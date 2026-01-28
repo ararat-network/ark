@@ -1,0 +1,44 @@
+project_name: noahd
+
+release:
+  disable: false
+  name_template: "{{.Tag}}"
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./noahd
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - LEDGER_ENABLED=true
+    flags:
+      - -trimpath
+      - -mod=readonly
+    tags:
+      - netgo
+      - ledger
+    ldflags:
+      - "-X github.com/cosmos/cosmos-sdk/version.Name=noah"
+      - "-X github.com/cosmos/cosmos-sdk/version.AppName=noahd"
+      - "-X github.com/cosmos/cosmos-sdk/version.Version={{.Version}}"
+      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}"
+      - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger"'
+      - "-w"
+      - "-s"
+
+archives:
+  - name_template: '{{ replace .Version "noahd/" "noahd-" }}-{{ .Os }}-{{ .Arch }}'
+
+checksum:
+  name_template: 'SHA256SUMS-{{ replace .Version "noahd/" "noahd-" }}.txt'
+  algorithm: sha256
+
+changelog:
+  skip: true
