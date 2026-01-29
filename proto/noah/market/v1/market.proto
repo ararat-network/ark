@@ -3,6 +3,8 @@ package noah.market.v1;
 
 import "gogoproto/gogo.proto";
 
+option go_package = "noah/x/market/types";
+
 // Params defines the parameters for the market module.
 message Params {
   option (gogoproto.equal)            = true;

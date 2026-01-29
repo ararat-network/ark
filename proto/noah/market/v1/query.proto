@@ -6,6 +6,8 @@ import "google/api/annotations.proto";
 import "noah/market/v1/market.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
+option go_package = "noah/x/market/types";
+
 // Query defines the gRPC querier service.
 service Query {
   // Swap returns simulated swap amount.
