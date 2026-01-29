@@ -116,8 +116,8 @@ modules:
       "@type": cosmos.staking.module.v1.Module
       # NOTE: specifying a prefix is only necessary when using bech32 addresses
       # If not specified, the auth Bech32Prefix appended with "valoper" and "valcons" is used by default
-      bech32_prefix_validator: cosmosvaloper
-      bech32_prefix_consensus: cosmosvalcons
+      bech32_prefix_validator: noahvaloper
+      bech32_prefix_consensus: noahvalcons
   - name: slashing
     config:
       "@type": cosmos.slashing.module.v1.Module
