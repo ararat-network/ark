@@ -1,0 +1,15 @@
+syntax = "proto3";
+package noah.market.v1;
+
+import "gogoproto/gogo.proto";
+import "noah/market/v1/market.proto";
+
+// GenesisState defines the market module's genesis state.
+message GenesisState {
+  // params defines all the paramaters of the module.
+  Params params = 1 [(gogoproto.nullable) = false];
+
+  // the gap between the TerraPool and the BasePool
+  bytes noah_pool_delta = 2
+      [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec", (gogoproto.nullable) = false];
+}
