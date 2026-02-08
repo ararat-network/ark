@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	modulev1 "noah/api/noah/market/module/v1"
 	"noah/x/market/types"
 
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -13,6 +14,8 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/core/store"
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/x/evidence/keeper"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -183,4 +186,50 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		simState.AppParams, simState.Cdc,
 		am.accountKeeper, am.bankKeeper, am.oracleKeeper,
 	)
+}
+
+func init() {
+	appmodule.Register(
+		&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+	)
+}
+
+type ModuleInputs struct {
+	depinject.In
+
+	Config       *modulev1.Module
+	Cdc          codec.Codec
+	StoreService store.KVStoreService
+
+	AccountKeeper types.AccountKeeper
+	BankKeeper    types.BankKeeper
+	OracleKeeper  types.OracleKeeper
+}
+
+type ModuleOutputs struct {
+	depinject.Out
+
+	Keeper keeper.Keeper
+	Module appmodule.AppModule
+}
+
+func ProvideModule(in ModuleInputs) ModuleOutputs {
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
+	if in.Config.Authority != "" {
+		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
+	}
+
+	k := keeper.NewKeeper(
+		in.Cdc,
+		in.StoreService,
+		in.AccountKeeper,
+		in.BankKeeper,
+		in.OracleKeeper,
+		authority.String(),
+	)
+
+	m := NewAppModule(in.Cdc, k)
+
+	return ModuleOutputs{Keeper: k, Module: m}
 }
