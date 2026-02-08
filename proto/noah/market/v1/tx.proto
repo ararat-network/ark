@@ -1,6 +1,7 @@
 syntax = "proto3";
 package noah.market.v1;
 
+import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
@@ -21,9 +22,10 @@ service Msg {
 // MsgSwap represents a message to swap coin to another denom.
 message MsgSwap {
   option (cosmos.msg.v1.signer) = "trader";
+  option (amino.name) = "noah/MsgSwap";
 
   string trader = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin offer_coin = 2;
+  cosmos.base.v1beta1.Coin offer_coin = 2 [ (amino.dont_omitempty) = true ];
   string ask_denom = 3;
 }
 
@@ -37,10 +39,11 @@ message MsgSwapResponse {
 // recipient
 message MsgSwapSend {
   option (cosmos.msg.v1.signer) = "from_address";
+  option (amino.name) = "noah/MsgSwapSend";
 
   string from_address = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string to_address = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin offer_coin = 3;
+  cosmos.base.v1beta1.Coin offer_coin = 3 [ (amino.dont_omitempty) = true ];
   string ask_denom = 4;
 }
 

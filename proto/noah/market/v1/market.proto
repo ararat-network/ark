@@ -1,10 +1,13 @@
 syntax = "proto3";
 package noah.market.v1;
 
+import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
 
 // Params defines the parameters for the market module.
 message Params {
+  option (amino.name) = "noah/market/Params";
+
   string base_pool = 1 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
   uint64 pool_recovery_period = 2;
   string min_stability_spread = 3 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
