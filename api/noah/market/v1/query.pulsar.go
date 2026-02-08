@@ -2,10 +2,10 @@
 package marketv1
 
 import (
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
-	types "github.com/cosmos/cosmos-sdk/types"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
@@ -656,7 +656,7 @@ func (x *fastReflection_QuerySwapResponse) Get(descriptor protoreflect.FieldDesc
 func (x *fastReflection_QuerySwapResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "noah.market.v1.QuerySwapResponse.return_coin":
-		x.ReturnCoin = value.Message().Interface().(*types.Coin)
+		x.ReturnCoin = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.market.v1.QuerySwapResponse"))
@@ -679,7 +679,7 @@ func (x *fastReflection_QuerySwapResponse) Mutable(fd protoreflect.FieldDescript
 	switch fd.FullName() {
 	case "noah.market.v1.QuerySwapResponse.return_coin":
 		if x.ReturnCoin == nil {
-			x.ReturnCoin = new(types.Coin)
+			x.ReturnCoin = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.ReturnCoin.ProtoReflect())
 	default:
@@ -696,7 +696,7 @@ func (x *fastReflection_QuerySwapResponse) Mutable(fd protoreflect.FieldDescript
 func (x *fastReflection_QuerySwapResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "noah.market.v1.QuerySwapResponse.return_coin":
-		m := new(types.Coin)
+		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -893,7 +893,7 @@ func (x *fastReflection_QuerySwapResponse) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.ReturnCoin == nil {
-					x.ReturnCoin = &types.Coin{}
+					x.ReturnCoin = &v1beta1.Coin{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ReturnCoin); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -2567,7 +2567,7 @@ type QuerySwapResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// return_coin defines the coin returned as a result of the swap simulation.
-	ReturnCoin *types.Coin `protobuf:"bytes,1,opt,name=return_coin,json=returnCoin,proto3" json:"return_coin,omitempty"`
+	ReturnCoin *v1beta1.Coin `protobuf:"bytes,1,opt,name=return_coin,json=returnCoin,proto3" json:"return_coin,omitempty"`
 }
 
 func (x *QuerySwapResponse) Reset() {
@@ -2590,7 +2590,7 @@ func (*QuerySwapResponse) Descriptor() ([]byte, []int) {
 	return file_noah_market_v1_query_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *QuerySwapResponse) GetReturnCoin() *types.Coin {
+func (x *QuerySwapResponse) GetReturnCoin() *v1beta1.Coin {
 	if x != nil {
 		return x.ReturnCoin
 	}
@@ -2820,7 +2820,7 @@ var file_noah_market_v1_query_proto_goTypes = []interface{}{
 	(*QueryNoahPoolDeltaResponse)(nil), // 3: noah.market.v1.QueryNoahPoolDeltaResponse
 	(*QueryParamsRequest)(nil),         // 4: noah.market.v1.QueryParamsRequest
 	(*QueryParamsResponse)(nil),        // 5: noah.market.v1.QueryParamsResponse
-	(*types.Coin)(nil),                 // 6: cosmos.base.v1beta1.Coin
+	(*v1beta1.Coin)(nil),               // 6: cosmos.base.v1beta1.Coin
 	(*Params)(nil),                     // 7: noah.market.v1.Params
 }
 var file_noah_market_v1_query_proto_depIdxs = []int32{
