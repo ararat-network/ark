@@ -7,4 +7,15 @@ const (
 	StoreKey = ModuleName
 	// RouterKey is the msg router key for the staking module
 	RouterKey = ModuleName
+	// QuerierRoute is the query router key for the market module
+	QuerierRoute = ModuleName
+)
+
+// Keys for market store
+// Items are stored with the following key: values
+//
+// - 0x01: math.LegacyDec
+var (
+	// Keys for store prefixed
+	NoahPoolDeltaKey = []byte{0x01} // key for noah pool delta which gap between MintPool from BasePool
 )

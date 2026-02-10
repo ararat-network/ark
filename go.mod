@@ -11,12 +11,12 @@ require (
 	cosmossdk.io/math v1.5.3
 	cosmossdk.io/store v1.1.2
 	cosmossdk.io/tools/confix v0.1.2
-	cosmossdk.io/x/tx v0.14.0
+	cosmossdk.io/x/tx v0.14.0 // indirect
 	github.com/cometbft/cometbft v0.38.20
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-sdk v0.53.5
 	github.com/cosmos/gogoproto v1.7.2
-	github.com/spf13/cast v1.10.0
+	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
@@ -33,6 +33,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260114163908-3f89685c29c3
 	google.golang.org/grpc v1.78.0
+	gopkg.in/yaml.v2 v2.3.0
 )
 
 require (

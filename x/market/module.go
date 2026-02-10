@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	modulev1 "noah/api/noah/market/module/v1"
+	marketv1 "noah/api/noah/market/v1"
 	"noah/x/market/types"
 
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -62,12 +63,12 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 
 // ValidateGenesis performs genesis state validation for the slashing module.
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
-	var data types.GenesisState
+	var data marketv1.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &data); err != nil {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
 
-	return types.ValidateGenesis(data)
+	return types.ValidateGenesis(&data)
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the slashing module.
