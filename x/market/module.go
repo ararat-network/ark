@@ -8,6 +8,8 @@ import (
 
 	modulev1 "noah/api/noah/market/module/v1"
 	marketv1 "noah/api/noah/market/v1"
+	"noah/x/market/keeper"
+	"noah/x/market/simulation"
 	"noah/x/market/types"
 
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -17,7 +19,6 @@ import (
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/depinject"
-	"cosmossdk.io/x/evidence/keeper"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -73,7 +74,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncod
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the slashing module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *gwruntime.ServeMux) {
-	if err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)); err != nil {
+	if err := marketv1.RegisterQueryHandlerClient(context.Background(), mux, marketv1.NewQueryClient(clientCtx)); err != nil {
 		panic(err)
 	}
 }
@@ -123,8 +124,7 @@ func (AppModule) QuerierRoute() string { return types.QuerierRoute }
 // RegisterServices registers module services.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	querier := keeper.NewQuerier(am.keeper)
-	types.RegisterQueryServer(cfg.QueryServer(), querier)
+	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper))
 }
 
 // InitGenesis performs genesis initialization for the market module. It returns
