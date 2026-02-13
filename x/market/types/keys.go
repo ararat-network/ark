@@ -1,5 +1,7 @@
 package types
 
+import "cosmossdk.io/collections"
+
 const (
 	// ModuleName is the name of the market module
 	ModuleName = "market"
@@ -12,10 +14,7 @@ const (
 )
 
 // Keys for market store
-// Items are stored with the following key: values
-//
-// - 0x01: math.LegacyDec
 var (
-	// Keys for store prefixed
-	NoahPoolDeltaKey = []byte{0x01} // key for noah pool delta which gap between MintPool from BasePool
+	ParamsKey        = collections.NewPrefix(0)
+	NoahPoolDeltaKey = collections.NewPrefix(1)
 )

@@ -2,22 +2,12 @@ package types
 
 import (
 	"fmt"
+
+	"gopkg.in/yaml.v2"
 	marketv1 "noah/api/noah/market/v1"
 	"noah/types"
 
-	"gopkg.in/yaml.v2"
-
 	"cosmossdk.io/math"
-)
-
-// Parameter keys
-var (
-	// Terra liquidity pool(usdr unit) made available per ${PoolRecoveryPeriod} (usdr unit)
-	KeyBasePool = []byte("BasePool")
-	// The period required to recover BasePool
-	KeyPoolRecoveryPeriod = []byte("PoolRecoveryPeriod")
-	// Min spread
-	KeyMinStabilitySpread = []byte("MinStabilitySpread")
 )
 
 // Default parameter values
