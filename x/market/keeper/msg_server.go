@@ -30,19 +30,19 @@ var _ marketv1.MsgServer = msgServer{}
 func (m msgServer) Swap(ctx context.Context, msg *marketv1.MsgSwap) (*marketv1.MsgSwapResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid trader address: %s", err)
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid trader address (%s)", err)
 	}
 
 	amt, ok := math.NewIntFromString(msg.OfferCoin.Amount)
 	if !ok {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin amount: %s", msg.OfferCoin.Amount)
+		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, msg.OfferCoin.String())
 	}
+
 	offerCoin := sdk.NewCoin(msg.OfferCoin.Denom, amt)
 	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
 		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
 	}
-
-	if offerCoin.Denom == msg.AskDenom {
+	if msg.OfferCoin.Denom == msg.AskDenom {
 		return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, msg.AskDenom)
 	}
 
@@ -52,24 +52,25 @@ func (m msgServer) Swap(ctx context.Context, msg *marketv1.MsgSwap) (*marketv1.M
 func (m msgServer) SwapSend(ctx context.Context, msg *marketv1.MsgSwapSend) (*marketv1.MsgSwapSendResponse, error) {
 	fromAddr, err := sdk.AccAddressFromBech32(msg.FromAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid from address: %s", err)
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid from address (%s)", err)
 	}
 
 	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid to address: %s", err)
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid to address (%s)", err)
 	}
 
 	amt, ok := math.NewIntFromString(msg.OfferCoin.Amount)
 	if !ok {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin amount: %s", msg.OfferCoin.Amount)
-	}
-	offerCoin := sdk.NewCoin(msg.OfferCoin.Denom, amt)
-	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
+		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, msg.OfferCoin.String())
 	}
 
-	if offerCoin.Denom == msg.AskDenom {
+	offerCoin := sdk.NewCoin(msg.OfferCoin.Denom, amt)
+	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
+		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, msg.OfferCoin.String())
+	}
+
+	if msg.OfferCoin.Denom == msg.AskDenom {
 		return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, msg.AskDenom)
 	}
 

@@ -28,7 +28,6 @@ require (
 require (
 	cosmossdk.io/collections v1.3.1
 	cosmossdk.io/errors v1.0.2
-	cosmossdk.io/log/v2 v2.0.1
 	cosmossdk.io/x/evidence v0.2.0
 	cosmossdk.io/x/feegrant v0.2.0
 	cosmossdk.io/x/upgrade v0.2.0

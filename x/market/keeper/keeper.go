@@ -76,15 +76,15 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", "x/"+types.ModuleName)
 }
 
-// ReplenishPools replenishes each pool(Terra,Luna) to BasePool
-func (k Keeper) ReplenishPools(ctx sdk.Context) {
+// ReplenishPools replenishes each pool(Noah,Ark) to BasePool
+func (k Keeper) ReplenishPools(ctx context.Context) error {
 	poolDelta, err := k.NoahPoolDelta.Get(ctx)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	params, err := k.Params.Get(ctx)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	poolRecoveryPeriod := int64(params.PoolRecoveryPeriod)
 	poolRegressionAmt := poolDelta.QuoInt64(poolRecoveryPeriod)
@@ -94,6 +94,7 @@ func (k Keeper) ReplenishPools(ctx sdk.Context) {
 	poolDelta = poolDelta.Sub(poolRegressionAmt)
 
 	if err := k.NoahPoolDelta.Set(ctx, poolDelta); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }

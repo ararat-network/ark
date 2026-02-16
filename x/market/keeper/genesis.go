@@ -10,7 +10,7 @@ import (
 )
 
 // InitGenesis new mint genesis
-func (keeper Keeper) InitGenesis(ctx context.Context, ak types.AccountKeeper, data *marketv1.GenesisState) {
+func (keeper Keeper) InitGenesis(ctx context.Context, data *marketv1.GenesisState) {
 	if err := keeper.Params.Set(ctx, data.Params); err != nil {
 		panic(fmt.Errorf("Getting Params: %w", err))
 	}
@@ -22,7 +22,7 @@ func (keeper Keeper) InitGenesis(ctx context.Context, ak types.AccountKeeper, da
 		panic(fmt.Errorf("Getting NoahPoolDelta: %w", err))
 	}
 
-	ak.GetModuleAccount(ctx, types.ModuleName)
+	keeper.AccountKeeper.GetModuleAccount(ctx, types.ModuleName)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
