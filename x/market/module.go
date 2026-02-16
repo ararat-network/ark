@@ -14,8 +14,6 @@ import (
 
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/depinject"
@@ -28,12 +26,14 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 )
 
+const consensusVersion = 1
+
 var (
 	_ module.AppModuleBasic      = AppModule{}
 	_ module.AppModuleSimulation = AppModule{}
 
-	_ appmodule.AppModule       = AppModule{}
-	_ appmodule.HasBeginBlocker = AppModule{}
+	_ appmodule.AppModule     = AppModule{}
+	_ appmodule.HasEndBlocker = AppModule{}
 )
 
 // AppModuleBasic defines the basic application module used by the slashing module.
@@ -115,45 +115,34 @@ func (am AppModule) IsAppModule() {}
 // Name returns the market module's name.
 func (AppModule) Name() string { return types.ModuleName }
 
-// RegisterInvariants performs a no-op.
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
-
-// QuerierRoute returns the market module's querier route name.
-func (AppModule) QuerierRoute() string { return types.QuerierRoute }
-
 // RegisterServices registers module services.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper))
+	marketv1.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	marketv1.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper))
 }
 
 // InitGenesis performs genesis initialization for the market module. It returns
 // no validator updates.
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
+	var genesisState marketv1.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, &genesisState)
+	am.keeper.InitGenesis(ctx, &genesisState)
 
-	return nil
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the market
 // module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	gs := ExportGenesis(ctx, am.keeper)
+	gs := am.keeper.ExportGenesis(ctx)
 	return cdc.MustMarshalJSON(gs)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
-
-// BeginBlock returns the begin blocker for the market module.
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {}
+func (AppModule) ConsensusVersion() uint64 { return consensusVersion }
 
 // EndBlock returns the end blocker for the market module.
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	EndBlocker(ctx, am.keeper)
-	return []abci.ValidatorUpdate{}
+func (am AppModule) EndBlock(ctx context.Context) error {
+	return am.keeper.EndBlocker(ctx)
 }
 
 // ____________________________________________________________________________
@@ -172,19 +161,19 @@ func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.Weight
 }
 
 // RandomizedParams creates randomized market param changes for the simulator.
-func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
+func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.LegacyParamChange {
 	return simulation.ParamChanges(r)
 }
 
 // RegisterStoreDecoder registers a decoder for market module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
+func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
+	simulation.RegisterStoreDecoder(sdr, am.keeper)
 }
 
 // WeightedOperations returns the all the market module operations with their respective weights.
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	return simulation.WeightedOperations(
-		simState.AppParams, simState.Cdc,
+		simState.AppParams, simState.Cdc, simState.TxConfig,
 		am.accountKeeper, am.bankKeeper, am.oracleKeeper,
 	)
 }
