@@ -38,14 +38,14 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 	authority string,
-) Keeper {
+) *Keeper {
 	// ensure market module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic(fmt.Sprintf("the x/%s module account has not been set", types.ModuleName))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
-	k := Keeper{
+	k := &Keeper{
 		cdc:           cdc,
 		storeService:  storeService,
 		authority:     authority,

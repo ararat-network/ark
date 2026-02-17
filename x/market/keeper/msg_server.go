@@ -8,20 +8,22 @@ import (
 	oracletypes "noah/x/oracle/types"
 
 	base "cosmossdk.io/api/cosmos/base/v1beta1"
+	"cosmossdk.io/errors"
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
 type msgServer struct {
-	k Keeper
+	k *Keeper
 	marketv1.UnimplementedMsgServer
 }
 
 // NewMsgServerImpl returns an implementation of the market MsgServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(k Keeper) marketv1.MsgServer {
+func NewMsgServerImpl(k *Keeper) marketv1.MsgServer {
 	return msgServer{k: k}
 }
 
@@ -37,14 +39,7 @@ func (m msgServer) Swap(ctx context.Context, msg *marketv1.MsgSwap) (*marketv1.M
 	if !ok {
 		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, msg.OfferCoin.String())
 	}
-
 	offerCoin := sdk.NewCoin(msg.OfferCoin.Denom, amt)
-	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
-	}
-	if msg.OfferCoin.Denom == msg.AskDenom {
-		return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, msg.AskDenom)
-	}
 
 	return m.handleSwapRequest(ctx, addr, addr, offerCoin, msg.AskDenom)
 }
@@ -54,7 +49,6 @@ func (m msgServer) SwapSend(ctx context.Context, msg *marketv1.MsgSwapSend) (*ma
 	if err != nil {
 		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid from address (%s)", err)
 	}
-
 	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid to address (%s)", err)
@@ -64,15 +58,7 @@ func (m msgServer) SwapSend(ctx context.Context, msg *marketv1.MsgSwapSend) (*ma
 	if !ok {
 		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, msg.OfferCoin.String())
 	}
-
 	offerCoin := sdk.NewCoin(msg.OfferCoin.Denom, amt)
-	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, msg.OfferCoin.String())
-	}
-
-	if msg.OfferCoin.Denom == msg.AskDenom {
-		return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, msg.AskDenom)
-	}
 
 	res, err := m.handleSwapRequest(ctx, fromAddr, toAddr, offerCoin, msg.AskDenom)
 	if err != nil {
@@ -85,9 +71,24 @@ func (m msgServer) SwapSend(ctx context.Context, msg *marketv1.MsgSwapSend) (*ma
 	}, nil
 }
 
+// UpdateParams updates the params.
+func (m msgServer) UpdateParams(ctx context.Context, msg *marketv1.MsgUpdateParams) (*marketv1.MsgUpdateParamsResponse, error) {
+	if m.k.authority != msg.Authority {
+		return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", m.k.authority, msg.Authority)
+	}
+
+	if err := types.ValidateParams(msg.Params); err != nil {
+		return nil, err
+	}
+
+	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
+		return nil, err
+	}
+
+	return &marketv1.MsgUpdateParamsResponse{}, nil
+}
+
 // handleMsgSwap handles the logic of a MsgSwap
-// This function does not repeat checks that have already been performed in msg.ValidateBasic()
-// Ex) assert(offerCoin.Denom != askDenom)
 func (m msgServer) handleSwapRequest(
 	ctx context.Context,
 	trader sdk.AccAddress,
@@ -95,6 +96,13 @@ func (m msgServer) handleSwapRequest(
 	offerCoin sdk.Coin,
 	askDenom string,
 ) (*marketv1.MsgSwapResponse, error) {
+	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
+		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
+	}
+	if offerCoin.Denom == askDenom {
+		return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
+	}
+
 	// Compute exchange rates between the ask and offer
 	swapDecCoin, spread, err := m.k.ComputeSwap(ctx, offerCoin, askDenom)
 	if err != nil {

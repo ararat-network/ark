@@ -93,12 +93,12 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 
 // WasmQuerier - staking query interface for wasm contract
 type Querier struct {
-	keeper keeper.Keeper
+	k *keeper.Keeper
 }
 
 // NewWasmQuerier return bank wasm query interface
-func NewWasmQuerier(keeper keeper.Keeper) Querier {
-	return Querier{keeper}
+func NewWasmQuerier(k *keeper.Keeper) Querier {
+	return Querier{k}
 }
 
 // Query - implement query function
@@ -124,7 +124,7 @@ func (querier Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byt
 		return nil, sdkerrors.Wrap(errortypes.ErrJSONUnmarshal, err.Error())
 	}
 
-	q := keeper.NewQueryServerImpl(querier.keeper)
+	q := keeper.NewQueryServerImpl(querier.k)
 	if params.Swap != nil {
 		res, err := q.Swap(ctx, &marketv1.QuerySwapRequest{
 			OfferCoin: params.Swap.OfferCoin.String(),

@@ -43,14 +43,20 @@ func WeightedOperations(
 	ok types.OracleKeeper,
 ) simulation.WeightedOperations {
 	var weightMsgSwap int
-	appParams.GetOrGenerate(OpWeightMsgSwap, &weightMsgSwap, nil,
+	appParams.GetOrGenerate(
+		OpWeightMsgSwap,
+		&weightMsgSwap,
+		nil,
 		func(_ *rand.Rand) {
 			weightMsgSwap = DefaultWeightMsgSwap
 		},
 	)
 
 	var weightMsgSwapSend int
-	appParams.GetOrGenerate(OpWeightMsgSwapSend, &weightMsgSwapSend, nil,
+	appParams.GetOrGenerate(
+		OpWeightMsgSwapSend,
+		&weightMsgSwapSend,
+		nil,
 		func(_ *rand.Rand) {
 			weightMsgSwapSend = DefaultWeightMsgSwapSend
 		},
@@ -109,7 +115,7 @@ func SimulateMsgSwap(
 			AskDenom: askDenom,
 		}
 
-		err = sendMsg(r, app, txGen, ak, bk, msg, ctx, chainID, []cryptotypes.PrivKey{simAccount.PrivKey}, account)
+		err = sendMsg(r, app, txGen, bk, msg, ctx, chainID, []cryptotypes.PrivKey{simAccount.PrivKey}, account)
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, msgType, "unable to deliver tx"), nil, err
 		}
@@ -166,7 +172,7 @@ func SimulateMsgSwapSend(
 			AskDenom: askDenom,
 		}
 
-		err = sendMsg(r, app, txGen, ak, bk, msg, ctx, chainID, []cryptotypes.PrivKey{simAccount.PrivKey}, account)
+		err = sendMsg(r, app, txGen, bk, msg, ctx, chainID, []cryptotypes.PrivKey{simAccount.PrivKey}, account)
 		if err != nil {
 			if strings.Contains(err.Error(), "insufficient fee") {
 				return simtypes.NoOpMsg(types.ModuleName, msgType, "ignore tax error"), nil, nil
@@ -204,10 +210,13 @@ func randomDenomPair(r *rand.Rand, ctx sdk.Context, ok types.OracleKeeper) (offe
 
 // sendMsg builds, signs, and delivers a simulation transaction.
 func sendMsg(
-	r *rand.Rand, app *baseapp.BaseApp,
+	r *rand.Rand,
+	app *baseapp.BaseApp,
 	txGen client.TxConfig,
-	ak types.AccountKeeper, bk types.BankKeeper,
-	msg sdk.Msg, ctx sdk.Context, chainID string,
+	bk types.BankKeeper,
+	msg sdk.Msg,
+	ctx sdk.Context,
+	chainID string,
 	privkeys []cryptotypes.PrivKey,
 	account sdk.AccountI,
 ) error {

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	marketv1 "noah/api/noah/market/v1"
+	feeutils "noah/custom/auth/client/utils"
 	"noah/x/market/types"
 
 	"github.com/spf13/cobra"
@@ -17,8 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
-
-	feeutils "github.com/classic-terra/core/custom/auth/client/utils"
 )
 
 // GetTxCmd returns the transaction commands for this module

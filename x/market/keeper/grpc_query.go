@@ -15,11 +15,11 @@ import (
 var _ marketv1.QueryServer = queryServer{}
 
 type queryServer struct {
-	k Keeper
+	k *Keeper
 	marketv1.UnimplementedQueryServer
 }
 
-func NewQueryServerImpl(k Keeper) marketv1.QueryServer {
+func NewQueryServerImpl(k *Keeper) marketv1.QueryServer {
 	return queryServer{k: k}
 }
 
