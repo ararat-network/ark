@@ -4,11 +4,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// query endpoints supported by the oracle Querier
+// query endpoints supported by the market Querier
 const (
-	QuerySwap           = "swap"
-	QueryTerraPoolDelta = "terra_pool_delta"
-	QueryParameters     = "parameters"
+	QuerySwap          = "swap"
+	QueryNoahPoolDelta = "noah_pool_delta"
+	QueryParameters    = "parameters"
 )
 
 // QuerySwapParams for query
