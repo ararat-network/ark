@@ -1,9 +1,13 @@
 syntax = "proto3";
 package noah.market.v1;
 
+option go_package = "noah/x/market/types";
+
+import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "noah/market/v1/market.proto";
 
@@ -40,7 +44,7 @@ message QuerySwapRequest {
 // QuerySwapResponse is the response type for the Query/Swap RPC method.
 message QuerySwapResponse {
   // return_coin defines the coin returned as a result of the swap simulation.
-  cosmos.base.v1beta1.Coin return_coin = 1;
+  cosmos.base.v1beta1.Coin return_coin = 1 [ (gogoproto.nullable) = false ];
 }
 
 // QueryNoahPoolDeltaRequest is the request type for the Query/NoahPoolDelta RPC
@@ -51,7 +55,12 @@ message QueryNoahPoolDeltaRequest {}
 // RPC method.
 message QueryNoahPoolDeltaResponse {
   // noah_pool_delta defines the gap between the NoahPool and the NoahBasePool
-  string noah_pool_delta = 1 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
+  string noah_pool_delta = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -60,5 +69,6 @@ message QueryParamsRequest {}
 // QueryParamsResponse is the response type for the Query/Params RPC method.
 message QueryParamsResponse {
   // params defines the parameters of the module.
-  Params params = 1;
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

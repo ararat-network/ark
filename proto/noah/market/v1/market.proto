@@ -1,14 +1,27 @@
 syntax = "proto3";
 package noah.market.v1;
 
+option go_package = "noah/x/market/types";
+
 import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 
 // Params defines the parameters for the market module.
 message Params {
   option (amino.name) = "noah/market/Params";
 
-  string base_pool = 1 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
+  string base_pool = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   uint64 pool_recovery_period = 2;
-  string min_stability_spread = 3 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
+  string min_stability_spread = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
