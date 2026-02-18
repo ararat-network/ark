@@ -2,19 +2,18 @@ package simulation
 
 import (
 	"context"
-	marketv1 "noah/api/noah/market/v1"
 	core "noah/types"
 	"noah/x/market/keeper"
 	"noah/x/market/types"
 
-	basev1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 )
 
-func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*marketv1.MsgSwap] {
-	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *marketv1.MsgSwap) {
+func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
+	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwap) {
 		r := testData.Rand()
 
 		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
@@ -32,19 +31,16 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*marketv1.MsgSwap] {
 			return nil, nil
 		}
 
-		return []simsx.SimAccount{sender}, &marketv1.MsgSwap{
-			Trader: sender.AddressBech32,
-			OfferCoin: &basev1beta1.Coin{
-				Denom:  offerCoin.Denom,
-				Amount: offerCoin.Amount.String(),
-			},
-			AskDenom: askDenom,
+		return []simsx.SimAccount{sender}, &types.MsgSwap{
+			Trader:    sender.AddressBech32,
+			OfferCoin: sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
+			AskDenom:  askDenom,
 		}
 	}
 }
 
-func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*marketv1.MsgSwapSend] {
-	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *marketv1.MsgSwapSend) {
+func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSend] {
+	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwapSend) {
 		r := testData.Rand()
 
 		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
@@ -72,27 +68,25 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*marketv1.MsgSwa
 			return nil, nil
 		}
 
-		return []simsx.SimAccount{sender}, &marketv1.MsgSwapSend{
+		return []simsx.SimAccount{sender}, &types.MsgSwapSend{
 			FromAddress: sender.AddressBech32,
 			ToAddress:   receiver.AddressBech32,
-			OfferCoin: &basev1beta1.Coin{
-				Denom:  offerCoin.Denom,
-				Amount: offerCoin.Amount.String(),
-			},
-			AskDenom: askDenom,
+			OfferCoin:   sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
+			AskDenom:    askDenom,
 		}
 	}
 }
 
-func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*marketv1.MsgUpdateParams] {
-	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *marketv1.MsgUpdateParams) {
+func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
+	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		r := testData.Rand()
-		params := types.DefaultParams()
-		params.BasePool = GenBasePool(r.Rand).String()
-		params.PoolRecoveryPeriod = GenPoolRecoveryPeriod(r.Rand)
-		params.MinStabilitySpread = GenMinSpread(r.Rand).String()
+		params := types.Params{
+			BasePool:           GenBasePool(r.Rand),
+			PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
+			MinStabilitySpread: GenMinSpread(r.Rand),
+		}
 
-		return nil, &marketv1.MsgUpdateParams{
+		return nil, &types.MsgUpdateParams{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
 			Params:    params,
 		}

@@ -3,21 +3,15 @@ package cli
 import (
 	"strings"
 
-	marketv1 "noah/api/noah/market/v1"
 	feeutils "noah/custom/auth/client/utils"
 	"noah/x/market/types"
 
 	"github.com/spf13/cobra"
 
-	base "cosmossdk.io/api/cosmos/base/v1beta1"
-	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -64,37 +58,26 @@ $ noahd market swap "1000ukrw" "uusd" "noah1..."
 				return err
 			}
 
-			offerCoinStr := args[0]
-			askDenom := args[1]
-			fromAddress := clientCtx.GetFromAddress()
-
-			offerCoin, err := sdk.ParseCoinNormalized(offerCoinStr)
+			offerCoin, err := sdk.ParseCoinNormalized(args[0])
 			if err != nil {
 				return err
 			}
-			if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-				return sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
-			}
-			if offerCoin.Denom == askDenom {
-				return sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
-			}
+
+			askDenom := args[1]
+			fromAddress := clientCtx.GetFromAddress()
 
 			var msg sdk.Msg
 			if len(args) == 3 {
 				toAddress, err := sdk.AccAddressFromBech32(args[2])
 				if err != nil {
-					return sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid to address (%s)", err)
+					return err
 				}
 
-				msg = &marketv1.MsgSwapSend{
-					FromAddress: fromAddress.String(),
-					ToAddress:   toAddress.String(),
-					OfferCoin: &base.Coin{
-						Denom:  offerCoin.Denom,
-						Amount: offerCoin.Amount.String(),
-					},
-					AskDenom: askDenom,
+				swapSendMsg := types.NewMsgSwapSend(fromAddress, toAddress, offerCoin, askDenom)
+				if err = swapSendMsg.ValidateBasic(); err != nil {
+					return err
 				}
+				msg = swapSendMsg
 
 				if !clientCtx.GenerateOnly && txf.Fees().IsZero() {
 					// estimate tax and gas
@@ -111,14 +94,11 @@ $ noahd market swap "1000ukrw" "uusd" "noah1..."
 						WithGasPrices("")
 				}
 			} else {
-				msg = &marketv1.MsgSwap{
-					Trader: fromAddress.String(),
-					OfferCoin: &base.Coin{
-						Denom:  offerCoin.Denom,
-						Amount: offerCoin.Amount.String(),
-					},
-					AskDenom: askDenom,
+				swapMsg := types.NewMsgSwap(fromAddress, offerCoin, askDenom)
+				if err = swapMsg.ValidateBasic(); err != nil {
+					return err
 				}
+				msg = swapMsg
 			}
 
 			// build and sign the transaction, then broadcast to Tendermint

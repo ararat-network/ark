@@ -1,11 +1,9 @@
 package types
 
 import (
-	marketv1 "noah/api/noah/market/v1"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/legacy"
-	"github.com/cosmos/cosmos-sdk/codec/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
@@ -14,19 +12,19 @@ import (
 // on the provided LegacyAmino codec. These types are used for Amino JSON serialization
 // (SIGN_MODE_LEGACY_AMINO_JSON), which is required for Ledger hardware wallet signing.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &marketv1.MsgSwap{}, "noah/MsgSwap")
-	legacy.RegisterAminoMsg(cdc, &marketv1.MsgSwapSend{}, "noah/MsgSwapSend")
+	legacy.RegisterAminoMsg(cdc, &MsgSwap{}, "noah/MsgSwap")
+	legacy.RegisterAminoMsg(cdc, &MsgSwapSend{}, "noah/MsgSwapSend")
 
-	cdc.RegisterConcrete(&marketv1.Params{}, "noah/market/Params", nil)
+	cdc.RegisterConcrete(&Params{}, "noah/market/Params", nil)
 }
 
 // RegisterInterfaces registers the x/market interfaces and implementations
 // with the interface registry for Protobuf serialization (SIGN_MODE_DIRECT).
-func RegisterInterfaces(registry types.InterfaceRegistry) {
+func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
-		&marketv1.MsgSwap{},
-		&marketv1.MsgSwapSend{},
+		&MsgSwap{},
+		&MsgSwapSend{},
 	)
 
-	msgservice.RegisterMsgServiceDesc(registry, &marketv1.Msg_ServiceDesc)
+	msgservice.RegisterMsgServiceDesc(registry, &Msg_serviceDesc)
 }

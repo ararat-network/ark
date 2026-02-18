@@ -6,11 +6,9 @@ import (
 	"math/rand"
 	"strings"
 
-	marketv1 "noah/api/noah/market/v1"
 	core "noah/types"
 	"noah/x/market/types"
 
-	basev1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -84,7 +82,7 @@ func SimulateMsgSwap(
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-		msgType := sdk.MsgTypeURL(&marketv1.MsgSwap{})
+		msgType := sdk.MsgTypeURL(&types.MsgSwap{})
 
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		account := ak.GetAccount(ctx, simAccount.Address)
@@ -106,13 +104,10 @@ func SimulateMsgSwap(
 			return simtypes.NoOpMsg(types.ModuleName, msgType, "not enough offer denom amount"), nil, nil
 		}
 
-		msg := &marketv1.MsgSwap{
-			Trader: simAccount.Address.String(),
-			OfferCoin: &basev1beta1.Coin{
-				Denom:  offerDenom,
-				Amount: amount.String(),
-			},
-			AskDenom: askDenom,
+		msg := &types.MsgSwap{
+			Trader:    simAccount.Address.String(),
+			OfferCoin: sdk.NewCoin(offerDenom, amount),
+			AskDenom:  askDenom,
 		}
 
 		err = sendMsg(r, app, txGen, bk, msg, ctx, chainID, []cryptotypes.PrivKey{simAccount.PrivKey}, account)
@@ -134,7 +129,7 @@ func SimulateMsgSwapSend(
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-		msgType := sdk.MsgTypeURL(&marketv1.MsgSwapSend{})
+		msgType := sdk.MsgTypeURL(&types.MsgSwapSend{})
 
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		receiverAccount, _ := simtypes.RandomAcc(r, accs)
@@ -162,14 +157,11 @@ func SimulateMsgSwapSend(
 			return simtypes.NoOpMsg(types.ModuleName, msgType, "not enough offer denom amount"), nil, nil
 		}
 
-		msg := &marketv1.MsgSwapSend{
+		msg := &types.MsgSwapSend{
 			FromAddress: simAccount.Address.String(),
 			ToAddress:   receiverAccount.Address.String(),
-			OfferCoin: &basev1beta1.Coin{
-				Denom:  offerDenom,
-				Amount: amount.String(),
-			},
-			AskDenom: askDenom,
+			OfferCoin:   sdk.NewCoin(offerDenom, amount),
+			AskDenom:    askDenom,
 		}
 
 		err = sendMsg(r, app, txGen, bk, msg, ctx, chainID, []cryptotypes.PrivKey{simAccount.PrivKey}, account)

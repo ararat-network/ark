@@ -3,13 +3,11 @@ package wasm
 import (
 	"encoding/json"
 
-	marketv1 "noah/api/noah/market/v1"
 	"noah/x/market/keeper"
 	"noah/x/market/types"
 	wasm "noah/x/wasm/exported"
 
 	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -36,8 +34,8 @@ func (MsgParser) Parse(_ sdk.AccAddress, _ wasmvmtypes.CosmosMsg) (sdk.Msg, erro
 
 // CosmosMsg only contains swap msg
 type CosmosMsg struct {
-	Swap     *marketv1.MsgSwap     `json:"swap,omitempty"`
-	SwapSend *marketv1.MsgSwapSend `json:"swap_send,omitempty"`
+	Swap     *types.MsgSwap     `json:"swap,omitempty"`
+	SwapSend *types.MsgSwapSend `json:"swap_send,omitempty"`
 }
 
 // ParseCustom implements custom parser
@@ -50,42 +48,10 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 
 	if sdkMsg.Swap != nil {
 		sdkMsg.Swap.Trader = contractAddr.String()
-
-		amt, ok := math.NewIntFromString(sdkMsg.Swap.OfferCoin.Amount)
-		if !ok {
-			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, sdkMsg.Swap.OfferCoin.String())
-		}
-
-		offerCoin := sdk.NewCoin(sdkMsg.Swap.OfferCoin.Denom, amt)
-		if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
-		}
-		if sdkMsg.Swap.OfferCoin.Denom == sdkMsg.Swap.AskDenom {
-			return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, sdkMsg.Swap.AskDenom)
-		}
-
-		return sdkMsg.Swap, nil
+		return sdkMsg.Swap, sdkMsg.Swap.ValidateBasic()
 	} else if sdkMsg.SwapSend != nil {
 		sdkMsg.SwapSend.FromAddress = contractAddr.String()
-
-		if _, err := sdk.AccAddressFromBech32(sdkMsg.SwapSend.ToAddress); err != nil {
-			return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid to address (%s)", err)
-		}
-
-		amt, ok := math.NewIntFromString(sdkMsg.SwapSend.OfferCoin.Amount)
-		if !ok {
-			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, sdkMsg.SwapSend.OfferCoin.String())
-		}
-
-		offerCoin := sdk.NewCoin(sdkMsg.SwapSend.OfferCoin.Denom, amt)
-		if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
-		}
-		if sdkMsg.SwapSend.OfferCoin.Denom == sdkMsg.SwapSend.AskDenom {
-			return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, sdkMsg.SwapSend.AskDenom)
-		}
-
-		return sdkMsg.SwapSend, nil
+		return sdkMsg.SwapSend, sdkMsg.SwapSend.ValidateBasic()
 	}
 
 	return nil, sdkerrors.Wrap(wasm.ErrInvalidMsg, "Unknown variant of Market")
@@ -126,7 +92,7 @@ func (querier Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byt
 
 	q := keeper.NewQueryServerImpl(querier.k)
 	if params.Swap != nil {
-		res, err := q.Swap(ctx, &marketv1.QuerySwapRequest{
+		res, err := q.Swap(ctx, &types.QuerySwapRequest{
 			OfferCoin: params.Swap.OfferCoin.String(),
 			AskDenom:  params.Swap.AskDenom,
 		})

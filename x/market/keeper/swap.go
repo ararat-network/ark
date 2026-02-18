@@ -30,7 +30,7 @@ func (k Keeper) ApplySwapToPool(ctx context.Context, offerCoin sdk.Coin, askCoin
 
 	// In case swapping Noah to Ark, the noah swap pool(offer) must be increased and the ark swap pool(ask) must be decreased
 	if offerCoin.Denom != core.MicroArkDenom && askCoin.Denom == core.MicroArkDenom {
-		offerBaseCoin, err := k.ComputeInternalSwap(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
+		offerBaseCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
 		if err != nil {
 			return err
 		}
@@ -40,7 +40,7 @@ func (k Keeper) ApplySwapToPool(ctx context.Context, offerCoin sdk.Coin, askCoin
 
 	// In case swapping Ark to Noah, the ark swap pool(offer) must be increased and the noah swap pool(ask) must be decreased
 	if offerCoin.Denom == core.MicroArkDenom && askCoin.Denom != core.MicroArkDenom {
-		askBaseCoin, err := k.ComputeInternalSwap(ctx, askCoin, core.MicroSDRDenom)
+		askBaseCoin, err := k.ComputeOracleRate(ctx, askCoin, core.MicroSDRDenom)
 		if err != nil {
 			return err
 		}
@@ -66,13 +66,13 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	}
 
 	// Swap offer coin to base denom for simplicity of swap process
-	baseOfferDecCoin, err := k.ComputeInternalSwap(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
+	baseOfferDecCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
 	if err != nil {
 		return sdk.DecCoin{}, math.LegacyDec{}, err
 	}
 
 	// Get swap amount based on the oracle price
-	retDecCoin, err = k.ComputeInternalSwap(ctx, baseOfferDecCoin, askDenom)
+	retDecCoin, err = k.ComputeOracleRate(ctx, baseOfferDecCoin, askDenom)
 	if err != nil {
 		return sdk.DecCoin{}, math.LegacyDec{}, err
 	}
@@ -106,14 +106,8 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	if err != nil {
 		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("Getting params: %w", err)
 	}
-	basePool, err := math.LegacyNewDecFromStr(params.BasePool)
-	if err != nil {
-		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("Converting BasePool: %w", err)
-	}
-	minSpread, err := math.LegacyNewDecFromStr(params.MinStabilitySpread)
-	if err != nil {
-		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("Converting MinStabilitySpread: %w", err)
-	}
+	basePool := params.BasePool
+	minSpread := params.MinStabilitySpread
 
 	// constant-product, which by construction is square of base(equilibrium) pool
 	cp := basePool.Mul(basePool)
@@ -153,10 +147,9 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	return retDecCoin, spread, nil
 }
 
-// ComputeInternalSwap returns the amount of asked DecCoin should be returned for a given offerCoin at the effective
-// exchange rate registered with the oracle.
-// Different from ComputeSwap, ComputeInternalSwap does not charge a spread as its use is system internal.
-func (k Keeper) ComputeInternalSwap(ctx context.Context, offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
+// ComputeOracleRate converts an offer coin to the ask denom using oracle exchange rates.
+// Unlike ComputeSwap, it does not apply any spread or pool mechanics.
+func (k Keeper) ComputeOracleRate(ctx context.Context, offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
 	if offerCoin.Denom == askDenom {
 		return offerCoin, nil
 	}

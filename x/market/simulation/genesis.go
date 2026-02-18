@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	marketv1 "noah/api/noah/market/v1"
 	"noah/x/market/types"
 
 	"cosmossdk.io/math"
@@ -64,10 +63,10 @@ func RandomizedGenState(simState *module.SimulationState) {
 
 	marketGenesis := types.NewGenesisState(
 		math.LegacyZeroDec(),
-		&marketv1.Params{
-			BasePool:           basePool.String(),
+		types.Params{
+			BasePool:           basePool,
 			PoolRecoveryPeriod: poolRecoveryPeriod,
-			MinStabilitySpread: minStabilitySpread.String(),
+			MinStabilitySpread: minStabilitySpread,
 		},
 	)
 

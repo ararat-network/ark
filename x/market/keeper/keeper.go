@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	marketv1 "noah/api/noah/market/v1"
 	"noah/x/market/types"
 
 	"cosmossdk.io/collections"
@@ -26,7 +25,7 @@ type Keeper struct {
 	OracleKeeper  types.OracleKeeper
 
 	Schema        collections.Schema
-	Params        collections.Item[*marketv1.Params]
+	Params        collections.Item[types.Params]
 	NoahPoolDelta collections.Item[math.LegacyDec]
 }
 
@@ -52,7 +51,7 @@ func NewKeeper(
 		AccountKeeper: accountKeeper,
 		BankKeeper:    bankKeeper,
 		OracleKeeper:  oracleKeeper,
-		Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValueV2[marketv1.Params]()),
+		Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		NoahPoolDelta: collections.NewItem(sb, types.NoahPoolDeltaKey, "noah_pool_delta", sdk.LegacyDecValue),
 	}
 
