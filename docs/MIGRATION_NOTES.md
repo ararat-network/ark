@@ -1,14 +1,14 @@
 # Migration Notes: Terra Classic → Modern Cosmos SDK
 
-This document covers the key architectural differences between Terra Classic's market module (cosmos-sdk v0.45) and our modern implementation (cosmos-sdk v0.53.5). Use this as a reference when porting additional modules.
+This document covers the key architectural differences between Terra Classic (cosmos-sdk v0.45) and our modern implementation (cosmos-sdk v0.53.5). Use this as a reference when porting modules.
 
 ---
 
-## Proto Generation: gogoproto vs Pulsar
+## Proto Generation: Dual Pipeline (gogo + pulsar)
 
-### Terra Classic (gogoproto)
+### Terra Classic (gogoproto only)
 
-Proto files in `classic-core/proto/terra/market/v1beta1/` use gogoproto annotations extensively:
+Proto files in `classic-core/proto/terra/*/v1beta1/` use gogoproto annotations extensively:
 
 ```protobuf
 message Params {
@@ -23,26 +23,49 @@ message Params {
 }
 ```
 
-Key gogoproto features used:
-- `gogoproto.customtype` — maps proto `bytes` to Go types like `sdk.Dec`
-- `gogoproto.nullable = false` — generates value types instead of pointers
-- `gogoproto.moretags` — adds YAML struct tags for legacy amino serialization
-- `gogoproto.equal` / `gogoproto.goproto_stringer` — controls generated methods
+Legacy gogoproto annotations to remove:
+- `gogoproto.equal` / `gogoproto.goproto_stringer` / `gogoproto.goproto_getters` — removed
+- `gogoproto.moretags` with `yaml:` tags — replaced by `amino` annotations
+- `customtype = "github.com/cosmos/cosmos-sdk/types.Dec"` — updated to `cosmossdk.io/math.LegacyDec`
 
-### Modern (Pulsar)
+### Modern (Dual: gogo + pulsar)
 
-Proto files in `proto/noah/market/v1/` use standard protobuf with `cosmos.proto` scalar types:
+Following upstream SDK v0.53, we use **both** gogo and pulsar codegen. Proto files in `proto/noah/*/v1/` use the full annotation pattern:
 
 ```protobuf
 message Params {
-  string base_pool = 1 [(cosmos_proto.scalar) = "cosmos.Dec"];
-  uint64 pool_recovery_period = 2;
-  string min_stability_spread = 3 [(cosmos_proto.scalar) = "cosmos.Dec"];
+  option (amino.name) = "noah/market/Params";
+
+  string base_pool = 1 [
+    (cosmos_proto.scalar)  = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable)   = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 pool_recovery_period = 2 [(amino.dont_omitempty) = true];
+  string min_stability_spread = 3 [
+    (cosmos_proto.scalar)  = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable)   = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 ```
 
-Code generation configured in `proto/buf.gen.yaml`:
+Code generation uses two configs:
 
+**`proto/buf.gen.gogo.yaml`** — gogo output to `x/*/types/` (typed Go structs + grpc-gateway):
+```yaml
+plugins:
+  - name: gocosmos
+    out: ..
+    opt: plugins=grpc,Mgoogle/protobuf/any.proto=github.com/cosmos/gogoproto/types/any
+  - name: grpc-gateway
+    out: ..
+    opt: logtostderr=true,allow_colon_final_segments=true
+```
+
+**`proto/buf.gen.yaml`** — pulsar output to `api/` (standard protobuf):
 ```yaml
 plugins:
   - name: go-pulsar
@@ -53,21 +76,38 @@ plugins:
     opt: paths=source_relative
 ```
 
+### Annotation Pattern Reference
+
+For `math.LegacyDec` / `math.Int` fields:
+- `cosmos_proto.scalar` = runtime metadata (signing, textual rendering, amino JSON)
+- `gogoproto.customtype` = compile-time codegen (typed Go field instead of `string`)
+- `gogoproto.nullable = false` = value type, not pointer
+- `amino.dont_omitempty = true` = only on fields in Params/Msg types (messages with `amino.name`)
+
+For sub-message fields (Params, Coin):
+- `gogoproto.nullable = false` = value type
+- `amino.dont_omitempty = true` = on fields in Params/Msg/GenesisState
+
+For repeated Coin fields:
+- `gogoproto.nullable = false` + `gogoproto.castrepeated = "github.com/cosmos/cosmos-sdk/types.Coins"`
+
 ### Key Differences
 
-| Aspect | gogoproto | Pulsar |
-|--------|-----------|--------|
-| Decimal fields | `bytes` with `customtype = "sdk.Dec"` | `string` with `cosmos_proto.scalar = "cosmos.Dec"` |
-| Nullability | `gogoproto.nullable = false` → value types | Pointers by default; use `cosmos_proto` options |
-| Generated output | In-place with module code | Separate `api/` directory |
-| YAML tags | `gogoproto.moretags` | Not needed; amino handled via annotations |
-| Codec | Protobuf v1 (gogo fork) | Protobuf v2 (native) |
+| Aspect | Classic gogoproto | Modern dual pipeline |
+|--------|-------------------|----------------------|
+| Decimal fields | `bytes` with `customtype = "sdk.Dec"` | `string` with `cosmos_proto.scalar` + `gogoproto.customtype = "cosmossdk.io/math.LegacyDec"` |
+| Nullability | `gogoproto.nullable = false` | Same — still used for value types |
+| Generated output | In-place with module code | gogo → `x/*/types/`, pulsar → `api/` |
+| YAML tags | `gogoproto.moretags` | `amino.dont_omitempty` + `amino.name` |
+| Codec | Protobuf v1 (gogo fork) only | Both gogo (v1) and pulsar (v2) |
+| Removed annotations | — | `gogoproto.equal`, `goproto_stringer`, `moretags` with yaml |
 
 ### Files
 
-- Classic: `classic-core/proto/terra/market/v1beta1/{market,tx,query,genesis}.proto`
-- Modern: `proto/noah/market/v1/{market,tx,query,genesis}.proto`
-- Buf config: `proto/buf.gen.yaml`
+- Classic: `classic-core/proto/terra/*/v1beta1/{market,tx,query,genesis}.proto`
+- Modern: `proto/noah/*/v1/{market,tx,query,genesis}.proto`
+- Gogo config: `proto/buf.gen.gogo.yaml`
+- Pulsar config: `proto/buf.gen.yaml`
 
 ---
 
@@ -75,7 +115,7 @@ plugins:
 
 ### Terra Classic
 
-`classic-core/x/market/keeper/keeper.go`:
+`classic-core/x/{module}/keeper/keeper.go` (market example):
 
 ```go
 type Keeper struct {
@@ -108,7 +148,7 @@ func NewKeeper(
 
 ### Modern
 
-`x/market/keeper/keeper.go`:
+`x/{module}/keeper/keeper.go` (market example):
 
 ```go
 type Keeper struct {
@@ -121,7 +161,7 @@ type Keeper struct {
     OracleKeeper  types.OracleKeeper
 
     Schema        collections.Schema
-    Params        collections.Item[*marketv1.Params]
+    Params        collections.Item[types.Params]        // gogo value type, not pointer
     NoahPoolDelta collections.Item[math.LegacyDec]
 }
 
@@ -137,7 +177,7 @@ func NewKeeper(
     k := &Keeper{
         cdc: cdc, storeService: storeService, authority: authority,
         AccountKeeper: accountKeeper, BankKeeper: bankKeeper, OracleKeeper: oracleKeeper,
-        Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValueV2[marketv1.Params]()),
+        Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
         NoahPoolDelta: collections.NewItem(sb, types.NoahPoolDeltaKey, "noah_pool_delta", sdk.LegacyDecValue),
     }
     schema, err := sb.Build()
@@ -153,7 +193,7 @@ func NewKeeper(
 |--------|---------|--------|
 | Store access | `sdk.StoreKey` + raw KVStore | `storetypes.KVStoreService` |
 | State management | Manual `store.Get()`/`store.Set()` with marshaling | `collections.Item` / `collections.Map` |
-| Params | `paramstypes.Subspace` | `collections.Item[*Params]` |
+| Params | `paramstypes.Subspace` | `collections.Item[types.Params]` (gogo value type) |
 | Authority | Not present (governance via param proposals) | Explicit `authority string` for `MsgUpdateParams` |
 | Return type | Value `Keeper` | Pointer `*Keeper` |
 | Pool delta | `DecProto` wrapper with manual marshal | `collections.Item[math.LegacyDec]` with `sdk.LegacyDecValue` codec |
@@ -164,7 +204,7 @@ func NewKeeper(
 
 ### Terra Classic (x/params)
 
-Params defined in `classic-core/x/market/types/params.go`:
+Params defined in `classic-core/x/{module}/types/params.go` (market example):
 
 ```go
 var (
@@ -186,7 +226,7 @@ func (p *Params) ParamSetPairs() paramstypes.ParamSetPairs {
 }
 ```
 
-Accessed in keeper via `classic-core/x/market/keeper/params.go`:
+Accessed in keeper via `classic-core/x/{module}/keeper/params.go`:
 
 ```go
 func (k Keeper) BasePool(ctx sdk.Context) (res sdk.Dec) {
@@ -202,13 +242,13 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 ### Modern (Collections)
 
-Params storage defined directly in the keeper (`x/market/keeper/keeper.go`):
+Params storage defined directly in the keeper (`x/{module}/keeper/keeper.go`):
 
 ```go
-Params: collections.NewItem(sb, types.ParamsKey, "params", codec.CollValueV2[marketv1.Params]())
+Params: collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc))
 ```
 
-Keys defined in `x/market/types/keys.go`:
+Keys defined in `x/{module}/types/keys.go`:
 
 ```go
 var (
@@ -224,17 +264,20 @@ params, err := k.Params.Get(ctx)
 err := k.Params.Set(ctx, msg.Params)
 ```
 
-Updated via governance through `MsgUpdateParams` in `x/market/keeper/msg_server.go`:
+Updated via governance through `MsgUpdateParams` in `x/{module}/keeper/msg_server.go`:
 
 ```go
-func (m msgServer) UpdateParams(ctx context.Context, msg *marketv1.MsgUpdateParams) (*marketv1.MsgUpdateParamsResponse, error) {
+func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
     if m.k.authority != msg.Authority {
         return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "...")
+    }
+    if err := msg.Params.Validate(); err != nil {
+        return nil, err
     }
     if err := m.k.Params.Set(ctx, msg.Params); err != nil {
         return nil, err
     }
-    return &marketv1.MsgUpdateParamsResponse{}, nil
+    return &types.MsgUpdateParamsResponse{}, nil
 }
 ```
 
@@ -254,7 +297,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *marketv1.MsgUpdatePara
 
 1. Remove `ParamKeyTable()`, `ParamSetPairs()`, and per-param byte keys
 2. Add `collections.NewPrefix` keys in `types/keys.go`
-3. Replace `paramstypes.Subspace` in keeper with `collections.Item[*modulev1.Params]`
+3. Replace `paramstypes.Subspace` in keeper with `collections.Item[types.Params]` using `codec.CollValue[types.Params](cdc)`
 4. Add `authority string` field to keeper
 5. Implement `MsgUpdateParams` message and handler
 6. Remove individual param getter methods; use `k.Params.Get(ctx)` instead
@@ -265,7 +308,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *marketv1.MsgUpdatePara
 
 ### Terra Classic
 
-`classic-core/x/market/keeper/msg_server.go`:
+`classic-core/x/{module}/keeper/msg_server.go` (market example):
 
 ```go
 type msgServer struct {
@@ -288,15 +331,15 @@ func (k msgServer) Swap(goCtx context.Context, msg *types.MsgSwap) (*types.MsgSw
 
 ### Modern
 
-`x/market/keeper/msg_server.go`:
+`x/{module}/keeper/msg_server.go` (market example):
 
 ```go
 type msgServer struct {
     k *Keeper  // named field — avoids method shadowing
-    marketv1.UnimplementedMsgServer
+    types.UnimplementedMsgServer
 }
 
-func NewMsgServerImpl(k *Keeper) marketv1.MsgServer {
+func NewMsgServerImpl(k *Keeper) types.MsgServer {
     return msgServer{k: k}
 }
 ```
@@ -304,7 +347,9 @@ func NewMsgServerImpl(k *Keeper) marketv1.MsgServer {
 Key changes in message handlers:
 - `context.Context` used directly (no `sdk.UnwrapSDKContext` needed for collections)
 - `MsgUpdateParams` added for governance-controlled param updates
-- Uses pulsar-generated types from `api/noah/market/v1` package
+- All module code uses gogo types from `x/{module}/types` — message fields are typed (`sdk.Coin`, `math.LegacyDec`), not strings/pointers
+- Methods can be defined on gogo types (e.g. `Params.Validate()`, `MsgSwap.ValidateBasic()`) since they live in the same package
+- Pulsar types in `api/` are only for the runtime/signing layer — never imported in module code
 
 ### Key Differences
 
@@ -313,16 +358,18 @@ Key changes in message handlers:
 | Keeper reference | Embedded `Keeper` struct | Named field `k *Keeper` (pointer) |
 | Unimplemented server | Not embedded | `UnimplementedMsgServer` embedded for forward compat |
 | Context | `sdk.UnwrapSDKContext(goCtx)` | `context.Context` passed directly to collections |
-| Generated types | `x/market/types` (gogoproto) | `api/noah/market/v1` (pulsar) |
+| Generated types | `x/{module}/types` (gogoproto) | `x/{module}/types` (gogo, used in all module code) + `api/` (pulsar, runtime only) |
 | Param updates | Via legacy param change proposals | Explicit `MsgUpdateParams` handler |
 
 ### Porting Checklist for MsgServer
 
 1. Change keeper from embedded struct to named `k *Keeper` field (pointer)
-2. Embed `UnimplementedMsgServer` from pulsar-generated package
-3. Add `MsgUpdateParams` handler with authority check
-4. Update type imports from legacy types to pulsar-generated `api/` package
+2. Embed `UnimplementedMsgServer` from gogo-generated `x/{module}/types` package
+3. Add `MsgUpdateParams` handler with authority check + `msg.Params.Validate()`
+4. Use gogo types throughout — `msg.OfferCoin` is `sdk.Coin` (value), `msg.Params` is `types.Params` (value)
 5. Remove `sdk.UnwrapSDKContext` where not needed (collections accept `context.Context`)
+6. Add `ValidateBasic()` methods on `MsgSwap`, `MsgSwapSend` etc. in `x/{module}/types/msgs.go`
+7. Legacy Msg interface methods (`Route`, `Type`, `GetSignBytes`, `GetSigners`) are NOT needed — replaced by proto annotations
 
 ---
 
@@ -330,7 +377,7 @@ Key changes in message handlers:
 
 ### Terra Classic
 
-`classic-core/x/market/module.go`:
+`classic-core/x/{module}/module.go` (market example):
 
 ```go
 type AppModuleBasic struct {
@@ -371,7 +418,7 @@ app.MarketKeeper = marketkeeper.NewKeeper(
 
 ### Modern
 
-`x/market/module.go` — depinject registration:
+`x/{module}/module.go` — depinject registration (market example):
 
 ```go
 func init() {
@@ -408,7 +455,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 }
 ```
 
-Module config proto in `proto/noah/market/module/v1/module.proto`:
+Module config proto in `proto/noah/{module}/module/v1/module.proto`:
 
 ```protobuf
 message Module {
@@ -463,5 +510,5 @@ modules:
 | `github.com/cosmos/cosmos-sdk/types` (Int, Dec) | `cosmossdk.io/math` |
 | `github.com/cosmos/cosmos-sdk/types/errors` | `cosmossdk.io/errors` |
 | `github.com/cosmos/cosmos-sdk/store/types` | `cosmossdk.io/store/types` |
-| `github.com/gogo/protobuf/...` | `google.golang.org/protobuf/...` |
+| `github.com/gogo/protobuf/...` | `github.com/cosmos/gogoproto/...` (gogo) + `google.golang.org/protobuf/...` (pulsar) |
 | `github.com/cosmos/cosmos-sdk/types/module` | `cosmossdk.io/core/appmodule` (for interfaces) |

@@ -8,7 +8,7 @@ Compare how a pattern or concept works in Terra Classic (cosmos-sdk v0.45) vs ou
 2. Find the Terra Classic implementation in `../classic-core/` — show the relevant code
 3. Find or explain the modern cosmos-sdk v0.53 equivalent pattern
 4. Highlight breaking changes, renamed packages, and migration steps
-5. If the pattern already exists in `x/market/`, check whether it follows the modern convention or still uses legacy patterns
+5. If the pattern already exists in any `x/` module, check whether it follows the modern convention or still uses legacy patterns
 
 ## Format
 

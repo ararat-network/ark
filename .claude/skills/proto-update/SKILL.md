@@ -17,9 +17,9 @@ Handle protobuf file modifications with a structured workflow that prevents casc
 ### Phase 2: Apply (only after user approves)
 1. Apply the proto file edits
 2. Run buf lint to check for issues: `buf lint proto/`
-3. Run buf generate: `buf generate`
+3. Run buf generate for both pipelines: gogo (`buf generate --template buf.gen.gogo.yaml`) and pulsar (`buf generate --template buf.gen.yaml`)
 4. Check if generated Go files need any manual fixups
-5. Update amino codec registration in `x/market/types/codec.go` if new message types were added
+5. Update amino codec registration in `x/{module}/types/codec.go` if new message types were added
 6. Run `go build ./...` to verify everything compiles
 
 ### Phase 3: Verify

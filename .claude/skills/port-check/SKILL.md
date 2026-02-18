@@ -11,7 +11,7 @@ Scan for these legacy patterns and flag each one found:
 - **Logger**: `tendermint/libs/log` or `tendermint/log` — should be `cosmossdk.io/log`
 - **Math types**: `sdk.Int`, `sdk.Dec`, `sdk.NewInt`, `sdk.NewDec` — should be `math.Int`, `math.LegacyDec` from `cosmossdk.io/math`
 - **Params**: `x/params` ParamSubspace usage — should use collections-based module params
-- **Protobuf**: gogoproto annotations or imports — should use pulsar/cosmos-proto
+- **Protobuf**: legacy-only gogoproto annotations (`gogoproto.equal`, `gogoproto.goproto_stringer`, `gogoproto.moretags` with yaml tags) without modern annotations — should use dual pattern: `gogoproto.customtype` + `cosmos_proto.scalar` + `gogoproto.nullable` together, matching upstream SDK v0.53
 - **Struct embedding**: `UnimplementedQueryServer` or `UnimplementedMsgServer` embedded in Keeper instead of a separate Querier/MsgServer wrapper
 - **Keeper constructors**: manual wiring instead of depinject-compatible patterns
 - **Module registration**: `AppModuleBasic` instead of depinject module registration
