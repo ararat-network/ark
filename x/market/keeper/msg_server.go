@@ -82,6 +82,15 @@ func (m msgServer) handleSwapRequest(
 	offerCoin sdk.Coin,
 	askDenom string,
 ) (*types.MsgSwapResponse, error) {
+	// Validate offer Coin
+	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
+		return nil, errors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
+	}
+
+	if offerCoin.Denom == askDenom {
+		return nil, errors.Wrap(types.ErrRecursiveSwap, askDenom)
+	}
+
 	// Compute exchange rates between the ask and offer
 	swapDecCoin, spread, err := m.k.ComputeSwap(ctx, offerCoin, askDenom)
 	if err != nil {
@@ -107,13 +116,13 @@ func (m msgServer) handleSwapRequest(
 
 	// Send offer coins to module account
 	offerCoins := sdk.NewCoins(offerCoin)
-	err = m.k.BankKeeper.SendCoinsFromAccountToModule(ctx, trader, types.ModuleName, offerCoins)
+	err = m.k.bankKeeper.SendCoinsFromAccountToModule(ctx, trader, types.ModuleName, offerCoins)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send offer coins to module")
 	}
 
 	// Burn offered coins and subtract from the trader's account
-	err = m.k.BankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins)
+	err = m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to burn offer coins")
 	}
@@ -130,14 +139,14 @@ func (m msgServer) handleSwapRequest(
 	feeCoin, _ := feeDecCoin.TruncateDecimal()
 
 	mintCoins := sdk.NewCoins(swapCoin.Add(feeCoin))
-	err = m.k.BankKeeper.MintCoins(ctx, types.ModuleName, mintCoins)
+	err = m.k.bankKeeper.MintCoins(ctx, types.ModuleName, mintCoins)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to mint swap coins")
 	}
 
 	// Send swap coin to the trader
 	swapCoins := sdk.NewCoins(swapCoin)
-	err = m.k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins)
+	err = m.k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send swap coins to receiver")
 	}
@@ -145,7 +154,7 @@ func (m msgServer) handleSwapRequest(
 	// Send swap fee to oracle account
 	if feeCoin.IsPositive() {
 		feeCoins := sdk.NewCoins(feeCoin)
-		err = m.k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, oracletypes.ModuleName, feeCoins)
+		err = m.k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, oracletypes.ModuleName, feeCoins)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to send swap fee to oracle")
 		}

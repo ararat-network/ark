@@ -74,9 +74,6 @@ $ noahd market swap "1000ukrw" "uusd" "noah1..."
 				}
 
 				swapSendMsg := types.NewMsgSwapSend(fromAddress, toAddress, offerCoin, askDenom)
-				if err = swapSendMsg.ValidateBasic(); err != nil {
-					return err
-				}
 				msg = swapSendMsg
 
 				if !clientCtx.GenerateOnly && txf.Fees().IsZero() {
@@ -95,9 +92,6 @@ $ noahd market swap "1000ukrw" "uusd" "noah1..."
 				}
 			} else {
 				swapMsg := types.NewMsgSwap(fromAddress, offerCoin, askDenom)
-				if err = swapMsg.ValidateBasic(); err != nil {
-					return err
-				}
 				msg = swapMsg
 			}
 

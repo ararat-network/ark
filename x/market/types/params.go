@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
-
 	"cosmossdk.io/math"
 
 	core "noah/types"
@@ -24,12 +22,6 @@ func DefaultParams() Params {
 		PoolRecoveryPeriod: DefaultPoolRecoveryPeriod,
 		MinStabilitySpread: DefaultMinStabilitySpread,
 	}
-}
-
-// ParamsString returns a human-readable string representation of the params.
-func ParamsString(p Params) string {
-	out, _ := yaml.Marshal(p)
-	return string(out)
 }
 
 // Validate validates the set of params

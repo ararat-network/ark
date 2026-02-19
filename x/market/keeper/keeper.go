@@ -6,7 +6,7 @@ import (
 	"noah/x/market/types"
 
 	"cosmossdk.io/collections"
-	storetypes "cosmossdk.io/core/store"
+	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 
@@ -16,13 +16,12 @@ import (
 
 // Keeper of the market store
 type Keeper struct {
-	cdc          codec.BinaryCodec
-	storeService storetypes.KVStoreService
-	authority    string
-
-	AccountKeeper types.AccountKeeper
-	BankKeeper    types.BankKeeper
-	OracleKeeper  types.OracleKeeper
+	cdc           codec.BinaryCodec
+	storeService  store.KVStoreService
+	authority     string
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
+	oracleKeeper  types.OracleKeeper
 
 	Schema        collections.Schema
 	Params        collections.Item[types.Params]
@@ -32,11 +31,11 @@ type Keeper struct {
 // NewKeeper creates a new market Keeper instance.
 func NewKeeper(
 	cdc codec.BinaryCodec,
-	storeService storetypes.KVStoreService,
+	storeService store.KVStoreService,
+	authority string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
-	authority string,
 ) *Keeper {
 	// ensure market module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
@@ -48,9 +47,9 @@ func NewKeeper(
 		cdc:           cdc,
 		storeService:  storeService,
 		authority:     authority,
-		AccountKeeper: accountKeeper,
-		BankKeeper:    bankKeeper,
-		OracleKeeper:  oracleKeeper,
+		accountKeeper: accountKeeper,
+		bankKeeper:    bankKeeper,
+		oracleKeeper:  oracleKeeper,
 		Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		NoahPoolDelta: collections.NewItem(sb, types.NoahPoolDeltaKey, "noah_pool_delta", sdk.LegacyDecValue),
 	}

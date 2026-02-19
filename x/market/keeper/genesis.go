@@ -14,8 +14,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) {
 	if err := k.NoahPoolDelta.Set(ctx, data.NoahPoolDelta); err != nil {
 		panic(fmt.Errorf("setting noah pool delta: %w", err))
 	}
-
-	k.AccountKeeper.GetModuleAccount(ctx, types.ModuleName)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.

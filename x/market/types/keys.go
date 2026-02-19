@@ -7,8 +7,6 @@ const (
 	ModuleName = "market"
 	// StoreKey is the string store representation
 	StoreKey = ModuleName
-	// RouterKey is the msg router key for the market module
-	RouterKey = ModuleName
 )
 
 // Keys for market store

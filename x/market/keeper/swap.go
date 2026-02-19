@@ -81,12 +81,12 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	// Apply only tobin tax without constant product spread
 	if offerCoin.Denom != core.MicroArkDenom && askDenom != core.MicroArkDenom {
 		var tobinTax math.LegacyDec
-		offerTobinTax, err2 := k.OracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
+		offerTobinTax, err2 := k.oracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
 		if err2 != nil {
 			return sdk.DecCoin{}, math.LegacyDec{}, err2
 		}
 
-		askTobinTax, err2 := k.OracleKeeper.GetTobinTax(ctx, askDenom)
+		askTobinTax, err2 := k.oracleKeeper.GetTobinTax(ctx, askDenom)
 		if err2 != nil {
 			return sdk.DecCoin{}, math.LegacyDec{}, err2
 		}
@@ -154,12 +154,12 @@ func (k Keeper) ComputeOracleRate(ctx context.Context, offerCoin sdk.DecCoin, as
 		return offerCoin, nil
 	}
 
-	offerRate, err := k.OracleKeeper.GetArkExchangeRate(ctx, offerCoin.Denom)
+	offerRate, err := k.oracleKeeper.GetArkExchangeRate(ctx, offerCoin.Denom)
 	if err != nil {
 		return sdk.DecCoin{}, sdkerrors.Wrap(types.ErrNoEffectivePrice, offerCoin.Denom)
 	}
 
-	askRate, err := k.OracleKeeper.GetArkExchangeRate(ctx, askDenom)
+	askRate, err := k.oracleKeeper.GetArkExchangeRate(ctx, askDenom)
 	if err != nil {
 		return sdk.DecCoin{}, sdkerrors.Wrap(types.ErrNoEffectivePrice, askDenom)
 	}

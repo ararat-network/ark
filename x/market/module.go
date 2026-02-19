@@ -84,26 +84,14 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *g
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        *keeper.Keeper
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
-	oracleKeeper  types.OracleKeeper
+	k *keeper.Keeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(
-	cdc codec.Codec,
-	keeper *keeper.Keeper,
-	accountKeeper types.AccountKeeper,
-	bankKeeper types.BankKeeper,
-	oracleKeeper types.OracleKeeper,
-) AppModule {
+func NewAppModule(cdc codec.Codec, k *keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{cdc},
-		keeper:         keeper,
-		accountKeeper:  accountKeeper,
-		bankKeeper:     bankKeeper,
-		oracleKeeper:   oracleKeeper,
+		k:              k,
 	}
 }
 
@@ -118,8 +106,8 @@ func (AppModule) Name() string { return types.ModuleName }
 
 // RegisterServices registers module services.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper))
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.k))
+	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.k))
 }
 
 // InitGenesis performs genesis initialization for the market module. It returns
@@ -127,14 +115,13 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	am.keeper.InitGenesis(ctx, &genesisState)
-
+	am.k.InitGenesis(ctx, &genesisState)
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the market
 // module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	gs := am.keeper.ExportGenesis(ctx)
+	gs := am.k.ExportGenesis(ctx)
 	return cdc.MustMarshalJSON(gs)
 }
 
@@ -143,7 +130,7 @@ func (AppModule) ConsensusVersion() uint64 { return consensusVersion }
 
 // EndBlock returns the end blocker for the market module.
 func (am AppModule) EndBlock(ctx context.Context) error {
-	return am.keeper.EndBlocker(ctx)
+	return am.k.EndBlocker(ctx)
 }
 
 func init() {
@@ -187,7 +174,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority.String(),
 	)
 
-	m := NewAppModule(in.Cdc, k, in.AccountKeeper, in.BankKeeper, in.OracleKeeper)
+	m := NewAppModule(in.Cdc, k)
 
 	return ModuleOutputs{MarketKeeper: k, Module: m}
 }
@@ -206,7 +193,7 @@ func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 
 // RegisterStoreDecoder registers a decoder for market module's types
 func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
-	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.keeper.Schema)
+	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.k.Schema)
 }
 
 func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
@@ -215,6 +202,6 @@ func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.Weig
 
 // WeightedOperationsX registers weighted market module operations for simulation.
 func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Registry) {
-	reg.Add(weights.Get("msg_swap", 100), simulation.MsgSwapFactory(am.keeper))
-	reg.Add(weights.Get("msg_swap_send", 100), simulation.MsgSwapSendFactory(am.keeper))
+	reg.Add(weights.Get("msg_swap", 100), simulation.MsgSwapFactory(am.k))
+	reg.Add(weights.Get("msg_swap_send", 100), simulation.MsgSwapSendFactory(am.k))
 }
