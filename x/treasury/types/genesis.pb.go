@@ -34,7 +34,7 @@ type GenesisState struct {
 	TaxRate              cosmossdk_io_math.LegacyDec              `protobuf:"bytes,2,opt,name=tax_rate,json=taxRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tax_rate"`
 	RewardWeight         cosmossdk_io_math.LegacyDec              `protobuf:"bytes,3,opt,name=reward_weight,json=rewardWeight,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"reward_weight"`
 	TaxCaps              []TaxCap                                 `protobuf:"bytes,4,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps"`
-	TaxProceeds          github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,5,rep,name=tax_proceeds,json=taxProceeds,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"tax_proceeds"`
+	EpochTaxProceeds     github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,5,rep,name=epoch_tax_proceeds,json=epochTaxProceeds,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"epoch_tax_proceeds"`
 	EpochInitialIssuance github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,6,rep,name=epoch_initial_issuance,json=epochInitialIssuance,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"epoch_initial_issuance"`
 	EpochStates          []EpochState                             `protobuf:"bytes,7,rep,name=epoch_states,json=epochStates,proto3" json:"epoch_states"`
 }
@@ -86,9 +86,9 @@ func (m *GenesisState) GetTaxCaps() []TaxCap {
 	return nil
 }
 
-func (m *GenesisState) GetTaxProceeds() github_com_cosmos_cosmos_sdk_types.Coins {
+func (m *GenesisState) GetEpochTaxProceeds() github_com_cosmos_cosmos_sdk_types.Coins {
 	if m != nil {
-		return m.TaxProceeds
+		return m.EpochTaxProceeds
 	}
 	return nil
 }
@@ -107,65 +107,19 @@ func (m *GenesisState) GetEpochStates() []EpochState {
 	return nil
 }
 
-// TaxCap is the max tax amount can be charged for the given denom
-type TaxCap struct {
-	Denom  string                `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	TaxCap cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=tax_cap,json=taxCap,proto3,customtype=cosmossdk.io/math.Int" json:"tax_cap"`
-}
-
-func (m *TaxCap) Reset()         { *m = TaxCap{} }
-func (m *TaxCap) String() string { return proto.CompactTextString(m) }
-func (*TaxCap) ProtoMessage()    {}
-func (*TaxCap) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5eaabe3dcd93a1a7, []int{1}
-}
-func (m *TaxCap) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *TaxCap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_TaxCap.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *TaxCap) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TaxCap.Merge(m, src)
-}
-func (m *TaxCap) XXX_Size() int {
-	return m.Size()
-}
-func (m *TaxCap) XXX_DiscardUnknown() {
-	xxx_messageInfo_TaxCap.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TaxCap proto.InternalMessageInfo
-
-func (m *TaxCap) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
 // EpochState is the record for each epoch state
 type EpochState struct {
 	Epoch             uint64                      `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	TaxReward         cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tax_reward,json=taxReward,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tax_reward"`
 	SeigniorageReward cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=seigniorage_reward,json=seigniorageReward,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"seigniorage_reward"`
-	TotalStakedLuna   cosmossdk_io_math.Int       `protobuf:"bytes,4,opt,name=total_staked_luna,json=totalStakedLuna,proto3,customtype=cosmossdk.io/math.Int" json:"total_staked_luna"`
+	TotalStakedArk    cosmossdk_io_math.Int       `protobuf:"bytes,4,opt,name=total_staked_ark,json=totalStakedArk,proto3,customtype=cosmossdk.io/math.Int" json:"total_staked_ark"`
 }
 
 func (m *EpochState) Reset()         { *m = EpochState{} }
 func (m *EpochState) String() string { return proto.CompactTextString(m) }
 func (*EpochState) ProtoMessage()    {}
 func (*EpochState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5eaabe3dcd93a1a7, []int{2}
+	return fileDescriptor_5eaabe3dcd93a1a7, []int{1}
 }
 func (m *EpochState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -201,54 +155,151 @@ func (m *EpochState) GetEpoch() uint64 {
 	return 0
 }
 
+// EpochTaxProceeds represents the tax amount
+// collected at the current epoch
+type EpochTaxProceeds struct {
+	TaxProceeds github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,1,rep,name=tax_proceeds,json=taxProceeds,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"tax_proceeds" yaml:"tax_proceeds"`
+}
+
+func (m *EpochTaxProceeds) Reset()         { *m = EpochTaxProceeds{} }
+func (m *EpochTaxProceeds) String() string { return proto.CompactTextString(m) }
+func (*EpochTaxProceeds) ProtoMessage()    {}
+func (*EpochTaxProceeds) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5eaabe3dcd93a1a7, []int{2}
+}
+func (m *EpochTaxProceeds) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EpochTaxProceeds) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EpochTaxProceeds.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EpochTaxProceeds) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EpochTaxProceeds.Merge(m, src)
+}
+func (m *EpochTaxProceeds) XXX_Size() int {
+	return m.Size()
+}
+func (m *EpochTaxProceeds) XXX_DiscardUnknown() {
+	xxx_messageInfo_EpochTaxProceeds.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EpochTaxProceeds proto.InternalMessageInfo
+
+func (m *EpochTaxProceeds) GetTaxProceeds() github_com_cosmos_cosmos_sdk_types.Coins {
+	if m != nil {
+		return m.TaxProceeds
+	}
+	return nil
+}
+
+// EpochInitialIssuance represents initial issuance
+// of the currrent epoch
+type EpochInitialIssuance struct {
+	Issuance github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,1,rep,name=issuance,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"issuance" yaml:"issuance"`
+}
+
+func (m *EpochInitialIssuance) Reset()         { *m = EpochInitialIssuance{} }
+func (m *EpochInitialIssuance) String() string { return proto.CompactTextString(m) }
+func (*EpochInitialIssuance) ProtoMessage()    {}
+func (*EpochInitialIssuance) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5eaabe3dcd93a1a7, []int{3}
+}
+func (m *EpochInitialIssuance) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EpochInitialIssuance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EpochInitialIssuance.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EpochInitialIssuance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EpochInitialIssuance.Merge(m, src)
+}
+func (m *EpochInitialIssuance) XXX_Size() int {
+	return m.Size()
+}
+func (m *EpochInitialIssuance) XXX_DiscardUnknown() {
+	xxx_messageInfo_EpochInitialIssuance.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EpochInitialIssuance proto.InternalMessageInfo
+
+func (m *EpochInitialIssuance) GetIssuance() github_com_cosmos_cosmos_sdk_types.Coins {
+	if m != nil {
+		return m.Issuance
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*GenesisState)(nil), "noah.treasury.v1.GenesisState")
-	proto.RegisterType((*TaxCap)(nil), "noah.treasury.v1.TaxCap")
 	proto.RegisterType((*EpochState)(nil), "noah.treasury.v1.EpochState")
+	proto.RegisterType((*EpochTaxProceeds)(nil), "noah.treasury.v1.EpochTaxProceeds")
+	proto.RegisterType((*EpochInitialIssuance)(nil), "noah.treasury.v1.EpochInitialIssuance")
 }
 
 func init() { proto.RegisterFile("noah/treasury/v1/genesis.proto", fileDescriptor_5eaabe3dcd93a1a7) }
 
 var fileDescriptor_5eaabe3dcd93a1a7 = []byte{
-	// 607 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0x4f, 0x6b, 0x13, 0x41,
-	0x1c, 0xcd, 0xb6, 0x69, 0x6a, 0xa6, 0x11, 0xed, 0xd0, 0xca, 0xb6, 0xca, 0xa6, 0xf4, 0x54, 0x94,
-	0xee, 0x12, 0xc5, 0x93, 0xe0, 0x21, 0xad, 0x48, 0xa4, 0x87, 0xb0, 0x15, 0x0b, 0x5e, 0xd6, 0x5f,
-	0x76, 0x87, 0xcd, 0x90, 0xec, 0xcc, 0xb2, 0x33, 0x49, 0x93, 0x2f, 0xe0, 0xd9, 0x8f, 0x21, 0x5e,
-	0xf4, 0xe0, 0x87, 0xe8, 0xb1, 0x78, 0x12, 0x0f, 0x55, 0x92, 0x83, 0x1f, 0xc2, 0x8b, 0xcc, 0x9f,
-	0xb6, 0xc1, 0x78, 0x31, 0xe0, 0x25, 0xd9, 0x99, 0xdf, 0x6f, 0xde, 0x7b, 0xf3, 0x7b, 0x8f, 0x41,
-	0x1e, 0xe3, 0xd0, 0x0d, 0x64, 0x41, 0x40, 0x0c, 0x8a, 0x71, 0x30, 0x6c, 0x04, 0x29, 0x61, 0x44,
-	0x50, 0xe1, 0xe7, 0x05, 0x97, 0x1c, 0xdf, 0x56, 0x75, 0xff, 0xb2, 0xee, 0x0f, 0x1b, 0xdb, 0xeb,
-	0x90, 0x51, 0xc6, 0x03, 0xfd, 0x6b, 0x9a, 0xb6, 0xbd, 0x98, 0x8b, 0x8c, 0x8b, 0xa0, 0x03, 0x82,
-	0x04, 0xc3, 0x46, 0x87, 0x48, 0x68, 0x04, 0x31, 0xa7, 0xcc, 0xd6, 0xb7, 0x4c, 0x3d, 0xd2, 0xab,
-	0xc0, 0x2c, 0x6c, 0x69, 0x23, 0xe5, 0x29, 0x37, 0xfb, 0xea, 0xcb, 0xee, 0xd6, 0xe7, 0x54, 0x5d,
-	0x29, 0xd0, 0x0d, 0xbb, 0xbf, 0xca, 0xa8, 0xf6, 0xdc, 0x08, 0x3d, 0x96, 0x20, 0x09, 0x7e, 0x82,
-	0x2a, 0x39, 0x14, 0x90, 0x09, 0xd7, 0xd9, 0x71, 0xf6, 0xd6, 0x1e, 0xba, 0xfe, 0x9f, 0xc2, 0xfd,
-	0xb6, 0xae, 0x37, 0xab, 0x67, 0x17, 0xf5, 0xd2, 0xfb, 0x9f, 0x9f, 0xee, 0x3b, 0xa1, 0x3d, 0x82,
-	0x8f, 0xd0, 0x0d, 0x09, 0xa3, 0xa8, 0x00, 0x49, 0xdc, 0xa5, 0x1d, 0x67, 0xaf, 0xda, 0x6c, 0xa8,
-	0xa6, 0x6f, 0x17, 0xf5, 0xbb, 0x46, 0xac, 0x48, 0x7a, 0x3e, 0xe5, 0x41, 0x06, 0xb2, 0xeb, 0x1f,
-	0x91, 0x14, 0xe2, 0xf1, 0x21, 0x89, 0xbf, 0x7c, 0xde, 0x47, 0xf6, 0x2e, 0x87, 0x24, 0x0e, 0x57,
-	0x25, 0x8c, 0x42, 0x25, 0xe5, 0x15, 0xba, 0x59, 0x90, 0x53, 0x28, 0x92, 0xe8, 0x94, 0xd0, 0xb4,
-	0x2b, 0xdd, 0xe5, 0x45, 0x21, 0x6b, 0x06, 0xe7, 0x44, 0xc3, 0xe0, 0xa7, 0x46, 0x65, 0x0c, 0xb9,
-	0x70, 0xcb, 0x3b, 0xcb, 0x7f, 0xbf, 0xe4, 0x4b, 0x18, 0x1d, 0x40, 0x3e, 0x7b, 0x49, 0xa5, 0xeb,
-	0x00, 0x72, 0x81, 0x05, 0xaa, 0xa9, 0xf3, 0x79, 0xc1, 0x63, 0x42, 0x12, 0xe1, 0xae, 0x68, 0x8c,
-	0x2d, 0xdf, 0x12, 0x2a, 0xf3, 0x7c, 0x6b, 0x9e, 0x7f, 0xc0, 0x29, 0x6b, 0x3e, 0x56, 0x20, 0x1f,
-	0xbe, 0xd7, 0xf7, 0x52, 0x2a, 0xbb, 0x83, 0x8e, 0x1f, 0xf3, 0xcc, 0x9a, 0x67, 0xff, 0xf6, 0x45,
-	0xd2, 0x0b, 0xe4, 0x38, 0x27, 0x42, 0x1f, 0x10, 0x86, 0x70, 0x4d, 0xc2, 0xa8, 0x6d, 0x49, 0xf0,
-	0x5b, 0x07, 0xdd, 0x21, 0x39, 0x8f, 0xbb, 0x11, 0x65, 0x54, 0x52, 0xe8, 0x47, 0x54, 0x88, 0x01,
-	0xb0, 0x98, 0xb8, 0x95, 0xff, 0xc4, 0xbf, 0xa1, 0xf9, 0x5a, 0x86, 0xae, 0x65, 0xd9, 0xf0, 0x0b,
-	0x54, 0x33, 0x3a, 0x84, 0xca, 0x8b, 0x70, 0x57, 0x35, 0xfb, 0xbd, 0xf9, 0x09, 0x3e, 0x53, 0x5d,
-	0x3a, 0x54, 0xb3, 0x53, 0x5c, 0x23, 0x57, 0xdb, 0x62, 0x37, 0x41, 0x15, 0x33, 0x67, 0xbc, 0x81,
-	0x56, 0x12, 0xc2, 0x78, 0xa6, 0x53, 0x57, 0x0d, 0xcd, 0x02, 0x1f, 0xa2, 0x55, 0xeb, 0x94, 0x8d,
-	0xd3, 0x03, 0xeb, 0xfd, 0xe6, 0xbc, 0xf7, 0x2d, 0x26, 0x67, 0x5c, 0x6f, 0x31, 0x19, 0x56, 0x8c,
-	0x61, 0xbb, 0x1f, 0x97, 0x10, 0xba, 0x16, 0xa3, 0xa8, 0xb4, 0x06, 0x4d, 0x55, 0x0e, 0xcd, 0x02,
-	0xb7, 0x11, 0xd2, 0xd1, 0xd5, 0x41, 0x59, 0x3c, 0xbc, 0x55, 0x15, 0x5e, 0x8d, 0x81, 0xdf, 0x20,
-	0x2c, 0x08, 0x4d, 0x19, 0xe5, 0x05, 0xa4, 0xe4, 0x12, 0x79, 0xe1, 0x0c, 0xaf, 0xcf, 0x80, 0x59,
-	0x86, 0x13, 0xb4, 0x2e, 0xb9, 0x84, 0xbe, 0xb2, 0xa2, 0x47, 0x92, 0xa8, 0x3f, 0x60, 0xe0, 0x96,
-	0xff, 0x7d, 0x50, 0xb7, 0x34, 0xca, 0xb1, 0x06, 0x39, 0x1a, 0x30, 0x68, 0x06, 0x67, 0x13, 0xcf,
-	0x39, 0x9f, 0x78, 0xce, 0x8f, 0x89, 0xe7, 0xbc, 0x9b, 0x7a, 0xa5, 0xf3, 0xa9, 0x57, 0xfa, 0x3a,
-	0xf5, 0x4a, 0xaf, 0x37, 0xf5, 0x83, 0x32, 0xba, 0x7e, 0x52, 0x74, 0x6a, 0x3a, 0x15, 0xfd, 0x9a,
-	0x3c, 0xfa, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x82, 0xc8, 0x59, 0x56, 0x06, 0x05, 0x00, 0x00,
+	// 671 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x94, 0x4f, 0x6b, 0x13, 0x41,
+	0x18, 0xc6, 0x33, 0xfd, 0xdf, 0x69, 0xd4, 0x74, 0x4d, 0x65, 0x5b, 0x65, 0x53, 0x72, 0x2a, 0x85,
+	0xee, 0x1a, 0x05, 0x0f, 0x0a, 0x82, 0x69, 0xab, 0x44, 0x3c, 0xd4, 0xb4, 0xa2, 0xd4, 0xc3, 0xf2,
+	0x66, 0x33, 0x6c, 0x86, 0x64, 0x77, 0x96, 0x9d, 0x69, 0x9b, 0x7c, 0x06, 0x0f, 0x7a, 0x52, 0xf0,
+	0xec, 0x41, 0xf4, 0x52, 0xd0, 0xa3, 0x1f, 0xa0, 0xc7, 0xe2, 0x49, 0x3c, 0x54, 0x69, 0x0f, 0xbd,
+	0xfb, 0x09, 0x64, 0xfe, 0x34, 0x8d, 0x4d, 0xa1, 0x87, 0x80, 0x97, 0x64, 0x67, 0xde, 0x77, 0x9e,
+	0xe7, 0x37, 0x33, 0x0f, 0x83, 0x9d, 0x98, 0x41, 0xc3, 0x13, 0x29, 0x01, 0xbe, 0x95, 0x76, 0xbc,
+	0xed, 0x92, 0x17, 0x92, 0x98, 0x70, 0xca, 0xdd, 0x24, 0x65, 0x82, 0x59, 0x39, 0x59, 0x77, 0x4f,
+	0xea, 0xee, 0x76, 0x69, 0x6e, 0x1a, 0x22, 0x1a, 0x33, 0x4f, 0xfd, 0xea, 0xa6, 0x39, 0x27, 0x60,
+	0x3c, 0x62, 0xdc, 0xab, 0x01, 0x27, 0xde, 0x76, 0xa9, 0x46, 0x04, 0x94, 0xbc, 0x80, 0xd1, 0xd8,
+	0xd4, 0x67, 0x75, 0xdd, 0x57, 0x23, 0x4f, 0x0f, 0x4c, 0x29, 0x1f, 0xb2, 0x90, 0xe9, 0x79, 0xf9,
+	0x65, 0x66, 0x0b, 0x7d, 0x54, 0x5d, 0x02, 0xd5, 0x50, 0xfc, 0x32, 0x8a, 0xb3, 0x8f, 0x34, 0xe8,
+	0xba, 0x00, 0x41, 0xac, 0x7b, 0x78, 0x2c, 0x81, 0x14, 0x22, 0x6e, 0xa3, 0x79, 0xb4, 0x30, 0x75,
+	0xcb, 0x76, 0xcf, 0x82, 0xbb, 0x6b, 0xaa, 0x5e, 0x9e, 0xdc, 0x3b, 0x28, 0x64, 0x3e, 0x1e, 0xef,
+	0x2e, 0xa2, 0xaa, 0x59, 0x62, 0x3d, 0xc5, 0x13, 0x02, 0xda, 0x7e, 0x0a, 0x82, 0xd8, 0x43, 0xf3,
+	0x68, 0x61, 0xb2, 0x7c, 0x47, 0x36, 0xfd, 0x3c, 0x28, 0x5c, 0xd7, 0xb0, 0xbc, 0xde, 0x74, 0x29,
+	0xf3, 0x22, 0x10, 0x0d, 0xf7, 0x09, 0x09, 0x21, 0xe8, 0xac, 0x90, 0xe0, 0xfb, 0xd7, 0x25, 0x6c,
+	0xf6, 0xb2, 0x42, 0x02, 0xad, 0x38, 0x2e, 0xa0, 0x5d, 0x95, 0x3c, 0x2f, 0xf1, 0xa5, 0x94, 0xec,
+	0x40, 0x5a, 0xf7, 0x77, 0x08, 0x0d, 0x1b, 0xc2, 0x1e, 0x1e, 0x48, 0x37, 0xab, 0xc5, 0x9e, 0x2b,
+	0x2d, 0xeb, 0xbe, 0xe6, 0x0d, 0x20, 0xe1, 0xf6, 0xc8, 0xfc, 0xf0, 0xf9, 0xdb, 0xdd, 0x80, 0xf6,
+	0x32, 0x24, 0xbd, 0xdb, 0x95, 0x70, 0xcb, 0x90, 0x70, 0xeb, 0x35, 0xc2, 0x16, 0x49, 0x58, 0xd0,
+	0xf0, 0xa5, 0x4c, 0x92, 0xb2, 0x80, 0x90, 0x3a, 0xb7, 0x47, 0x95, 0xd4, 0xac, 0x6b, 0xcc, 0xe5,
+	0x6d, 0xba, 0xe6, 0x36, 0xdd, 0x65, 0x46, 0xe3, 0xf2, 0x43, 0xa9, 0xf5, 0xe9, 0x57, 0x61, 0x21,
+	0xa4, 0xa2, 0xb1, 0x55, 0x73, 0x03, 0x16, 0x99, 0xdb, 0x34, 0x7f, 0x4b, 0xbc, 0xde, 0xf4, 0x44,
+	0x27, 0x21, 0x5c, 0x2d, 0xe0, 0xef, 0x8f, 0x77, 0x17, 0xb3, 0x2d, 0xb5, 0x31, 0x5f, 0xe6, 0x81,
+	0x6b, 0x90, 0x9c, 0x32, 0xdf, 0x80, 0xf6, 0x9a, 0xb1, 0xb6, 0xde, 0x21, 0x7c, 0x4d, 0x13, 0xd1,
+	0x98, 0x0a, 0x0a, 0x2d, 0x9f, 0x72, 0xbe, 0x05, 0x71, 0x40, 0xec, 0xb1, 0xff, 0x45, 0x95, 0x57,
+	0x00, 0x15, 0xed, 0x5f, 0x31, 0xf6, 0xd6, 0x63, 0x9c, 0xd5, 0x60, 0x5c, 0xe6, 0x8c, 0xdb, 0xe3,
+	0x0a, 0xe7, 0x46, 0xff, 0x79, 0xaf, 0xca, 0x2e, 0x15, 0xc6, 0xde, 0x33, 0x9f, 0x22, 0xdd, 0x69,
+	0x5e, 0xfc, 0x36, 0x84, 0xf1, 0x69, 0x9b, 0x95, 0xc7, 0xa3, 0xaa, 0xaa, 0x22, 0x3b, 0x52, 0xd5,
+	0x03, 0xeb, 0x19, 0xc6, 0x2a, 0x8c, 0xea, 0xc2, 0x07, 0x8c, 0xe3, 0xa4, 0x8c, 0xa3, 0x12, 0xb2,
+	0x08, 0xb6, 0x38, 0xa1, 0x61, 0x4c, 0x59, 0x0a, 0x21, 0x39, 0x91, 0x1f, 0x2c, 0x95, 0xd3, 0x3d,
+	0x8a, 0xc6, 0x66, 0x13, 0xe7, 0x04, 0x13, 0xd0, 0x92, 0xc7, 0xd5, 0x24, 0x75, 0x1f, 0xd2, 0xa6,
+	0x3d, 0xa2, 0x4c, 0x6e, 0x1a, 0x93, 0x99, 0x7e, 0x93, 0x4a, 0x2c, 0x7a, 0xe4, 0x2b, 0xb1, 0xd0,
+	0xf2, 0x97, 0x95, 0xd2, 0xba, 0x12, 0x7a, 0x90, 0x36, 0x8b, 0x9f, 0x11, 0xce, 0xad, 0x9e, 0x4d,
+	0xce, 0x5b, 0x84, 0xb3, 0xff, 0xa4, 0x18, 0x5d, 0x94, 0x97, 0x17, 0x12, 0xe4, 0xcf, 0x41, 0xe1,
+	0x6a, 0x07, 0xa2, 0xd6, 0xdd, 0x62, 0xef, 0xe2, 0xe2, 0x40, 0x31, 0xaa, 0x4e, 0x89, 0x53, 0xb0,
+	0xe2, 0x07, 0x84, 0xf3, 0xab, 0xe7, 0x25, 0xea, 0x15, 0xc2, 0x13, 0xdd, 0x74, 0x5f, 0x48, 0xbb,
+	0x61, 0x68, 0xaf, 0x68, 0xda, 0x93, 0x85, 0x03, 0x92, 0x76, 0x01, 0xca, 0xde, 0xde, 0xa1, 0x83,
+	0xf6, 0x0f, 0x1d, 0xf4, 0xfb, 0xd0, 0x41, 0x6f, 0x8e, 0x9c, 0xcc, 0xfe, 0x91, 0x93, 0xf9, 0x71,
+	0xe4, 0x64, 0x36, 0x67, 0xd4, 0x23, 0xdc, 0x3e, 0x7d, 0x86, 0x95, 0x62, 0x6d, 0x4c, 0xbd, 0xc0,
+	0xb7, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0xb9, 0x7f, 0x21, 0x21, 0x3a, 0x06, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -299,10 +350,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x32
 		}
 	}
-	if len(m.TaxProceeds) > 0 {
-		for iNdEx := len(m.TaxProceeds) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.EpochTaxProceeds) > 0 {
+		for iNdEx := len(m.EpochTaxProceeds) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.TaxProceeds[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.EpochTaxProceeds[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -360,46 +411,6 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TaxCap) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TaxCap) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TaxCap) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size := m.TaxCap.Size()
-		i -= size
-		if _, err := m.TaxCap.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *EpochState) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -421,9 +432,9 @@ func (m *EpochState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size := m.TotalStakedLuna.Size()
+		size := m.TotalStakedArk.Size()
 		i -= size
-		if _, err := m.TotalStakedLuna.MarshalTo(dAtA[i:]); err != nil {
+		if _, err := m.TotalStakedArk.MarshalTo(dAtA[i:]); err != nil {
 			return 0, err
 		}
 		i = encodeVarintGenesis(dAtA, i, uint64(size))
@@ -458,6 +469,80 @@ func (m *EpochState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *EpochTaxProceeds) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EpochTaxProceeds) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EpochTaxProceeds) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.TaxProceeds) > 0 {
+		for iNdEx := len(m.TaxProceeds) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TaxProceeds[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EpochInitialIssuance) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EpochInitialIssuance) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EpochInitialIssuance) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Issuance) > 0 {
+		for iNdEx := len(m.Issuance) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Issuance[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintGenesis(dAtA []byte, offset int, v uint64) int {
 	offset -= sovGenesis(v)
 	base := offset
@@ -487,8 +572,8 @@ func (m *GenesisState) Size() (n int) {
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.TaxProceeds) > 0 {
-		for _, e := range m.TaxProceeds {
+	if len(m.EpochTaxProceeds) > 0 {
+		for _, e := range m.EpochTaxProceeds {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
@@ -508,21 +593,6 @@ func (m *GenesisState) Size() (n int) {
 	return n
 }
 
-func (m *TaxCap) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovGenesis(uint64(l))
-	}
-	l = m.TaxCap.Size()
-	n += 1 + l + sovGenesis(uint64(l))
-	return n
-}
-
 func (m *EpochState) Size() (n int) {
 	if m == nil {
 		return 0
@@ -536,8 +606,38 @@ func (m *EpochState) Size() (n int) {
 	n += 1 + l + sovGenesis(uint64(l))
 	l = m.SeigniorageReward.Size()
 	n += 1 + l + sovGenesis(uint64(l))
-	l = m.TotalStakedLuna.Size()
+	l = m.TotalStakedArk.Size()
 	n += 1 + l + sovGenesis(uint64(l))
+	return n
+}
+
+func (m *EpochTaxProceeds) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.TaxProceeds) > 0 {
+		for _, e := range m.TaxProceeds {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *EpochInitialIssuance) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Issuance) > 0 {
+		for _, e := range m.Issuance {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -713,7 +813,7 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TaxProceeds", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EpochTaxProceeds", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -740,8 +840,8 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.TaxProceeds = append(m.TaxProceeds, types.Coin{})
-			if err := m.TaxProceeds[len(m.TaxProceeds)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.EpochTaxProceeds = append(m.EpochTaxProceeds, types.Coin{})
+			if err := m.EpochTaxProceeds[len(m.EpochTaxProceeds)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -810,122 +910,6 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			}
 			m.EpochStates = append(m.EpochStates, EpochState{})
 			if err := m.EpochStates[len(m.EpochStates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenesis(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *TaxCap) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenesis
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TaxCap: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TaxCap: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TaxCap", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.TaxCap.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1068,7 +1052,7 @@ func (m *EpochState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TotalStakedLuna", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalStakedArk", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1096,7 +1080,175 @@ func (m *EpochState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.TotalStakedLuna.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.TotalStakedArk.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EpochTaxProceeds) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EpochTaxProceeds: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EpochTaxProceeds: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TaxProceeds", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TaxProceeds = append(m.TaxProceeds, types.Coin{})
+			if err := m.TaxProceeds[len(m.TaxProceeds)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EpochInitialIssuance) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EpochInitialIssuance: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EpochInitialIssuance: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Issuance", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Issuance = append(m.Issuance, types.Coin{})
+			if err := m.Issuance[len(m.Issuance)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

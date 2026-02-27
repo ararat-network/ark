@@ -19,9 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_AddBurnTaxExemptionAddress_FullMethodName    = "/noah.treasury.v1.Msg/AddBurnTaxExemptionAddress"
-	Msg_RemoveBurnTaxExemptionAddress_FullMethodName = "/noah.treasury.v1.Msg/RemoveBurnTaxExemptionAddress"
-	Msg_UpdateParams_FullMethodName                  = "/noah.treasury.v1.Msg/UpdateParams"
+	Msg_UpdateParams_FullMethodName = "/noah.treasury.v1.Msg/UpdateParams"
 )
 
 // MsgClient is the client API for Msg service.
@@ -30,10 +28,6 @@ const (
 //
 // Msg defines the market Msg service.
 type MsgClient interface {
-	// TODO add description once i know what this exactly does
-	AddBurnTaxExemptionAddress(ctx context.Context, in *MsgAddBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgAddBurnTaxExemptionAddressResponse, error)
-	// TODO add description once i know what this exactly does
-	RemoveBurnTaxExemptionAddress(ctx context.Context, in *MsgRemoveBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgRemoveBurnTaxExemptionAddressResponse, error)
 	// UpdateParams defines an operation for updating the x/treasury module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
@@ -45,26 +39,6 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
-}
-
-func (c *msgClient) AddBurnTaxExemptionAddress(ctx context.Context, in *MsgAddBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgAddBurnTaxExemptionAddressResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgAddBurnTaxExemptionAddressResponse)
-	err := c.cc.Invoke(ctx, Msg_AddBurnTaxExemptionAddress_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) RemoveBurnTaxExemptionAddress(ctx context.Context, in *MsgRemoveBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgRemoveBurnTaxExemptionAddressResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgRemoveBurnTaxExemptionAddressResponse)
-	err := c.cc.Invoke(ctx, Msg_RemoveBurnTaxExemptionAddress_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
@@ -83,10 +57,6 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 //
 // Msg defines the market Msg service.
 type MsgServer interface {
-	// TODO add description once i know what this exactly does
-	AddBurnTaxExemptionAddress(context.Context, *MsgAddBurnTaxExemptionAddress) (*MsgAddBurnTaxExemptionAddressResponse, error)
-	// TODO add description once i know what this exactly does
-	RemoveBurnTaxExemptionAddress(context.Context, *MsgRemoveBurnTaxExemptionAddress) (*MsgRemoveBurnTaxExemptionAddressResponse, error)
 	// UpdateParams defines an operation for updating the x/treasury module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
@@ -100,12 +70,6 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
-func (UnimplementedMsgServer) AddBurnTaxExemptionAddress(context.Context, *MsgAddBurnTaxExemptionAddress) (*MsgAddBurnTaxExemptionAddressResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AddBurnTaxExemptionAddress not implemented")
-}
-func (UnimplementedMsgServer) RemoveBurnTaxExemptionAddress(context.Context, *MsgRemoveBurnTaxExemptionAddress) (*MsgRemoveBurnTaxExemptionAddressResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RemoveBurnTaxExemptionAddress not implemented")
-}
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
 }
@@ -128,42 +92,6 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Msg_ServiceDesc, srv)
-}
-
-func _Msg_AddBurnTaxExemptionAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgAddBurnTaxExemptionAddress)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).AddBurnTaxExemptionAddress(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_AddBurnTaxExemptionAddress_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).AddBurnTaxExemptionAddress(ctx, req.(*MsgAddBurnTaxExemptionAddress))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_RemoveBurnTaxExemptionAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgRemoveBurnTaxExemptionAddress)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).RemoveBurnTaxExemptionAddress(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_RemoveBurnTaxExemptionAddress_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).RemoveBurnTaxExemptionAddress(ctx, req.(*MsgRemoveBurnTaxExemptionAddress))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -191,14 +119,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "noah.treasury.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "AddBurnTaxExemptionAddress",
-			Handler:    _Msg_AddBurnTaxExemptionAddress_Handler,
-		},
-		{
-			MethodName: "RemoveBurnTaxExemptionAddress",
-			Handler:    _Msg_RemoveBurnTaxExemptionAddress_Handler,
-		},
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,

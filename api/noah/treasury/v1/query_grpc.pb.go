@@ -19,15 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_TaxRate_FullMethodName              = "/noah.treasury.v1.Query/TaxRate"
-	Query_TaxCap_FullMethodName               = "/noah.treasury.v1.Query/TaxCap"
-	Query_TaxCaps_FullMethodName              = "/noah.treasury.v1.Query/TaxCaps"
-	Query_RewardWeight_FullMethodName         = "/noah.treasury.v1.Query/RewardWeight"
-	Query_SeigniorageProceeds_FullMethodName  = "/noah.treasury.v1.Query/SeigniorageProceeds"
-	Query_TaxProceeds_FullMethodName          = "/noah.treasury.v1.Query/TaxProceeds"
-	Query_Indicators_FullMethodName           = "/noah.treasury.v1.Query/Indicators"
-	Query_BurnTaxExemptionList_FullMethodName = "/noah.treasury.v1.Query/BurnTaxExemptionList"
-	Query_Params_FullMethodName               = "/noah.treasury.v1.Query/Params"
+	Query_TaxRate_FullMethodName             = "/noah.treasury.v1.Query/TaxRate"
+	Query_TaxCap_FullMethodName              = "/noah.treasury.v1.Query/TaxCap"
+	Query_TaxCaps_FullMethodName             = "/noah.treasury.v1.Query/TaxCaps"
+	Query_RewardWeight_FullMethodName        = "/noah.treasury.v1.Query/RewardWeight"
+	Query_SeigniorageProceeds_FullMethodName = "/noah.treasury.v1.Query/SeigniorageProceeds"
+	Query_TaxProceeds_FullMethodName         = "/noah.treasury.v1.Query/TaxProceeds"
+	Query_Indicators_FullMethodName          = "/noah.treasury.v1.Query/Indicators"
+	Query_Params_FullMethodName              = "/noah.treasury.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -50,8 +49,6 @@ type QueryClient interface {
 	TaxProceeds(ctx context.Context, in *QueryTaxProceedsRequest, opts ...grpc.CallOption) (*QueryTaxProceedsResponse, error)
 	// Indicators return the current trl informations
 	Indicators(ctx context.Context, in *QueryIndicatorsRequest, opts ...grpc.CallOption) (*QueryIndicatorsResponse, error)
-	// BurnTaxExemptionList returns all registered burn tax exemption addresses
-	BurnTaxExemptionList(ctx context.Context, in *QueryBurnTaxExemptionListRequest, opts ...grpc.CallOption) (*QueryBurnTaxExemptionListResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 }
@@ -134,16 +131,6 @@ func (c *queryClient) Indicators(ctx context.Context, in *QueryIndicatorsRequest
 	return out, nil
 }
 
-func (c *queryClient) BurnTaxExemptionList(ctx context.Context, in *QueryBurnTaxExemptionListRequest, opts ...grpc.CallOption) (*QueryBurnTaxExemptionListResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryBurnTaxExemptionListResponse)
-	err := c.cc.Invoke(ctx, Query_BurnTaxExemptionList_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryParamsResponse)
@@ -174,8 +161,6 @@ type QueryServer interface {
 	TaxProceeds(context.Context, *QueryTaxProceedsRequest) (*QueryTaxProceedsResponse, error)
 	// Indicators return the current trl informations
 	Indicators(context.Context, *QueryIndicatorsRequest) (*QueryIndicatorsResponse, error)
-	// BurnTaxExemptionList returns all registered burn tax exemption addresses
-	BurnTaxExemptionList(context.Context, *QueryBurnTaxExemptionListRequest) (*QueryBurnTaxExemptionListResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	mustEmbedUnimplementedQueryServer()
@@ -208,9 +193,6 @@ func (UnimplementedQueryServer) TaxProceeds(context.Context, *QueryTaxProceedsRe
 }
 func (UnimplementedQueryServer) Indicators(context.Context, *QueryIndicatorsRequest) (*QueryIndicatorsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Indicators not implemented")
-}
-func (UnimplementedQueryServer) BurnTaxExemptionList(context.Context, *QueryBurnTaxExemptionListRequest) (*QueryBurnTaxExemptionListResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method BurnTaxExemptionList not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
@@ -362,24 +344,6 @@ func _Query_Indicators_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_BurnTaxExemptionList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryBurnTaxExemptionListRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).BurnTaxExemptionList(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_BurnTaxExemptionList_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).BurnTaxExemptionList(ctx, req.(*QueryBurnTaxExemptionListRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryParamsRequest)
 	if err := dec(in); err != nil {
@@ -432,10 +396,6 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Indicators",
 			Handler:    _Query_Indicators_Handler,
-		},
-		{
-			MethodName: "BurnTaxExemptionList",
-			Handler:    _Query_BurnTaxExemptionList_Handler,
 		},
 		{
 			MethodName: "Params",

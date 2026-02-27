@@ -31,196 +31,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MsgAddBurnTaxExemptionAddress represents a message to add an exemption
-// address.
-type MsgAddBurnTaxExemptionAddress struct {
-	// authority is the address that controls the module (defaults to x/gov unless
-	// overwritten).
-	Authority string   `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
-}
-
-func (m *MsgAddBurnTaxExemptionAddress) Reset()         { *m = MsgAddBurnTaxExemptionAddress{} }
-func (m *MsgAddBurnTaxExemptionAddress) String() string { return proto.CompactTextString(m) }
-func (*MsgAddBurnTaxExemptionAddress) ProtoMessage()    {}
-func (*MsgAddBurnTaxExemptionAddress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e33b3d3ac984d117, []int{0}
-}
-func (m *MsgAddBurnTaxExemptionAddress) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgAddBurnTaxExemptionAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgAddBurnTaxExemptionAddress.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgAddBurnTaxExemptionAddress) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgAddBurnTaxExemptionAddress.Merge(m, src)
-}
-func (m *MsgAddBurnTaxExemptionAddress) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgAddBurnTaxExemptionAddress) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgAddBurnTaxExemptionAddress.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgAddBurnTaxExemptionAddress proto.InternalMessageInfo
-
-func (m *MsgAddBurnTaxExemptionAddress) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgAddBurnTaxExemptionAddress) GetAddresses() []string {
-	if m != nil {
-		return m.Addresses
-	}
-	return nil
-}
-
-// MsgAddBurnTaxExemptionAddressResponse defines the response structure for
-// executing a MsgAddBurnTaxExemptionAddress message.
-type MsgAddBurnTaxExemptionAddressResponse struct {
-}
-
-func (m *MsgAddBurnTaxExemptionAddressResponse) Reset()         { *m = MsgAddBurnTaxExemptionAddressResponse{} }
-func (m *MsgAddBurnTaxExemptionAddressResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgAddBurnTaxExemptionAddressResponse) ProtoMessage()    {}
-func (*MsgAddBurnTaxExemptionAddressResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e33b3d3ac984d117, []int{1}
-}
-func (m *MsgAddBurnTaxExemptionAddressResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgAddBurnTaxExemptionAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgAddBurnTaxExemptionAddressResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgAddBurnTaxExemptionAddressResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgAddBurnTaxExemptionAddressResponse.Merge(m, src)
-}
-func (m *MsgAddBurnTaxExemptionAddressResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgAddBurnTaxExemptionAddressResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgAddBurnTaxExemptionAddressResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgAddBurnTaxExemptionAddressResponse proto.InternalMessageInfo
-
-// MsgRemoveBurnTaxExemptionAddress represents a message to remove an exemption
-// address.
-type MsgRemoveBurnTaxExemptionAddress struct {
-	// authority is the address that controls the module (defaults to x/gov unless
-	// overwritten).
-	Authority string   `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddress) Reset()         { *m = MsgRemoveBurnTaxExemptionAddress{} }
-func (m *MsgRemoveBurnTaxExemptionAddress) String() string { return proto.CompactTextString(m) }
-func (*MsgRemoveBurnTaxExemptionAddress) ProtoMessage()    {}
-func (*MsgRemoveBurnTaxExemptionAddress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e33b3d3ac984d117, []int{2}
-}
-func (m *MsgRemoveBurnTaxExemptionAddress) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgRemoveBurnTaxExemptionAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgRemoveBurnTaxExemptionAddress.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgRemoveBurnTaxExemptionAddress) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgRemoveBurnTaxExemptionAddress.Merge(m, src)
-}
-func (m *MsgRemoveBurnTaxExemptionAddress) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgRemoveBurnTaxExemptionAddress) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgRemoveBurnTaxExemptionAddress.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgRemoveBurnTaxExemptionAddress proto.InternalMessageInfo
-
-func (m *MsgRemoveBurnTaxExemptionAddress) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddress) GetAddresses() []string {
-	if m != nil {
-		return m.Addresses
-	}
-	return nil
-}
-
-// MsgRemoveBurnTaxExemptionAddressResponse defines the response structure for
-// executing a MsgRemoveBurnTaxExemptionAddress message.
-type MsgRemoveBurnTaxExemptionAddressResponse struct {
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) Reset() {
-	*m = MsgRemoveBurnTaxExemptionAddressResponse{}
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgRemoveBurnTaxExemptionAddressResponse) ProtoMessage()    {}
-func (*MsgRemoveBurnTaxExemptionAddressResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e33b3d3ac984d117, []int{3}
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgRemoveBurnTaxExemptionAddressResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgRemoveBurnTaxExemptionAddressResponse.Merge(m, src)
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgRemoveBurnTaxExemptionAddressResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgRemoveBurnTaxExemptionAddressResponse proto.InternalMessageInfo
-
 // MsgUpdateParams is the Msg/UpdateParams request type.
 type MsgUpdateParams struct {
 	// authority is the address that controls the module (defaults to x/gov unless
@@ -236,7 +46,7 @@ func (m *MsgUpdateParams) Reset()         { *m = MsgUpdateParams{} }
 func (m *MsgUpdateParams) String() string { return proto.CompactTextString(m) }
 func (*MsgUpdateParams) ProtoMessage()    {}
 func (*MsgUpdateParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e33b3d3ac984d117, []int{4}
+	return fileDescriptor_e33b3d3ac984d117, []int{0}
 }
 func (m *MsgUpdateParams) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -288,7 +98,7 @@ func (m *MsgUpdateParamsResponse) Reset()         { *m = MsgUpdateParamsResponse
 func (m *MsgUpdateParamsResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgUpdateParamsResponse) ProtoMessage()    {}
 func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e33b3d3ac984d117, []int{5}
+	return fileDescriptor_e33b3d3ac984d117, []int{1}
 }
 func (m *MsgUpdateParamsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -318,10 +128,6 @@ func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*MsgAddBurnTaxExemptionAddress)(nil), "noah.treasury.v1.MsgAddBurnTaxExemptionAddress")
-	proto.RegisterType((*MsgAddBurnTaxExemptionAddressResponse)(nil), "noah.treasury.v1.MsgAddBurnTaxExemptionAddressResponse")
-	proto.RegisterType((*MsgRemoveBurnTaxExemptionAddress)(nil), "noah.treasury.v1.MsgRemoveBurnTaxExemptionAddress")
-	proto.RegisterType((*MsgRemoveBurnTaxExemptionAddressResponse)(nil), "noah.treasury.v1.MsgRemoveBurnTaxExemptionAddressResponse")
 	proto.RegisterType((*MsgUpdateParams)(nil), "noah.treasury.v1.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "noah.treasury.v1.MsgUpdateParamsResponse")
 }
@@ -329,37 +135,28 @@ func init() {
 func init() { proto.RegisterFile("noah/treasury/v1/tx.proto", fileDescriptor_e33b3d3ac984d117) }
 
 var fileDescriptor_e33b3d3ac984d117 = []byte{
-	// 477 bytes of a gzipped FileDescriptorProto
+	// 329 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xcc, 0xcb, 0x4f, 0xcc,
 	0xd0, 0x2f, 0x29, 0x4a, 0x4d, 0x2c, 0x2e, 0x2d, 0xaa, 0xd4, 0x2f, 0x33, 0xd4, 0x2f, 0xa9, 0xd0,
 	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x00, 0x49, 0xe9, 0xc1, 0xa4, 0xf4, 0xca, 0x0c, 0xa5,
 	0x04, 0x13, 0x73, 0x33, 0xf3, 0xf2, 0xf5, 0xc1, 0x24, 0x44, 0x91, 0x94, 0x78, 0x72, 0x7e, 0x71,
 	0x6e, 0x7e, 0xb1, 0x7e, 0x6e, 0x71, 0x3a, 0x48, 0x73, 0x6e, 0x71, 0x3a, 0x54, 0x42, 0x12, 0x22,
 	0x11, 0x0f, 0xe6, 0xe9, 0x43, 0x38, 0x50, 0x29, 0x91, 0xf4, 0xfc, 0xf4, 0x7c, 0x88, 0x38, 0x88,
-	0x05, 0x15, 0x95, 0xc7, 0x74, 0x09, 0xcc, 0x6a, 0xb0, 0x02, 0xa5, 0xed, 0x8c, 0x5c, 0xb2, 0xbe,
-	0xc5, 0xe9, 0x8e, 0x29, 0x29, 0x4e, 0xa5, 0x45, 0x79, 0x21, 0x89, 0x15, 0xae, 0x15, 0xa9, 0xb9,
-	0x05, 0x25, 0x99, 0xf9, 0x79, 0x8e, 0x29, 0x29, 0x45, 0xa9, 0xc5, 0xc5, 0x42, 0x66, 0x5c, 0x9c,
-	0x89, 0xa5, 0x25, 0x19, 0xf9, 0x45, 0x99, 0x25, 0x95, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x9c, 0x4e,
-	0x12, 0x97, 0xb6, 0xe8, 0x8a, 0x40, 0x6d, 0x87, 0x2a, 0x0b, 0x2e, 0x29, 0xca, 0xcc, 0x4b, 0x0f,
-	0x42, 0x28, 0x15, 0x92, 0xe1, 0xe2, 0x4c, 0x84, 0xc8, 0xa5, 0x16, 0x4b, 0x30, 0x29, 0x30, 0x6b,
-	0x70, 0x06, 0x21, 0x04, 0xac, 0x1c, 0x9a, 0x9e, 0x6f, 0xd0, 0x42, 0xa8, 0xee, 0x7a, 0xbe, 0x41,
-	0x4b, 0x17, 0xec, 0xd6, 0x0a, 0x84, 0x6b, 0xf1, 0xba, 0x4b, 0x49, 0x9d, 0x4b, 0x15, 0xaf, 0x82,
-	0xa0, 0xd4, 0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0xa5, 0xbd, 0x8c, 0x5c, 0x0a, 0xbe, 0xc5, 0xe9,
-	0x41, 0xa9, 0xb9, 0xf9, 0x65, 0xa9, 0xf4, 0xf5, 0xa5, 0x33, 0xa6, 0x2f, 0x0d, 0xb0, 0xf8, 0x12,
-	0xaf, 0xd3, 0x94, 0xb4, 0xb8, 0x34, 0x08, 0xa9, 0x81, 0xfb, 0x75, 0x07, 0x23, 0x17, 0xbf, 0x6f,
-	0x71, 0x7a, 0x68, 0x41, 0x4a, 0x62, 0x49, 0x6a, 0x40, 0x62, 0x51, 0x62, 0x2e, 0xf9, 0x5e, 0xb3,
-	0xe6, 0x62, 0x2b, 0x00, 0x9b, 0x20, 0xc1, 0xa4, 0xc0, 0xa8, 0xc1, 0x6d, 0x24, 0xa1, 0x87, 0x9e,
-	0x76, 0xf5, 0x20, 0x36, 0x38, 0x71, 0x9e, 0xb8, 0x27, 0xcf, 0xb0, 0xe2, 0xf9, 0x06, 0x2d, 0xc6,
-	0x20, 0xa8, 0x16, 0x2b, 0x03, 0x4c, 0x9f, 0xcb, 0x42, 0x7d, 0x9e, 0x9b, 0x58, 0x94, 0x9d, 0x5a,
-	0xa2, 0x8f, 0xe6, 0x4c, 0x25, 0x49, 0x2e, 0x71, 0x34, 0x21, 0x98, 0xaf, 0x8c, 0xda, 0x99, 0xb9,
-	0x98, 0x7d, 0x8b, 0xd3, 0x85, 0xda, 0x18, 0xb9, 0xa4, 0xf0, 0xa4, 0x54, 0x7d, 0x4c, 0x07, 0xe2,
-	0x4d, 0x21, 0x52, 0xe6, 0x24, 0x6a, 0x80, 0x39, 0x48, 0xa8, 0x9f, 0x91, 0x4b, 0x16, 0x7f, 0x7a,
-	0x32, 0xc2, 0x6a, 0x34, 0x5e, 0x3d, 0x52, 0x56, 0xa4, 0xeb, 0x81, 0xbb, 0x28, 0x8e, 0x8b, 0x07,
-	0x25, 0xd2, 0x15, 0xb1, 0x9a, 0x85, 0xac, 0x44, 0x4a, 0x93, 0xa0, 0x12, 0x78, 0xb2, 0x62, 0x90,
-	0x62, 0x6d, 0x00, 0x45, 0xaf, 0x93, 0xfe, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e,
-	0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31,
-	0x44, 0x89, 0xa2, 0xa7, 0xeb, 0x92, 0xca, 0x82, 0xd4, 0xe2, 0x24, 0x36, 0x70, 0x31, 0x63, 0x0c,
-	0x08, 0x00, 0x00, 0xff, 0xff, 0x88, 0x4b, 0xc8, 0xd1, 0x13, 0x05, 0x00, 0x00,
+	0x05, 0x15, 0x95, 0xc7, 0x74, 0x09, 0xcc, 0x6a, 0xb0, 0x02, 0xa5, 0x5d, 0x8c, 0x5c, 0xfc, 0xbe,
+	0xc5, 0xe9, 0xa1, 0x05, 0x29, 0x89, 0x25, 0xa9, 0x01, 0x89, 0x45, 0x89, 0xb9, 0xc5, 0x42, 0x66,
+	0x5c, 0x9c, 0x89, 0xa5, 0x25, 0x19, 0xf9, 0x45, 0x99, 0x25, 0x95, 0x12, 0x8c, 0x0a, 0x8c, 0x1a,
+	0x9c, 0x4e, 0x12, 0x97, 0xb6, 0xe8, 0x8a, 0x40, 0xed, 0x73, 0x4c, 0x49, 0x29, 0x4a, 0x2d, 0x2e,
+	0x0e, 0x2e, 0x29, 0xca, 0xcc, 0x4b, 0x0f, 0x42, 0x28, 0x15, 0xb2, 0xe6, 0x62, 0x2b, 0x00, 0x9b,
+	0x20, 0xc1, 0xa4, 0xc0, 0xa8, 0xc1, 0x6d, 0x24, 0xa1, 0x87, 0xee, 0x59, 0x3d, 0x88, 0x0d, 0x4e,
+	0x9c, 0x27, 0xee, 0xc9, 0x33, 0xac, 0x78, 0xbe, 0x41, 0x8b, 0x31, 0x08, 0xaa, 0xc5, 0xca, 0xa8,
+	0xe9, 0xf9, 0x06, 0x2d, 0x84, 0x61, 0x5d, 0xcf, 0x37, 0x68, 0x41, 0x1c, 0x5f, 0x81, 0x70, 0x3e,
+	0x9a, 0x43, 0x95, 0x24, 0xb9, 0xc4, 0xd1, 0x84, 0x82, 0x52, 0x8b, 0x0b, 0xf2, 0xf3, 0x8a, 0x53,
+	0x8d, 0x72, 0xb8, 0x98, 0x7d, 0x8b, 0xd3, 0x85, 0xe2, 0xb8, 0x78, 0x50, 0xbc, 0xa6, 0x88, 0xe9,
+	0x24, 0x34, 0x13, 0xa4, 0x34, 0x09, 0x2a, 0x81, 0x59, 0xa2, 0xc4, 0x20, 0xc5, 0xda, 0x00, 0xf2,
+	0x84, 0x93, 0xfe, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38,
+	0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x44, 0x89, 0xa2, 0xfb,
+	0xa1, 0xa4, 0xb2, 0x20, 0xb5, 0x38, 0x89, 0x0d, 0x1c, 0xfa, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x90, 0xbc, 0xe4, 0x33, 0x2a, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -374,10 +171,6 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// TODO add description once i know what this exactly does
-	AddBurnTaxExemptionAddress(ctx context.Context, in *MsgAddBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgAddBurnTaxExemptionAddressResponse, error)
-	// TODO add description once i know what this exactly does
-	RemoveBurnTaxExemptionAddress(ctx context.Context, in *MsgRemoveBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgRemoveBurnTaxExemptionAddressResponse, error)
 	// UpdateParams defines an operation for updating the x/treasury module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
@@ -391,24 +184,6 @@ func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 	return &msgClient{cc}
 }
 
-func (c *msgClient) AddBurnTaxExemptionAddress(ctx context.Context, in *MsgAddBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgAddBurnTaxExemptionAddressResponse, error) {
-	out := new(MsgAddBurnTaxExemptionAddressResponse)
-	err := c.cc.Invoke(ctx, "/noah.treasury.v1.Msg/AddBurnTaxExemptionAddress", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) RemoveBurnTaxExemptionAddress(ctx context.Context, in *MsgRemoveBurnTaxExemptionAddress, opts ...grpc.CallOption) (*MsgRemoveBurnTaxExemptionAddressResponse, error) {
-	out := new(MsgRemoveBurnTaxExemptionAddressResponse)
-	err := c.cc.Invoke(ctx, "/noah.treasury.v1.Msg/RemoveBurnTaxExemptionAddress", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
 	out := new(MsgUpdateParamsResponse)
 	err := c.cc.Invoke(ctx, "/noah.treasury.v1.Msg/UpdateParams", in, out, opts...)
@@ -420,10 +195,6 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// TODO add description once i know what this exactly does
-	AddBurnTaxExemptionAddress(context.Context, *MsgAddBurnTaxExemptionAddress) (*MsgAddBurnTaxExemptionAddressResponse, error)
-	// TODO add description once i know what this exactly does
-	RemoveBurnTaxExemptionAddress(context.Context, *MsgRemoveBurnTaxExemptionAddress) (*MsgRemoveBurnTaxExemptionAddressResponse, error)
 	// UpdateParams defines an operation for updating the x/treasury module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
@@ -433,54 +204,12 @@ type MsgServer interface {
 type UnimplementedMsgServer struct {
 }
 
-func (*UnimplementedMsgServer) AddBurnTaxExemptionAddress(ctx context.Context, req *MsgAddBurnTaxExemptionAddress) (*MsgAddBurnTaxExemptionAddressResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddBurnTaxExemptionAddress not implemented")
-}
-func (*UnimplementedMsgServer) RemoveBurnTaxExemptionAddress(ctx context.Context, req *MsgRemoveBurnTaxExemptionAddress) (*MsgRemoveBurnTaxExemptionAddressResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveBurnTaxExemptionAddress not implemented")
-}
 func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
 	s.RegisterService(&_Msg_serviceDesc, srv)
-}
-
-func _Msg_AddBurnTaxExemptionAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgAddBurnTaxExemptionAddress)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).AddBurnTaxExemptionAddress(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/noah.treasury.v1.Msg/AddBurnTaxExemptionAddress",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).AddBurnTaxExemptionAddress(ctx, req.(*MsgAddBurnTaxExemptionAddress))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_RemoveBurnTaxExemptionAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgRemoveBurnTaxExemptionAddress)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).RemoveBurnTaxExemptionAddress(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/noah.treasury.v1.Msg/RemoveBurnTaxExemptionAddress",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).RemoveBurnTaxExemptionAddress(ctx, req.(*MsgRemoveBurnTaxExemptionAddress))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -507,144 +236,12 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AddBurnTaxExemptionAddress",
-			Handler:    _Msg_AddBurnTaxExemptionAddress_Handler,
-		},
-		{
-			MethodName: "RemoveBurnTaxExemptionAddress",
-			Handler:    _Msg_RemoveBurnTaxExemptionAddress_Handler,
-		},
-		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "noah/treasury/v1/tx.proto",
-}
-
-func (m *MsgAddBurnTaxExemptionAddress) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgAddBurnTaxExemptionAddress) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgAddBurnTaxExemptionAddress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Addresses) > 0 {
-		for iNdEx := len(m.Addresses) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Addresses[iNdEx])
-			copy(dAtA[i:], m.Addresses[iNdEx])
-			i = encodeVarintTx(dAtA, i, uint64(len(m.Addresses[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgAddBurnTaxExemptionAddressResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgAddBurnTaxExemptionAddressResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgAddBurnTaxExemptionAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddress) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddress) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Addresses) > 0 {
-		for iNdEx := len(m.Addresses) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Addresses[iNdEx])
-			copy(dAtA[i:], m.Addresses[iNdEx])
-			i = encodeVarintTx(dAtA, i, uint64(len(m.Addresses[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
 }
 
 func (m *MsgUpdateParams) Marshal() (dAtA []byte, err error) {
@@ -721,62 +318,6 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *MsgAddBurnTaxExemptionAddress) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if len(m.Addresses) > 0 {
-		for _, s := range m.Addresses {
-			l = len(s)
-			n += 1 + l + sovTx(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *MsgAddBurnTaxExemptionAddressResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddress) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if len(m.Addresses) > 0 {
-		for _, s := range m.Addresses {
-			l = len(s)
-			n += 1 + l + sovTx(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
 func (m *MsgUpdateParams) Size() (n int) {
 	if m == nil {
 		return 0
@@ -806,334 +347,6 @@ func sovTx(x uint64) (n int) {
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *MsgAddBurnTaxExemptionAddress) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgAddBurnTaxExemptionAddress: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgAddBurnTaxExemptionAddress: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Addresses = append(m.Addresses, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgAddBurnTaxExemptionAddressResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgAddBurnTaxExemptionAddressResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgAddBurnTaxExemptionAddressResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgRemoveBurnTaxExemptionAddress) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgRemoveBurnTaxExemptionAddress: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgRemoveBurnTaxExemptionAddress: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Addresses = append(m.Addresses, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgRemoveBurnTaxExemptionAddressResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgRemoveBurnTaxExemptionAddressResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgRemoveBurnTaxExemptionAddressResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *MsgUpdateParams) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

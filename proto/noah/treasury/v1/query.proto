@@ -1,16 +1,15 @@
 syntax = "proto3";
 package noah.treasury.v1;
 
-option go_package = "noah/x/treasury/types";
-
 import "amino/amino.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "noah/treasury/v1/treasury.proto";
+
+option go_package = "noah/x/treasury/types";
 
 // Query defines the gRPC querier service.
 service Query {
@@ -58,13 +57,6 @@ service Query {
     option (google.api.http).get = "/noah/treasury/v1/indicators";
   }
 
-  // BurnTaxExemptionList returns all registered burn tax exemption addresses
-  rpc BurnTaxExemptionList(QueryBurnTaxExemptionListRequest)
-      returns (QueryBurnTaxExemptionListResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/noah/treasury/v1/burn_tax_exemption_list";
-  }
-
   // Params queries all parameters.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -106,22 +98,10 @@ message QueryTaxCapResponse {
 // QueryTaxCapsRequest is the request type for the Query/TaxCaps RPC method.
 message QueryTaxCapsRequest {}
 
-// QueryTaxCapsResponseItem is response item type for the
-// Query/TaxCaps RPC method.
-message QueryTaxCapsResponseItem {
-  string denom = 1;
-  string tax_cap = 2 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
-
 // QueryTaxCapsResponse is response type for the
 // Query/TaxCaps RPC method.
 message QueryTaxCapsResponse {
-  repeated QueryTaxCapsResponseItem tax_caps = 1
+  repeated TaxCap tax_caps = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
@@ -177,18 +157,18 @@ message QueryIndicatorsRequest {}
 // QueryIndicatorsResponse is response type for the
 // Query/Indicators RPC method.
 message QueryIndicatorsResponse {
-  string trl_year = 1 [
+  string tra_year = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
-    (gogoproto.customname) = "TRLYear",
+    (gogoproto.customname) = "TRAYear",
     (amino.dont_omitempty) = true
   ];
-  string trl_month = 2 [
+  string tra_month = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
-    (gogoproto.customname) = "TRLMonth",
+    (gogoproto.customname) = "TRAMonth",
     (amino.dont_omitempty) = true
   ];
 }
@@ -201,18 +181,4 @@ message QueryParamsResponse {
   // params defines the parameters of the module.
   Params params = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// QueryBurnTaxExemptionListRequest is the request type for the
-// Query/BurnTaxExemptionList RPC method.
-message QueryBurnTaxExemptionListRequest {
-  cosmos.base.query.v1beta1.PageRequest pagination = 2;
-}
-
-// QueryBurnTaxExemptionListResponse is response type for the
-// Query/BurnTaxExemptionList RPC method.
-message QueryBurnTaxExemptionListResponse {
-  repeated string addresses = 1;
-
-  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

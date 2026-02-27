@@ -13,50 +13,10 @@ option go_package = "noah/x/treasury/types";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // TODO add description once i know what this exactly does
-  rpc AddBurnTaxExemptionAddress(MsgAddBurnTaxExemptionAddress)
-      returns (MsgAddBurnTaxExemptionAddressResponse);
-
-  // TODO add description once i know what this exactly does
-  rpc RemoveBurnTaxExemptionAddress(MsgRemoveBurnTaxExemptionAddress)
-      returns (MsgRemoveBurnTaxExemptionAddressResponse);
-
   // UpdateParams defines an operation for updating the x/treasury module
   // parameters.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
 }
-
-// MsgAddBurnTaxExemptionAddress represents a message to add an exemption
-// address.
-message MsgAddBurnTaxExemptionAddress {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "noah/x/treasury/MsgAddBurnTaxExemptionAddress";
-
-  // authority is the address that controls the module (defaults to x/gov unless
-  // overwritten).
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  repeated string addresses = 2;
-}
-
-// MsgAddBurnTaxExemptionAddressResponse defines the response structure for
-// executing a MsgAddBurnTaxExemptionAddress message.
-message MsgAddBurnTaxExemptionAddressResponse {}
-
-// MsgRemoveBurnTaxExemptionAddress represents a message to remove an exemption
-// address.
-message MsgRemoveBurnTaxExemptionAddress {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "noah/x/treasury/MsgRemoveBurnTaxExemptionAddress";
-
-  // authority is the address that controls the module (defaults to x/gov unless
-  // overwritten).
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  repeated string addresses = 2;
-}
-
-// MsgRemoveBurnTaxExemptionAddressResponse defines the response structure for
-// executing a MsgRemoveBurnTaxExemptionAddress message.
-message MsgRemoveBurnTaxExemptionAddressResponse {}
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {

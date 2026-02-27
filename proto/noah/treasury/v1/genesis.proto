@@ -41,19 +41,6 @@ message GenesisState {
   ];
   repeated EpochState epoch_states = 7
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-
-  repeated string burn_tax_exemptions = 8;
-}
-
-// TaxCap is the max tax amount can be charged for the given denom
-message TaxCap {
-  string denom = 1;
-  string tax_cap = 2 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
 }
 
 // EpochState is the record for each epoch state
@@ -76,5 +63,27 @@ message EpochState {
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
+  ];
+}
+
+// EpochTaxProceeds represents the tax amount
+// collected at the current epoch
+message EpochTaxProceeds {
+  repeated cosmos.base.v1beta1.Coin tax_proceeds = 1 [
+    (gogoproto.moretags) = "yaml:\"tax_proceeds\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
+    (amino.encoding) = "legacy_coins"
+  ];
+}
+
+// EpochInitialIssuance represents initial issuance
+// of the currrent epoch
+message EpochInitialIssuance {
+  repeated cosmos.base.v1beta1.Coin issuance = 1 [
+    (gogoproto.moretags) = "yaml:\"issuance\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
+    (amino.encoding) = "legacy_coins"
   ];
 }

@@ -3,7 +3,6 @@ package treasuryv1
 
 import (
 	_ "cosmossdk.io/api/amino"
-	v1beta11 "cosmossdk.io/api/cosmos/base/query/v1beta1"
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	_ "cosmossdk.io/api/cosmos/query/v1"
 	fmt "fmt"
@@ -1991,494 +1990,10 @@ func (x *fastReflection_QueryTaxCapsRequest) ProtoMethods() *protoiface.Methods 
 	}
 }
 
-var (
-	md_QueryTaxCapsResponseItem         protoreflect.MessageDescriptor
-	fd_QueryTaxCapsResponseItem_denom   protoreflect.FieldDescriptor
-	fd_QueryTaxCapsResponseItem_tax_cap protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_noah_treasury_v1_query_proto_init()
-	md_QueryTaxCapsResponseItem = File_noah_treasury_v1_query_proto.Messages().ByName("QueryTaxCapsResponseItem")
-	fd_QueryTaxCapsResponseItem_denom = md_QueryTaxCapsResponseItem.Fields().ByName("denom")
-	fd_QueryTaxCapsResponseItem_tax_cap = md_QueryTaxCapsResponseItem.Fields().ByName("tax_cap")
-}
-
-var _ protoreflect.Message = (*fastReflection_QueryTaxCapsResponseItem)(nil)
-
-type fastReflection_QueryTaxCapsResponseItem QueryTaxCapsResponseItem
-
-func (x *QueryTaxCapsResponseItem) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryTaxCapsResponseItem)(x)
-}
-
-func (x *QueryTaxCapsResponseItem) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_QueryTaxCapsResponseItem_messageType fastReflection_QueryTaxCapsResponseItem_messageType
-var _ protoreflect.MessageType = fastReflection_QueryTaxCapsResponseItem_messageType{}
-
-type fastReflection_QueryTaxCapsResponseItem_messageType struct{}
-
-func (x fastReflection_QueryTaxCapsResponseItem_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryTaxCapsResponseItem)(nil)
-}
-func (x fastReflection_QueryTaxCapsResponseItem_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryTaxCapsResponseItem)
-}
-func (x fastReflection_QueryTaxCapsResponseItem_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTaxCapsResponseItem
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_QueryTaxCapsResponseItem) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTaxCapsResponseItem
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryTaxCapsResponseItem) Type() protoreflect.MessageType {
-	return _fastReflection_QueryTaxCapsResponseItem_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryTaxCapsResponseItem) New() protoreflect.Message {
-	return new(fastReflection_QueryTaxCapsResponseItem)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryTaxCapsResponseItem) Interface() protoreflect.ProtoMessage {
-	return (*QueryTaxCapsResponseItem)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_QueryTaxCapsResponseItem) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_QueryTaxCapsResponseItem_denom, value) {
-			return
-		}
-	}
-	if x.TaxCap != "" {
-		value := protoreflect.ValueOfString(x.TaxCap)
-		if !f(fd_QueryTaxCapsResponseItem_tax_cap, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryTaxCapsResponseItem) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.denom":
-		return x.Denom != ""
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.tax_cap":
-		return x.TaxCap != ""
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryTaxCapsResponseItem"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryTaxCapsResponseItem does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTaxCapsResponseItem) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.denom":
-		x.Denom = ""
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.tax_cap":
-		x.TaxCap = ""
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryTaxCapsResponseItem"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryTaxCapsResponseItem does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryTaxCapsResponseItem) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.tax_cap":
-		value := x.TaxCap
-		return protoreflect.ValueOfString(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryTaxCapsResponseItem"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryTaxCapsResponseItem does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTaxCapsResponseItem) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.denom":
-		x.Denom = value.Interface().(string)
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.tax_cap":
-		x.TaxCap = value.Interface().(string)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryTaxCapsResponseItem"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryTaxCapsResponseItem does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTaxCapsResponseItem) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.denom":
-		panic(fmt.Errorf("field denom of message noah.treasury.v1.QueryTaxCapsResponseItem is not mutable"))
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.tax_cap":
-		panic(fmt.Errorf("field tax_cap of message noah.treasury.v1.QueryTaxCapsResponseItem is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryTaxCapsResponseItem"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryTaxCapsResponseItem does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryTaxCapsResponseItem) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.denom":
-		return protoreflect.ValueOfString("")
-	case "noah.treasury.v1.QueryTaxCapsResponseItem.tax_cap":
-		return protoreflect.ValueOfString("")
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryTaxCapsResponseItem"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryTaxCapsResponseItem does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryTaxCapsResponseItem) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.treasury.v1.QueryTaxCapsResponseItem", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryTaxCapsResponseItem) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTaxCapsResponseItem) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_QueryTaxCapsResponseItem) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryTaxCapsResponseItem) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryTaxCapsResponseItem)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.TaxCap)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTaxCapsResponseItem)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.TaxCap) > 0 {
-			i -= len(x.TaxCap)
-			copy(dAtA[i:], x.TaxCap)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TaxCap)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTaxCapsResponseItem)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTaxCapsResponseItem: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTaxCapsResponseItem: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxCap", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.TaxCap = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
 var _ protoreflect.List = (*_QueryTaxCapsResponse_1_list)(nil)
 
 type _QueryTaxCapsResponse_1_list struct {
-	list *[]*QueryTaxCapsResponseItem
+	list *[]*TaxCap
 }
 
 func (x *_QueryTaxCapsResponse_1_list) Len() int {
@@ -2494,18 +2009,18 @@ func (x *_QueryTaxCapsResponse_1_list) Get(i int) protoreflect.Value {
 
 func (x *_QueryTaxCapsResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*QueryTaxCapsResponseItem)
+	concreteValue := valueUnwrapped.Interface().(*TaxCap)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_QueryTaxCapsResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*QueryTaxCapsResponseItem)
+	concreteValue := valueUnwrapped.Interface().(*TaxCap)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_QueryTaxCapsResponse_1_list) AppendMutable() protoreflect.Value {
-	v := new(QueryTaxCapsResponseItem)
+	v := new(TaxCap)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -2518,7 +2033,7 @@ func (x *_QueryTaxCapsResponse_1_list) Truncate(n int) {
 }
 
 func (x *_QueryTaxCapsResponse_1_list) NewElement() protoreflect.Value {
-	v := new(QueryTaxCapsResponseItem)
+	v := new(TaxCap)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -2546,7 +2061,7 @@ func (x *QueryTaxCapsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTaxCapsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[6]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2711,7 +2226,7 @@ func (x *fastReflection_QueryTaxCapsResponse) Mutable(fd protoreflect.FieldDescr
 	switch fd.FullName() {
 	case "noah.treasury.v1.QueryTaxCapsResponse.tax_caps":
 		if x.TaxCaps == nil {
-			x.TaxCaps = []*QueryTaxCapsResponseItem{}
+			x.TaxCaps = []*TaxCap{}
 		}
 		value := &_QueryTaxCapsResponse_1_list{list: &x.TaxCaps}
 		return protoreflect.ValueOfList(value)
@@ -2729,7 +2244,7 @@ func (x *fastReflection_QueryTaxCapsResponse) Mutable(fd protoreflect.FieldDescr
 func (x *fastReflection_QueryTaxCapsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "noah.treasury.v1.QueryTaxCapsResponse.tax_caps":
-		list := []*QueryTaxCapsResponseItem{}
+		list := []*TaxCap{}
 		return protoreflect.ValueOfList(&_QueryTaxCapsResponse_1_list{list: &list})
 	default:
 		if fd.IsExtension() {
@@ -2929,7 +2444,7 @@ func (x *fastReflection_QueryTaxCapsResponse) ProtoMethods() *protoiface.Methods
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TaxCaps = append(x.TaxCaps, &QueryTaxCapsResponseItem{})
+				x.TaxCaps = append(x.TaxCaps, &TaxCap{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TaxCaps[len(x.TaxCaps)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
@@ -2987,7 +2502,7 @@ func (x *QueryRewardWeightRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryRewardWeightRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[7]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3345,7 +2860,7 @@ func (x *QueryRewardWeightResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryRewardWeightResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[8]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3763,7 +3278,7 @@ func (x *QueryTaxProceedsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTaxProceedsRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[9]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4172,7 +3687,7 @@ func (x *QueryTaxProceedsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTaxProceedsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[10]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4613,7 +4128,7 @@ func (x *QuerySeigniorageProceedsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QuerySeigniorageProceedsRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[11]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4971,7 +4486,7 @@ func (x *QuerySeigniorageProceedsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QuerySeigniorageProceedsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[12]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5389,7 +4904,7 @@ func (x *QueryIndicatorsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryIndicatorsRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[13]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5729,15 +5244,15 @@ func (x *fastReflection_QueryIndicatorsRequest) ProtoMethods() *protoiface.Metho
 
 var (
 	md_QueryIndicatorsResponse           protoreflect.MessageDescriptor
-	fd_QueryIndicatorsResponse_trl_year  protoreflect.FieldDescriptor
-	fd_QueryIndicatorsResponse_trl_month protoreflect.FieldDescriptor
+	fd_QueryIndicatorsResponse_tra_year  protoreflect.FieldDescriptor
+	fd_QueryIndicatorsResponse_tra_month protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_treasury_v1_query_proto_init()
 	md_QueryIndicatorsResponse = File_noah_treasury_v1_query_proto.Messages().ByName("QueryIndicatorsResponse")
-	fd_QueryIndicatorsResponse_trl_year = md_QueryIndicatorsResponse.Fields().ByName("trl_year")
-	fd_QueryIndicatorsResponse_trl_month = md_QueryIndicatorsResponse.Fields().ByName("trl_month")
+	fd_QueryIndicatorsResponse_tra_year = md_QueryIndicatorsResponse.Fields().ByName("tra_year")
+	fd_QueryIndicatorsResponse_tra_month = md_QueryIndicatorsResponse.Fields().ByName("tra_month")
 }
 
 var _ protoreflect.Message = (*fastReflection_QueryIndicatorsResponse)(nil)
@@ -5749,7 +5264,7 @@ func (x *QueryIndicatorsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryIndicatorsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[14]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5805,15 +5320,15 @@ func (x *fastReflection_QueryIndicatorsResponse) Interface() protoreflect.ProtoM
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_QueryIndicatorsResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.TrlYear != "" {
-		value := protoreflect.ValueOfString(x.TrlYear)
-		if !f(fd_QueryIndicatorsResponse_trl_year, value) {
+	if x.TraYear != "" {
+		value := protoreflect.ValueOfString(x.TraYear)
+		if !f(fd_QueryIndicatorsResponse_tra_year, value) {
 			return
 		}
 	}
-	if x.TrlMonth != "" {
-		value := protoreflect.ValueOfString(x.TrlMonth)
-		if !f(fd_QueryIndicatorsResponse_trl_month, value) {
+	if x.TraMonth != "" {
+		value := protoreflect.ValueOfString(x.TraMonth)
+		if !f(fd_QueryIndicatorsResponse_tra_month, value) {
 			return
 		}
 	}
@@ -5832,10 +5347,10 @@ func (x *fastReflection_QueryIndicatorsResponse) Range(f func(protoreflect.Field
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryIndicatorsResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_year":
-		return x.TrlYear != ""
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_month":
-		return x.TrlMonth != ""
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_year":
+		return x.TraYear != ""
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_month":
+		return x.TraMonth != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryIndicatorsResponse"))
@@ -5852,10 +5367,10 @@ func (x *fastReflection_QueryIndicatorsResponse) Has(fd protoreflect.FieldDescri
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryIndicatorsResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_year":
-		x.TrlYear = ""
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_month":
-		x.TrlMonth = ""
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_year":
+		x.TraYear = ""
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_month":
+		x.TraMonth = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryIndicatorsResponse"))
@@ -5872,11 +5387,11 @@ func (x *fastReflection_QueryIndicatorsResponse) Clear(fd protoreflect.FieldDesc
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryIndicatorsResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_year":
-		value := x.TrlYear
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_year":
+		value := x.TraYear
 		return protoreflect.ValueOfString(value)
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_month":
-		value := x.TrlMonth
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_month":
+		value := x.TraMonth
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
@@ -5898,10 +5413,10 @@ func (x *fastReflection_QueryIndicatorsResponse) Get(descriptor protoreflect.Fie
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryIndicatorsResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_year":
-		x.TrlYear = value.Interface().(string)
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_month":
-		x.TrlMonth = value.Interface().(string)
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_year":
+		x.TraYear = value.Interface().(string)
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_month":
+		x.TraMonth = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryIndicatorsResponse"))
@@ -5922,10 +5437,10 @@ func (x *fastReflection_QueryIndicatorsResponse) Set(fd protoreflect.FieldDescri
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryIndicatorsResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_year":
-		panic(fmt.Errorf("field trl_year of message noah.treasury.v1.QueryIndicatorsResponse is not mutable"))
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_month":
-		panic(fmt.Errorf("field trl_month of message noah.treasury.v1.QueryIndicatorsResponse is not mutable"))
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_year":
+		panic(fmt.Errorf("field tra_year of message noah.treasury.v1.QueryIndicatorsResponse is not mutable"))
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_month":
+		panic(fmt.Errorf("field tra_month of message noah.treasury.v1.QueryIndicatorsResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryIndicatorsResponse"))
@@ -5939,9 +5454,9 @@ func (x *fastReflection_QueryIndicatorsResponse) Mutable(fd protoreflect.FieldDe
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryIndicatorsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_year":
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_year":
 		return protoreflect.ValueOfString("")
-	case "noah.treasury.v1.QueryIndicatorsResponse.trl_month":
+	case "noah.treasury.v1.QueryIndicatorsResponse.tra_month":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -6012,11 +5527,11 @@ func (x *fastReflection_QueryIndicatorsResponse) ProtoMethods() *protoiface.Meth
 		var n int
 		var l int
 		_ = l
-		l = len(x.TrlYear)
+		l = len(x.TraYear)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.TrlMonth)
+		l = len(x.TraMonth)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -6049,17 +5564,17 @@ func (x *fastReflection_QueryIndicatorsResponse) ProtoMethods() *protoiface.Meth
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.TrlMonth) > 0 {
-			i -= len(x.TrlMonth)
-			copy(dAtA[i:], x.TrlMonth)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TrlMonth)))
+		if len(x.TraMonth) > 0 {
+			i -= len(x.TraMonth)
+			copy(dAtA[i:], x.TraMonth)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TraMonth)))
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.TrlYear) > 0 {
-			i -= len(x.TrlYear)
-			copy(dAtA[i:], x.TrlYear)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TrlYear)))
+		if len(x.TraYear) > 0 {
+			i -= len(x.TraYear)
+			copy(dAtA[i:], x.TraYear)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TraYear)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -6114,7 +5629,7 @@ func (x *fastReflection_QueryIndicatorsResponse) ProtoMethods() *protoiface.Meth
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TrlYear", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TraYear", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -6142,11 +5657,11 @@ func (x *fastReflection_QueryIndicatorsResponse) ProtoMethods() *protoiface.Meth
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TrlYear = string(dAtA[iNdEx:postIndex])
+				x.TraYear = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TrlMonth", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TraMonth", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -6174,7 +5689,7 @@ func (x *fastReflection_QueryIndicatorsResponse) ProtoMethods() *protoiface.Meth
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TrlMonth = string(dAtA[iNdEx:postIndex])
+				x.TraMonth = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -6229,7 +5744,7 @@ func (x *QueryParamsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryParamsRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[15]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6587,7 +6102,7 @@ func (x *QueryParamsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryParamsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[16]
+	mi := &file_noah_treasury_v1_query_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7002,1000 +6517,6 @@ func (x *fastReflection_QueryParamsResponse) ProtoMethods() *protoiface.Methods 
 	}
 }
 
-var (
-	md_QueryBurnTaxExemptionListRequest            protoreflect.MessageDescriptor
-	fd_QueryBurnTaxExemptionListRequest_pagination protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_noah_treasury_v1_query_proto_init()
-	md_QueryBurnTaxExemptionListRequest = File_noah_treasury_v1_query_proto.Messages().ByName("QueryBurnTaxExemptionListRequest")
-	fd_QueryBurnTaxExemptionListRequest_pagination = md_QueryBurnTaxExemptionListRequest.Fields().ByName("pagination")
-}
-
-var _ protoreflect.Message = (*fastReflection_QueryBurnTaxExemptionListRequest)(nil)
-
-type fastReflection_QueryBurnTaxExemptionListRequest QueryBurnTaxExemptionListRequest
-
-func (x *QueryBurnTaxExemptionListRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryBurnTaxExemptionListRequest)(x)
-}
-
-func (x *QueryBurnTaxExemptionListRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_QueryBurnTaxExemptionListRequest_messageType fastReflection_QueryBurnTaxExemptionListRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryBurnTaxExemptionListRequest_messageType{}
-
-type fastReflection_QueryBurnTaxExemptionListRequest_messageType struct{}
-
-func (x fastReflection_QueryBurnTaxExemptionListRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryBurnTaxExemptionListRequest)(nil)
-}
-func (x fastReflection_QueryBurnTaxExemptionListRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryBurnTaxExemptionListRequest)
-}
-func (x fastReflection_QueryBurnTaxExemptionListRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryBurnTaxExemptionListRequest
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryBurnTaxExemptionListRequest
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryBurnTaxExemptionListRequest_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryBurnTaxExemptionListRequest)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryBurnTaxExemptionListRequest)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Pagination != nil {
-		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryBurnTaxExemptionListRequest_pagination, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination":
-		return x.Pagination != nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListRequest"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListRequest does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination":
-		x.Pagination = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListRequest"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListRequest does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination":
-		value := x.Pagination
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListRequest"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListRequest does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination":
-		x.Pagination = value.Message().Interface().(*v1beta11.PageRequest)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListRequest"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListRequest does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination":
-		if x.Pagination == nil {
-			x.Pagination = new(v1beta11.PageRequest)
-		}
-		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListRequest"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListRequest does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination":
-		m := new(v1beta11.PageRequest)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListRequest"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListRequest does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.treasury.v1.QueryBurnTaxExemptionListRequest", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryBurnTaxExemptionListRequest) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryBurnTaxExemptionListRequest)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.Pagination != nil {
-			l = options.Size(x.Pagination)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryBurnTaxExemptionListRequest)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Pagination != nil {
-			encoded, err := options.Marshal(x.Pagination)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryBurnTaxExemptionListRequest)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBurnTaxExemptionListRequest: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBurnTaxExemptionListRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.Pagination == nil {
-					x.Pagination = &v1beta11.PageRequest{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Pagination); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var _ protoreflect.List = (*_QueryBurnTaxExemptionListResponse_1_list)(nil)
-
-type _QueryBurnTaxExemptionListResponse_1_list struct {
-	list *[]string
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfString((*x.list)[i])
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message QueryBurnTaxExemptionListResponse at list field Addresses as it is not of Message kind"))
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) Truncate(n int) {
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) NewElement() protoreflect.Value {
-	v := ""
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_QueryBurnTaxExemptionListResponse_1_list) IsValid() bool {
-	return x.list != nil
-}
-
-var (
-	md_QueryBurnTaxExemptionListResponse            protoreflect.MessageDescriptor
-	fd_QueryBurnTaxExemptionListResponse_addresses  protoreflect.FieldDescriptor
-	fd_QueryBurnTaxExemptionListResponse_pagination protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_noah_treasury_v1_query_proto_init()
-	md_QueryBurnTaxExemptionListResponse = File_noah_treasury_v1_query_proto.Messages().ByName("QueryBurnTaxExemptionListResponse")
-	fd_QueryBurnTaxExemptionListResponse_addresses = md_QueryBurnTaxExemptionListResponse.Fields().ByName("addresses")
-	fd_QueryBurnTaxExemptionListResponse_pagination = md_QueryBurnTaxExemptionListResponse.Fields().ByName("pagination")
-}
-
-var _ protoreflect.Message = (*fastReflection_QueryBurnTaxExemptionListResponse)(nil)
-
-type fastReflection_QueryBurnTaxExemptionListResponse QueryBurnTaxExemptionListResponse
-
-func (x *QueryBurnTaxExemptionListResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryBurnTaxExemptionListResponse)(x)
-}
-
-func (x *QueryBurnTaxExemptionListResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_treasury_v1_query_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_QueryBurnTaxExemptionListResponse_messageType fastReflection_QueryBurnTaxExemptionListResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryBurnTaxExemptionListResponse_messageType{}
-
-type fastReflection_QueryBurnTaxExemptionListResponse_messageType struct{}
-
-func (x fastReflection_QueryBurnTaxExemptionListResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryBurnTaxExemptionListResponse)(nil)
-}
-func (x fastReflection_QueryBurnTaxExemptionListResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryBurnTaxExemptionListResponse)
-}
-func (x fastReflection_QueryBurnTaxExemptionListResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryBurnTaxExemptionListResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryBurnTaxExemptionListResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryBurnTaxExemptionListResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryBurnTaxExemptionListResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryBurnTaxExemptionListResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Addresses) != 0 {
-		value := protoreflect.ValueOfList(&_QueryBurnTaxExemptionListResponse_1_list{list: &x.Addresses})
-		if !f(fd_QueryBurnTaxExemptionListResponse_addresses, value) {
-			return
-		}
-	}
-	if x.Pagination != nil {
-		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryBurnTaxExemptionListResponse_pagination, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.addresses":
-		return len(x.Addresses) != 0
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination":
-		return x.Pagination != nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListResponse"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.addresses":
-		x.Addresses = nil
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination":
-		x.Pagination = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListResponse"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.addresses":
-		if len(x.Addresses) == 0 {
-			return protoreflect.ValueOfList(&_QueryBurnTaxExemptionListResponse_1_list{})
-		}
-		listValue := &_QueryBurnTaxExemptionListResponse_1_list{list: &x.Addresses}
-		return protoreflect.ValueOfList(listValue)
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination":
-		value := x.Pagination
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListResponse"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.addresses":
-		lv := value.List()
-		clv := lv.(*_QueryBurnTaxExemptionListResponse_1_list)
-		x.Addresses = *clv.list
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination":
-		x.Pagination = value.Message().Interface().(*v1beta11.PageResponse)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListResponse"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.addresses":
-		if x.Addresses == nil {
-			x.Addresses = []string{}
-		}
-		value := &_QueryBurnTaxExemptionListResponse_1_list{list: &x.Addresses}
-		return protoreflect.ValueOfList(value)
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination":
-		if x.Pagination == nil {
-			x.Pagination = new(v1beta11.PageResponse)
-		}
-		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListResponse"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.addresses":
-		list := []string{}
-		return protoreflect.ValueOfList(&_QueryBurnTaxExemptionListResponse_1_list{list: &list})
-	case "noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination":
-		m := new(v1beta11.PageResponse)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.v1.QueryBurnTaxExemptionListResponse"))
-		}
-		panic(fmt.Errorf("message noah.treasury.v1.QueryBurnTaxExemptionListResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.treasury.v1.QueryBurnTaxExemptionListResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryBurnTaxExemptionListResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryBurnTaxExemptionListResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if len(x.Addresses) > 0 {
-			for _, s := range x.Addresses {
-				l = len(s)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if x.Pagination != nil {
-			l = options.Size(x.Pagination)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryBurnTaxExemptionListResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Pagination != nil {
-			encoded, err := options.Marshal(x.Pagination)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Addresses) > 0 {
-			for iNdEx := len(x.Addresses) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.Addresses[iNdEx])
-				copy(dAtA[i:], x.Addresses[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Addresses[iNdEx])))
-				i--
-				dAtA[i] = 0xa
-			}
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryBurnTaxExemptionListResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBurnTaxExemptionListResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBurnTaxExemptionListResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Addresses = append(x.Addresses, string(dAtA[iNdEx:postIndex]))
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.Pagination == nil {
-					x.Pagination = &v1beta11.PageResponse{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Pagination); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -8174,51 +6695,6 @@ func (*QueryTaxCapsRequest) Descriptor() ([]byte, []int) {
 	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{4}
 }
 
-// QueryTaxCapsResponseItem is response item type for the
-// Query/TaxCaps RPC method.
-type QueryTaxCapsResponseItem struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Denom  string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	TaxCap string `protobuf:"bytes,2,opt,name=tax_cap,json=taxCap,proto3" json:"tax_cap,omitempty"`
-}
-
-func (x *QueryTaxCapsResponseItem) Reset() {
-	*x = QueryTaxCapsResponseItem{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryTaxCapsResponseItem) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryTaxCapsResponseItem) ProtoMessage() {}
-
-// Deprecated: Use QueryTaxCapsResponseItem.ProtoReflect.Descriptor instead.
-func (*QueryTaxCapsResponseItem) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *QueryTaxCapsResponseItem) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *QueryTaxCapsResponseItem) GetTaxCap() string {
-	if x != nil {
-		return x.TaxCap
-	}
-	return ""
-}
-
 // QueryTaxCapsResponse is response type for the
 // Query/TaxCaps RPC method.
 type QueryTaxCapsResponse struct {
@@ -8226,13 +6702,13 @@ type QueryTaxCapsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	TaxCaps []*QueryTaxCapsResponseItem `protobuf:"bytes,1,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
+	TaxCaps []*TaxCap `protobuf:"bytes,1,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
 }
 
 func (x *QueryTaxCapsResponse) Reset() {
 	*x = QueryTaxCapsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[6]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8246,10 +6722,10 @@ func (*QueryTaxCapsResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryTaxCapsResponse.ProtoReflect.Descriptor instead.
 func (*QueryTaxCapsResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{6}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QueryTaxCapsResponse) GetTaxCaps() []*QueryTaxCapsResponseItem {
+func (x *QueryTaxCapsResponse) GetTaxCaps() []*TaxCap {
 	if x != nil {
 		return x.TaxCaps
 	}
@@ -8267,7 +6743,7 @@ type QueryRewardWeightRequest struct {
 func (x *QueryRewardWeightRequest) Reset() {
 	*x = QueryRewardWeightRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[7]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8281,7 +6757,7 @@ func (*QueryRewardWeightRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryRewardWeightRequest.ProtoReflect.Descriptor instead.
 func (*QueryRewardWeightRequest) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{7}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{6}
 }
 
 // QueryRewardWeightResponse is response type for the
@@ -8297,7 +6773,7 @@ type QueryRewardWeightResponse struct {
 func (x *QueryRewardWeightResponse) Reset() {
 	*x = QueryRewardWeightResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[8]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8311,7 +6787,7 @@ func (*QueryRewardWeightResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryRewardWeightResponse.ProtoReflect.Descriptor instead.
 func (*QueryRewardWeightResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{8}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QueryRewardWeightResponse) GetRewardWeight() string {
@@ -8332,7 +6808,7 @@ type QueryTaxProceedsRequest struct {
 func (x *QueryTaxProceedsRequest) Reset() {
 	*x = QueryTaxProceedsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[9]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8346,7 +6822,7 @@ func (*QueryTaxProceedsRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryTaxProceedsRequest.ProtoReflect.Descriptor instead.
 func (*QueryTaxProceedsRequest) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{9}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{8}
 }
 
 // QueryTaxProceedsResponse is response type for the
@@ -8362,7 +6838,7 @@ type QueryTaxProceedsResponse struct {
 func (x *QueryTaxProceedsResponse) Reset() {
 	*x = QueryTaxProceedsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[10]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8376,7 +6852,7 @@ func (*QueryTaxProceedsResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryTaxProceedsResponse.ProtoReflect.Descriptor instead.
 func (*QueryTaxProceedsResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{10}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *QueryTaxProceedsResponse) GetTaxProceeds() []*v1beta1.Coin {
@@ -8397,7 +6873,7 @@ type QuerySeigniorageProceedsRequest struct {
 func (x *QuerySeigniorageProceedsRequest) Reset() {
 	*x = QuerySeigniorageProceedsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[11]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8411,7 +6887,7 @@ func (*QuerySeigniorageProceedsRequest) ProtoMessage() {}
 
 // Deprecated: Use QuerySeigniorageProceedsRequest.ProtoReflect.Descriptor instead.
 func (*QuerySeigniorageProceedsRequest) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{11}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{10}
 }
 
 // QuerySeigniorageProceedsResponse is response type for the
@@ -8427,7 +6903,7 @@ type QuerySeigniorageProceedsResponse struct {
 func (x *QuerySeigniorageProceedsResponse) Reset() {
 	*x = QuerySeigniorageProceedsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[12]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8441,7 +6917,7 @@ func (*QuerySeigniorageProceedsResponse) ProtoMessage() {}
 
 // Deprecated: Use QuerySeigniorageProceedsResponse.ProtoReflect.Descriptor instead.
 func (*QuerySeigniorageProceedsResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{12}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *QuerySeigniorageProceedsResponse) GetSeigniorageProceeds() string {
@@ -8462,7 +6938,7 @@ type QueryIndicatorsRequest struct {
 func (x *QueryIndicatorsRequest) Reset() {
 	*x = QueryIndicatorsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[13]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8476,7 +6952,7 @@ func (*QueryIndicatorsRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryIndicatorsRequest.ProtoReflect.Descriptor instead.
 func (*QueryIndicatorsRequest) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{13}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{12}
 }
 
 // QueryIndicatorsResponse is response type for the
@@ -8486,14 +6962,14 @@ type QueryIndicatorsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	TrlYear  string `protobuf:"bytes,1,opt,name=trl_year,json=trlYear,proto3" json:"trl_year,omitempty"`
-	TrlMonth string `protobuf:"bytes,2,opt,name=trl_month,json=trlMonth,proto3" json:"trl_month,omitempty"`
+	TraYear  string `protobuf:"bytes,1,opt,name=tra_year,json=traYear,proto3" json:"tra_year,omitempty"`
+	TraMonth string `protobuf:"bytes,2,opt,name=tra_month,json=traMonth,proto3" json:"tra_month,omitempty"`
 }
 
 func (x *QueryIndicatorsResponse) Reset() {
 	*x = QueryIndicatorsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[14]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8507,19 +6983,19 @@ func (*QueryIndicatorsResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryIndicatorsResponse.ProtoReflect.Descriptor instead.
 func (*QueryIndicatorsResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{14}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *QueryIndicatorsResponse) GetTrlYear() string {
+func (x *QueryIndicatorsResponse) GetTraYear() string {
 	if x != nil {
-		return x.TrlYear
+		return x.TraYear
 	}
 	return ""
 }
 
-func (x *QueryIndicatorsResponse) GetTrlMonth() string {
+func (x *QueryIndicatorsResponse) GetTraMonth() string {
 	if x != nil {
-		return x.TrlMonth
+		return x.TraMonth
 	}
 	return ""
 }
@@ -8534,7 +7010,7 @@ type QueryParamsRequest struct {
 func (x *QueryParamsRequest) Reset() {
 	*x = QueryParamsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[15]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8548,7 +7024,7 @@ func (*QueryParamsRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryParamsRequest.ProtoReflect.Descriptor instead.
 func (*QueryParamsRequest) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{15}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{14}
 }
 
 // QueryParamsResponse is the response type for the Query/Params RPC method.
@@ -8564,7 +7040,7 @@ type QueryParamsResponse struct {
 func (x *QueryParamsResponse) Reset() {
 	*x = QueryParamsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[16]
+		mi := &file_noah_treasury_v1_query_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8578,94 +7054,12 @@ func (*QueryParamsResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryParamsResponse.ProtoReflect.Descriptor instead.
 func (*QueryParamsResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{16}
+	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *QueryParamsResponse) GetParams() *Params {
 	if x != nil {
 		return x.Params
-	}
-	return nil
-}
-
-// QueryBurnTaxExemptionListRequest is the request type for the
-// Query/BurnTaxExemptionList RPC method.
-type QueryBurnTaxExemptionListRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Pagination *v1beta11.PageRequest `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
-}
-
-func (x *QueryBurnTaxExemptionListRequest) Reset() {
-	*x = QueryBurnTaxExemptionListRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryBurnTaxExemptionListRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryBurnTaxExemptionListRequest) ProtoMessage() {}
-
-// Deprecated: Use QueryBurnTaxExemptionListRequest.ProtoReflect.Descriptor instead.
-func (*QueryBurnTaxExemptionListRequest) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *QueryBurnTaxExemptionListRequest) GetPagination() *v1beta11.PageRequest {
-	if x != nil {
-		return x.Pagination
-	}
-	return nil
-}
-
-// QueryBurnTaxExemptionListResponse is response type for the
-// Query/BurnTaxExemptionList RPC method.
-type QueryBurnTaxExemptionListResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Addresses  []string               `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
-	Pagination *v1beta11.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
-}
-
-func (x *QueryBurnTaxExemptionListResponse) Reset() {
-	*x = QueryBurnTaxExemptionListResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_treasury_v1_query_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryBurnTaxExemptionListResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryBurnTaxExemptionListResponse) ProtoMessage() {}
-
-// Deprecated: Use QueryBurnTaxExemptionListResponse.ProtoReflect.Descriptor instead.
-func (*QueryBurnTaxExemptionListResponse) Descriptor() ([]byte, []int) {
-	return file_noah_treasury_v1_query_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *QueryBurnTaxExemptionListResponse) GetAddresses() []string {
-	if x != nil {
-		return x.Addresses
-	}
-	return nil
-}
-
-func (x *QueryBurnTaxExemptionListResponse) GetPagination() *v1beta11.PageResponse {
-	if x != nil {
-		return x.Pagination
 	}
 	return nil
 }
@@ -8677,214 +7071,179 @@ var file_noah_treasury_v1_query_proto_rawDesc = []byte{
 	0x76, 0x31, 0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x10,
 	0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
 	0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x1a, 0x2a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65,
-	0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x70,
-	0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
-	0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62,
-	0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
-	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2f, 0x76, 0x31,
-	0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x6e, 0x6f, 0x61,
-	0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x15, 0x0a, 0x13,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x22, 0x64, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x52,
-	0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a, 0x08, 0x74,
-	0x61, 0x78, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x31, 0xc8,
-	0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
-	0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44,
-	0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63,
-	0x52, 0x07, 0x74, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x22, 0x2a, 0x0a, 0x12, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
-	0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
-	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x5b, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61,
-	0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x07,
-	0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x2b, 0xc8,
-	0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
-	0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0x52, 0x06, 0x74, 0x61, 0x78, 0x43,
-	0x61, 0x70, 0x22, 0x15, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61,
-	0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x76, 0x0a, 0x18, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x49, 0x74, 0x65, 0x6d, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x44, 0x0a, 0x07, 0x74,
-	0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x2b, 0xc8, 0xde,
-	0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0x52, 0x06, 0x74, 0x61, 0x78, 0x43, 0x61,
-	0x70, 0x22, 0x63, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4b, 0x0a, 0x08, 0x74, 0x61, 0x78,
-	0x5f, 0x63, 0x61, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6e, 0x6f,
-	0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x49, 0x74, 0x65, 0x6d, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x07, 0x74,
-	0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x22, 0x1a, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52,
-	0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x22, 0x73, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x56, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x31, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65,
+	0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x71, 0x75, 0x65, 0x72,
+	0x79, 0x2f, 0x76, 0x31, 0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67,
+	0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x1a, 0x1c, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x6e,
+	0x6e, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
+	0x1f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76,
+	0x31, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x22, 0x15, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x69, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x51, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67,
+	0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61, 0x78, 0x52, 0x61,
+	0x74, 0x65, 0x22, 0x2a, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61,
+	0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f,
+	0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x60,
+	0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x49, 0x0a, 0x07, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
-	0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x19, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x22, 0x8a, 0x01, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x50,
-	0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x6e, 0x0a, 0x0c, 0x74, 0x61, 0x78, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x18,
-	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62,
-	0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
-	0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69,
-	0x6e, 0x73, 0x52, 0x0b, 0x74, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x22,
-	0x21, 0x0a, 0x1f, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72,
-	0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x22, 0x82, 0x01, 0x0a, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69, 0x67,
-	0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5e, 0x0a, 0x14, 0x73, 0x65, 0x69, 0x67, 0x6e,
-	0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x2b, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
-	0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49,
-	0x6e, 0x74, 0x52, 0x13, 0x73, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50,
-	0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x22, 0x18, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x22, 0xce, 0x01, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x64, 0x69, 0x63,
-	0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a,
-	0x08, 0x74, 0x72, 0x6c, 0x5f, 0x79, 0x65, 0x61, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x3c, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x74, 0x61, 0x78, 0x43, 0x61, 0x70,
+	0x22, 0x15, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x56, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x3e, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x18, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x42, 0x09, 0xc8, 0xde, 0x1f,
+	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x22,
+	0x1a, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x78, 0x0a, 0x19, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5b, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61,
+	0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
 	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
-	0x79, 0x44, 0x65, 0x63, 0xe2, 0xde, 0x1f, 0x07, 0x54, 0x52, 0x4c, 0x59, 0x65, 0x61, 0x72, 0xd2,
-	0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0x52, 0x07, 0x74,
-	0x72, 0x6c, 0x59, 0x65, 0x61, 0x72, 0x12, 0x5a, 0x0a, 0x09, 0x74, 0x72, 0x6c, 0x5f, 0x6d, 0x6f,
-	0x6e, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x3d, 0xc8, 0xde, 0x1f, 0x00, 0xda,
+	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
+	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x19, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61,
+	0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x22, 0xa1, 0x01, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x50, 0x72, 0x6f,
+	0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x84, 0x01,
+	0x0a, 0x0c, 0x74, 0x61, 0x78, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42,
+	0x46, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
+	0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
+	0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69,
+	0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x74, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63,
+	0x65, 0x65, 0x64, 0x73, 0x22, 0x21, 0x0a, 0x1f, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69,
+	0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x87, 0x01, 0x0a, 0x20, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x53, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63,
+	0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x63, 0x0a, 0x14,
+	0x73, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x70, 0x72, 0x6f, 0x63,
+	0x65, 0x65, 0x64, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00,
+	0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x13, 0x73, 0x65,
+	0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64,
+	0x73, 0x22, 0x18, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61,
+	0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xd8, 0x01, 0x0a, 0x17,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x08, 0x74, 0x72, 0x61, 0x5f, 0x79,
+	0x65, 0x61, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x41, 0xc8, 0xde, 0x1f, 0x00, 0xda,
 	0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
 	0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xe2, 0xde,
-	0x1f, 0x08, 0x54, 0x52, 0x4c, 0x4d, 0x6f, 0x6e, 0x74, 0x68, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0x52, 0x08, 0x74, 0x72, 0x6c, 0x4d, 0x6f, 0x6e,
-	0x74, 0x68, 0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x52, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x3b, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x18, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x6a, 0x0a, 0x20,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x75, 0x72, 0x6e, 0x54, 0x61, 0x78, 0x45, 0x78, 0x65, 0x6d,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x46, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
-	0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
-	0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61,
-	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x8a, 0x01, 0x0a, 0x21, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x42, 0x75, 0x72, 0x6e, 0x54, 0x61, 0x78, 0x45, 0x78, 0x65, 0x6d, 0x70, 0x74, 0x69,
-	0x6f, 0x6e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1c,
-	0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x47, 0x0a, 0x0a,
-	0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x27, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71,
-	0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32, 0xbf, 0x0a, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12,
-	0x81, 0x01, 0x0a, 0x07, 0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6e, 0x6f,
+	0x1f, 0x07, 0x54, 0x52, 0x41, 0x59, 0x65, 0x61, 0x72, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x72,
+	0x61, 0x59, 0x65, 0x61, 0x72, 0x12, 0x5f, 0x0a, 0x09, 0x74, 0x72, 0x61, 0x5f, 0x6d, 0x6f, 0x6e,
+	0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x42, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
+	0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d,
+	0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xe2, 0xde, 0x1f,
+	0x08, 0x54, 0x52, 0x41, 0x4d, 0x6f, 0x6e, 0x74, 0x68, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x74, 0x72,
+	0x61, 0x4d, 0x6f, 0x6e, 0x74, 0x68, 0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50,
+	0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x52, 0x0a, 0x13,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x32, 0x85, 0x09, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x81, 0x01, 0x0a, 0x07, 0x54,
+	0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54,
+	0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e,
+	0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x27, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x1c, 0x12, 0x1a, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x12, 0x86,
+	0x01, 0x0a, 0x06, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x12, 0x24, 0x2e, 0x6e, 0x6f, 0x61, 0x68,
+	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x25, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4,
+	0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x2f,
+	0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x12, 0x81, 0x01, 0x0a, 0x07, 0x54, 0x61, 0x78, 0x43,
+	0x61, 0x70, 0x73, 0x12, 0x25, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43,
+	0x61, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6e, 0x6f, 0x61,
+	0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x27, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1c, 0x12,
+	0x1a, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f,
+	0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x12, 0x95, 0x01, 0x0a, 0x0c,
+	0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x2e, 0x6e,
+	0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e,
+	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2c, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x21, 0x12, 0x1f, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x12, 0xb1, 0x01, 0x0a, 0x13, 0x53, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72,
+	0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x31, 0x2e, 0x6e, 0x6f,
 	0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61,
-	0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x27, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1c, 0x12, 0x1a, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x72,
-	0x61, 0x74, 0x65, 0x12, 0x86, 0x01, 0x0a, 0x06, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x12, 0x24,
+	0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50,
+	0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x32,
 	0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78,
-	0x43, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x88, 0xe7, 0xb0,
-	0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f,
-	0x63, 0x61, 0x70, 0x73, 0x2f, 0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x12, 0x81, 0x01, 0x0a,
-	0x07, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x12, 0x25, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x26, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x27, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3,
-	0xe4, 0x93, 0x02, 0x1c, 0x12, 0x1a, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73,
-	0x12, 0x95, 0x01, 0x0a, 0x0c, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x12, 0x2a, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
-	0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64,
-	0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e,
-	0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2c, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x21, 0x12, 0x1f, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x72, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0xb1, 0x01, 0x0a, 0x13, 0x53, 0x65, 0x69,
-	0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73,
-	0x12, 0x31, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f,
-	0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x32, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
-	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69, 0x67,
-	0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x33, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3,
-	0xe4, 0x93, 0x02, 0x28, 0x12, 0x26, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72,
-	0x61, 0x67, 0x65, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x91, 0x01, 0x0a,
-	0x0b, 0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x29, 0x2e, 0x6e,
-	0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61,
+	0x67, 0x65, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x33, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x28, 0x12,
+	0x26, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f,
+	0x76, 0x31, 0x2f, 0x73, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x70,
+	0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x91, 0x01, 0x0a, 0x0b, 0x54, 0x61, 0x78, 0x50,
+	0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x29, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74,
 	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x2b, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x20,
-	0x12, 0x1e, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73,
-	0x12, 0x8c, 0x01, 0x0a, 0x0a, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12,
-	0x28, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f,
-	0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x6e, 0x6f, 0x61, 0x68,
-	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x29, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02,
-	0x1e, 0x12, 0x1c, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
-	0x79, 0x2f, 0x76, 0x31, 0x2f, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12,
-	0xb7, 0x01, 0x0a, 0x14, 0x42, 0x75, 0x72, 0x6e, 0x54, 0x61, 0x78, 0x45, 0x78, 0x65, 0x6d, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x32, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x42, 0x75, 0x72, 0x6e, 0x54, 0x61, 0x78, 0x45, 0x78, 0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f,
-	0x6e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6e,
-	0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x75, 0x72, 0x6e, 0x54, 0x61, 0x78, 0x45, 0x78, 0x65, 0x6d,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x36, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2b, 0x12, 0x29,
+	0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x50, 0x72,
+	0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2b,
+	0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x20, 0x12, 0x1e, 0x2f, 0x6e, 0x6f,
+	0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74,
+	0x61, 0x78, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x8c, 0x01, 0x0a, 0x0a,
+	0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x28, 0x2e, 0x6e, 0x6f, 0x61,
+	0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x64,
+	0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x29, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1e, 0x12, 0x1c, 0x2f, 0x6e,
+	0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f,
+	0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x7c, 0x0a, 0x06, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6e, 0x6f, 0x61,
+	0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x25, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1a, 0x12, 0x18,
 	0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76,
-	0x31, 0x2f, 0x62, 0x75, 0x72, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x5f, 0x65, 0x78, 0x65, 0x6d, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x7c, 0x0a, 0x06, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
-	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6e, 0x6f, 0x61, 0x68,
-	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x25, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1a, 0x12, 0x18, 0x2f,
-	0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31,
-	0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0xaa, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e,
-	0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
-	0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x24,
-	0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4e, 0x54, 0x58, 0xaa, 0x02, 0x10, 0x4e, 0x6f, 0x61,
-	0x68, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x10,
-	0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31,
-	0xe2, 0x02, 0x1c, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x12, 0x4e, 0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0xaa, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d,
+	0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
+	0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x24, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x74,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4e, 0x54, 0x58, 0xaa, 0x02, 0x10, 0x4e, 0x6f,
+	0x61, 0x68, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02,
+	0x10, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56,
+	0x31, 0xe2, 0x02, 0x1c, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0xea, 0x02, 0x12, 0x4e, 0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -8899,61 +7258,53 @@ func file_noah_treasury_v1_query_proto_rawDescGZIP() []byte {
 	return file_noah_treasury_v1_query_proto_rawDescData
 }
 
-var file_noah_treasury_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_noah_treasury_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_noah_treasury_v1_query_proto_goTypes = []interface{}{
-	(*QueryTaxRateRequest)(nil),               // 0: noah.treasury.v1.QueryTaxRateRequest
-	(*QueryTaxRateResponse)(nil),              // 1: noah.treasury.v1.QueryTaxRateResponse
-	(*QueryTaxCapRequest)(nil),                // 2: noah.treasury.v1.QueryTaxCapRequest
-	(*QueryTaxCapResponse)(nil),               // 3: noah.treasury.v1.QueryTaxCapResponse
-	(*QueryTaxCapsRequest)(nil),               // 4: noah.treasury.v1.QueryTaxCapsRequest
-	(*QueryTaxCapsResponseItem)(nil),          // 5: noah.treasury.v1.QueryTaxCapsResponseItem
-	(*QueryTaxCapsResponse)(nil),              // 6: noah.treasury.v1.QueryTaxCapsResponse
-	(*QueryRewardWeightRequest)(nil),          // 7: noah.treasury.v1.QueryRewardWeightRequest
-	(*QueryRewardWeightResponse)(nil),         // 8: noah.treasury.v1.QueryRewardWeightResponse
-	(*QueryTaxProceedsRequest)(nil),           // 9: noah.treasury.v1.QueryTaxProceedsRequest
-	(*QueryTaxProceedsResponse)(nil),          // 10: noah.treasury.v1.QueryTaxProceedsResponse
-	(*QuerySeigniorageProceedsRequest)(nil),   // 11: noah.treasury.v1.QuerySeigniorageProceedsRequest
-	(*QuerySeigniorageProceedsResponse)(nil),  // 12: noah.treasury.v1.QuerySeigniorageProceedsResponse
-	(*QueryIndicatorsRequest)(nil),            // 13: noah.treasury.v1.QueryIndicatorsRequest
-	(*QueryIndicatorsResponse)(nil),           // 14: noah.treasury.v1.QueryIndicatorsResponse
-	(*QueryParamsRequest)(nil),                // 15: noah.treasury.v1.QueryParamsRequest
-	(*QueryParamsResponse)(nil),               // 16: noah.treasury.v1.QueryParamsResponse
-	(*QueryBurnTaxExemptionListRequest)(nil),  // 17: noah.treasury.v1.QueryBurnTaxExemptionListRequest
-	(*QueryBurnTaxExemptionListResponse)(nil), // 18: noah.treasury.v1.QueryBurnTaxExemptionListResponse
-	(*v1beta1.Coin)(nil),                      // 19: cosmos.base.v1beta1.Coin
-	(*Params)(nil),                            // 20: noah.treasury.v1.Params
-	(*v1beta11.PageRequest)(nil),              // 21: cosmos.base.query.v1beta1.PageRequest
-	(*v1beta11.PageResponse)(nil),             // 22: cosmos.base.query.v1beta1.PageResponse
+	(*QueryTaxRateRequest)(nil),              // 0: noah.treasury.v1.QueryTaxRateRequest
+	(*QueryTaxRateResponse)(nil),             // 1: noah.treasury.v1.QueryTaxRateResponse
+	(*QueryTaxCapRequest)(nil),               // 2: noah.treasury.v1.QueryTaxCapRequest
+	(*QueryTaxCapResponse)(nil),              // 3: noah.treasury.v1.QueryTaxCapResponse
+	(*QueryTaxCapsRequest)(nil),              // 4: noah.treasury.v1.QueryTaxCapsRequest
+	(*QueryTaxCapsResponse)(nil),             // 5: noah.treasury.v1.QueryTaxCapsResponse
+	(*QueryRewardWeightRequest)(nil),         // 6: noah.treasury.v1.QueryRewardWeightRequest
+	(*QueryRewardWeightResponse)(nil),        // 7: noah.treasury.v1.QueryRewardWeightResponse
+	(*QueryTaxProceedsRequest)(nil),          // 8: noah.treasury.v1.QueryTaxProceedsRequest
+	(*QueryTaxProceedsResponse)(nil),         // 9: noah.treasury.v1.QueryTaxProceedsResponse
+	(*QuerySeigniorageProceedsRequest)(nil),  // 10: noah.treasury.v1.QuerySeigniorageProceedsRequest
+	(*QuerySeigniorageProceedsResponse)(nil), // 11: noah.treasury.v1.QuerySeigniorageProceedsResponse
+	(*QueryIndicatorsRequest)(nil),           // 12: noah.treasury.v1.QueryIndicatorsRequest
+	(*QueryIndicatorsResponse)(nil),          // 13: noah.treasury.v1.QueryIndicatorsResponse
+	(*QueryParamsRequest)(nil),               // 14: noah.treasury.v1.QueryParamsRequest
+	(*QueryParamsResponse)(nil),              // 15: noah.treasury.v1.QueryParamsResponse
+	(*TaxCap)(nil),                           // 16: noah.treasury.v1.TaxCap
+	(*v1beta1.Coin)(nil),                     // 17: cosmos.base.v1beta1.Coin
+	(*Params)(nil),                           // 18: noah.treasury.v1.Params
 }
 var file_noah_treasury_v1_query_proto_depIdxs = []int32{
-	5,  // 0: noah.treasury.v1.QueryTaxCapsResponse.tax_caps:type_name -> noah.treasury.v1.QueryTaxCapsResponseItem
-	19, // 1: noah.treasury.v1.QueryTaxProceedsResponse.tax_proceeds:type_name -> cosmos.base.v1beta1.Coin
-	20, // 2: noah.treasury.v1.QueryParamsResponse.params:type_name -> noah.treasury.v1.Params
-	21, // 3: noah.treasury.v1.QueryBurnTaxExemptionListRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	22, // 4: noah.treasury.v1.QueryBurnTaxExemptionListResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
-	0,  // 5: noah.treasury.v1.Query.TaxRate:input_type -> noah.treasury.v1.QueryTaxRateRequest
-	2,  // 6: noah.treasury.v1.Query.TaxCap:input_type -> noah.treasury.v1.QueryTaxCapRequest
-	4,  // 7: noah.treasury.v1.Query.TaxCaps:input_type -> noah.treasury.v1.QueryTaxCapsRequest
-	7,  // 8: noah.treasury.v1.Query.RewardWeight:input_type -> noah.treasury.v1.QueryRewardWeightRequest
-	11, // 9: noah.treasury.v1.Query.SeigniorageProceeds:input_type -> noah.treasury.v1.QuerySeigniorageProceedsRequest
-	9,  // 10: noah.treasury.v1.Query.TaxProceeds:input_type -> noah.treasury.v1.QueryTaxProceedsRequest
-	13, // 11: noah.treasury.v1.Query.Indicators:input_type -> noah.treasury.v1.QueryIndicatorsRequest
-	17, // 12: noah.treasury.v1.Query.BurnTaxExemptionList:input_type -> noah.treasury.v1.QueryBurnTaxExemptionListRequest
-	15, // 13: noah.treasury.v1.Query.Params:input_type -> noah.treasury.v1.QueryParamsRequest
-	1,  // 14: noah.treasury.v1.Query.TaxRate:output_type -> noah.treasury.v1.QueryTaxRateResponse
-	3,  // 15: noah.treasury.v1.Query.TaxCap:output_type -> noah.treasury.v1.QueryTaxCapResponse
-	6,  // 16: noah.treasury.v1.Query.TaxCaps:output_type -> noah.treasury.v1.QueryTaxCapsResponse
-	8,  // 17: noah.treasury.v1.Query.RewardWeight:output_type -> noah.treasury.v1.QueryRewardWeightResponse
-	12, // 18: noah.treasury.v1.Query.SeigniorageProceeds:output_type -> noah.treasury.v1.QuerySeigniorageProceedsResponse
-	10, // 19: noah.treasury.v1.Query.TaxProceeds:output_type -> noah.treasury.v1.QueryTaxProceedsResponse
-	14, // 20: noah.treasury.v1.Query.Indicators:output_type -> noah.treasury.v1.QueryIndicatorsResponse
-	18, // 21: noah.treasury.v1.Query.BurnTaxExemptionList:output_type -> noah.treasury.v1.QueryBurnTaxExemptionListResponse
-	16, // 22: noah.treasury.v1.Query.Params:output_type -> noah.treasury.v1.QueryParamsResponse
-	14, // [14:23] is the sub-list for method output_type
-	5,  // [5:14] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	16, // 0: noah.treasury.v1.QueryTaxCapsResponse.tax_caps:type_name -> noah.treasury.v1.TaxCap
+	17, // 1: noah.treasury.v1.QueryTaxProceedsResponse.tax_proceeds:type_name -> cosmos.base.v1beta1.Coin
+	18, // 2: noah.treasury.v1.QueryParamsResponse.params:type_name -> noah.treasury.v1.Params
+	0,  // 3: noah.treasury.v1.Query.TaxRate:input_type -> noah.treasury.v1.QueryTaxRateRequest
+	2,  // 4: noah.treasury.v1.Query.TaxCap:input_type -> noah.treasury.v1.QueryTaxCapRequest
+	4,  // 5: noah.treasury.v1.Query.TaxCaps:input_type -> noah.treasury.v1.QueryTaxCapsRequest
+	6,  // 6: noah.treasury.v1.Query.RewardWeight:input_type -> noah.treasury.v1.QueryRewardWeightRequest
+	10, // 7: noah.treasury.v1.Query.SeigniorageProceeds:input_type -> noah.treasury.v1.QuerySeigniorageProceedsRequest
+	8,  // 8: noah.treasury.v1.Query.TaxProceeds:input_type -> noah.treasury.v1.QueryTaxProceedsRequest
+	12, // 9: noah.treasury.v1.Query.Indicators:input_type -> noah.treasury.v1.QueryIndicatorsRequest
+	14, // 10: noah.treasury.v1.Query.Params:input_type -> noah.treasury.v1.QueryParamsRequest
+	1,  // 11: noah.treasury.v1.Query.TaxRate:output_type -> noah.treasury.v1.QueryTaxRateResponse
+	3,  // 12: noah.treasury.v1.Query.TaxCap:output_type -> noah.treasury.v1.QueryTaxCapResponse
+	5,  // 13: noah.treasury.v1.Query.TaxCaps:output_type -> noah.treasury.v1.QueryTaxCapsResponse
+	7,  // 14: noah.treasury.v1.Query.RewardWeight:output_type -> noah.treasury.v1.QueryRewardWeightResponse
+	11, // 15: noah.treasury.v1.Query.SeigniorageProceeds:output_type -> noah.treasury.v1.QuerySeigniorageProceedsResponse
+	9,  // 16: noah.treasury.v1.Query.TaxProceeds:output_type -> noah.treasury.v1.QueryTaxProceedsResponse
+	13, // 17: noah.treasury.v1.Query.Indicators:output_type -> noah.treasury.v1.QueryIndicatorsResponse
+	15, // 18: noah.treasury.v1.Query.Params:output_type -> noah.treasury.v1.QueryParamsResponse
+	11, // [11:19] is the sub-list for method output_type
+	3,  // [3:11] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_noah_treasury_v1_query_proto_init() }
@@ -9024,18 +7375,6 @@ func file_noah_treasury_v1_query_proto_init() {
 			}
 		}
 		file_noah_treasury_v1_query_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTaxCapsResponseItem); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_noah_treasury_v1_query_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryTaxCapsResponse); i {
 			case 0:
 				return &v.state
@@ -9047,7 +7386,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryRewardWeightRequest); i {
 			case 0:
 				return &v.state
@@ -9059,7 +7398,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryRewardWeightResponse); i {
 			case 0:
 				return &v.state
@@ -9071,7 +7410,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryTaxProceedsRequest); i {
 			case 0:
 				return &v.state
@@ -9083,7 +7422,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryTaxProceedsResponse); i {
 			case 0:
 				return &v.state
@@ -9095,7 +7434,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QuerySeigniorageProceedsRequest); i {
 			case 0:
 				return &v.state
@@ -9107,7 +7446,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QuerySeigniorageProceedsResponse); i {
 			case 0:
 				return &v.state
@@ -9119,7 +7458,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryIndicatorsRequest); i {
 			case 0:
 				return &v.state
@@ -9131,7 +7470,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryIndicatorsResponse); i {
 			case 0:
 				return &v.state
@@ -9143,7 +7482,7 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryParamsRequest); i {
 			case 0:
 				return &v.state
@@ -9155,32 +7494,8 @@ func file_noah_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
-		file_noah_treasury_v1_query_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_noah_treasury_v1_query_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryParamsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_noah_treasury_v1_query_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryBurnTaxExemptionListRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_noah_treasury_v1_query_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryBurnTaxExemptionListResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9198,7 +7513,7 @@ func file_noah_treasury_v1_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_noah_treasury_v1_query_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
