@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"noah/app"
-	"noah/cmd/noahd/cmd"
-
 	clientv2helpers "cosmossdk.io/client/v2/helpers"
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+
+	"noah/app"
+	"noah/cmd/noahd/cmd"
 )
 
 func main() {

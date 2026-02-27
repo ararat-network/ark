@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	app "noah/app"
 
 	"github.com/cometbft/cometbft/crypto"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
+	app "noah/app"
 )
 
 func TestSimGenesisAccountValidate(t *testing.T) {

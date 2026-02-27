@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	app "noah/app"
 
 	"github.com/cosmos/cosmos-sdk/testutil/network"
+
+	app "noah/app"
 )
 
 type IntegrationTestSuite struct {

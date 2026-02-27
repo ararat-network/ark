@@ -6,13 +6,12 @@ import (
 	"os"
 	"testing"
 
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cmttypes "github.com/cometbft/cometbft/types"
-
-	dbm "github.com/cosmos/cosmos-db"
 
 	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"

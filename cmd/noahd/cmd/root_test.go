@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"noah/app"
-	"noah/cmd/noahd/cmd"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	"github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+
+	"noah/app"
+	"noah/cmd/noahd/cmd"
 )
 
 func TestInitCmd(t *testing.T) {

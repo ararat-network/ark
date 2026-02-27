@@ -5,11 +5,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/spf13/cobra"
-	"noah/app"
-	"noah/app/params"
-
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/spf13/cobra"
 
 	"cosmossdk.io/log"
 
@@ -22,6 +19,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+
+	"noah/app"
+	"noah/app/params"
 )
 
 // NewRootCmd creates a new root command for simd. It is called once in the

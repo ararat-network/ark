@@ -4,13 +4,11 @@ import (
 	"errors"
 	"io"
 
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"noah/app"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
-
-	dbm "github.com/cosmos/cosmos-db"
 
 	"cosmossdk.io/log"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
@@ -29,6 +27,8 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+
+	"noah/app"
 )
 
 // initCometBFTConfig helps to override default CometBFT Config values.

@@ -37,7 +37,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260114163908-3f89685c29c3
 	google.golang.org/grpc v1.78.0
-	gopkg.in/yaml.v2 v2.3.0
 )
 
 require (
