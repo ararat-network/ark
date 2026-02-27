@@ -10,8 +10,6 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgAddBurnTaxExemptionAddress{}, "noah/x/treasury/MsgAddBurnTaxExemptionAddress")
-	legacy.RegisterAminoMsg(cdc, &MsgRemoveBurnTaxExemptionAddress{}, "noah/x/treasury/MsgRemoveBurnTaxExemptionAddress")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "noah/x/treasury/MsgUpdateParams")
 
 	cdc.RegisterConcrete(Params{}, "noah/x/treasury/Params", nil)
@@ -21,8 +19,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
-		&MsgAddBurnTaxExemptionAddress{},
-		&MsgAddBurnTaxExemptionAddress{},
 		&MsgUpdateParams{},
 	)
 

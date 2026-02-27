@@ -6,15 +6,11 @@ import (
 	"fmt"
 	"math/rand"
 
-	modulev1 "noah/api/noah/treasury/module/v1"
-	"noah/x/treasury/keeper"
-	"noah/x/treasury/simulation"
-	"noah/x/treasury/types"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/depinject"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -24,6 +20,11 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	modulev1 "noah/api/noah/treasury/module/v1"
+	"noah/x/treasury/keeper"
+	"noah/x/treasury/simulation"
+	"noah/x/treasury/types"
 )
 
 const consensusVersion = 1

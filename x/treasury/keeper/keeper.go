@@ -1,24 +1,20 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
-
-	core "noah/types"
-	"noah/x/treasury/types"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-)
 
-// TaxPowerUpgradeHeight is when taxes are allowed to go into effect
-// This will still need a parameter change proposal, but can be activated
-// anytime after this height
-const TaxPowerUpgradeHeight = 9346889
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	core "noah/types"
+	"noah/x/treasury/types"
+)
 
 // Keeper of the treasury store
 type Keeper struct {
@@ -33,6 +29,7 @@ type Keeper struct {
 	distrKeeper   types.DistributionKeeper
 	oracleKeeper  types.OracleKeeper
 
+	oracleModuleName       string
 	distributionModuleName string
 
 	Schema               collections.Schema
@@ -40,10 +37,9 @@ type Keeper struct {
 	TaxRate              collections.Item[math.LegacyDec]
 	RewardWeight         collections.Item[math.LegacyDec]
 	TaxCaps              collections.Map[string, math.Int]
-	EpochTaxProceeds     collections.Map[string, math.Int]
-	EpochInitialIssuance collections.Map[string, math.Int]
+	EpochTaxProceeds     collections.Item[types.EpochTaxProceeds]
+	EpochInitialIssuance collections.Item[types.EpochInitialIssuance]
 	EpochStates          collections.Map[uint64, types.EpochState]
-	BurnTaxExemptions    collections.KeySet[string]
 }
 
 // NewKeeper creates a new treasury Keeper instance
@@ -57,6 +53,7 @@ func NewKeeper(
 	stakingKeeper types.StakingKeeper,
 	distrKeeper types.DistributionKeeper,
 	oracleKeeper types.OracleKeeper,
+	oracleModuleName string,
 	distributionModuleName string,
 ) *Keeper {
 	// ensure treasury module account is set
@@ -64,10 +61,6 @@ func NewKeeper(
 		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
 	}
 
-	// ensure burn module account is set
-	if addr := accountKeeper.GetModuleAddress(types.BurnModuleName); addr == nil {
-		panic(fmt.Sprintf("%s module account has not been set", types.BurnModuleName))
-	}
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
 		cdc:                    cdc,
@@ -79,15 +72,15 @@ func NewKeeper(
 		stakingKeeper:          stakingKeeper,
 		distrKeeper:            distrKeeper,
 		oracleKeeper:           oracleKeeper,
+		oracleModuleName:       oracleModuleName,
 		distributionModuleName: distributionModuleName,
 		Params:                 collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		TaxRate:                collections.NewItem(sb, types.TaxRateKey, "tax_rate", sdk.LegacyDecValue),
 		RewardWeight:           collections.NewItem(sb, types.RewardWeightKey, "reward_weight", sdk.LegacyDecValue),
 		TaxCaps:                collections.NewMap(sb, types.TaxCapsKey, "tax_caps", collections.StringKey, sdk.IntValue),
-		EpochTaxProceeds:       collections.NewMap(sb, types.EpochTaxProceedsKey, "epoch_tax_proceeds", collections.StringKey, sdk.IntValue),
-		EpochInitialIssuance:   collections.NewMap(sb, types.EpochInitialIssuanceKey, "epoch_initial_issuance", collections.StringKey, sdk.IntValue),
+		EpochTaxProceeds:       collections.NewItem(sb, types.EpochTaxProceedsKey, "epoch_tax_proceeds", codec.CollValue[types.EpochTaxProceeds](cdc)),
+		EpochInitialIssuance:   collections.NewItem(sb, types.EpochInitialIssuanceKey, "epoch_initial_issuance", codec.CollValue[types.EpochInitialIssuance](cdc)),
 		EpochStates:            collections.NewMap(sb, types.EpochStatesKey, "epoch_states", collections.Uint64Key, codec.CollValue[types.EpochState](cdc)),
-		BurnTaxExemptions:      collections.NewKeySet(sb, types.BurnTaxExemptionsKey, "burn_tax_exemptions", collections.StringKey),
 	}
 
 	schema, err := sb.Build()
@@ -100,313 +93,60 @@ func NewKeeper(
 }
 
 // Logger returns a module-specific logger.
-func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// GetTaxRate loads the tax rate
-func (k Keeper) GetTaxRate(ctx sdk.Context) sdk.Dec {
-	store := ctx.KVStore(k.storeKey)
-	b := store.Get(types.TaxRateKey)
-	if b == nil {
-		return types.DefaultTaxRate
-	}
-
-	dp := sdk.DecProto{}
-	k.cdc.MustUnmarshal(b, &dp)
-	return dp.Dec
-}
-
-// SetTaxRate sets the tax rate
-func (k Keeper) SetTaxRate(ctx sdk.Context, taxRate sdk.Dec) {
-	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshal(&sdk.DecProto{Dec: taxRate})
-	store.Set(types.TaxRateKey, b)
-}
-
-// GetRewardWeight loads the reward weight
-func (k Keeper) GetRewardWeight(ctx sdk.Context) sdk.Dec {
-	store := ctx.KVStore(k.storeKey)
-	b := store.Get(types.RewardWeightKey)
-	if b == nil {
-		return types.DefaultRewardWeight
-	}
-
-	dp := sdk.DecProto{}
-	k.cdc.MustUnmarshal(b, &dp)
-	return dp.Dec
-}
-
-// SetRewardWeight sets the reward weight
-func (k Keeper) SetRewardWeight(ctx sdk.Context, rewardWeight sdk.Dec) {
-	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshal(&sdk.DecProto{Dec: rewardWeight})
-	store.Set(types.RewardWeightKey, b)
-}
-
-// SetTaxCap sets the tax cap denominated in integer units of the reference {denom}
-func (k Keeper) SetTaxCap(ctx sdk.Context, denom string, cap sdk.Int) {
-	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshal(&sdk.IntProto{Int: cap})
-	store.Set(types.GetTaxCapKey(denom), bz)
-}
-
-// GetTaxCap gets the tax cap denominated in integer units of the reference {denom}
-func (k Keeper) GetTaxCap(ctx sdk.Context, denom string) sdk.Int {
-	currHeight := ctx.BlockHeight()
-	// Allow tax cap for uluna
-	if denom == core.MicroLunaDenom && currHeight < TaxPowerUpgradeHeight {
-		return sdk.ZeroInt()
-	}
-
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetTaxCapKey(denom))
-	if bz == nil {
-		// if no tax-cap registered, return SDR tax-cap
-		return k.TaxPolicy(ctx).Cap.Amount
-	}
-
-	ip := sdk.IntProto{}
-	k.cdc.MustUnmarshal(bz, &ip)
-	return ip.Int
-}
-
-// IterateTaxCap iterates all tax cap
-func (k Keeper) IterateTaxCap(ctx sdk.Context, handler func(denom string, taxCap sdk.Int) (stop bool)) {
-	store := ctx.KVStore(k.storeKey)
-	iter := sdk.KVStorePrefixIterator(store, types.TaxCapKey)
-
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		denom := string(iter.Key()[len(types.TaxCapKey):])
-		var ip sdk.IntProto
-		k.cdc.MustUnmarshal(iter.Value(), &ip)
-
-		if handler(denom, ip.Int) {
-			break
-		}
-	}
+func (k Keeper) Logger(ctx context.Context) log.Logger {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
 // RecordEpochTaxProceeds adds tax proceeds that have been added this epoch
-func (k Keeper) RecordEpochTaxProceeds(ctx sdk.Context, delta sdk.Coins) {
+func (k Keeper) RecordEpochTaxProceeds(ctx context.Context, delta sdk.Coins) error {
 	if delta.IsZero() {
-		return
+		return nil
 	}
 
-	proceeds := k.PeekEpochTaxProceeds(ctx)
-	proceeds = proceeds.Add(delta...)
-
-	k.SetEpochTaxProceeds(ctx, proceeds)
-}
-
-// SetEpochTaxProceeds stores tax proceeds for the given epoch
-func (k Keeper) SetEpochTaxProceeds(ctx sdk.Context, taxProceeds sdk.Coins) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := k.cdc.MustMarshal(&types.EpochTaxProceeds{TaxProceeds: taxProceeds})
-	store.Set(types.TaxProceedsKey, bz)
-}
-
-// PeekEpochTaxProceeds peeks the total amount of taxes that have been collected in the given epoch.
-func (k Keeper) PeekEpochTaxProceeds(ctx sdk.Context) sdk.Coins {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.TaxProceedsKey)
-	taxProceeds := types.EpochTaxProceeds{}
-	if bz == nil {
-		taxProceeds.TaxProceeds = sdk.Coins{}
-	} else {
-		k.cdc.MustUnmarshal(bz, &taxProceeds)
+	proceeds, err := k.EpochTaxProceeds.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting epoch tax proceeds: %w", err)
 	}
+	proceeds.TaxProceeds = proceeds.TaxProceeds.Add(delta...)
 
-	return taxProceeds.TaxProceeds
+	k.EpochTaxProceeds.Set(ctx, proceeds)
+	return nil
 }
 
 // RecordEpochInitialIssuance updates epoch initial issuance from supply keeper
-func (k Keeper) RecordEpochInitialIssuance(ctx sdk.Context) {
+func (k Keeper) RecordEpochInitialIssuance(ctx context.Context) error {
 	whitelist := k.oracleKeeper.Whitelist(ctx)
 
 	totalSupply := make(sdk.Coins, len(whitelist)+1)
-	totalSupply[0] = k.bankKeeper.GetSupply(ctx, core.MicroLunaDenom)
+	totalSupply[0] = k.bankKeeper.GetSupply(ctx, core.MicroArkDenom)
 
 	for i, denom := range whitelist {
 		totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Name)
 	}
 
-	k.SetEpochInitialIssuance(ctx, totalSupply.Sort())
-}
-
-// SetEpochInitialIssuance stores epoch initial issuance
-func (k Keeper) SetEpochInitialIssuance(ctx sdk.Context, issuance sdk.Coins) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := k.cdc.MustMarshal(&types.EpochInitialIssuance{Issuance: issuance})
-	store.Set(types.EpochInitialIssuanceKey, bz)
-}
-
-// GetEpochInitialIssuance returns epoch initial issuance
-func (k Keeper) GetEpochInitialIssuance(ctx sdk.Context) sdk.Coins {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.EpochInitialIssuanceKey)
-
-	initialIssuance := types.EpochInitialIssuance{}
-	if bz == nil {
-		initialIssuance.Issuance = sdk.Coins{}
-	} else {
-		k.cdc.MustUnmarshal(bz, &initialIssuance)
+	epochInitialIssuance := types.EpochInitialIssuance{
+		Issuance: totalSupply.Sort(),
 	}
-
-	return initialIssuance.Issuance
-}
-
-// PeekEpochSeigniorage returns epoch seigniorage
-func (k Keeper) PeekEpochSeigniorage(ctx sdk.Context) sdk.Int {
-	epochIssuance := k.bankKeeper.GetSupply(ctx, core.MicroLunaDenom).Amount
-	preEpochIssuance := k.GetEpochInitialIssuance(ctx).AmountOf(core.MicroLunaDenom)
-	epochSeigniorage := preEpochIssuance.Sub(epochIssuance)
-
-	if epochSeigniorage.IsNegative() {
-		return sdk.ZeroInt()
+	if err := k.EpochInitialIssuance.Set(ctx, epochInitialIssuance); err != nil {
+		return fmt.Errorf("setting epoch initial issuance: %w", err)
 	}
-
-	return epochSeigniorage
-}
-
-// GetTR returns the tax rewards for the epoch
-func (k Keeper) GetTR(ctx sdk.Context, epoch int64) sdk.Dec {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetTRKey(epoch))
-
-	dp := sdk.DecProto{}
-	if bz == nil {
-		dp.Dec = sdk.ZeroDec()
-	} else {
-		k.cdc.MustUnmarshal(bz, &dp)
-	}
-
-	return dp.Dec
-}
-
-// SetTR stores the tax rewards for the epoch
-func (k Keeper) SetTR(ctx sdk.Context, epoch int64, tr sdk.Dec) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := k.cdc.MustMarshal(&sdk.DecProto{Dec: tr})
-	store.Set(types.GetTRKey(epoch), bz)
-}
-
-// ClearTRs delete all tax rewards from the store
-func (k Keeper) ClearTRs(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
-
-	iter := sdk.KVStorePrefixIterator(store, types.TRKey)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
-	}
-}
-
-// GetSR returns the seigniorage rewards for the epoch
-func (k Keeper) GetSR(ctx sdk.Context, epoch int64) sdk.Dec {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetSRKey(epoch))
-
-	dp := sdk.DecProto{}
-	if bz == nil {
-		dp.Dec = sdk.ZeroDec()
-	} else {
-		k.cdc.MustUnmarshal(bz, &dp)
-	}
-
-	return dp.Dec
-}
-
-// SetSR stores the seigniorage rewards for the epoch
-func (k Keeper) SetSR(ctx sdk.Context, epoch int64, sr sdk.Dec) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := k.cdc.MustMarshal(&sdk.DecProto{Dec: sr})
-	store.Set(types.GetSRKey(epoch), bz)
-}
-
-// ClearSRs delete all seigniorage rewards from the store
-func (k Keeper) ClearSRs(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
-
-	iter := sdk.KVStorePrefixIterator(store, types.SRKey)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
-	}
-}
-
-// GetTSL returns the total staked luna for the epoch
-func (k Keeper) GetTSL(ctx sdk.Context, epoch int64) sdk.Int {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetTSLKey(epoch))
-
-	ip := sdk.IntProto{}
-	if bz == nil {
-		ip.Int = sdk.ZeroInt()
-	} else {
-		k.cdc.MustUnmarshal(bz, &ip)
-	}
-
-	return ip.Int
-}
-
-// SetTSL stores the total staked luna for the epoch
-func (k Keeper) SetTSL(ctx sdk.Context, epoch int64, tsl sdk.Int) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := k.cdc.MustMarshal(&sdk.IntProto{Int: tsl})
-	store.Set(types.GetTSLKey(epoch), bz)
-}
-
-// ClearTSLs delete all the total staked luna from the store
-func (k Keeper) ClearTSLs(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
-
-	iter := sdk.KVStorePrefixIterator(store, types.TSLKey)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
-	}
-}
-
-// Burn tax exemption list
-func (k Keeper) AddBurnTaxExemptionAddress(ctx sdk.Context, address string) {
-	if _, err := sdk.AccAddressFromBech32(address); err != nil {
-		panic(err)
-	}
-
-	sub := prefix.NewStore(ctx.KVStore(k.storeKey), types.BurnTaxExemptionListPrefix)
-	sub.Set([]byte(address), []byte{0x01})
-}
-
-func (k Keeper) RemoveBurnTaxExemptionAddress(ctx sdk.Context, address string) error {
-	if _, err := sdk.AccAddressFromBech32(address); err != nil {
-		panic(err)
-	}
-
-	sub := prefix.NewStore(ctx.KVStore(k.storeKey), types.BurnTaxExemptionListPrefix)
-
-	if !sub.Has([]byte(address)) {
-		return types.ErrNoSuchBurnTaxExemptionAddress.Wrapf("address = %s", address)
-	}
-
-	sub.Delete([]byte(address))
 	return nil
 }
 
-func (k Keeper) HasBurnTaxExemptionAddress(ctx sdk.Context, addresses ...string) bool {
-	sub := prefix.NewStore(ctx.KVStore(k.storeKey), types.BurnTaxExemptionListPrefix)
+// ComputeEpochSeigniorage returns epoch seigniorage
+func (k Keeper) ComputeEpochSeigniorage(ctx context.Context) (math.Int, error) {
+	epochIssuance := k.bankKeeper.GetSupply(ctx, core.MicroArkDenom).Amount
+	epochIntialIssuance, err := k.EpochInitialIssuance.Get(ctx)
+	if err != nil {
+		return math.ZeroInt(), fmt.Errorf("getting epoch initial issuance: %w", err)
+	}
+	preEpochIssuance := epochIntialIssuance.Issuance.AmountOf(core.MicroArkDenom)
+	epochSeigniorage := preEpochIssuance.Sub(epochIssuance)
 
-	for _, address := range addresses {
-		if !sub.Has([]byte(address)) {
-			return false
-		}
+	if epochSeigniorage.IsNegative() {
+		return math.ZeroInt(), nil
 	}
 
-	return true
+	return epochSeigniorage, nil
 }

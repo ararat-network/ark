@@ -5,9 +5,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	core "noah/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	core "noah/types"
 )
 
 // Default parameter values
@@ -31,8 +31,6 @@ var (
 	DefaultWindowProbation         = uint64(12)                        // 3 month
 	DefaultTaxRate                 = math.LegacyNewDecWithPrec(1, 3)   // 0.1%
 	DefaultRewardWeight            = math.LegacyNewDecWithPrec(5, 2)   // 5%
-	DefaultBurnTaxSplit            = math.LegacyNewDecWithPrec(1, 1)   // 10% goes to community pool, 90% burn
-	DefaultMinInitialDepositRatio  = math.LegacyZeroDec()              // 0% min initial deposit
 )
 
 // DefaultParams creates default treasury module parameters
@@ -45,8 +43,6 @@ func DefaultParams() Params {
 		WindowShort:             DefaultWindowShort,
 		WindowLong:              DefaultWindowLong,
 		WindowProbation:         DefaultWindowProbation,
-		BurnTaxSplit:            DefaultBurnTaxSplit,
-		MinInitialDepositRatio:  DefaultMinInitialDepositRatio,
 	}
 }
 

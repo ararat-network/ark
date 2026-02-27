@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(params Params, taxRate math.LegacyDec, rewardWeight math.LegacyDec,
-	taxCaps []TaxCap, taxProceeds sdk.Coins, epochInitialIssuance sdk.Coins,
+func NewGenesisState(params Params, taxRate, rewardWeight math.LegacyDec,
+	taxCaps []TaxCap, taxProceeds, epochInitialIssuance sdk.Coins,
 	epochStates []EpochState,
 ) *GenesisState {
 	return &GenesisState{
@@ -19,7 +20,7 @@ func NewGenesisState(params Params, taxRate math.LegacyDec, rewardWeight math.Le
 		TaxRate:              taxRate,
 		RewardWeight:         rewardWeight,
 		TaxCaps:              taxCaps,
-		TaxProceeds:          taxProceeds,
+		EpochTaxProceeds:     taxProceeds,
 		EpochInitialIssuance: epochInitialIssuance,
 		EpochStates:          epochStates,
 	}
@@ -32,7 +33,7 @@ func DefaultGenesisState() *GenesisState {
 		TaxRate:              DefaultTaxRate,
 		RewardWeight:         DefaultRewardWeight,
 		TaxCaps:              []TaxCap{},
-		TaxProceeds:          sdk.Coins{},
+		EpochTaxProceeds:     sdk.Coins{},
 		EpochInitialIssuance: sdk.Coins{},
 		EpochStates:          []EpochState{},
 	}
