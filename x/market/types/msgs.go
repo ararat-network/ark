@@ -20,7 +20,7 @@ func NewMsgSwap(traderAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom strin
 }
 
 // NewMsgSwapSend creates a MsgSwapSend instance
-func NewMsgSwapSend(fromAddress sdk.AccAddress, toAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom string) *MsgSwapSend {
+func NewMsgSwapSend(fromAddress, toAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom string) *MsgSwapSend {
 	return &MsgSwapSend{
 		FromAddress: fromAddress.String(),
 		ToAddress:   toAddress.String(),

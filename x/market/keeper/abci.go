@@ -2,9 +2,10 @@ package keeper
 
 import (
 	"context"
-	"noah/x/market/types"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
+
+	"noah/x/market/types"
 )
 
 // EndBlocker is called at the end of every block

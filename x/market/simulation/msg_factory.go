@@ -2,14 +2,15 @@ package simulation
 
 import (
 	"context"
-	core "noah/types"
-	"noah/x/market/keeper"
-	"noah/x/market/types"
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	core "noah/types"
+	"noah/x/market/keeper"
+	"noah/x/market/types"
 )
 
 func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
@@ -96,7 +97,7 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 // randomDenomPairX picks a random offer/ask denom pair from available exchange rates.
 func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.SimulationReporter, k *keeper.Keeper) (offerDenom, askDenom string) {
 	var whitelist []string
-	k.OracleKeeper.IterateArkExchangeRates(ctx, func(denom string, _ math.LegacyDec) bool {
+	k.oracleKeeper.IterateArkExchangeRates(ctx, func(denom string, _ math.LegacyDec) bool {
 		whitelist = append(whitelist, denom)
 		return false
 	})

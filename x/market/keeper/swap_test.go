@@ -1,12 +1,14 @@
 package keeper_test
 
 import (
-	core "noah/types"
-	"noah/x/market/types"
+	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"go.uber.org/mock/gomock"
+
+	core "noah/types"
+	"noah/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestComputeOracleRate() {

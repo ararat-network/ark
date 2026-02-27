@@ -1,14 +1,14 @@
 syntax = "proto3";
 package noah.market.v1;
 
-option go_package = "noah/x/market/types";
-
 import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "noah/market/v1/market.proto";
+
+option go_package = "noah/x/market/types";
 
 // Msg defines the market Msg service.
 service Msg {
@@ -41,7 +41,7 @@ message MsgSwap {
 // MsgSwapResponse defines the Msg/Swap response type.
 message MsgSwapResponse {
   cosmos.base.v1beta1.Coin swap_coin = 1 [ (gogoproto.nullable) = false ];
-  cosmos.base.v1beta1.Coin swap_fee = 2 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
 }
 
 // MsgSwapSend represents a message to swap coin and send all result coin to
@@ -60,7 +60,7 @@ message MsgSwapSend {
 // MsgSwapSendResponse defines the Msg/SwapSend response type.
 message MsgSwapSendResponse {
   cosmos.base.v1beta1.Coin swap_coin = 1 [ (gogoproto.nullable) = false ];
-  cosmos.base.v1beta1.Coin swap_fee = 2 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.

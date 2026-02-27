@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	core "noah/types"
-	"noah/x/market/types"
-
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+
+	core "noah/types"
+	"noah/x/market/types"
 )
 
 // ApplySwapToPool updates each pool with offerCoin and askCoin taken from swap operation,
@@ -99,7 +99,7 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 		}
 
 		spread = tobinTax
-		return
+		return retDecCoin, spread, err
 	}
 
 	params, err := k.Params.Get(ctx)

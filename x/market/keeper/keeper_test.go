@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	gocontext "context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -8,12 +9,6 @@ import (
 
 	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
-
-	gocontext "context"
-
-	"noah/x/market/keeper"
-	markettestutil "noah/x/market/testutil"
-	"noah/x/market/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -24,6 +19,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	"noah/x/market/keeper"
+	markettestutil "noah/x/market/testutil"
+	"noah/x/market/types"
 )
 
 type KeeperTestSuite struct {
@@ -67,10 +66,10 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.marketKeeper = keeper.NewKeeper(
 		cdc,
 		storeService,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
 		bankKeeper,
 		oracleKeeper,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	s.accountKeeper = accountKeeper

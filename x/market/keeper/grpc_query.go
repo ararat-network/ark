@@ -3,12 +3,12 @@ package keeper
 import (
 	"context"
 
-	"noah/x/market/types"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"noah/x/market/types"
 )
 
 var _ types.QueryServer = queryServer{}

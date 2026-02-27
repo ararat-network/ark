@@ -1,11 +1,13 @@
 package keeper_test
 
 import (
+	"go.uber.org/mock/gomock"
+
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"go.uber.org/mock/gomock"
 
 	core "noah/types"
 	"noah/x/market/types"
@@ -72,7 +74,6 @@ func (s *KeeperTestSuite) TestMsgSwap_RecursiveSwap() {
 }
 
 func (s *KeeperTestSuite) TestMsgSwap_ZeroAmount() {
-	// Zero amount is caught by ValidateBasic, not the handler
 	trader := sdk.AccAddress([]byte("trader______________"))
 	msg := &types.MsgSwap{
 		Trader:    trader.String(),
@@ -80,7 +81,8 @@ func (s *KeeperTestSuite) TestMsgSwap_ZeroAmount() {
 		AskDenom:  "ukrw",
 	}
 
-	s.Require().Error(msg.ValidateBasic())
+	_, err := s.msgServer.Swap(s.ctx, msg)
+	s.Require().Error(err)
 }
 
 func (s *KeeperTestSuite) TestMsgSwap_InvalidAddress() {

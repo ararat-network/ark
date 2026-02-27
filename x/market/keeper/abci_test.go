@@ -1,9 +1,9 @@
 package keeper_test
 
 import (
-	"noah/x/market/types"
-
 	"cosmossdk.io/math"
+
+	"noah/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestEndBlocker_ReplenishPools() {

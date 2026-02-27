@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"math/rand"
 
-	"noah/x/market/types"
-
 	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/types/module"
+
+	"noah/x/market/types"
 )
 
 // Simulation parameter constants

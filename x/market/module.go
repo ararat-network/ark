@@ -5,11 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	modulev1 "noah/api/noah/market/module/v1"
-	"noah/x/market/keeper"
-	"noah/x/market/simulation"
-	"noah/x/market/types"
-
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"cosmossdk.io/core/appmodule"
@@ -25,6 +20,11 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	modulev1 "noah/api/noah/market/module/v1"
+	"noah/x/market/keeper"
+	"noah/x/market/simulation"
+	"noah/x/market/types"
 )
 
 const consensusVersion = 1
@@ -168,10 +168,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
+		authority.String(),
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.OracleKeeper,
-		authority.String(),
 	)
 
 	m := NewAppModule(in.Cdc, k)

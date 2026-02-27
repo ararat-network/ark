@@ -4,14 +4,14 @@ import (
 	"context"
 	"strings"
 
-	marketv1 "noah/api/noah/market/v1"
-	"noah/x/market/types"
-
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	marketv1 "noah/api/noah/market/v1"
+	"noah/x/market/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

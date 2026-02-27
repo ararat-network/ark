@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"noah/x/market/types"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"noah/x/market/types"
 )
 
 // Keeper of the market store

@@ -1,10 +1,11 @@
 package keeper_test
 
 import (
-	"noah/x/market/types"
+	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
-	"go.uber.org/mock/gomock"
+
+	"noah/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
@@ -17,9 +18,7 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	customDelta := math.LegacyNewDec(12345)
 	genesis := types.NewGenesisState(customDelta, customParams)
 
-	// InitGenesis calls GetModuleAccount
 	s.accountKeeper.EXPECT().GetModuleAccount(gomock.Any(), types.ModuleName).Return(nil).Times(1)
-
 	s.marketKeeper.InitGenesis(s.ctx, genesis)
 
 	// Verify params
@@ -46,7 +45,6 @@ func (s *KeeperTestSuite) TestDefaultGenesis() {
 	genesis := types.DefaultGenesisState()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(gomock.Any(), types.ModuleName).Return(nil).Times(1)
-
 	s.marketKeeper.InitGenesis(s.ctx, genesis)
 
 	// Verify default params

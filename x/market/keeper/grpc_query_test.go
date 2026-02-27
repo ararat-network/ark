@@ -1,11 +1,12 @@
 package keeper_test
 
 import (
-	core "noah/types"
-	"noah/x/market/types"
+	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
-	"go.uber.org/mock/gomock"
+
+	core "noah/types"
+	"noah/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestQueryParams() {

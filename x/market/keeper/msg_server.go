@@ -3,14 +3,14 @@ package keeper
 import (
 	"context"
 
-	"noah/x/market/types"
-	oracletypes "noah/x/oracle/types"
-
 	"cosmossdk.io/errors"
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	"noah/x/market/types"
 )
 
 type msgServer struct {
@@ -98,15 +98,15 @@ func (m msgServer) handleSwapRequest(
 	}
 
 	// Charge a spread if applicable; the spread is burned
-	var feeDecCoin sdk.DecCoin
+	var swapFee sdk.DecCoin
 	if spread.IsPositive() {
-		feeDecCoin = sdk.NewDecCoinFromDec(swapDecCoin.Denom, spread.Mul(swapDecCoin.Amount))
+		swapFee = sdk.NewDecCoinFromDec(swapDecCoin.Denom, spread.Mul(swapDecCoin.Amount))
 	} else {
-		feeDecCoin = sdk.NewDecCoin(swapDecCoin.Denom, math.ZeroInt())
+		swapFee = sdk.NewDecCoin(swapDecCoin.Denom, math.ZeroInt())
 	}
 
 	// Subtract fee from the swap coin
-	swapDecCoin.Amount = swapDecCoin.Amount.Sub(feeDecCoin.Amount)
+	swapDecCoin.Amount = swapDecCoin.Amount.Sub(swapFee.Amount)
 
 	// Update pool delta
 	err = m.k.ApplySwapToPool(ctx, offerCoin, swapDecCoin)
@@ -135,29 +135,17 @@ func (m msgServer) handleSwapRequest(
 		return nil, types.ErrZeroSwapCoin
 	}
 
-	feeDecCoin = feeDecCoin.Add(decimalCoin) // add truncated decimalCoin to swapFee
-	feeCoin, _ := feeDecCoin.TruncateDecimal()
-
-	mintCoins := sdk.NewCoins(swapCoin.Add(feeCoin))
-	err = m.k.bankKeeper.MintCoins(ctx, types.ModuleName, mintCoins)
+	swapFee = swapFee.Add(decimalCoin) // add truncated decimalCoin to swapFee
+	swapCoins := sdk.NewCoins(swapCoin)
+	err = m.k.bankKeeper.MintCoins(ctx, types.ModuleName, swapCoins)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to mint swap coins")
 	}
 
 	// Send swap coin to the trader
-	swapCoins := sdk.NewCoins(swapCoin)
 	err = m.k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send swap coins to receiver")
-	}
-
-	// Send swap fee to oracle account
-	if feeCoin.IsPositive() {
-		feeCoins := sdk.NewCoins(feeCoin)
-		err = m.k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, oracletypes.ModuleName, feeCoins)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to send swap fee to oracle")
-		}
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -168,7 +156,7 @@ func (m msgServer) handleSwapRequest(
 			sdk.NewAttribute(types.AttributeKeyTrader, trader.String()),
 			sdk.NewAttribute(types.AttributeKeyRecipient, receiver.String()),
 			sdk.NewAttribute(types.AttributeKeySwapCoin, swapCoin.String()),
-			sdk.NewAttribute(types.AttributeKeySwapFee, feeCoin.String()),
+			sdk.NewAttribute(types.AttributeKeySwapFee, swapFee.String()),
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -178,6 +166,6 @@ func (m msgServer) handleSwapRequest(
 
 	return &types.MsgSwapResponse{
 		SwapCoin: swapCoin,
-		SwapFee:  feeCoin,
+		SwapFee:  swapFee,
 	}, nil
 }

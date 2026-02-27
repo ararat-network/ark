@@ -6,20 +6,19 @@ import (
 	"math/rand"
 	"strings"
 
-	core "noah/types"
-	"noah/x/market/types"
-
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	core "noah/types"
+	"noah/x/market/types"
 )
 
 // Simulation operation weights constants
