@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -14,6 +16,7 @@ const (
 )
 
 // IsPeriodLastBlock returns true if we are at the last block of the period
-func IsPeriodLastBlock(ctx sdk.Context, blocksPerPeriod uint64) bool {
-	return ((uint64)(ctx.BlockHeight())+1)%blocksPerPeriod == 0
+func IsPeriodLastBlock(ctx context.Context, blocksPerPeriod uint64) bool {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	return ((uint64)(sdkCtx.BlockHeight())+1)%blocksPerPeriod == 0
 }
