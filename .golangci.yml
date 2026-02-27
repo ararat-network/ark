@@ -1,12 +1,14 @@
 version: "2"
 run:
   tests: true
-  timeout: 5m
+  allow-parallel-runners: true
 linters:
   default: none
   enable:
+    - copyloopvar
     - dogsled
     - errcheck
+    - errorlint
     - goconst
     - gocritic
     - gosec
@@ -24,68 +26,77 @@ linters:
   settings:
     dogsled:
       max-blank-identifiers: 3
+    gocritic:
+      disabled-checks:
+        - regexpMust
+        - appendAssign
+        - ifElseChain
+    gosec:
+      excludes:
+        - G101 # hardcoded credentials — false positives on test mnemonics/keys
+        - G107 # variable URL in HTTP request — legitimate in clients
+        - G115 # integer overflow conversion — too noisy in blockchain math
+        - G404 # weak random number generator — math/rand is fine for non-crypto
+      confidence: medium
+    misspell:
+      locale: US
     nolintlint:
-      require-explanation: false
+      require-explanation: true
       require-specific: false
       allow-unused: false
     revive:
-      severity: warning
       rules:
-        - name: unused-parameter
+        - name: redefines-builtin-id
           disabled: true
-        - name: blank-imports
+        - name: exported
+          severity: error
         - name: context-as-argument
-        - name: context-keys-type
-        - name: dot-imports
         - name: error-return
         - name: error-strings
         - name: error-naming
-        - name: exported
-        - name: if-return
+        - name: dot-imports
         - name: increment-decrement
-        - name: var-naming
-        - name: var-declaration
         - name: range
         - name: receiver-naming
-        - name: time-naming
-        - name: unexported-return
         - name: indent-error-flow
-        - name: errorf
-        - name: empty-block
         - name: superfluous-else
         - name: unreachable-code
-        - name: redefines-builtin-id
+        - name: empty-block
+    staticcheck:
+      checks:
+        - all
+    unused:
+      local-variables-are-used: false
   exclusions:
     generated: lax
     presets:
-      - comments
       - common-false-positives
       - legacy
       - std-error-handling
     rules:
       - linters:
+          - staticcheck
+        text: "ST1000:"
+      - linters:
           - revive
-        text: "var-naming: avoid meaningless package names"
-      - linters:
-          - gosec
-        text: Use of weak random number generator
-      - linters:
-          - golint
-        text: comment on exported var
-      - linters:
-          - golint
-        text: don't use an underscore in package name
+        text: "or be unexported"
       - linters:
           - staticcheck
-        text: 'ST1003:'
+        text: "ST1003:"
       - linters:
           - staticcheck
-        text: 'ST1016:'
+        text: "ST1016:"
       - linters:
           - staticcheck
         path: migrations
-        text: 'SA1019:'
+        text: "SA1019:"
+      - linters:
+          - nolintlint
+        text: leading space
     paths:
+      - .*\.pb\.go$
+      - .*\.pb\.gw\.go$
+      - .*\.pulsar\.go$
       - third_party$
       - builtin$
       - examples$
@@ -101,18 +112,19 @@ formatters:
       sections:
         - standard
         - default
-        - blank
-        - dot
         - prefix(github.com/cometbft/cometbft)
-        - prefix(github.com/cosmos)
         - prefix(cosmossdk.io)
         - prefix(github.com/cosmos/cosmos-sdk)
-        - prefix(github.com/CosmWasm/wasmd)
-        - prefix(github.com/cosmos/gaia)
+        - prefix(noah)
       custom-order: true
+    gofumpt:
+      extra-rules: true
   exclusions:
     generated: lax
     paths:
+      - .*\.pb\.go$
+      - .*\.pb\.gw\.go$
+      - .*\.pulsar\.go$
       - third_party$
       - builtin$
       - examples$
