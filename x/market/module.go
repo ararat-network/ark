@@ -115,13 +115,18 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	am.k.InitGenesis(ctx, &genesisState)
+	if err := am.k.InitGenesis(ctx, &genesisState); err != nil {
+		panic(err)
+	}
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the market
 // module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	gs := am.k.ExportGenesis(ctx)
+	gs, err := am.k.ExportGenesis(ctx)
+	if err != nil {
+		panic(err)
+	}
 	return cdc.MustMarshalJSON(gs)
 }
 

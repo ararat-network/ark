@@ -13,6 +13,8 @@ import (
 	"noah/x/market/types"
 )
 
+var _ types.MsgServer = msgServer{}
+
 type msgServer struct {
 	k *Keeper
 	types.UnimplementedMsgServer
@@ -23,8 +25,6 @@ type msgServer struct {
 func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return msgServer{k: k}
 }
-
-var _ types.MsgServer = msgServer{}
 
 func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
