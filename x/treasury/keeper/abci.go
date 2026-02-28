@@ -39,7 +39,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	}
 
 	// Settle seigniorage to oracle & distribution(community-pool) module-account
-	// TODO error handling
+	// TODO: error handling
 	k.SettleSeigniorage(ctx)
 
 	// Update tax-rate and reward-weight of next epoch

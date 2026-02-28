@@ -11,8 +11,13 @@ import (
 )
 
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(params Params, taxRate, rewardWeight math.LegacyDec,
-	taxCaps []TaxCap, taxProceeds, epochInitialIssuance sdk.Coins,
+func NewGenesisState(
+	params Params,
+	taxRate,
+	rewardWeight math.LegacyDec,
+	taxCaps []TaxCap,
+	taxProceeds,
+	epochInitialIssuance sdk.Coins,
 	epochStates []EpochState,
 ) *GenesisState {
 	return &GenesisState{

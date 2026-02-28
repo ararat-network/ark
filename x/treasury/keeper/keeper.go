@@ -18,19 +18,18 @@ import (
 
 // Keeper of the treasury store
 type Keeper struct {
-	cdc          codec.BinaryCodec
-	storeService store.KVStoreService
-	authority    string
+	cdc                    codec.BinaryCodec
+	storeService           store.KVStoreService
+	authority              string
+	oracleModuleName       string
+	distributionModuleName string
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
-	marketKeeper  types.MarketKeeper
-	stakingKeeper types.StakingKeeper
 	distrKeeper   types.DistributionKeeper
+	marketKeeper  types.MarketKeeper
 	oracleKeeper  types.OracleKeeper
-
-	oracleModuleName       string
-	distributionModuleName string
+	stakingKeeper types.StakingKeeper
 
 	Schema               collections.Schema
 	Params               collections.Item[types.Params]
@@ -47,14 +46,14 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
 	authority string,
-	accountKeeper types.AccountKeeper,
-	bankKeeper types.BankKeeper,
-	marketKeeper types.MarketKeeper,
-	stakingKeeper types.StakingKeeper,
-	distrKeeper types.DistributionKeeper,
-	oracleKeeper types.OracleKeeper,
 	oracleModuleName string,
 	distributionModuleName string,
+	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
+	distrKeeper types.DistributionKeeper,
+	marketKeeper types.MarketKeeper,
+	oracleKeeper types.OracleKeeper,
+	stakingKeeper types.StakingKeeper,
 ) *Keeper {
 	// ensure treasury module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
@@ -66,14 +65,14 @@ func NewKeeper(
 		cdc:                    cdc,
 		storeService:           storeService,
 		authority:              authority,
+		distributionModuleName: distributionModuleName,
+		oracleModuleName:       oracleModuleName,
 		accountKeeper:          accountKeeper,
 		bankKeeper:             bankKeeper,
-		marketKeeper:           marketKeeper,
-		stakingKeeper:          stakingKeeper,
 		distrKeeper:            distrKeeper,
+		marketKeeper:           marketKeeper,
 		oracleKeeper:           oracleKeeper,
-		oracleModuleName:       oracleModuleName,
-		distributionModuleName: distributionModuleName,
+		stakingKeeper:          stakingKeeper,
 		Params:                 collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		TaxRate:                collections.NewItem(sb, types.TaxRateKey, "tax_rate", sdk.LegacyDecValue),
 		RewardWeight:           collections.NewItem(sb, types.RewardWeightKey, "reward_weight", sdk.LegacyDecValue),

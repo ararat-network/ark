@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
@@ -15,13 +14,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	modulev1 "noah/api/noah/treasury/module/v1"
+	oracletypes "noah/x/oracle/types"
 	"noah/x/treasury/keeper"
 	"noah/x/treasury/simulation"
 	"noah/x/treasury/types"
@@ -75,7 +77,9 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncod
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the treasury module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
-	_ = types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
+	if err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)); err != nil {
+		panic(err)
+	}
 }
 
 // AppModule implements an application module for the treasury module.
@@ -86,10 +90,10 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(cdc codec.Codec, keeper *keeper.Keeper) AppModule {
+func NewAppModule(cdc codec.Codec, k *keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{cdc},
-		k:              keeper,
+		k:              k,
 	}
 }
 
@@ -113,13 +117,18 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	am.k.InitGenesis(ctx, &genesisState)
+	if err := am.k.InitGenesis(ctx, &genesisState); err != nil {
+		panic(err)
+	}
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the treasury
 // module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	gs := am.k.ExportGenesis(ctx)
+	gs, err := am.k.ExportGenesis(ctx)
+	if err != nil {
+		panic(err)
+	}
 	return cdc.MustMarshalJSON(gs)
 }
 
@@ -169,13 +178,15 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
+		authority.String(),
+		oracletypes.ModuleName,
+		distrtypes.ModuleName,
 		in.AccountKeeper,
 		in.BankKeeper,
-		in.MarketKeeper,
-		in.StakingKeeper,
 		in.DistributionKeeper,
+		in.MarketKeeper,
 		in.OracleKeeper,
-		authority.String(),
+		in.StakingKeeper,
 	)
 
 	m := NewAppModule(in.Cdc, k)
@@ -185,28 +196,27 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 
 // AppModuleSimulation functions
 
-// GenerateGenesisState creates a randomized GenState of the distribution module.
+// GenerateGenesisState creates a randomized GenState of the market module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simulation.RandomizedGenState(simState)
 }
 
-// ProposalContents returns all the distribution content functions used to
-// simulate governance proposals.
-func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedProposalContent {
+// ProposalMsgsX returns msgs used for governance proposals for simulations.
+func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
+	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
+}
+
+// RegisterStoreDecoder registers a decoder for market module's types
+func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
+	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.k.Schema)
+}
+
+func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }
 
-// RandomizedParams creates randomized distribution param changes for the simulator.
-func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
-	return simulation.ParamChanges(r)
-}
-
-// RegisterStoreDecoder registers a decoder for distribution module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
-}
-
-// WeightedOperations returns the all the gov module operations with their respective weights.
-func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
-	return nil
+// WeightedOperationsX registers weighted market module operations for simulation.
+func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Registry) {
+	reg.Add(weights.Get("msg_swap", 100), simulation.MsgSwapFactory(am.k))
+	reg.Add(weights.Get("msg_swap_send", 100), simulation.MsgSwapSendFactory(am.k))
 }
