@@ -156,12 +156,12 @@ func (k Keeper) ComputeOracleRate(ctx context.Context, offerCoin sdk.DecCoin, as
 
 	offerRate, err := k.oracleKeeper.GetArkExchangeRate(ctx, offerCoin.Denom)
 	if err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrap(types.ErrNoEffectivePrice, offerCoin.Denom)
+		return sdk.DecCoin{}, sdkerrors.Wrapf(types.ErrNoEffectivePrice, "%s: %v", offerCoin.Denom, err)
 	}
 
 	askRate, err := k.oracleKeeper.GetArkExchangeRate(ctx, askDenom)
 	if err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrap(types.ErrNoEffectivePrice, askDenom)
+		return sdk.DecCoin{}, sdkerrors.Wrapf(types.ErrNoEffectivePrice, "%s: %v", askDenom, err)
 	}
 
 	retAmount := offerCoin.Amount.Mul(askRate).Quo(offerRate)

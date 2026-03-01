@@ -2,8 +2,10 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,11 +64,11 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 	// Compute Seigniorage Rewards
 	seigniorage, err := k.ComputeEpochSeigniorage(ctx)
 	if err != nil {
-		return fmt.Errorf("computing seigniroage: %w", err)
+		return fmt.Errorf("computing seigniorage: %w", err)
 	}
 	rewardWeight, err := k.RewardWeight.Get(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting reward weight: %w", err)
 	}
 	seigniorageRewardsAmt := rewardWeight.MulInt(seigniorage)
 	seigniorageRewards := sdk.DecCoins{sdk.NewDecCoinFromDec(core.MicroArkDenom, seigniorageRewardsAmt)}
@@ -79,14 +81,15 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 		TotalStakedArk:    totalStakedArk,
 	}
 	if err := k.EpochStates.Set(ctx, epoch, epochState); err != nil {
-		return err
+		return fmt.Errorf("setting epoch state: %w", err)
 	}
 
 	return nil
 }
 
 // sumIndicator returns the sum of the indicator over several epochs.
-// If current epoch < epochs, we return the best we can and return sumIndicator(currentEpoch)
+// If current epoch < epochs, we return the best we can and return sumIndicator(currentEpoch).
+// Missing epoch states are skipped gracefully (treated as zero contribution).
 // Return values are (taxRewardSum, seigniorageRewardSum, error)
 func (k Keeper) sumIndicator(ctx context.Context, epochs uint64) (math.LegacyDec, math.LegacyDec, error) {
 	taxRewardSum := math.LegacyZeroDec()
@@ -97,6 +100,9 @@ func (k Keeper) sumIndicator(ctx context.Context, epochs uint64) (math.LegacyDec
 	for j := uint64(0); j < n; j++ {
 		val, err := k.EpochStates.Get(ctx, curEpoch-j)
 		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				continue
+			}
 			return math.LegacyZeroDec(), math.LegacyZeroDec(), fmt.Errorf("getting epoch state: %w", err)
 		}
 		taxRewardSum = taxRewardSum.Add(val.TaxReward)
@@ -107,26 +113,33 @@ func (k Keeper) sumIndicator(ctx context.Context, epochs uint64) (math.LegacyDec
 }
 
 // rollingAverageIndicator returns the rolling average of the indicator over several epochs.
-// If current epoch < epochs, we return the best we can and return rollingAverageIndicator(currentEpoch)
+// If current epoch < epochs, we return the best we can and return rollingAverageIndicator(currentEpoch).
+// Missing epoch states are skipped and excluded from the denominator, so the average
+// reflects only epochs with actual data rather than being diluted by gaps.
 func (k Keeper) rollingAverageIndicator(ctx context.Context, epochs uint64) (math.LegacyDec, error) {
 	sum := math.LegacyZeroDec()
 	curEpoch := k.GetEpoch(ctx)
 
 	n := min(epochs, curEpoch+1)
+	var counted uint64
 	for j := uint64(0); j < n; j++ {
 		val, err := k.EpochStates.Get(ctx, curEpoch-j)
 		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				continue
+			}
 			return math.LegacyZeroDec(), fmt.Errorf("getting epoch state: %w", err)
 		}
+		counted++
 		if val.TaxReward.IsZero() || val.TotalStakedArk.IsZero() {
 			continue
 		}
 		sum = sum.Add(val.TaxReward.QuoInt(val.TotalStakedArk))
 	}
 
-	if n == 0 {
+	if counted == 0 {
 		return sum, nil
 	}
 
-	return sum.QuoInt64(int64(n)), nil
+	return sum.QuoInt64(int64(counted)), nil
 }

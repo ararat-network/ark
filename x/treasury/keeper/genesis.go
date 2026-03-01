@@ -1,8 +1,10 @@
 package keeper
 
 import (
+	"errors"
 	"fmt"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +33,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data *types.GenesisState) error {
 
 	// If EpochInitialIssuance is empty, we use current supply as epoch initial issuance
 	if data.EpochInitialIssuance.IsZero() {
-		k.RecordEpochInitialIssuance(ctx)
+		if err := k.RecordEpochInitialIssuance(ctx); err != nil {
+			return fmt.Errorf("recording epoch initial issuance: %w", err)
+		}
 	} else {
 		epochInitialIssuance := types.EpochInitialIssuance{Issuance: data.EpochInitialIssuance}
 		if err := k.EpochInitialIssuance.Set(ctx, epochInitialIssuance); err != nil {
@@ -103,6 +107,9 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) (*types.GenesisState, error) {
 		(e == curEpoch && core.IsPeriodLastBlock(ctx, core.BlocksPerWeek)); e++ {
 		epochState, err := k.EpochStates.Get(ctx, e)
 		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				continue
+			}
 			return nil, fmt.Errorf("getting epoch state %d: %w", e, err)
 		}
 		epochStates = append(epochStates, epochState)

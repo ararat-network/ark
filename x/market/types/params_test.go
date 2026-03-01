@@ -25,7 +25,7 @@ func TestValidateParams(t *testing.T) {
 
 	// Negative min stability spread
 	p = DefaultParams()
-	p.MinStabilitySpread = math.LegacyNewDec(-1)
+	p.MinStabilitySpread = math.LegacyNewDecWithPrec(-1, 2)
 	require.Error(t, p.Validate())
 
 	// Min stability spread > 1

@@ -16,8 +16,12 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("setting noah pool delta: %w", err)
 	}
 
-	// Lazily create the module account in the auth store if it doesn't exist yet.
-	k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
+	// check if the module account exists
+	moduleAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
+	if moduleAcc == nil {
+		return fmt.Errorf("%s module account has not been set", types.ModuleName)
+	}
+
 	return nil
 }
 

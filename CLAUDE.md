@@ -1,6 +1,6 @@
 ## Project Context
 
-This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. The market module is the first being ported, with additional modules to follow. The chain uses **cosmos-sdk v0.53.5** with depinject and `cosmossdk.io/*` packages.
+This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active modules: `x/market/`, `x/oracle/`, `x/treasury/`. The chain uses **cosmos-sdk v0.53.5** with depinject and `cosmossdk.io/*` packages.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
 - **Dependency injection**: depinject-based module wiring, not manual constructor calls
@@ -13,9 +13,20 @@ Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern pat
 - **Module registration**: depinject module.Manager patterns, not legacy AppModuleBasic
 
 Reference codebases:
-- **New chain**: `x/market/` (this repo)
+- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Upstream Cosmos SDK reference**: `../cosmos-sdk/`
+
+## Project Structure
+
+```
+x/market/       # DEX swap module (Luna ↔ stablecoins)
+x/oracle/       # Price oracle module (validator price voting)
+x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
+proto/noah/     # Proto definitions (market, treasury)
+api/noah/       # Pulsar-generated code (runtime only, never import in module code)
+app/            # App wiring, depinject config
+```
 
 ## Cosmos SDK Conventions
 
@@ -49,7 +60,7 @@ string field_name = N [
   (cosmos_proto.scalar)  = "cosmos.Dec",           // runtime: signing, textual rendering
   (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", // codegen: typed Go field
   (gogoproto.nullable)   = false,                  // codegen: value type, not pointer
-  (amino.dont_omitempty) = true                    // amino: always include in JSON (Params/Msg only)
+  (amino.dont_omitempty) = true                    // amino: always include in JSON (all nullable=false fields)
 ];
 ```
 
@@ -57,3 +68,5 @@ string field_name = N [
 
 - Always run `go build ./...` after making code changes to verify compilation
 - If proto/buf files are modified, also run the buf generation command and verify output
+- Run tests: `go test ./x/{module}/...` for a single module, or `go test ./...` for all
+- Run with verbose output: `go test -v ./x/{module}/...`

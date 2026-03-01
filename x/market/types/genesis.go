@@ -25,13 +25,13 @@ func DefaultGenesisState() *GenesisState {
 	}
 }
 
-// ValidateGenesis validates the provided market genesis state
-func ValidateGenesis(data *GenesisState) error {
-	if data.NoahPoolDelta.IsNil() {
+// Validate validates the provided market genesis state
+func (gs GenesisState) Validate() error {
+	if gs.NoahPoolDelta.IsNil() {
 		return fmt.Errorf("noah pool delta must not be nil")
 	}
 
-	return data.Params.Validate()
+	return gs.Params.Validate()
 }
 
 // GetGenesisStateFromAppState returns x/market GenesisState given raw application

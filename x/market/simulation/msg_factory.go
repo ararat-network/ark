@@ -3,8 +3,6 @@ package simulation
 import (
 	"context"
 
-	"cosmossdk.io/math"
-
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -96,11 +94,7 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 
 // randomDenomPairX picks a random offer/ask denom pair from available exchange rates.
 func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.SimulationReporter, k *keeper.Keeper) (offerDenom, askDenom string) {
-	var whitelist []string
-	k.oracleKeeper.IterateArkExchangeRates(ctx, func(denom string, _ math.LegacyDec) bool {
-		whitelist = append(whitelist, denom)
-		return false
-	})
+	whitelist := k.GetActiveDenoms(ctx)
 
 	if len(whitelist) == 0 {
 		reporter.Skip("no available exchange rates")

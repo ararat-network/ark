@@ -109,7 +109,9 @@ func (k Keeper) RecordEpochTaxProceeds(ctx context.Context, delta sdk.Coins) err
 	}
 	proceeds.TaxProceeds = proceeds.TaxProceeds.Add(delta...)
 
-	k.EpochTaxProceeds.Set(ctx, proceeds)
+	if err := k.EpochTaxProceeds.Set(ctx, proceeds); err != nil {
+		return fmt.Errorf("setting epoch tax proceeds: %w", err)
+	}
 	return nil
 }
 

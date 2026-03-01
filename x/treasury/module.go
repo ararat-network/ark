@@ -196,7 +196,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 
 // AppModuleSimulation functions
 
-// GenerateGenesisState creates a randomized GenState of the market module.
+// GenerateGenesisState creates a randomized GenState of the treasury module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simulation.RandomizedGenState(simState)
 }
@@ -206,17 +206,11 @@ func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
 }
 
-// RegisterStoreDecoder registers a decoder for market module's types
+// RegisterStoreDecoder registers a decoder for treasury module's types
 func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.k.Schema)
 }
 
 func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	return nil
-}
-
-// WeightedOperationsX registers weighted market module operations for simulation.
-func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Registry) {
-	reg.Add(weights.Get("msg_swap", 100), simulation.MsgSwapFactory(am.k))
-	reg.Add(weights.Get("msg_swap_send", 100), simulation.MsgSwapSendFactory(am.k))
 }

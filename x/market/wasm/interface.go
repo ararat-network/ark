@@ -6,6 +6,7 @@ import (
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 
 	sdkerrors "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
@@ -49,10 +50,25 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 
 	if sdkMsg.Swap != nil {
 		sdkMsg.Swap.Trader = contractAddr.String()
-		return sdkMsg.Swap, sdkMsg.Swap.ValidateBasic()
+		if sdkMsg.Swap.OfferCoin.Amount.LTE(math.ZeroInt()) || sdkMsg.Swap.OfferCoin.Amount.BigInt().BitLen() > 100 {
+			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, sdkMsg.Swap.OfferCoin.String())
+		}
+		if sdkMsg.Swap.OfferCoin.Denom == sdkMsg.Swap.AskDenom {
+			return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, sdkMsg.Swap.AskDenom)
+		}
+		return sdkMsg.Swap, nil
 	} else if sdkMsg.SwapSend != nil {
 		sdkMsg.SwapSend.FromAddress = contractAddr.String()
-		return sdkMsg.SwapSend, sdkMsg.SwapSend.ValidateBasic()
+		if _, err := sdk.AccAddressFromBech32(sdkMsg.SwapSend.ToAddress); err != nil {
+			return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid to address (%s)", err)
+		}
+		if sdkMsg.SwapSend.OfferCoin.Amount.LTE(math.ZeroInt()) || sdkMsg.SwapSend.OfferCoin.Amount.BigInt().BitLen() > 100 {
+			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, sdkMsg.SwapSend.OfferCoin.String())
+		}
+		if sdkMsg.SwapSend.OfferCoin.Denom == sdkMsg.SwapSend.AskDenom {
+			return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, sdkMsg.SwapSend.AskDenom)
+		}
+		return sdkMsg.SwapSend, nil
 	}
 
 	return nil, sdkerrors.Wrap(wasm.ErrInvalidMsg, "Unknown variant of Market")
@@ -75,7 +91,7 @@ func (Querier) Query(_ sdk.Context, _ wasmvmtypes.QueryRequest) ([]byte, error) 
 
 // CosmosQuery only contains swap simulation
 type CosmosQuery struct {
-	Swap *types.QuerySwapParams `json:"swap,omitempty"`
+	Swap *types.QuerySwapRequest `json:"swap,omitempty"`
 }
 
 // SwapQueryResponse - swap simulation query response for wasm module
@@ -94,7 +110,7 @@ func (querier Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byt
 	q := keeper.NewQueryServerImpl(querier.k)
 	if params.Swap != nil {
 		res, err := q.Swap(ctx, &types.QuerySwapRequest{
-			OfferCoin: params.Swap.OfferCoin.String(),
+			OfferCoin: params.Swap.OfferCoin,
 			AskDenom:  params.Swap.AskDenom,
 		})
 		if err != nil {

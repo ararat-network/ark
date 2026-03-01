@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 // EndBlocker is called at the end of every block
-func (k Keeper) EndBlocker(ctx context.Context) error {
+func (k Keeper) EndBlocker(ctx context.Context) (err error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
 
 	// Check epoch last block
@@ -21,12 +22,19 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 		return nil
 	}
 
-	// Update luna issuance after finish all works
-	defer k.RecordEpochInitialIssuance(ctx)
+	// Record issuance after all epoch-end work completes, so the next epoch
+	// starts with an accurate snapshot. Uses errors.Join to surface deferred
+	// errors without masking any earlier error from the main body.
+	defer func() {
+		if deferErr := k.RecordEpochInitialIssuance(ctx); deferErr != nil {
+			err = errors.Join(err, fmt.Errorf("recording epoch initial issuance: %w", deferErr))
+		}
+	}()
 
 	// Compute & Update internal indicators for the current epoch
-	// TODO: make sure the linter catches this unhandled error and handle it
-	k.UpdateIndicators(ctx)
+	if err := k.UpdateIndicators(ctx); err != nil {
+		return fmt.Errorf("updating indicators: %w", err)
+	}
 
 	// Check probation period
 	params, err := k.Params.Get(ctx)
@@ -39,8 +47,9 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	}
 
 	// Settle seigniorage to oracle & distribution(community-pool) module-account
-	// TODO: error handling
-	k.SettleSeigniorage(ctx)
+	if err := k.SettleSeigniorage(ctx); err != nil {
+		return fmt.Errorf("settling seigniorage: %w", err)
+	}
 
 	// Update tax-rate and reward-weight of next epoch
 	taxRate, err := k.UpdateTaxPolicy(ctx)

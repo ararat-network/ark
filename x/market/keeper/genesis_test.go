@@ -19,7 +19,8 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	genesis := types.NewGenesisState(customDelta, customParams)
 
 	s.accountKeeper.EXPECT().GetModuleAccount(gomock.Any(), types.ModuleName).Return(nil).Times(1)
-	s.marketKeeper.InitGenesis(s.ctx, genesis)
+	err := s.marketKeeper.InitGenesis(s.ctx, genesis)
+	s.Require().NoError(err)
 
 	// Verify params
 	params, err := s.marketKeeper.Params.Get(s.ctx)
@@ -34,7 +35,8 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	s.Require().True(delta.Equal(customDelta))
 
 	// Export and verify round-trip
-	exported := s.marketKeeper.ExportGenesis(s.ctx)
+	exported, err := s.marketKeeper.ExportGenesis(s.ctx)
+	s.Require().NoError(err)
 	s.Require().True(genesis.NoahPoolDelta.Equal(exported.NoahPoolDelta))
 	s.Require().True(genesis.Params.BasePool.Equal(exported.Params.BasePool))
 	s.Require().Equal(genesis.Params.PoolRecoveryPeriod, exported.Params.PoolRecoveryPeriod)
@@ -45,7 +47,8 @@ func (s *KeeperTestSuite) TestDefaultGenesis() {
 	genesis := types.DefaultGenesisState()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(gomock.Any(), types.ModuleName).Return(nil).Times(1)
-	s.marketKeeper.InitGenesis(s.ctx, genesis)
+	err := s.marketKeeper.InitGenesis(s.ctx, genesis)
+	s.Require().NoError(err)
 
 	// Verify default params
 	params, err := s.marketKeeper.Params.Get(s.ctx)

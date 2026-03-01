@@ -8,28 +8,18 @@ import (
 	"cosmossdk.io/math"
 )
 
-func TestValidateGenesis(t *testing.T) {
-	// Default genesis should be valid
-	require.NoError(t, ValidateGenesis(DefaultGenesisState()))
+func TestValidateGenesisState(t *testing.T) {
+	genState := DefaultGenesisState()
+	require.NoError(t, genState.Validate())
 
-	// Invalid params: negative base pool
-	gen := DefaultGenesisState()
-	gen.Params.BasePool = math.LegacyNewDec(-1)
-	require.Error(t, ValidateGenesis(gen))
+	genState.Params.BasePool = math.LegacyNewDec(-1)
+	require.Error(t, genState.Validate())
 
-	// Invalid params: zero pool recovery period
-	gen = DefaultGenesisState()
-	gen.Params.PoolRecoveryPeriod = 0
-	require.Error(t, ValidateGenesis(gen))
-}
+	genState = DefaultGenesisState()
+	genState.Params.PoolRecoveryPeriod = 0
+	require.Error(t, genState.Validate())
 
-func TestNewGenesisState(t *testing.T) {
-	delta := math.LegacyNewDec(12345)
-	params := DefaultParams()
-
-	gen := NewGenesisState(delta, params)
-	require.True(t, delta.Equal(gen.NoahPoolDelta))
-	require.Equal(t, params.BasePool, gen.Params.BasePool)
-	require.Equal(t, params.PoolRecoveryPeriod, gen.Params.PoolRecoveryPeriod)
-	require.Equal(t, params.MinStabilitySpread, gen.Params.MinStabilitySpread)
+	genState = DefaultGenesisState()
+	genState.Params.MinStabilitySpread = math.LegacyNewDec(-1)
+	require.Error(t, genState.Validate())
 }
