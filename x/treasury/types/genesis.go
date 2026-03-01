@@ -44,18 +44,18 @@ func DefaultGenesisState() *GenesisState {
 	}
 }
 
-// ValidateGenesis validates the provided oracle genesis state to ensure the
+// Validate validates the provided oracle genesis state to ensure the
 // expected invariants holds. (i.e. params in correct bounds, no duplicate validators)
-func ValidateGenesis(data *GenesisState) error {
-	if data.TaxRate.LT(data.Params.TaxPolicy.RateMin) || data.TaxRate.GT(data.Params.TaxPolicy.RateMax) {
-		return fmt.Errorf("tax_rate must less than RateMax(%s) and bigger than RateMin(%s)", data.Params.TaxPolicy.RateMax, data.Params.TaxPolicy.RateMin)
+func (gs GenesisState) Validate() error {
+	if gs.TaxRate.LT(gs.Params.TaxPolicy.RateMin) || gs.TaxRate.GT(gs.Params.TaxPolicy.RateMax) {
+		return fmt.Errorf("tax_rate must less than RateMax(%s) and bigger than RateMin(%s)", gs.Params.TaxPolicy.RateMax, gs.Params.TaxPolicy.RateMin)
 	}
 
-	if data.RewardWeight.LT(data.Params.RewardPolicy.RateMin) || data.RewardWeight.GT(data.Params.RewardPolicy.RateMax) {
-		return fmt.Errorf("reward_weight must less than WeightMax(%s) and bigger than RateMin(%s)", data.Params.RewardPolicy.RateMax, data.Params.RewardPolicy.RateMin)
+	if gs.RewardWeight.LT(gs.Params.RewardPolicy.RateMin) || gs.RewardWeight.GT(gs.Params.RewardPolicy.RateMax) {
+		return fmt.Errorf("reward_weight must less than WeightMax(%s) and bigger than RateMin(%s)", gs.Params.RewardPolicy.RateMax, gs.Params.RewardPolicy.RateMin)
 	}
 
-	return data.Params.Validate()
+	return gs.Params.Validate()
 }
 
 // GetGenesisStateFromAppState returns x/treasury GenesisState given raw application
