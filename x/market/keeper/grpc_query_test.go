@@ -51,15 +51,25 @@ func (s *KeeperTestSuite) TestQuerySwap_RecursiveSwap() {
 		AskDenom:  "uusd",
 	})
 	s.Require().Error(err)
+	s.Require().ErrorContains(err, "recursive swap")
 }
 
-func (s *KeeperTestSuite) TestQuerySwap_InvalidDenom() {
-	// Empty offer coin should error
+func (s *KeeperTestSuite) TestQuerySwap_EmptyOfferCoin() {
 	_, err := s.queryClient.Swap(s.goCtx, &types.QuerySwapRequest{
 		OfferCoin: "",
 		AskDenom:  "ukrw",
 	})
 	s.Require().Error(err)
+	s.Require().ErrorContains(err, "invalid decimal coin expression")
+}
+
+func (s *KeeperTestSuite) TestQuerySwap_EmptyAskDenom() {
+	_, err := s.queryClient.Swap(s.goCtx, &types.QuerySwapRequest{
+		OfferCoin: "1000000uusd",
+		AskDenom:  "",
+	})
+	s.Require().Error(err)
+	s.Require().ErrorContains(err, "invalid ask denom")
 }
 
 func (s *KeeperTestSuite) TestQueryNoahPoolDelta() {

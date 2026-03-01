@@ -104,7 +104,7 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 
 	params, err := k.Params.Get(ctx)
 	if err != nil {
-		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("Getting params: %w", err)
+		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("getting params: %w", err)
 	}
 	basePool := params.BasePool
 	minSpread := params.MinStabilitySpread
@@ -113,7 +113,7 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	cp := basePool.Mul(basePool)
 	noahPoolDelta, err := k.NoahPoolDelta.Get(ctx)
 	if err != nil {
-		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("Getting NoahPoolDelta: %w", err)
+		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("getting NoahPoolDelta: %w", err)
 	}
 	noahPool := basePool.Add(noahPoolDelta)
 	arkPool := cp.Quo(noahPool)
