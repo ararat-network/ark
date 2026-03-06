@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # How to run manually:
 # docker build --pull --rm -f "contrib/devtools/Dockerfile" -t cosmossdk-proto:latest "contrib/devtools"
@@ -34,7 +34,5 @@ if [ -d "noah" ]; then
   cp -r noah/* ./
   rm -rf noah
 fi
-
-go mod tidy
 
 ./scripts/protocgen-pulsar.sh
