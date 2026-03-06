@@ -26,11 +26,14 @@ var (
 	}
 	DefaultSeigniorageBurdenTarget = math.LegacyNewDecWithPrec(67, 2)  // 67%
 	DefaultMiningIncrement         = math.LegacyNewDecWithPrec(107, 2) // 1.07 mining increment; exponential growth
-	DefaultWindowShort             = uint64(4)                         // a month
-	DefaultWindowLong              = uint64(52)                        // a year
-	DefaultWindowProbation         = uint64(12)                        // 3 month
 	DefaultTaxRate                 = math.LegacyNewDecWithPrec(1, 3)   // 0.1%
 	DefaultRewardWeight            = math.LegacyNewDecWithPrec(5, 2)   // 5%
+)
+
+const (
+	DefaultWindowShort     = uint64(4)  // a month
+	DefaultWindowLong      = uint64(52) // a year
+	DefaultWindowProbation = uint64(12) // 3 month
 )
 
 // DefaultParams creates default treasury module parameters

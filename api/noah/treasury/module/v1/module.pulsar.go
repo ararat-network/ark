@@ -14,14 +14,18 @@ import (
 )
 
 var (
-	md_Module           protoreflect.MessageDescriptor
-	fd_Module_authority protoreflect.FieldDescriptor
+	md_Module                       protoreflect.MessageDescriptor
+	fd_Module_authority             protoreflect.FieldDescriptor
+	fd_Module_reward_collector_name protoreflect.FieldDescriptor
+	fd_Module_distribution_name     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_treasury_module_v1_module_proto_init()
 	md_Module = File_noah_treasury_module_v1_module_proto.Messages().ByName("Module")
 	fd_Module_authority = md_Module.Fields().ByName("authority")
+	fd_Module_reward_collector_name = md_Module.Fields().ByName("reward_collector_name")
+	fd_Module_distribution_name = md_Module.Fields().ByName("distribution_name")
 }
 
 var _ protoreflect.Message = (*fastReflection_Module)(nil)
@@ -95,6 +99,18 @@ func (x *fastReflection_Module) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
+	if x.RewardCollectorName != "" {
+		value := protoreflect.ValueOfString(x.RewardCollectorName)
+		if !f(fd_Module_reward_collector_name, value) {
+			return
+		}
+	}
+	if x.DistributionName != "" {
+		value := protoreflect.ValueOfString(x.DistributionName)
+		if !f(fd_Module_distribution_name, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -112,6 +128,10 @@ func (x *fastReflection_Module) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	case "noah.treasury.module.v1.Module.authority":
 		return x.Authority != ""
+	case "noah.treasury.module.v1.Module.reward_collector_name":
+		return x.RewardCollectorName != ""
+	case "noah.treasury.module.v1.Module.distribution_name":
+		return x.DistributionName != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.module.v1.Module"))
@@ -130,6 +150,10 @@ func (x *fastReflection_Module) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "noah.treasury.module.v1.Module.authority":
 		x.Authority = ""
+	case "noah.treasury.module.v1.Module.reward_collector_name":
+		x.RewardCollectorName = ""
+	case "noah.treasury.module.v1.Module.distribution_name":
+		x.DistributionName = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.module.v1.Module"))
@@ -148,6 +172,12 @@ func (x *fastReflection_Module) Get(descriptor protoreflect.FieldDescriptor) pro
 	switch descriptor.FullName() {
 	case "noah.treasury.module.v1.Module.authority":
 		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "noah.treasury.module.v1.Module.reward_collector_name":
+		value := x.RewardCollectorName
+		return protoreflect.ValueOfString(value)
+	case "noah.treasury.module.v1.Module.distribution_name":
+		value := x.DistributionName
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
@@ -171,6 +201,10 @@ func (x *fastReflection_Module) Set(fd protoreflect.FieldDescriptor, value proto
 	switch fd.FullName() {
 	case "noah.treasury.module.v1.Module.authority":
 		x.Authority = value.Interface().(string)
+	case "noah.treasury.module.v1.Module.reward_collector_name":
+		x.RewardCollectorName = value.Interface().(string)
+	case "noah.treasury.module.v1.Module.distribution_name":
+		x.DistributionName = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.module.v1.Module"))
@@ -193,6 +227,10 @@ func (x *fastReflection_Module) Mutable(fd protoreflect.FieldDescriptor) protore
 	switch fd.FullName() {
 	case "noah.treasury.module.v1.Module.authority":
 		panic(fmt.Errorf("field authority of message noah.treasury.module.v1.Module is not mutable"))
+	case "noah.treasury.module.v1.Module.reward_collector_name":
+		panic(fmt.Errorf("field reward_collector_name of message noah.treasury.module.v1.Module is not mutable"))
+	case "noah.treasury.module.v1.Module.distribution_name":
+		panic(fmt.Errorf("field distribution_name of message noah.treasury.module.v1.Module is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.treasury.module.v1.Module"))
@@ -207,6 +245,10 @@ func (x *fastReflection_Module) Mutable(fd protoreflect.FieldDescriptor) protore
 func (x *fastReflection_Module) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "noah.treasury.module.v1.Module.authority":
+		return protoreflect.ValueOfString("")
+	case "noah.treasury.module.v1.Module.reward_collector_name":
+		return protoreflect.ValueOfString("")
+	case "noah.treasury.module.v1.Module.distribution_name":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -281,6 +323,14 @@ func (x *fastReflection_Module) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		l = len(x.RewardCollectorName)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.DistributionName)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -309,6 +359,20 @@ func (x *fastReflection_Module) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.DistributionName) > 0 {
+			i -= len(x.DistributionName)
+			copy(dAtA[i:], x.DistributionName)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DistributionName)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.RewardCollectorName) > 0 {
+			i -= len(x.RewardCollectorName)
+			copy(dAtA[i:], x.RewardCollectorName)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RewardCollectorName)))
+			i--
+			dAtA[i] = 0x12
 		}
 		if len(x.Authority) > 0 {
 			i -= len(x.Authority)
@@ -398,6 +462,70 @@ func (x *fastReflection_Module) ProtoMethods() *protoiface.Methods {
 				}
 				x.Authority = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardCollectorName", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.RewardCollectorName = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DistributionName", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.DistributionName = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -455,6 +583,13 @@ type Module struct {
 	// authority defines the custom module authority. If not set, defaults to the
 	// governance module.
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// reward_collector_name defines the module account name to which
+	// seigniorage reward is sent. If not set, defaults to "oracle".
+	RewardCollectorName string `protobuf:"bytes,2,opt,name=reward_collector_name,json=rewardCollectorName,proto3" json:"reward_collector_name,omitempty"`
+	// distribution_name defines the module account name to
+	// which the community pool remainder is sent. If not set, defaults to
+	// "distribution".
+	DistributionName string `protobuf:"bytes,3,opt,name=distribution_name,json=distributionName,proto3" json:"distribution_name,omitempty"`
 }
 
 func (x *Module) Reset() {
@@ -484,6 +619,20 @@ func (x *Module) GetAuthority() string {
 	return ""
 }
 
+func (x *Module) GetRewardCollectorName() string {
+	if x != nil {
+		return x.RewardCollectorName
+	}
+	return ""
+}
+
+func (x *Module) GetDistributionName() string {
+	if x != nil {
+		return x.DistributionName
+	}
+	return ""
+}
+
 var File_noah_treasury_module_v1_module_proto protoreflect.FileDescriptor
 
 var file_noah_treasury_module_v1_module_proto_rawDesc = []byte{
@@ -493,25 +642,31 @@ var file_noah_treasury_module_v1_module_proto_rawDesc = []byte{
 	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x1a,
 	0x20, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x61, 0x70, 0x70, 0x2f, 0x76, 0x31, 0x61, 0x6c,
 	0x70, 0x68, 0x61, 0x31, 0x2f, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0x3f, 0x0a, 0x06, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x61,
-	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
-	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x3a, 0x17, 0xba, 0xc0, 0x96, 0xda, 0x01,
-	0x11, 0x0a, 0x0f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x78, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x42, 0xd4, 0x01, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e,
-	0x76, 0x31, 0x42, 0x0b, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
-	0x01, 0x5a, 0x29, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f, 0x61, 0x68,
-	0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
-	0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4e,
-	0x54, 0x4d, 0xaa, 0x02, 0x17, 0x4e, 0x6f, 0x61, 0x68, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x17, 0x4e,
-	0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x4d, 0x6f, 0x64,
-	0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x23, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1a, 0x4e,
-	0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x4d,
-	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x6f, 0x22, 0xa0, 0x01, 0x0a, 0x06, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x12, 0x1c, 0x0a, 0x09,
+	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x32, 0x0a, 0x15, 0x72, 0x65,
+	0x77, 0x61, 0x72, 0x64, 0x5f, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x5f, 0x6e,
+	0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x13, 0x72, 0x65, 0x77, 0x61, 0x72,
+	0x64, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x2b,
+	0x0a, 0x11, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6e,
+	0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x64, 0x69, 0x73, 0x74, 0x72,
+	0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x3a, 0x17, 0xba, 0xc0, 0x96,
+	0xda, 0x01, 0x11, 0x0a, 0x0f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x78, 0x2f, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x42, 0xd4, 0x01, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x6e, 0x6f, 0x61,
+	0x68, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c,
+	0x65, 0x2e, 0x76, 0x31, 0x42, 0x0b, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x72, 0x6f, 0x74,
+	0x6f, 0x50, 0x01, 0x5a, 0x29, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f,
+	0x61, 0x68, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x6d, 0x6f, 0x64, 0x75,
+	0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02,
+	0x03, 0x4e, 0x54, 0x4d, 0xaa, 0x02, 0x17, 0x4e, 0x6f, 0x61, 0x68, 0x2e, 0x54, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02,
+	0x17, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x4d,
+	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x23, 0x4e, 0x6f, 0x61, 0x68, 0x5c,
+	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c,
+	0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
+	0x1a, 0x4e, 0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a,
+	0x3a, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (

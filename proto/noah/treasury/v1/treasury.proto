@@ -10,6 +10,7 @@ option go_package = "noah/x/treasury/types";
 
 // Params defines the parameters for the treasury module.
 message Params {
+  option (gogoproto.equal) = true;
   option (amino.name) = "noah/x/treasury/Params";
 
   PolicyConstraints tax_policy = 1
@@ -36,6 +37,8 @@ message Params {
 // PolicyConstraints - defines policy constraints can be applied in tax & reward
 // policies
 message PolicyConstraints {
+  option (gogoproto.equal) = true;
+
   string rate_min = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

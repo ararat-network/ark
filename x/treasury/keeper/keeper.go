@@ -18,11 +18,11 @@ import (
 
 // Keeper of the treasury store
 type Keeper struct {
-	cdc                    codec.BinaryCodec
-	storeService           store.KVStoreService
-	authority              string
-	oracleModuleName       string
-	distributionModuleName string
+	cdc                 codec.BinaryCodec
+	storeService        store.KVStoreService
+	authority           string
+	rewardCollectorName string
+	distrName           string
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
@@ -46,8 +46,8 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
 	authority string,
-	oracleModuleName string,
-	distributionModuleName string,
+	rewardCollectorName string,
+	distrName string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	distrKeeper types.DistributionKeeper,
@@ -62,24 +62,61 @@ func NewKeeper(
 
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:                    cdc,
-		storeService:           storeService,
-		authority:              authority,
-		distributionModuleName: distributionModuleName,
-		oracleModuleName:       oracleModuleName,
-		accountKeeper:          accountKeeper,
-		bankKeeper:             bankKeeper,
-		distrKeeper:            distrKeeper,
-		marketKeeper:           marketKeeper,
-		oracleKeeper:           oracleKeeper,
-		stakingKeeper:          stakingKeeper,
-		Params:                 collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
-		TaxRate:                collections.NewItem(sb, types.TaxRateKey, "tax_rate", sdk.LegacyDecValue),
-		RewardWeight:           collections.NewItem(sb, types.RewardWeightKey, "reward_weight", sdk.LegacyDecValue),
-		TaxCaps:                collections.NewMap(sb, types.TaxCapsKey, "tax_caps", collections.StringKey, sdk.IntValue),
-		EpochTaxProceeds:       collections.NewItem(sb, types.EpochTaxProceedsKey, "epoch_tax_proceeds", codec.CollValue[types.EpochTaxProceeds](cdc)),
-		EpochInitialIssuance:   collections.NewItem(sb, types.EpochInitialIssuanceKey, "epoch_initial_issuance", codec.CollValue[types.EpochInitialIssuance](cdc)),
-		EpochStates:            collections.NewMap(sb, types.EpochStatesKey, "epoch_states", collections.Uint64Key, codec.CollValue[types.EpochState](cdc)),
+		cdc:                 cdc,
+		storeService:        storeService,
+		authority:           authority,
+		rewardCollectorName: rewardCollectorName,
+		distrName:           distrName,
+		accountKeeper:       accountKeeper,
+		bankKeeper:          bankKeeper,
+		distrKeeper:         distrKeeper,
+		marketKeeper:        marketKeeper,
+		oracleKeeper:        oracleKeeper,
+		stakingKeeper:       stakingKeeper,
+		Params: collections.NewItem(
+			sb,
+			types.ParamsKey,
+			"params",
+			codec.CollValue[types.Params](cdc),
+		),
+		TaxRate: collections.NewItem(
+			sb,
+			types.TaxRateKey,
+			"tax_rate",
+			sdk.LegacyDecValue,
+		),
+		RewardWeight: collections.NewItem(
+			sb,
+			types.RewardWeightKey,
+			"reward_weight",
+			sdk.LegacyDecValue,
+		),
+		TaxCaps: collections.NewMap(
+			sb,
+			types.TaxCapsKey,
+			"tax_caps",
+			collections.StringKey,
+			sdk.IntValue,
+		),
+		EpochTaxProceeds: collections.NewItem(
+			sb,
+			types.EpochTaxProceedsKey,
+			"epoch_tax_proceeds",
+			codec.CollValue[types.EpochTaxProceeds](cdc),
+		),
+		EpochInitialIssuance: collections.NewItem(
+			sb,
+			types.EpochInitialIssuanceKey,
+			"epoch_initial_issuance",
+			codec.CollValue[types.EpochInitialIssuance](cdc),
+		),
+		EpochStates: collections.NewMap(
+			sb,
+			types.EpochStatesKey,
+			"epoch_states",
+			collections.Uint64Key,
+			codec.CollValue[types.EpochState](cdc),
+		),
 	}
 
 	schema, err := sb.Build()

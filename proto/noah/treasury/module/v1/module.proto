@@ -13,4 +13,13 @@ message Module {
   // authority defines the custom module authority. If not set, defaults to the
   // governance module.
   string authority = 1;
+
+  // reward_collector_name defines the module account name to which
+  // seigniorage reward is sent. If not set, defaults to "oracle".
+  string reward_collector_name = 2;
+
+  // distribution_name defines the module account name to
+  // which the community pool remainder is sent. If not set, defaults to
+  // "distribution".
+  string distribution_name = 3;
 }

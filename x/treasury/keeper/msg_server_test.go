@@ -45,13 +45,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	// Verify params were updated
 	params, err := s.treasuryKeeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(newParams.TaxPolicy.RateMax.Equal(params.TaxPolicy.RateMax))
-	s.Require().True(newParams.RewardPolicy.RateMax.Equal(params.RewardPolicy.RateMax))
-	s.Require().True(newParams.SeigniorageBurdenTarget.Equal(params.SeigniorageBurdenTarget))
-	s.Require().True(newParams.MiningIncrement.Equal(params.MiningIncrement))
-	s.Require().Equal(newParams.WindowShort, params.WindowShort)
-	s.Require().Equal(newParams.WindowLong, params.WindowLong)
-	s.Require().Equal(newParams.WindowProbation, params.WindowProbation)
+	s.Require().Equal(newParams, params)
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParams_InvalidAuthority() {

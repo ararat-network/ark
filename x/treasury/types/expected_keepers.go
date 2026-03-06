@@ -47,6 +47,6 @@ type OracleKeeper interface {
 	Whitelist(ctx context.Context) (res oracletypes.DenomList)
 
 	// only used for test purpose
-	SetLunaExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec)
+	SetArkExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec)
 	SetWhitelist(ctx context.Context, whitelist oracletypes.DenomList)
 }

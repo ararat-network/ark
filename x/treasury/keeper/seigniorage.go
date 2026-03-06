@@ -46,7 +46,12 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 	oracleRewardAmt := rewardWeight.MulInt(seigniorageAmt).TruncateInt()
 	if oracleRewardAmt.IsPositive() {
 		oracleRewardCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, oracleRewardAmt))
-		if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.oracleModuleName, oracleRewardCoins); err != nil {
+		if err := k.bankKeeper.SendCoinsFromModuleToModule(
+			ctx,
+			types.ModuleName,
+			k.rewardCollectorName,
+			oracleRewardCoins,
+		); err != nil {
 			return fmt.Errorf("sending oracle reward: %w", err)
 		}
 	}
@@ -58,7 +63,7 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			types.ModuleName,
-			k.distributionModuleName,
+			k.distrName,
 			leftCoins,
 		); err != nil {
 			return fmt.Errorf("sending community pool funds: %w", err)

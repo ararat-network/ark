@@ -175,12 +175,22 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
 
+	rewardCollectorName := in.Config.RewardCollectorName
+	if rewardCollectorName == "" {
+		rewardCollectorName = oracletypes.ModuleName
+	}
+
+	distrName := in.Config.DistributionName
+	if distrName == "" {
+		distrName = distrtypes.ModuleName
+	}
+
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
 		authority.String(),
-		oracletypes.ModuleName,
-		distrtypes.ModuleName,
+		rewardCollectorName,
+		distrName,
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.DistributionKeeper,
@@ -193,6 +203,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 
 	return ModuleOutputs{TreasuryKeeper: k, Module: m}
 }
+
+// ____________________________________________________________________________
 
 // AppModuleSimulation functions
 

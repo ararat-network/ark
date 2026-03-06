@@ -317,16 +317,16 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// SetLunaExchangeRate mocks base method.
-func (m *MockOracleKeeper) SetLunaExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) {
+// SetArkExchangeRate mocks base method.
+func (m *MockOracleKeeper) SetArkExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLunaExchangeRate", ctx, denom, exchangeRate)
+	m.ctrl.Call(m, "SetArkExchangeRate", ctx, denom, exchangeRate)
 }
 
-// SetLunaExchangeRate indicates an expected call of SetLunaExchangeRate.
-func (mr *MockOracleKeeperMockRecorder) SetLunaExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
+// SetArkExchangeRate indicates an expected call of SetArkExchangeRate.
+func (mr *MockOracleKeeperMockRecorder) SetArkExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLunaExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetLunaExchangeRate), ctx, denom, exchangeRate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetArkExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetArkExchangeRate), ctx, denom, exchangeRate)
 }
 
 // SetWhitelist mocks base method.
