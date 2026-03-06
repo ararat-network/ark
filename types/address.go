@@ -17,7 +17,7 @@ const (
 	Bech32PrefixConsPub = "noahvalconspub"
 )
 
-// AddressVerifier terra address verifier
+// AddressVerifier noah address verifier
 var AddressVerifier = func(bz []byte) error {
 	if n := len(bz); n != 20 {
 		return fmt.Errorf("incorrect address length %d", n)
