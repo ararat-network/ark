@@ -1,8 +1,6 @@
 syntax = "proto3";
 package noah.market.v1;
 
-option go_package = "noah/x/market/types";
-
 import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
@@ -10,6 +8,8 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "noah/market/v1/market.proto";
+
+option go_package = "noah/x/market/types";
 
 // Query defines the gRPC querier service.
 service Query {

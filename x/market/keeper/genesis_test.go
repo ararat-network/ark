@@ -25,9 +25,7 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	// Verify params
 	params, err := s.marketKeeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(customParams.BasePool.Equal(params.BasePool))
-	s.Require().Equal(customParams.PoolRecoveryPeriod, params.PoolRecoveryPeriod)
-	s.Require().True(customParams.MinStabilitySpread.Equal(params.MinStabilitySpread))
+	s.Require().Equal(customParams, params)
 
 	// Verify pool delta
 	delta, err := s.marketKeeper.NoahPoolDelta.Get(s.ctx)
@@ -38,9 +36,7 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	exported, err := s.marketKeeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(genesis.NoahPoolDelta.Equal(exported.NoahPoolDelta))
-	s.Require().True(genesis.Params.BasePool.Equal(exported.Params.BasePool))
-	s.Require().Equal(genesis.Params.PoolRecoveryPeriod, exported.Params.PoolRecoveryPeriod)
-	s.Require().True(genesis.Params.MinStabilitySpread.Equal(exported.Params.MinStabilitySpread))
+	s.Require().Equal(genesis.Params, exported.Params)
 }
 
 func (s *KeeperTestSuite) TestDefaultGenesis() {
@@ -53,9 +49,7 @@ func (s *KeeperTestSuite) TestDefaultGenesis() {
 	// Verify default params
 	params, err := s.marketKeeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(types.DefaultParams().BasePool.Equal(params.BasePool))
-	s.Require().Equal(types.DefaultParams().PoolRecoveryPeriod, params.PoolRecoveryPeriod)
-	s.Require().True(types.DefaultParams().MinStabilitySpread.Equal(params.MinStabilitySpread))
+	s.Require().Equal(types.DefaultParams(), params)
 
 	// Verify zero pool delta
 	delta, err := s.marketKeeper.NoahPoolDelta.Get(s.ctx)

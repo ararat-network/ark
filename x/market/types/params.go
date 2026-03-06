@@ -9,9 +9,13 @@ import (
 )
 
 // Default parameter values
+const (
+	DefaultPoolRecoveryPeriod = core.BlocksPerDay // 14,400
+)
+
+// Default parameter values
 var (
 	DefaultBasePool           = math.LegacyNewDec(1000000 * core.MicroUnit) // 1000,000sdr = 1000,000,000,000usdr
-	DefaultPoolRecoveryPeriod = core.BlocksPerDay                           // 14,400
 	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)             // 2%
 )
 

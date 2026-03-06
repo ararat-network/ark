@@ -51,8 +51,18 @@ func NewKeeper(
 		accountKeeper: accountKeeper,
 		bankKeeper:    bankKeeper,
 		oracleKeeper:  oracleKeeper,
-		Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
-		NoahPoolDelta: collections.NewItem(sb, types.NoahPoolDeltaKey, "noah_pool_delta", sdk.LegacyDecValue),
+		Params: collections.NewItem(
+			sb,
+			types.ParamsKey,
+			"params",
+			codec.CollValue[types.Params](cdc),
+		),
+		NoahPoolDelta: collections.NewItem(
+			sb,
+			types.NoahPoolDeltaKey,
+			"noah_pool_delta",
+			sdk.LegacyDecValue,
+		),
 	}
 
 	schema, err := sb.Build()

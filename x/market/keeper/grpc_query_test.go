@@ -17,9 +17,7 @@ func (s *KeeperTestSuite) TestQueryParams() {
 	// Compare with keeper state
 	params, err := s.marketKeeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(params.BasePool.Equal(res.Params.BasePool))
-	s.Require().Equal(params.PoolRecoveryPeriod, res.Params.PoolRecoveryPeriod)
-	s.Require().True(params.MinStabilitySpread.Equal(res.Params.MinStabilitySpread))
+	s.Require().Equal(params, res.Params)
 }
 
 func (s *KeeperTestSuite) TestQuerySwap() {

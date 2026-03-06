@@ -42,7 +42,7 @@ func GetCmdQuerySwap() *cobra.Command {
 		Long: strings.TrimSpace(`
 Query a quote for how many coins can be received in a swap operation. Note; rates are dynamic and can quickly change.
 
-$ terrad query swap 5000000uluna usdr
+$ noahd query swap 5000000uark usdr
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)

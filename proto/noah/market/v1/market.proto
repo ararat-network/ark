@@ -9,6 +9,7 @@ option go_package = "noah/x/market/types";
 
 // Params defines the parameters for the market module.
 message Params {
+  option (gogoproto.equal) = true;
   option (amino.name) = "noah/x/market/Params";
 
   string base_pool = 1 [

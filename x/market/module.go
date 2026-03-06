@@ -184,6 +184,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	return ModuleOutputs{MarketKeeper: k, Module: m}
 }
 
+// ____________________________________________________________________________
+
 // AppModuleSimulation functions
 
 // GenerateGenesisState creates a randomized GenState of the market module.

@@ -19,7 +19,7 @@ type queryServer struct {
 }
 
 func NewQueryServerImpl(k *Keeper) types.QueryServer {
-	return queryServer{k: k}
+	return &queryServer{k: k}
 }
 
 // Params queries params of market module

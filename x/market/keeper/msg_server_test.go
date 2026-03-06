@@ -255,9 +255,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	// Verify params were updated
 	params, err := s.marketKeeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(newParams.BasePool.Equal(params.BasePool))
-	s.Require().Equal(newParams.PoolRecoveryPeriod, params.PoolRecoveryPeriod)
-	s.Require().True(newParams.MinStabilitySpread.Equal(params.MinStabilitySpread))
+	s.Require().Equal(newParams, params)
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParams_InvalidAuthority() {
