@@ -11,6 +11,7 @@ import (
 	"noah/x/market/types"
 )
 
+// MsgSwapFactory generates random MsgSwap transactions by picking a denom pair and a funded sender.
 func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwap) {
 		r := testData.Rand()
@@ -38,6 +39,7 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 	}
 }
 
+// MsgSwapSendFactory generates random MsgSwapSend transactions, picking a denom pair, funded sender, and distinct receiver.
 func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSend] {
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwapSend) {
 		r := testData.Rand()
@@ -76,6 +78,7 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 	}
 }
 
+// MsgUpdateParamsFactory generates random MsgUpdateParams transactions with randomized market parameters.
 func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		r := testData.Rand()
