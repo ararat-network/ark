@@ -16,8 +16,8 @@ import (
 
 // GetEpoch returns current epoch of (current block height + cumulated block height of past chains)
 func (k Keeper) GetEpoch(ctx context.Context) uint64 {
-	sdkctx := sdk.UnwrapSDKContext(ctx)
-	return uint64(sdkctx.BlockHeight()) / core.BlocksPerWeek
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	return uint64(sdkCtx.BlockHeight()) / core.BlocksPerWeek
 }
 
 // Computes important economic indicators for the stability of Noah currencies.
