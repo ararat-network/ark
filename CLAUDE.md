@@ -70,6 +70,10 @@ When porting from Classic, always modernize:
 
 - Before running any `git push` commands, verify that a remote is configured with `git remote -v`
 - Never assume a remote exists
+- When asked to commit all changes, split them into multiple reasonably sized commits grouped by logical area (e.g., by
+  module, by concern like proto vs keeper vs tests). Never lump unrelated changes into a single giant commit.
+- Every commit message must be detailed: a concise subject line, followed by a body explaining what changed and why.
+- Do NOT add Co-Authored-By lines to commit messages.
 
 ## General Rules
 
