@@ -30,7 +30,7 @@ func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.Weig
 
 // WeightedOperationsX registers weighted market module operations for simulation.
 func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Registry) {
-	reg.Add(weights.Get("msg_aggregate_exchange_rate_prevote", 200), simulation.MsgAggregateExchangeRatePrevoteFactory(am.k))
-	reg.Add(weights.Get("msg_aggregate_exchange_rate_vote", 200), simulation.MsgAggregateExchangeRateVoteFactory(am.k))
+	reg.Add(weights.Get("msg_aggregate_exchange_rate_prevote", 100), simulation.MsgAggregateExchangeRatePrevoteFactory(am.k))
+	reg.Add(weights.Get("msg_aggregate_exchange_rate_vote", 100), simulation.MsgAggregateExchangeRateVoteFactory(am.k))
 	reg.Add(weights.Get("msg_delegate_feed_consent", 50), simulation.MsgDelegateFeedConsentFactory(am.k))
 }

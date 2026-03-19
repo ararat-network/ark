@@ -2,94 +2,166 @@ package simulation
 
 import (
 	"context"
+	"strings"
+
+	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	core "noah/types"
 	"noah/x/oracle/keeper"
 	"noah/x/oracle/types"
 )
 
-// MsgAggregateExchangeRatePrevote
-func MsgAggregateExchangeRatePrevote(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgAggregateExchangeRatePrevote] {
+const salt = "1234"
+
+var (
+	whitelist   = []string{core.MicroKRWDenom, core.MicroUSDDenom, core.MicroSDRDenom}
+	voteHashMap = make(map[string]string)
+)
+
+// MsgAggregateExchangeRatePrevoteFactory submits a hashed exchange rate prevote for a random bonded validator.
+func MsgAggregateExchangeRatePrevoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgAggregateExchangeRatePrevote] {
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgAggregateExchangeRatePrevote) {
 		r := testData.Rand()
-
-		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
-		if reporter.IsSkipped() {
+		validators, err := k.GetAllValidators(ctx)
+		if err != nil {
+			reporter.Skip(err.Error())
 			return nil, nil
 		}
 
-		sender := testData.AnyAccount(reporter, simsx.WithDenomBalance(offerDenom))
+		val := simsx.OneOf(r, validators)
+		if !val.IsBonded() {
+			reporter.Skip("validator is not bonded")
+			return nil, nil
+		}
+		addrBytes, err := k.ValidatorAddressCodec().StringToBytes(val.GetOperator())
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		valAddress := sdk.ValAddress(addrBytes)
+
+		exchangeRatesStr := ""
+		for _, denom := range whitelist {
+			price := math.LegacyNewDecWithPrec(int64(r.IntInRange(1, 10000)), 1)
+			exchangeRatesStr += price.String() + denom + ","
+		}
+		exchangeRatesStr = strings.TrimRight(exchangeRatesStr, ",")
+		voteHash := types.GetAggregateVoteHash(salt, exchangeRatesStr, valAddress)
+
+		feederAddr, err := k.GetFeederDelegation(ctx, valAddress)
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		feederAccount := testData.GetAccountbyAccAddr(reporter, feederAddr)
 		if reporter.IsSkipped() {
 			return nil, nil
 		}
+		voteHashMap[val.GetOperator()] = exchangeRatesStr
 
-		offerCoin := sender.LiquidBalance().RandSubsetCoin(reporter, offerDenom)
-		if reporter.IsSkipped() {
-			return nil, nil
-		}
-
-		return []simsx.SimAccount{sender}, &types.MsgAggregateExchangeRatePrevote{
-			Trader:    sender.AddressBech32,
-			OfferCoin: sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
-			AskDenom:  askDenom,
-		}
+		return []simsx.SimAccount{feederAccount}, types.NewMsgAggregateExchangeRatePrevote(voteHash, feederAddr, valAddress)
 	}
 }
 
-// MsgAggregateExchangeRateVote
-func MsgAggregateExchangeRateVote(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgAggregateExchangeRateVote] {
+// MsgAggregateExchangeRateVoteFactory reveals exchange rates for a validator that previously submitted a prevote.
+func MsgAggregateExchangeRateVoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgAggregateExchangeRateVote] {
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgAggregateExchangeRateVote) {
 		r := testData.Rand()
+		validators, err := k.GetAllValidators(ctx)
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
 
-		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
+		val := simsx.OneOf(r, validators)
+		if !val.IsBonded() {
+			reporter.Skip("validator is not bonded")
+			return nil, nil
+		}
+		addrBytes, err := k.ValidatorAddressCodec().StringToBytes(val.GetOperator())
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		valAddress := sdk.ValAddress(addrBytes)
+
+		// ensure vote hash exists
+		exchangeRatesStr, ok := voteHashMap[val.GetOperator()]
+		if !ok {
+			reporter.Skip("vote hash does not exist")
+			return nil, nil
+		}
+
+		// get prevote
+		prevote, err := k.AggregateExchangeRatePrevote.Get(ctx, valAddress)
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+
+		params, err := k.Params.Get(ctx)
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		if (uint64(sdkCtx.BlockHeight())/params.VotePeriod)-(prevote.SubmitBlock/params.VotePeriod) != 1 {
+			reporter.Skip("reveal period of submitted vote do not match with registered prevote")
+			return nil, nil
+		}
+
+		feederAddr, err := k.GetFeederDelegation(ctx, valAddress)
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		feederAccount := testData.GetAccountbyAccAddr(reporter, feederAddr)
 		if reporter.IsSkipped() {
 			return nil, nil
 		}
 
-		sender := testData.AnyAccount(reporter, simsx.WithDenomBalance(offerDenom))
-		if reporter.IsSkipped() {
-			return nil, nil
-		}
-
-		offerCoin := sender.LiquidBalance().RandSubsetCoin(reporter, offerDenom)
-		if reporter.IsSkipped() {
-			return nil, nil
-		}
-
-		return []simsx.SimAccount{sender}, &types.MsgAggregateExchangeRateVote{
-			Trader:    sender.AddressBech32,
-			OfferCoin: sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
-			AskDenom:  askDenom,
-		}
+		return []simsx.SimAccount{feederAccount}, types.NewMsgAggregateExchangeRateVote(salt, exchangeRatesStr, feederAddr, valAddress)
 	}
 }
 
-// MsgDelegateFeedConsent
-func MsgDelegateFeedConsent(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgDelegateFeedConsent] {
+// MsgDelegateFeedConsentFactory delegates oracle feeder authority from a validator to a non-validator account.
+func MsgDelegateFeedConsentFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgDelegateFeedConsent] {
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgDelegateFeedConsent) {
 		r := testData.Rand()
+		validators, err := k.GetAllValidators(ctx)
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
 
-		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
+		val := simsx.OneOf(r, validators)
+		if !val.IsBonded() {
+			reporter.Skip("validator is not bonded")
+			return nil, nil
+		}
+		addrBytes, err := k.ValidatorAddressCodec().StringToBytes(val.GetOperator())
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		valAccount := testData.GetAccountbyAccAddr(reporter, addrBytes)
+		if reporter.IsSkipped() {
+			return nil, nil
+		}
+		valAddress := sdk.ValAddress(addrBytes)
+		notValidator := simsx.SimAccountFilterFn(func(a simsx.SimAccount) bool {
+			val := k.Validator(ctx, sdk.ValAddress(a.Address))
+			return val == nil
+		})
+		delegateAccount := testData.AnyAccount(reporter, notValidator)
 		if reporter.IsSkipped() {
 			return nil, nil
 		}
 
-		sender := testData.AnyAccount(reporter, simsx.WithDenomBalance(offerDenom))
-		if reporter.IsSkipped() {
-			return nil, nil
-		}
-
-		offerCoin := sender.LiquidBalance().RandSubsetCoin(reporter, offerDenom)
-		if reporter.IsSkipped() {
-			return nil, nil
-		}
-
-		return []simsx.SimAccount{sender}, &types.MsgDelegateFeedConsent{
-			Trader:    sender.AddressBech32,
-			OfferCoin: sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
-			AskDenom:  askDenom,
-		}
+		return []simsx.SimAccount{valAccount}, types.NewMsgDelegateFeedConsent(valAddress, delegateAccount.Address)
 	}
 }
 

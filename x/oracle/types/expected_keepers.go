@@ -1,7 +1,7 @@
 package types
 
 import (
-	context "context"
+	"context"
 
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/store"
@@ -22,6 +22,9 @@ type StakingKeeper interface {
 	MaxValidators(context.Context) uint32                                          // MaxValidators returns the maximum amount of bonded validators
 	PowerReduction(ctx context.Context) (res math.Int)
 	ValidatorAddressCodec() address.Codec
+
+	// only used for simulation
+	GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error)
 }
 
 // DistributionKeeper is expected keeper for distribution module
@@ -41,7 +44,6 @@ type AccountKeeper interface {
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
 type BankKeeper interface {
-	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 	GetDenomMetaData(ctx context.Context, denom string) (banktypes.Metadata, bool)

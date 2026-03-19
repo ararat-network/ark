@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/collections"
 	collcodec "cosmossdk.io/collections/codec"
+	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/store"
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/log"
@@ -197,4 +198,18 @@ func (k Keeper) ValidateFeeder(ctx context.Context, feederAddr sdk.AccAddress, v
 	}
 
 	return nil
+}
+
+// These are light wrappers only used for simulation
+
+func (k Keeper) GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error) {
+	return k.stakingKeeper.GetAllValidators(ctx)
+}
+
+func (k Keeper) Validator(ctx context.Context, address sdk.ValAddress) stakingtypes.ValidatorI {
+	return k.stakingKeeper.Validator(ctx, address)
+}
+
+func (k Keeper) ValidatorAddressCodec() address.Codec {
+	return k.stakingKeeper.ValidatorAddressCodec()
 }
