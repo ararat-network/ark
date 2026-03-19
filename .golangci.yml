@@ -1,6 +1,5 @@
 version: "2"
 run:
-  tests: true
   allow-parallel-runners: true
 linters:
   default: none
@@ -39,11 +38,10 @@ linters:
         - G404 # weak random number generator — math/rand is fine for non-crypto
       confidence: medium
     misspell:
-      locale: US
+      locale: UK
     nolintlint:
       require-explanation: true
-      require-specific: false
-      allow-unused: false
+      require-specific: true
     revive:
       rules:
         - name: redefines-builtin-id
@@ -62,9 +60,6 @@ linters:
         - name: superfluous-else
         - name: unreachable-code
         - name: empty-block
-    staticcheck:
-      checks:
-        - all
     unused:
       local-variables-are-used: false
   exclusions:
@@ -75,17 +70,8 @@ linters:
       - std-error-handling
     rules:
       - linters:
-          - staticcheck
-        text: "ST1000:"
-      - linters:
           - revive
         text: "or be unexported"
-      - linters:
-          - staticcheck
-        text: "ST1003:"
-      - linters:
-          - staticcheck
-        text: "ST1016:"
       - linters:
           - staticcheck
         path: migrations
@@ -106,7 +92,6 @@ issues:
 formatters:
   enable:
     - gci
-    - gofumpt
   settings:
     gci:
       sections:
@@ -117,8 +102,6 @@ formatters:
         - prefix(github.com/cosmos/cosmos-sdk)
         - prefix(noah)
       custom-order: true
-    gofumpt:
-      extra-rules: true
   exclusions:
     generated: lax
     paths:
