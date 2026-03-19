@@ -40,8 +40,6 @@ func (s *KeeperTestSuite) setupNoahToNoahSwapMocks() {
 		Return(nil).AnyTimes()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).
 		Return(nil).AnyTimes()
-	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).
-		Return(nil).AnyTimes()
 }
 
 func (s *KeeperTestSuite) TestMsgSwap() {
