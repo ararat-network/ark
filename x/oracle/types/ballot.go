@@ -1,7 +1,7 @@
 package types
 
 import (
-	context "context"
+	"context"
 	"fmt"
 	stdMath "math"
 	"sort"
@@ -36,10 +36,10 @@ func NewVoteForTally(rate math.LegacyDec, denom string, voter sdk.ValAddress, po
 // ExchangeRateBallot is a convenience wrapper around a ExchangeRateVote slice
 type ExchangeRateBallot []VoteForTally
 
-// ToMap return organized exchange rate map by validator
-func (pb ExchangeRateBallot) ToMap() map[string]math.LegacyDec {
+// ToMap return organised exchange rate map by validator
+func (erb ExchangeRateBallot) ToMap() map[string]math.LegacyDec {
 	exchangeRateMap := make(map[string]math.LegacyDec)
-	for _, vote := range pb {
+	for _, vote := range erb {
 		if vote.ExchangeRate.IsPositive() {
 			exchangeRateMap[string(vote.Voter)] = vote.ExchangeRate
 		}
@@ -49,9 +49,9 @@ func (pb ExchangeRateBallot) ToMap() map[string]math.LegacyDec {
 }
 
 // ToCrossRate return cross_rate(base/exchange_rate) ballot
-func (pb ExchangeRateBallot) ToCrossRate(bases map[string]math.LegacyDec) (cb ExchangeRateBallot) {
-	for i := range pb {
-		vote := pb[i]
+func (erb ExchangeRateBallot) ToCrossRate(bases map[string]math.LegacyDec) (cb ExchangeRateBallot) {
+	for i := range erb {
+		vote := erb[i]
 
 		if exchangeRateRT, ok := bases[string(vote.Voter)]; ok && vote.ExchangeRate.IsPositive() {
 			vote.ExchangeRate = exchangeRateRT.Quo(vote.ExchangeRate)
@@ -68,9 +68,9 @@ func (pb ExchangeRateBallot) ToCrossRate(bases map[string]math.LegacyDec) (cb Ex
 }
 
 // ToCrossRateWithSort return cross_rate(base/exchange_rate) ballot
-func (pb ExchangeRateBallot) ToCrossRateWithSort(bases map[string]math.LegacyDec) (cb ExchangeRateBallot) {
-	for i := range pb {
-		vote := pb[i]
+func (erb ExchangeRateBallot) ToCrossRateWithSort(bases map[string]math.LegacyDec) (cb ExchangeRateBallot) {
+	for i := range erb {
+		vote := erb[i]
 
 		if exchangeRateRT, ok := bases[string(vote.Voter)]; ok && vote.ExchangeRate.IsPositive() {
 			vote.ExchangeRate = exchangeRateRT.Quo(vote.ExchangeRate)
@@ -88,9 +88,9 @@ func (pb ExchangeRateBallot) ToCrossRateWithSort(bases map[string]math.LegacyDec
 }
 
 // Power returns the total amount of voting power in the ballot
-func (pb ExchangeRateBallot) Power() int64 {
+func (erb ExchangeRateBallot) Power() int64 {
 	totalPower := int64(0)
-	for _, vote := range pb {
+	for _, vote := range erb {
 		totalPower += vote.Power
 	}
 
@@ -99,11 +99,11 @@ func (pb ExchangeRateBallot) Power() int64 {
 
 // WeightedMedian returns the median weighted by the power of the ExchangeRateVote.
 // CONTRACT: ballot must be sorted
-func (pb ExchangeRateBallot) WeightedMedian() math.LegacyDec {
-	totalPower := pb.Power()
-	if pb.Len() > 0 {
+func (erb ExchangeRateBallot) WeightedMedian() math.LegacyDec {
+	totalPower := erb.Power()
+	if erb.Len() > 0 {
 		pivot := int64(0)
-		for _, v := range pb {
+		for _, v := range erb {
 			votePower := v.Power
 
 			pivot += votePower
@@ -117,15 +117,15 @@ func (pb ExchangeRateBallot) WeightedMedian() math.LegacyDec {
 
 // WeightedMedianWithAssertion returns the median weighted by the power of the ExchangeRateVote.
 // CONTRACT: ballot must be sorted
-func (pb ExchangeRateBallot) WeightedMedianWithAssertion() math.LegacyDec {
-	if !sort.IsSorted(pb) {
+func (erb ExchangeRateBallot) WeightedMedianWithAssertion() math.LegacyDec {
+	if !sort.IsSorted(erb) {
 		panic("ballot must be sorted")
 	}
 
-	totalPower := pb.Power()
-	if pb.Len() > 0 {
+	totalPower := erb.Power()
+	if erb.Len() > 0 {
 		pivot := int64(0)
-		for _, v := range pb {
+		for _, v := range erb {
 			votePower := v.Power
 
 			pivot += votePower
@@ -138,8 +138,8 @@ func (pb ExchangeRateBallot) WeightedMedianWithAssertion() math.LegacyDec {
 }
 
 // StandardDeviation returns the standard deviation by the power of the ExchangeRateVote.
-func (pb ExchangeRateBallot) StandardDeviation(median math.LegacyDec) (standardDeviation math.LegacyDec) {
-	if len(pb) == 0 {
+func (erb ExchangeRateBallot) StandardDeviation(median math.LegacyDec) (standardDeviation math.LegacyDec) {
+	if len(erb) == 0 {
 		return math.LegacyZeroDec()
 	}
 
@@ -150,12 +150,12 @@ func (pb ExchangeRateBallot) StandardDeviation(median math.LegacyDec) (standardD
 	}()
 
 	sum := math.LegacyZeroDec()
-	for _, v := range pb {
+	for _, v := range erb {
 		deviation := v.ExchangeRate.Sub(median)
 		sum = sum.Add(deviation.Mul(deviation))
 	}
 
-	variance := sum.QuoInt64(int64(len(pb)))
+	variance := sum.QuoInt64(int64(len(erb)))
 
 	floatNum, _ := strconv.ParseFloat(variance.String(), 64)
 	floatNum = stdMath.Sqrt(floatNum)
@@ -165,42 +165,42 @@ func (pb ExchangeRateBallot) StandardDeviation(median math.LegacyDec) (standardD
 }
 
 // Len implements sort.Interface
-func (pb ExchangeRateBallot) Len() int {
-	return len(pb)
+func (erb ExchangeRateBallot) Len() int {
+	return len(erb)
 }
 
 // Less reports whether the element with
 // index i should sort before the element with index j.
-func (pb ExchangeRateBallot) Less(i, j int) bool {
-	return pb[i].ExchangeRate.LT(pb[j].ExchangeRate)
+func (erb ExchangeRateBallot) Less(i, j int) bool {
+	return erb[i].ExchangeRate.LT(erb[j].ExchangeRate)
 }
 
 // Swap implements sort.Interface.
-func (pb ExchangeRateBallot) Swap(i, j int) {
-	pb[i], pb[j] = pb[j], pb[i]
+func (erb ExchangeRateBallot) Swap(i, j int) {
+	erb[i], erb[j] = erb[j], erb[i]
 }
 
 // BallotIsPassing returns the total voting power of the ballot and whether it meets the
 // threshold required for the ballot to pass.
-func (pb ExchangeRateBallot) BallotIsPassing(thresholdVotes math.Int) (math.Int, bool) {
-	ballotPower := math.NewInt(pb.Power())
+func (erb ExchangeRateBallot) BallotIsPassing(thresholdVotes math.Int) (math.Int, bool) {
+	ballotPower := math.NewInt(erb.Power())
 	return ballotPower, !ballotPower.IsZero() && ballotPower.GTE(thresholdVotes)
 }
 
 // Tally calculates the median and returns it. Sets the set of voters to be rewarded, i.e. voted within
 // a reasonable spread from the weighted median to the store
-func (pb ExchangeRateBallot) Tally(ctx context.Context, rewardBand math.LegacyDec, validatorClaimMap map[string]Claim) (weightedMedian math.LegacyDec) {
-	sort.Sort(pb)
-	weightedMedian = pb.WeightedMedianWithAssertion()
+func (erb ExchangeRateBallot) Tally(ctx context.Context, rewardBand math.LegacyDec, validatorClaimMap map[string]Claim) (weightedMedian math.LegacyDec) {
+	sort.Sort(erb)
+	weightedMedian = erb.WeightedMedianWithAssertion()
 
-	standardDeviation := pb.StandardDeviation(weightedMedian)
+	standardDeviation := erb.StandardDeviation(weightedMedian)
 	rewardSpread := weightedMedian.Mul(rewardBand.QuoInt64(2))
 
 	if standardDeviation.GT(rewardSpread) {
 		rewardSpread = standardDeviation
 	}
 
-	for _, vote := range pb {
+	for _, vote := range erb {
 		// Filter ballot winners & abstain voters
 		if (vote.ExchangeRate.GTE(weightedMedian.Sub(rewardSpread)) &&
 			vote.ExchangeRate.LTE(weightedMedian.Add(rewardSpread))) ||
