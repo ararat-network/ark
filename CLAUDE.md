@@ -45,7 +45,6 @@ app/            # App wiring, depinject config
 When making code changes:
 
 - Always check the exact cosmos-sdk version in go.mod before suggesting imports or patterns
-- Use `cosmossdk.io/log` not `tendermint/libs/log`
 - **msgServer/queryServer pattern**: use named `k *Keeper` field + embed
   `UnimplementedMsgServer`/`UnimplementedQueryServer` in both. Query RPCs collide with public collection fields
   (`Params`, `TaxRate`, etc.); oracle msg RPCs also collide (`AggregateExchangeRatePrevote`). Named fields everywhere
@@ -65,6 +64,8 @@ When porting from Classic, always modernize:
 - `ValidateBasic()` on messages → remove; validate inline in msg_server handlers (no double address parsing)
 - `sdk.ValAddress.MustLengthPrefix()` store keys → use collections with typed address keys (`sdk.ValAddressKey`,
   `sdk.AccAddressKey`)
+- Cargo-culted methods on custom types (e.g., `Marshal`, `Unmarshal`, `MarshalJSON`, `Empty`, `Bytes`, `Format`) →
+  remove unless actually used. Classic copied these from `sdk.AccAddress` onto types like `AggregateVoteHash`.
 
 ## Git Workflow
 
@@ -129,3 +130,12 @@ string field_name = N [
 - Proto linting: `make proto-lint`
 - Run tests: `go test ./x/{module}/...` for a single module, or `go test ./...` for all
 - Run with verbose output: `go test -v ./x/{module}/...`
+
+## Testing Conventions
+
+- Types tests (`x/*/types/`): plain functions, not test suites. Test suites are for keeper tests only.
+- Use table-driven tests with `t.Run()` for all test cases
+- For params/genesis validation: use mutate pattern — start from `DefaultParams()`/`DefaultGenesisState()`, mutate one field per case
+- Test validation logic and parsing, not trivial constructors (field assignments with no logic)
+- Verify both error and boundary-valid cases (e.g., zero is valid for `[0, 1]` range checks)
+- Use British spelling for function names (e.g., `Randomised` not `Randomized`)
