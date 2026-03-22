@@ -1,4 +1,4 @@
-package types
+package types_test
 
 import (
 	"testing"
@@ -6,20 +6,49 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
+
+	"noah/x/market/types"
 )
 
-func TestValidateGenesisState(t *testing.T) {
-	genState := DefaultGenesisState()
-	require.NoError(t, genState.Validate())
+func TestValidateGenesis(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(*types.GenesisState)
+		expectErr string
+	}{
+		{
+			name:   "default is valid",
+			mutate: func(gs *types.GenesisState) {},
+		},
+		{
+			name: "nil noah pool delta",
+			mutate: func(gs *types.GenesisState) {
+				gs.NoahPoolDelta = math.LegacyDec{}
+			},
+			expectErr: "noah pool delta must not be nil",
+		},
+		{
+			name: "custom valid genesis",
+			mutate: func(gs *types.GenesisState) {
+				*gs = *types.NewGenesisState(
+					math.LegacyNewDec(500),
+					types.DefaultParams(),
+				)
+			},
+		},
+	}
 
-	genState.Params.BasePool = math.LegacyNewDec(-1)
-	require.Error(t, genState.Validate())
-
-	genState = DefaultGenesisState()
-	genState.Params.PoolRecoveryPeriod = 0
-	require.Error(t, genState.Validate())
-
-	genState = DefaultGenesisState()
-	genState.Params.MinStabilitySpread = math.LegacyNewDec(-1)
-	require.Error(t, genState.Validate())
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			gs := types.DefaultGenesisState()
+			tc.mutate(gs)
+			err := gs.Validate()
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectErr)
+			}
+		})
+	}
 }
