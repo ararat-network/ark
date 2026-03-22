@@ -48,11 +48,11 @@ func DefaultGenesisState() *GenesisState {
 // expected invariants holds. (i.e. params in correct bounds, no duplicate validators)
 func (gs GenesisState) Validate() error {
 	if gs.TaxRate.LT(gs.Params.TaxPolicy.RateMin) || gs.TaxRate.GT(gs.Params.TaxPolicy.RateMax) {
-		return fmt.Errorf("tax_rate must less than RateMax(%s) and bigger than RateMin(%s)", gs.Params.TaxPolicy.RateMax, gs.Params.TaxPolicy.RateMin)
+		return fmt.Errorf("tax_rate must be less than RateMax(%s) and greater than RateMin(%s)", gs.Params.TaxPolicy.RateMax, gs.Params.TaxPolicy.RateMin)
 	}
 
 	if gs.RewardWeight.LT(gs.Params.RewardPolicy.RateMin) || gs.RewardWeight.GT(gs.Params.RewardPolicy.RateMax) {
-		return fmt.Errorf("reward_weight must less than WeightMax(%s) and bigger than RateMin(%s)", gs.Params.RewardPolicy.RateMax, gs.Params.RewardPolicy.RateMin)
+		return fmt.Errorf("reward_weight must be less than WeightMax(%s) and greater than RateMin(%s)", gs.Params.RewardPolicy.RateMax, gs.Params.RewardPolicy.RateMin)
 	}
 
 	return gs.Params.Validate()

@@ -29,17 +29,17 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx             sdk.Context
-	goCtx           gocontext.Context
-	treasuryKeeper  *keeper.Keeper
-	msgServer       types.MsgServer
-	queryClient     types.QueryClient
-	accountKeeper   *treasurytestutil.MockAccountKeeper
-	bankKeeper      *treasurytestutil.MockBankKeeper
-	distrKeeper     *treasurytestutil.MockDistributionKeeper
-	marketKeeper    *treasurytestutil.MockMarketKeeper
-	oracleKeeper    *treasurytestutil.MockOracleKeeper
-	stakingKeeper   *treasurytestutil.MockStakingKeeper
+	ctx            sdk.Context
+	goCtx          gocontext.Context
+	treasuryKeeper *keeper.Keeper
+	msgServer      types.MsgServer
+	queryClient    types.QueryClient
+	accountKeeper  *treasurytestutil.MockAccountKeeper
+	bankKeeper     *treasurytestutil.MockBankKeeper
+	distrKeeper    *treasurytestutil.MockDistributionKeeper
+	marketKeeper   *treasurytestutil.MockMarketKeeper
+	oracleKeeper   *treasurytestutil.MockOracleKeeper
+	stakingKeeper  *treasurytestutil.MockStakingKeeper
 }
 
 func TestKeeperTestSuite(t *testing.T) {
