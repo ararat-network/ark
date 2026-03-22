@@ -21,23 +21,23 @@ const (
 	minStabilitySpreadKey = "min_spread"
 )
 
-// GenBasePool randomized BasePool
+// GenBasePool randomised BasePool
 func GenBasePool(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDec(50000000000000).Add(math.LegacyNewDec(int64(r.Intn(10000000000))))
 }
 
-// GenPoolRecoveryPeriod randomized PoolRecoveryPeriod
+// GenPoolRecoveryPeriod randomised PoolRecoveryPeriod
 func GenPoolRecoveryPeriod(r *rand.Rand) uint64 {
 	return uint64(100 + r.Intn(10000000000))
 }
 
-// GenMinSpread randomized MinSpread
+// GenMinSpread randomised MinSpread
 func GenMinSpread(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(1, 2).Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
 }
 
-// RandomizedGenState generates a random GenesisState for the market module
-func RandomizedGenState(simState *module.SimulationState) {
+// RandomisedGenState generates a random GenesisState for the market module
+func RandomisedGenState(simState *module.SimulationState) {
 	var basePool math.LegacyDec
 	simState.AppParams.GetOrGenerate(
 		basePoolKey,

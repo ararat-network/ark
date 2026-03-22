@@ -15,8 +15,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"noah/x/treasury/simulation"
-	"noah/x/treasury/types"
+	"noah/x/oracle/simulation"
+	"noah/x/oracle/types"
 )
 
 func TestRandomisedGenState(t *testing.T) {
@@ -39,30 +39,17 @@ func TestRandomisedGenState(t *testing.T) {
 
 	simulation.RandomisedGenState(&simState)
 
-	var treasuryGenesis types.GenesisState
-	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &treasuryGenesis)
+	var oracleGenesis types.GenesisState
+	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &oracleGenesis)
 
-	// Params
-	require.True(t, treasuryGenesis.Params.TaxPolicy.RateMin.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.TaxPolicy.RateMax.GT(treasuryGenesis.Params.TaxPolicy.RateMin))
-	require.True(t, treasuryGenesis.Params.TaxPolicy.ChangeRateMax.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.RewardPolicy.RateMin.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.RewardPolicy.RateMax.GT(treasuryGenesis.Params.RewardPolicy.RateMin))
-	require.True(t, treasuryGenesis.Params.RewardPolicy.ChangeRateMax.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.SeigniorageBurdenTarget.GTE(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.MiningIncrement.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.WindowShort > 0)
-	require.True(t, treasuryGenesis.Params.WindowLong > 0)
-	require.True(t, treasuryGenesis.Params.WindowProbation > 0)
-
-	// Initial rates match policy minimums
-	require.True(t, treasuryGenesis.TaxRate.Equal(treasuryGenesis.Params.TaxPolicy.RateMin))
-	require.True(t, treasuryGenesis.RewardWeight.Equal(treasuryGenesis.Params.RewardPolicy.RateMin))
-
-	// Empty initial state
-	require.Empty(t, treasuryGenesis.TaxCaps)
-	require.Empty(t, treasuryGenesis.EpochTaxProceeds)
-	require.Empty(t, treasuryGenesis.EpochStates)
+	require.True(t, oracleGenesis.Params.VotePeriod > 0)
+	require.True(t, oracleGenesis.Params.VoteThreshold.GT(math.LegacyNewDecWithPrec(33, 2)))
+	require.False(t, oracleGenesis.Params.RewardBand.IsNegative())
+	require.True(t, oracleGenesis.Params.RewardDistributionWindow >= 100)
+	require.False(t, oracleGenesis.Params.SlashFraction.IsNegative())
+	require.True(t, oracleGenesis.Params.SlashWindow >= 100)
+	require.False(t, oracleGenesis.Params.MinValidPerWindow.IsNegative())
+	require.NotEmpty(t, oracleGenesis.Params.Whitelist)
 }
 
 func TestRandomisedGenState_InvalidSimState(t *testing.T) {

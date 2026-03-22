@@ -9,9 +9,9 @@ import (
 	"noah/x/treasury/types"
 )
 
-// GenerateGenesisState creates a randomized GenState of the treasury module.
+// GenerateGenesisState creates a randomised GenState of the treasury module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
-	simulation.RandomizedGenState(simState)
+	simulation.RandomisedGenState(simState)
 }
 
 // ProposalMsgsX returns msgs used for governance proposals for simulations.

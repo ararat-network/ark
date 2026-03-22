@@ -26,43 +26,43 @@ const (
 	minValidPerWindowKey        = "min_valid_per_window"
 )
 
-// GenVotePeriod randomized VotePeriod
+// GenVotePeriod randomised VotePeriod
 func GenVotePeriod(r *rand.Rand) uint64 {
 	return uint64(1 + r.Intn(100))
 }
 
-// GenVoteThreshold randomized VoteThreshold
+// GenVoteThreshold randomised VoteThreshold
 func GenVoteThreshold(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(333, 3).Add(math.LegacyNewDecWithPrec(int64(r.Intn(333)), 3))
 }
 
-// GenRewardBand randomized RewardBand
+// GenRewardBand randomised RewardBand
 func GenRewardBand(r *rand.Rand) math.LegacyDec {
 	return math.LegacyZeroDec().Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
 }
 
-// GenRewardDistributionWindow randomized RewardDistributionWindow
+// GenRewardDistributionWindow randomised RewardDistributionWindow
 func GenRewardDistributionWindow(r *rand.Rand) uint64 {
 	return uint64(100 + r.Intn(100000))
 }
 
-// GenSlashFraction randomized SlashFraction
+// GenSlashFraction randomised SlashFraction
 func GenSlashFraction(r *rand.Rand) math.LegacyDec {
 	return math.LegacyZeroDec().Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
 }
 
-// GenSlashWindow randomized SlashWindow
+// GenSlashWindow randomised SlashWindow
 func GenSlashWindow(r *rand.Rand) uint64 {
 	return uint64(100 + r.Intn(100000))
 }
 
-// GenMinValidPerWindow randomized MinValidPerWindow
+// GenMinValidPerWindow randomised MinValidPerWindow
 func GenMinValidPerWindow(r *rand.Rand) math.LegacyDec {
 	return math.LegacyZeroDec().Add(math.LegacyNewDecWithPrec(int64(r.Intn(500)), 3))
 }
 
-// RandomizedGenState generates a random GenesisState for oracle
-func RandomizedGenState(simState *module.SimulationState) {
+// RandomisedGenState generates a random GenesisState for oracle
+func RandomisedGenState(simState *module.SimulationState) {
 	var votePeriod uint64
 	simState.AppParams.GetOrGenerate(
 		votePeriodKey, &votePeriod, simState.Rand,

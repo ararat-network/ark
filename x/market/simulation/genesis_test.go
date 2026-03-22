@@ -19,7 +19,7 @@ import (
 	"noah/x/market/types"
 )
 
-func TestRandomizedGenState(t *testing.T) {
+func TestRandomisedGenState(t *testing.T) {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 
@@ -37,7 +37,7 @@ func TestRandomizedGenState(t *testing.T) {
 		GenState:     make(map[string]json.RawMessage),
 	}
 
-	simulation.RandomizedGenState(&simState)
+	simulation.RandomisedGenState(&simState)
 
 	var marketGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &marketGenesis)
@@ -48,7 +48,7 @@ func TestRandomizedGenState(t *testing.T) {
 	require.True(t, marketGenesis.NoahPoolDelta.IsZero())
 }
 
-func TestRandomizedGenState_InvalidSimState(t *testing.T) {
+func TestRandomisedGenState_InvalidSimState(t *testing.T) {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 
@@ -70,6 +70,6 @@ func TestRandomizedGenState_InvalidSimState(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		require.Panicsf(t, func() { simulation.RandomizedGenState(&tt.simState) }, tt.panicMsg)
+		require.Panicsf(t, func() { simulation.RandomisedGenState(&tt.simState) }, tt.panicMsg)
 	}
 }

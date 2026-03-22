@@ -27,7 +27,7 @@ const (
 	windowProbationKey         = "window_probation"
 )
 
-// GenTaxPolicy randomized TaxPolicy
+// GenTaxPolicy randomised TaxPolicy
 func GenTaxPolicy(r *rand.Rand) types.PolicyConstraints {
 	return types.PolicyConstraints{
 		RateMin:       math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3),
@@ -37,7 +37,7 @@ func GenTaxPolicy(r *rand.Rand) types.PolicyConstraints {
 	}
 }
 
-// GenRewardPolicy randomized RewardPolicy
+// GenRewardPolicy randomised RewardPolicy
 func GenRewardPolicy(r *rand.Rand) types.PolicyConstraints {
 	return types.PolicyConstraints{
 		RateMin:       math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3),
@@ -47,33 +47,33 @@ func GenRewardPolicy(r *rand.Rand) types.PolicyConstraints {
 	}
 }
 
-// GenSeigniorageBurdenTarget randomized SeigniorageBurdenTarget
+// GenSeigniorageBurdenTarget randomised SeigniorageBurdenTarget
 func GenSeigniorageBurdenTarget(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(int64(r.Intn(100)), 2)
 }
 
-// GenMiningIncrement randomized MiningIncrement
+// GenMiningIncrement randomised MiningIncrement
 func GenMiningIncrement(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(int64(100+r.Intn(30)), 2)
 }
 
-// GenWindowShort randomized WindowShort
+// GenWindowShort randomised WindowShort
 func GenWindowShort(r *rand.Rand) uint64 {
 	return uint64(1 + r.Intn(12))
 }
 
-// GenWindowLong randomized WindowLong
+// GenWindowLong randomised WindowLong
 func GenWindowLong(r *rand.Rand) uint64 {
 	return uint64(12 + r.Intn(24))
 }
 
-// GenWindowProbation randomized WindowProbation
+// GenWindowProbation randomised WindowProbation
 func GenWindowProbation(r *rand.Rand) uint64 {
 	return uint64(1 + r.Intn(6))
 }
 
-// RandomizedGenState generates a random GenesisState for gov
-func RandomizedGenState(simState *module.SimulationState) {
+// RandomisedGenState generates a random GenesisState for gov
+func RandomisedGenState(simState *module.SimulationState) {
 	var taxPolicy types.PolicyConstraints
 	simState.AppParams.GetOrGenerate(
 		taxPolicyKey,

@@ -9,9 +9,9 @@ import (
 	"noah/x/market/types"
 )
 
-// GenerateGenesisState creates a randomized GenState of the market module.
+// GenerateGenesisState creates a randomised GenState of the market module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
-	simulation.RandomizedGenState(simState)
+	simulation.RandomisedGenState(simState)
 }
 
 // ProposalMsgsX returns msgs used for governance proposals for simulations.
