@@ -1,13 +1,12 @@
 package keeper
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	core "noah/types"
 	"noah/x/treasury/types"
@@ -15,7 +14,7 @@ import (
 
 // InitGenesis initializes default parameters
 // and the keeper's address to pubkey map
-func (k Keeper) InitGenesis(ctx sdk.Context, data *types.GenesisState) error {
+func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
@@ -68,7 +67,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data *types.GenesisState) error {
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
-func (k Keeper) ExportGenesis(ctx sdk.Context) (*types.GenesisState, error) {
+func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)

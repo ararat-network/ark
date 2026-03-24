@@ -10,6 +10,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+var (
+	DefaultTaxRate      = math.LegacyNewDecWithPrec(1, 3) // 0.1%
+	DefaultRewardWeight = math.LegacyNewDecWithPrec(5, 2) // 5%
+)
+
 // NewGenesisState creates a new GenesisState object
 func NewGenesisState(
 	params Params,
