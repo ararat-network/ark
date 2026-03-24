@@ -21,21 +21,21 @@ func (s *KeeperTestSuite) TestInitGenesis_Default() {
 	s.bankKeeper.EXPECT().GetSupply(s.ctx, core.MicroArkDenom).
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000)))
 
-	err := s.treasuryKeeper.InitGenesis(s.ctx, genesis)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
 	// Verify params stored
-	params, err := s.treasuryKeeper.Params.Get(s.ctx)
+	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultParams(), params)
 
 	// Verify tax rate stored
-	taxRate, err := s.treasuryKeeper.TaxRate.Get(s.ctx)
+	taxRate, err := s.keeper.TaxRate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(types.DefaultTaxRate.Equal(taxRate))
 
 	// Verify reward weight stored
-	rewardWeight, err := s.treasuryKeeper.RewardWeight.Get(s.ctx)
+	rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(types.DefaultRewardWeight.Equal(rewardWeight))
 }
@@ -45,7 +45,7 @@ func (s *KeeperTestSuite) TestInitGenesis_Custom() {
 		GetModuleAccount(s.ctx, types.ModuleName).
 		Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
 
-	customTaxRate := math.LegacyNewDecWithPrec(5, 3) // 0.5%
+	customTaxRate := math.LegacyNewDecWithPrec(5, 3)       // 0.5%
 	customRewardWeight := math.LegacyNewDecWithPrec(10, 2) // 10%
 	customTaxCaps := []types.TaxCap{
 		{Denom: "uusd", TaxCap: math.NewInt(1000000)},
@@ -70,40 +70,40 @@ func (s *KeeperTestSuite) TestInitGenesis_Custom() {
 		customEpochStates,
 	)
 
-	err := s.treasuryKeeper.InitGenesis(s.ctx, genesis)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
 	// Verify tax rate
-	taxRate, err := s.treasuryKeeper.TaxRate.Get(s.ctx)
+	taxRate, err := s.keeper.TaxRate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(customTaxRate.Equal(taxRate))
 
 	// Verify reward weight
-	rewardWeight, err := s.treasuryKeeper.RewardWeight.Get(s.ctx)
+	rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(customRewardWeight.Equal(rewardWeight))
 
 	// Verify tax caps
-	cap, err := s.treasuryKeeper.TaxCaps.Get(s.ctx, "uusd")
+	cap, err := s.keeper.TaxCaps.Get(s.ctx, "uusd")
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(1000000), cap)
 
-	cap, err = s.treasuryKeeper.TaxCaps.Get(s.ctx, "ukrw")
+	cap, err = s.keeper.TaxCaps.Get(s.ctx, "ukrw")
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(1300000000), cap)
 
 	// Verify epoch tax proceeds
-	proceeds, err := s.treasuryKeeper.EpochTaxProceeds.Get(s.ctx)
+	proceeds, err := s.keeper.EpochTaxProceeds.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(5000), proceeds.TaxProceeds.AmountOf("uusd"))
 
 	// Verify epoch initial issuance
-	issuance, err := s.treasuryKeeper.EpochInitialIssuance.Get(s.ctx)
+	issuance, err := s.keeper.EpochInitialIssuance.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(500000), issuance.Issuance.AmountOf(core.MicroArkDenom))
 
 	// Verify epoch states
-	epochState, err := s.treasuryKeeper.EpochStates.Get(s.ctx, 0)
+	epochState, err := s.keeper.EpochStates.Get(s.ctx, 0)
 	s.Require().NoError(err)
 	s.Require().True(math.LegacyNewDec(100).Equal(epochState.TaxReward))
 	s.Require().True(math.LegacyNewDec(200).Equal(epochState.SeigniorageReward))
@@ -128,11 +128,11 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		[]types.EpochState{},
 	)
 
-	err := s.treasuryKeeper.InitGenesis(s.ctx, genesis)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
 	// Export at block 0 (epoch 0, not last block) — no epoch states expected
-	exported, err := s.treasuryKeeper.ExportGenesis(s.ctx)
+	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
 	s.Require().NotNil(exported)
 
@@ -164,7 +164,7 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000)))
 
 	genesis := types.DefaultGenesisState()
-	err := s.treasuryKeeper.InitGenesis(s.ctx, genesis)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, "module account has not been set")
 }

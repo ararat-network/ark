@@ -14,7 +14,7 @@ import (
 
 func (s *KeeperTestSuite) TestSettleSeigniorage() {
 	// Set up: seigniorage = 1000 uark, rewardWeight = 5%
-	s.Require().NoError(s.treasuryKeeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
+	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
 		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(10000))),
 	}))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
@@ -47,28 +47,28 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 	}
 	s.distrKeeper.EXPECT().SetFeePool(gomock.Any(), expectedPool)
 
-	err := s.treasuryKeeper.SettleSeigniorage(s.ctx)
+	err := s.keeper.SettleSeigniorage(s.ctx)
 	s.Require().NoError(err)
 }
 
 func (s *KeeperTestSuite) TestSettleSeigniorage_ZeroSeigniorage() {
 	// No seigniorage (supply didn't decrease)
-	s.Require().NoError(s.treasuryKeeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
+	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
 		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(10000))),
 	}))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(10000)))
 
-	err := s.treasuryKeeper.SettleSeigniorage(s.ctx)
+	err := s.keeper.SettleSeigniorage(s.ctx)
 	s.Require().NoError(err)
 	// No mint/send should be called (gomock would fail if unexpected calls were made)
 }
 
 func (s *KeeperTestSuite) TestSettleSeigniorage_FullRewardWeight() {
 	// When rewardWeight = 100%, all seigniorage goes to oracle, nothing to community pool
-	s.Require().NoError(s.treasuryKeeper.RewardWeight.Set(s.ctx, math.LegacyOneDec()))
+	s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, math.LegacyOneDec()))
 
-	s.Require().NoError(s.treasuryKeeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
+	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
 		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(10000))),
 	}))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
@@ -88,15 +88,15 @@ func (s *KeeperTestSuite) TestSettleSeigniorage_FullRewardWeight() {
 
 	// leftAmt = 0 → distribution path is skipped (no send, no fee pool update)
 
-	err := s.treasuryKeeper.SettleSeigniorage(s.ctx)
+	err := s.keeper.SettleSeigniorage(s.ctx)
 	s.Require().NoError(err)
 }
 
 func (s *KeeperTestSuite) TestSettleSeigniorage_ZeroRewardWeight() {
 	// When rewardWeight = 0%, all seigniorage goes to community pool, nothing to oracle
-	s.Require().NoError(s.treasuryKeeper.RewardWeight.Set(s.ctx, math.LegacyZeroDec()))
+	s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, math.LegacyZeroDec()))
 
-	s.Require().NoError(s.treasuryKeeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
+	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
 		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(10000))),
 	}))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
@@ -123,6 +123,40 @@ func (s *KeeperTestSuite) TestSettleSeigniorage_ZeroRewardWeight() {
 	}
 	s.distrKeeper.EXPECT().SetFeePool(gomock.Any(), expectedPool)
 
-	err := s.treasuryKeeper.SettleSeigniorage(s.ctx)
+	err := s.keeper.SettleSeigniorage(s.ctx)
+	s.Require().NoError(err)
+}
+
+func (s *KeeperTestSuite) TestSettleSeigniorage_SmallAmount() {
+	// Seigniorage=1 with default 5% rewardWeight: oracle reward truncates to 0,
+	// all goes to community pool.
+	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
+		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(10000))),
+	}))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
+		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(9999)))
+	// seigniorage = 10000 - 9999 = 1
+
+	seigniorageCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1)))
+	s.bankKeeper.EXPECT().
+		MintCoins(gomock.Any(), types.ModuleName, seigniorageCoins).
+		Return(nil)
+
+	// oracleRewardAmt = 0.05 * 1 = 0 (truncated) → oracle send skipped
+
+	// All to community pool: 1 - 0 = 1
+	communityCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1)))
+	s.bankKeeper.EXPECT().
+		SendCoinsFromModuleToModule(gomock.Any(), types.ModuleName, "distribution", communityCoins).
+		Return(nil)
+
+	s.distrKeeper.EXPECT().GetFeePool(gomock.Any()).
+		Return(distrtypes.FeePool{CommunityPool: sdk.DecCoins{}})
+	expectedSmallPool := distrtypes.FeePool{
+		CommunityPool: sdk.NewDecCoinsFromCoins(communityCoins...),
+	}
+	s.distrKeeper.EXPECT().SetFeePool(gomock.Any(), expectedSmallPool)
+
+	err := s.keeper.SettleSeigniorage(s.ctx)
 	s.Require().NoError(err)
 }
