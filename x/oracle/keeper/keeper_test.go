@@ -88,6 +88,10 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
 
+func (s *KeeperTestSuite) SetupSubTest() {
+	s.SetupTest()
+}
+
 var (
 	valAddr1 = sdk.ValAddress([]byte("validator1___________"))
 	valAddr2 = sdk.ValAddress([]byte("validator2___________"))
@@ -137,10 +141,6 @@ func (s *KeeperTestSuite) TestGetFeederDelegation() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			// Clear any existing delegations
-			_ = s.keeper.FeederDelegation.Remove(s.ctx, valAddr1)
-			_ = s.keeper.FeederDelegation.Remove(s.ctx, valAddr2)
-
 			tc.setup()
 
 			result, err := s.keeper.GetFeederDelegation(s.ctx, tc.operator)
@@ -191,10 +191,6 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			// Clear exchange rates
-			_ = s.keeper.ExchangeRate.Remove(s.ctx, "uusd")
-			_ = s.keeper.ExchangeRate.Remove(s.ctx, "ufoo")
-
 			tc.setup()
 
 			rate, err := s.keeper.GetExchangeRate(s.ctx, tc.denom)
@@ -230,10 +226,6 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			// Reset event manager for each sub-test
-			sdkCtx := sdk.UnwrapSDKContext(s.ctx).WithEventManager(sdk.NewEventManager())
-			s.ctx = sdkCtx
-
 			err := s.keeper.SetExchangeRateWithEvent(s.ctx, "uusd", tc.rate)
 			s.Require().NoError(err)
 
@@ -243,7 +235,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 			s.Require().True(tc.rate.Equal(stored), "expected %s, got %s", tc.rate, stored)
 
 			// Verify event emitted
-			events := sdkCtx.EventManager().Events()
+			events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
 			s.Require().Len(events, 1)
 			s.Require().Equal(types.EventTypeExchangeRateUpdate, events[0].Type)
 
@@ -262,28 +254,24 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 		setup     func()
 		feeder    sdk.AccAddress
 		validator sdk.ValAddress
-		mockSetup func()
 		expectErr string
 	}{
 		{
-			name:      "validator is own feeder",
-			setup:     func() {},
-			feeder:    sdk.AccAddress(valAddr1),
-			validator: valAddr1,
-			mockSetup: func() {
+			name: "validator is own feeder",
+			setup: func() {
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(bondedValidator())
 			},
+			feeder:    sdk.AccAddress(valAddr1),
+			validator: valAddr1,
 		},
 		{
 			name: "delegated feeder — authorised",
 			setup: func() {
 				s.Require().NoError(s.keeper.FeederDelegation.Set(s.ctx, valAddr1, accAddr1))
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(bondedValidator())
 			},
 			feeder:    accAddr1,
 			validator: valAddr1,
-			mockSetup: func() {
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(bondedValidator())
-			},
 		},
 		{
 			name: "wrong feeder — unauthorised",
@@ -292,7 +280,6 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 			},
 			feeder:    accAddr2,
 			validator: valAddr1,
-			mockSetup: func() {},
 			expectErr: types.ErrNoVotingPermission.Error(),
 		},
 		{
@@ -300,39 +287,31 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 			setup:     func() {},
 			feeder:    accAddr1,
 			validator: valAddr1,
-			mockSetup: func() {},
 			expectErr: types.ErrNoVotingPermission.Error(),
 		},
 		{
-			name:      "validator not bonded",
-			setup:     func() {},
-			feeder:    sdk.AccAddress(valAddr1),
-			validator: valAddr1,
-			mockSetup: func() {
+			name: "validator not bonded",
+			setup: func() {
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(unbondedValidator())
 			},
+			feeder:    sdk.AccAddress(valAddr1),
+			validator: valAddr1,
 			expectErr: stakingtypes.ErrNoValidatorFound.Error(),
 		},
 		{
-			name:      "validator not found",
-			setup:     func() {},
-			feeder:    sdk.AccAddress(valAddr1),
-			validator: valAddr1,
-			mockSetup: func() {
+			name: "validator not found",
+			setup: func() {
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil)
 			},
+			feeder:    sdk.AccAddress(valAddr1),
+			validator: valAddr1,
 			expectErr: stakingtypes.ErrNoValidatorFound.Error(),
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			// Clear delegations
-			_ = s.keeper.FeederDelegation.Remove(s.ctx, valAddr1)
-			_ = s.keeper.FeederDelegation.Remove(s.ctx, valAddr2)
-
 			tc.setup()
-			tc.mockSetup()
 
 			err := s.keeper.ValidateFeeder(s.ctx, tc.feeder, tc.validator)
 			if tc.expectErr != "" {
