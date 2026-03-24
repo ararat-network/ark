@@ -11,8 +11,10 @@ import (
 
 // NewGenesisState creates a new GenesisState object
 func NewGenesisState(
-	params Params, rates []ExchangeRateTuple,
-	feederDelegations []FeederDelegation, missCounters []MissCounter,
+	params Params,
+	rates []ExchangeRateTuple,
+	feederDelegations []FeederDelegation,
+	missCounters []MissCounter,
 	aggregateExchangeRatePrevotes []AggregateExchangeRatePrevote,
 	aggregateExchangeRateVotes []AggregateExchangeRateVote,
 	tobinTaxes []TobinTax,
