@@ -14,8 +14,7 @@ import (
 	"noah/x/market/types"
 )
 
-// setupSwapMocks configures oracle and bank mocks for a Noah→Noah (uusd→ukrw) swap.
-// This is a helper to avoid repeating mock setup across swap tests.
+// setupNoahToNoahSwapMocks configures oracle and bank mocks for a Noah→Noah (uusd→ukrw) swap.
 func (s *KeeperTestSuite) setupNoahToNoahSwapMocks() {
 	// Oracle rates
 	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
@@ -60,7 +59,8 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 
 	// Verify swap event emitted with correct attributes
 	var swapEvent sdk.Event
-	for _, e := range s.ctx.EventManager().Events() {
+	sdkCtx := sdk.UnwrapSDKContext(s.ctx)
+	for _, e := range sdkCtx.EventManager().Events() {
 		if e.Type == types.EventSwap {
 			swapEvent = e
 			break
@@ -78,47 +78,58 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 	s.Require().Equal(res.SwapFee.String(), attrMap[types.AttributeKeySwapFee])
 }
 
-func (s *KeeperTestSuite) TestMsgSwap_RecursiveSwap() {
+func (s *KeeperTestSuite) TestMsgSwap_Errors() {
 	trader := sdk.AccAddress([]byte("trader______________"))
-	msg := &types.MsgSwap{
-		Trader:    trader.String(),
-		OfferCoin: sdk.NewCoin("uusd", math.NewInt(1000000)),
-		AskDenom:  "uusd",
+
+	tests := []struct {
+		name      string
+		msg       *types.MsgSwap
+		expectErr error
+		errMsg    string
+	}{
+		{
+			name: "recursive swap",
+			msg: &types.MsgSwap{
+				Trader:    trader.String(),
+				OfferCoin: sdk.NewCoin("uusd", math.NewInt(1000000)),
+				AskDenom:  "uusd",
+			},
+			expectErr: types.ErrRecursiveSwap,
+		},
+		{
+			name: "zero amount",
+			msg: &types.MsgSwap{
+				Trader:    trader.String(),
+				OfferCoin: sdk.NewCoin("uusd", math.ZeroInt()),
+				AskDenom:  "ukrw",
+			},
+			expectErr: errortypes.ErrInvalidCoins,
+		},
+		{
+			name: "invalid trader address",
+			msg: &types.MsgSwap{
+				Trader:    "invalid",
+				OfferCoin: sdk.NewCoin("uusd", math.NewInt(1000000)),
+				AskDenom:  "ukrw",
+			},
+			expectErr: errortypes.ErrInvalidAddress,
+			errMsg:    "invalid trader address",
+		},
 	}
 
-	_, err := s.msgServer.Swap(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, types.ErrRecursiveSwap)
-}
-
-func (s *KeeperTestSuite) TestMsgSwap_ZeroAmount() {
-	trader := sdk.AccAddress([]byte("trader______________"))
-	msg := &types.MsgSwap{
-		Trader:    trader.String(),
-		OfferCoin: sdk.NewCoin("uusd", math.ZeroInt()),
-		AskDenom:  "ukrw",
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			_, err := s.msgServer.Swap(s.ctx, tc.msg)
+			s.Require().Error(err)
+			s.Require().ErrorIs(err, tc.expectErr)
+			if tc.errMsg != "" {
+				s.Require().ErrorContains(err, tc.errMsg)
+			}
+		})
 	}
-
-	_, err := s.msgServer.Swap(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
-}
-
-func (s *KeeperTestSuite) TestMsgSwap_InvalidAddress() {
-	msg := &types.MsgSwap{
-		Trader:    "invalid",
-		OfferCoin: sdk.NewCoin("uusd", math.NewInt(1000000)),
-		AskDenom:  "ukrw",
-	}
-
-	_, err := s.msgServer.Swap(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, errortypes.ErrInvalidAddress)
-	s.Require().ErrorContains(err, "invalid trader address")
 }
 
 func (s *KeeperTestSuite) TestMsgSwap_FeeDeduction() {
-	// Verify exact swap coin and fee amounts after spread deduction.
 	// Unit rates (1:1:1) with a small base pool so CP spread is significant.
 	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
@@ -137,7 +148,7 @@ func (s *KeeperTestSuite) TestMsgSwap_FeeDeduction() {
 		Return(nil).AnyTimes()
 
 	// BasePool=400 with offer=100 gives CP spread = 100/500 = 0.2
-	err := s.marketKeeper.Params.Set(s.ctx, types.Params{
+	err := s.keeper.Params.Set(s.ctx, types.Params{
 		BasePool:           math.LegacyNewDec(400),
 		PoolRecoveryPeriod: 14400,
 		MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
@@ -188,7 +199,8 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 
 	// Verify swap event: trader=from, recipient=to
 	var swapEvent sdk.Event
-	for _, e := range s.ctx.EventManager().Events() {
+	sdkCtx := sdk.UnwrapSDKContext(s.ctx)
+	for _, e := range sdkCtx.EventManager().Events() {
 		if e.Type == types.EventSwap {
 			swapEvent = e
 			break
@@ -203,84 +215,148 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 	s.Require().Equal(toAddr.String(), attrMap[types.AttributeKeyRecipient])
 }
 
-func (s *KeeperTestSuite) TestMsgSwapSend_InvalidFromAddress() {
-	toAddr := sdk.AccAddress([]byte("to__________________"))
-	msg := &types.MsgSwapSend{
-		FromAddress: "invalid",
-		ToAddress:   toAddr.String(),
-		OfferCoin:   sdk.NewCoin("uusd", math.NewInt(1000000)),
-		AskDenom:    "ukrw",
-	}
-
-	_, err := s.msgServer.SwapSend(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, errortypes.ErrInvalidAddress)
-	s.Require().ErrorContains(err, "invalid from address")
-}
-
-func (s *KeeperTestSuite) TestMsgSwapSend_InvalidToAddress() {
+func (s *KeeperTestSuite) TestMsgSwapSend_Errors() {
 	fromAddr := sdk.AccAddress([]byte("from________________"))
-	msg := &types.MsgSwapSend{
-		FromAddress: fromAddr.String(),
-		ToAddress:   "invalid",
-		OfferCoin:   sdk.NewCoin("uusd", math.NewInt(1000000)),
-		AskDenom:    "ukrw",
+	toAddr := sdk.AccAddress([]byte("to__________________"))
+
+	tests := []struct {
+		name   string
+		msg    *types.MsgSwapSend
+		errMsg string
+	}{
+		{
+			name: "invalid from address",
+			msg: &types.MsgSwapSend{
+				FromAddress: "invalid",
+				ToAddress:   toAddr.String(),
+				OfferCoin:   sdk.NewCoin("uusd", math.NewInt(1000000)),
+				AskDenom:    "ukrw",
+			},
+			errMsg: "invalid from address",
+		},
+		{
+			name: "invalid to address",
+			msg: &types.MsgSwapSend{
+				FromAddress: fromAddr.String(),
+				ToAddress:   "invalid",
+				OfferCoin:   sdk.NewCoin("uusd", math.NewInt(1000000)),
+				AskDenom:    "ukrw",
+			},
+			errMsg: "invalid to address",
+		},
 	}
 
-	_, err := s.msgServer.SwapSend(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, errortypes.ErrInvalidAddress)
-	s.Require().ErrorContains(err, "invalid to address")
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			_, err := s.msgServer.SwapSend(s.ctx, tc.msg)
+			s.Require().Error(err)
+			s.Require().ErrorIs(err, errortypes.ErrInvalidAddress)
+			s.Require().ErrorContains(err, tc.errMsg)
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	newParams := types.Params{
-		BasePool:           math.LegacyNewDec(2000000000000),
-		PoolRecoveryPeriod: 28800,
-		MinStabilitySpread: math.LegacyNewDecWithPrec(5, 2),
-	}
-
-	msg := &types.MsgUpdateParams{
-		Authority: authority,
-		Params:    newParams,
-	}
-
-	_, err := s.msgServer.UpdateParams(s.ctx, msg)
-	s.Require().NoError(err)
-
-	// Verify params were updated
-	params, err := s.marketKeeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(newParams, params)
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParams_InvalidAuthority() {
-	msg := &types.MsgUpdateParams{
-		Authority: "invalid_authority",
-		Params:    types.DefaultParams(),
-	}
-
-	_, err := s.msgServer.UpdateParams(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorContains(err, "invalid authority")
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParams_InvalidParams() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-
-	// Negative base pool
-	msg := &types.MsgUpdateParams{
-		Authority: authority,
-		Params: types.Params{
-			BasePool:           math.LegacyNewDec(-1),
-			PoolRecoveryPeriod: 14400,
-			MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
+	tests := []struct {
+		name      string
+		msg       *types.MsgUpdateParams
+		expectErr string
+	}{
+		{
+			name: "valid params",
+			msg: &types.MsgUpdateParams{
+				Authority: authority,
+				Params: types.Params{
+					BasePool:           math.LegacyNewDec(2000000000000),
+					PoolRecoveryPeriod: 28800,
+					MinStabilitySpread: math.LegacyNewDecWithPrec(5, 2),
+				},
+			},
+		},
+		{
+			name: "zero base pool is valid",
+			msg: &types.MsgUpdateParams{
+				Authority: authority,
+				Params: types.Params{
+					BasePool:           math.LegacyZeroDec(),
+					PoolRecoveryPeriod: 14400,
+					MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
+				},
+			},
+		},
+		{
+			name: "invalid authority",
+			msg: &types.MsgUpdateParams{
+				Authority: "invalid_authority",
+				Params:    types.DefaultParams(),
+			},
+			expectErr: "invalid authority",
+		},
+		{
+			name: "negative base pool",
+			msg: &types.MsgUpdateParams{
+				Authority: authority,
+				Params: types.Params{
+					BasePool:           math.LegacyNewDec(-1),
+					PoolRecoveryPeriod: 14400,
+					MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
+				},
+			},
+			expectErr: "base pool must be positive or zero",
+		},
+		{
+			name: "zero recovery period",
+			msg: &types.MsgUpdateParams{
+				Authority: authority,
+				Params: types.Params{
+					BasePool:           math.LegacyNewDec(1000000000000),
+					PoolRecoveryPeriod: 0,
+					MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
+				},
+			},
+			expectErr: "pool recovery period must be positive",
+		},
+		{
+			name: "negative min stability spread",
+			msg: &types.MsgUpdateParams{
+				Authority: authority,
+				Params: types.Params{
+					BasePool:           math.LegacyNewDec(1000000000000),
+					PoolRecoveryPeriod: 14400,
+					MinStabilitySpread: math.LegacyNewDec(-1),
+				},
+			},
+			expectErr: "min stability spread must be in [0, 1]",
+		},
+		{
+			name: "min stability spread greater than 1",
+			msg: &types.MsgUpdateParams{
+				Authority: authority,
+				Params: types.Params{
+					BasePool:           math.LegacyNewDec(1000000000000),
+					PoolRecoveryPeriod: 14400,
+					MinStabilitySpread: math.LegacyNewDecWithPrec(11, 1), // 1.1
+				},
+			},
+			expectErr: "min stability spread must be in [0, 1]",
 		},
 	}
 
-	_, err := s.msgServer.UpdateParams(s.ctx, msg)
-	s.Require().Error(err)
-	s.Require().ErrorContains(err, "base pool must be positive or zero")
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			_, err := s.msgServer.UpdateParams(s.ctx, tc.msg)
+			if tc.expectErr != "" {
+				s.Require().Error(err)
+				s.Require().ErrorContains(err, tc.expectErr)
+			} else {
+				s.Require().NoError(err)
+
+				params, err := s.keeper.Params.Get(s.ctx)
+				s.Require().NoError(err)
+				s.Require().Equal(tc.msg.Params, params)
+			}
+		})
+	}
 }

@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	gocontext "context"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -15,27 +15,26 @@ import (
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
-	"github.com/cosmos/cosmos-sdk/testutil"
+	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"noah/x/market/keeper"
-	markettestutil "noah/x/market/testutil"
+	"noah/x/market/testutil"
 	"noah/x/market/types"
 )
 
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx           sdk.Context
-	goCtx         gocontext.Context
-	marketKeeper  *keeper.Keeper
+	ctx           context.Context
+	keeper        *keeper.Keeper
 	msgServer     types.MsgServer
 	queryClient   types.QueryClient
-	accountKeeper *markettestutil.MockAccountKeeper
-	bankKeeper    *markettestutil.MockBankKeeper
-	oracleKeeper  *markettestutil.MockOracleKeeper
+	accountKeeper *testutil.MockAccountKeeper
+	bankKeeper    *testutil.MockBankKeeper
+	oracleKeeper  *testutil.MockOracleKeeper
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -50,20 +49,19 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	storeService := runtime.NewKVStoreService(key)
-	testCtx := testutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
+	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
 	s.ctx = testCtx.Ctx
-	s.goCtx = s.ctx
 
 	ctrl := gomock.NewController(s.T())
 
-	accountKeeper := markettestutil.NewMockAccountKeeper(ctrl)
-	bankKeeper := markettestutil.NewMockBankKeeper(ctrl)
-	oracleKeeper := markettestutil.NewMockOracleKeeper(ctrl)
+	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
+	bankKeeper := testutil.NewMockBankKeeper(ctrl)
+	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
 
 	// Required by NewKeeper's panic guard
 	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
 
-	s.marketKeeper = keeper.NewKeeper(
+	s.keeper = keeper.NewKeeper(
 		cdc,
 		storeService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
@@ -77,16 +75,14 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.oracleKeeper = oracleKeeper
 
 	// Set default state
-	err := s.marketKeeper.Params.Set(s.ctx, types.DefaultParams())
-	s.Require().NoError(err)
-	err = s.marketKeeper.NoahPoolDelta.Set(s.ctx, math.LegacyZeroDec())
-	s.Require().NoError(err)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
+	s.Require().NoError(s.keeper.NoahPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
 	// Wire gRPC query client
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
-	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.marketKeeper))
+	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
 	s.queryClient = types.NewQueryClient(queryHelper)
 
 	// Create message server
-	s.msgServer = keeper.NewMsgServerImpl(s.marketKeeper)
+	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }

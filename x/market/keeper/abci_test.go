@@ -7,73 +7,89 @@ import (
 )
 
 func (s *KeeperTestSuite) TestEndBlocker_ReplenishPools() {
-	// Set known pool delta and recovery period
-	initialDelta := math.LegacyNewDec(1000)
-	err := s.marketKeeper.NoahPoolDelta.Set(s.ctx, initialDelta)
-	s.Require().NoError(err)
+	tests := []struct {
+		name          string
+		initialDelta  math.LegacyDec
+		recoveryPeriod uint64
+		expectedDelta math.LegacyDec
+	}{
+		{
+			name:          "positive delta decreases",
+			initialDelta:  math.LegacyNewDec(1000),
+			recoveryPeriod: 10,
+			// 1000 - 1000/10 = 900
+			expectedDelta: math.LegacyNewDec(900),
+		},
+		{
+			name:          "negative delta increases toward zero",
+			initialDelta:  math.LegacyNewDec(-1000),
+			recoveryPeriod: 10,
+			// -1000 - (-1000/10) = -1000 + 100 = -900
+			expectedDelta: math.LegacyNewDec(-900),
+		},
+		{
+			name:          "zero delta stays zero",
+			initialDelta:  math.LegacyZeroDec(),
+			recoveryPeriod: 10,
+			expectedDelta: math.LegacyZeroDec(),
+		},
+		{
+			name:          "small delta with large recovery period",
+			initialDelta:  math.LegacyNewDec(1),
+			recoveryPeriod: 100,
+			// 1 - 1/100 = 0.99
+			expectedDelta: math.LegacyNewDecWithPrec(99, 2),
+		},
+		{
+			name:          "large recovery period — slow convergence",
+			initialDelta:  math.LegacyNewDec(14400),
+			recoveryPeriod: 14400,
+			// 14400 - 14400/14400 = 14399
+			expectedDelta: math.LegacyNewDec(14399),
+		},
+	}
 
-	recoveryPeriod := uint64(10)
-	err = s.marketKeeper.Params.Set(s.ctx, types.Params{
-		BasePool:           math.LegacyNewDec(1000000000000),
-		PoolRecoveryPeriod: recoveryPeriod,
-		MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
-	})
-	s.Require().NoError(err)
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			err := s.keeper.NoahPoolDelta.Set(s.ctx, tc.initialDelta)
+			s.Require().NoError(err)
 
-	// After one EndBlocker, delta should decrease by delta/recoveryPeriod
-	err = s.marketKeeper.EndBlocker(s.ctx)
-	s.Require().NoError(err)
+			err = s.keeper.Params.Set(s.ctx, types.Params{
+				BasePool:           math.LegacyNewDec(1000000000000),
+				PoolRecoveryPeriod: tc.recoveryPeriod,
+				MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
+			})
+			s.Require().NoError(err)
 
-	delta, err := s.marketKeeper.NoahPoolDelta.Get(s.ctx)
-	s.Require().NoError(err)
+			err = s.keeper.EndBlocker(s.ctx)
+			s.Require().NoError(err)
 
-	// Expected: 1000 - 1000/10 = 900
-	expectedDelta := initialDelta.Sub(initialDelta.QuoInt64(int64(recoveryPeriod)))
-	s.Require().True(delta.Equal(expectedDelta))
+			delta, err := s.keeper.NoahPoolDelta.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().True(tc.expectedDelta.Equal(delta), "expected %s, got %s", tc.expectedDelta, delta)
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestEndBlocker_ConvergesToZero() {
-	// Set small pool delta
-	err := s.marketKeeper.NoahPoolDelta.Set(s.ctx, math.LegacyNewDec(100))
+	// Run many iterations — delta should approach zero
+	err := s.keeper.NoahPoolDelta.Set(s.ctx, math.LegacyNewDec(100))
 	s.Require().NoError(err)
 
-	err = s.marketKeeper.Params.Set(s.ctx, types.Params{
+	err = s.keeper.Params.Set(s.ctx, types.Params{
 		BasePool:           math.LegacyNewDec(1000000000000),
 		PoolRecoveryPeriod: 10,
 		MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
 	})
 	s.Require().NoError(err)
 
-	// Run multiple EndBlockers — delta should approach zero
 	for i := 0; i < 100; i++ {
-		err = s.marketKeeper.EndBlocker(s.ctx)
+		err = s.keeper.EndBlocker(s.ctx)
 		s.Require().NoError(err)
 	}
 
-	delta, err := s.marketKeeper.NoahPoolDelta.Get(s.ctx)
+	delta, err := s.keeper.NoahPoolDelta.Get(s.ctx)
 	s.Require().NoError(err)
 	// After 100 iterations with factor 0.9: 100 * 0.9^100 ≈ 0.0027
-	// Delta should be significantly smaller than the initial value
 	s.Require().True(delta.Abs().LT(math.LegacyOneDec()))
-}
-
-func (s *KeeperTestSuite) TestEndBlocker_NegativeDelta() {
-	// Negative delta should also converge toward zero
-	err := s.marketKeeper.NoahPoolDelta.Set(s.ctx, math.LegacyNewDec(-1000))
-	s.Require().NoError(err)
-
-	err = s.marketKeeper.Params.Set(s.ctx, types.Params{
-		BasePool:           math.LegacyNewDec(1000000000000),
-		PoolRecoveryPeriod: 10,
-		MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
-	})
-	s.Require().NoError(err)
-
-	err = s.marketKeeper.EndBlocker(s.ctx)
-	s.Require().NoError(err)
-
-	delta, err := s.marketKeeper.NoahPoolDelta.Get(s.ctx)
-	s.Require().NoError(err)
-	// -1000 - (-1000/10) = -1000 + 100 = -900
-	s.Require().True(delta.Equal(math.LegacyNewDec(-900)))
 }
