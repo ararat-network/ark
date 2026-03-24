@@ -63,7 +63,7 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			types.ModuleName,
-			k.distrName,
+			k.distributionName,
 			leftCoins,
 		); err != nil {
 			return fmt.Errorf("sending community pool funds: %w", err)

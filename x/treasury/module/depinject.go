@@ -61,9 +61,9 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		rewardCollectorName = oracletypes.ModuleName
 	}
 
-	distrName := in.Config.DistributionName
-	if distrName == "" {
-		distrName = distrtypes.ModuleName
+	distributionName := in.Config.DistributionName
+	if distributionName == "" {
+		distributionName = distrtypes.ModuleName
 	}
 
 	k := keeper.NewKeeper(
@@ -71,7 +71,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.StoreService,
 		authority.String(),
 		rewardCollectorName,
-		distrName,
+		distributionName,
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.DistributionKeeper,

@@ -22,7 +22,7 @@ type Keeper struct {
 	storeService        store.KVStoreService
 	authority           string
 	rewardCollectorName string
-	distrName           string
+	distributionName    string
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
@@ -47,7 +47,7 @@ func NewKeeper(
 	storeService store.KVStoreService,
 	authority string,
 	rewardCollectorName string,
-	distrName string,
+	distributionName string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	distrKeeper types.DistributionKeeper,
@@ -66,7 +66,7 @@ func NewKeeper(
 		storeService:        storeService,
 		authority:           authority,
 		rewardCollectorName: rewardCollectorName,
-		distrName:           distrName,
+		distributionName:    distributionName,
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
 		distrKeeper:         distrKeeper,

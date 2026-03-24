@@ -24,10 +24,10 @@ import (
 
 // Keeper of the oracle store
 type Keeper struct {
-	cdc          codec.BinaryCodec
-	storeService store.KVStoreService
-	authority    string
-	distrName    string
+	cdc              codec.BinaryCodec
+	storeService     store.KVStoreService
+	authority        string
+	distributionName string
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
@@ -49,7 +49,7 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
 	authority string,
-	distrName string,
+	distributionName string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	distrKeeper types.DistributionKeeper,
@@ -62,14 +62,14 @@ func NewKeeper(
 
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:           cdc,
-		storeService:  storeService,
-		authority:     authority,
-		distrName:     distrName,
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
-		distrKeeper:   distrKeeper,
-		stakingKeeper: stakingKeeper,
+		cdc:              cdc,
+		storeService:     storeService,
+		authority:        authority,
+		distributionName: distributionName,
+		accountKeeper:    accountKeeper,
+		bankKeeper:       bankKeeper,
+		distrKeeper:      distrKeeper,
+		stakingKeeper:    stakingKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,
