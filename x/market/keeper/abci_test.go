@@ -8,41 +8,41 @@ import (
 
 func (s *KeeperTestSuite) TestEndBlocker_ReplenishPools() {
 	tests := []struct {
-		name          string
-		initialDelta  math.LegacyDec
+		name           string
+		initialDelta   math.LegacyDec
 		recoveryPeriod uint64
-		expectedDelta math.LegacyDec
+		expectedDelta  math.LegacyDec
 	}{
 		{
-			name:          "positive delta decreases",
-			initialDelta:  math.LegacyNewDec(1000),
+			name:           "positive delta decreases",
+			initialDelta:   math.LegacyNewDec(1000),
 			recoveryPeriod: 10,
 			// 1000 - 1000/10 = 900
 			expectedDelta: math.LegacyNewDec(900),
 		},
 		{
-			name:          "negative delta increases toward zero",
-			initialDelta:  math.LegacyNewDec(-1000),
+			name:           "negative delta increases toward zero",
+			initialDelta:   math.LegacyNewDec(-1000),
 			recoveryPeriod: 10,
 			// -1000 - (-1000/10) = -1000 + 100 = -900
 			expectedDelta: math.LegacyNewDec(-900),
 		},
 		{
-			name:          "zero delta stays zero",
-			initialDelta:  math.LegacyZeroDec(),
+			name:           "zero delta stays zero",
+			initialDelta:   math.LegacyZeroDec(),
 			recoveryPeriod: 10,
-			expectedDelta: math.LegacyZeroDec(),
+			expectedDelta:  math.LegacyZeroDec(),
 		},
 		{
-			name:          "small delta with large recovery period",
-			initialDelta:  math.LegacyNewDec(1),
+			name:           "small delta with large recovery period",
+			initialDelta:   math.LegacyNewDec(1),
 			recoveryPeriod: 100,
 			// 1 - 1/100 = 0.99
 			expectedDelta: math.LegacyNewDecWithPrec(99, 2),
 		},
 		{
-			name:          "large recovery period — slow convergence",
-			initialDelta:  math.LegacyNewDec(14400),
+			name:           "large recovery period — slow convergence",
+			initialDelta:   math.LegacyNewDec(14400),
 			recoveryPeriod: 14400,
 			// 14400 - 14400/14400 = 14399
 			expectedDelta: math.LegacyNewDec(14399),
