@@ -1,3 +1,5 @@
+# Repository Guidelines
+
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
@@ -135,7 +137,8 @@ string field_name = N [
 
 - Types tests (`x/*/types/`): plain functions, not test suites. Test suites are for keeper tests only.
 - Use table-driven tests with `t.Run()` for all test cases
-- For params/genesis validation: use mutate pattern — start from `DefaultParams()`/`DefaultGenesisState()`, mutate one field per case
+- For params/genesis validation: use mutate pattern — start from `DefaultParams()`/`DefaultGenesisState()`, mutate one
+  field per case
 - Test validation logic and parsing, not trivial constructors (field assignments with no logic)
 - Verify both error and boundary-valid cases (e.g., zero is valid for `[0, 1]` range checks)
 - Use British spelling for function names (e.g., `Randomised` not `Randomized`)
