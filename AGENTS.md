@@ -84,6 +84,9 @@ When porting from Classic, always modernize:
   diffs. Wait for approval before editing. This is especially important for proto files and keeper/module wiring.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
+- When discussing code, refer to functions, methods, types, constants, or interfaces by name first (for example,
+  `msgServer.handleSwapRequest` or `Keeper.ComputeSwap`). Include file paths when helpful, but avoid line numbers unless
+  the user explicitly asks for them or the symbol reference would be ambiguous.
 
 ## Protobuf Generation
 
