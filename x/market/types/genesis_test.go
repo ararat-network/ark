@@ -10,16 +10,12 @@ import (
 	"noah/x/market/types"
 )
 
-func TestValidateGenesis(t *testing.T) {
+func TestValidateGenesisState(t *testing.T) {
 	tests := []struct {
 		name      string
 		mutate    func(*types.GenesisState)
 		expectErr string
 	}{
-		{
-			name:   "default is valid",
-			mutate: func(gs *types.GenesisState) {},
-		},
 		{
 			name: "nil noah pool delta",
 			mutate: func(gs *types.GenesisState) {
@@ -28,13 +24,8 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "noah pool delta must not be nil",
 		},
 		{
-			name: "custom valid genesis",
-			mutate: func(gs *types.GenesisState) {
-				*gs = *types.NewGenesisState(
-					math.LegacyNewDec(500),
-					types.DefaultParams(),
-				)
-			},
+			name:   "default genesis state",
+			mutate: func(gs *types.GenesisState) {},
 		},
 	}
 

@@ -86,3 +86,66 @@ func (s *KeeperTestSuite) SetupTest() {
 	// Create message server
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
+
+func (s *KeeperTestSuite) TestReplenishPools() {
+	tests := []struct {
+		name           string
+		initialDelta   math.LegacyDec
+		recoveryPeriod uint64
+		expectedDelta  math.LegacyDec
+	}{
+		{
+			name:           "positive delta converges to zero",
+			initialDelta:   math.LegacyNewDec(1000),
+			recoveryPeriod: 10,
+			// 1000 - 1000/10 = 900
+			expectedDelta: math.LegacyNewDec(900),
+		},
+		{
+			name:           "negative delta converges to zero",
+			initialDelta:   math.LegacyNewDec(-1000),
+			recoveryPeriod: 10,
+			// 1000 - 1000/10 = 900
+			expectedDelta: math.LegacyNewDec(-900),
+		},
+		{
+			name:           "zero delta stays zero",
+			initialDelta:   math.LegacyZeroDec(),
+			recoveryPeriod: 10,
+			expectedDelta:  math.LegacyZeroDec(),
+		},
+		{
+			name:           "small delta with large recovery period",
+			initialDelta:   math.LegacyNewDec(1),
+			recoveryPeriod: 100,
+			// 1 - 1/100 = 0.99
+			expectedDelta: math.LegacyNewDecWithPrec(99, 2),
+		},
+		{
+			name:           "large recovery period - slow convergence",
+			initialDelta:   math.LegacyNewDec(14400),
+			recoveryPeriod: 14400,
+			// 14400 - 14400/14400 = 14399
+			expectedDelta: math.LegacyNewDec(14399),
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			err := s.keeper.NoahPoolDelta.Set(s.ctx, tc.initialDelta)
+			s.Require().NoError(err)
+
+			p := types.DefaultParams()
+			p.PoolRecoveryPeriod = tc.recoveryPeriod
+			err = s.keeper.Params.Set(s.ctx, p)
+			s.Require().NoError(err)
+
+			err = s.keeper.ReplenishPools(s.ctx)
+			s.Require().NoError(err)
+
+			delta, err := s.keeper.NoahPoolDelta.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().True(tc.expectedDelta.Equal(delta), "expected %s, got %s", tc.expectedDelta, delta)
+		})
+	}
+}

@@ -15,8 +15,8 @@ const (
 
 // Default parameter values
 var (
-	DefaultBasePool           = math.LegacyNewDec(1000000 * core.MicroUnit) // 1000,000sdr = 1000,000,000,000usdr
-	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)             // 2%
+	DefaultBasePool           = math.LegacyNewDec(1_000_000 * core.MicroUnit) // 1,000,000sdr = 1,000,000,000,000usdr
+	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)               // 2%
 )
 
 // DefaultParams creates default market module parameters
