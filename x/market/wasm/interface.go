@@ -117,7 +117,7 @@ func (querier Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byt
 			return nil, err
 		}
 
-		bz, err := json.Marshal(SwapQueryResponse{Receive: wasm.EncodeSdkCoin(res.ReturnCoin)})
+		bz, err := json.Marshal(SwapQueryResponse{Receive: wasm.EncodeSdkCoin(res.SwapCoin)})
 		if err != nil {
 			return nil, sdkerrors.Wrap(errortypes.ErrJSONMarshal, err.Error())
 		}

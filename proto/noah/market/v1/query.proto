@@ -44,7 +44,9 @@ message QuerySwapRequest {
 // QuerySwapResponse is the response type for the Query/Swap RPC method.
 message QuerySwapResponse {
   // return_coin defines the coin returned as a result of the swap simulation.
-  cosmos.base.v1beta1.Coin return_coin = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin swap_coin = 1 [ (gogoproto.nullable) = false ];
+  // swap_fee defines the fee deducted from the simulated swap result.
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
 }
 
 // QueryNoahPoolDeltaRequest is the request type for the Query/NoahPoolDelta RPC

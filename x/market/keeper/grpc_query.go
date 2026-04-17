@@ -47,12 +47,24 @@ func (q queryServer) Swap(ctx context.Context, req *types.QuerySwapRequest) (*ty
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	retCoin, err := q.k.simulateSwap(ctx, offerCoin, req.AskDenom)
+	if err := validateInputs(offerCoin, req.AskDenom); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	swapDecCoin, spread, err := q.k.ComputeSwap(ctx, offerCoin, req.AskDenom)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QuerySwapResponse{ReturnCoin: retCoin}, nil
+	outcome, err := buildSwapOutcome(swapDecCoin, spread)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QuerySwapResponse{
+		SwapCoin: outcome.swapCoin,
+		SwapFee:  outcome.swapFee,
+	}, nil
 }
 
 // NoahPoolDelta queries noah pool delta
