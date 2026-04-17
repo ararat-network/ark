@@ -129,7 +129,6 @@ string field_name = N [
 
 ## Build & Verification
 
-- Always run `go build ./...` after making code changes to verify compilation
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`

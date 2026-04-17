@@ -1,6 +1,7 @@
 # Migration Notes: Terra Classic → Modern Cosmos SDK
 
-This document covers the key architectural differences between Terra Classic (cosmos-sdk v0.45) and our modern implementation (cosmos-sdk v0.53.5). Use this as a reference when porting modules.
+This document covers the key architectural differences between Terra Classic (cosmos-sdk v0.45) and our modern
+implementation (cosmos-sdk v0.53.5). Use this as a reference when porting modules.
 
 ---
 
@@ -24,13 +25,15 @@ message Params {
 ```
 
 Legacy gogoproto annotations to remove:
+
 - `gogoproto.equal` / `gogoproto.goproto_stringer` / `gogoproto.goproto_getters` — removed
 - `gogoproto.moretags` with `yaml:` tags — replaced by `amino` annotations
 - `customtype = "github.com/cosmos/cosmos-sdk/types.Dec"` — updated to `cosmossdk.io/math.LegacyDec`
 
 ### Modern (Dual: gogo + pulsar)
 
-Following upstream SDK v0.53, we use **both** gogo and pulsar codegen. Proto files in `proto/noah/*/v1/` use the full annotation pattern:
+Following upstream SDK v0.53, we use **both** gogo and pulsar codegen. Proto files in `proto/noah/*/v1/` use the full
+annotation pattern:
 
 ```protobuf
 message Params {
@@ -55,6 +58,7 @@ message Params {
 Code generation uses two configs:
 
 **`proto/buf.gen.gogo.yaml`** — gogo output to `x/*/types/` (typed Go structs + grpc-gateway):
+
 ```yaml
 plugins:
   - name: gocosmos
@@ -66,6 +70,7 @@ plugins:
 ```
 
 **`proto/buf.gen.yaml`** — pulsar output to `api/` (standard protobuf):
+
 ```yaml
 plugins:
   - name: go-pulsar
@@ -79,28 +84,31 @@ plugins:
 ### Annotation Pattern Reference
 
 For `math.LegacyDec` / `math.Int` fields:
+
 - `cosmos_proto.scalar` = runtime metadata (signing, textual rendering, amino JSON)
 - `gogoproto.customtype` = compile-time codegen (typed Go field instead of `string`)
 - `gogoproto.nullable = false` = value type, not pointer
 - `amino.dont_omitempty = true` = only on fields in Params/Msg types (messages with `amino.name`)
 
 For sub-message fields (Params, Coin):
+
 - `gogoproto.nullable = false` = value type
 - `amino.dont_omitempty = true` = on fields in Params/Msg/GenesisState
 
 For repeated Coin fields:
+
 - `gogoproto.nullable = false` + `gogoproto.castrepeated = "github.com/cosmos/cosmos-sdk/types.Coins"`
 
 ### Key Differences
 
-| Aspect | Classic gogoproto | Modern dual pipeline |
-|--------|-------------------|----------------------|
-| Decimal fields | `bytes` with `customtype = "sdk.Dec"` | `string` with `cosmos_proto.scalar` + `gogoproto.customtype = "cosmossdk.io/math.LegacyDec"` |
-| Nullability | `gogoproto.nullable = false` | Same — still used for value types |
-| Generated output | In-place with module code | gogo → `x/*/types/`, pulsar → `api/` |
-| YAML tags | `gogoproto.moretags` | `amino.dont_omitempty` + `amino.name` |
-| Codec | Protobuf v1 (gogo fork) only | Both gogo (v1) and pulsar (v2) |
-| Removed annotations | — | `gogoproto.equal`, `goproto_stringer`, `moretags` with yaml |
+| Aspect              | Classic gogoproto                     | Modern dual pipeline                                                                         |
+| ------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Decimal fields      | `bytes` with `customtype = "sdk.Dec"` | `string` with `cosmos_proto.scalar` + `gogoproto.customtype = "cosmossdk.io/math.LegacyDec"` |
+| Nullability         | `gogoproto.nullable = false`          | Same — still used for value types                                                            |
+| Generated output    | In-place with module code             | gogo → `x/*/types/`, pulsar → `api/`                                                         |
+| YAML tags           | `gogoproto.moretags`                  | `amino.dont_omitempty` + `amino.name`                                                        |
+| Codec               | Protobuf v1 (gogo fork) only          | Both gogo (v1) and pulsar (v2)                                                               |
+| Removed annotations | —                                     | `gogoproto.equal`, `goproto_stringer`, `moretags` with yaml                                  |
 
 ### Files
 
@@ -189,14 +197,14 @@ func NewKeeper(
 
 ### Key Differences
 
-| Aspect | Classic | Modern |
-|--------|---------|--------|
-| Store access | `sdk.StoreKey` + raw KVStore | `storetypes.KVStoreService` |
-| State management | Manual `store.Get()`/`store.Set()` with marshaling | `collections.Item` / `collections.Map` |
-| Params | `paramstypes.Subspace` | `collections.Item[types.Params]` (gogo value type) |
-| Authority | Not present (governance via param proposals) | Explicit `authority string` for `MsgUpdateParams` |
-| Return type | Value `Keeper` | Pointer `*Keeper` |
-| Pool delta | `DecProto` wrapper with manual marshal | `collections.Item[math.LegacyDec]` with `sdk.LegacyDecValue` codec |
+| Aspect           | Classic                                            | Modern                                                             |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------------------ |
+| Store access     | `sdk.StoreKey` + raw KVStore                       | `storetypes.KVStoreService`                                        |
+| State management | Manual `store.Get()`/`store.Set()` with marshaling | `collections.Item` / `collections.Map`                             |
+| Params           | `paramstypes.Subspace`                             | `collections.Item[types.Params]` (gogo value type)                 |
+| Authority        | Not present (governance via param proposals)       | Explicit `authority string` for `MsgUpdateParams`                  |
+| Return type      | Value `Keeper`                                     | Pointer `*Keeper`                                                  |
+| Pool delta       | `DecProto` wrapper with manual marshal             | `collections.Item[math.LegacyDec]` with `sdk.LegacyDecValue` codec |
 
 ---
 
@@ -283,21 +291,22 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 
 ### Key Differences
 
-| Aspect | x/params | Collections |
-|--------|----------|-------------|
-| Storage | ParamSubspace with key-value pairs | `collections.Item` with typed codec |
-| Keys | `[]byte` constants | `collections.Prefix` |
-| Access | `paramSpace.Get(ctx, key, &val)` | `k.Params.Get(ctx)` |
-| Mutation | `paramSpace.SetParamSet(ctx, &params)` | `k.Params.Set(ctx, params)` |
-| Governance | Param change proposals (legacy) | `MsgUpdateParams` with authority check |
-| Validation | `ParamSetPairs` with validators | Validated in `MsgUpdateParams` handler |
-| Per-field access | Individual getter per param | Single `Get()` returns full Params struct |
+| Aspect           | x/params                               | Collections                               |
+| ---------------- | -------------------------------------- | ----------------------------------------- |
+| Storage          | ParamSubspace with key-value pairs     | `collections.Item` with typed codec       |
+| Keys             | `[]byte` constants                     | `collections.Prefix`                      |
+| Access           | `paramSpace.Get(ctx, key, &val)`       | `k.Params.Get(ctx)`                       |
+| Mutation         | `paramSpace.SetParamSet(ctx, &params)` | `k.Params.Set(ctx, params)`               |
+| Governance       | Param change proposals (legacy)        | `MsgUpdateParams` with authority check    |
+| Validation       | `ParamSetPairs` with validators        | Validated in `MsgUpdateParams` handler    |
+| Per-field access | Individual getter per param            | Single `Get()` returns full Params struct |
 
 ### Porting Checklist for Params
 
 1. Remove `ParamKeyTable()`, `ParamSetPairs()`, and per-param byte keys
 2. Add `collections.NewPrefix` keys in `types/keys.go`
-3. Replace `paramstypes.Subspace` in keeper with `collections.Item[types.Params]` using `codec.CollValue[types.Params](cdc)`
+3. Replace `paramstypes.Subspace` in keeper with `collections.Item[types.Params]` using
+   `codec.CollValue[types.Params](cdc)`
 4. Add `authority string` field to keeper
 5. Implement `MsgUpdateParams` message and handler
 6. Remove individual param getter methods; use `k.Params.Get(ctx)` instead
@@ -345,21 +354,24 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 ```
 
 Key changes in message handlers:
+
 - `context.Context` used directly (no `sdk.UnwrapSDKContext` needed for collections)
 - `MsgUpdateParams` added for governance-controlled param updates
-- All module code uses gogo types from `x/{module}/types` — message fields are typed (`sdk.Coin`, `math.LegacyDec`), not strings/pointers
-- Methods can be defined on gogo types (e.g. `Params.Validate()`, `MsgSwap.ValidateBasic()`) since they live in the same package
+- All module code uses gogo types from `x/{module}/types` — message fields are typed (`sdk.Coin`, `math.LegacyDec`), not
+  strings/pointers
+- Methods can be defined on gogo types (e.g. `Params.Validate()`, `MsgSwap.ValidateBasic()`) since they live in the same
+  package
 - Pulsar types in `api/` are only for the runtime/signing layer — never imported in module code
 
 ### Key Differences
 
-| Aspect | Classic | Modern |
-|--------|---------|--------|
-| Keeper reference | Embedded `Keeper` struct | Named field `k *Keeper` (pointer) |
-| Unimplemented server | Not embedded | `UnimplementedMsgServer` embedded for forward compat |
-| Context | `sdk.UnwrapSDKContext(goCtx)` | `context.Context` passed directly to collections |
-| Generated types | `x/{module}/types` (gogoproto) | `x/{module}/types` (gogo, used in all module code) + `api/` (pulsar, runtime only) |
-| Param updates | Via legacy param change proposals | Explicit `MsgUpdateParams` handler |
+| Aspect               | Classic                           | Modern                                                                             |
+| -------------------- | --------------------------------- | ---------------------------------------------------------------------------------- |
+| Keeper reference     | Embedded `Keeper` struct          | Named field `k *Keeper` (pointer)                                                  |
+| Unimplemented server | Not embedded                      | `UnimplementedMsgServer` embedded for forward compat                               |
+| Context              | `sdk.UnwrapSDKContext(goCtx)`     | `context.Context` passed directly to collections                                   |
+| Generated types      | `x/{module}/types` (gogoproto)    | `x/{module}/types` (gogo, used in all module code) + `api/` (pulsar, runtime only) |
+| Param updates        | Via legacy param change proposals | Explicit `MsgUpdateParams` handler                                                 |
 
 ### Porting Checklist for MsgServer
 
@@ -369,7 +381,8 @@ Key changes in message handlers:
 4. Use gogo types throughout — `msg.OfferCoin` is `sdk.Coin` (value), `msg.Params` is `types.Params` (value)
 5. Remove `sdk.UnwrapSDKContext` where not needed (collections accept `context.Context`)
 6. Add `ValidateBasic()` methods on `MsgSwap`, `MsgSwapSend` etc. in `x/{module}/types/msgs.go`
-7. Legacy Msg interface methods (`Route`, `Type`, `GetSignBytes`, `GetSigners`) are NOT needed — replaced by proto annotations
+7. Legacy Msg interface methods (`Route`, `Type`, `GetSignBytes`, `GetSigners`) are NOT needed — replaced by proto
+   annotations
 
 ---
 
@@ -478,14 +491,14 @@ modules:
 
 ### Key Differences
 
-| Aspect | Classic | Modern |
-|--------|---------|--------|
-| Wiring | Manual in `app.go` | Depinject via `ProvideModule` |
-| Config | Constructor args | `module.proto` + `app_config.yaml` |
-| REST routes | `RegisterRESTRoutes` (mux) | Removed (gRPC-gateway only) |
-| Interfaces | `AppModuleBasic` + `AppModule` | `appmodule.AppModule` + `appmodule.HasEndBlocker` |
+| Aspect              | Classic                        | Modern                                               |
+| ------------------- | ------------------------------ | ---------------------------------------------------- |
+| Wiring              | Manual in `app.go`             | Depinject via `ProvideModule`                        |
+| Config              | Constructor args               | `module.proto` + `app_config.yaml`                   |
+| REST routes         | `RegisterRESTRoutes` (mux)     | Removed (gRPC-gateway only)                          |
+| Interfaces          | `AppModuleBasic` + `AppModule` | `appmodule.AppModule` + `appmodule.HasEndBlocker`    |
 | BeginBlock/EndBlock | `abci.RequestBeginBlock` param | No params (uses `appmodule.HasEndBlocker` interface) |
-| Module account | Registered in `maccPerms` map | Declared in module config |
+| Module account      | Registered in `maccPerms` map  | Declared in module config                            |
 
 ### Porting Checklist for Module Registration
 
@@ -496,19 +509,20 @@ modules:
 5. Add module entry to `app/app_config.yaml`
 6. Remove manual wiring from `app.go`
 7. Remove `RegisterRESTRoutes` (legacy REST is deprecated)
-8. Replace `BeginBlock(ctx, req)` / `EndBlock(ctx, req)` with parameterless versions via `appmodule.HasBeginBlocker` / `appmodule.HasEndBlocker`
+8. Replace `BeginBlock(ctx, req)` / `EndBlock(ctx, req)` with parameterless versions via `appmodule.HasBeginBlocker` /
+   `appmodule.HasEndBlocker`
 
 ---
 
 ## Quick Reference: Import Path Changes
 
-| Classic Import | Modern Import |
-|---------------|---------------|
-| `github.com/cosmos/cosmos-sdk/types` | `github.com/cosmos/cosmos-sdk/types` (unchanged) |
-| `github.com/cosmos/cosmos-sdk/x/params/types` | `cosmossdk.io/collections` |
-| `github.com/tendermint/tendermint/libs/log` | `cosmossdk.io/log` |
-| `github.com/cosmos/cosmos-sdk/types` (Int, Dec) | `cosmossdk.io/math` |
-| `github.com/cosmos/cosmos-sdk/types/errors` | `cosmossdk.io/errors` |
-| `github.com/cosmos/cosmos-sdk/store/types` | `cosmossdk.io/store/types` |
-| `github.com/gogo/protobuf/...` | `github.com/cosmos/gogoproto/...` (gogo) + `google.golang.org/protobuf/...` (pulsar) |
-| `github.com/cosmos/cosmos-sdk/types/module` | `cosmossdk.io/core/appmodule` (for interfaces) |
+| Classic Import                                  | Modern Import                                                                        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `github.com/cosmos/cosmos-sdk/types`            | `github.com/cosmos/cosmos-sdk/types` (unchanged)                                     |
+| `github.com/cosmos/cosmos-sdk/x/params/types`   | `cosmossdk.io/collections`                                                           |
+| `github.com/tendermint/tendermint/libs/log`     | `cosmossdk.io/log`                                                                   |
+| `github.com/cosmos/cosmos-sdk/types` (Int, Dec) | `cosmossdk.io/math`                                                                  |
+| `github.com/cosmos/cosmos-sdk/types/errors`     | `cosmossdk.io/errors`                                                                |
+| `github.com/cosmos/cosmos-sdk/store/types`      | `cosmossdk.io/store/types`                                                           |
+| `github.com/gogo/protobuf/...`                  | `github.com/cosmos/gogoproto/...` (gogo) + `google.golang.org/protobuf/...` (pulsar) |
+| `github.com/cosmos/cosmos-sdk/types/module`     | `cosmossdk.io/core/appmodule` (for interfaces)                                       |
