@@ -12,21 +12,18 @@ import (
 	"noah/x/treasury/types"
 )
 
-// InitGenesis initializes default parameters
-// and the keeper's address to pubkey map
+// InitGenesis initializes default parameters and the keeper's address to pubkey map
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
-
 	if err := k.TaxRate.Set(ctx, data.TaxRate); err != nil {
 		return fmt.Errorf("setting tax rate: %w", err)
 	}
 	if err := k.RewardWeight.Set(ctx, data.RewardWeight); err != nil {
 		return fmt.Errorf("setting reward weight: %w", err)
 	}
-	epochTaxProceeds := types.EpochTaxProceeds{TaxProceeds: data.EpochTaxProceeds}
-	if err := k.EpochTaxProceeds.Set(ctx, epochTaxProceeds); err != nil {
+	if err := k.EpochTaxProceeds.Set(ctx, types.EpochTaxProceeds{TaxProceeds: data.EpochTaxProceeds}); err != nil {
 		return fmt.Errorf("setting epoch tax proceeds: %w", err)
 	}
 
@@ -36,8 +33,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			return fmt.Errorf("recording epoch initial issuance: %w", err)
 		}
 	} else {
-		epochInitialIssuance := types.EpochInitialIssuance{Issuance: data.EpochInitialIssuance}
-		if err := k.EpochInitialIssuance.Set(ctx, epochInitialIssuance); err != nil {
+		if err := k.EpochInitialIssuance.Set(ctx, types.EpochInitialIssuance{Issuance: data.EpochInitialIssuance}); err != nil {
 			return fmt.Errorf("setting epoch initial issuance: %w", err)
 		}
 	}

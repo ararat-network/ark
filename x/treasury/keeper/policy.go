@@ -2,8 +2,10 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,19 +28,28 @@ func (k Keeper) UpdateTaxCap(ctx context.Context) (sdk.Coins, error) {
 		}
 
 		newDecCap, err := k.marketKeeper.ComputeOracleRate(ctx, taxPolicyCap, denom.Name)
-		if err == nil {
-			newCap, _ := newDecCap.TruncateDecimal()
-			newCaps = append(newCaps, newCap)
-			if err := k.TaxCaps.Set(ctx, newCap.Denom, newCap.Amount); err != nil {
-				return nil, fmt.Errorf("setting tax cap: %w", err)
-			}
+		if err != nil {
+			k.Logger(ctx).Warn(
+				"skipping tax cap update",
+				"denom", denom.Name,
+				"cap_denom", taxPolicyCap.Denom,
+				"cap_amount", taxPolicyCap.Amount.String(),
+				"err", err,
+			)
+			continue
+		}
+
+		newCap, _ := newDecCap.TruncateDecimal()
+		newCaps = append(newCaps, newCap)
+		if err := k.TaxCaps.Set(ctx, newCap.Denom, newCap.Amount); err != nil {
+			return nil, fmt.Errorf("setting tax cap: %w", err)
 		}
 	}
 
 	return newCaps, nil
 }
 
-// UpdateTaxPolicy updates tax-rate with t(t+1) = t(t) * (TL_year(t) + INC) / TL_month(t)
+// UpdateTaxPolicy updates tax-rate with t(t+1) = t(t) * (TRA_year(t) + INC) / TRA_month(t)
 func (k Keeper) UpdateTaxPolicy(ctx context.Context) (math.LegacyDec, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -50,21 +61,21 @@ func (k Keeper) UpdateTaxPolicy(ctx context.Context) (math.LegacyDec, error) {
 		return math.LegacyZeroDec(), fmt.Errorf("getting tax rate: %w", err)
 	}
 	inc := params.MiningIncrement
-	tlYear, err := k.rollingAverageIndicator(ctx, params.WindowLong)
+	traYear, err := k.rollingAverageIndicator(ctx, params.WindowLong)
 	if err != nil {
 		return math.LegacyZeroDec(), err
 	}
-	tlMonth, err := k.rollingAverageIndicator(ctx, params.WindowShort)
+	traMonth, err := k.rollingAverageIndicator(ctx, params.WindowShort)
 	if err != nil {
 		return math.LegacyZeroDec(), err
 	}
 
 	var newTaxRate math.LegacyDec
 	// No revenues, hike as much as possible.
-	if tlMonth.Equal(math.LegacyZeroDec()) {
+	if traMonth.Equal(math.LegacyZeroDec()) {
 		newTaxRate = params.TaxPolicy.RateMax
 	} else {
-		newTaxRate = oldTaxRate.Mul(tlYear.Mul(inc)).Quo(tlMonth)
+		newTaxRate = oldTaxRate.Mul(traYear.Mul(inc)).Quo(traMonth)
 	}
 
 	newTaxRate = params.TaxPolicy.Clamp(oldTaxRate, newTaxRate)
@@ -112,4 +123,61 @@ func (k Keeper) UpdateRewardPolicy(ctx context.Context) (math.LegacyDec, error) 
 		return math.LegacyZeroDec(), fmt.Errorf("setting reward weight: %w", err)
 	}
 	return newRewardWeight, nil
+}
+
+// sumIndicator returns the sum of the indicator over several epochs.
+// If current epoch < epochs, we return the best we can and return sumIndicator(currentEpoch).
+// Missing epoch states are skipped gracefully (treated as zero contribution).
+// Return values are (taxRewardSum, seigniorageRewardSum, error)
+func (k Keeper) sumIndicator(ctx context.Context, epochs uint64) (math.LegacyDec, math.LegacyDec, error) {
+	taxRewardSum := math.LegacyZeroDec()
+	seigniorageRewardSum := math.LegacyZeroDec()
+	curEpoch := k.GetEpoch(ctx)
+
+	n := min(epochs, curEpoch+1)
+	for j := uint64(0); j < n; j++ {
+		val, err := k.EpochStates.Get(ctx, curEpoch-j)
+		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				continue
+			}
+			return math.LegacyZeroDec(), math.LegacyZeroDec(), fmt.Errorf("getting epoch state: %w", err)
+		}
+		taxRewardSum = taxRewardSum.Add(val.TaxReward)
+		seigniorageRewardSum = seigniorageRewardSum.Add(val.SeigniorageReward)
+	}
+
+	return taxRewardSum, seigniorageRewardSum, nil
+}
+
+// rollingAverageIndicator returns the rolling average of the indicator over several epochs.
+// If current epoch < epochs, we return the best we can and return rollingAverageIndicator(currentEpoch).
+// Missing epoch states are skipped and excluded from the denominator, so the average
+// reflects only epochs with actual data rather than being diluted by gaps.
+func (k Keeper) rollingAverageIndicator(ctx context.Context, epochs uint64) (math.LegacyDec, error) {
+	sum := math.LegacyZeroDec()
+	curEpoch := k.GetEpoch(ctx)
+
+	n := min(epochs, curEpoch+1)
+	var counted uint64
+	for j := uint64(0); j < n; j++ {
+		val, err := k.EpochStates.Get(ctx, curEpoch-j)
+		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				continue
+			}
+			return math.LegacyZeroDec(), fmt.Errorf("getting epoch state: %w", err)
+		}
+		counted++
+		if val.TaxReward.IsZero() || val.TotalStakedArk.IsZero() {
+			continue
+		}
+		sum = sum.Add(val.TaxReward.QuoInt(val.TotalStakedArk))
+	}
+
+	if counted == 0 {
+		return sum, nil
+	}
+
+	return sum.QuoInt64(int64(counted)), nil
 }
