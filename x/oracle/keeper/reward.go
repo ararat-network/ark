@@ -19,7 +19,7 @@ func (k Keeper) RewardBallotWinners(
 	ctx context.Context,
 	votePeriod int64,
 	rewardDistributionWindow int64,
-	ballotWinners map[string]types.Claim,
+	ballotWinners map[string]types.VoteScore,
 ) error {
 	// Sum weight of the claims
 	ballotPowerSum := int64(0)

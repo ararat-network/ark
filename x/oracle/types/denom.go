@@ -2,7 +2,7 @@ package types
 
 import "strings"
 
-// DenomList is a list of Denom.
+// DenomList is a list of Denom
 type DenomList []Denom
 
 // String implements fmt.Stringer interface

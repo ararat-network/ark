@@ -148,8 +148,8 @@ func (k Keeper) GetFeederDelegation(ctx context.Context, operator sdk.ValAddress
 	return accAddress, nil
 }
 
-// GetExchangeRate gets the consensus exchange rate of Ark denominated in the denom asset from the store.
-func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
+// GetArkExchangeRate gets the consensus exchange rate of Ark denominated in the denom asset from the store.
+func (k Keeper) GetArkExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	if denom == core.MicroArkDenom {
 		return math.LegacyOneDec(), nil
 	}

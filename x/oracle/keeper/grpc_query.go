@@ -47,7 +47,7 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 		return nil, status.Error(codes.InvalidArgument, "empty denom")
 	}
 
-	exchangeRate, err := q.k.GetExchangeRate(ctx, req.Denom)
+	exchangeRate, err := q.k.GetArkExchangeRate(ctx, req.Denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, req.Denom)

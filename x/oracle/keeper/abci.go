@@ -23,7 +23,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	}
 
 	if core.IsPeriodLastBlock(ctx, params.VotePeriod) {
-		validatorClaimMap, err := k.BuildValidatorClaimMap(ctx)
+		validatorClaimMap, err := k.BuildVoteScoreMap(ctx)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func (k Keeper) TallyExchangeRates(
 	ctx context.Context,
 	params types.Params,
 	voteTargets map[string]math.LegacyDec,
-	validatorClaimMap map[string]types.Claim,
+	validatorClaimMap map[string]types.VoteScore,
 ) error {
 	// Clear all exchange rates
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
@@ -109,17 +109,17 @@ func (k Keeper) TallyExchangeRates(
 	}
 
 	ballotRT := voteMap[referenceDenom]
-	voteMapRT := ballotRT.ToMap()
-	exchangeRateRT := ballotRT.WeightedMedianWithAssertion()
+	voteMapRT := ballotRT.ValidatorMap()
+	exchangeRateRT := ballotRT.WeightedMedian()
 
 	for denom, ballot := range voteMap {
 		// Convert ballot to cross exchange rates
 		if denom != referenceDenom {
-			ballot = ballot.ToCrossRateWithSort(voteMapRT)
+			ballot = ballot.CrossRate(voteMapRT)
 		}
 
 		// Get weighted median of cross exchange rates
-		exchangeRate := ballot.Tally(ctx, params.RewardBand, validatorClaimMap)
+		exchangeRate := TallyVotes(ctx, params.RewardBand, ballot, validatorClaimMap)
 
 		// Transform into the original form uark/stablecoin
 		if denom != referenceDenom {

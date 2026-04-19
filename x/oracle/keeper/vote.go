@@ -15,8 +15,8 @@ import (
 
 // PickReferenceDenom choose reference stablecoin denom with the highest voter turnout. If the voting power of
 // the two denominations is the same, select in alphabetical order.
-func (k Keeper) PickReferenceDenom(ctx context.Context, voteTargets map[string]math.LegacyDec, voteMap map[string]types.ExchangeRateBallot) (string, error) {
-	largestBallotPower := int64(0)
+func (k Keeper) PickReferenceDenom(ctx context.Context, voteTargets map[string]math.LegacyDec, voteMap map[string]types.DenomVotes) (string, error) {
+	largestBallotPower := math.ZeroInt()
 	referenceNoah := ""
 
 	totalBondedPower := sdk.TokensToConsensusPower(k.stakingKeeper.TotalBondedTokens(ctx), k.stakingKeeper.PowerReduction(ctx))
@@ -34,22 +34,20 @@ func (k Keeper) PickReferenceDenom(ctx context.Context, voteTargets map[string]m
 			continue
 		}
 
-		ballotPower := int64(0)
+		ballotPower := math.NewInt(ballot.Power())
 
 		// If the ballot is not passed, remove it from the voteTargets array
 		// to prevent slashing validators who did valid vote.
-		if power, ok := ballot.BallotIsPassing(thresholdVotes); ok {
-			ballotPower = power.Int64()
-		} else {
+		if ballotPower.IsZero() || ballotPower.LT(thresholdVotes) {
 			delete(voteTargets, denom)
 			delete(voteMap, denom)
 			continue
 		}
 
-		if ballotPower > largestBallotPower || largestBallotPower == 0 {
+		if ballotPower.GT(largestBallotPower) || largestBallotPower.IsZero() {
 			referenceNoah = denom
 			largestBallotPower = ballotPower
-		} else if largestBallotPower == ballotPower && referenceNoah > denom {
+		} else if largestBallotPower.Equal(ballotPower) && referenceNoah > denom {
 			referenceNoah = denom
 		}
 	}
@@ -57,9 +55,9 @@ func (k Keeper) PickReferenceDenom(ctx context.Context, voteTargets map[string]m
 	return referenceNoah, nil
 }
 
-// BuildValidatorClaimMap builds a map of validator claims for all bonded validators in the active set.
-func (k Keeper) BuildValidatorClaimMap(ctx context.Context) (map[string]types.Claim, error) {
-	validatorClaimMap := make(map[string]types.Claim)
+// BuildVoteScoreMap builds a map of validator claims for all bonded validators in the active set.
+func (k Keeper) BuildVoteScoreMap(ctx context.Context) (map[string]types.VoteScore, error) {
+	validatorClaimMap := make(map[string]types.VoteScore)
 
 	maxValidators := k.stakingKeeper.MaxValidators(ctx)
 	iterator := k.stakingKeeper.ValidatorsPowerStoreIterator(ctx)
@@ -77,7 +75,7 @@ func (k Keeper) BuildValidatorClaimMap(ctx context.Context) (map[string]types.Cl
 			if err != nil {
 				return nil, fmt.Errorf("invalid address: %w", err)
 			}
-			validatorClaimMap[operator] = types.NewClaim(
+			validatorClaimMap[operator] = types.NewValidatorScore(
 				validator.GetConsensusPower(powerReduction),
 				0,
 				0,
@@ -91,7 +89,7 @@ func (k Keeper) BuildValidatorClaimMap(ctx context.Context) (map[string]types.Cl
 }
 
 // CountMisses increments the miss counter for validators who failed to vote on all passing denoms.
-func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.LegacyDec, validatorClaimMap map[string]types.Claim) error {
+func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.LegacyDec, validatorClaimMap map[string]types.VoteScore) error {
 	voteTargetsLen := len(voteTargets)
 	for _, claim := range validatorClaimMap {
 		// Skip abstain & valid voters
@@ -110,4 +108,33 @@ func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.Leg
 	}
 
 	return nil
+}
+
+// TallyVotes calculates the median and returns it. Sets the set of voters to be rewarded, i.e. voted within
+// a reasonable spread from the weighted median to the store
+func TallyVotes(ctx context.Context, rewardBand math.LegacyDec, denomVotes types.DenomVotes, validatorScoreMap map[string]types.VoteScore) (weightedMedian math.LegacyDec) {
+	weightedMedian = denomVotes.WeightedMedian()
+
+	standardDeviation := denomVotes.StandardDeviation(weightedMedian)
+	rewardSpread := weightedMedian.Mul(rewardBand.QuoInt64(2))
+
+	if standardDeviation.GT(rewardSpread) {
+		rewardSpread = standardDeviation
+	}
+
+	for _, vote := range denomVotes {
+		// Filter vote winners & abstains
+		if (vote.ExchangeRate.GTE(weightedMedian.Sub(rewardSpread)) &&
+			vote.ExchangeRate.LTE(weightedMedian.Add(rewardSpread))) ||
+			!vote.ExchangeRate.IsPositive() {
+
+			voter := vote.Voter.String()
+			claim := validatorScoreMap[voter]
+			claim.Weight += vote.Power
+			claim.WinCount++
+			validatorScoreMap[voter] = claim
+		}
+	}
+
+	return weightedMedian
 }

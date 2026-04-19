@@ -16,8 +16,8 @@ import (
 
 // OrganizeBallotByDenom collects all oracle votes for the period, categorized by the votes' denom parameter.
 // Inactive or jailed validators are filtered out, and abstain votes are given zero vote power.
-func (k Keeper) OrganizeBallotByDenom(ctx context.Context, validatorClaimMap map[string]types.Claim) (map[string]types.ExchangeRateBallot, error) {
-	votes := make(map[string]types.ExchangeRateBallot)
+func (k Keeper) OrganizeBallotByDenom(ctx context.Context, validatorClaimMap map[string]types.VoteScore) (map[string]types.DenomVotes, error) {
+	votes := make(map[string]types.DenomVotes)
 
 	// Organize aggregate votes
 	iteratorHandler := func(voterAddr sdk.ValAddress, vote types.AggregateExchangeRateVote) (bool, error) {
@@ -34,7 +34,7 @@ func (k Keeper) OrganizeBallotByDenom(ctx context.Context, validatorClaimMap map
 				}
 
 				votes[tuple.Denom] = append(votes[tuple.Denom],
-					types.NewVoteForTally(
+					types.NewVote(
 						tuple.ExchangeRate,
 						tuple.Denom,
 						voterAddr,
