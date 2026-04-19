@@ -8,7 +8,6 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
 	core "noah/types"
 	oracletypes "noah/x/oracle/types"
@@ -211,8 +210,8 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 		Return(oracletypes.DenomList{}).AnyTimes()
 	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	s.distrKeeper.EXPECT().GetFeePool(gomock.Any()).Return(distrtypes.FeePool{CommunityPool: sdk.DecCoins{}}).AnyTimes()
-	s.distrKeeper.EXPECT().SetFeePool(gomock.Any(), gomock.Any()).AnyTimes()
+	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1}).AnyTimes()
+	s.distrKeeper.EXPECT().FundCommunityPool(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	initialTaxRate, _ := s.keeper.TaxRate.Get(s.ctx)
 

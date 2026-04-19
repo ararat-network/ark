@@ -47,7 +47,7 @@ type QueryClient interface {
 	SeigniorageProceeds(ctx context.Context, in *QuerySeigniorageProceedsRequest, opts ...grpc.CallOption) (*QuerySeigniorageProceedsResponse, error)
 	// TaxProceeds return the current tax proceeds
 	TaxProceeds(ctx context.Context, in *QueryTaxProceedsRequest, opts ...grpc.CallOption) (*QueryTaxProceedsResponse, error)
-	// Indicators return the current trl informations
+	// Indicators return the current tra informations
 	Indicators(ctx context.Context, in *QueryIndicatorsRequest, opts ...grpc.CallOption) (*QueryIndicatorsResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
@@ -159,7 +159,7 @@ type QueryServer interface {
 	SeigniorageProceeds(context.Context, *QuerySeigniorageProceedsRequest) (*QuerySeigniorageProceedsResponse, error)
 	// TaxProceeds return the current tax proceeds
 	TaxProceeds(context.Context, *QueryTaxProceedsRequest) (*QueryTaxProceedsResponse, error)
-	// Indicators return the current trl informations
+	// Indicators return the current tra informations
 	Indicators(context.Context, *QueryIndicatorsRequest) (*QueryIndicatorsResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)

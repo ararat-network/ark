@@ -63,7 +63,7 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 	return nil
 }
 
-// alignCoins align the coins to the given denom through the market swap
+// alignCoins aligns the coins to the given denom through the market swap
 func (k Keeper) alignCoins(ctx context.Context, coins sdk.DecCoins, denom string) (alignedAmt math.LegacyDec) {
 	alignedAmt = math.LegacyZeroDec()
 	for _, coinReward := range coins {

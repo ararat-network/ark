@@ -128,7 +128,6 @@ func (k Keeper) UpdateRewardPolicy(ctx context.Context) (math.LegacyDec, error) 
 // sumIndicator returns the sum of the indicator over several epochs.
 // If current epoch < epochs, we return the best we can and return sumIndicator(currentEpoch).
 // Missing epoch states are skipped gracefully (treated as zero contribution).
-// Return values are (taxRewardSum, seigniorageRewardSum, error)
 func (k Keeper) sumIndicator(ctx context.Context, epochs uint64) (math.LegacyDec, math.LegacyDec, error) {
 	taxRewardSum := math.LegacyZeroDec()
 	seigniorageRewardSum := math.LegacyZeroDec()

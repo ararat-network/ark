@@ -13,10 +13,9 @@ import (
 
 	"noah/x/treasury/keeper"
 	"noah/x/treasury/types"
-	wasm "noah/x/wasm/exported"
 )
 
-var _ wasm.WasmQuerierInterface = Querier{}
+// var _ wasm.WasmQuerierInterface = Querier{}
 
 // Querier - staking query interface for wasm contract
 type Querier struct {

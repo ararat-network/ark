@@ -11,12 +11,11 @@ package testutil
 
 import (
 	context "context"
-	types1 "noah/x/oracle/types"
+	types0 "noah/x/oracle/types"
 	reflect "reflect"
 
 	math "cosmossdk.io/math"
 	types "github.com/cosmos/cosmos-sdk/types"
-	types0 "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -267,30 +266,18 @@ func (m *MockDistributionKeeper) EXPECT() *MockDistributionKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetFeePool mocks base method.
-func (m *MockDistributionKeeper) GetFeePool(ctx context.Context) types0.FeePool {
+// FundCommunityPool mocks base method.
+func (m *MockDistributionKeeper) FundCommunityPool(ctx context.Context, amount types.Coins, sender types.AccAddress) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFeePool", ctx)
-	ret0, _ := ret[0].(types0.FeePool)
+	ret := m.ctrl.Call(m, "FundCommunityPool", ctx, amount, sender)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// GetFeePool indicates an expected call of GetFeePool.
-func (mr *MockDistributionKeeperMockRecorder) GetFeePool(ctx any) *gomock.Call {
+// FundCommunityPool indicates an expected call of FundCommunityPool.
+func (mr *MockDistributionKeeperMockRecorder) FundCommunityPool(ctx, amount, sender any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeePool", reflect.TypeOf((*MockDistributionKeeper)(nil).GetFeePool), ctx)
-}
-
-// SetFeePool mocks base method.
-func (m *MockDistributionKeeper) SetFeePool(ctx context.Context, feePool types0.FeePool) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetFeePool", ctx, feePool)
-}
-
-// SetFeePool indicates an expected call of SetFeePool.
-func (mr *MockDistributionKeeperMockRecorder) SetFeePool(ctx, feePool any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFeePool", reflect.TypeOf((*MockDistributionKeeper)(nil).SetFeePool), ctx, feePool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FundCommunityPool", reflect.TypeOf((*MockDistributionKeeper)(nil).FundCommunityPool), ctx, amount, sender)
 }
 
 // MockOracleKeeper is a mock of OracleKeeper interface.
@@ -330,7 +317,7 @@ func (mr *MockOracleKeeperMockRecorder) SetArkExchangeRate(ctx, denom, exchangeR
 }
 
 // SetWhitelist mocks base method.
-func (m *MockOracleKeeper) SetWhitelist(ctx context.Context, whitelist types1.DenomList) {
+func (m *MockOracleKeeper) SetWhitelist(ctx context.Context, whitelist types0.DenomList) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetWhitelist", ctx, whitelist)
 }
@@ -342,10 +329,10 @@ func (mr *MockOracleKeeperMockRecorder) SetWhitelist(ctx, whitelist any) *gomock
 }
 
 // Whitelist mocks base method.
-func (m *MockOracleKeeper) Whitelist(ctx context.Context) types1.DenomList {
+func (m *MockOracleKeeper) Whitelist(ctx context.Context) types0.DenomList {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Whitelist", ctx)
-	ret0, _ := ret[0].(types1.DenomList)
+	ret0, _ := ret[0].(types0.DenomList)
 	return ret0
 }
 

@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
 	oracletypes "noah/x/oracle/types"
 )
@@ -38,8 +37,7 @@ type StakingKeeper interface {
 
 // DistributionKeeper expected keeper for distribution module
 type DistributionKeeper interface {
-	GetFeePool(ctx context.Context) (feePool distrtypes.FeePool)
-	SetFeePool(ctx context.Context, feePool distrtypes.FeePool)
+	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
 }
 
 // OracleKeeper defines expected oracle keeper
