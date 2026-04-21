@@ -86,7 +86,7 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 		Return(nil)
 
 	// When EpochInitialIssuance is empty, RecordEpochInitialIssuance is called
-	s.oracleKeeper.EXPECT().Whitelist(s.ctx).Return(nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(nil, nil)
 	s.bankKeeper.EXPECT().GetSupply(s.ctx, core.MicroArkDenom).
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000)))
 

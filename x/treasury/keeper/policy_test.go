@@ -25,7 +25,7 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 
 	tests := []struct {
 		name            string
-		whitelist       oracletypes.DenomList
+		whitelist       oracletypes.TobinTaxes
 		oracleResponses map[string]oracleResponse
 		expectedCaps    sdk.Coins
 		absentDenoms    []string
@@ -33,9 +33,9 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 	}{
 		{
 			name: "updates whitelisted denoms",
-			whitelist: oracletypes.DenomList{
-				{Name: "uusd"},
-				{Name: "ukrw"},
+			whitelist: oracletypes.TobinTaxes{
+				{Denom: "uusd"},
+				{Denom: "ukrw"},
 			},
 			oracleResponses: map[string]oracleResponse{
 				"uusd": {amount: math.LegacyNewDec(1500000)},
@@ -48,9 +48,9 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 		},
 		{
 			name: "skips cap denom",
-			whitelist: oracletypes.DenomList{
-				{Name: core.MicroSDRDenom},
-				{Name: "uusd"},
+			whitelist: oracletypes.TobinTaxes{
+				{Denom: core.MicroSDRDenom},
+				{Denom: "uusd"},
 			},
 			oracleResponses: map[string]oracleResponse{
 				"uusd": {amount: math.LegacyNewDec(1500000)},
@@ -62,15 +62,15 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 		},
 		{
 			name:            "empty whitelist",
-			whitelist:       oracletypes.DenomList{},
+			whitelist:       oracletypes.TobinTaxes{},
 			oracleResponses: map[string]oracleResponse{},
 			expectedCaps:    sdk.Coins{},
 		},
 		{
 			name: "skips denom when oracle conversion fails",
-			whitelist: oracletypes.DenomList{
-				{Name: "uusd"},
-				{Name: "ukrw"},
+			whitelist: oracletypes.TobinTaxes{
+				{Denom: "uusd"},
+				{Denom: "ukrw"},
 			},
 			oracleResponses: map[string]oracleResponse{
 				"uusd": {amount: math.LegacyNewDec(1500000)},
@@ -102,12 +102,12 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 				s.Require().NoError(s.keeper.TaxCaps.Remove(s.ctx, denom))
 			}
 
-			s.oracleKeeper.EXPECT().Whitelist(gomock.Any()).
-				Return(tc.whitelist)
+			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
+				Return(tc.whitelist, nil)
 
 			expectedOracleCalls := 0
 			for _, denom := range tc.whitelist {
-				if denom.Name != core.MicroSDRDenom {
+				if denom.Denom != core.MicroSDRDenom {
 					expectedOracleCalls++
 				}
 			}

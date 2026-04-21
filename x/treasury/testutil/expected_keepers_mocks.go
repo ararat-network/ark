@@ -304,40 +304,45 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// SetArkExchangeRate mocks base method.
-func (m *MockOracleKeeper) SetArkExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) {
+// GetTobinTaxes mocks base method.
+func (m *MockOracleKeeper) GetTobinTaxes(ctx context.Context) (types0.TobinTaxes, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetArkExchangeRate", ctx, denom, exchangeRate)
+	ret := m.ctrl.Call(m, "GetTobinTaxes", ctx)
+	ret0, _ := ret[0].(types0.TobinTaxes)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// SetArkExchangeRate indicates an expected call of SetArkExchangeRate.
-func (mr *MockOracleKeeperMockRecorder) SetArkExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
+// GetTobinTaxes indicates an expected call of GetTobinTaxes.
+func (mr *MockOracleKeeperMockRecorder) GetTobinTaxes(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetArkExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetArkExchangeRate), ctx, denom, exchangeRate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTaxes", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTaxes), ctx)
 }
 
-// SetWhitelist mocks base method.
-func (m *MockOracleKeeper) SetWhitelist(ctx context.Context, whitelist types0.DenomList) {
+// SetExchangeRate mocks base method.
+func (m *MockOracleKeeper) SetExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetWhitelist", ctx, whitelist)
-}
-
-// SetWhitelist indicates an expected call of SetWhitelist.
-func (mr *MockOracleKeeperMockRecorder) SetWhitelist(ctx, whitelist any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWhitelist", reflect.TypeOf((*MockOracleKeeper)(nil).SetWhitelist), ctx, whitelist)
-}
-
-// Whitelist mocks base method.
-func (m *MockOracleKeeper) Whitelist(ctx context.Context) types0.DenomList {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Whitelist", ctx)
-	ret0, _ := ret[0].(types0.DenomList)
+	ret := m.ctrl.Call(m, "SetExchangeRate", ctx, denom, exchangeRate)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Whitelist indicates an expected call of Whitelist.
-func (mr *MockOracleKeeperMockRecorder) Whitelist(ctx any) *gomock.Call {
+// SetExchangeRate indicates an expected call of SetExchangeRate.
+func (mr *MockOracleKeeperMockRecorder) SetExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Whitelist", reflect.TypeOf((*MockOracleKeeper)(nil).Whitelist), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRate), ctx, denom, exchangeRate)
+}
+
+// SetTobinTaxes mocks base method.
+func (m *MockOracleKeeper) SetTobinTaxes(ctx context.Context, tobinTaxes types0.TobinTaxes) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTobinTaxes", ctx, tobinTaxes)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTobinTaxes indicates an expected call of SetTobinTaxes.
+func (mr *MockOracleKeeperMockRecorder) SetTobinTaxes(ctx, tobinTaxes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTobinTaxes", reflect.TypeOf((*MockOracleKeeper)(nil).SetTobinTaxes), ctx, tobinTaxes)
 }

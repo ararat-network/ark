@@ -18,20 +18,23 @@ func (k Keeper) UpdateTaxCap(ctx context.Context) (sdk.Coins, error) {
 		return nil, fmt.Errorf("getting params: %w", err)
 	}
 	taxPolicyCap := sdk.NewDecCoinFromCoin(params.TaxPolicy.Cap)
-	whitelist := k.oracleKeeper.Whitelist(ctx)
+	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	var newCaps sdk.Coins
-	for _, denom := range whitelist {
+	for _, denom := range tobinTaxes {
 		// keep sdr tax cap
-		if denom.Name == taxPolicyCap.Denom {
+		if denom.Denom == taxPolicyCap.Denom {
 			continue
 		}
 
-		newDecCap, err := k.marketKeeper.ComputeOracleRate(ctx, taxPolicyCap, denom.Name)
+		newDecCap, err := k.marketKeeper.ComputeOracleRate(ctx, taxPolicyCap, denom.Denom)
 		if err != nil {
 			k.Logger(ctx).Warn(
 				"skipping tax cap update",
-				"denom", denom.Name,
+				"denom", denom.Denom,
 				"cap_denom", taxPolicyCap.Denom,
 				"cap_amount", taxPolicyCap.Amount.String(),
 				"err", err,

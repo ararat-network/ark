@@ -154,13 +154,16 @@ func (k Keeper) RecordEpochTaxProceeds(ctx context.Context, delta sdk.Coins) err
 
 // RecordEpochInitialIssuance updates epoch initial issuance from supply keeper
 func (k Keeper) RecordEpochInitialIssuance(ctx context.Context) error {
-	whitelist := k.oracleKeeper.Whitelist(ctx)
+	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
+	if err != nil {
+		return err
+	}
 
-	totalSupply := make(sdk.Coins, len(whitelist)+1)
+	totalSupply := make(sdk.Coins, len(tobinTaxes)+1)
 	totalSupply[0] = k.bankKeeper.GetSupply(ctx, core.MicroArkDenom)
 
-	for i, denom := range whitelist {
-		totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Name)
+	for i, denom := range tobinTaxes {
+		totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Denom)
 	}
 
 	epochInitialIssuance := types.EpochInitialIssuance{

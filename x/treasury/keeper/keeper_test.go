@@ -239,7 +239,7 @@ func (s *KeeperTestSuite) TestComputeEpochSeigniorage() {
 func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 	tests := []struct {
 		name      string
-		whitelist oracletypes.DenomList
+		whitelist oracletypes.TobinTaxes
 		supplies  map[string]math.Int
 		expected  sdk.Coins
 	}{
@@ -253,9 +253,9 @@ func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 		},
 		{
 			name: "with whitelist denoms",
-			whitelist: oracletypes.DenomList{
-				{Name: "uusd"},
-				{Name: "ukrw"},
+			whitelist: oracletypes.TobinTaxes{
+				{Denom: "uusd"},
+				{Denom: "ukrw"},
 			},
 			supplies: map[string]math.Int{
 				core.MicroArkDenom: math.NewInt(1_000_000),
@@ -270,8 +270,8 @@ func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 		},
 		{
 			name: "single whitelist denom",
-			whitelist: oracletypes.DenomList{
-				{Name: "uusd"},
+			whitelist: oracletypes.TobinTaxes{
+				{Denom: "uusd"},
 			},
 			supplies: map[string]math.Int{
 				core.MicroArkDenom: math.NewInt(5_000_000),
@@ -286,7 +286,7 @@ func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			s.oracleKeeper.EXPECT().Whitelist(s.ctx).Return(tc.whitelist)
+			s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(tc.whitelist, nil)
 			for denom, amount := range tc.supplies {
 				s.bankKeeper.EXPECT().GetSupply(s.ctx, denom).
 					Return(sdk.NewCoin(denom, amount))

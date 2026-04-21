@@ -38,7 +38,7 @@ func (s *KeeperTestSuite) TestEndBlocker_DuringProbation() {
 		Return(sdk.NewDecCoinFromDec(core.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
 
 	// Deferred RecordEpochInitialIssuance mocks
-	s.oracleKeeper.EXPECT().Whitelist(gomock.Any()).Return(oracletypes.DenomList{})
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{}, nil)
 
 	err := s.keeper.EndBlocker(s.ctx)
 	s.Require().NoError(err)
@@ -98,11 +98,11 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 	// SettleSeigniorage: no seigniorage (supply unchanged) → early return
 
 	// UpdateTaxCap + RecordEpochInitialIssuance both call Whitelist
-	s.oracleKeeper.EXPECT().Whitelist(gomock.Any()).
-		Return(oracletypes.DenomList{
-			{Name: core.MicroSDRDenom},
-			{Name: core.MicroUSDDenom},
-		}).AnyTimes()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
+		Return(oracletypes.TobinTaxes{
+			{Denom: core.MicroSDRDenom},
+			{Denom: core.MicroUSDDenom},
+		}, nil).AnyTimes()
 
 	err := s.keeper.EndBlocker(s.ctx)
 	s.Require().NoError(err)
@@ -177,8 +177,8 @@ func (s *KeeperTestSuite) TestEndBlocker_SparseEpochData() {
 	// SettleSeigniorage: no seigniorage → early return
 
 	// UpdateTaxCap + RecordEpochInitialIssuance
-	s.oracleKeeper.EXPECT().Whitelist(gomock.Any()).
-		Return(oracletypes.DenomList{}).AnyTimes()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
+		Return(oracletypes.TobinTaxes{}, nil).AnyTimes()
 
 	err := s.keeper.EndBlocker(s.ctx)
 	s.Require().NoError(err)
@@ -206,8 +206,8 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(sdk.NewDecCoinFromDec(core.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().Whitelist(gomock.Any()).
-		Return(oracletypes.DenomList{}).AnyTimes()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
+		Return(oracletypes.TobinTaxes{}, nil).AnyTimes()
 	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1}).AnyTimes()

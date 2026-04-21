@@ -42,9 +42,9 @@ type DistributionKeeper interface {
 
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
-	Whitelist(ctx context.Context) (res oracletypes.DenomList)
+	GetTobinTaxes(ctx context.Context) (res oracletypes.TobinTaxes, err error)
 
 	// only used for test purpose
-	SetArkExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec)
-	SetWhitelist(ctx context.Context, whitelist oracletypes.DenomList)
+	SetExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) error
+	SetTobinTaxes(ctx context.Context, tobinTaxes oracletypes.TobinTaxes) error
 }
