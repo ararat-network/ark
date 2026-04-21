@@ -13,9 +13,9 @@ import (
 
 func (s *KeeperTestSuite) TestApplySwapToPool() {
 	// Unit rates so SDR conversion is 1:1
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroSDRDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
 
 	tests := []struct {
@@ -69,11 +69,11 @@ func (s *KeeperTestSuite) TestComputeSwap_RecursiveSwap() {
 }
 
 func (s *KeeperTestSuite) TestComputeSwap_NoahToNoah_TobinTax() {
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "ukrw").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "ukrw").
 		Return(math.LegacyNewDec(1300), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroSDRDenom).
 		Return(math.LegacyNewDecWithPrec(17, 1), nil).AnyTimes()
 
 	offerCoin := sdk.NewCoin("uusd", math.NewInt(1000000))
@@ -121,11 +121,11 @@ func (s *KeeperTestSuite) TestComputeSwap_NoahToNoah_TobinTax() {
 
 func (s *KeeperTestSuite) TestComputeSwap_ConstantProduct() {
 	// Unit rates (1:1:1) with a small base pool so CP spread is significant.
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroArkDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroArkDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroSDRDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
 
 	err := s.keeper.Params.Set(s.ctx, types.Params{
@@ -177,11 +177,11 @@ func (s *KeeperTestSuite) TestComputeSwap_ConstantProduct() {
 func (s *KeeperTestSuite) TestComputeSwap_SpreadNeverBelowMinSpread() {
 	// With small offers into the default large pool (1e12), CP spread ≈ 0.
 	// The minimum stability spread (2%) should always be the floor.
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroArkDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroArkDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroSDRDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
 
 	minSpread := math.LegacyNewDecWithPrec(2, 2) // 2%
@@ -196,11 +196,11 @@ func (s *KeeperTestSuite) TestComputeSwap_SpreadNeverBelowMinSpread() {
 }
 
 func (s *KeeperTestSuite) TestComputeSwap_PoolImbalanceIncreasesSpread() {
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroArkDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroArkDenom).
 		Return(math.LegacyNewDecWithPrec(5, 1), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroSDRDenom).
 		Return(math.LegacyNewDecWithPrec(17, 1), nil).AnyTimes()
 
 	offerCoin := sdk.NewCoin("uusd", math.NewInt(1000))
@@ -220,11 +220,11 @@ func (s *KeeperTestSuite) TestComputeSwap_PoolImbalanceIncreasesSpread() {
 }
 
 func (s *KeeperTestSuite) TestComputeOracleRate() {
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "ukrw").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "ukrw").
 		Return(math.LegacyNewDec(1300), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(gomock.Any(), "unknown").
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "unknown").
 		Return(math.LegacyDec{}, types.ErrNoEffectivePrice).AnyTimes()
 
 	tests := []struct {

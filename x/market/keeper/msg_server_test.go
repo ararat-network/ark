@@ -227,11 +227,11 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 }
 
 func (s *KeeperTestSuite) setupNoahToNoahSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(s.ctx, "uusd").
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
 		Return(math.LegacyOneDec(), nil)
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(s.ctx, core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, core.MicroSDRDenom).
 		Return(math.LegacyMustNewDecFromStr("1.7"), nil).Times(2)
-	s.oracleKeeper.EXPECT().GetArkExchangeRate(s.ctx, "ukrw").
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ukrw").
 		Return(math.LegacyNewDec(1300), nil)
 	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
 		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)

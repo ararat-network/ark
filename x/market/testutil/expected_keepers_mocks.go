@@ -230,19 +230,19 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetArkExchangeRate mocks base method.
-func (m *MockOracleKeeper) GetArkExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
+// GetExchangeRate mocks base method.
+func (m *MockOracleKeeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetArkExchangeRate", ctx, denom)
+	ret := m.ctrl.Call(m, "GetExchangeRate", ctx, denom)
 	ret0, _ := ret[0].(math.LegacyDec)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetArkExchangeRate indicates an expected call of GetArkExchangeRate.
-func (mr *MockOracleKeeperMockRecorder) GetArkExchangeRate(ctx, denom any) *gomock.Call {
+// GetExchangeRate indicates an expected call of GetExchangeRate.
+func (mr *MockOracleKeeperMockRecorder) GetExchangeRate(ctx, denom any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArkExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).GetArkExchangeRate), ctx, denom)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).GetExchangeRate), ctx, denom)
 }
 
 // GetTobinTax mocks base method.
@@ -260,34 +260,40 @@ func (mr *MockOracleKeeperMockRecorder) GetTobinTax(ctx, denom any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTax), ctx, denom)
 }
 
-// IterateArkExchangeRates mocks base method.
-func (m *MockOracleKeeper) IterateArkExchangeRates(ctx context.Context, handler func(string, math.LegacyDec) bool) {
+// IterateExchangeRates mocks base method.
+func (m *MockOracleKeeper) IterateExchangeRates(ctx context.Context, handler func(string, math.LegacyDec) bool) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IterateArkExchangeRates", ctx, handler)
+	ret := m.ctrl.Call(m, "IterateExchangeRates", ctx, handler)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// IterateArkExchangeRates indicates an expected call of IterateArkExchangeRates.
-func (mr *MockOracleKeeperMockRecorder) IterateArkExchangeRates(ctx, handler any) *gomock.Call {
+// IterateExchangeRates indicates an expected call of IterateExchangeRates.
+func (mr *MockOracleKeeperMockRecorder) IterateExchangeRates(ctx, handler any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateArkExchangeRates", reflect.TypeOf((*MockOracleKeeper)(nil).IterateArkExchangeRates), ctx, handler)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateExchangeRates", reflect.TypeOf((*MockOracleKeeper)(nil).IterateExchangeRates), ctx, handler)
 }
 
-// SetArkExchangeRate mocks base method.
-func (m *MockOracleKeeper) SetArkExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) {
+// SetExchangeRate mocks base method.
+func (m *MockOracleKeeper) SetExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetArkExchangeRate", ctx, denom, exchangeRate)
+	ret := m.ctrl.Call(m, "SetExchangeRate", ctx, denom, exchangeRate)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// SetArkExchangeRate indicates an expected call of SetArkExchangeRate.
-func (mr *MockOracleKeeperMockRecorder) SetArkExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
+// SetExchangeRate indicates an expected call of SetExchangeRate.
+func (mr *MockOracleKeeperMockRecorder) SetExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetArkExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetArkExchangeRate), ctx, denom, exchangeRate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRate), ctx, denom, exchangeRate)
 }
 
 // SetTobinTax mocks base method.
-func (m *MockOracleKeeper) SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) {
+func (m *MockOracleKeeper) SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTobinTax", ctx, denom, tobinTax)
+	ret := m.ctrl.Call(m, "SetTobinTax", ctx, denom, tobinTax)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SetTobinTax indicates an expected call of SetTobinTax.

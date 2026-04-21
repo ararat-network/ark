@@ -31,11 +31,11 @@ type BankKeeper interface {
 
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
-	GetArkExchangeRate(ctx context.Context, denom string) (price math.LegacyDec, err error)
+	GetExchangeRate(ctx context.Context, denom string) (price math.LegacyDec, err error)
 	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
 
 	// only used for simulation
-	IterateArkExchangeRates(ctx context.Context, handler func(denom string, exchangeRate math.LegacyDec) (stop bool))
-	SetArkExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec)
-	SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec)
+	IterateExchangeRates(ctx context.Context, handler func(denom string, rate math.LegacyDec) (stop bool)) error
+	SetExchangeRate(ctx context.Context, denom string, rate math.LegacyDec) error
+	SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error
 }

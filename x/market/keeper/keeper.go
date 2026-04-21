@@ -112,7 +112,7 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 // Used for simulation
 func (k Keeper) GetActiveDenoms(ctx context.Context) []string {
 	var denoms []string
-	k.oracleKeeper.IterateArkExchangeRates(ctx, func(denom string, _ math.LegacyDec) bool {
+	k.oracleKeeper.IterateExchangeRates(ctx, func(denom string, _ math.LegacyDec) bool {
 		denoms = append(denoms, denom)
 		return false
 	})
