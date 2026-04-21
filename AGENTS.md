@@ -73,8 +73,16 @@ When porting from Classic, always modernize:
 
 - Before running any `git push` commands, verify that a remote is configured with `git remote -v`
 - Never assume a remote exists
-- When asked to commit all changes, split them into multiple reasonably sized commits grouped by logical area (e.g., by
-  module, by concern like proto vs keeper vs tests). Never lump unrelated changes into a single giant commit.
+- When asked to commit all changes, split them into small commits grouped by one logical change at a time.
+- Prefer narrower commits over broad area commits. A good commit should usually represent one reviewable intent, such as:
+  renaming oracle tally helper types, moving tally logic, adding oracle ballot tests, changing treasury seigniorage
+  distribution, updating mocks for a keeper interface change, or regenerating proto output.
+- Do not group unrelated files just because they are in the same module. Separate keeper logic, type/helper refactors,
+  tests, proto definitions, generated files, mocks, and mechanical formatting when they are independently reviewable.
+- If a change requires generated files, commit the proto/source change and generated output together only when they are
+  part of the same logical change.
+- Before committing, inspect `git diff --cached --stat` and split the staged set again if the commit mixes multiple
+  reviewable intents.
 - Every commit message must be detailed: a concise subject line, followed by a body explaining what changed and why.
 - Do NOT add Co-Authored-By lines to commit messages.
 
