@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	feeutils "noah/custom/auth/client/utils"
+	// feeutils "noah/custom/auth/client/utils"
 	"noah/x/market/types"
 )
 
@@ -78,15 +78,15 @@ $ noahd market swap "1000ukrw" "uusd" "noah1..."
 
 				if !clientCtx.GenerateOnly && txf.Fees().IsZero() {
 					// estimate tax and gas
-					stdFee, err := feeutils.ComputeFeesWithCmd(clientCtx, cmd.Flags(), msg)
-					if err != nil {
-						return err
-					}
+					// stdFee, err := feeutils.ComputeFeesWithCmd(clientCtx, cmd.Flags(), msg)
+					// if err != nil {
+					// 	return err
+					// }
 
 					// override gas and fees
 					txf = txf.
-						WithFees(stdFee.Amount.String()).
-						WithGas(stdFee.Gas).
+						// WithFees(stdFee.Amount.String()).
+						// WithGas(stdFee.Gas).
 						WithSimulateAndExecute(false).
 						WithGasPrices("")
 				}
