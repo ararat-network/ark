@@ -4,7 +4,6 @@
 package types
 
 import (
-	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
@@ -28,13 +27,13 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // GenesisState defines the oracle module's genesis state.
 type GenesisState struct {
-	Params                        Params                         `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
-	FeederDelegations             []FeederDelegation             `protobuf:"bytes,2,rep,name=feeder_delegations,json=feederDelegations,proto3" json:"feeder_delegations"`
-	ExchangeRates                 ExchangeRateTuples             `protobuf:"bytes,3,rep,name=exchange_rates,json=exchangeRates,proto3,castrepeated=ExchangeRateTuples" json:"exchange_rates"`
-	MissCounters                  []MissCounter                  `protobuf:"bytes,4,rep,name=miss_counters,json=missCounters,proto3" json:"miss_counters"`
-	AggregateExchangeRatePrevotes []AggregateExchangeRatePrevote `protobuf:"bytes,5,rep,name=aggregate_exchange_rate_prevotes,json=aggregateExchangeRatePrevotes,proto3" json:"aggregate_exchange_rate_prevotes"`
-	AggregateExchangeRateVotes    []AggregateExchangeRateVote    `protobuf:"bytes,6,rep,name=aggregate_exchange_rate_votes,json=aggregateExchangeRateVotes,proto3" json:"aggregate_exchange_rate_votes"`
-	TobinTaxes                    []TobinTax                     `protobuf:"bytes,7,rep,name=tobin_taxes,json=tobinTaxes,proto3" json:"tobin_taxes"`
+	Params            Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
+	FeederDelegations []FeederDelegation `protobuf:"bytes,2,rep,name=feeder_delegations,json=feederDelegations,proto3" json:"feeder_delegations"`
+	ExchangeRates     ExchangeRates      `protobuf:"bytes,3,rep,name=exchange_rates,json=exchangeRates,proto3,castrepeated=ExchangeRates" json:"exchange_rates"`
+	MissCounts        []MissCount        `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts"`
+	Prevotes          []Prevote          `protobuf:"bytes,5,rep,name=prevotes,proto3" json:"prevotes"`
+	Votes             []Vote             `protobuf:"bytes,6,rep,name=votes,proto3" json:"votes"`
+	TobinTaxes        []TobinTax         `protobuf:"bytes,7,rep,name=tobin_taxes,json=tobinTaxes,proto3" json:"tobin_taxes"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -84,30 +83,30 @@ func (m *GenesisState) GetFeederDelegations() []FeederDelegation {
 	return nil
 }
 
-func (m *GenesisState) GetExchangeRates() ExchangeRateTuples {
+func (m *GenesisState) GetExchangeRates() ExchangeRates {
 	if m != nil {
 		return m.ExchangeRates
 	}
 	return nil
 }
 
-func (m *GenesisState) GetMissCounters() []MissCounter {
+func (m *GenesisState) GetMissCounts() []MissCount {
 	if m != nil {
-		return m.MissCounters
+		return m.MissCounts
 	}
 	return nil
 }
 
-func (m *GenesisState) GetAggregateExchangeRatePrevotes() []AggregateExchangeRatePrevote {
+func (m *GenesisState) GetPrevotes() []Prevote {
 	if m != nil {
-		return m.AggregateExchangeRatePrevotes
+		return m.Prevotes
 	}
 	return nil
 }
 
-func (m *GenesisState) GetAggregateExchangeRateVotes() []AggregateExchangeRateVote {
+func (m *GenesisState) GetVotes() []Vote {
 	if m != nil {
-		return m.AggregateExchangeRateVotes
+		return m.Votes
 	}
 	return nil
 }
@@ -174,25 +173,25 @@ func (m *FeederDelegation) GetValidatorAddress() string {
 	return ""
 }
 
-// MissCounter defines an miss counter and validator address pair used in
+// MissCounts defines a miss count and validator address pair used in
 // oracle module's genesis state
-type MissCounter struct {
+type MissCount struct {
 	ValidatorAddress string `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
-	MissCounter      uint64 `protobuf:"varint,2,opt,name=miss_counter,json=missCounter,proto3" json:"miss_counter,omitempty"`
+	MissCount        uint64 `protobuf:"varint,2,opt,name=miss_count,json=missCount,proto3" json:"miss_count,omitempty"`
 }
 
-func (m *MissCounter) Reset()         { *m = MissCounter{} }
-func (m *MissCounter) String() string { return proto.CompactTextString(m) }
-func (*MissCounter) ProtoMessage()    {}
-func (*MissCounter) Descriptor() ([]byte, []int) {
+func (m *MissCount) Reset()         { *m = MissCount{} }
+func (m *MissCount) String() string { return proto.CompactTextString(m) }
+func (*MissCount) ProtoMessage()    {}
+func (*MissCount) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c062f6d23e382539, []int{2}
 }
-func (m *MissCounter) XXX_Unmarshal(b []byte) error {
+func (m *MissCount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MissCounter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MissCount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MissCounter.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MissCount.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -202,129 +201,74 @@ func (m *MissCounter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-func (m *MissCounter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MissCounter.Merge(m, src)
+func (m *MissCount) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MissCount.Merge(m, src)
 }
-func (m *MissCounter) XXX_Size() int {
+func (m *MissCount) XXX_Size() int {
 	return m.Size()
 }
-func (m *MissCounter) XXX_DiscardUnknown() {
-	xxx_messageInfo_MissCounter.DiscardUnknown(m)
+func (m *MissCount) XXX_DiscardUnknown() {
+	xxx_messageInfo_MissCount.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MissCounter proto.InternalMessageInfo
+var xxx_messageInfo_MissCount proto.InternalMessageInfo
 
-func (m *MissCounter) GetValidatorAddress() string {
+func (m *MissCount) GetValidatorAddress() string {
 	if m != nil {
 		return m.ValidatorAddress
 	}
 	return ""
 }
 
-func (m *MissCounter) GetMissCounter() uint64 {
+func (m *MissCount) GetMissCount() uint64 {
 	if m != nil {
-		return m.MissCounter
+		return m.MissCount
 	}
 	return 0
-}
-
-// TobinTax defines an denom and tobin_tax pair used in
-// oracle module's genesis state
-type TobinTax struct {
-	Denom    string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
-}
-
-func (m *TobinTax) Reset()         { *m = TobinTax{} }
-func (m *TobinTax) String() string { return proto.CompactTextString(m) }
-func (*TobinTax) ProtoMessage()    {}
-func (*TobinTax) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c062f6d23e382539, []int{3}
-}
-func (m *TobinTax) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *TobinTax) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_TobinTax.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *TobinTax) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TobinTax.Merge(m, src)
-}
-func (m *TobinTax) XXX_Size() int {
-	return m.Size()
-}
-func (m *TobinTax) XXX_DiscardUnknown() {
-	xxx_messageInfo_TobinTax.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TobinTax proto.InternalMessageInfo
-
-func (m *TobinTax) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
 }
 
 func init() {
 	proto.RegisterType((*GenesisState)(nil), "noah.oracle.v1.GenesisState")
 	proto.RegisterType((*FeederDelegation)(nil), "noah.oracle.v1.FeederDelegation")
-	proto.RegisterType((*MissCounter)(nil), "noah.oracle.v1.MissCounter")
-	proto.RegisterType((*TobinTax)(nil), "noah.oracle.v1.TobinTax")
+	proto.RegisterType((*MissCount)(nil), "noah.oracle.v1.MissCount")
 }
 
 func init() { proto.RegisterFile("noah/oracle/v1/genesis.proto", fileDescriptor_c062f6d23e382539) }
 
 var fileDescriptor_c062f6d23e382539 = []byte{
-	// 609 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xcd, 0x6e, 0xd3, 0x4c,
-	0x14, 0x8d, 0xfb, 0xf7, 0xb5, 0x93, 0xb6, 0x6a, 0xe7, 0x8b, 0x90, 0x49, 0x88, 0xf3, 0xb3, 0x2a,
-	0x88, 0xd8, 0x6a, 0x91, 0x90, 0x58, 0xa1, 0x86, 0x00, 0x0b, 0x7e, 0x54, 0x25, 0x51, 0x17, 0xdd,
-	0x58, 0x53, 0xfb, 0xd6, 0xb1, 0x88, 0x3d, 0x91, 0x67, 0x12, 0xd2, 0x5d, 0x1f, 0x81, 0x37, 0x60,
-	0xc1, 0x06, 0xb1, 0x62, 0x91, 0x87, 0xe8, 0xb2, 0xca, 0x0a, 0xb1, 0x28, 0x28, 0x59, 0xf0, 0x1a,
-	0xc8, 0x33, 0x93, 0xd6, 0x31, 0x14, 0x21, 0x36, 0x51, 0xe6, 0x9e, 0x33, 0xe7, 0x9c, 0x3b, 0x73,
-	0x3d, 0xe8, 0x4e, 0x48, 0x49, 0xc7, 0xa2, 0x11, 0x71, 0xba, 0x60, 0x0d, 0x76, 0x2d, 0x0f, 0x42,
-	0x60, 0x3e, 0x33, 0x7b, 0x11, 0xe5, 0x14, 0x6f, 0xc6, 0xa8, 0x29, 0x51, 0x73, 0xb0, 0x9b, 0xdf,
-	0x26, 0x81, 0x1f, 0x52, 0x4b, 0xfc, 0x4a, 0x4a, 0xfe, 0xb6, 0x43, 0x59, 0x40, 0x99, 0x2d, 0x56,
-	0x96, 0x5c, 0x28, 0x28, 0xe7, 0x51, 0x8f, 0xca, 0x7a, 0xfc, 0x4f, 0x55, 0x0b, 0x29, 0x47, 0xa5,
-	0x2e, 0xc0, 0xea, 0xfb, 0x65, 0xb4, 0xfe, 0x5c, 0x46, 0x68, 0x71, 0xc2, 0x01, 0x3f, 0x42, 0x2b,
-	0x3d, 0x12, 0x91, 0x80, 0xe9, 0x5a, 0x59, 0xdb, 0xc9, 0xee, 0xdd, 0x32, 0xe7, 0x23, 0x99, 0x07,
-	0x02, 0xad, 0xaf, 0x9d, 0x5f, 0x96, 0x32, 0x1f, 0x7f, 0x7c, 0xbe, 0xa7, 0x35, 0xd5, 0x06, 0x7c,
-	0x84, 0xf0, 0x09, 0x80, 0x0b, 0x91, 0xed, 0x42, 0x17, 0x3c, 0xc2, 0x7d, 0x1a, 0x32, 0x7d, 0xa1,
-	0xbc, 0xb8, 0x93, 0xdd, 0x2b, 0xa7, 0x65, 0x9e, 0x09, 0x66, 0xe3, 0x8a, 0x98, 0x14, 0xdc, 0x3e,
-	0x49, 0x81, 0x0c, 0xfb, 0x68, 0x13, 0x86, 0x4e, 0x87, 0x84, 0x1e, 0xd8, 0x11, 0xe1, 0xc0, 0xf4,
-	0x45, 0xa1, 0x5b, 0x49, 0xeb, 0x3e, 0x55, 0xac, 0x26, 0xe1, 0xd0, 0xee, 0xf7, 0xba, 0x50, 0x2f,
-	0xc5, 0xc2, 0x9f, 0xbe, 0x95, 0xf0, 0x2f, 0x10, 0x93, 0x76, 0x1b, 0x90, 0x00, 0x18, 0x7e, 0x81,
-	0x36, 0x02, 0x9f, 0x31, 0xdb, 0xa1, 0xfd, 0x90, 0x43, 0xc4, 0xf4, 0x25, 0xe1, 0x54, 0x48, 0x3b,
-	0xbd, 0xf2, 0x19, 0x7b, 0x22, 0x39, 0xc9, 0xf0, 0xeb, 0xc1, 0x75, 0x9d, 0xe1, 0x33, 0x0d, 0x95,
-	0x89, 0xe7, 0x45, 0x71, 0x23, 0x60, 0xcf, 0xb5, 0x60, 0xf7, 0x22, 0x18, 0xd0, 0xb8, 0x95, 0x65,
-	0x61, 0x70, 0x3f, 0x6d, 0xb0, 0x3f, 0xdb, 0x97, 0x0c, 0x7e, 0x20, 0x37, 0x25, 0x1d, 0x8b, 0xe4,
-	0x0f, 0x44, 0x86, 0xdf, 0xa2, 0xe2, 0x4d, 0x09, 0xa4, 0xfd, 0x8a, 0xb0, 0xbf, 0xfb, 0x57, 0xf6,
-	0x87, 0x29, 0xef, 0x3c, 0xb9, 0x89, 0xc5, 0x70, 0x03, 0x65, 0x39, 0x3d, 0xf6, 0x43, 0x9b, 0x93,
-	0x21, 0x30, 0xfd, 0x3f, 0x61, 0xa3, 0xa7, 0x6d, 0xda, 0x31, 0xa5, 0x4d, 0x86, 0x49, 0x55, 0xc4,
-	0x55, 0x11, 0x58, 0xf5, 0x83, 0x86, 0xb6, 0xd2, 0xc3, 0x82, 0x1f, 0xa3, 0x4d, 0x35, 0x6a, 0xc4,
-	0x75, 0x23, 0x60, 0x72, 0x5a, 0xd7, 0xea, 0xfa, 0x78, 0x54, 0xcb, 0xa9, 0x6f, 0x62, 0x5f, 0x22,
-	0x2d, 0x1e, 0xf9, 0xa1, 0xd7, 0xdc, 0x90, 0x7c, 0x55, 0xc4, 0xaf, 0xd1, 0xf6, 0x80, 0x74, 0x7d,
-	0x97, 0x70, 0x7a, 0xad, 0xb1, 0x20, 0x34, 0x2a, 0xe3, 0x51, 0xad, 0xa8, 0x34, 0x0e, 0x67, 0x9c,
-	0x79, 0xb1, 0xad, 0x41, 0xaa, 0x5e, 0x3d, 0xd3, 0x50, 0x36, 0x31, 0x10, 0xbf, 0xd7, 0xd7, 0xfe,
-	0x59, 0x1f, 0x57, 0xd0, 0x7a, 0x72, 0x28, 0x45, 0xd4, 0xa5, 0x66, 0x36, 0x31, 0x6b, 0xd5, 0x3e,
-	0x5a, 0x9d, 0x9d, 0x25, 0xce, 0xa1, 0x65, 0x17, 0x42, 0x1a, 0x48, 0xcb, 0xa6, 0x5c, 0xe0, 0x16,
-	0x5a, 0xbb, 0xba, 0x10, 0xd5, 0xec, 0xc3, 0xf8, 0xd0, 0xbf, 0x5e, 0x96, 0x0a, 0x32, 0x10, 0x73,
-	0xdf, 0x98, 0x3e, 0xb5, 0x02, 0xc2, 0x3b, 0xe6, 0x4b, 0xf0, 0x88, 0x73, 0xda, 0x00, 0x67, 0x3c,
-	0xaa, 0x21, 0x95, 0xb7, 0x01, 0x8e, 0xbc, 0xa1, 0xd5, 0xd9, 0x0d, 0xd5, 0x6b, 0xe7, 0x13, 0x43,
-	0xbb, 0x98, 0x18, 0xda, 0xf7, 0x89, 0xa1, 0xbd, 0x9b, 0x1a, 0x99, 0x8b, 0xa9, 0x91, 0xf9, 0x32,
-	0x35, 0x32, 0x47, 0xff, 0x8b, 0x87, 0x67, 0x38, 0x7b, 0x7a, 0xf8, 0x69, 0x0f, 0xd8, 0xf1, 0x8a,
-	0x78, 0x77, 0x1e, 0xfc, 0x0c, 0x00, 0x00, 0xff, 0xff, 0x11, 0xa6, 0x04, 0x42, 0x08, 0x05, 0x00,
-	0x00,
+	// 507 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0x3f, 0x6f, 0xd3, 0x4e,
+	0x18, 0xc7, 0xe3, 0x36, 0xcd, 0xef, 0x97, 0x0b, 0x89, 0x9a, 0x23, 0x02, 0x37, 0xb4, 0x6e, 0xc8,
+	0x54, 0x21, 0xc5, 0x56, 0x8b, 0x18, 0x58, 0x40, 0x84, 0x16, 0x26, 0x10, 0x4a, 0xab, 0x0e, 0x5d,
+	0xac, 0x6b, 0xfc, 0xd4, 0xb5, 0x14, 0xfb, 0x22, 0x3f, 0x87, 0x15, 0x78, 0x09, 0x4c, 0xbc, 0x07,
+	0x16, 0xc4, 0xc4, 0xd0, 0x17, 0xd1, 0xb1, 0xea, 0xc4, 0x04, 0x28, 0x19, 0x78, 0x1b, 0xc8, 0x77,
+	0x97, 0xd4, 0x39, 0x98, 0x58, 0xa2, 0xf8, 0xfb, 0xe7, 0xe3, 0x47, 0x7e, 0xee, 0xc8, 0x66, 0xc2,
+	0xd9, 0xb9, 0xc7, 0x53, 0x36, 0x1c, 0x81, 0x97, 0xed, 0x7a, 0x21, 0x24, 0x80, 0x11, 0xba, 0xe3,
+	0x94, 0x0b, 0x4e, 0x1b, 0xb9, 0xeb, 0x2a, 0xd7, 0xcd, 0x76, 0xdb, 0x4d, 0x16, 0x47, 0x09, 0xf7,
+	0xe4, 0xaf, 0x8a, 0xb4, 0x37, 0x86, 0x1c, 0x63, 0x8e, 0xbe, 0x7c, 0xf2, 0xd4, 0x83, 0xb6, 0x5a,
+	0x21, 0x0f, 0xb9, 0xd2, 0xf3, 0x7f, 0x5a, 0xbd, 0x67, 0xbc, 0x51, 0xd3, 0xa5, 0xd9, 0xfd, 0x50,
+	0x26, 0xb7, 0x5e, 0xaa, 0x11, 0x0e, 0x05, 0x13, 0x40, 0x1f, 0x93, 0xca, 0x98, 0xa5, 0x2c, 0x46,
+	0xdb, 0xea, 0x58, 0x3b, 0xb5, 0xbd, 0x3b, 0xee, 0xf2, 0x48, 0xee, 0x1b, 0xe9, 0xf6, 0xab, 0x97,
+	0xdf, 0xb7, 0x4b, 0x9f, 0x7f, 0x7d, 0x7d, 0x60, 0x0d, 0x74, 0x81, 0x9e, 0x10, 0x7a, 0x06, 0x10,
+	0x40, 0xea, 0x07, 0x30, 0x82, 0x90, 0x89, 0x88, 0x27, 0x68, 0xaf, 0x74, 0x56, 0x77, 0x6a, 0x7b,
+	0x1d, 0x13, 0xf3, 0x42, 0x26, 0xf7, 0x17, 0xc1, 0x22, 0xb0, 0x79, 0x66, 0x98, 0x48, 0x7d, 0xd2,
+	0x80, 0xc9, 0xf0, 0x9c, 0x25, 0x21, 0xf8, 0x29, 0x13, 0x80, 0xf6, 0xaa, 0xe4, 0x6e, 0x9a, 0xdc,
+	0x03, 0x9d, 0x1a, 0x30, 0x01, 0xfd, 0x76, 0xce, 0xfc, 0xf2, 0x63, 0xbb, 0x5e, 0x54, 0x51, 0xbd,
+	0xa4, 0x0e, 0x45, 0x8d, 0x1e, 0x90, 0x5a, 0x1c, 0x21, 0xfa, 0x43, 0xfe, 0x36, 0x11, 0x68, 0x97,
+	0x25, 0x7d, 0xc3, 0xa4, 0xbf, 0x8a, 0x10, 0x9f, 0xe7, 0x89, 0xe2, 0xb8, 0x24, 0x9e, 0xab, 0x48,
+	0x9f, 0x90, 0xff, 0xc7, 0x29, 0x64, 0x3c, 0x9f, 0x70, 0x4d, 0x32, 0xee, 0xfe, 0xf1, 0x01, 0x95,
+	0x5f, 0x24, 0x2c, 0x3a, 0xf4, 0x11, 0x59, 0x53, 0xe5, 0x8a, 0x2c, 0xb7, 0xcc, 0xf2, 0xb1, 0xd1,
+	0x54, 0x69, 0xba, 0x4f, 0x6a, 0x82, 0x9f, 0x46, 0x89, 0x2f, 0xd8, 0x04, 0xd0, 0xfe, 0x4f, 0x96,
+	0x6d, 0xb3, 0x7c, 0x94, 0x47, 0x8e, 0xd8, 0x64, 0x69, 0x78, 0xa1, 0x45, 0xc0, 0xee, 0x27, 0x8b,
+	0xac, 0x9b, 0x7b, 0xa1, 0x4f, 0x49, 0x43, 0x6f, 0x95, 0x05, 0x41, 0x0a, 0xa8, 0x0e, 0x46, 0xb5,
+	0x6f, 0x5f, 0x5f, 0xf4, 0x5a, 0xfa, 0xf8, 0x3d, 0x53, 0xce, 0xa1, 0x48, 0xa3, 0x24, 0x1c, 0xd4,
+	0x55, 0x5e, 0x8b, 0xf4, 0x35, 0x69, 0x66, 0x6c, 0x14, 0x05, 0x4c, 0xf0, 0x1b, 0xc6, 0x8a, 0x64,
+	0xdc, 0xbf, 0xbe, 0xe8, 0x6d, 0x69, 0xc6, 0xf1, 0x3c, 0xb3, 0x0c, 0x5b, 0xcf, 0x0c, 0xbd, 0xfb,
+	0x9e, 0x54, 0x17, 0x6b, 0xf8, 0x3b, 0xdc, 0xfa, 0x67, 0x38, 0xdd, 0x22, 0xe4, 0xe6, 0x18, 0xc8,
+	0x29, 0xcb, 0x83, 0xea, 0x62, 0xbf, 0xfd, 0xde, 0xe5, 0xd4, 0xb1, 0xae, 0xa6, 0x8e, 0xf5, 0x73,
+	0xea, 0x58, 0x1f, 0x67, 0x4e, 0xe9, 0x6a, 0xe6, 0x94, 0xbe, 0xcd, 0x9c, 0xd2, 0xc9, 0x6d, 0x79,
+	0xcb, 0x26, 0xf3, 0x7b, 0x26, 0xde, 0x8d, 0x01, 0x4f, 0x2b, 0xf2, 0x92, 0x3d, 0xfc, 0x1d, 0x00,
+	0x00, 0xff, 0xff, 0x90, 0xb6, 0xa4, 0xa8, 0xf5, 0x03, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -361,10 +305,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x3a
 		}
 	}
-	if len(m.AggregateExchangeRateVotes) > 0 {
-		for iNdEx := len(m.AggregateExchangeRateVotes) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Votes) > 0 {
+		for iNdEx := len(m.Votes) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.AggregateExchangeRateVotes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Votes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -375,10 +319,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x32
 		}
 	}
-	if len(m.AggregateExchangeRatePrevotes) > 0 {
-		for iNdEx := len(m.AggregateExchangeRatePrevotes) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Prevotes) > 0 {
+		for iNdEx := len(m.Prevotes) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.AggregateExchangeRatePrevotes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Prevotes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -389,10 +333,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x2a
 		}
 	}
-	if len(m.MissCounters) > 0 {
-		for iNdEx := len(m.MissCounters) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.MissCounts) > 0 {
+		for iNdEx := len(m.MissCounts) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.MissCounters[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.MissCounts[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -481,7 +425,7 @@ func (m *FeederDelegation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MissCounter) Marshal() (dAtA []byte, err error) {
+func (m *MissCount) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -491,18 +435,18 @@ func (m *MissCounter) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MissCounter) MarshalTo(dAtA []byte) (int, error) {
+func (m *MissCount) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MissCounter) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MissCount) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.MissCounter != 0 {
-		i = encodeVarintGenesis(dAtA, i, uint64(m.MissCounter))
+	if m.MissCount != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.MissCount))
 		i--
 		dAtA[i] = 0x10
 	}
@@ -510,46 +454,6 @@ func (m *MissCounter) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.ValidatorAddress)
 		copy(dAtA[i:], m.ValidatorAddress)
 		i = encodeVarintGenesis(dAtA, i, uint64(len(m.ValidatorAddress)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *TobinTax) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TobinTax) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TobinTax) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size := m.TobinTax.Size()
-		i -= size
-		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Denom)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -587,20 +491,20 @@ func (m *GenesisState) Size() (n int) {
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.MissCounters) > 0 {
-		for _, e := range m.MissCounters {
+	if len(m.MissCounts) > 0 {
+		for _, e := range m.MissCounts {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.AggregateExchangeRatePrevotes) > 0 {
-		for _, e := range m.AggregateExchangeRatePrevotes {
+	if len(m.Prevotes) > 0 {
+		for _, e := range m.Prevotes {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.AggregateExchangeRateVotes) > 0 {
-		for _, e := range m.AggregateExchangeRateVotes {
+	if len(m.Votes) > 0 {
+		for _, e := range m.Votes {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
@@ -631,7 +535,7 @@ func (m *FeederDelegation) Size() (n int) {
 	return n
 }
 
-func (m *MissCounter) Size() (n int) {
+func (m *MissCount) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -641,24 +545,9 @@ func (m *MissCounter) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovGenesis(uint64(l))
 	}
-	if m.MissCounter != 0 {
-		n += 1 + sovGenesis(uint64(m.MissCounter))
+	if m.MissCount != 0 {
+		n += 1 + sovGenesis(uint64(m.MissCount))
 	}
-	return n
-}
-
-func (m *TobinTax) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovGenesis(uint64(l))
-	}
-	l = m.TobinTax.Size()
-	n += 1 + l + sovGenesis(uint64(l))
 	return n
 }
 
@@ -793,14 +682,14 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ExchangeRates = append(m.ExchangeRates, ExchangeRateTuple{})
+			m.ExchangeRates = append(m.ExchangeRates, ExchangeRate{})
 			if err := m.ExchangeRates[len(m.ExchangeRates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MissCounters", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MissCounts", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -827,14 +716,14 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.MissCounters = append(m.MissCounters, MissCounter{})
-			if err := m.MissCounters[len(m.MissCounters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.MissCounts = append(m.MissCounts, MissCount{})
+			if err := m.MissCounts[len(m.MissCounts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExchangeRatePrevotes", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Prevotes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -861,14 +750,14 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AggregateExchangeRatePrevotes = append(m.AggregateExchangeRatePrevotes, AggregateExchangeRatePrevote{})
-			if err := m.AggregateExchangeRatePrevotes[len(m.AggregateExchangeRatePrevotes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Prevotes = append(m.Prevotes, Prevote{})
+			if err := m.Prevotes[len(m.Prevotes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExchangeRateVotes", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Votes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -895,8 +784,8 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AggregateExchangeRateVotes = append(m.AggregateExchangeRateVotes, AggregateExchangeRateVote{})
-			if err := m.AggregateExchangeRateVotes[len(m.AggregateExchangeRateVotes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Votes = append(m.Votes, Vote{})
+			if err := m.Votes[len(m.Votes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1069,7 +958,7 @@ func (m *FeederDelegation) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MissCounter) Unmarshal(dAtA []byte) error {
+func (m *MissCount) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1092,10 +981,10 @@ func (m *MissCounter) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MissCounter: wiretype end group for non-group")
+			return fmt.Errorf("proto: MissCount: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MissCounter: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MissCount: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1132,9 +1021,9 @@ func (m *MissCounter) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MissCounter", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MissCount", wireType)
 			}
-			m.MissCounter = 0
+			m.MissCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenesis
@@ -1144,127 +1033,11 @@ func (m *MissCounter) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MissCounter |= uint64(b&0x7F) << shift
+				m.MissCount |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenesis(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *TobinTax) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenesis
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TobinTax: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])

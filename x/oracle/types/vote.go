@@ -9,43 +9,43 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewAggregateExchangeRatePrevote returns AggregateExchangeRatePrevote object
-func NewAggregateExchangeRatePrevote(hash AggregateVoteHash, voter sdk.ValAddress, submitBlock uint64) AggregateExchangeRatePrevote {
-	return AggregateExchangeRatePrevote{
+// NewPrevote returns Prevote object
+func NewPrevote(hash VoteHash, voter sdk.ValAddress, submitBlock uint64) Prevote {
+	return Prevote{
 		Hash:        hash.String(),
 		Voter:       voter.String(),
 		SubmitBlock: submitBlock,
 	}
 }
 
-// NewAggregateExchangeRateVote creates a AggregateExchangeRateVote instance
-func NewAggregateExchangeRateVote(exchangeRateTuples ExchangeRateTuples, voter sdk.ValAddress) AggregateExchangeRateVote {
-	return AggregateExchangeRateVote{
-		ExchangeRateTuples: exchangeRateTuples,
-		Voter:              voter.String(),
+// NewVote creates a Vote instance
+func NewVote(exchangeRates ExchangeRates, voter sdk.ValAddress) Vote {
+	return Vote{
+		ExchangeRates: exchangeRates,
+		Voter:         voter.String(),
 	}
 }
 
-// NewExchangeRateTuple creates a ExchangeRateTuple instance
-func NewExchangeRateTuple(denom string, exchangeRate math.LegacyDec) ExchangeRateTuple {
-	return ExchangeRateTuple{
+// NewExchangeRate creates a ExchangeRate instance
+func NewExchangeRate(denom string, rate math.LegacyDec) ExchangeRate {
+	return ExchangeRate{
 		denom,
-		exchangeRate,
+		rate,
 	}
 }
 
-// ExchangeRateTuples - array of ExchangeRateTuple
-type ExchangeRateTuples []ExchangeRateTuple
+// ExchangeRates - array of ExchangeRate
+type ExchangeRates []ExchangeRate
 
-// ParseExchangeRateTuples ExchangeRateTuple parser
-func ParseExchangeRateTuples(tuplesStr string) (ExchangeRateTuples, error) {
+// ParseExchangeRates ExchangeRateTuple parser
+func ParseExchangeRates(tuplesStr string) (ExchangeRates, error) {
 	tuplesStr = strings.TrimSpace(tuplesStr)
 	if len(tuplesStr) == 0 {
 		return nil, nil
 	}
 
 	tupleStrs := strings.Split(tuplesStr, ",")
-	tuples := make(ExchangeRateTuples, len(tupleStrs))
+	tuples := make(ExchangeRates, len(tupleStrs))
 	duplicateCheckMap := make(map[string]bool)
 	for i, tupleStr := range tupleStrs {
 		decCoin, err := sdk.ParseDecCoin(tupleStr)
@@ -53,9 +53,9 @@ func ParseExchangeRateTuples(tuplesStr string) (ExchangeRateTuples, error) {
 			return nil, err
 		}
 
-		tuples[i] = ExchangeRateTuple{
-			Denom:        decCoin.Denom,
-			ExchangeRate: decCoin.Amount,
+		tuples[i] = ExchangeRate{
+			Denom: decCoin.Denom,
+			Rate:  decCoin.Amount,
 		}
 
 		if _, ok := duplicateCheckMap[decCoin.Denom]; ok {

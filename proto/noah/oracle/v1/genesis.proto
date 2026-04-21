@@ -14,16 +14,16 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated FeederDelegation feeder_delegations = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated ExchangeRateTuple exchange_rates = 3 [
-    (gogoproto.castrepeated) = "ExchangeRateTuples",
+  repeated ExchangeRate exchange_rates = 3 [
+    (gogoproto.castrepeated) = "ExchangeRates",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated MissCounter miss_counters = 4
+  repeated MissCount miss_counts = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated AggregateExchangeRatePrevote aggregate_exchange_rate_prevotes = 5
+  repeated Prevote prevotes = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated AggregateExchangeRateVote aggregate_exchange_rate_votes = 6
+  repeated Vote votes = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated TobinTax tobin_taxes = 7
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
@@ -38,22 +38,10 @@ message FeederDelegation {
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
 }
 
-// MissCounter defines an miss counter and validator address pair used in
+// MissCounts defines a miss count and validator address pair used in
 // oracle module's genesis state
-message MissCounter {
+message MissCount {
   string validator_address = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  uint64 miss_counter = 2;
-}
-
-// TobinTax defines an denom and tobin_tax pair used in
-// oracle module's genesis state
-message TobinTax {
-  string denom = 1;
-  string tobin_tax = 2 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  uint64 miss_count = 2;
 }

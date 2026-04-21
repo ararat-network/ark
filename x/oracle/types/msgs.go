@@ -7,22 +7,22 @@ import (
 // ensure Msg interface compliance at compile time
 var (
 	_ sdk.Msg = &MsgDelegateFeedConsent{}
-	_ sdk.Msg = &MsgAggregateExchangeRatePrevote{}
-	_ sdk.Msg = &MsgAggregateExchangeRateVote{}
+	_ sdk.Msg = &MsgPrevote{}
+	_ sdk.Msg = &MsgVote{}
 )
 
-// NewMsgAggregateExchangeRatePrevote returns MsgAggregateExchangeRatePrevote instance
-func NewMsgAggregateExchangeRatePrevote(hash AggregateVoteHash, feeder sdk.AccAddress, validator sdk.ValAddress) *MsgAggregateExchangeRatePrevote {
-	return &MsgAggregateExchangeRatePrevote{
+// NewMsgPrevote returns MsgPrevote instance
+func NewMsgPrevote(hash VoteHash, feeder sdk.AccAddress, validator sdk.ValAddress) *MsgPrevote {
+	return &MsgPrevote{
 		Hash:      hash.String(),
 		Feeder:    feeder.String(),
 		Validator: validator.String(),
 	}
 }
 
-// NewMsgAggregateExchangeRateVote returns MsgAggregateExchangeRateVote instance
-func NewMsgAggregateExchangeRateVote(salt, exchangeRates string, feeder sdk.AccAddress, validator sdk.ValAddress) *MsgAggregateExchangeRateVote {
-	return &MsgAggregateExchangeRateVote{
+// NewMsgVote returns MsgVote instance
+func NewMsgVote(salt, exchangeRates string, feeder sdk.AccAddress, validator sdk.ValAddress) *MsgVote {
+	return &MsgVote{
 		Salt:          salt,
 		ExchangeRates: exchangeRates,
 		Feeder:        feeder.String(),

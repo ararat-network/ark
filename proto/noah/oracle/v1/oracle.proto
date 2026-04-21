@@ -26,8 +26,8 @@ message Params {
     (amino.dont_omitempty) = true
   ];
   uint64 reward_distribution_window = 4;
-  repeated Denom whitelist = 5 [
-    (gogoproto.castrepeated) = "DenomList",
+  repeated TobinTax tobin_taxes = 5 [
+    (gogoproto.castrepeated) = "TobinTaxes",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -46,11 +46,11 @@ message Params {
   ];
 }
 
-// Denom - the object to hold configurations of each denom
-message Denom {
+// TobinTax - the object to hold configurations of each denom
+message TobinTax {
   option (gogoproto.equal) = true;
 
-  string name = 1;
+  string denom = 1;
   string tobin_tax = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -59,21 +59,21 @@ message Denom {
   ];
 }
 
-// struct for aggregate prevoting on the ExchangeRateVote.
+// Prevote is a struct for aggregate prevoting on the Vote.
 // The purpose of aggregate prevote is to hide vote exchange rates with hash
 // which is formatted as hex string in SHA256("{salt}:{exchange
 // rate}{denom},...,{exchange rate}{denom}:{voter}")
-message AggregateExchangeRatePrevote {
+message Prevote {
   string hash = 1;
   string voter = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   uint64 submit_block = 3;
 }
 
-// MsgAggregateExchangeRateVote - struct for voting on
+// Vote - struct for voting on
 // the exchange rates of Ark denominated in various Noah assets.
-message AggregateExchangeRateVote {
-  repeated ExchangeRateTuple exchange_rate_tuples = 1 [
-    (gogoproto.castrepeated) = "ExchangeRateTuples",
+message Vote {
+  repeated ExchangeRate exchange_rates = 1 [
+    (gogoproto.castrepeated) = "ExchangeRates",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -81,10 +81,10 @@ message AggregateExchangeRateVote {
   string voter = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-// ExchangeRateTuple - struct to store interpreted exchange rates data to store
-message ExchangeRateTuple {
+// ExchangeRate - struct to store interpreted exchange rates data to store
+message ExchangeRate {
   string denom = 1;
-  string exchange_rate = 2 [
+  string rate = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,

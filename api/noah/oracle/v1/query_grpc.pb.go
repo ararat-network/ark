@@ -19,19 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_ExchangeRate_FullMethodName      = "/noah.oracle.v1.Query/ExchangeRate"
-	Query_ExchangeRates_FullMethodName     = "/noah.oracle.v1.Query/ExchangeRates"
-	Query_TobinTax_FullMethodName          = "/noah.oracle.v1.Query/TobinTax"
-	Query_TobinTaxes_FullMethodName        = "/noah.oracle.v1.Query/TobinTaxes"
-	Query_Actives_FullMethodName           = "/noah.oracle.v1.Query/Actives"
-	Query_VoteTargets_FullMethodName       = "/noah.oracle.v1.Query/VoteTargets"
-	Query_FeederDelegation_FullMethodName  = "/noah.oracle.v1.Query/FeederDelegation"
-	Query_MissCounter_FullMethodName       = "/noah.oracle.v1.Query/MissCounter"
-	Query_AggregatePrevote_FullMethodName  = "/noah.oracle.v1.Query/AggregatePrevote"
-	Query_AggregatePrevotes_FullMethodName = "/noah.oracle.v1.Query/AggregatePrevotes"
-	Query_AggregateVote_FullMethodName     = "/noah.oracle.v1.Query/AggregateVote"
-	Query_AggregateVotes_FullMethodName    = "/noah.oracle.v1.Query/AggregateVotes"
-	Query_Params_FullMethodName            = "/noah.oracle.v1.Query/Params"
+	Query_ExchangeRate_FullMethodName     = "/noah.oracle.v1.Query/ExchangeRate"
+	Query_ExchangeRates_FullMethodName    = "/noah.oracle.v1.Query/ExchangeRates"
+	Query_TobinTax_FullMethodName         = "/noah.oracle.v1.Query/TobinTax"
+	Query_TobinTaxes_FullMethodName       = "/noah.oracle.v1.Query/TobinTaxes"
+	Query_VoteTargets_FullMethodName      = "/noah.oracle.v1.Query/VoteTargets"
+	Query_FeederDelegation_FullMethodName = "/noah.oracle.v1.Query/FeederDelegation"
+	Query_MissCount_FullMethodName        = "/noah.oracle.v1.Query/MissCount"
+	Query_Prevote_FullMethodName          = "/noah.oracle.v1.Query/Prevote"
+	Query_Prevotes_FullMethodName         = "/noah.oracle.v1.Query/Prevotes"
+	Query_Vote_FullMethodName             = "/noah.oracle.v1.Query/Vote"
+	Query_Votes_FullMethodName            = "/noah.oracle.v1.Query/Votes"
+	Query_Params_FullMethodName           = "/noah.oracle.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -48,22 +47,20 @@ type QueryClient interface {
 	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest, opts ...grpc.CallOption) (*QueryTobinTaxesResponse, error)
-	// Actives returns all active denoms
-	Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
 	// FeederDelegation returns feeder delegation of a validator
 	FeederDelegation(ctx context.Context, in *QueryFeederDelegationRequest, opts ...grpc.CallOption) (*QueryFeederDelegationResponse, error)
-	// MissCounter returns oracle miss counter of a validator
-	MissCounter(ctx context.Context, in *QueryMissCounterRequest, opts ...grpc.CallOption) (*QueryMissCounterResponse, error)
-	// AggregatePrevote returns an aggregate prevote of a validator
-	AggregatePrevote(ctx context.Context, in *QueryAggregatePrevoteRequest, opts ...grpc.CallOption) (*QueryAggregatePrevoteResponse, error)
-	// AggregatePrevotes returns aggregate prevotes of all validators
-	AggregatePrevotes(ctx context.Context, in *QueryAggregatePrevotesRequest, opts ...grpc.CallOption) (*QueryAggregatePrevotesResponse, error)
-	// AggregateVote returns an aggregate vote of a validator
-	AggregateVote(ctx context.Context, in *QueryAggregateVoteRequest, opts ...grpc.CallOption) (*QueryAggregateVoteResponse, error)
-	// AggregateVotes returns aggregate votes of all validators
-	AggregateVotes(ctx context.Context, in *QueryAggregateVotesRequest, opts ...grpc.CallOption) (*QueryAggregateVotesResponse, error)
+	// MissCount returns oracle miss count of a validator
+	MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error)
+	// Prevote returns an aggregate prevote of a validator
+	Prevote(ctx context.Context, in *QueryPrevoteRequest, opts ...grpc.CallOption) (*QueryPrevoteResponse, error)
+	// Prevotes returns aggregate prevotes of all validators
+	Prevotes(ctx context.Context, in *QueryPrevotesRequest, opts ...grpc.CallOption) (*QueryPrevotesResponse, error)
+	// Vote returns an aggregate vote of a validator
+	Vote(ctx context.Context, in *QueryVoteRequest, opts ...grpc.CallOption) (*QueryVoteResponse, error)
+	// Votes returns aggregate votes of all validators
+	Votes(ctx context.Context, in *QueryVotesRequest, opts ...grpc.CallOption) (*QueryVotesResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 }
@@ -116,16 +113,6 @@ func (c *queryClient) TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest
 	return out, nil
 }
 
-func (c *queryClient) Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryActivesResponse)
-	err := c.cc.Invoke(ctx, Query_Actives_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryVoteTargetsResponse)
@@ -146,50 +133,50 @@ func (c *queryClient) FeederDelegation(ctx context.Context, in *QueryFeederDeleg
 	return out, nil
 }
 
-func (c *queryClient) MissCounter(ctx context.Context, in *QueryMissCounterRequest, opts ...grpc.CallOption) (*QueryMissCounterResponse, error) {
+func (c *queryClient) MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryMissCounterResponse)
-	err := c.cc.Invoke(ctx, Query_MissCounter_FullMethodName, in, out, cOpts...)
+	out := new(QueryMissCountResponse)
+	err := c.cc.Invoke(ctx, Query_MissCount_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) AggregatePrevote(ctx context.Context, in *QueryAggregatePrevoteRequest, opts ...grpc.CallOption) (*QueryAggregatePrevoteResponse, error) {
+func (c *queryClient) Prevote(ctx context.Context, in *QueryPrevoteRequest, opts ...grpc.CallOption) (*QueryPrevoteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryAggregatePrevoteResponse)
-	err := c.cc.Invoke(ctx, Query_AggregatePrevote_FullMethodName, in, out, cOpts...)
+	out := new(QueryPrevoteResponse)
+	err := c.cc.Invoke(ctx, Query_Prevote_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) AggregatePrevotes(ctx context.Context, in *QueryAggregatePrevotesRequest, opts ...grpc.CallOption) (*QueryAggregatePrevotesResponse, error) {
+func (c *queryClient) Prevotes(ctx context.Context, in *QueryPrevotesRequest, opts ...grpc.CallOption) (*QueryPrevotesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryAggregatePrevotesResponse)
-	err := c.cc.Invoke(ctx, Query_AggregatePrevotes_FullMethodName, in, out, cOpts...)
+	out := new(QueryPrevotesResponse)
+	err := c.cc.Invoke(ctx, Query_Prevotes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) AggregateVote(ctx context.Context, in *QueryAggregateVoteRequest, opts ...grpc.CallOption) (*QueryAggregateVoteResponse, error) {
+func (c *queryClient) Vote(ctx context.Context, in *QueryVoteRequest, opts ...grpc.CallOption) (*QueryVoteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryAggregateVoteResponse)
-	err := c.cc.Invoke(ctx, Query_AggregateVote_FullMethodName, in, out, cOpts...)
+	out := new(QueryVoteResponse)
+	err := c.cc.Invoke(ctx, Query_Vote_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) AggregateVotes(ctx context.Context, in *QueryAggregateVotesRequest, opts ...grpc.CallOption) (*QueryAggregateVotesResponse, error) {
+func (c *queryClient) Votes(ctx context.Context, in *QueryVotesRequest, opts ...grpc.CallOption) (*QueryVotesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryAggregateVotesResponse)
-	err := c.cc.Invoke(ctx, Query_AggregateVotes_FullMethodName, in, out, cOpts...)
+	out := new(QueryVotesResponse)
+	err := c.cc.Invoke(ctx, Query_Votes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -220,22 +207,20 @@ type QueryServer interface {
 	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error)
-	// Actives returns all active denoms
-	Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
 	// FeederDelegation returns feeder delegation of a validator
 	FeederDelegation(context.Context, *QueryFeederDelegationRequest) (*QueryFeederDelegationResponse, error)
-	// MissCounter returns oracle miss counter of a validator
-	MissCounter(context.Context, *QueryMissCounterRequest) (*QueryMissCounterResponse, error)
-	// AggregatePrevote returns an aggregate prevote of a validator
-	AggregatePrevote(context.Context, *QueryAggregatePrevoteRequest) (*QueryAggregatePrevoteResponse, error)
-	// AggregatePrevotes returns aggregate prevotes of all validators
-	AggregatePrevotes(context.Context, *QueryAggregatePrevotesRequest) (*QueryAggregatePrevotesResponse, error)
-	// AggregateVote returns an aggregate vote of a validator
-	AggregateVote(context.Context, *QueryAggregateVoteRequest) (*QueryAggregateVoteResponse, error)
-	// AggregateVotes returns aggregate votes of all validators
-	AggregateVotes(context.Context, *QueryAggregateVotesRequest) (*QueryAggregateVotesResponse, error)
+	// MissCount returns oracle miss count of a validator
+	MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error)
+	// Prevote returns an aggregate prevote of a validator
+	Prevote(context.Context, *QueryPrevoteRequest) (*QueryPrevoteResponse, error)
+	// Prevotes returns aggregate prevotes of all validators
+	Prevotes(context.Context, *QueryPrevotesRequest) (*QueryPrevotesResponse, error)
+	// Vote returns an aggregate vote of a validator
+	Vote(context.Context, *QueryVoteRequest) (*QueryVoteResponse, error)
+	// Votes returns aggregate votes of all validators
+	Votes(context.Context, *QueryVotesRequest) (*QueryVotesResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	mustEmbedUnimplementedQueryServer()
@@ -260,29 +245,26 @@ func (UnimplementedQueryServer) TobinTax(context.Context, *QueryTobinTaxRequest)
 func (UnimplementedQueryServer) TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TobinTaxes not implemented")
 }
-func (UnimplementedQueryServer) Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Actives not implemented")
-}
 func (UnimplementedQueryServer) VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VoteTargets not implemented")
 }
 func (UnimplementedQueryServer) FeederDelegation(context.Context, *QueryFeederDelegationRequest) (*QueryFeederDelegationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FeederDelegation not implemented")
 }
-func (UnimplementedQueryServer) MissCounter(context.Context, *QueryMissCounterRequest) (*QueryMissCounterResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method MissCounter not implemented")
+func (UnimplementedQueryServer) MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MissCount not implemented")
 }
-func (UnimplementedQueryServer) AggregatePrevote(context.Context, *QueryAggregatePrevoteRequest) (*QueryAggregatePrevoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AggregatePrevote not implemented")
+func (UnimplementedQueryServer) Prevote(context.Context, *QueryPrevoteRequest) (*QueryPrevoteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Prevote not implemented")
 }
-func (UnimplementedQueryServer) AggregatePrevotes(context.Context, *QueryAggregatePrevotesRequest) (*QueryAggregatePrevotesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AggregatePrevotes not implemented")
+func (UnimplementedQueryServer) Prevotes(context.Context, *QueryPrevotesRequest) (*QueryPrevotesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Prevotes not implemented")
 }
-func (UnimplementedQueryServer) AggregateVote(context.Context, *QueryAggregateVoteRequest) (*QueryAggregateVoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AggregateVote not implemented")
+func (UnimplementedQueryServer) Vote(context.Context, *QueryVoteRequest) (*QueryVoteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Vote not implemented")
 }
-func (UnimplementedQueryServer) AggregateVotes(context.Context, *QueryAggregateVotesRequest) (*QueryAggregateVotesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AggregateVotes not implemented")
+func (UnimplementedQueryServer) Votes(context.Context, *QueryVotesRequest) (*QueryVotesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Votes not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
@@ -380,24 +362,6 @@ func _Query_TobinTaxes_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Actives_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryActivesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Actives(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Actives_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Actives(ctx, req.(*QueryActivesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryVoteTargetsRequest)
 	if err := dec(in); err != nil {
@@ -434,92 +398,92 @@ func _Query_FeederDelegation_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_MissCounter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryMissCounterRequest)
+func _Query_MissCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMissCountRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).MissCounter(ctx, in)
+		return srv.(QueryServer).MissCount(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_MissCounter_FullMethodName,
+		FullMethod: Query_MissCount_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).MissCounter(ctx, req.(*QueryMissCounterRequest))
+		return srv.(QueryServer).MissCount(ctx, req.(*QueryMissCountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_AggregatePrevote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryAggregatePrevoteRequest)
+func _Query_Prevote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPrevoteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).AggregatePrevote(ctx, in)
+		return srv.(QueryServer).Prevote(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_AggregatePrevote_FullMethodName,
+		FullMethod: Query_Prevote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).AggregatePrevote(ctx, req.(*QueryAggregatePrevoteRequest))
+		return srv.(QueryServer).Prevote(ctx, req.(*QueryPrevoteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_AggregatePrevotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryAggregatePrevotesRequest)
+func _Query_Prevotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPrevotesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).AggregatePrevotes(ctx, in)
+		return srv.(QueryServer).Prevotes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_AggregatePrevotes_FullMethodName,
+		FullMethod: Query_Prevotes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).AggregatePrevotes(ctx, req.(*QueryAggregatePrevotesRequest))
+		return srv.(QueryServer).Prevotes(ctx, req.(*QueryPrevotesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_AggregateVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryAggregateVoteRequest)
+func _Query_Vote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryVoteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).AggregateVote(ctx, in)
+		return srv.(QueryServer).Vote(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_AggregateVote_FullMethodName,
+		FullMethod: Query_Vote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).AggregateVote(ctx, req.(*QueryAggregateVoteRequest))
+		return srv.(QueryServer).Vote(ctx, req.(*QueryVoteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_AggregateVotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryAggregateVotesRequest)
+func _Query_Votes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryVotesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).AggregateVotes(ctx, in)
+		return srv.(QueryServer).Votes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_AggregateVotes_FullMethodName,
+		FullMethod: Query_Votes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).AggregateVotes(ctx, req.(*QueryAggregateVotesRequest))
+		return srv.(QueryServer).Votes(ctx, req.(*QueryVotesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -566,10 +530,6 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_TobinTaxes_Handler,
 		},
 		{
-			MethodName: "Actives",
-			Handler:    _Query_Actives_Handler,
-		},
-		{
 			MethodName: "VoteTargets",
 			Handler:    _Query_VoteTargets_Handler,
 		},
@@ -578,24 +538,24 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_FeederDelegation_Handler,
 		},
 		{
-			MethodName: "MissCounter",
-			Handler:    _Query_MissCounter_Handler,
+			MethodName: "MissCount",
+			Handler:    _Query_MissCount_Handler,
 		},
 		{
-			MethodName: "AggregatePrevote",
-			Handler:    _Query_AggregatePrevote_Handler,
+			MethodName: "Prevote",
+			Handler:    _Query_Prevote_Handler,
 		},
 		{
-			MethodName: "AggregatePrevotes",
-			Handler:    _Query_AggregatePrevotes_Handler,
+			MethodName: "Prevotes",
+			Handler:    _Query_Prevotes_Handler,
 		},
 		{
-			MethodName: "AggregateVote",
-			Handler:    _Query_AggregateVote_Handler,
+			MethodName: "Vote",
+			Handler:    _Query_Vote_Handler,
 		},
 		{
-			MethodName: "AggregateVotes",
-			Handler:    _Query_AggregateVotes_Handler,
+			MethodName: "Votes",
+			Handler:    _Query_Votes_Handler,
 		},
 		{
 			MethodName: "Params",

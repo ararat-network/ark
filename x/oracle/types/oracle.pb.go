@@ -32,7 +32,7 @@ type Params struct {
 	VoteThreshold            cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=vote_threshold,json=voteThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"vote_threshold"`
 	RewardBand               cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=reward_band,json=rewardBand,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"reward_band"`
 	RewardDistributionWindow uint64                      `protobuf:"varint,4,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
-	Whitelist                DenomList                   `protobuf:"bytes,5,rep,name=whitelist,proto3,castrepeated=DenomList" json:"whitelist"`
+	TobinTaxes               TobinTaxes                  `protobuf:"bytes,5,rep,name=tobin_taxes,json=tobinTaxes,proto3,castrepeated=TobinTaxes" json:"tobin_taxes"`
 	SlashFraction            cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=slash_fraction,json=slashFraction,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"slash_fraction"`
 	SlashWindow              uint64                      `protobuf:"varint,7,opt,name=slash_window,json=slashWindow,proto3" json:"slash_window,omitempty"`
 	MinValidPerWindow        cosmossdk_io_math.LegacyDec `protobuf:"bytes,8,opt,name=min_valid_per_window,json=minValidPerWindow,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_valid_per_window"`
@@ -85,9 +85,9 @@ func (m *Params) GetRewardDistributionWindow() uint64 {
 	return 0
 }
 
-func (m *Params) GetWhitelist() DenomList {
+func (m *Params) GetTobinTaxes() TobinTaxes {
 	if m != nil {
-		return m.Whitelist
+		return m.TobinTaxes
 	}
 	return nil
 }
@@ -99,24 +99,24 @@ func (m *Params) GetSlashWindow() uint64 {
 	return 0
 }
 
-// Denom - the object to hold configurations of each denom
-type Denom struct {
-	Name     string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+// TobinTax - the object to hold configurations of each denom
+type TobinTax struct {
+	Denom    string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
 }
 
-func (m *Denom) Reset()         { *m = Denom{} }
-func (m *Denom) String() string { return proto.CompactTextString(m) }
-func (*Denom) ProtoMessage()    {}
-func (*Denom) Descriptor() ([]byte, []int) {
+func (m *TobinTax) Reset()         { *m = TobinTax{} }
+func (m *TobinTax) String() string { return proto.CompactTextString(m) }
+func (*TobinTax) ProtoMessage()    {}
+func (*TobinTax) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d822df339892ddab, []int{1}
 }
-func (m *Denom) XXX_Unmarshal(b []byte) error {
+func (m *TobinTax) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Denom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TobinTax) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Denom.Marshal(b, m, deterministic)
+		return xxx_messageInfo_TobinTax.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -126,47 +126,47 @@ func (m *Denom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Denom) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Denom.Merge(m, src)
+func (m *TobinTax) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TobinTax.Merge(m, src)
 }
-func (m *Denom) XXX_Size() int {
+func (m *TobinTax) XXX_Size() int {
 	return m.Size()
 }
-func (m *Denom) XXX_DiscardUnknown() {
-	xxx_messageInfo_Denom.DiscardUnknown(m)
+func (m *TobinTax) XXX_DiscardUnknown() {
+	xxx_messageInfo_TobinTax.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Denom proto.InternalMessageInfo
+var xxx_messageInfo_TobinTax proto.InternalMessageInfo
 
-func (m *Denom) GetName() string {
+func (m *TobinTax) GetDenom() string {
 	if m != nil {
-		return m.Name
+		return m.Denom
 	}
 	return ""
 }
 
-// struct for aggregate prevoting on the ExchangeRateVote.
+// Prevote is a struct for aggregate prevoting on the Vote.
 // The purpose of aggregate prevote is to hide vote exchange rates with hash
 // which is formatted as hex string in SHA256("{salt}:{exchange
 // rate}{denom},...,{exchange rate}{denom}:{voter}")
-type AggregateExchangeRatePrevote struct {
+type Prevote struct {
 	Hash        string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	Voter       string `protobuf:"bytes,2,opt,name=voter,proto3" json:"voter,omitempty"`
 	SubmitBlock uint64 `protobuf:"varint,3,opt,name=submit_block,json=submitBlock,proto3" json:"submit_block,omitempty"`
 }
 
-func (m *AggregateExchangeRatePrevote) Reset()         { *m = AggregateExchangeRatePrevote{} }
-func (m *AggregateExchangeRatePrevote) String() string { return proto.CompactTextString(m) }
-func (*AggregateExchangeRatePrevote) ProtoMessage()    {}
-func (*AggregateExchangeRatePrevote) Descriptor() ([]byte, []int) {
+func (m *Prevote) Reset()         { *m = Prevote{} }
+func (m *Prevote) String() string { return proto.CompactTextString(m) }
+func (*Prevote) ProtoMessage()    {}
+func (*Prevote) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d822df339892ddab, []int{2}
 }
-func (m *AggregateExchangeRatePrevote) XXX_Unmarshal(b []byte) error {
+func (m *Prevote) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AggregateExchangeRatePrevote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Prevote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AggregateExchangeRatePrevote.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Prevote.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -176,58 +176,58 @@ func (m *AggregateExchangeRatePrevote) XXX_Marshal(b []byte, deterministic bool)
 		return b[:n], nil
 	}
 }
-func (m *AggregateExchangeRatePrevote) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AggregateExchangeRatePrevote.Merge(m, src)
+func (m *Prevote) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Prevote.Merge(m, src)
 }
-func (m *AggregateExchangeRatePrevote) XXX_Size() int {
+func (m *Prevote) XXX_Size() int {
 	return m.Size()
 }
-func (m *AggregateExchangeRatePrevote) XXX_DiscardUnknown() {
-	xxx_messageInfo_AggregateExchangeRatePrevote.DiscardUnknown(m)
+func (m *Prevote) XXX_DiscardUnknown() {
+	xxx_messageInfo_Prevote.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AggregateExchangeRatePrevote proto.InternalMessageInfo
+var xxx_messageInfo_Prevote proto.InternalMessageInfo
 
-func (m *AggregateExchangeRatePrevote) GetHash() string {
+func (m *Prevote) GetHash() string {
 	if m != nil {
 		return m.Hash
 	}
 	return ""
 }
 
-func (m *AggregateExchangeRatePrevote) GetVoter() string {
+func (m *Prevote) GetVoter() string {
 	if m != nil {
 		return m.Voter
 	}
 	return ""
 }
 
-func (m *AggregateExchangeRatePrevote) GetSubmitBlock() uint64 {
+func (m *Prevote) GetSubmitBlock() uint64 {
 	if m != nil {
 		return m.SubmitBlock
 	}
 	return 0
 }
 
-// MsgAggregateExchangeRateVote - struct for voting on
+// Vote - struct for voting on
 // the exchange rates of Ark denominated in various Noah assets.
-type AggregateExchangeRateVote struct {
-	ExchangeRateTuples ExchangeRateTuples `protobuf:"bytes,1,rep,name=exchange_rate_tuples,json=exchangeRateTuples,proto3,castrepeated=ExchangeRateTuples" json:"exchange_rate_tuples"`
-	Voter              string             `protobuf:"bytes,2,opt,name=voter,proto3" json:"voter,omitempty"`
+type Vote struct {
+	ExchangeRates ExchangeRates `protobuf:"bytes,1,rep,name=exchange_rates,json=exchangeRates,proto3,castrepeated=ExchangeRates" json:"exchange_rates"`
+	Voter         string        `protobuf:"bytes,2,opt,name=voter,proto3" json:"voter,omitempty"`
 }
 
-func (m *AggregateExchangeRateVote) Reset()         { *m = AggregateExchangeRateVote{} }
-func (m *AggregateExchangeRateVote) String() string { return proto.CompactTextString(m) }
-func (*AggregateExchangeRateVote) ProtoMessage()    {}
-func (*AggregateExchangeRateVote) Descriptor() ([]byte, []int) {
+func (m *Vote) Reset()         { *m = Vote{} }
+func (m *Vote) String() string { return proto.CompactTextString(m) }
+func (*Vote) ProtoMessage()    {}
+func (*Vote) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d822df339892ddab, []int{3}
 }
-func (m *AggregateExchangeRateVote) XXX_Unmarshal(b []byte) error {
+func (m *Vote) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AggregateExchangeRateVote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Vote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AggregateExchangeRateVote.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Vote.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -237,50 +237,50 @@ func (m *AggregateExchangeRateVote) XXX_Marshal(b []byte, deterministic bool) ([
 		return b[:n], nil
 	}
 }
-func (m *AggregateExchangeRateVote) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AggregateExchangeRateVote.Merge(m, src)
+func (m *Vote) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Vote.Merge(m, src)
 }
-func (m *AggregateExchangeRateVote) XXX_Size() int {
+func (m *Vote) XXX_Size() int {
 	return m.Size()
 }
-func (m *AggregateExchangeRateVote) XXX_DiscardUnknown() {
-	xxx_messageInfo_AggregateExchangeRateVote.DiscardUnknown(m)
+func (m *Vote) XXX_DiscardUnknown() {
+	xxx_messageInfo_Vote.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AggregateExchangeRateVote proto.InternalMessageInfo
+var xxx_messageInfo_Vote proto.InternalMessageInfo
 
-func (m *AggregateExchangeRateVote) GetExchangeRateTuples() ExchangeRateTuples {
+func (m *Vote) GetExchangeRates() ExchangeRates {
 	if m != nil {
-		return m.ExchangeRateTuples
+		return m.ExchangeRates
 	}
 	return nil
 }
 
-func (m *AggregateExchangeRateVote) GetVoter() string {
+func (m *Vote) GetVoter() string {
 	if m != nil {
 		return m.Voter
 	}
 	return ""
 }
 
-// ExchangeRateTuple - struct to store interpreted exchange rates data to store
-type ExchangeRateTuple struct {
-	Denom        string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExchangeRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=exchange_rate,json=exchangeRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"exchange_rate"`
+// ExchangeRate - struct to store interpreted exchange rates data to store
+type ExchangeRate struct {
+	Denom string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Rate  cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=rate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"rate"`
 }
 
-func (m *ExchangeRateTuple) Reset()         { *m = ExchangeRateTuple{} }
-func (m *ExchangeRateTuple) String() string { return proto.CompactTextString(m) }
-func (*ExchangeRateTuple) ProtoMessage()    {}
-func (*ExchangeRateTuple) Descriptor() ([]byte, []int) {
+func (m *ExchangeRate) Reset()         { *m = ExchangeRate{} }
+func (m *ExchangeRate) String() string { return proto.CompactTextString(m) }
+func (*ExchangeRate) ProtoMessage()    {}
+func (*ExchangeRate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d822df339892ddab, []int{4}
 }
-func (m *ExchangeRateTuple) XXX_Unmarshal(b []byte) error {
+func (m *ExchangeRate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExchangeRateTuple) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExchangeRate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ExchangeRateTuple.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ExchangeRate.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -290,19 +290,19 @@ func (m *ExchangeRateTuple) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *ExchangeRateTuple) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ExchangeRateTuple.Merge(m, src)
+func (m *ExchangeRate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExchangeRate.Merge(m, src)
 }
-func (m *ExchangeRateTuple) XXX_Size() int {
+func (m *ExchangeRate) XXX_Size() int {
 	return m.Size()
 }
-func (m *ExchangeRateTuple) XXX_DiscardUnknown() {
-	xxx_messageInfo_ExchangeRateTuple.DiscardUnknown(m)
+func (m *ExchangeRate) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExchangeRate.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ExchangeRateTuple proto.InternalMessageInfo
+var xxx_messageInfo_ExchangeRate proto.InternalMessageInfo
 
-func (m *ExchangeRateTuple) GetDenom() string {
+func (m *ExchangeRate) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
@@ -311,57 +311,55 @@ func (m *ExchangeRateTuple) GetDenom() string {
 
 func init() {
 	proto.RegisterType((*Params)(nil), "noah.oracle.v1.Params")
-	proto.RegisterType((*Denom)(nil), "noah.oracle.v1.Denom")
-	proto.RegisterType((*AggregateExchangeRatePrevote)(nil), "noah.oracle.v1.AggregateExchangeRatePrevote")
-	proto.RegisterType((*AggregateExchangeRateVote)(nil), "noah.oracle.v1.AggregateExchangeRateVote")
-	proto.RegisterType((*ExchangeRateTuple)(nil), "noah.oracle.v1.ExchangeRateTuple")
+	proto.RegisterType((*TobinTax)(nil), "noah.oracle.v1.TobinTax")
+	proto.RegisterType((*Prevote)(nil), "noah.oracle.v1.Prevote")
+	proto.RegisterType((*Vote)(nil), "noah.oracle.v1.Vote")
+	proto.RegisterType((*ExchangeRate)(nil), "noah.oracle.v1.ExchangeRate")
 }
 
 func init() { proto.RegisterFile("noah/oracle/v1/oracle.proto", fileDescriptor_d822df339892ddab) }
 
 var fileDescriptor_d822df339892ddab = []byte{
-	// 652 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x4f, 0x4f, 0x13, 0x4f,
-	0x18, 0xee, 0xfe, 0x68, 0xf9, 0xd1, 0x29, 0x90, 0x30, 0x56, 0xb3, 0x80, 0xb6, 0xd0, 0x13, 0x21,
-	0x61, 0x1b, 0x34, 0xf1, 0x40, 0xbc, 0xd0, 0x54, 0x2f, 0x72, 0x68, 0x0a, 0x81, 0x44, 0x63, 0x36,
-	0xb3, 0x3b, 0xe3, 0xee, 0x84, 0xdd, 0x99, 0x66, 0x66, 0x68, 0xcb, 0x07, 0xd0, 0x83, 0x27, 0x3f,
-	0x82, 0x47, 0xe3, 0x89, 0x03, 0x5f, 0xc0, 0x1b, 0x47, 0xc2, 0xc9, 0x78, 0x40, 0x03, 0x07, 0xfc,
-	0x04, 0x9e, 0xcd, 0xfc, 0x69, 0x04, 0xf1, 0x62, 0x7a, 0x69, 0x66, 0x9e, 0xf7, 0x9d, 0xe7, 0x7d,
-	0xde, 0xf7, 0x7d, 0xba, 0x60, 0x91, 0x71, 0x94, 0x36, 0xb9, 0x40, 0x71, 0x46, 0x9a, 0xfd, 0x75,
-	0x77, 0x0a, 0x7a, 0x82, 0x2b, 0x0e, 0x67, 0x75, 0x30, 0x70, 0x50, 0x7f, 0x7d, 0x61, 0x0e, 0xe5,
-	0x94, 0xf1, 0xa6, 0xf9, 0xb5, 0x29, 0x0b, 0xf3, 0x31, 0x97, 0x39, 0x97, 0xa1, 0xb9, 0x35, 0xed,
-	0xc5, 0x85, 0xaa, 0x09, 0x4f, 0xb8, 0xc5, 0xf5, 0xc9, 0xa2, 0x8d, 0x9f, 0x45, 0x30, 0xd9, 0x41,
-	0x02, 0xe5, 0x12, 0xd6, 0x41, 0xa5, 0xcf, 0x15, 0x09, 0x7b, 0x44, 0x50, 0x8e, 0x7d, 0x6f, 0xc9,
-	0x5b, 0x29, 0x76, 0x81, 0x86, 0x3a, 0x06, 0x81, 0xaf, 0xc0, 0xac, 0x49, 0x50, 0xa9, 0x20, 0x32,
-	0xe5, 0x19, 0xf6, 0xff, 0x5b, 0xf2, 0x56, 0xca, 0xad, 0xc7, 0x27, 0xe7, 0xf5, 0xc2, 0xd7, 0xf3,
-	0xfa, 0xa2, 0xad, 0x27, 0xf1, 0x7e, 0x40, 0x79, 0x33, 0x47, 0x2a, 0x0d, 0xb6, 0x48, 0x82, 0xe2,
-	0xc3, 0x36, 0x89, 0xcf, 0x8e, 0xd7, 0x80, 0x93, 0xd3, 0x26, 0xf1, 0xc7, 0xab, 0xa3, 0x55, 0xaf,
-	0x3b, 0xa3, 0xd9, 0x76, 0x46, 0x64, 0x70, 0x0f, 0x54, 0x04, 0x19, 0x20, 0x81, 0xc3, 0x08, 0x31,
-	0xec, 0x4f, 0x8c, 0xc5, 0x0d, 0x2c, 0x55, 0x0b, 0x31, 0x0c, 0x9f, 0x80, 0x05, 0x47, 0x8c, 0xa9,
-	0x54, 0x82, 0x46, 0x07, 0x8a, 0x72, 0x16, 0x0e, 0x28, 0xc3, 0x7c, 0xe0, 0x17, 0x4d, 0x9f, 0xbe,
-	0xcd, 0x68, 0x5f, 0x4b, 0xd8, 0x33, 0x71, 0xf8, 0x1c, 0x94, 0x07, 0x29, 0x55, 0x24, 0xa3, 0x52,
-	0xf9, 0xa5, 0xa5, 0x89, 0x95, 0xca, 0xc3, 0xbb, 0xc1, 0xcd, 0x4d, 0x04, 0x6d, 0xc2, 0x78, 0xde,
-	0xba, 0xa7, 0xb5, 0x7e, 0xfa, 0x56, 0x2f, 0x9b, 0xeb, 0x16, 0x95, 0xca, 0x6a, 0xf9, 0xfd, 0x5e,
-	0x8f, 0x50, 0x66, 0x48, 0xa6, 0xe1, 0x6b, 0x81, 0x62, 0x5d, 0xc4, 0x9f, 0x1c, 0x6f, 0x84, 0x86,
-	0xed, 0x99, 0x23, 0x83, 0xcb, 0x60, 0xda, 0xd2, 0xbb, 0xde, 0xfe, 0x37, 0xbd, 0x55, 0x0c, 0xe6,
-	0xda, 0x49, 0x40, 0x35, 0xa7, 0x2c, 0xec, 0xa3, 0x8c, 0x62, 0xbd, 0xea, 0x51, 0xea, 0xd4, 0x58,
-	0x3a, 0xe6, 0x72, 0xca, 0x76, 0x35, 0x65, 0x87, 0x08, 0x5b, 0x68, 0xe3, 0xc1, 0x8f, 0x0f, 0x75,
-	0xef, 0xdd, 0xd5, 0xd1, 0x6a, 0xd5, 0x78, 0x7a, 0x38, 0x72, 0xb5, 0x75, 0x5b, 0xa3, 0x0f, 0x4a,
-	0x66, 0x4c, 0x10, 0x82, 0x22, 0x43, 0x39, 0x31, 0x7e, 0x2b, 0x77, 0xcd, 0x19, 0x6e, 0x83, 0xb2,
-	0xe2, 0x11, 0x65, 0xa1, 0x42, 0xc3, 0x31, 0x4d, 0x36, 0x65, 0x88, 0x76, 0xd0, 0x70, 0xa3, 0xa8,
-	0x05, 0x35, 0xde, 0x78, 0xe0, 0xfe, 0x66, 0x92, 0x08, 0x92, 0x20, 0x45, 0x9e, 0x0e, 0xe3, 0x14,
-	0xb1, 0x84, 0x74, 0x91, 0x22, 0x1d, 0x41, 0xb4, 0x1f, 0xb5, 0x9e, 0x14, 0xc9, 0x74, 0xa4, 0x47,
-	0x9f, 0x61, 0x00, 0x4a, 0x3a, 0x26, 0x9c, 0x16, 0xff, 0xec, 0x78, 0xad, 0xea, 0x0a, 0x6d, 0x62,
-	0x2c, 0x88, 0x94, 0xdb, 0x4a, 0x50, 0x96, 0x74, 0x6d, 0x9a, 0xd9, 0xc3, 0x41, 0x94, 0x53, 0x15,
-	0x46, 0x19, 0x8f, 0xf7, 0x8d, 0x97, 0xf5, 0x1e, 0x0c, 0xd6, 0xd2, 0x50, 0xe3, 0xb3, 0x07, 0xe6,
-	0xff, 0xaa, 0x63, 0x57, 0x8b, 0x50, 0xa0, 0x4a, 0x1c, 0x16, 0x0a, 0xa4, 0xff, 0x73, 0x07, 0xbd,
-	0x8c, 0x48, 0xdf, 0x33, 0xfe, 0x5b, 0xfe, 0xd3, 0x7f, 0xd7, 0xdf, 0xef, 0xe8, 0xcc, 0x56, 0xdd,
-	0x79, 0x11, 0xde, 0x0a, 0x49, 0x3b, 0x17, 0x48, 0x6e, 0x05, 0xfe, 0xb5, 0xcd, 0xc6, 0x5b, 0x0f,
-	0xcc, 0xdd, 0xe2, 0x87, 0x55, 0x50, 0xc2, 0x7a, 0xb3, 0x6e, 0x82, 0xf6, 0x02, 0x5f, 0x82, 0x99,
-	0x1b, 0x1d, 0x8d, 0xb9, 0xd6, 0xe9, 0xeb, 0xf2, 0x5b, 0x6b, 0x27, 0x17, 0x35, 0xef, 0xf4, 0xa2,
-	0xe6, 0x7d, 0xbf, 0xa8, 0x79, 0xef, 0x2f, 0x6b, 0x85, 0xd3, 0xcb, 0x5a, 0xe1, 0xcb, 0x65, 0xad,
-	0xf0, 0xe2, 0xce, 0x4d, 0xf3, 0xa9, 0xc3, 0x1e, 0x91, 0xd1, 0xa4, 0xf9, 0xf6, 0x3d, 0xfa, 0x15,
-	0x00, 0x00, 0xff, 0xff, 0xcb, 0xce, 0x81, 0x1b, 0x6e, 0x05, 0x00, 0x00,
+	// 615 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xbf, 0x6b, 0x14, 0x41,
+	0x18, 0xbd, 0x35, 0x9b, 0x5f, 0x73, 0x49, 0x20, 0xe3, 0x81, 0xeb, 0x45, 0xef, 0xe2, 0x55, 0x21,
+	0x90, 0x3d, 0xa2, 0x60, 0x11, 0x6c, 0x3c, 0xa2, 0x85, 0x58, 0x1c, 0x9b, 0x90, 0x80, 0x20, 0xcb,
+	0xec, 0xce, 0xb8, 0x3b, 0xe4, 0x76, 0xe6, 0x98, 0x99, 0x5c, 0x2e, 0xf8, 0x1f, 0x58, 0xd9, 0xd9,
+	0x5a, 0x8a, 0x55, 0x8a, 0xfc, 0x11, 0x29, 0x43, 0x2a, 0xb1, 0x88, 0x92, 0x2b, 0xe2, 0x3f, 0x21,
+	0xc8, 0xfc, 0xd8, 0x70, 0x11, 0x2c, 0xe4, 0x9a, 0x65, 0xe6, 0xcd, 0xe3, 0x7d, 0xef, 0xfb, 0xbe,
+	0xc7, 0x82, 0x15, 0xc6, 0x51, 0xde, 0xe6, 0x02, 0xa5, 0x3d, 0xd2, 0x1e, 0x6c, 0xba, 0x53, 0xd8,
+	0x17, 0x5c, 0x71, 0xb8, 0xa4, 0x1f, 0x43, 0x07, 0x0d, 0x36, 0xeb, 0xcb, 0xa8, 0xa0, 0x8c, 0xb7,
+	0xcd, 0xd7, 0x52, 0xea, 0xf7, 0x53, 0x2e, 0x0b, 0x2e, 0x63, 0x73, 0x6b, 0xdb, 0x8b, 0x7b, 0xaa,
+	0x65, 0x3c, 0xe3, 0x16, 0xd7, 0x27, 0x8b, 0xb6, 0x7e, 0xfb, 0x60, 0xa6, 0x8b, 0x04, 0x2a, 0x24,
+	0x6c, 0x82, 0xea, 0x80, 0x2b, 0x12, 0xf7, 0x89, 0xa0, 0x1c, 0x07, 0xde, 0xaa, 0xb7, 0xe6, 0x47,
+	0x40, 0x43, 0x5d, 0x83, 0xc0, 0xb7, 0x60, 0xc9, 0x10, 0x54, 0x2e, 0x88, 0xcc, 0x79, 0x0f, 0x07,
+	0x77, 0x56, 0xbd, 0xb5, 0xf9, 0xce, 0xd3, 0xb3, 0xcb, 0x66, 0xe5, 0xfb, 0x65, 0x73, 0xc5, 0xd6,
+	0x93, 0xf8, 0x20, 0xa4, 0xbc, 0x5d, 0x20, 0x95, 0x87, 0xaf, 0x49, 0x86, 0xd2, 0xe3, 0x6d, 0x92,
+	0x5e, 0x9c, 0x6e, 0x00, 0x67, 0x67, 0x9b, 0xa4, 0x5f, 0xae, 0x4f, 0xd6, 0xbd, 0x68, 0x51, 0xab,
+	0xed, 0x96, 0x62, 0x70, 0x1f, 0x54, 0x05, 0x39, 0x42, 0x02, 0xc7, 0x09, 0x62, 0x38, 0x98, 0x9a,
+	0x48, 0x1b, 0x58, 0xa9, 0x0e, 0x62, 0x18, 0x3e, 0x03, 0x75, 0x27, 0x8c, 0xa9, 0x54, 0x82, 0x26,
+	0x87, 0x8a, 0x72, 0x16, 0x1f, 0x51, 0x86, 0xf9, 0x51, 0xe0, 0x9b, 0x3e, 0x03, 0xcb, 0xd8, 0x1e,
+	0x23, 0xec, 0x9b, 0x77, 0x18, 0x81, 0xaa, 0xe2, 0x09, 0x65, 0xb1, 0x42, 0x43, 0x22, 0x83, 0xe9,
+	0xd5, 0xa9, 0xb5, 0xea, 0xe3, 0x20, 0xbc, 0xbd, 0x8b, 0x70, 0x57, 0x53, 0x76, 0xd1, 0xb0, 0x73,
+	0x4f, 0x1b, 0xfe, 0xfa, 0xa3, 0x09, 0x4a, 0x84, 0x48, 0xe7, 0x48, 0xdd, 0x00, 0x7a, 0x92, 0xb2,
+	0x87, 0x64, 0x1e, 0xbf, 0x13, 0x28, 0xd5, 0xb5, 0x82, 0x99, 0xc9, 0x26, 0x69, 0xd4, 0x5e, 0x3a,
+	0x31, 0xf8, 0x08, 0x2c, 0x58, 0x79, 0xd7, 0xe2, 0xac, 0x69, 0xb1, 0x6a, 0x30, 0xd7, 0x55, 0x06,
+	0x6a, 0x05, 0x65, 0xf1, 0x00, 0xf5, 0x28, 0xd6, 0x1b, 0x2f, 0xa9, 0x73, 0x13, 0xf9, 0x58, 0x2e,
+	0x28, 0xdb, 0xd3, 0x92, 0x5d, 0x22, 0x6c, 0xa1, 0xad, 0x87, 0xbf, 0x3e, 0x37, 0xbd, 0x0f, 0xd7,
+	0x27, 0xeb, 0x35, 0x13, 0xed, 0x61, 0x19, 0x6e, 0x1b, 0xba, 0xd6, 0x7b, 0x30, 0x57, 0x0e, 0x0a,
+	0xd6, 0xc0, 0x34, 0x26, 0x8c, 0x17, 0x26, 0x7a, 0xf3, 0x91, 0xbd, 0xc0, 0x1d, 0x30, 0x7f, 0x33,
+	0xff, 0x09, 0x03, 0x37, 0x57, 0xae, 0x60, 0xcb, 0xd7, 0xae, 0x5a, 0x7d, 0x30, 0xdb, 0x15, 0x44,
+	0xa7, 0x10, 0x42, 0xe0, 0xe7, 0x48, 0xe6, 0xae, 0xb4, 0x39, 0xc3, 0x10, 0x4c, 0xeb, 0x37, 0xe1,
+	0xaa, 0x06, 0x17, 0xa7, 0x1b, 0x35, 0x27, 0xf9, 0x1c, 0x63, 0x41, 0xa4, 0xdc, 0x51, 0x82, 0xb2,
+	0x2c, 0xb2, 0x34, 0x33, 0xf6, 0xc3, 0xa4, 0xa0, 0x2a, 0x4e, 0x7a, 0x3c, 0x3d, 0x30, 0x09, 0xd6,
+	0x63, 0x37, 0x58, 0x47, 0x43, 0xad, 0x4f, 0x1e, 0xf0, 0xf7, 0x74, 0xbd, 0x18, 0x2c, 0x91, 0x61,
+	0x9a, 0x23, 0x96, 0x91, 0x58, 0x20, 0x45, 0x64, 0xe0, 0x99, 0x60, 0x3d, 0xf8, 0x3b, 0x58, 0x2f,
+	0x1c, 0x2b, 0x42, 0x8a, 0x74, 0xea, 0x2e, 0x5c, 0x8b, 0xe3, 0xa8, 0xcb, 0xd7, 0x22, 0x19, 0xc7,
+	0xfe, 0xd7, 0x7c, 0xab, 0x0f, 0x16, 0xc6, 0x45, 0xff, 0xb1, 0x8c, 0x57, 0xc0, 0xd7, 0x6e, 0x27,
+	0xdc, 0x83, 0xd1, 0xe8, 0x6c, 0x9c, 0x5d, 0x35, 0xbc, 0xf3, 0xab, 0x86, 0xf7, 0xf3, 0xaa, 0xe1,
+	0x7d, 0x1c, 0x35, 0x2a, 0xe7, 0xa3, 0x46, 0xe5, 0xdb, 0xa8, 0x51, 0x79, 0x73, 0xf7, 0x76, 0x54,
+	0xd4, 0x71, 0x9f, 0xc8, 0x64, 0xc6, 0xfc, 0xb0, 0x9e, 0xfc, 0x09, 0x00, 0x00, 0xff, 0xff, 0x9c,
+	0x8f, 0x67, 0xd0, 0x23, 0x05, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -395,11 +393,11 @@ func (this *Params) Equal(that interface{}) bool {
 	if this.RewardDistributionWindow != that1.RewardDistributionWindow {
 		return false
 	}
-	if len(this.Whitelist) != len(that1.Whitelist) {
+	if len(this.TobinTaxes) != len(that1.TobinTaxes) {
 		return false
 	}
-	for i := range this.Whitelist {
-		if !this.Whitelist[i].Equal(&that1.Whitelist[i]) {
+	for i := range this.TobinTaxes {
+		if !this.TobinTaxes[i].Equal(&that1.TobinTaxes[i]) {
 			return false
 		}
 	}
@@ -414,14 +412,14 @@ func (this *Params) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *Denom) Equal(that interface{}) bool {
+func (this *TobinTax) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*Denom)
+	that1, ok := that.(*TobinTax)
 	if !ok {
-		that2, ok := that.(Denom)
+		that2, ok := that.(TobinTax)
 		if ok {
 			that1 = &that2
 		} else {
@@ -433,7 +431,7 @@ func (this *Denom) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if this.Name != that1.Name {
+	if this.Denom != that1.Denom {
 		return false
 	}
 	if !this.TobinTax.Equal(that1.TobinTax) {
@@ -486,10 +484,10 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x32
-	if len(m.Whitelist) > 0 {
-		for iNdEx := len(m.Whitelist) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.TobinTaxes) > 0 {
+		for iNdEx := len(m.TobinTaxes) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Whitelist[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.TobinTaxes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -533,7 +531,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Denom) Marshal() (dAtA []byte, err error) {
+func (m *TobinTax) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -543,12 +541,12 @@ func (m *Denom) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Denom) MarshalTo(dAtA []byte) (int, error) {
+func (m *TobinTax) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Denom) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TobinTax) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -563,17 +561,17 @@ func (m *Denom) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x12
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintOracle(dAtA, i, uint64(len(m.Name)))
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintOracle(dAtA, i, uint64(len(m.Denom)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *AggregateExchangeRatePrevote) Marshal() (dAtA []byte, err error) {
+func (m *Prevote) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -583,12 +581,12 @@ func (m *AggregateExchangeRatePrevote) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AggregateExchangeRatePrevote) MarshalTo(dAtA []byte) (int, error) {
+func (m *Prevote) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AggregateExchangeRatePrevote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Prevote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -615,7 +613,7 @@ func (m *AggregateExchangeRatePrevote) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *AggregateExchangeRateVote) Marshal() (dAtA []byte, err error) {
+func (m *Vote) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -625,12 +623,12 @@ func (m *AggregateExchangeRateVote) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AggregateExchangeRateVote) MarshalTo(dAtA []byte) (int, error) {
+func (m *Vote) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AggregateExchangeRateVote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Vote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -642,10 +640,10 @@ func (m *AggregateExchangeRateVote) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.ExchangeRateTuples) > 0 {
-		for iNdEx := len(m.ExchangeRateTuples) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.ExchangeRates) > 0 {
+		for iNdEx := len(m.ExchangeRates) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.ExchangeRateTuples[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.ExchangeRates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -659,7 +657,7 @@ func (m *AggregateExchangeRateVote) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *ExchangeRateTuple) Marshal() (dAtA []byte, err error) {
+func (m *ExchangeRate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -669,20 +667,20 @@ func (m *ExchangeRateTuple) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExchangeRateTuple) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExchangeRate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ExchangeRateTuple) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ExchangeRate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size := m.ExchangeRate.Size()
+		size := m.Rate.Size()
 		i -= size
-		if _, err := m.ExchangeRate.MarshalTo(dAtA[i:]); err != nil {
+		if _, err := m.Rate.MarshalTo(dAtA[i:]); err != nil {
 			return 0, err
 		}
 		i = encodeVarintOracle(dAtA, i, uint64(size))
@@ -726,8 +724,8 @@ func (m *Params) Size() (n int) {
 	if m.RewardDistributionWindow != 0 {
 		n += 1 + sovOracle(uint64(m.RewardDistributionWindow))
 	}
-	if len(m.Whitelist) > 0 {
-		for _, e := range m.Whitelist {
+	if len(m.TobinTaxes) > 0 {
+		for _, e := range m.TobinTaxes {
 			l = e.Size()
 			n += 1 + l + sovOracle(uint64(l))
 		}
@@ -742,13 +740,13 @@ func (m *Params) Size() (n int) {
 	return n
 }
 
-func (m *Denom) Size() (n int) {
+func (m *TobinTax) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Name)
+	l = len(m.Denom)
 	if l > 0 {
 		n += 1 + l + sovOracle(uint64(l))
 	}
@@ -757,7 +755,7 @@ func (m *Denom) Size() (n int) {
 	return n
 }
 
-func (m *AggregateExchangeRatePrevote) Size() (n int) {
+func (m *Prevote) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -777,14 +775,14 @@ func (m *AggregateExchangeRatePrevote) Size() (n int) {
 	return n
 }
 
-func (m *AggregateExchangeRateVote) Size() (n int) {
+func (m *Vote) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.ExchangeRateTuples) > 0 {
-		for _, e := range m.ExchangeRateTuples {
+	if len(m.ExchangeRates) > 0 {
+		for _, e := range m.ExchangeRates {
 			l = e.Size()
 			n += 1 + l + sovOracle(uint64(l))
 		}
@@ -796,7 +794,7 @@ func (m *AggregateExchangeRateVote) Size() (n int) {
 	return n
 }
 
-func (m *ExchangeRateTuple) Size() (n int) {
+func (m *ExchangeRate) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -806,7 +804,7 @@ func (m *ExchangeRateTuple) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOracle(uint64(l))
 	}
-	l = m.ExchangeRate.Size()
+	l = m.Rate.Size()
 	n += 1 + l + sovOracle(uint64(l))
 	return n
 }
@@ -954,7 +952,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			}
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Whitelist", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTaxes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -981,8 +979,8 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Whitelist = append(m.Whitelist, Denom{})
-			if err := m.Whitelist[len(m.Whitelist)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.TobinTaxes = append(m.TobinTaxes, TobinTax{})
+			if err := m.TobinTaxes[len(m.TobinTaxes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1094,7 +1092,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Denom) Unmarshal(dAtA []byte) error {
+func (m *TobinTax) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1117,15 +1115,15 @@ func (m *Denom) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Denom: wiretype end group for non-group")
+			return fmt.Errorf("proto: TobinTax: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Denom: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1153,7 +1151,7 @@ func (m *Denom) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Name = string(dAtA[iNdEx:postIndex])
+			m.Denom = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1210,7 +1208,7 @@ func (m *Denom) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AggregateExchangeRatePrevote) Unmarshal(dAtA []byte) error {
+func (m *Prevote) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1233,10 +1231,10 @@ func (m *AggregateExchangeRatePrevote) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AggregateExchangeRatePrevote: wiretype end group for non-group")
+			return fmt.Errorf("proto: Prevote: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AggregateExchangeRatePrevote: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Prevote: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1343,7 +1341,7 @@ func (m *AggregateExchangeRatePrevote) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AggregateExchangeRateVote) Unmarshal(dAtA []byte) error {
+func (m *Vote) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1366,15 +1364,15 @@ func (m *AggregateExchangeRateVote) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AggregateExchangeRateVote: wiretype end group for non-group")
+			return fmt.Errorf("proto: Vote: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AggregateExchangeRateVote: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Vote: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExchangeRateTuples", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ExchangeRates", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1401,8 +1399,8 @@ func (m *AggregateExchangeRateVote) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ExchangeRateTuples = append(m.ExchangeRateTuples, ExchangeRateTuple{})
-			if err := m.ExchangeRateTuples[len(m.ExchangeRateTuples)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.ExchangeRates = append(m.ExchangeRates, ExchangeRate{})
+			if err := m.ExchangeRates[len(m.ExchangeRates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1459,7 +1457,7 @@ func (m *AggregateExchangeRateVote) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExchangeRateTuple) Unmarshal(dAtA []byte) error {
+func (m *ExchangeRate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1482,10 +1480,10 @@ func (m *ExchangeRateTuple) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExchangeRateTuple: wiretype end group for non-group")
+			return fmt.Errorf("proto: ExchangeRate: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExchangeRateTuple: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ExchangeRate: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1522,7 +1520,7 @@ func (m *ExchangeRateTuple) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExchangeRate", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Rate", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1550,7 +1548,7 @@ func (m *ExchangeRateTuple) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ExchangeRate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Rate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

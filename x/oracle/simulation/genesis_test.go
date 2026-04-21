@@ -49,7 +49,7 @@ func TestRandomisedGenState(t *testing.T) {
 	require.False(t, oracleGenesis.Params.SlashFraction.IsNegative())
 	require.True(t, oracleGenesis.Params.SlashWindow >= 100)
 	require.False(t, oracleGenesis.Params.MinValidPerWindow.IsNegative())
-	require.NotEmpty(t, oracleGenesis.Params.Whitelist)
+	require.NotEmpty(t, oracleGenesis.Params.TobinTaxes)
 }
 
 func TestRandomisedGenState_InvalidSimState(t *testing.T) {

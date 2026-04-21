@@ -11,26 +11,8 @@ import (
 // NOTE: proto interface doesn't exist for these types as they are only use internally
 // and not used in the store or rpc responses
 
-// Vote is a convenience wrapper to reduce redundant lookup cost
-type Vote struct {
-	Denom        string
-	ExchangeRate math.LegacyDec
-	Voter        sdk.ValAddress
-	Power        int64
-}
-
-// NewVote returns a new VoteForTally instance
-func NewVote(rate math.LegacyDec, denom string, voter sdk.ValAddress, power int64) Vote {
-	return Vote{
-		ExchangeRate: rate,
-		Denom:        denom,
-		Voter:        voter,
-		Power:        power,
-	}
-}
-
-// VoteScore is an interface that directs its rewards to an attached bank account.
-type VoteScore struct {
+// ValidatorScore is an interface that directs its rewards to an attached validator
+type ValidatorScore struct {
 	Power     int64
 	Weight    int64
 	WinCount  int64
@@ -38,8 +20,8 @@ type VoteScore struct {
 }
 
 // NewValidatorScore generates a ValidatorScore instance.
-func NewValidatorScore(power, weight, winCount int64, recipient sdk.ValAddress) VoteScore {
-	return VoteScore{
+func NewValidatorScore(power, weight, winCount int64, recipient sdk.ValAddress) ValidatorScore {
+	return ValidatorScore{
 		Power:     power,
 		Weight:    weight,
 		WinCount:  winCount,
@@ -47,8 +29,26 @@ func NewValidatorScore(power, weight, winCount int64, recipient sdk.ValAddress) 
 	}
 }
 
+// DenomVote is a convenience wrapper to reduce redundant lookup cost
+type DenomVote struct {
+	Denom        string
+	ExchangeRate math.LegacyDec
+	Voter        sdk.ValAddress
+	Power        int64
+}
+
+// NewDenomVote returns a new VoteForTally instance
+func NewDenomVote(rate math.LegacyDec, denom string, voter sdk.ValAddress, power int64) DenomVote {
+	return DenomVote{
+		ExchangeRate: rate,
+		Denom:        denom,
+		Voter:        voter,
+		Power:        power,
+	}
+}
+
 // DenomVotes is a convenience wrapper around a Vote slice
-type DenomVotes []Vote
+type DenomVotes []DenomVote
 
 // Len implements sort.Interface
 func (dv DenomVotes) Len() int {

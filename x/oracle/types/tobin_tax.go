@@ -2,11 +2,11 @@ package types
 
 import "strings"
 
-// DenomList is a list of Denom
-type DenomList []Denom
+// TobinTaxes is a list of TobinTax
+type TobinTaxes []TobinTax
 
 // String implements fmt.Stringer interface
-func (dl DenomList) String() (out string) {
+func (dl TobinTaxes) String() (out string) {
 	for _, d := range dl {
 		out += d.String() + "\n"
 	}

@@ -12,32 +12,32 @@ import (
 // NewGenesisState creates a new GenesisState object
 func NewGenesisState(
 	params Params,
-	rates []ExchangeRateTuple,
+	exchangeRates []ExchangeRate,
 	feederDelegations []FeederDelegation,
-	missCounters []MissCounter,
-	aggregateExchangeRatePrevotes []AggregateExchangeRatePrevote,
-	aggregateExchangeRateVotes []AggregateExchangeRateVote,
+	missCounts []MissCount,
+	prevotes []Prevote,
+	votes []Vote,
 	tobinTaxes []TobinTax,
 ) *GenesisState {
 	return &GenesisState{
-		Params:                        params,
-		ExchangeRates:                 rates,
-		FeederDelegations:             feederDelegations,
-		MissCounters:                  missCounters,
-		AggregateExchangeRatePrevotes: aggregateExchangeRatePrevotes,
-		AggregateExchangeRateVotes:    aggregateExchangeRateVotes,
-		TobinTaxes:                    tobinTaxes,
+		Params:            params,
+		ExchangeRates:     exchangeRates,
+		FeederDelegations: feederDelegations,
+		MissCounts:        missCounts,
+		Prevotes:          prevotes,
+		Votes:             votes,
+		TobinTaxes:        tobinTaxes,
 	}
 }
 
-// DefaultGenesisState - default GenesisState used by columbus-2
+// DefaultGenesisState - default GenesisState
 func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(DefaultParams(),
-		[]ExchangeRateTuple{},
+		[]ExchangeRate{},
 		[]FeederDelegation{},
-		[]MissCounter{},
-		[]AggregateExchangeRatePrevote{},
-		[]AggregateExchangeRateVote{},
+		[]MissCount{},
+		[]Prevote{},
+		[]Vote{},
 		[]TobinTax{})
 }
 
@@ -49,8 +49,8 @@ func (gs GenesisState) Validate() error {
 		if len(er.Denom) == 0 {
 			return fmt.Errorf("exchange rate denom must not be empty")
 		}
-		if !er.ExchangeRate.IsPositive() {
-			return fmt.Errorf("exchange rate for %s must be positive: %s", er.Denom, er.ExchangeRate)
+		if !er.Rate.IsPositive() {
+			return fmt.Errorf("exchange rate for %s must be positive: %s", er.Denom, er.Rate)
 		}
 		if seenDenoms[er.Denom] {
 			return fmt.Errorf("duplicate exchange rate for denom %s", er.Denom)
@@ -73,9 +73,9 @@ func (gs GenesisState) Validate() error {
 		seenValidators[fd.ValidatorAddress] = true
 	}
 
-	// MissCounters: no duplicate validators
+	// MissCounts: no duplicate validators
 	seenValidators = make(map[string]bool)
-	for _, mc := range gs.MissCounters {
+	for _, mc := range gs.MissCounts {
 		if len(mc.ValidatorAddress) == 0 {
 			return fmt.Errorf("miss counter validator address must not be empty")
 		}
@@ -85,9 +85,9 @@ func (gs GenesisState) Validate() error {
 		seenValidators[mc.ValidatorAddress] = true
 	}
 
-	// AggregateExchangeRatePrevotes: no duplicate voters
+	// Prevotes: no duplicate voters
 	seenVoters := make(map[string]bool)
-	for _, ap := range gs.AggregateExchangeRatePrevotes {
+	for _, ap := range gs.Prevotes {
 		if len(ap.Voter) == 0 {
 			return fmt.Errorf("aggregate prevote voter must not be empty")
 		}
@@ -97,9 +97,9 @@ func (gs GenesisState) Validate() error {
 		seenVoters[ap.Voter] = true
 	}
 
-	// AggregateExchangeRateVotes: no duplicate voters
+	// Votes: no duplicate voters
 	seenVoters = make(map[string]bool)
-	for _, av := range gs.AggregateExchangeRateVotes {
+	for _, av := range gs.Votes {
 		if len(av.Voter) == 0 {
 			return fmt.Errorf("aggregate vote voter must not be empty")
 		}

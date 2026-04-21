@@ -22,8 +22,8 @@ var (
 )
 
 // MsgAggregateExchangeRatePrevoteFactory submits a hashed exchange rate prevote for a random bonded validator.
-func MsgAggregateExchangeRatePrevoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgAggregateExchangeRatePrevote] {
-	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgAggregateExchangeRatePrevote) {
+func MsgAggregateExchangeRatePrevoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgPrevote] {
+	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgPrevote) {
 		r := testData.Rand()
 		validators, err := k.GetAllValidators(ctx)
 		if err != nil {
@@ -49,7 +49,7 @@ func MsgAggregateExchangeRatePrevoteFactory(k *keeper.Keeper) simsx.SimMsgFactor
 			exchangeRatesStr += price.String() + denom + ","
 		}
 		exchangeRatesStr = strings.TrimRight(exchangeRatesStr, ",")
-		voteHash := types.GetAggregateVoteHash(salt, exchangeRatesStr, valAddress)
+		voteHash := types.GetVoteHash(salt, exchangeRatesStr, valAddress)
 
 		feederAddr, err := k.GetFeederDelegation(ctx, valAddress)
 		if err != nil {
@@ -62,13 +62,13 @@ func MsgAggregateExchangeRatePrevoteFactory(k *keeper.Keeper) simsx.SimMsgFactor
 		}
 		voteHashMap[val.GetOperator()] = exchangeRatesStr
 
-		return []simsx.SimAccount{feederAccount}, types.NewMsgAggregateExchangeRatePrevote(voteHash, feederAddr, valAddress)
+		return []simsx.SimAccount{feederAccount}, types.NewMsgPrevote(voteHash, feederAddr, valAddress)
 	}
 }
 
 // MsgAggregateExchangeRateVoteFactory reveals exchange rates for a validator that previously submitted a prevote.
-func MsgAggregateExchangeRateVoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgAggregateExchangeRateVote] {
-	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgAggregateExchangeRateVote) {
+func MsgAggregateExchangeRateVoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgVote] {
+	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgVote) {
 		r := testData.Rand()
 		validators, err := k.GetAllValidators(ctx)
 		if err != nil {
@@ -96,7 +96,7 @@ func MsgAggregateExchangeRateVoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn
 		}
 
 		// get prevote
-		prevote, err := k.AggregateExchangeRatePrevote.Get(ctx, valAddress)
+		prevote, err := k.Prevote.Get(ctx, valAddress)
 		if err != nil {
 			reporter.Skip(err.Error())
 			return nil, nil
@@ -123,7 +123,7 @@ func MsgAggregateExchangeRateVoteFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn
 			return nil, nil
 		}
 
-		return []simsx.SimAccount{feederAccount}, types.NewMsgAggregateExchangeRateVote(salt, exchangeRatesStr, feederAddr, valAddress)
+		return []simsx.SimAccount{feederAccount}, types.NewMsgVote(salt, exchangeRatesStr, feederAddr, valAddress)
 	}
 }
 

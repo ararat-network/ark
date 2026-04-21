@@ -109,7 +109,7 @@ $ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvalop
 
 			salt := args[0]
 			exchangeRatesStr := args[1]
-			_, err = types.ParseExchangeRateTuples(exchangeRatesStr)
+			_, err = types.ParseExchangeRates(exchangeRatesStr)
 			if err != nil {
 				return fmt.Errorf("given exchange_rates {%s} is not a valid format; exchange_rate should be formatted as DecCoins; %s", exchangeRatesStr, err.Error())
 			}
@@ -129,8 +129,8 @@ $ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvalop
 				validator = parsedVal
 			}
 
-			hash := types.GetAggregateVoteHash(salt, exchangeRatesStr, validator)
-			msgs := []sdk.Msg{types.NewMsgAggregateExchangeRatePrevote(hash, voter, validator)}
+			hash := types.GetVoteHash(salt, exchangeRatesStr, validator)
+			msgs := []sdk.Msg{types.NewMsgPrevote(hash, voter, validator)}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msgs...)
 		},
@@ -176,13 +176,13 @@ $ noahd tx oracle aggregate-vote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1
 			} else if l > 4096 {
 				return sdkerrors.Wrap(errortypes.ErrInvalidRequest, "exchange rates string can not exceed 4096 characters")
 			}
-			exchangeRates, err := types.ParseExchangeRateTuples(exchangeRatesStr)
+			exchangeRates, err := types.ParseExchangeRates(exchangeRatesStr)
 			if err != nil {
 				return fmt.Errorf("given exchange_rate {%s} is not a valid format; exchange rate should be formatted as DecCoin; %s", exchangeRatesStr, err.Error())
 			}
 			for _, exchangeRate := range exchangeRates {
 				// Check overflow bit length
-				if exchangeRate.ExchangeRate.BigInt().BitLen() > 255+math.LegacyDecimalPrecisionBits {
+				if exchangeRate.Rate.BigInt().BitLen() > 255+math.LegacyDecimalPrecisionBits {
 					return sdkerrors.Wrap(types.ErrInvalidExchangeRate, "overflow")
 				}
 			}
@@ -202,7 +202,7 @@ $ noahd tx oracle aggregate-vote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1
 				validator = parsedVal
 			}
 
-			msgs := []sdk.Msg{types.NewMsgAggregateExchangeRateVote(salt, exchangeRatesStr, voter, validator)}
+			msgs := []sdk.Msg{types.NewMsgVote(salt, exchangeRatesStr, voter, validator)}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msgs...)
 		},

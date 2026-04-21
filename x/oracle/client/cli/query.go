@@ -25,7 +25,6 @@ func GetQueryCmd() *cobra.Command {
 
 	oracleQueryCmd.AddCommand(
 		GetCmdQueryExchangeRates(),
-		GetCmdQueryActives(),
 		GetCmdQueryParams(),
 		GetCmdQueryFeederDelegation(),
 		GetCmdQueryMissCounter(),
@@ -75,37 +74,6 @@ $ noahd query oracle exchange-rates ukrw
 				context.Background(),
 				&types.QueryExchangeRateRequest{Denom: denom},
 			)
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdQueryActives implements the query actives command.
-func GetCmdQueryActives() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "actives",
-		Args:  cobra.NoArgs,
-		Short: "Query the active list of noah assets recognized by the oracle",
-		Long: strings.TrimSpace(`
-Query the active list of noah assets recognized by the types.
-
-$ noahd query oracle actives
-`),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-			queryClient := types.NewQueryClient(clientCtx)
-
-			res, err := queryClient.Actives(context.Background(), &types.QueryActivesRequest{})
 			if err != nil {
 				return err
 			}
@@ -208,9 +176,9 @@ $ noahd query oracle miss noahvaloper...
 				return err
 			}
 
-			res, err := queryClient.MissCounter(
+			res, err := queryClient.MissCount(
 				context.Background(),
-				&types.QueryMissCounterRequest{ValidatorAddr: validator.String()},
+				&types.QueryMissCountRequest{ValidatorAddr: validator.String()},
 			)
 			if err != nil {
 				return err
@@ -247,9 +215,9 @@ $ noahd query oracle aggregate-prevotes noahvaloper...
 			queryClient := types.NewQueryClient(clientCtx)
 
 			if len(args) == 0 {
-				res, err := queryClient.AggregatePrevotes(
+				res, err := queryClient.Prevotes(
 					context.Background(),
-					&types.QueryAggregatePrevotesRequest{},
+					&types.QueryPrevotesRequest{},
 				)
 				if err != nil {
 					return err
@@ -264,9 +232,9 @@ $ noahd query oracle aggregate-prevotes noahvaloper...
 				return err
 			}
 
-			res, err := queryClient.AggregatePrevote(
+			res, err := queryClient.Prevote(
 				context.Background(),
-				&types.QueryAggregatePrevoteRequest{ValidatorAddr: validator.String()},
+				&types.QueryPrevoteRequest{ValidatorAddr: validator.String()},
 			)
 			if err != nil {
 				return err
@@ -303,9 +271,9 @@ $ noahd query oracle aggregate-votes noahvaloper...
 			queryClient := types.NewQueryClient(clientCtx)
 
 			if len(args) == 0 {
-				res, err := queryClient.AggregateVotes(
+				res, err := queryClient.Votes(
 					context.Background(),
-					&types.QueryAggregateVotesRequest{},
+					&types.QueryVotesRequest{},
 				)
 				if err != nil {
 					return err
@@ -320,9 +288,9 @@ $ noahd query oracle aggregate-votes noahvaloper...
 				return err
 			}
 
-			res, err := queryClient.AggregateVote(
+			res, err := queryClient.Vote(
 				context.Background(),
-				&types.QueryAggregateVoteRequest{ValidatorAddr: validator.String()},
+				&types.QueryVoteRequest{ValidatorAddr: validator.String()},
 			)
 			if err != nil {
 				return err

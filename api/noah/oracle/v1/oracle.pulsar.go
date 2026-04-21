@@ -18,7 +18,7 @@ import (
 var _ protoreflect.List = (*_Params_5_list)(nil)
 
 type _Params_5_list struct {
-	list *[]*Denom
+	list *[]*TobinTax
 }
 
 func (x *_Params_5_list) Len() int {
@@ -34,18 +34,18 @@ func (x *_Params_5_list) Get(i int) protoreflect.Value {
 
 func (x *_Params_5_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Denom)
+	concreteValue := valueUnwrapped.Interface().(*TobinTax)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_Params_5_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Denom)
+	concreteValue := valueUnwrapped.Interface().(*TobinTax)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_Params_5_list) AppendMutable() protoreflect.Value {
-	v := new(Denom)
+	v := new(TobinTax)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -58,7 +58,7 @@ func (x *_Params_5_list) Truncate(n int) {
 }
 
 func (x *_Params_5_list) NewElement() protoreflect.Value {
-	v := new(Denom)
+	v := new(TobinTax)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -72,7 +72,7 @@ var (
 	fd_Params_vote_threshold             protoreflect.FieldDescriptor
 	fd_Params_reward_band                protoreflect.FieldDescriptor
 	fd_Params_reward_distribution_window protoreflect.FieldDescriptor
-	fd_Params_whitelist                  protoreflect.FieldDescriptor
+	fd_Params_tobin_taxes                protoreflect.FieldDescriptor
 	fd_Params_slash_fraction             protoreflect.FieldDescriptor
 	fd_Params_slash_window               protoreflect.FieldDescriptor
 	fd_Params_min_valid_per_window       protoreflect.FieldDescriptor
@@ -85,7 +85,7 @@ func init() {
 	fd_Params_vote_threshold = md_Params.Fields().ByName("vote_threshold")
 	fd_Params_reward_band = md_Params.Fields().ByName("reward_band")
 	fd_Params_reward_distribution_window = md_Params.Fields().ByName("reward_distribution_window")
-	fd_Params_whitelist = md_Params.Fields().ByName("whitelist")
+	fd_Params_tobin_taxes = md_Params.Fields().ByName("tobin_taxes")
 	fd_Params_slash_fraction = md_Params.Fields().ByName("slash_fraction")
 	fd_Params_slash_window = md_Params.Fields().ByName("slash_window")
 	fd_Params_min_valid_per_window = md_Params.Fields().ByName("min_valid_per_window")
@@ -180,9 +180,9 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
-	if len(x.Whitelist) != 0 {
-		value := protoreflect.ValueOfList(&_Params_5_list{list: &x.Whitelist})
-		if !f(fd_Params_whitelist, value) {
+	if len(x.TobinTaxes) != 0 {
+		value := protoreflect.ValueOfList(&_Params_5_list{list: &x.TobinTaxes})
+		if !f(fd_Params_tobin_taxes, value) {
 			return
 		}
 	}
@@ -227,8 +227,8 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.RewardBand != ""
 	case "noah.oracle.v1.Params.reward_distribution_window":
 		return x.RewardDistributionWindow != uint64(0)
-	case "noah.oracle.v1.Params.whitelist":
-		return len(x.Whitelist) != 0
+	case "noah.oracle.v1.Params.tobin_taxes":
+		return len(x.TobinTaxes) != 0
 	case "noah.oracle.v1.Params.slash_fraction":
 		return x.SlashFraction != ""
 	case "noah.oracle.v1.Params.slash_window":
@@ -259,8 +259,8 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.RewardBand = ""
 	case "noah.oracle.v1.Params.reward_distribution_window":
 		x.RewardDistributionWindow = uint64(0)
-	case "noah.oracle.v1.Params.whitelist":
-		x.Whitelist = nil
+	case "noah.oracle.v1.Params.tobin_taxes":
+		x.TobinTaxes = nil
 	case "noah.oracle.v1.Params.slash_fraction":
 		x.SlashFraction = ""
 	case "noah.oracle.v1.Params.slash_window":
@@ -295,11 +295,11 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "noah.oracle.v1.Params.reward_distribution_window":
 		value := x.RewardDistributionWindow
 		return protoreflect.ValueOfUint64(value)
-	case "noah.oracle.v1.Params.whitelist":
-		if len(x.Whitelist) == 0 {
+	case "noah.oracle.v1.Params.tobin_taxes":
+		if len(x.TobinTaxes) == 0 {
 			return protoreflect.ValueOfList(&_Params_5_list{})
 		}
-		listValue := &_Params_5_list{list: &x.Whitelist}
+		listValue := &_Params_5_list{list: &x.TobinTaxes}
 		return protoreflect.ValueOfList(listValue)
 	case "noah.oracle.v1.Params.slash_fraction":
 		value := x.SlashFraction
@@ -338,10 +338,10 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.RewardBand = value.Interface().(string)
 	case "noah.oracle.v1.Params.reward_distribution_window":
 		x.RewardDistributionWindow = value.Uint()
-	case "noah.oracle.v1.Params.whitelist":
+	case "noah.oracle.v1.Params.tobin_taxes":
 		lv := value.List()
 		clv := lv.(*_Params_5_list)
-		x.Whitelist = *clv.list
+		x.TobinTaxes = *clv.list
 	case "noah.oracle.v1.Params.slash_fraction":
 		x.SlashFraction = value.Interface().(string)
 	case "noah.oracle.v1.Params.slash_window":
@@ -368,11 +368,11 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.Params.whitelist":
-		if x.Whitelist == nil {
-			x.Whitelist = []*Denom{}
+	case "noah.oracle.v1.Params.tobin_taxes":
+		if x.TobinTaxes == nil {
+			x.TobinTaxes = []*TobinTax{}
 		}
-		value := &_Params_5_list{list: &x.Whitelist}
+		value := &_Params_5_list{list: &x.TobinTaxes}
 		return protoreflect.ValueOfList(value)
 	case "noah.oracle.v1.Params.vote_period":
 		panic(fmt.Errorf("field vote_period of message noah.oracle.v1.Params is not mutable"))
@@ -409,8 +409,8 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfString("")
 	case "noah.oracle.v1.Params.reward_distribution_window":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "noah.oracle.v1.Params.whitelist":
-		list := []*Denom{}
+	case "noah.oracle.v1.Params.tobin_taxes":
+		list := []*TobinTax{}
 		return protoreflect.ValueOfList(&_Params_5_list{list: &list})
 	case "noah.oracle.v1.Params.slash_fraction":
 		return protoreflect.ValueOfString("")
@@ -501,8 +501,8 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.RewardDistributionWindow != 0 {
 			n += 1 + runtime.Sov(uint64(x.RewardDistributionWindow))
 		}
-		if len(x.Whitelist) > 0 {
-			for _, e := range x.Whitelist {
+		if len(x.TobinTaxes) > 0 {
+			for _, e := range x.TobinTaxes {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -566,9 +566,9 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x32
 		}
-		if len(x.Whitelist) > 0 {
-			for iNdEx := len(x.Whitelist) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Whitelist[iNdEx])
+		if len(x.TobinTaxes) > 0 {
+			for iNdEx := len(x.TobinTaxes) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.TobinTaxes[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -759,7 +759,7 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				}
 			case 5:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Whitelist", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TobinTaxes", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -786,8 +786,8 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Whitelist = append(x.Whitelist, &Denom{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Whitelist[len(x.Whitelist)-1]); err != nil {
+				x.TobinTaxes = append(x.TobinTaxes, &TobinTax{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TobinTaxes[len(x.TobinTaxes)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -910,27 +910,27 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_Denom           protoreflect.MessageDescriptor
-	fd_Denom_name      protoreflect.FieldDescriptor
-	fd_Denom_tobin_tax protoreflect.FieldDescriptor
+	md_TobinTax           protoreflect.MessageDescriptor
+	fd_TobinTax_denom     protoreflect.FieldDescriptor
+	fd_TobinTax_tobin_tax protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_oracle_v1_oracle_proto_init()
-	md_Denom = File_noah_oracle_v1_oracle_proto.Messages().ByName("Denom")
-	fd_Denom_name = md_Denom.Fields().ByName("name")
-	fd_Denom_tobin_tax = md_Denom.Fields().ByName("tobin_tax")
+	md_TobinTax = File_noah_oracle_v1_oracle_proto.Messages().ByName("TobinTax")
+	fd_TobinTax_denom = md_TobinTax.Fields().ByName("denom")
+	fd_TobinTax_tobin_tax = md_TobinTax.Fields().ByName("tobin_tax")
 }
 
-var _ protoreflect.Message = (*fastReflection_Denom)(nil)
+var _ protoreflect.Message = (*fastReflection_TobinTax)(nil)
 
-type fastReflection_Denom Denom
+type fastReflection_TobinTax TobinTax
 
-func (x *Denom) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_Denom)(x)
+func (x *TobinTax) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_TobinTax)(x)
 }
 
-func (x *Denom) slowProtoReflect() protoreflect.Message {
+func (x *TobinTax) slowProtoReflect() protoreflect.Message {
 	mi := &file_noah_oracle_v1_oracle_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -942,43 +942,43 @@ func (x *Denom) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_Denom_messageType fastReflection_Denom_messageType
-var _ protoreflect.MessageType = fastReflection_Denom_messageType{}
+var _fastReflection_TobinTax_messageType fastReflection_TobinTax_messageType
+var _ protoreflect.MessageType = fastReflection_TobinTax_messageType{}
 
-type fastReflection_Denom_messageType struct{}
+type fastReflection_TobinTax_messageType struct{}
 
-func (x fastReflection_Denom_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_Denom)(nil)
+func (x fastReflection_TobinTax_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_TobinTax)(nil)
 }
-func (x fastReflection_Denom_messageType) New() protoreflect.Message {
-	return new(fastReflection_Denom)
+func (x fastReflection_TobinTax_messageType) New() protoreflect.Message {
+	return new(fastReflection_TobinTax)
 }
-func (x fastReflection_Denom_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_Denom
+func (x fastReflection_TobinTax_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_TobinTax
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_Denom) Descriptor() protoreflect.MessageDescriptor {
-	return md_Denom
+func (x *fastReflection_TobinTax) Descriptor() protoreflect.MessageDescriptor {
+	return md_TobinTax
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_Denom) Type() protoreflect.MessageType {
-	return _fastReflection_Denom_messageType
+func (x *fastReflection_TobinTax) Type() protoreflect.MessageType {
+	return _fastReflection_TobinTax_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_Denom) New() protoreflect.Message {
-	return new(fastReflection_Denom)
+func (x *fastReflection_TobinTax) New() protoreflect.Message {
+	return new(fastReflection_TobinTax)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_Denom) Interface() protoreflect.ProtoMessage {
-	return (*Denom)(x)
+func (x *fastReflection_TobinTax) Interface() protoreflect.ProtoMessage {
+	return (*TobinTax)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -986,16 +986,16 @@ func (x *fastReflection_Denom) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_Denom) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Name != "" {
-		value := protoreflect.ValueOfString(x.Name)
-		if !f(fd_Denom_name, value) {
+func (x *fastReflection_TobinTax) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_TobinTax_denom, value) {
 			return
 		}
 	}
 	if x.TobinTax != "" {
 		value := protoreflect.ValueOfString(x.TobinTax)
-		if !f(fd_Denom_tobin_tax, value) {
+		if !f(fd_TobinTax_tobin_tax, value) {
 			return
 		}
 	}
@@ -1012,17 +1012,17 @@ func (x *fastReflection_Denom) Range(f func(protoreflect.FieldDescriptor, protor
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_Denom) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_TobinTax) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "noah.oracle.v1.Denom.name":
-		return x.Name != ""
-	case "noah.oracle.v1.Denom.tobin_tax":
+	case "noah.oracle.v1.TobinTax.denom":
+		return x.Denom != ""
+	case "noah.oracle.v1.TobinTax.tobin_tax":
 		return x.TobinTax != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Denom"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.TobinTax"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.Denom does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.TobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1032,17 +1032,17 @@ func (x *fastReflection_Denom) Has(fd protoreflect.FieldDescriptor) bool {
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Denom) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_TobinTax) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.Denom.name":
-		x.Name = ""
-	case "noah.oracle.v1.Denom.tobin_tax":
+	case "noah.oracle.v1.TobinTax.denom":
+		x.Denom = ""
+	case "noah.oracle.v1.TobinTax.tobin_tax":
 		x.TobinTax = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Denom"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.TobinTax"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.Denom does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.TobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1052,19 +1052,19 @@ func (x *fastReflection_Denom) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_Denom) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_TobinTax) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "noah.oracle.v1.Denom.name":
-		value := x.Name
+	case "noah.oracle.v1.TobinTax.denom":
+		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "noah.oracle.v1.Denom.tobin_tax":
+	case "noah.oracle.v1.TobinTax.tobin_tax":
 		value := x.TobinTax
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Denom"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.TobinTax"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.Denom does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.TobinTax does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1078,17 +1078,17 @@ func (x *fastReflection_Denom) Get(descriptor protoreflect.FieldDescriptor) prot
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Denom) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_TobinTax) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.Denom.name":
-		x.Name = value.Interface().(string)
-	case "noah.oracle.v1.Denom.tobin_tax":
+	case "noah.oracle.v1.TobinTax.denom":
+		x.Denom = value.Interface().(string)
+	case "noah.oracle.v1.TobinTax.tobin_tax":
 		x.TobinTax = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Denom"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.TobinTax"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.Denom does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.TobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1102,44 +1102,44 @@ func (x *fastReflection_Denom) Set(fd protoreflect.FieldDescriptor, value protor
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Denom) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_TobinTax) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.Denom.name":
-		panic(fmt.Errorf("field name of message noah.oracle.v1.Denom is not mutable"))
-	case "noah.oracle.v1.Denom.tobin_tax":
-		panic(fmt.Errorf("field tobin_tax of message noah.oracle.v1.Denom is not mutable"))
+	case "noah.oracle.v1.TobinTax.denom":
+		panic(fmt.Errorf("field denom of message noah.oracle.v1.TobinTax is not mutable"))
+	case "noah.oracle.v1.TobinTax.tobin_tax":
+		panic(fmt.Errorf("field tobin_tax of message noah.oracle.v1.TobinTax is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Denom"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.TobinTax"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.Denom does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.TobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_Denom) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_TobinTax) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.Denom.name":
+	case "noah.oracle.v1.TobinTax.denom":
 		return protoreflect.ValueOfString("")
-	case "noah.oracle.v1.Denom.tobin_tax":
+	case "noah.oracle.v1.TobinTax.tobin_tax":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Denom"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.TobinTax"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.Denom does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.TobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_Denom) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_TobinTax) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.Denom", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.TobinTax", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1147,7 +1147,7 @@ func (x *fastReflection_Denom) WhichOneof(d protoreflect.OneofDescriptor) protor
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_Denom) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_TobinTax) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1158,7 +1158,7 @@ func (x *fastReflection_Denom) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Denom) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_TobinTax) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1170,7 +1170,7 @@ func (x *fastReflection_Denom) SetUnknown(fields protoreflect.RawFields) {
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_Denom) IsValid() bool {
+func (x *fastReflection_TobinTax) IsValid() bool {
 	return x != nil
 }
 
@@ -1180,9 +1180,9 @@ func (x *fastReflection_Denom) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_TobinTax) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*Denom)
+		x := input.Message.Interface().(*TobinTax)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1194,7 +1194,7 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Name)
+		l = len(x.Denom)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -1212,7 +1212,7 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*Denom)
+		x := input.Message.Interface().(*TobinTax)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1238,10 +1238,10 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.Name) > 0 {
-			i -= len(x.Name)
-			copy(dAtA[i:], x.Name)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Name)))
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -1256,7 +1256,7 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*Denom)
+		x := input.Message.Interface().(*TobinTax)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1288,15 +1288,15 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Denom: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: TobinTax: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Denom: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: TobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1324,7 +1324,7 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Name = string(dAtA[iNdEx:postIndex])
+				x.Denom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
@@ -1394,29 +1394,29 @@ func (x *fastReflection_Denom) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_AggregateExchangeRatePrevote              protoreflect.MessageDescriptor
-	fd_AggregateExchangeRatePrevote_hash         protoreflect.FieldDescriptor
-	fd_AggregateExchangeRatePrevote_voter        protoreflect.FieldDescriptor
-	fd_AggregateExchangeRatePrevote_submit_block protoreflect.FieldDescriptor
+	md_Prevote              protoreflect.MessageDescriptor
+	fd_Prevote_hash         protoreflect.FieldDescriptor
+	fd_Prevote_voter        protoreflect.FieldDescriptor
+	fd_Prevote_submit_block protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_oracle_v1_oracle_proto_init()
-	md_AggregateExchangeRatePrevote = File_noah_oracle_v1_oracle_proto.Messages().ByName("AggregateExchangeRatePrevote")
-	fd_AggregateExchangeRatePrevote_hash = md_AggregateExchangeRatePrevote.Fields().ByName("hash")
-	fd_AggregateExchangeRatePrevote_voter = md_AggregateExchangeRatePrevote.Fields().ByName("voter")
-	fd_AggregateExchangeRatePrevote_submit_block = md_AggregateExchangeRatePrevote.Fields().ByName("submit_block")
+	md_Prevote = File_noah_oracle_v1_oracle_proto.Messages().ByName("Prevote")
+	fd_Prevote_hash = md_Prevote.Fields().ByName("hash")
+	fd_Prevote_voter = md_Prevote.Fields().ByName("voter")
+	fd_Prevote_submit_block = md_Prevote.Fields().ByName("submit_block")
 }
 
-var _ protoreflect.Message = (*fastReflection_AggregateExchangeRatePrevote)(nil)
+var _ protoreflect.Message = (*fastReflection_Prevote)(nil)
 
-type fastReflection_AggregateExchangeRatePrevote AggregateExchangeRatePrevote
+type fastReflection_Prevote Prevote
 
-func (x *AggregateExchangeRatePrevote) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_AggregateExchangeRatePrevote)(x)
+func (x *Prevote) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_Prevote)(x)
 }
 
-func (x *AggregateExchangeRatePrevote) slowProtoReflect() protoreflect.Message {
+func (x *Prevote) slowProtoReflect() protoreflect.Message {
 	mi := &file_noah_oracle_v1_oracle_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1428,43 +1428,43 @@ func (x *AggregateExchangeRatePrevote) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_AggregateExchangeRatePrevote_messageType fastReflection_AggregateExchangeRatePrevote_messageType
-var _ protoreflect.MessageType = fastReflection_AggregateExchangeRatePrevote_messageType{}
+var _fastReflection_Prevote_messageType fastReflection_Prevote_messageType
+var _ protoreflect.MessageType = fastReflection_Prevote_messageType{}
 
-type fastReflection_AggregateExchangeRatePrevote_messageType struct{}
+type fastReflection_Prevote_messageType struct{}
 
-func (x fastReflection_AggregateExchangeRatePrevote_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_AggregateExchangeRatePrevote)(nil)
+func (x fastReflection_Prevote_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_Prevote)(nil)
 }
-func (x fastReflection_AggregateExchangeRatePrevote_messageType) New() protoreflect.Message {
-	return new(fastReflection_AggregateExchangeRatePrevote)
+func (x fastReflection_Prevote_messageType) New() protoreflect.Message {
+	return new(fastReflection_Prevote)
 }
-func (x fastReflection_AggregateExchangeRatePrevote_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_AggregateExchangeRatePrevote
+func (x fastReflection_Prevote_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_Prevote
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_AggregateExchangeRatePrevote) Descriptor() protoreflect.MessageDescriptor {
-	return md_AggregateExchangeRatePrevote
+func (x *fastReflection_Prevote) Descriptor() protoreflect.MessageDescriptor {
+	return md_Prevote
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_AggregateExchangeRatePrevote) Type() protoreflect.MessageType {
-	return _fastReflection_AggregateExchangeRatePrevote_messageType
+func (x *fastReflection_Prevote) Type() protoreflect.MessageType {
+	return _fastReflection_Prevote_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_AggregateExchangeRatePrevote) New() protoreflect.Message {
-	return new(fastReflection_AggregateExchangeRatePrevote)
+func (x *fastReflection_Prevote) New() protoreflect.Message {
+	return new(fastReflection_Prevote)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_AggregateExchangeRatePrevote) Interface() protoreflect.ProtoMessage {
-	return (*AggregateExchangeRatePrevote)(x)
+func (x *fastReflection_Prevote) Interface() protoreflect.ProtoMessage {
+	return (*Prevote)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1472,22 +1472,22 @@ func (x *fastReflection_AggregateExchangeRatePrevote) Interface() protoreflect.P
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_AggregateExchangeRatePrevote) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_Prevote) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Hash != "" {
 		value := protoreflect.ValueOfString(x.Hash)
-		if !f(fd_AggregateExchangeRatePrevote_hash, value) {
+		if !f(fd_Prevote_hash, value) {
 			return
 		}
 	}
 	if x.Voter != "" {
 		value := protoreflect.ValueOfString(x.Voter)
-		if !f(fd_AggregateExchangeRatePrevote_voter, value) {
+		if !f(fd_Prevote_voter, value) {
 			return
 		}
 	}
 	if x.SubmitBlock != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.SubmitBlock)
-		if !f(fd_AggregateExchangeRatePrevote_submit_block, value) {
+		if !f(fd_Prevote_submit_block, value) {
 			return
 		}
 	}
@@ -1504,19 +1504,19 @@ func (x *fastReflection_AggregateExchangeRatePrevote) Range(f func(protoreflect.
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_AggregateExchangeRatePrevote) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_Prevote) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.hash":
+	case "noah.oracle.v1.Prevote.hash":
 		return x.Hash != ""
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.voter":
+	case "noah.oracle.v1.Prevote.voter":
 		return x.Voter != ""
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.submit_block":
+	case "noah.oracle.v1.Prevote.submit_block":
 		return x.SubmitBlock != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRatePrevote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Prevote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRatePrevote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Prevote does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1526,19 +1526,19 @@ func (x *fastReflection_AggregateExchangeRatePrevote) Has(fd protoreflect.FieldD
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRatePrevote) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_Prevote) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.hash":
+	case "noah.oracle.v1.Prevote.hash":
 		x.Hash = ""
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.voter":
+	case "noah.oracle.v1.Prevote.voter":
 		x.Voter = ""
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.submit_block":
+	case "noah.oracle.v1.Prevote.submit_block":
 		x.SubmitBlock = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRatePrevote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Prevote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRatePrevote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Prevote does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1548,22 +1548,22 @@ func (x *fastReflection_AggregateExchangeRatePrevote) Clear(fd protoreflect.Fiel
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_AggregateExchangeRatePrevote) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Prevote) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.hash":
+	case "noah.oracle.v1.Prevote.hash":
 		value := x.Hash
 		return protoreflect.ValueOfString(value)
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.voter":
+	case "noah.oracle.v1.Prevote.voter":
 		value := x.Voter
 		return protoreflect.ValueOfString(value)
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.submit_block":
+	case "noah.oracle.v1.Prevote.submit_block":
 		value := x.SubmitBlock
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRatePrevote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Prevote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRatePrevote does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Prevote does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1577,19 +1577,19 @@ func (x *fastReflection_AggregateExchangeRatePrevote) Get(descriptor protoreflec
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRatePrevote) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_Prevote) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.hash":
+	case "noah.oracle.v1.Prevote.hash":
 		x.Hash = value.Interface().(string)
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.voter":
+	case "noah.oracle.v1.Prevote.voter":
 		x.Voter = value.Interface().(string)
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.submit_block":
+	case "noah.oracle.v1.Prevote.submit_block":
 		x.SubmitBlock = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRatePrevote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Prevote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRatePrevote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Prevote does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1603,48 +1603,48 @@ func (x *fastReflection_AggregateExchangeRatePrevote) Set(fd protoreflect.FieldD
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRatePrevote) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Prevote) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.hash":
-		panic(fmt.Errorf("field hash of message noah.oracle.v1.AggregateExchangeRatePrevote is not mutable"))
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.voter":
-		panic(fmt.Errorf("field voter of message noah.oracle.v1.AggregateExchangeRatePrevote is not mutable"))
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.submit_block":
-		panic(fmt.Errorf("field submit_block of message noah.oracle.v1.AggregateExchangeRatePrevote is not mutable"))
+	case "noah.oracle.v1.Prevote.hash":
+		panic(fmt.Errorf("field hash of message noah.oracle.v1.Prevote is not mutable"))
+	case "noah.oracle.v1.Prevote.voter":
+		panic(fmt.Errorf("field voter of message noah.oracle.v1.Prevote is not mutable"))
+	case "noah.oracle.v1.Prevote.submit_block":
+		panic(fmt.Errorf("field submit_block of message noah.oracle.v1.Prevote is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRatePrevote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Prevote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRatePrevote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Prevote does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_AggregateExchangeRatePrevote) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Prevote) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.hash":
+	case "noah.oracle.v1.Prevote.hash":
 		return protoreflect.ValueOfString("")
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.voter":
+	case "noah.oracle.v1.Prevote.voter":
 		return protoreflect.ValueOfString("")
-	case "noah.oracle.v1.AggregateExchangeRatePrevote.submit_block":
+	case "noah.oracle.v1.Prevote.submit_block":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRatePrevote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Prevote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRatePrevote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Prevote does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_AggregateExchangeRatePrevote) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_Prevote) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.AggregateExchangeRatePrevote", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.Prevote", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1652,7 +1652,7 @@ func (x *fastReflection_AggregateExchangeRatePrevote) WhichOneof(d protoreflect.
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_AggregateExchangeRatePrevote) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_Prevote) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1663,7 +1663,7 @@ func (x *fastReflection_AggregateExchangeRatePrevote) GetUnknown() protoreflect.
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRatePrevote) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_Prevote) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1675,7 +1675,7 @@ func (x *fastReflection_AggregateExchangeRatePrevote) SetUnknown(fields protoref
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_AggregateExchangeRatePrevote) IsValid() bool {
+func (x *fastReflection_Prevote) IsValid() bool {
 	return x != nil
 }
 
@@ -1685,9 +1685,9 @@ func (x *fastReflection_AggregateExchangeRatePrevote) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_AggregateExchangeRatePrevote) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_Prevote) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*AggregateExchangeRatePrevote)
+		x := input.Message.Interface().(*Prevote)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1720,7 +1720,7 @@ func (x *fastReflection_AggregateExchangeRatePrevote) ProtoMethods() *protoiface
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*AggregateExchangeRatePrevote)
+		x := input.Message.Interface().(*Prevote)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1769,7 +1769,7 @@ func (x *fastReflection_AggregateExchangeRatePrevote) ProtoMethods() *protoiface
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*AggregateExchangeRatePrevote)
+		x := input.Message.Interface().(*Prevote)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1801,10 +1801,10 @@ func (x *fastReflection_AggregateExchangeRatePrevote) ProtoMethods() *protoiface
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AggregateExchangeRatePrevote: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Prevote: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AggregateExchangeRatePrevote: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Prevote: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1925,79 +1925,79 @@ func (x *fastReflection_AggregateExchangeRatePrevote) ProtoMethods() *protoiface
 	}
 }
 
-var _ protoreflect.List = (*_AggregateExchangeRateVote_1_list)(nil)
+var _ protoreflect.List = (*_Vote_1_list)(nil)
 
-type _AggregateExchangeRateVote_1_list struct {
-	list *[]*ExchangeRateTuple
+type _Vote_1_list struct {
+	list *[]*ExchangeRate
 }
 
-func (x *_AggregateExchangeRateVote_1_list) Len() int {
+func (x *_Vote_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_AggregateExchangeRateVote_1_list) Get(i int) protoreflect.Value {
+func (x *_Vote_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_AggregateExchangeRateVote_1_list) Set(i int, value protoreflect.Value) {
+func (x *_Vote_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ExchangeRateTuple)
+	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_AggregateExchangeRateVote_1_list) Append(value protoreflect.Value) {
+func (x *_Vote_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ExchangeRateTuple)
+	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_AggregateExchangeRateVote_1_list) AppendMutable() protoreflect.Value {
-	v := new(ExchangeRateTuple)
+func (x *_Vote_1_list) AppendMutable() protoreflect.Value {
+	v := new(ExchangeRate)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_AggregateExchangeRateVote_1_list) Truncate(n int) {
+func (x *_Vote_1_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_AggregateExchangeRateVote_1_list) NewElement() protoreflect.Value {
-	v := new(ExchangeRateTuple)
+func (x *_Vote_1_list) NewElement() protoreflect.Value {
+	v := new(ExchangeRate)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_AggregateExchangeRateVote_1_list) IsValid() bool {
+func (x *_Vote_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_AggregateExchangeRateVote                      protoreflect.MessageDescriptor
-	fd_AggregateExchangeRateVote_exchange_rate_tuples protoreflect.FieldDescriptor
-	fd_AggregateExchangeRateVote_voter                protoreflect.FieldDescriptor
+	md_Vote                protoreflect.MessageDescriptor
+	fd_Vote_exchange_rates protoreflect.FieldDescriptor
+	fd_Vote_voter          protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_oracle_v1_oracle_proto_init()
-	md_AggregateExchangeRateVote = File_noah_oracle_v1_oracle_proto.Messages().ByName("AggregateExchangeRateVote")
-	fd_AggregateExchangeRateVote_exchange_rate_tuples = md_AggregateExchangeRateVote.Fields().ByName("exchange_rate_tuples")
-	fd_AggregateExchangeRateVote_voter = md_AggregateExchangeRateVote.Fields().ByName("voter")
+	md_Vote = File_noah_oracle_v1_oracle_proto.Messages().ByName("Vote")
+	fd_Vote_exchange_rates = md_Vote.Fields().ByName("exchange_rates")
+	fd_Vote_voter = md_Vote.Fields().ByName("voter")
 }
 
-var _ protoreflect.Message = (*fastReflection_AggregateExchangeRateVote)(nil)
+var _ protoreflect.Message = (*fastReflection_Vote)(nil)
 
-type fastReflection_AggregateExchangeRateVote AggregateExchangeRateVote
+type fastReflection_Vote Vote
 
-func (x *AggregateExchangeRateVote) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_AggregateExchangeRateVote)(x)
+func (x *Vote) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_Vote)(x)
 }
 
-func (x *AggregateExchangeRateVote) slowProtoReflect() protoreflect.Message {
+func (x *Vote) slowProtoReflect() protoreflect.Message {
 	mi := &file_noah_oracle_v1_oracle_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2009,43 +2009,43 @@ func (x *AggregateExchangeRateVote) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_AggregateExchangeRateVote_messageType fastReflection_AggregateExchangeRateVote_messageType
-var _ protoreflect.MessageType = fastReflection_AggregateExchangeRateVote_messageType{}
+var _fastReflection_Vote_messageType fastReflection_Vote_messageType
+var _ protoreflect.MessageType = fastReflection_Vote_messageType{}
 
-type fastReflection_AggregateExchangeRateVote_messageType struct{}
+type fastReflection_Vote_messageType struct{}
 
-func (x fastReflection_AggregateExchangeRateVote_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_AggregateExchangeRateVote)(nil)
+func (x fastReflection_Vote_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_Vote)(nil)
 }
-func (x fastReflection_AggregateExchangeRateVote_messageType) New() protoreflect.Message {
-	return new(fastReflection_AggregateExchangeRateVote)
+func (x fastReflection_Vote_messageType) New() protoreflect.Message {
+	return new(fastReflection_Vote)
 }
-func (x fastReflection_AggregateExchangeRateVote_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_AggregateExchangeRateVote
+func (x fastReflection_Vote_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_Vote
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_AggregateExchangeRateVote) Descriptor() protoreflect.MessageDescriptor {
-	return md_AggregateExchangeRateVote
+func (x *fastReflection_Vote) Descriptor() protoreflect.MessageDescriptor {
+	return md_Vote
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_AggregateExchangeRateVote) Type() protoreflect.MessageType {
-	return _fastReflection_AggregateExchangeRateVote_messageType
+func (x *fastReflection_Vote) Type() protoreflect.MessageType {
+	return _fastReflection_Vote_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_AggregateExchangeRateVote) New() protoreflect.Message {
-	return new(fastReflection_AggregateExchangeRateVote)
+func (x *fastReflection_Vote) New() protoreflect.Message {
+	return new(fastReflection_Vote)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_AggregateExchangeRateVote) Interface() protoreflect.ProtoMessage {
-	return (*AggregateExchangeRateVote)(x)
+func (x *fastReflection_Vote) Interface() protoreflect.ProtoMessage {
+	return (*Vote)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2053,16 +2053,16 @@ func (x *fastReflection_AggregateExchangeRateVote) Interface() protoreflect.Prot
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_AggregateExchangeRateVote) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.ExchangeRateTuples) != 0 {
-		value := protoreflect.ValueOfList(&_AggregateExchangeRateVote_1_list{list: &x.ExchangeRateTuples})
-		if !f(fd_AggregateExchangeRateVote_exchange_rate_tuples, value) {
+func (x *fastReflection_Vote) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.ExchangeRates) != 0 {
+		value := protoreflect.ValueOfList(&_Vote_1_list{list: &x.ExchangeRates})
+		if !f(fd_Vote_exchange_rates, value) {
 			return
 		}
 	}
 	if x.Voter != "" {
 		value := protoreflect.ValueOfString(x.Voter)
-		if !f(fd_AggregateExchangeRateVote_voter, value) {
+		if !f(fd_Vote_voter, value) {
 			return
 		}
 	}
@@ -2079,17 +2079,17 @@ func (x *fastReflection_AggregateExchangeRateVote) Range(f func(protoreflect.Fie
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_AggregateExchangeRateVote) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_Vote) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples":
-		return len(x.ExchangeRateTuples) != 0
-	case "noah.oracle.v1.AggregateExchangeRateVote.voter":
+	case "noah.oracle.v1.Vote.exchange_rates":
+		return len(x.ExchangeRates) != 0
+	case "noah.oracle.v1.Vote.voter":
 		return x.Voter != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRateVote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Vote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRateVote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Vote does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2099,17 +2099,17 @@ func (x *fastReflection_AggregateExchangeRateVote) Has(fd protoreflect.FieldDesc
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRateVote) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_Vote) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples":
-		x.ExchangeRateTuples = nil
-	case "noah.oracle.v1.AggregateExchangeRateVote.voter":
+	case "noah.oracle.v1.Vote.exchange_rates":
+		x.ExchangeRates = nil
+	case "noah.oracle.v1.Vote.voter":
 		x.Voter = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRateVote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Vote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRateVote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Vote does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2119,22 +2119,22 @@ func (x *fastReflection_AggregateExchangeRateVote) Clear(fd protoreflect.FieldDe
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_AggregateExchangeRateVote) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Vote) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples":
-		if len(x.ExchangeRateTuples) == 0 {
-			return protoreflect.ValueOfList(&_AggregateExchangeRateVote_1_list{})
+	case "noah.oracle.v1.Vote.exchange_rates":
+		if len(x.ExchangeRates) == 0 {
+			return protoreflect.ValueOfList(&_Vote_1_list{})
 		}
-		listValue := &_AggregateExchangeRateVote_1_list{list: &x.ExchangeRateTuples}
+		listValue := &_Vote_1_list{list: &x.ExchangeRates}
 		return protoreflect.ValueOfList(listValue)
-	case "noah.oracle.v1.AggregateExchangeRateVote.voter":
+	case "noah.oracle.v1.Vote.voter":
 		value := x.Voter
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRateVote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Vote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRateVote does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Vote does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2148,19 +2148,19 @@ func (x *fastReflection_AggregateExchangeRateVote) Get(descriptor protoreflect.F
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRateVote) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_Vote) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples":
+	case "noah.oracle.v1.Vote.exchange_rates":
 		lv := value.List()
-		clv := lv.(*_AggregateExchangeRateVote_1_list)
-		x.ExchangeRateTuples = *clv.list
-	case "noah.oracle.v1.AggregateExchangeRateVote.voter":
+		clv := lv.(*_Vote_1_list)
+		x.ExchangeRates = *clv.list
+	case "noah.oracle.v1.Vote.voter":
 		x.Voter = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRateVote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Vote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRateVote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Vote does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2174,49 +2174,49 @@ func (x *fastReflection_AggregateExchangeRateVote) Set(fd protoreflect.FieldDesc
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRateVote) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Vote) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples":
-		if x.ExchangeRateTuples == nil {
-			x.ExchangeRateTuples = []*ExchangeRateTuple{}
+	case "noah.oracle.v1.Vote.exchange_rates":
+		if x.ExchangeRates == nil {
+			x.ExchangeRates = []*ExchangeRate{}
 		}
-		value := &_AggregateExchangeRateVote_1_list{list: &x.ExchangeRateTuples}
+		value := &_Vote_1_list{list: &x.ExchangeRates}
 		return protoreflect.ValueOfList(value)
-	case "noah.oracle.v1.AggregateExchangeRateVote.voter":
-		panic(fmt.Errorf("field voter of message noah.oracle.v1.AggregateExchangeRateVote is not mutable"))
+	case "noah.oracle.v1.Vote.voter":
+		panic(fmt.Errorf("field voter of message noah.oracle.v1.Vote is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRateVote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Vote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRateVote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Vote does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_AggregateExchangeRateVote) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Vote) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples":
-		list := []*ExchangeRateTuple{}
-		return protoreflect.ValueOfList(&_AggregateExchangeRateVote_1_list{list: &list})
-	case "noah.oracle.v1.AggregateExchangeRateVote.voter":
+	case "noah.oracle.v1.Vote.exchange_rates":
+		list := []*ExchangeRate{}
+		return protoreflect.ValueOfList(&_Vote_1_list{list: &list})
+	case "noah.oracle.v1.Vote.voter":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.AggregateExchangeRateVote"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.Vote"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.AggregateExchangeRateVote does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.Vote does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_AggregateExchangeRateVote) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_Vote) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.AggregateExchangeRateVote", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.Vote", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2224,7 +2224,7 @@ func (x *fastReflection_AggregateExchangeRateVote) WhichOneof(d protoreflect.One
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_AggregateExchangeRateVote) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_Vote) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2235,7 +2235,7 @@ func (x *fastReflection_AggregateExchangeRateVote) GetUnknown() protoreflect.Raw
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AggregateExchangeRateVote) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_Vote) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2247,7 +2247,7 @@ func (x *fastReflection_AggregateExchangeRateVote) SetUnknown(fields protoreflec
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_AggregateExchangeRateVote) IsValid() bool {
+func (x *fastReflection_Vote) IsValid() bool {
 	return x != nil
 }
 
@@ -2257,9 +2257,9 @@ func (x *fastReflection_AggregateExchangeRateVote) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_Vote) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*AggregateExchangeRateVote)
+		x := input.Message.Interface().(*Vote)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2271,8 +2271,8 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 		var n int
 		var l int
 		_ = l
-		if len(x.ExchangeRateTuples) > 0 {
-			for _, e := range x.ExchangeRateTuples {
+		if len(x.ExchangeRates) > 0 {
+			for _, e := range x.ExchangeRates {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -2291,7 +2291,7 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*AggregateExchangeRateVote)
+		x := input.Message.Interface().(*Vote)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2317,9 +2317,9 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.ExchangeRateTuples) > 0 {
-			for iNdEx := len(x.ExchangeRateTuples) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.ExchangeRateTuples[iNdEx])
+		if len(x.ExchangeRates) > 0 {
+			for iNdEx := len(x.ExchangeRates) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ExchangeRates[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2344,7 +2344,7 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*AggregateExchangeRateVote)
+		x := input.Message.Interface().(*Vote)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2376,15 +2376,15 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AggregateExchangeRateVote: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Vote: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AggregateExchangeRateVote: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Vote: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExchangeRateTuples", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExchangeRates", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -2411,8 +2411,8 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ExchangeRateTuples = append(x.ExchangeRateTuples, &ExchangeRateTuple{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExchangeRateTuples[len(x.ExchangeRateTuples)-1]); err != nil {
+				x.ExchangeRates = append(x.ExchangeRates, &ExchangeRate{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExchangeRates[len(x.ExchangeRates)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -2484,27 +2484,27 @@ func (x *fastReflection_AggregateExchangeRateVote) ProtoMethods() *protoiface.Me
 }
 
 var (
-	md_ExchangeRateTuple               protoreflect.MessageDescriptor
-	fd_ExchangeRateTuple_denom         protoreflect.FieldDescriptor
-	fd_ExchangeRateTuple_exchange_rate protoreflect.FieldDescriptor
+	md_ExchangeRate       protoreflect.MessageDescriptor
+	fd_ExchangeRate_denom protoreflect.FieldDescriptor
+	fd_ExchangeRate_rate  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_oracle_v1_oracle_proto_init()
-	md_ExchangeRateTuple = File_noah_oracle_v1_oracle_proto.Messages().ByName("ExchangeRateTuple")
-	fd_ExchangeRateTuple_denom = md_ExchangeRateTuple.Fields().ByName("denom")
-	fd_ExchangeRateTuple_exchange_rate = md_ExchangeRateTuple.Fields().ByName("exchange_rate")
+	md_ExchangeRate = File_noah_oracle_v1_oracle_proto.Messages().ByName("ExchangeRate")
+	fd_ExchangeRate_denom = md_ExchangeRate.Fields().ByName("denom")
+	fd_ExchangeRate_rate = md_ExchangeRate.Fields().ByName("rate")
 }
 
-var _ protoreflect.Message = (*fastReflection_ExchangeRateTuple)(nil)
+var _ protoreflect.Message = (*fastReflection_ExchangeRate)(nil)
 
-type fastReflection_ExchangeRateTuple ExchangeRateTuple
+type fastReflection_ExchangeRate ExchangeRate
 
-func (x *ExchangeRateTuple) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_ExchangeRateTuple)(x)
+func (x *ExchangeRate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ExchangeRate)(x)
 }
 
-func (x *ExchangeRateTuple) slowProtoReflect() protoreflect.Message {
+func (x *ExchangeRate) slowProtoReflect() protoreflect.Message {
 	mi := &file_noah_oracle_v1_oracle_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2516,43 +2516,43 @@ func (x *ExchangeRateTuple) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_ExchangeRateTuple_messageType fastReflection_ExchangeRateTuple_messageType
-var _ protoreflect.MessageType = fastReflection_ExchangeRateTuple_messageType{}
+var _fastReflection_ExchangeRate_messageType fastReflection_ExchangeRate_messageType
+var _ protoreflect.MessageType = fastReflection_ExchangeRate_messageType{}
 
-type fastReflection_ExchangeRateTuple_messageType struct{}
+type fastReflection_ExchangeRate_messageType struct{}
 
-func (x fastReflection_ExchangeRateTuple_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_ExchangeRateTuple)(nil)
+func (x fastReflection_ExchangeRate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ExchangeRate)(nil)
 }
-func (x fastReflection_ExchangeRateTuple_messageType) New() protoreflect.Message {
-	return new(fastReflection_ExchangeRateTuple)
+func (x fastReflection_ExchangeRate_messageType) New() protoreflect.Message {
+	return new(fastReflection_ExchangeRate)
 }
-func (x fastReflection_ExchangeRateTuple_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_ExchangeRateTuple
+func (x fastReflection_ExchangeRate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ExchangeRate
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_ExchangeRateTuple) Descriptor() protoreflect.MessageDescriptor {
-	return md_ExchangeRateTuple
+func (x *fastReflection_ExchangeRate) Descriptor() protoreflect.MessageDescriptor {
+	return md_ExchangeRate
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_ExchangeRateTuple) Type() protoreflect.MessageType {
-	return _fastReflection_ExchangeRateTuple_messageType
+func (x *fastReflection_ExchangeRate) Type() protoreflect.MessageType {
+	return _fastReflection_ExchangeRate_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_ExchangeRateTuple) New() protoreflect.Message {
-	return new(fastReflection_ExchangeRateTuple)
+func (x *fastReflection_ExchangeRate) New() protoreflect.Message {
+	return new(fastReflection_ExchangeRate)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_ExchangeRateTuple) Interface() protoreflect.ProtoMessage {
-	return (*ExchangeRateTuple)(x)
+func (x *fastReflection_ExchangeRate) Interface() protoreflect.ProtoMessage {
+	return (*ExchangeRate)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2560,16 +2560,16 @@ func (x *fastReflection_ExchangeRateTuple) Interface() protoreflect.ProtoMessage
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_ExchangeRateTuple) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_ExchangeRate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_ExchangeRateTuple_denom, value) {
+		if !f(fd_ExchangeRate_denom, value) {
 			return
 		}
 	}
-	if x.ExchangeRate != "" {
-		value := protoreflect.ValueOfString(x.ExchangeRate)
-		if !f(fd_ExchangeRateTuple_exchange_rate, value) {
+	if x.Rate != "" {
+		value := protoreflect.ValueOfString(x.Rate)
+		if !f(fd_ExchangeRate_rate, value) {
 			return
 		}
 	}
@@ -2586,17 +2586,17 @@ func (x *fastReflection_ExchangeRateTuple) Range(f func(protoreflect.FieldDescri
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_ExchangeRateTuple) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_ExchangeRate) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "noah.oracle.v1.ExchangeRateTuple.denom":
+	case "noah.oracle.v1.ExchangeRate.denom":
 		return x.Denom != ""
-	case "noah.oracle.v1.ExchangeRateTuple.exchange_rate":
-		return x.ExchangeRate != ""
+	case "noah.oracle.v1.ExchangeRate.rate":
+		return x.Rate != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRateTuple"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRateTuple does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2606,17 +2606,17 @@ func (x *fastReflection_ExchangeRateTuple) Has(fd protoreflect.FieldDescriptor) 
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ExchangeRateTuple) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_ExchangeRate) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.ExchangeRateTuple.denom":
+	case "noah.oracle.v1.ExchangeRate.denom":
 		x.Denom = ""
-	case "noah.oracle.v1.ExchangeRateTuple.exchange_rate":
-		x.ExchangeRate = ""
+	case "noah.oracle.v1.ExchangeRate.rate":
+		x.Rate = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRateTuple"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRateTuple does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2626,19 +2626,19 @@ func (x *fastReflection_ExchangeRateTuple) Clear(fd protoreflect.FieldDescriptor
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_ExchangeRateTuple) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ExchangeRate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "noah.oracle.v1.ExchangeRateTuple.denom":
+	case "noah.oracle.v1.ExchangeRate.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "noah.oracle.v1.ExchangeRateTuple.exchange_rate":
-		value := x.ExchangeRate
+	case "noah.oracle.v1.ExchangeRate.rate":
+		value := x.Rate
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRateTuple"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRateTuple does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2652,17 +2652,17 @@ func (x *fastReflection_ExchangeRateTuple) Get(descriptor protoreflect.FieldDesc
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ExchangeRateTuple) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_ExchangeRate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.ExchangeRateTuple.denom":
+	case "noah.oracle.v1.ExchangeRate.denom":
 		x.Denom = value.Interface().(string)
-	case "noah.oracle.v1.ExchangeRateTuple.exchange_rate":
-		x.ExchangeRate = value.Interface().(string)
+	case "noah.oracle.v1.ExchangeRate.rate":
+		x.Rate = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRateTuple"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRateTuple does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2676,44 +2676,44 @@ func (x *fastReflection_ExchangeRateTuple) Set(fd protoreflect.FieldDescriptor, 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ExchangeRateTuple) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ExchangeRate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.ExchangeRateTuple.denom":
-		panic(fmt.Errorf("field denom of message noah.oracle.v1.ExchangeRateTuple is not mutable"))
-	case "noah.oracle.v1.ExchangeRateTuple.exchange_rate":
-		panic(fmt.Errorf("field exchange_rate of message noah.oracle.v1.ExchangeRateTuple is not mutable"))
+	case "noah.oracle.v1.ExchangeRate.denom":
+		panic(fmt.Errorf("field denom of message noah.oracle.v1.ExchangeRate is not mutable"))
+	case "noah.oracle.v1.ExchangeRate.rate":
+		panic(fmt.Errorf("field rate of message noah.oracle.v1.ExchangeRate is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRateTuple"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRateTuple does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_ExchangeRateTuple) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ExchangeRate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.ExchangeRateTuple.denom":
+	case "noah.oracle.v1.ExchangeRate.denom":
 		return protoreflect.ValueOfString("")
-	case "noah.oracle.v1.ExchangeRateTuple.exchange_rate":
+	case "noah.oracle.v1.ExchangeRate.rate":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRateTuple"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRateTuple does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_ExchangeRateTuple) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_ExchangeRate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.ExchangeRateTuple", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.ExchangeRate", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2721,7 +2721,7 @@ func (x *fastReflection_ExchangeRateTuple) WhichOneof(d protoreflect.OneofDescri
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_ExchangeRateTuple) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_ExchangeRate) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2732,7 +2732,7 @@ func (x *fastReflection_ExchangeRateTuple) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ExchangeRateTuple) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_ExchangeRate) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2744,7 +2744,7 @@ func (x *fastReflection_ExchangeRateTuple) SetUnknown(fields protoreflect.RawFie
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_ExchangeRateTuple) IsValid() bool {
+func (x *fastReflection_ExchangeRate) IsValid() bool {
 	return x != nil
 }
 
@@ -2754,9 +2754,9 @@ func (x *fastReflection_ExchangeRateTuple) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_ExchangeRate) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*ExchangeRateTuple)
+		x := input.Message.Interface().(*ExchangeRate)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2772,7 +2772,7 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ExchangeRate)
+		l = len(x.Rate)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -2786,7 +2786,7 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*ExchangeRateTuple)
+		x := input.Message.Interface().(*ExchangeRate)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2805,10 +2805,10 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.ExchangeRate) > 0 {
-			i -= len(x.ExchangeRate)
-			copy(dAtA[i:], x.ExchangeRate)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ExchangeRate)))
+		if len(x.Rate) > 0 {
+			i -= len(x.Rate)
+			copy(dAtA[i:], x.Rate)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Rate)))
 			i--
 			dAtA[i] = 0x12
 		}
@@ -2830,7 +2830,7 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*ExchangeRateTuple)
+		x := input.Message.Interface().(*ExchangeRate)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2862,10 +2862,10 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExchangeRateTuple: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExchangeRate: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExchangeRateTuple: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExchangeRate: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2902,7 +2902,7 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExchangeRate", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Rate", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -2930,7 +2930,7 @@ func (x *fastReflection_ExchangeRateTuple) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ExchangeRate = string(dAtA[iNdEx:postIndex])
+				x.Rate = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -2986,14 +2986,14 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	VotePeriod               uint64   `protobuf:"varint,1,opt,name=vote_period,json=votePeriod,proto3" json:"vote_period,omitempty"`
-	VoteThreshold            string   `protobuf:"bytes,2,opt,name=vote_threshold,json=voteThreshold,proto3" json:"vote_threshold,omitempty"`
-	RewardBand               string   `protobuf:"bytes,3,opt,name=reward_band,json=rewardBand,proto3" json:"reward_band,omitempty"`
-	RewardDistributionWindow uint64   `protobuf:"varint,4,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
-	Whitelist                []*Denom `protobuf:"bytes,5,rep,name=whitelist,proto3" json:"whitelist,omitempty"`
-	SlashFraction            string   `protobuf:"bytes,6,opt,name=slash_fraction,json=slashFraction,proto3" json:"slash_fraction,omitempty"`
-	SlashWindow              uint64   `protobuf:"varint,7,opt,name=slash_window,json=slashWindow,proto3" json:"slash_window,omitempty"`
-	MinValidPerWindow        string   `protobuf:"bytes,8,opt,name=min_valid_per_window,json=minValidPerWindow,proto3" json:"min_valid_per_window,omitempty"`
+	VotePeriod               uint64      `protobuf:"varint,1,opt,name=vote_period,json=votePeriod,proto3" json:"vote_period,omitempty"`
+	VoteThreshold            string      `protobuf:"bytes,2,opt,name=vote_threshold,json=voteThreshold,proto3" json:"vote_threshold,omitempty"`
+	RewardBand               string      `protobuf:"bytes,3,opt,name=reward_band,json=rewardBand,proto3" json:"reward_band,omitempty"`
+	RewardDistributionWindow uint64      `protobuf:"varint,4,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
+	TobinTaxes               []*TobinTax `protobuf:"bytes,5,rep,name=tobin_taxes,json=tobinTaxes,proto3" json:"tobin_taxes,omitempty"`
+	SlashFraction            string      `protobuf:"bytes,6,opt,name=slash_fraction,json=slashFraction,proto3" json:"slash_fraction,omitempty"`
+	SlashWindow              uint64      `protobuf:"varint,7,opt,name=slash_window,json=slashWindow,proto3" json:"slash_window,omitempty"`
+	MinValidPerWindow        string      `protobuf:"bytes,8,opt,name=min_valid_per_window,json=minValidPerWindow,proto3" json:"min_valid_per_window,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -3044,9 +3044,9 @@ func (x *Params) GetRewardDistributionWindow() uint64 {
 	return 0
 }
 
-func (x *Params) GetWhitelist() []*Denom {
+func (x *Params) GetTobinTaxes() []*TobinTax {
 	if x != nil {
-		return x.Whitelist
+		return x.TobinTaxes
 	}
 	return nil
 }
@@ -3072,18 +3072,18 @@ func (x *Params) GetMinValidPerWindow() string {
 	return ""
 }
 
-// Denom - the object to hold configurations of each denom
-type Denom struct {
+// TobinTax - the object to hold configurations of each denom
+type TobinTax struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name     string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Denom    string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 	TobinTax string `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3" json:"tobin_tax,omitempty"`
 }
 
-func (x *Denom) Reset() {
-	*x = Denom{}
+func (x *TobinTax) Reset() {
+	*x = TobinTax{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_noah_oracle_v1_oracle_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3091,36 +3091,36 @@ func (x *Denom) Reset() {
 	}
 }
 
-func (x *Denom) String() string {
+func (x *TobinTax) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Denom) ProtoMessage() {}
+func (*TobinTax) ProtoMessage() {}
 
-// Deprecated: Use Denom.ProtoReflect.Descriptor instead.
-func (*Denom) Descriptor() ([]byte, []int) {
+// Deprecated: Use TobinTax.ProtoReflect.Descriptor instead.
+func (*TobinTax) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_oracle_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Denom) GetName() string {
+func (x *TobinTax) GetDenom() string {
 	if x != nil {
-		return x.Name
+		return x.Denom
 	}
 	return ""
 }
 
-func (x *Denom) GetTobinTax() string {
+func (x *TobinTax) GetTobinTax() string {
 	if x != nil {
 		return x.TobinTax
 	}
 	return ""
 }
 
-// struct for aggregate prevoting on the ExchangeRateVote.
+// Prevote is a struct for aggregate prevoting on the Vote.
 // The purpose of aggregate prevote is to hide vote exchange rates with hash
 // which is formatted as hex string in SHA256("{salt}:{exchange
 // rate}{denom},...,{exchange rate}{denom}:{voter}")
-type AggregateExchangeRatePrevote struct {
+type Prevote struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -3130,8 +3130,8 @@ type AggregateExchangeRatePrevote struct {
 	SubmitBlock uint64 `protobuf:"varint,3,opt,name=submit_block,json=submitBlock,proto3" json:"submit_block,omitempty"`
 }
 
-func (x *AggregateExchangeRatePrevote) Reset() {
-	*x = AggregateExchangeRatePrevote{}
+func (x *Prevote) Reset() {
+	*x = Prevote{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_noah_oracle_v1_oracle_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3139,51 +3139,51 @@ func (x *AggregateExchangeRatePrevote) Reset() {
 	}
 }
 
-func (x *AggregateExchangeRatePrevote) String() string {
+func (x *Prevote) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AggregateExchangeRatePrevote) ProtoMessage() {}
+func (*Prevote) ProtoMessage() {}
 
-// Deprecated: Use AggregateExchangeRatePrevote.ProtoReflect.Descriptor instead.
-func (*AggregateExchangeRatePrevote) Descriptor() ([]byte, []int) {
+// Deprecated: Use Prevote.ProtoReflect.Descriptor instead.
+func (*Prevote) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_oracle_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *AggregateExchangeRatePrevote) GetHash() string {
+func (x *Prevote) GetHash() string {
 	if x != nil {
 		return x.Hash
 	}
 	return ""
 }
 
-func (x *AggregateExchangeRatePrevote) GetVoter() string {
+func (x *Prevote) GetVoter() string {
 	if x != nil {
 		return x.Voter
 	}
 	return ""
 }
 
-func (x *AggregateExchangeRatePrevote) GetSubmitBlock() uint64 {
+func (x *Prevote) GetSubmitBlock() uint64 {
 	if x != nil {
 		return x.SubmitBlock
 	}
 	return 0
 }
 
-// MsgAggregateExchangeRateVote - struct for voting on
+// Vote - struct for voting on
 // the exchange rates of Ark denominated in various Noah assets.
-type AggregateExchangeRateVote struct {
+type Vote struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ExchangeRateTuples []*ExchangeRateTuple `protobuf:"bytes,1,rep,name=exchange_rate_tuples,json=exchangeRateTuples,proto3" json:"exchange_rate_tuples,omitempty"`
-	Voter              string               `protobuf:"bytes,2,opt,name=voter,proto3" json:"voter,omitempty"`
+	ExchangeRates []*ExchangeRate `protobuf:"bytes,1,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
+	Voter         string          `protobuf:"bytes,2,opt,name=voter,proto3" json:"voter,omitempty"`
 }
 
-func (x *AggregateExchangeRateVote) Reset() {
-	*x = AggregateExchangeRateVote{}
+func (x *Vote) Reset() {
+	*x = Vote{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_noah_oracle_v1_oracle_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3191,43 +3191,43 @@ func (x *AggregateExchangeRateVote) Reset() {
 	}
 }
 
-func (x *AggregateExchangeRateVote) String() string {
+func (x *Vote) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AggregateExchangeRateVote) ProtoMessage() {}
+func (*Vote) ProtoMessage() {}
 
-// Deprecated: Use AggregateExchangeRateVote.ProtoReflect.Descriptor instead.
-func (*AggregateExchangeRateVote) Descriptor() ([]byte, []int) {
+// Deprecated: Use Vote.ProtoReflect.Descriptor instead.
+func (*Vote) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_oracle_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AggregateExchangeRateVote) GetExchangeRateTuples() []*ExchangeRateTuple {
+func (x *Vote) GetExchangeRates() []*ExchangeRate {
 	if x != nil {
-		return x.ExchangeRateTuples
+		return x.ExchangeRates
 	}
 	return nil
 }
 
-func (x *AggregateExchangeRateVote) GetVoter() string {
+func (x *Vote) GetVoter() string {
 	if x != nil {
 		return x.Voter
 	}
 	return ""
 }
 
-// ExchangeRateTuple - struct to store interpreted exchange rates data to store
-type ExchangeRateTuple struct {
+// ExchangeRate - struct to store interpreted exchange rates data to store
+type ExchangeRate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Denom        string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExchangeRate string `protobuf:"bytes,2,opt,name=exchange_rate,json=exchangeRate,proto3" json:"exchange_rate,omitempty"`
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Rate  string `protobuf:"bytes,2,opt,name=rate,proto3" json:"rate,omitempty"`
 }
 
-func (x *ExchangeRateTuple) Reset() {
-	*x = ExchangeRateTuple{}
+func (x *ExchangeRate) Reset() {
+	*x = ExchangeRate{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_noah_oracle_v1_oracle_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3235,27 +3235,27 @@ func (x *ExchangeRateTuple) Reset() {
 	}
 }
 
-func (x *ExchangeRateTuple) String() string {
+func (x *ExchangeRate) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExchangeRateTuple) ProtoMessage() {}
+func (*ExchangeRate) ProtoMessage() {}
 
-// Deprecated: Use ExchangeRateTuple.ProtoReflect.Descriptor instead.
-func (*ExchangeRateTuple) Descriptor() ([]byte, []int) {
+// Deprecated: Use ExchangeRate.ProtoReflect.Descriptor instead.
+func (*ExchangeRate) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_oracle_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ExchangeRateTuple) GetDenom() string {
+func (x *ExchangeRate) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *ExchangeRateTuple) GetExchangeRate() string {
+func (x *ExchangeRate) GetRate() string {
 	if x != nil {
-		return x.ExchangeRate
+		return x.Rate
 	}
 	return ""
 }
@@ -3270,7 +3270,7 @@ var file_noah_oracle_v1_oracle_proto_rawDesc = []byte{
 	0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67,
 	0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xf6, 0x04, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1f, 0x0a, 0x0b,
+	0x6f, 0x22, 0xfd, 0x04, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1f, 0x0a, 0x0b,
 	0x76, 0x6f, 0x74, 0x65, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x04, 0x52, 0x0a, 0x76, 0x6f, 0x74, 0x65, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x12, 0x5d, 0x0a,
 	0x0e, 0x76, 0x6f, 0x74, 0x65, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18,
@@ -3288,75 +3288,71 @@ var file_noah_oracle_v1_oracle_proto_rawDesc = []byte{
 	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x77, 0x69, 0x6e,
 	0x64, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x18, 0x72, 0x65, 0x77, 0x61, 0x72,
 	0x64, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x57, 0x69, 0x6e,
-	0x64, 0x6f, 0x77, 0x12, 0x4b, 0x0a, 0x09, 0x77, 0x68, 0x69, 0x74, 0x65, 0x6c, 0x69, 0x73, 0x74,
-	0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x42, 0x16, 0xc8,
-	0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x09, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x4c, 0x69, 0x73, 0x74,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x77, 0x68, 0x69, 0x74, 0x65, 0x6c, 0x69, 0x73, 0x74,
-	0x12, 0x5d, 0x0a, 0x0e, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f, 0x66, 0x72, 0x61, 0x63, 0x74, 0x69,
-	0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
-	0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d,
-	0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d,
-	0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x0d, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x46, 0x72, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12,
-	0x21, 0x0a, 0x0c, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18,
-	0x07, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64,
-	0x6f, 0x77, 0x12, 0x67, 0x0a, 0x14, 0x6d, 0x69, 0x6e, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x5f,
-	0x70, 0x65, 0x72, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09,
-	0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61,
-	0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6d, 0x69, 0x6e, 0x56, 0x61, 0x6c,
-	0x69, 0x64, 0x50, 0x65, 0x72, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x3a, 0x1d, 0xe8, 0xa0, 0x1f,
-	0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x14, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x78, 0x2f, 0x6f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x76, 0x0a, 0x05, 0x44, 0x65,
-	0x6e, 0x6f, 0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x53, 0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e,
-	0x5f, 0x74, 0x61, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00,
-	0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2,
-	0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x08, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x04, 0xe8, 0xa0,
-	0x1f, 0x01, 0x22, 0x85, 0x01, 0x0a, 0x1c, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
-	0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x50, 0x72, 0x65, 0x76,
-	0x6f, 0x74, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x2e, 0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x72,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x72, 0x12, 0x21, 0x0a, 0x0c, 0x73, 0x75, 0x62, 0x6d, 0x69,
-	0x74, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x73,
-	0x75, 0x62, 0x6d, 0x69, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0xc1, 0x01, 0x0a, 0x19, 0x41,
-	0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x52, 0x61, 0x74, 0x65, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x74, 0x0a, 0x14, 0x65, 0x78, 0x63, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x75, 0x70, 0x6c, 0x65, 0x73,
-	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x52, 0x61, 0x74, 0x65, 0x54, 0x75, 0x70, 0x6c, 0x65, 0x42, 0x1f, 0xc8, 0xde, 0x1f, 0x00, 0xaa,
-	0xdf, 0x1f, 0x12, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x54,
-	0x75, 0x70, 0x6c, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x65, 0x78, 0x63, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x54, 0x75, 0x70, 0x6c, 0x65, 0x73, 0x12, 0x2e,
-	0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
-	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x72, 0x22, 0x86,
-	0x01, 0x0a, 0x11, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x54,
-	0x75, 0x70, 0x6c, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x5b, 0x0a, 0x0d, 0x65, 0x78,
-	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67,
-	0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x63, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x42, 0x9d, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e,
-	0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0b,
-	0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x6e,
-	0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x6f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2,
-	0x02, 0x03, 0x4e, 0x4f, 0x58, 0xaa, 0x02, 0x0e, 0x4e, 0x6f, 0x61, 0x68, 0x2e, 0x4f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x4f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x4f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4e, 0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x4f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x6f, 0x77, 0x12, 0x52, 0x0a, 0x0b, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78,
+	0x65, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e,
+	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54,
+	0x61, 0x78, 0x42, 0x17, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x0a, 0x54, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x74, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x12, 0x5d, 0x0a, 0x0e, 0x73, 0x6c, 0x61, 0x73, 0x68,
+	0x5f, 0x66, 0x72, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
+	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
+	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x46, 0x72,
+	0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x21, 0x0a, 0x0c, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f,
+	0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x07, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x73, 0x6c,
+	0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x67, 0x0a, 0x14, 0x6d, 0x69, 0x6e,
+	0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x5f, 0x70, 0x65, 0x72, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f,
+	0x77, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x11, 0x6d, 0x69, 0x6e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x50, 0x65, 0x72, 0x57, 0x69, 0x6e, 0x64,
+	0x6f, 0x77, 0x3a, 0x1d, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x14, 0x6e, 0x6f, 0x61,
+	0x68, 0x2f, 0x78, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x22, 0x7b, 0x0a, 0x08, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x14, 0x0a,
+	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65,
+	0x6e, 0x6f, 0x6d, 0x12, 0x53, 0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08,
+	0x74, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0x70,
+	0x0a, 0x07, 0x50, 0x72, 0x65, 0x76, 0x6f, 0x74, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73,
+	0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x2e, 0x0a,
+	0x05, 0x76, 0x6f, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x72, 0x12, 0x21, 0x0a,
+	0x0c, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x0b, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x22, 0x97, 0x01, 0x0a, 0x04, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x5f, 0x0a, 0x0e, 0x65, 0x78, 0x63,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x1c, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x42,
+	0x1a, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x0d, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x65, 0x78, 0x63,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x12, 0x2e, 0x0a, 0x05, 0x76, 0x6f,
+	0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x72, 0x22, 0x70, 0x0a, 0x0c, 0x45, 0x78,
+	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65,
+	0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x12, 0x4a, 0x0a, 0x04, 0x72, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x72, 0x61, 0x74, 0x65, 0x42, 0x9d, 0x01, 0x0a,
+	0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2e, 0x76, 0x31, 0x42, 0x0b, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x20, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f, 0x61,
+	0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4e, 0x4f, 0x58, 0xaa, 0x02, 0x0e, 0x4e, 0x6f, 0x61,
+	0x68, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4e, 0x6f,
+	0x61, 0x68, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4e,
+	0x6f, 0x61, 0x68, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
+	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4e, 0x6f, 0x61, 0x68,
+	0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3373,15 +3369,15 @@ func file_noah_oracle_v1_oracle_proto_rawDescGZIP() []byte {
 
 var file_noah_oracle_v1_oracle_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_noah_oracle_v1_oracle_proto_goTypes = []interface{}{
-	(*Params)(nil),                       // 0: noah.oracle.v1.Params
-	(*Denom)(nil),                        // 1: noah.oracle.v1.Denom
-	(*AggregateExchangeRatePrevote)(nil), // 2: noah.oracle.v1.AggregateExchangeRatePrevote
-	(*AggregateExchangeRateVote)(nil),    // 3: noah.oracle.v1.AggregateExchangeRateVote
-	(*ExchangeRateTuple)(nil),            // 4: noah.oracle.v1.ExchangeRateTuple
+	(*Params)(nil),       // 0: noah.oracle.v1.Params
+	(*TobinTax)(nil),     // 1: noah.oracle.v1.TobinTax
+	(*Prevote)(nil),      // 2: noah.oracle.v1.Prevote
+	(*Vote)(nil),         // 3: noah.oracle.v1.Vote
+	(*ExchangeRate)(nil), // 4: noah.oracle.v1.ExchangeRate
 }
 var file_noah_oracle_v1_oracle_proto_depIdxs = []int32{
-	1, // 0: noah.oracle.v1.Params.whitelist:type_name -> noah.oracle.v1.Denom
-	4, // 1: noah.oracle.v1.AggregateExchangeRateVote.exchange_rate_tuples:type_name -> noah.oracle.v1.ExchangeRateTuple
+	1, // 0: noah.oracle.v1.Params.tobin_taxes:type_name -> noah.oracle.v1.TobinTax
+	4, // 1: noah.oracle.v1.Vote.exchange_rates:type_name -> noah.oracle.v1.ExchangeRate
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -3408,7 +3404,7 @@ func file_noah_oracle_v1_oracle_proto_init() {
 			}
 		}
 		file_noah_oracle_v1_oracle_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Denom); i {
+			switch v := v.(*TobinTax); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3420,7 +3416,7 @@ func file_noah_oracle_v1_oracle_proto_init() {
 			}
 		}
 		file_noah_oracle_v1_oracle_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AggregateExchangeRatePrevote); i {
+			switch v := v.(*Prevote); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3432,7 +3428,7 @@ func file_noah_oracle_v1_oracle_proto_init() {
 			}
 		}
 		file_noah_oracle_v1_oracle_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AggregateExchangeRateVote); i {
+			switch v := v.(*Vote); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3444,7 +3440,7 @@ func file_noah_oracle_v1_oracle_proto_init() {
 			}
 		}
 		file_noah_oracle_v1_oracle_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExchangeRateTuple); i {
+			switch v := v.(*ExchangeRate); i {
 			case 0:
 				return &v.state
 			case 1:

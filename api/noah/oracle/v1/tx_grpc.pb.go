@@ -19,10 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_AggregateExchangeRatePrevote_FullMethodName = "/noah.oracle.v1.Msg/AggregateExchangeRatePrevote"
-	Msg_AggregateExchangeRateVote_FullMethodName    = "/noah.oracle.v1.Msg/AggregateExchangeRateVote"
-	Msg_DelegateFeedConsent_FullMethodName          = "/noah.oracle.v1.Msg/DelegateFeedConsent"
-	Msg_UpdateParams_FullMethodName                 = "/noah.oracle.v1.Msg/UpdateParams"
+	Msg_Prevote_FullMethodName             = "/noah.oracle.v1.Msg/Prevote"
+	Msg_Vote_FullMethodName                = "/noah.oracle.v1.Msg/Vote"
+	Msg_DelegateFeedConsent_FullMethodName = "/noah.oracle.v1.Msg/DelegateFeedConsent"
+	Msg_UpdateParams_FullMethodName        = "/noah.oracle.v1.Msg/UpdateParams"
 )
 
 // MsgClient is the client API for Msg service.
@@ -31,12 +31,10 @@ const (
 //
 // Msg defines the oracle Msg service.
 type MsgClient interface {
-	// AggregateExchangeRatePrevote defines a method for submitting
-	// aggregate exchange rate prevote
-	AggregateExchangeRatePrevote(ctx context.Context, in *MsgAggregateExchangeRatePrevote, opts ...grpc.CallOption) (*MsgAggregateExchangeRatePrevoteResponse, error)
-	// AggregateExchangeRateVote defines a method for submitting
-	// aggregate exchange rate vote
-	AggregateExchangeRateVote(ctx context.Context, in *MsgAggregateExchangeRateVote, opts ...grpc.CallOption) (*MsgAggregateExchangeRateVoteResponse, error)
+	// Prevote defines a method for submitting prevote
+	Prevote(ctx context.Context, in *MsgPrevote, opts ...grpc.CallOption) (*MsgPrevoteResponse, error)
+	// Vote defines a method for submitting vote
+	Vote(ctx context.Context, in *MsgVote, opts ...grpc.CallOption) (*MsgVoteResponse, error)
 	// DelegateFeedConsent defines a method for setting the feeder delegation
 	DelegateFeedConsent(ctx context.Context, in *MsgDelegateFeedConsent, opts ...grpc.CallOption) (*MsgDelegateFeedConsentResponse, error)
 	// UpdateParams defines an operation for updating the x/oracle module
@@ -52,20 +50,20 @@ func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
 }
 
-func (c *msgClient) AggregateExchangeRatePrevote(ctx context.Context, in *MsgAggregateExchangeRatePrevote, opts ...grpc.CallOption) (*MsgAggregateExchangeRatePrevoteResponse, error) {
+func (c *msgClient) Prevote(ctx context.Context, in *MsgPrevote, opts ...grpc.CallOption) (*MsgPrevoteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgAggregateExchangeRatePrevoteResponse)
-	err := c.cc.Invoke(ctx, Msg_AggregateExchangeRatePrevote_FullMethodName, in, out, cOpts...)
+	out := new(MsgPrevoteResponse)
+	err := c.cc.Invoke(ctx, Msg_Prevote_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) AggregateExchangeRateVote(ctx context.Context, in *MsgAggregateExchangeRateVote, opts ...grpc.CallOption) (*MsgAggregateExchangeRateVoteResponse, error) {
+func (c *msgClient) Vote(ctx context.Context, in *MsgVote, opts ...grpc.CallOption) (*MsgVoteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgAggregateExchangeRateVoteResponse)
-	err := c.cc.Invoke(ctx, Msg_AggregateExchangeRateVote_FullMethodName, in, out, cOpts...)
+	out := new(MsgVoteResponse)
+	err := c.cc.Invoke(ctx, Msg_Vote_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +96,10 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 //
 // Msg defines the oracle Msg service.
 type MsgServer interface {
-	// AggregateExchangeRatePrevote defines a method for submitting
-	// aggregate exchange rate prevote
-	AggregateExchangeRatePrevote(context.Context, *MsgAggregateExchangeRatePrevote) (*MsgAggregateExchangeRatePrevoteResponse, error)
-	// AggregateExchangeRateVote defines a method for submitting
-	// aggregate exchange rate vote
-	AggregateExchangeRateVote(context.Context, *MsgAggregateExchangeRateVote) (*MsgAggregateExchangeRateVoteResponse, error)
+	// Prevote defines a method for submitting prevote
+	Prevote(context.Context, *MsgPrevote) (*MsgPrevoteResponse, error)
+	// Vote defines a method for submitting vote
+	Vote(context.Context, *MsgVote) (*MsgVoteResponse, error)
 	// DelegateFeedConsent defines a method for setting the feeder delegation
 	DelegateFeedConsent(context.Context, *MsgDelegateFeedConsent) (*MsgDelegateFeedConsentResponse, error)
 	// UpdateParams defines an operation for updating the x/oracle module
@@ -119,11 +115,11 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
-func (UnimplementedMsgServer) AggregateExchangeRatePrevote(context.Context, *MsgAggregateExchangeRatePrevote) (*MsgAggregateExchangeRatePrevoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AggregateExchangeRatePrevote not implemented")
+func (UnimplementedMsgServer) Prevote(context.Context, *MsgPrevote) (*MsgPrevoteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Prevote not implemented")
 }
-func (UnimplementedMsgServer) AggregateExchangeRateVote(context.Context, *MsgAggregateExchangeRateVote) (*MsgAggregateExchangeRateVoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AggregateExchangeRateVote not implemented")
+func (UnimplementedMsgServer) Vote(context.Context, *MsgVote) (*MsgVoteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Vote not implemented")
 }
 func (UnimplementedMsgServer) DelegateFeedConsent(context.Context, *MsgDelegateFeedConsent) (*MsgDelegateFeedConsentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DelegateFeedConsent not implemented")
@@ -152,38 +148,38 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 	s.RegisterService(&Msg_ServiceDesc, srv)
 }
 
-func _Msg_AggregateExchangeRatePrevote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgAggregateExchangeRatePrevote)
+func _Msg_Prevote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgPrevote)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).AggregateExchangeRatePrevote(ctx, in)
+		return srv.(MsgServer).Prevote(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_AggregateExchangeRatePrevote_FullMethodName,
+		FullMethod: Msg_Prevote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).AggregateExchangeRatePrevote(ctx, req.(*MsgAggregateExchangeRatePrevote))
+		return srv.(MsgServer).Prevote(ctx, req.(*MsgPrevote))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_AggregateExchangeRateVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgAggregateExchangeRateVote)
+func _Msg_Vote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgVote)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).AggregateExchangeRateVote(ctx, in)
+		return srv.(MsgServer).Vote(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_AggregateExchangeRateVote_FullMethodName,
+		FullMethod: Msg_Vote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).AggregateExchangeRateVote(ctx, req.(*MsgAggregateExchangeRateVote))
+		return srv.(MsgServer).Vote(ctx, req.(*MsgVote))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -232,12 +228,12 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AggregateExchangeRatePrevote",
-			Handler:    _Msg_AggregateExchangeRatePrevote_Handler,
+			MethodName: "Prevote",
+			Handler:    _Msg_Prevote_Handler,
 		},
 		{
-			MethodName: "AggregateExchangeRateVote",
-			Handler:    _Msg_AggregateExchangeRateVote_Handler,
+			MethodName: "Vote",
+			Handler:    _Msg_Vote_Handler,
 		},
 		{
 			MethodName: "DelegateFeedConsent",

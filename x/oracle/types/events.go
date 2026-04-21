@@ -6,8 +6,6 @@ const (
 	EventTypePrevote            = "prevote"
 	EventTypeVote               = "vote"
 	EventTypeFeedDelegate       = "feed_delegate"
-	EventTypeAggregatePrevote   = "aggregate_prevote"
-	EventTypeAggregateVote      = "aggregate_vote"
 
 	AttributeKeyDenom         = "denom"
 	AttributeKeyVoter         = "voter"
