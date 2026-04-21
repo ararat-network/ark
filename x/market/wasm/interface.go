@@ -21,7 +21,7 @@ var (
 	_ wasm.WasmMsgParserInterface = MsgParser{}
 )
 
-// WasmMsgParser - wasm msg parser for staking msgs
+// MsgParser - wasm msg parser for staking msgs
 type MsgParser struct{}
 
 // NewWasmMsgParser returns bank wasm msg parser
@@ -74,7 +74,7 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 	return nil, sdkerrors.Wrap(wasm.ErrInvalidMsg, "Unknown variant of Market")
 }
 
-// WasmQuerier - staking query interface for wasm contract
+// Querier - staking query interface for wasm contract
 type Querier struct {
 	k *keeper.Keeper
 }

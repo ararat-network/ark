@@ -22,7 +22,7 @@ type Querier struct {
 	k keeper.Keeper
 }
 
-// NewQuerier return bank wasm query interface
+// NewWasmQuerier return bank wasm query interface
 func NewWasmQuerier(k keeper.Keeper) Querier {
 	return Querier{k}
 }
@@ -67,12 +67,18 @@ func (q Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byte, err
 			return nil, fmt.Errorf("getting tax rate: %w", err)
 		}
 		bz, err = json.Marshal(TaxRateQueryResponse{Rate: rate.String()})
+		if err != nil {
+			return nil, fmt.Errorf("marshalling response: %w", err)
+		}
 	case query.TaxCap != nil:
 		cap, err := q.k.TaxCaps.Get(ctx, query.TaxCap.Denom)
 		if err != nil {
 			return nil, fmt.Errorf("getting tax caps: %w", err)
 		}
 		bz, err = json.Marshal(TaxCapQueryResponse{Cap: cap.String()})
+		if err != nil {
+			return nil, fmt.Errorf("marshalling response: %w", err)
+		}
 	default:
 		return nil, errortypes.ErrInvalidRequest
 	}
