@@ -14,7 +14,6 @@ var _ types.MsgServer = msgServer{}
 
 type msgServer struct {
 	k *Keeper
-	types.UnimplementedMsgServer
 }
 
 // NewMsgServerImpl returns an implementation of the market MsgServer interface

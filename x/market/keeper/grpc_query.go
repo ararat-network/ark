@@ -15,7 +15,6 @@ var _ types.QueryServer = queryServer{}
 
 type queryServer struct {
 	k *Keeper
-	types.UnimplementedQueryServer
 }
 
 func NewQueryServerImpl(k *Keeper) types.QueryServer {

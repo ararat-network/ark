@@ -345,7 +345,6 @@ func (k msgServer) Swap(goCtx context.Context, msg *types.MsgSwap) (*types.MsgSw
 ```go
 type msgServer struct {
     k *Keeper  // named field — avoids method shadowing
-    types.UnimplementedMsgServer
 }
 
 func NewMsgServerImpl(k *Keeper) types.MsgServer {
