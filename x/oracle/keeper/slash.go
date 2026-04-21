@@ -9,8 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// SlashAndResetMissCounters do slash any operator who over criteria & clear all operators miss counter to zero
-func (k Keeper) SlashAndResetMissCounters(ctx context.Context) error {
+// SlashAndResetMissCounts do slash any operator who over criteria & clear all operators miss counter to zero
+func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := sdkCtx.BlockHeight()
 	distributionHeight := height - sdk.ValidatorUpdateDelay - 1
@@ -28,9 +28,9 @@ func (k Keeper) SlashAndResetMissCounters(ctx context.Context) error {
 	)
 	powerReduction := k.stakingKeeper.PowerReduction(ctx)
 
-	if err := k.MissCounter.Walk(ctx, nil, func(operator sdk.ValAddress, missCounter uint64) (bool, error) {
-		// Calculate valid vote rate; (SlashWindow - MissCounter)/SlashWindow
-		validVoteRate := math.LegacyNewDec(int64(votePeriodsPerWindow - missCounter)).
+	if err := k.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, missCount uint64) (bool, error) {
+		// Calculate valid vote rate; (SlashWindow - MissCount)/SlashWindow
+		validVoteRate := math.LegacyNewDec(int64(votePeriodsPerWindow - missCount)).
 			QuoInt64(int64(votePeriodsPerWindow))
 
 		// Penalize the validator whose the valid vote rate is smaller than min threshold
@@ -50,7 +50,7 @@ func (k Keeper) SlashAndResetMissCounters(ctx context.Context) error {
 			}
 		}
 
-		if err := k.MissCounter.Remove(ctx, operator); err != nil {
+		if err := k.MissCount.Remove(ctx, operator); err != nil {
 			return true, fmt.Errorf("removing miss counter: %w", err)
 		}
 		return false, nil

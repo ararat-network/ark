@@ -36,6 +36,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 		}); err != nil {
 			return fmt.Errorf("iterating tobin tax: %w", err)
 		}
+		tobinTaxesChanged := !sameTobinTaxes(voteTargets, params.TobinTaxes)
 
 		if err := k.TallyExchangeRates(ctx, params, voteTargets, validatorClaimMap); err != nil {
 			return err
@@ -56,20 +57,22 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 		}
 
 		// Clear the ballot
-		if err := k.ClearBallots(ctx, params.VotePeriod); err != nil {
+		if err := k.ClearVotes(ctx, params.VotePeriod); err != nil {
 			return err
 		}
 
-		// Update vote targets and tobin tax
-		if err := k.ApplyWhitelist(ctx, params.Whitelist, voteTargets); err != nil {
-			return err
+		// Sync TobinTaxes if there were param updates
+		if tobinTaxesChanged {
+			if err := k.SetTobinTaxes(ctx, params.TobinTaxes); err != nil {
+				return err
+			}
 		}
 	}
 
 	// Do slash who did miss voting over threshold and
 	// reset miss counters of all validators at the last block of slash window
 	if core.IsPeriodLastBlock(ctx, params.SlashWindow) {
-		if err := k.SlashAndResetMissCounters(ctx); err != nil {
+		if err := k.SlashAndResetMissCounts(ctx); err != nil {
 			return err
 		}
 	}
@@ -77,13 +80,28 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	return nil
 }
 
-// TallyExchangeRates clears existing exchange rates, organizes ballots, picks a reference denom,
+func sameTobinTaxes(stored map[string]math.LegacyDec, params types.TobinTaxes) bool {
+	if len(stored) != len(params) {
+		return false
+	}
+
+	for _, item := range params {
+		tobinTax, ok := stored[item.Denom]
+		if !ok || !tobinTax.Equal(item.TobinTax) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// TallyExchangeRates clears existing exchange rates, organises ballots, picks a reference denom,
 // and computes new exchange rates via cross-rate medians.
 func (k Keeper) TallyExchangeRates(
 	ctx context.Context,
 	params types.Params,
 	voteTargets map[string]math.LegacyDec,
-	validatorClaimMap map[string]types.VoteScore,
+	validatorClaimMap map[string]types.ValidatorScore,
 ) error {
 	// Clear all exchange rates
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
@@ -95,7 +113,7 @@ func (k Keeper) TallyExchangeRates(
 		return fmt.Errorf("iterating exchange rate: %w", err)
 	}
 
-	voteMap, err := k.OrganizeBallotByDenom(ctx, validatorClaimMap)
+	voteMap, err := k.GroupVotesByDenom(ctx, validatorClaimMap)
 	if err != nil {
 		return err
 	}

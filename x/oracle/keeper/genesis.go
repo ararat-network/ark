@@ -11,16 +11,15 @@ import (
 	"noah/x/oracle/types"
 )
 
-// InitGenesis initialize default parameters
-// and the keeper's address to pubkey map
+// InitGenesis initialises default parameters and the keeper's address to pubkey map
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
-	for _, d := range data.FeederDelegations {
-		voter, err := sdk.ValAddressFromBech32(d.ValidatorAddress)
+	for _, fd := range data.FeederDelegations {
+		voter, err := sdk.ValAddressFromBech32(fd.ValidatorAddress)
 		if err != nil {
 			return fmt.Errorf("invalid address: %w", err)
 		}
 
-		feeder, err := sdk.AccAddressFromBech32(d.FeederAddress)
+		feeder, err := sdk.AccAddressFromBech32(fd.FeederAddress)
 		if err != nil {
 			return fmt.Errorf("invalid address: %w", err)
 		}
@@ -30,41 +29,41 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	for _, ex := range data.ExchangeRates {
-		if err := k.ExchangeRate.Set(ctx, ex.Denom, ex.ExchangeRate); err != nil {
+	for _, er := range data.ExchangeRates {
+		if err := k.ExchangeRate.Set(ctx, er.Denom, er.Rate); err != nil {
 			return fmt.Errorf("setting exchange rate: %w", err)
 		}
 	}
 
-	for _, mc := range data.MissCounters {
+	for _, mc := range data.MissCounts {
 		operator, err := sdk.ValAddressFromBech32(mc.ValidatorAddress)
 		if err != nil {
 			return fmt.Errorf("invalid address: %w", err)
 		}
 
-		if err := k.MissCounter.Set(ctx, operator, mc.MissCounter); err != nil {
+		if err := k.MissCount.Set(ctx, operator, mc.MissCount); err != nil {
 			return fmt.Errorf("setting miss counter: %w", err)
 		}
 	}
 
-	for _, ap := range data.AggregateExchangeRatePrevotes {
+	for _, ap := range data.Prevotes {
 		valAddr, err := sdk.ValAddressFromBech32(ap.Voter)
 		if err != nil {
 			return fmt.Errorf("invalid address: %w", err)
 		}
 
-		if err := k.AggregateExchangeRatePrevote.Set(ctx, valAddr, ap); err != nil {
+		if err := k.Prevote.Set(ctx, valAddr, ap); err != nil {
 			return fmt.Errorf("setting prevote: %w", err)
 		}
 	}
 
-	for _, av := range data.AggregateExchangeRateVotes {
+	for _, av := range data.Votes {
 		valAddr, err := sdk.ValAddressFromBech32(av.Voter)
 		if err != nil {
 			return fmt.Errorf("invalid address: %w", err)
 		}
 
-		if err := k.AggregateExchangeRateVote.Set(ctx, valAddr, av); err != nil {
+		if err := k.Vote.Set(ctx, valAddr, av); err != nil {
 			return fmt.Errorf("setting vote: %w", err)
 		}
 	}
@@ -76,8 +75,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			}
 		}
 	} else {
-		for _, item := range data.Params.Whitelist {
-			if err := k.TobinTax.Set(ctx, item.Name, item.TobinTax); err != nil {
+		for _, item := range data.Params.TobinTaxes {
+			if err := k.TobinTax.Set(ctx, item.Denom, item.TobinTax); err != nil {
 				return fmt.Errorf("setting tobin tax: %w", err)
 			}
 		}
@@ -96,9 +95,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	return nil
 }
 
-// ExportGenesis writes the current store values
-// to a genesis file, which can be imported again
-// with InitGenesis
+// ExportGenesis writes the current store values to a genesis file, which can be imported again with InitGenesis
 func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -116,35 +113,35 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("iterating feeder delegations: %w", err)
 	}
 
-	exchangeRates := []types.ExchangeRateTuple{}
+	exchangeRates := []types.ExchangeRate{}
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		exchangeRates = append(exchangeRates, types.ExchangeRateTuple{Denom: denom, ExchangeRate: rate})
+		exchangeRates = append(exchangeRates, types.ExchangeRate{Denom: denom, Rate: rate})
 		return false, nil
 	}); err != nil {
 		return nil, fmt.Errorf("iterating exchange rates: %w", err)
 	}
 
-	missCounters := []types.MissCounter{}
-	if err := k.MissCounter.Walk(ctx, nil, func(operator sdk.ValAddress, missCounter uint64) (bool, error) {
-		missCounters = append(missCounters, types.MissCounter{
+	missCounts := []types.MissCount{}
+	if err := k.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, missCounter uint64) (bool, error) {
+		missCounts = append(missCounts, types.MissCount{
 			ValidatorAddress: operator.String(),
-			MissCounter:      missCounter,
+			MissCount:        missCounter,
 		})
 		return false, nil
 	}); err != nil {
 		return nil, fmt.Errorf("iterating miss counters: %w", err)
 	}
 
-	aggregateExchangeRatePrevotes := []types.AggregateExchangeRatePrevote{}
-	if err := k.AggregateExchangeRatePrevote.Walk(ctx, nil, func(_ sdk.ValAddress, aggregatePrevote types.AggregateExchangeRatePrevote) (bool, error) {
+	aggregateExchangeRatePrevotes := []types.Prevote{}
+	if err := k.Prevote.Walk(ctx, nil, func(_ sdk.ValAddress, aggregatePrevote types.Prevote) (bool, error) {
 		aggregateExchangeRatePrevotes = append(aggregateExchangeRatePrevotes, aggregatePrevote)
 		return false, nil
 	}); err != nil {
 		return nil, fmt.Errorf("iterating prevotes: %w", err)
 	}
 
-	aggregateExchangeRateVotes := []types.AggregateExchangeRateVote{}
-	if err := k.AggregateExchangeRateVote.Walk(ctx, nil, func(_ sdk.ValAddress, aggregateVote types.AggregateExchangeRateVote) (bool, error) {
+	aggregateExchangeRateVotes := []types.Vote{}
+	if err := k.Vote.Walk(ctx, nil, func(_ sdk.ValAddress, aggregateVote types.Vote) (bool, error) {
 		aggregateExchangeRateVotes = append(aggregateExchangeRateVotes, aggregateVote)
 		return false, nil
 	}); err != nil {
@@ -163,7 +160,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		params,
 		exchangeRates,
 		feederDelegations,
-		missCounters,
+		missCounts,
 		aggregateExchangeRatePrevotes,
 		aggregateExchangeRateVotes,
 		tobinTaxes,

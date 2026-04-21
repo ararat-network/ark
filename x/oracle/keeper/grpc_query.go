@@ -19,7 +19,6 @@ var _ types.QueryServer = queryServer{}
 
 type queryServer struct {
 	k *Keeper
-	types.UnimplementedQueryServer
 }
 
 // NewQueryServerImpl returns an implementation of the oracle QueryServer interface
@@ -47,9 +46,9 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 		return nil, status.Error(codes.InvalidArgument, "empty denom")
 	}
 
-	exchangeRate, err := q.k.GetArkExchangeRate(ctx, req.Denom)
+	exchangeRate, err := q.k.GetExchangeRate(ctx, req.Denom)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
+		if errors.Is(err, types.ErrUnknownDenom) {
 			return nil, status.Error(codes.NotFound, req.Denom)
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -93,10 +92,10 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 
 // TobinTaxes queries tobin taxes of all denoms
 func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesRequest) (*types.QueryTobinTaxesResponse, error) {
-	var tobinTaxes types.DenomList
+	var tobinTaxes types.TobinTaxes
 	if err := q.k.TobinTax.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		tobinTaxes = append(tobinTaxes, types.Denom{
-			Name:     denom,
+		tobinTaxes = append(tobinTaxes, types.TobinTax{
+			Denom:    denom,
 			TobinTax: rate,
 		})
 		return false, nil
@@ -105,19 +104,6 @@ func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesR
 	}
 
 	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
-}
-
-// Actives queries all denoms for which exchange rates exist
-func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest) (*types.QueryActivesResponse, error) {
-	var actives []string
-	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		actives = append(actives, denom)
-		return false, nil
-	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return &types.QueryActivesResponse{Actives: actives}, nil
 }
 
 // VoteTargets queries the voting target list on current vote period
@@ -151,8 +137,8 @@ func (q queryServer) FeederDelegation(ctx context.Context, req *types.QueryFeede
 	return &types.QueryFeederDelegationResponse{FeederAddr: feederAddr.String()}, nil
 }
 
-// MissCounter queries oracle miss counter of a validator
-func (q queryServer) MissCounter(ctx context.Context, req *types.QueryMissCounterRequest) (*types.QueryMissCounterResponse, error) {
+// MissCount queries oracle miss counter of a validator
+func (q queryServer) MissCount(ctx context.Context, req *types.QueryMissCountRequest) (*types.QueryMissCountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -161,16 +147,16 @@ func (q queryServer) MissCounter(ctx context.Context, req *types.QueryMissCounte
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	missCounter, err := q.k.MissCounter.Get(ctx, valAddr)
+	missCount, err := q.k.MissCount.Get(ctx, valAddr)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryMissCounterResponse{MissCounter: missCounter}, nil
+	return &types.QueryMissCountResponse{MissCount: missCount}, nil
 }
 
-// AggregatePrevote queries an aggregate prevote of a validator
-func (q queryServer) AggregatePrevote(ctx context.Context, req *types.QueryAggregatePrevoteRequest) (*types.QueryAggregatePrevoteResponse, error) {
+// Prevote queries an aggregate prevote of a validator
+func (q queryServer) Prevote(ctx context.Context, req *types.QueryPrevoteRequest) (*types.QueryPrevoteResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -179,7 +165,7 @@ func (q queryServer) AggregatePrevote(ctx context.Context, req *types.QueryAggre
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	prevote, err := q.k.AggregateExchangeRatePrevote.Get(ctx, valAddr)
+	prevote, err := q.k.Prevote.Get(ctx, valAddr)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, valAddr.String())
@@ -187,24 +173,24 @@ func (q queryServer) AggregatePrevote(ctx context.Context, req *types.QueryAggre
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAggregatePrevoteResponse{AggregatePrevote: prevote}, nil
+	return &types.QueryPrevoteResponse{Prevote: prevote}, nil
 }
 
-// AggregatePrevotes queries aggregate prevotes of all validators
-func (q queryServer) AggregatePrevotes(ctx context.Context, req *types.QueryAggregatePrevotesRequest) (*types.QueryAggregatePrevotesResponse, error) {
-	var prevotes []types.AggregateExchangeRatePrevote
-	if err := q.k.AggregateExchangeRatePrevote.Walk(ctx, nil, func(_ sdk.ValAddress, prevote types.AggregateExchangeRatePrevote) (bool, error) {
+// Prevotes queries aggregate prevotes of all validators
+func (q queryServer) Prevotes(ctx context.Context, req *types.QueryPrevotesRequest) (*types.QueryPrevotesResponse, error) {
+	var prevotes []types.Prevote
+	if err := q.k.Prevote.Walk(ctx, nil, func(_ sdk.ValAddress, prevote types.Prevote) (bool, error) {
 		prevotes = append(prevotes, prevote)
 		return false, nil
 	}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAggregatePrevotesResponse{AggregatePrevotes: prevotes}, nil
+	return &types.QueryPrevotesResponse{Prevotes: prevotes}, nil
 }
 
-// AggregateVote queries an aggregate vote of a validator
-func (q queryServer) AggregateVote(ctx context.Context, req *types.QueryAggregateVoteRequest) (*types.QueryAggregateVoteResponse, error) {
+// Vote queries an aggregate vote of a validator
+func (q queryServer) Vote(ctx context.Context, req *types.QueryVoteRequest) (*types.QueryVoteResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -213,7 +199,7 @@ func (q queryServer) AggregateVote(ctx context.Context, req *types.QueryAggregat
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	vote, err := q.k.AggregateExchangeRateVote.Get(ctx, valAddr)
+	vote, err := q.k.Vote.Get(ctx, valAddr)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, valAddr.String())
@@ -221,18 +207,18 @@ func (q queryServer) AggregateVote(ctx context.Context, req *types.QueryAggregat
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAggregateVoteResponse{AggregateVote: vote}, nil
+	return &types.QueryVoteResponse{Vote: vote}, nil
 }
 
-// AggregateVotes queries aggregate votes of all validators
-func (q queryServer) AggregateVotes(ctx context.Context, req *types.QueryAggregateVotesRequest) (*types.QueryAggregateVotesResponse, error) {
-	var votes []types.AggregateExchangeRateVote
-	if err := q.k.AggregateExchangeRateVote.Walk(ctx, nil, func(_ sdk.ValAddress, vote types.AggregateExchangeRateVote) (bool, error) {
+// Votes queries aggregate votes of all validators
+func (q queryServer) Votes(ctx context.Context, req *types.QueryVotesRequest) (*types.QueryVotesResponse, error) {
+	var votes []types.Vote
+	if err := q.k.Vote.Walk(ctx, nil, func(_ sdk.ValAddress, vote types.Vote) (bool, error) {
 		votes = append(votes, vote)
 		return false, nil
 	}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAggregateVotesResponse{AggregateVotes: votes}, nil
+	return &types.QueryVotesResponse{Votes: votes}, nil
 }

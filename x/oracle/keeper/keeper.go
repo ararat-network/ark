@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"cosmossdk.io/collections"
 	collcodec "cosmossdk.io/collections/codec"
@@ -16,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	core "noah/types"
@@ -34,14 +36,14 @@ type Keeper struct {
 	distrKeeper   types.DistributionKeeper
 	stakingKeeper types.StakingKeeper
 
-	Schema                       collections.Schema
-	Params                       collections.Item[types.Params]
-	FeederDelegation             collections.Map[sdk.ValAddress, sdk.AccAddress]
-	ExchangeRate                 collections.Map[string, math.LegacyDec]
-	MissCounter                  collections.Map[sdk.ValAddress, uint64]
-	AggregateExchangeRatePrevote collections.Map[sdk.ValAddress, types.AggregateExchangeRatePrevote]
-	AggregateExchangeRateVote    collections.Map[sdk.ValAddress, types.AggregateExchangeRateVote]
-	TobinTax                     collections.Map[string, math.LegacyDec]
+	Schema           collections.Schema
+	Params           collections.Item[types.Params]
+	FeederDelegation collections.Map[sdk.ValAddress, sdk.AccAddress]
+	ExchangeRate     collections.Map[string, math.LegacyDec]
+	MissCount        collections.Map[sdk.ValAddress, uint64]
+	Prevote          collections.Map[sdk.ValAddress, types.Prevote]
+	Vote             collections.Map[sdk.ValAddress, types.Vote]
+	TobinTax         collections.Map[string, math.LegacyDec]
 }
 
 // NewKeeper constructs a new keeper for oracle
@@ -90,26 +92,26 @@ func NewKeeper(
 			collections.StringKey,
 			sdk.LegacyDecValue,
 		),
-		MissCounter: collections.NewMap(
+		MissCount: collections.NewMap(
 			sb,
-			types.MissCounterKey,
+			types.MissCountKey,
 			"miss_counter",
 			sdk.ValAddressKey,
 			collections.Uint64Value,
 		),
-		AggregateExchangeRatePrevote: collections.NewMap(
+		Prevote: collections.NewMap(
 			sb,
-			types.AggregateExchangeRatePrevoteKey,
+			types.PrevoteKey,
 			"aggregate_exchange_rate_prevote",
 			sdk.ValAddressKey,
-			codec.CollValue[types.AggregateExchangeRatePrevote](cdc),
+			codec.CollValue[types.Prevote](cdc),
 		),
-		AggregateExchangeRateVote: collections.NewMap(
+		Vote: collections.NewMap(
 			sb,
-			types.AggregateExchangeRateVoteKey,
+			types.VoteKey,
 			"aggregate_exchange_rate_vote",
 			sdk.ValAddressKey,
-			codec.CollValue[types.AggregateExchangeRateVote](cdc),
+			codec.CollValue[types.Vote](cdc),
 		),
 		TobinTax: collections.NewMap(
 			sb,
@@ -148,8 +150,8 @@ func (k Keeper) GetFeederDelegation(ctx context.Context, operator sdk.ValAddress
 	return accAddress, nil
 }
 
-// GetArkExchangeRate gets the consensus exchange rate of Ark denominated in the denom asset from the store.
-func (k Keeper) GetArkExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
+// GetExchangeRate gets the consensus exchange rate of Ark denominated in the denom asset from the store.
+func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	if denom == core.MicroArkDenom {
 		return math.LegacyOneDec(), nil
 	}
@@ -162,8 +164,28 @@ func (k Keeper) GetArkExchangeRate(ctx context.Context, denom string) (math.Lega
 	return exchangeRate, nil
 }
 
-// SetExchangeRateWithEvent sets the consensus exchange rate of Ark
-// denominated in the denom asset to the store with ABCI event
+// SetExchangeRate sets the consensus exchange rate of Ark denominated in the denom asset.
+func (k Keeper) SetExchangeRate(ctx context.Context, denom string, rate math.LegacyDec) error {
+	if err := k.ExchangeRate.Set(ctx, denom, rate); err != nil {
+		return sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+	}
+
+	return nil
+}
+
+// IterateExchangeRates iterates over all stored exchange rates until the handler returns true.
+func (k Keeper) IterateExchangeRates(ctx context.Context, handler func(denom string, rate math.LegacyDec) (stop bool)) error {
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
+		return handler(denom, rate), nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetExchangeRateWithEvent sets the consensus exchange rate of Ark denominated in the denom asset to the
+// store with ABCI event
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, denom string, exchangeRate math.LegacyDec) error {
 	if err := k.ExchangeRate.Set(ctx, denom, exchangeRate); err != nil {
 		return sdkerrors.Wrap(errortypes.ErrIO, err.Error())
@@ -195,6 +217,82 @@ func (k Keeper) ValidateFeeder(ctx context.Context, feederAddr sdk.AccAddress, v
 	// Check that the given validator exists
 	if val := k.stakingKeeper.Validator(ctx, validatorAddr); val == nil || !val.IsBonded() {
 		return sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "validator %s is not active set", validatorAddr.String())
+	}
+
+	return nil
+}
+
+// GetTobinTax gets the tobin tax of the specified denom
+func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
+	tobinTax, err := k.TobinTax.Get(ctx, denom)
+	if err != nil {
+		return math.LegacyZeroDec(), err
+	}
+
+	return tobinTax, nil
+}
+
+// SetTobinTax sets the tobin tax for the denom.
+func (k Keeper) SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error {
+	if err := k.TobinTax.Set(ctx, denom, tobinTax); err != nil {
+		return sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+	}
+
+	return nil
+}
+
+// GetTobinTaxes gets the stored tobin taxes.
+func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
+	tobinTaxes := types.TobinTaxes{}
+	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
+		tobinTaxes = append(tobinTaxes, types.TobinTax{Denom: denom, TobinTax: tobinTax})
+		return false, nil
+	}); err != nil {
+		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+	}
+
+	return tobinTaxes, nil
+}
+
+// SetTobinTaxes replaces the stored tobin taxes and registers bank metadata for active denoms.
+func (k Keeper) SetTobinTaxes(ctx context.Context, tobinTaxes types.TobinTaxes) error {
+	if err := k.TobinTax.Walk(
+		ctx,
+		nil,
+		func(denom string, _ math.LegacyDec) (bool, error) {
+			if err := k.TobinTax.Remove(ctx, denom); err != nil {
+				return false, err
+			}
+
+			return false, nil
+		},
+	); err != nil {
+		return err
+	}
+
+	for _, item := range tobinTaxes {
+		if err := k.SetTobinTax(ctx, item.Denom, item.TobinTax); err != nil {
+			return err
+		}
+
+		// Register meta data to bank module
+		if _, ok := k.bankKeeper.GetDenomMetaData(ctx, item.Denom); !ok {
+			base := item.Denom
+			display := base[1:]
+
+			k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+				Description: "The native stable token of Noah Icarus.",
+				DenomUnits: []*banktypes.DenomUnit{
+					{Denom: "u" + display, Exponent: uint32(0), Aliases: []string{"micro" + display}},
+					{Denom: "m" + display, Exponent: uint32(3), Aliases: []string{"milli" + display}},
+					{Denom: display, Exponent: uint32(6), Aliases: []string{}},
+				},
+				Base:    base,
+				Display: display,
+				Name:    fmt.Sprintf("%s NOAH", strings.ToUpper(display)),
+				Symbol:  fmt.Sprintf("%sN", strings.ToUpper(display[:len(display)-1])),
+			})
+		}
 	}
 
 	return nil

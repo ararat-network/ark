@@ -56,8 +56,8 @@ func (k Keeper) PickReferenceDenom(ctx context.Context, voteTargets map[string]m
 }
 
 // BuildVoteScoreMap builds a map of validator claims for all bonded validators in the active set.
-func (k Keeper) BuildVoteScoreMap(ctx context.Context) (map[string]types.VoteScore, error) {
-	validatorClaimMap := make(map[string]types.VoteScore)
+func (k Keeper) BuildVoteScoreMap(ctx context.Context) (map[string]types.ValidatorScore, error) {
+	validatorClaimMap := make(map[string]types.ValidatorScore)
 
 	maxValidators := k.stakingKeeper.MaxValidators(ctx)
 	iterator := k.stakingKeeper.ValidatorsPowerStoreIterator(ctx)
@@ -88,8 +88,8 @@ func (k Keeper) BuildVoteScoreMap(ctx context.Context) (map[string]types.VoteSco
 	return validatorClaimMap, nil
 }
 
-// CountMisses increments the miss counter for validators who failed to vote on all passing denoms.
-func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.LegacyDec, validatorClaimMap map[string]types.VoteScore) error {
+// CountMisses increments the miss count for validators who failed to vote on all passing denoms.
+func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.LegacyDec, validatorClaimMap map[string]types.ValidatorScore) error {
 	voteTargetsLen := len(voteTargets)
 	for _, claim := range validatorClaimMap {
 		// Skip abstain & valid voters
@@ -97,12 +97,12 @@ func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.Leg
 			continue
 		}
 
-		// Increase miss counter
-		missCount, err := k.MissCounter.Get(ctx, claim.Recipient)
+		// Increase miss count
+		missCount, err := k.MissCount.Get(ctx, claim.Recipient)
 		if err != nil && !errors.Is(err, collections.ErrNotFound) {
 			return fmt.Errorf("getting miss counter: %w", err)
 		}
-		if err := k.MissCounter.Set(ctx, claim.Recipient, missCount+1); err != nil {
+		if err := k.MissCount.Set(ctx, claim.Recipient, missCount+1); err != nil {
 			return fmt.Errorf("setting miss counter: %w", err)
 		}
 	}
@@ -112,7 +112,7 @@ func (k Keeper) CountMisses(ctx context.Context, voteTargets map[string]math.Leg
 
 // TallyVotes calculates the median and returns it. Sets the set of voters to be rewarded, i.e. voted within
 // a reasonable spread from the weighted median to the store
-func TallyVotes(ctx context.Context, rewardBand math.LegacyDec, denomVotes types.DenomVotes, validatorScoreMap map[string]types.VoteScore) (weightedMedian math.LegacyDec) {
+func TallyVotes(ctx context.Context, rewardBand math.LegacyDec, denomVotes types.DenomVotes, validatorScoreMap map[string]types.ValidatorScore) (weightedMedian math.LegacyDec) {
 	weightedMedian = denomVotes.WeightedMedian()
 
 	standardDeviation := denomVotes.StandardDeviation(weightedMedian)
