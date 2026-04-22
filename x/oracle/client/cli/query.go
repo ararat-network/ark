@@ -25,6 +25,7 @@ func GetQueryCmd() *cobra.Command {
 
 	oracleQueryCmd.AddCommand(
 		GetCmdQueryExchangeRates(),
+		GetCmdQueryActives(),
 		GetCmdQueryParams(),
 		GetCmdQueryFeederDelegation(),
 		GetCmdQueryMissCounter(),
@@ -74,6 +75,37 @@ $ noahd query oracle exchange-rates ukrw
 				context.Background(),
 				&types.QueryExchangeRateRequest{Denom: denom},
 			)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdQueryActives implements the query actives command.
+func GetCmdQueryActives() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "actives",
+		Args:  cobra.NoArgs,
+		Short: "Query the active list of noah assets recognised by the oracle",
+		Long: strings.TrimSpace(`
+Query the active list of noah assets recognised by the types.
+
+$ noahd query oracle actives
+`),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.Actives(context.Background(), &types.QueryActivesRequest{})
 			if err != nil {
 				return err
 			}

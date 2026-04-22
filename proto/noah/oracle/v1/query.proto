@@ -40,6 +40,12 @@ service Query {
     option (google.api.http).get = "/noah/oracle/v1/denoms/tobin_taxes";
   }
 
+  // Actives returns all active denoms
+  rpc Actives(QueryActivesRequest) returns (QueryActivesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/noah/oracle/v1/denoms/actives";
+  }
+
   // VoteTargets returns all vote target denoms
   rpc VoteTargets(QueryVoteTargetsRequest) returns (QueryVoteTargetsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -160,6 +166,16 @@ message QueryTobinTaxesResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// QueryActivesRequest is the request type for the Query/Actives RPC method.
+message QueryActivesRequest {}
+
+// QueryActivesResponse is response type for the
+// Query/Actives RPC method.
+message QueryActivesResponse {
+  // actives defines a list of the denomination which oracle prices agreed upon.
+  repeated string actives = 1;
 }
 
 // QueryVoteTargetsRequest is the request type for the Query/VoteTargets RPC

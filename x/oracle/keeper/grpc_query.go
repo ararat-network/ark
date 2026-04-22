@@ -106,6 +106,19 @@ func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesR
 	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
 }
 
+// Actives queries all denoms for which exchange rates exist
+func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest) (*types.QueryActivesResponse, error) {
+	var actives []string
+	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
+		actives = append(actives, denom)
+		return false, nil
+	}); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryActivesResponse{Actives: actives}, nil
+}
+
 // VoteTargets queries the voting target list on current vote period
 func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTargetsRequest) (*types.QueryVoteTargetsResponse, error) {
 	var voteTargets []string

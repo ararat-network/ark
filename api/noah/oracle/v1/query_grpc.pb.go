@@ -23,6 +23,7 @@ const (
 	Query_ExchangeRates_FullMethodName    = "/noah.oracle.v1.Query/ExchangeRates"
 	Query_TobinTax_FullMethodName         = "/noah.oracle.v1.Query/TobinTax"
 	Query_TobinTaxes_FullMethodName       = "/noah.oracle.v1.Query/TobinTaxes"
+	Query_Actives_FullMethodName          = "/noah.oracle.v1.Query/Actives"
 	Query_VoteTargets_FullMethodName      = "/noah.oracle.v1.Query/VoteTargets"
 	Query_FeederDelegation_FullMethodName = "/noah.oracle.v1.Query/FeederDelegation"
 	Query_MissCount_FullMethodName        = "/noah.oracle.v1.Query/MissCount"
@@ -47,6 +48,8 @@ type QueryClient interface {
 	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest, opts ...grpc.CallOption) (*QueryTobinTaxesResponse, error)
+	// Actives returns all active denoms
+	Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
 	// FeederDelegation returns feeder delegation of a validator
@@ -107,6 +110,16 @@ func (c *queryClient) TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryTobinTaxesResponse)
 	err := c.cc.Invoke(ctx, Query_TobinTaxes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryActivesResponse)
+	err := c.cc.Invoke(ctx, Query_Actives_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -207,6 +220,8 @@ type QueryServer interface {
 	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error)
+	// Actives returns all active denoms
+	Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
 	// FeederDelegation returns feeder delegation of a validator
@@ -244,6 +259,9 @@ func (UnimplementedQueryServer) TobinTax(context.Context, *QueryTobinTaxRequest)
 }
 func (UnimplementedQueryServer) TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TobinTaxes not implemented")
+}
+func (UnimplementedQueryServer) Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Actives not implemented")
 }
 func (UnimplementedQueryServer) VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VoteTargets not implemented")
@@ -358,6 +376,24 @@ func _Query_TobinTaxes_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).TobinTaxes(ctx, req.(*QueryTobinTaxesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Actives_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryActivesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Actives(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Actives_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Actives(ctx, req.(*QueryActivesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -528,6 +564,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TobinTaxes",
 			Handler:    _Query_TobinTaxes_Handler,
+		},
+		{
+			MethodName: "Actives",
+			Handler:    _Query_Actives_Handler,
 		},
 		{
 			MethodName: "VoteTargets",

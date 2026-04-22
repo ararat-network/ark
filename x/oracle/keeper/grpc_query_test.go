@@ -105,6 +105,7 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	}
 }
 
+
 func (s *KeeperTestSuite) TestQueryTobinTax() {
 	tests := []struct {
 		name      string
@@ -182,6 +183,34 @@ func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 			resp, err := s.queryClient.TobinTaxes(s.ctx, &types.QueryTobinTaxesRequest{})
 			s.Require().NoError(err)
 			s.Require().Equal(tc.expected, resp.TobinTaxes)
+		})
+	}
+}
+
+func (s *KeeperTestSuite) TestQueryActives() {
+	tests := []struct {
+		name     string
+		expected []string
+	}{
+		{
+			name:     "empty set",
+			expected: nil,
+		},
+		{
+			name:     "returns all active exchange rate denoms",
+			expected: []string{core.MicroKRWDenom, core.MicroUSDDenom},
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			for _, denom := range tc.expected {
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, math.LegacyOneDec()))
+			}
+
+			resp, err := s.queryClient.Actives(s.ctx, &types.QueryActivesRequest{})
+			s.Require().NoError(err)
+			s.Require().ElementsMatch(tc.expected, resp.Actives)
 		})
 	}
 }
