@@ -527,6 +527,59 @@ func (s *KeeperTestSuite) TestSetTobinTaxes() {
 	}
 }
 
+func (s *KeeperTestSuite) TestSyncTobinTaxes() {
+	tests := []struct {
+		name     string
+		initial  map[string]math.LegacyDec
+		params   types.TobinTaxes
+		expected map[string]math.LegacyDec
+		setup    func()
+	}{
+		{
+			name: "unchanged taxes skips metadata sync",
+			initial: map[string]math.LegacyDec{
+				core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+			},
+			params: types.TobinTaxes{
+				{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+			},
+			expected: map[string]math.LegacyDec{
+				core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+			},
+		},
+		{
+			name: "changed taxes are replaced",
+			initial: map[string]math.LegacyDec{
+				core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+			},
+			params: types.TobinTaxes{
+				{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+			},
+			setup: func() {
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroKRWDenom).Return(banktypes.Metadata{}, true)
+			},
+			expected: map[string]math.LegacyDec{
+				core.MicroKRWDenom: math.LegacyNewDecWithPrec(50, 4),
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			for denom, tobinTax := range tc.initial {
+				s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
+			}
+			if tc.setup != nil {
+				tc.setup()
+			}
+
+			err := s.keeper.SyncTobinTaxes(s.ctx, tc.initial, tc.params)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expected, s.tobinTaxMap())
+		})
+	}
+}
+
 func (s *KeeperTestSuite) tobinTaxMap() map[string]math.LegacyDec {
 	tobinTaxes := make(map[string]math.LegacyDec)
 	err := s.keeper.TobinTax.Walk(s.ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {

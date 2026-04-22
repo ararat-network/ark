@@ -271,7 +271,7 @@ func (k Keeper) SetTobinTaxes(ctx context.Context, tobinTaxes types.TobinTaxes) 
 	}
 
 	for _, item := range tobinTaxes {
-		if err := k.SetTobinTax(ctx, item.Denom, item.TobinTax); err != nil {
+		if err := k.TobinTax.Set(ctx, item.Denom, item.TobinTax); err != nil {
 			return err
 		}
 
@@ -292,6 +292,22 @@ func (k Keeper) SetTobinTaxes(ctx context.Context, tobinTaxes types.TobinTaxes) 
 				Name:    fmt.Sprintf("%s NOAH", strings.ToUpper(display)),
 				Symbol:  fmt.Sprintf("%sN", strings.ToUpper(display[:len(display)-1])),
 			})
+		}
+	}
+
+	return nil
+}
+
+// SyncTobinTaxes replaces stored Tobin taxes only when params differ.
+func (k Keeper) SyncTobinTaxes(ctx context.Context, stored map[string]math.LegacyDec, tobinTaxes types.TobinTaxes) error {
+	if len(stored) != len(tobinTaxes) {
+		return k.SetTobinTaxes(ctx, tobinTaxes)
+	}
+
+	for _, item := range tobinTaxes {
+		tobinTax, ok := stored[item.Denom]
+		if !ok || !tobinTax.Equal(item.TobinTax) {
+			return k.SetTobinTaxes(ctx, tobinTaxes)
 		}
 	}
 

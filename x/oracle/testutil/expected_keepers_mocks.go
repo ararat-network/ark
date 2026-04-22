@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	address "cosmossdk.io/core/address"
-	store "cosmossdk.io/core/store"
 	math "cosmossdk.io/math"
 	types "github.com/cosmos/cosmos-sdk/types"
 	types0 "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -59,6 +58,20 @@ func (m *MockStakingKeeper) GetAllValidators(ctx context.Context) ([]types1.Vali
 func (mr *MockStakingKeeperMockRecorder) GetAllValidators(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllValidators", reflect.TypeOf((*MockStakingKeeper)(nil).GetAllValidators), ctx)
+}
+
+// IterateBondedValidatorsByPower mocks base method.
+func (m *MockStakingKeeper) IterateBondedValidatorsByPower(arg0 context.Context, arg1 func(int64, types1.ValidatorI) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IterateBondedValidatorsByPower", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IterateBondedValidatorsByPower indicates an expected call of IterateBondedValidatorsByPower.
+func (mr *MockStakingKeeperMockRecorder) IterateBondedValidatorsByPower(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateBondedValidatorsByPower", reflect.TypeOf((*MockStakingKeeper)(nil).IterateBondedValidatorsByPower), arg0, arg1)
 }
 
 // Jail mocks base method.
@@ -155,20 +168,6 @@ func (mr *MockStakingKeeperMockRecorder) ValidatorAddressCodec() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorAddressCodec", reflect.TypeOf((*MockStakingKeeper)(nil).ValidatorAddressCodec))
 }
 
-// ValidatorsPowerStoreIterator mocks base method.
-func (m *MockStakingKeeper) ValidatorsPowerStoreIterator(ctx context.Context) store.Iterator {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidatorsPowerStoreIterator", ctx)
-	ret0, _ := ret[0].(store.Iterator)
-	return ret0
-}
-
-// ValidatorsPowerStoreIterator indicates an expected call of ValidatorsPowerStoreIterator.
-func (mr *MockStakingKeeperMockRecorder) ValidatorsPowerStoreIterator(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorsPowerStoreIterator", reflect.TypeOf((*MockStakingKeeper)(nil).ValidatorsPowerStoreIterator), ctx)
-}
-
 // MockDistributionKeeper is a mock of DistributionKeeper interface.
 type MockDistributionKeeper struct {
 	ctrl     *gomock.Controller
@@ -194,9 +193,11 @@ func (m *MockDistributionKeeper) EXPECT() *MockDistributionKeeperMockRecorder {
 }
 
 // AllocateTokensToValidator mocks base method.
-func (m *MockDistributionKeeper) AllocateTokensToValidator(ctx context.Context, val types1.ValidatorI, tokens types.DecCoins) {
+func (m *MockDistributionKeeper) AllocateTokensToValidator(ctx context.Context, val types1.ValidatorI, tokens types.DecCoins) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AllocateTokensToValidator", ctx, val, tokens)
+	ret := m.ctrl.Call(m, "AllocateTokensToValidator", ctx, val, tokens)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // AllocateTokensToValidator indicates an expected call of AllocateTokensToValidator.

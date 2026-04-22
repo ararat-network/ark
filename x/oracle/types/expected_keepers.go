@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/core/address"
-	"cosmossdk.io/core/store"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,8 +17,8 @@ type StakingKeeper interface {
 	TotalBondedTokens(context.Context) math.Int                                    // total bonded tokens within the validator set
 	Slash(context.Context, sdk.ConsAddress, int64, int64, math.LegacyDec)          // slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
 	Jail(context.Context, sdk.ConsAddress)                                         // jail a validator
-	ValidatorsPowerStoreIterator(ctx context.Context) store.Iterator               // an iterator for the current validator power store
-	MaxValidators(context.Context) uint32                                          // MaxValidators returns the maximum amount of bonded validators
+	IterateBondedValidatorsByPower(context.Context, func(int64, stakingtypes.ValidatorI) bool) error
+	MaxValidators(context.Context) uint32 // MaxValidators returns the maximum amount of bonded validators
 	PowerReduction(ctx context.Context) (res math.Int)
 	ValidatorAddressCodec() address.Codec
 
@@ -29,7 +28,7 @@ type StakingKeeper interface {
 
 // DistributionKeeper is expected keeper for distribution module
 type DistributionKeeper interface {
-	AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins)
+	AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) error
 
 	// only used for simulation
 	GetValidatorOutstandingRewardsCoins(ctx context.Context, val sdk.ValAddress) sdk.DecCoins
