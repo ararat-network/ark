@@ -13,23 +13,23 @@ import (
 	"noah/x/oracle/types"
 )
 
-// RewardBallotWinners will give out portion of seigniorage reward(reward-weight) to the
+// RewardVoteWinners will give out a portion of seigniorage reward (rewardWeight) to the
 // oracle voters that voted faithfully at the end of every VotePeriod.
-func (k Keeper) RewardBallotWinners(
+func (k Keeper) RewardVoteWinners(
 	ctx context.Context,
 	votePeriod int64,
 	rewardDistributionWindow int64,
-	ballotWinners map[string]types.ValidatorScore,
+	validatorScores map[string]types.ValidatorScore,
 ) error {
-	// Sum weight of the claims
-	ballotPowerSum := int64(0)
-	for _, winner := range ballotWinners {
-		ballotPowerSum += winner.Weight
+	// sum weight of the scores
+	votePowerSum := int64(0)
+	for _, score := range validatorScores {
+		votePowerSum += score.Weight
 	}
 
-	// Exit if the ballot is empty
-	if ballotPowerSum == 0 {
-		return errors.New("empty ballot")
+	// return if there are no votes
+	if votePowerSum == 0 {
+		return errors.New("no votes")
 	}
 
 	rewardAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
@@ -45,19 +45,24 @@ func (k Keeper) RewardBallotWinners(
 		MulInt64(votePeriod).
 		QuoInt64(rewardDistributionWindow)
 
-	// Dole out rewards
+	// distribute rewards
 	var distributedReward sdk.Coins
-	for _, winner := range ballotWinners {
-		rewardCoins := sdk.NewCoins()
-		receiverVal := k.stakingKeeper.Validator(ctx, winner.Recipient)
+	for _, score := range validatorScores {
+		validator := k.stakingKeeper.Validator(ctx, score.Recipient)
+		rewardAmt := periodRewards.QuoInt64(votePowerSum).MulInt64(score.Weight).TruncateInt()
+		rewardCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, rewardAmt))
 
-		// Reflects contribution
-		rewardAmt := periodRewards.QuoInt64(ballotPowerSum).MulInt64(winner.Weight).TruncateInt()
-		rewardCoins = append(rewardCoins, sdk.NewCoin(core.MicroArkDenom, rewardAmt))
-
-		// In case absence of the validator, we just skip distribution
-		if receiverVal != nil && !rewardCoins.IsZero() {
-			k.distrKeeper.AllocateTokensToValidator(ctx, receiverVal, sdk.NewDecCoinsFromCoins(rewardCoins...))
+		if validator != nil && !rewardCoins.IsZero() {
+			if err := k.distrKeeper.AllocateTokensToValidator(ctx, validator, sdk.NewDecCoinsFromCoins(rewardCoins...)); err != nil {
+				k.Logger(ctx).Warn(
+					"failed to allocate oracle rewards",
+					"validator", score.Recipient.String(),
+					"reward", rewardCoins.String(),
+					"weight", score.Weight,
+					"error", err,
+				)
+				continue
+			}
 			distributedReward = distributedReward.Add(rewardCoins...)
 		}
 	}

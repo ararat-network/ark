@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// SlashAndResetMissCounts do slash any operator who over criteria & clear all operators miss counter to zero
+// SlashAndResetMissCounts slashes validators who missed too many votes and resets all miss counters
 func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := sdkCtx.BlockHeight()
@@ -20,37 +20,35 @@ func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 		return fmt.Errorf("getting params: %w", err)
 	}
 
-	// slash_window / vote_period
-	votePeriodsPerWindow := uint64(
-		math.LegacyNewDec(int64(params.SlashWindow)).
-			QuoInt64(int64(params.VotePeriod)).
-			TruncateInt64(),
-	)
+	// calculate votePeriodsPerWindow = slash_window / vote_period
+	votePeriodsPerWindow := math.LegacyNewDec(int64(params.SlashWindow)).
+		Quo(math.LegacyNewDec(int64(params.VotePeriod)))
 	powerReduction := k.stakingKeeper.PowerReduction(ctx)
 
-	if err := k.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, missCount uint64) (bool, error) {
-		// Calculate valid vote rate; (SlashWindow - MissCount)/SlashWindow
-		validVoteRate := math.LegacyNewDec(int64(votePeriodsPerWindow - missCount)).
-			QuoInt64(int64(votePeriodsPerWindow))
+	if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, missCount uint64) (bool, error) {
+		// calculate valid vote rate; (votePeriodsPerWindow - missCount) / votePeriodsPerWindow
+		validVoteRate := votePeriodsPerWindow.
+			Sub(math.LegacyNewDec(int64(missCount))).
+			Quo(votePeriodsPerWindow)
 
-		// Penalize the validator whose the valid vote rate is smaller than min threshold
+		// slash and jail validators who voted less than the minimum required rate
 		if validVoteRate.LT(params.MinValidPerWindow) {
-			validator := k.stakingKeeper.Validator(ctx, operator)
-			if validator.IsBonded() && !validator.IsJailed() {
+			validator := k.stakingKeeper.Validator(ctx, valAddr)
+			if validator != nil && validator.IsBonded() && !validator.IsJailed() {
 				consAddr, err := validator.GetConsAddr()
 				if err != nil {
-					return true, err
+					k.Logger(ctx).Warn("failed to get consensus address", "validator", validator, "error", err)
+				} else {
+					k.stakingKeeper.Slash(
+						ctx, consAddr,
+						distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction,
+					)
+					k.stakingKeeper.Jail(ctx, consAddr)
 				}
-
-				k.stakingKeeper.Slash(
-					ctx, consAddr,
-					distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction,
-				)
-				k.stakingKeeper.Jail(ctx, consAddr)
 			}
 		}
 
-		if err := k.MissCount.Remove(ctx, operator); err != nil {
+		if err := k.MissCount.Remove(ctx, valAddr); err != nil {
 			return true, fmt.Errorf("removing miss counter: %w", err)
 		}
 		return false, nil
