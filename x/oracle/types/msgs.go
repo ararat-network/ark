@@ -31,9 +31,9 @@ func NewMsgVote(salt, exchangeRates string, feeder sdk.AccAddress, validator sdk
 }
 
 // NewMsgDelegateFeedConsent creates a MsgDelegateFeedConsent instance
-func NewMsgDelegateFeedConsent(operatorAddress sdk.ValAddress, feederAddress sdk.AccAddress) *MsgDelegateFeedConsent {
+func NewMsgDelegateFeedConsent(validatorAddress sdk.ValAddress, feederAddress sdk.AccAddress) *MsgDelegateFeedConsent {
 	return &MsgDelegateFeedConsent{
-		Operator: operatorAddress.String(),
-		Delegate: feederAddress.String(),
+		Validator: validatorAddress.String(),
+		Feeder:    feederAddress.String(),
 	}
 }

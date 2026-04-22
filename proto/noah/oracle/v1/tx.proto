@@ -62,12 +62,12 @@ message MsgVoteResponse {}
 // MsgDelegateFeedConsent represents a message to
 // delegate oracle voting rights to another address.
 message MsgDelegateFeedConsent {
-  option (cosmos.msg.v1.signer) = "operator";
+  option (cosmos.msg.v1.signer) = "valdiator";
   option (amino.name) = "noah/x/oracle/MsgDelegateFeedConsent";
 
-  string operator = 1
+  string validator = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  string delegate = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string feeder = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 // MsgDelegateFeedConsentResponse defines the Msg/DelegateFeedConsent response

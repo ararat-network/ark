@@ -42,15 +42,15 @@ func (m msgServer) Prevote(ctx context.Context, msg *types.MsgPrevote) (*types.M
 		return nil, err
 	}
 
+	// HEX encoding doubles the hash length
+	if len(msg.Hash) != types.TruncatedHashSize*2 {
+		return nil, types.ErrInvalidHashLength
+	}
+
 	// Convert hex string to votehash
 	voteHash, err := types.VoteHashFromHexString(msg.Hash)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalidHash, err.Error())
-	}
-
-	// HEX encoding doubles the hash length
-	if len(msg.Hash) != types.TruncatedHashSize*2 {
-		return nil, types.ErrInvalidHashLength
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -105,42 +105,42 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
 	}
 
-	aggregatePrevote, err := m.k.Prevote.Get(ctx, valAddr)
+	prevote, err := m.k.Prevote.Get(ctx, valAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	// Check a msg is submitted proper period
-	if (uint64(sdkCtx.BlockHeight())/params.VotePeriod)-(aggregatePrevote.SubmitBlock/params.VotePeriod) != 1 {
+	// checks the prevote was submitted in the previous period to this vote
+	if (uint64(sdkCtx.BlockHeight())/params.VotePeriod)-(prevote.SubmitBlock/params.VotePeriod) != 1 {
 		return nil, types.ErrRevealPeriodMissMatch
 	}
 
-	exchangeRateTuples, err := types.ParseExchangeRates(msg.ExchangeRates)
+	exchangeRates, err := types.ParseExchangeRates(msg.ExchangeRates)
 	if err != nil {
 		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, err.Error())
 	}
 	// check all denoms are in the vote target
-	for _, tuple := range exchangeRateTuples {
+	for _, er := range exchangeRates {
 		// Check overflow bit length
-		if tuple.Rate.BigInt().BitLen() > 255+math.LegacyDecimalPrecisionBits {
+		if er.Rate.BigInt().BitLen() > 255+math.LegacyDecimalPrecisionBits {
 			return nil, sdkerrors.Wrap(types.ErrInvalidExchangeRate, "overflow")
 		}
-		if has, err := m.k.TobinTax.Has(ctx, tuple.Denom); err != nil {
+		if has, err := m.k.TobinTax.Has(ctx, er.Denom); err != nil {
 			return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
 		} else if !has {
-			return nil, sdkerrors.Wrap(types.ErrUnknownDenom, tuple.Denom)
+			return nil, sdkerrors.Wrap(types.ErrUnknownDenom, er.Denom)
 		}
 	}
 
-	// Verify an exchange rate with aggregate prevote hash
+	// Verify an the vote hash against the prevote hash
 	hash := types.GetVoteHash(msg.Salt, msg.ExchangeRates, valAddr)
-	if aggregatePrevote.Hash != hash.String() {
-		return nil, sdkerrors.Wrapf(types.ErrVerificationFailed, "must be given %s not %s", aggregatePrevote.Hash, hash)
+	if prevote.Hash != hash.String() {
+		return nil, sdkerrors.Wrapf(types.ErrVerificationFailed, "must be given %s not %s", prevote.Hash, hash)
 	}
 
-	// Move aggregate prevote to aggregate vote with given exchange rates
-	if err := m.k.Vote.Set(ctx, valAddr, types.NewVote(exchangeRateTuples, valAddr)); err != nil {
+	// Move prevote to vote with given exchange rates
+	if err := m.k.Vote.Set(ctx, valAddr, types.NewVote(exchangeRates, valAddr)); err != nil {
 		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
 	}
 	if err := m.k.Prevote.Remove(ctx, valAddr); err != nil {
@@ -165,23 +165,23 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 
 // DelegateFeedConsent authorises another address to submit oracle votes on behalf of a validator
 func (m msgServer) DelegateFeedConsent(ctx context.Context, msg *types.MsgDelegateFeedConsent) (*types.MsgDelegateFeedConsentResponse, error) {
-	operatorAddr, err := sdk.ValAddressFromBech32(msg.Operator)
+	validatorAddr, err := sdk.ValAddressFromBech32(msg.Validator)
 	if err != nil {
 		return nil, err
 	}
-	delegateAddr, err := sdk.AccAddressFromBech32(msg.Delegate)
+	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check the delegator is a validator
-	val := m.k.stakingKeeper.Validator(ctx, operatorAddr)
+	val := m.k.stakingKeeper.Validator(ctx, validatorAddr)
 	if val == nil {
-		return nil, sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, msg.Operator)
+		return nil, sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, msg.Validator)
 	}
 
 	// Set the delegation
-	if err := m.k.FeederDelegation.Set(ctx, operatorAddr, delegateAddr); err != nil {
+	if err := m.k.FeederDelegation.Set(ctx, validatorAddr, feederAddr); err != nil {
 		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
 	}
 
@@ -189,12 +189,12 @@ func (m msgServer) DelegateFeedConsent(ctx context.Context, msg *types.MsgDelega
 	sdkCtx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			types.EventTypeFeedDelegate,
-			sdk.NewAttribute(types.AttributeKeyFeeder, msg.Delegate),
+			sdk.NewAttribute(types.AttributeKeyFeeder, msg.Feeder),
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Operator),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Validator),
 		),
 	})
 
