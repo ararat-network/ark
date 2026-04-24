@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -17,8 +16,8 @@ import (
 // oracle voters that voted faithfully at the end of every VotePeriod.
 func (k Keeper) RewardVoteWinners(
 	ctx context.Context,
-	votePeriod int64,
-	rewardDistributionWindow int64,
+	votePeriod,
+	rewardDistributionWindow uint64,
 	validatorScores map[string]types.ValidatorScore,
 ) error {
 	// sum weight of the scores
@@ -29,7 +28,8 @@ func (k Keeper) RewardVoteWinners(
 
 	// return if there are no votes
 	if votePowerSum == 0 {
-		return errors.New("no votes")
+		k.Logger(ctx).Info("no votes for this period", "votePeriod", votePeriod)
+		return nil
 	}
 
 	rewardAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
@@ -37,40 +37,48 @@ func (k Keeper) RewardVoteWinners(
 
 	// return if there's no rewards to give out
 	if rewardPool.IsZero() {
-		return errors.New("no rewards to give out")
+		k.Logger(ctx).Info("no rewards for this period", "votePeriod", votePeriod)
+		return nil
 	}
 
 	// rewardCoin  = oraclePool * VotePeriod / RewardDistributionWindow
 	periodRewards := math.LegacyNewDecFromInt(rewardPool.AmountOf(core.MicroArkDenom)).
-		MulInt64(votePeriod).
-		QuoInt64(rewardDistributionWindow)
+		MulInt64(int64(votePeriod)).
+		QuoInt64(int64(rewardDistributionWindow))
 
 	// distribute rewards
 	var distributedReward sdk.Coins
 	for _, score := range validatorScores {
-		validator := k.stakingKeeper.Validator(ctx, score.Recipient)
 		rewardAmt := periodRewards.QuoInt64(votePowerSum).MulInt64(score.Weight).TruncateInt()
 		rewardCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, rewardAmt))
-
-		if validator != nil && !rewardCoins.IsZero() {
-			if err := k.distrKeeper.AllocateTokensToValidator(ctx, validator, sdk.NewDecCoinsFromCoins(rewardCoins...)); err != nil {
-				k.Logger(ctx).Warn(
-					"failed to allocate oracle rewards",
-					"validator", score.Recipient.String(),
-					"reward", rewardCoins.String(),
-					"weight", score.Weight,
-					"error", err,
-				)
-				continue
-			}
-			distributedReward = distributedReward.Add(rewardCoins...)
+		if rewardCoins.IsZero() {
+			continue
 		}
+
+		validator, err := k.stakingKeeper.Validator(ctx, score.Recipient)
+		if err != nil {
+			return fmt.Errorf("getting validator %s for oracle rewards: %w", score.Recipient, err)
+		}
+		if validator == nil {
+			return fmt.Errorf("validator not found for oracle rewards: %s", score.Recipient)
+		}
+
+		if err := k.distrKeeper.AllocateTokensToValidator(ctx, validator, sdk.NewDecCoinsFromCoins(rewardCoins...)); err != nil {
+			return fmt.Errorf(
+				"allocating oracle rewards to %s with reward %s and weight %d: %w",
+				score.Recipient,
+				rewardCoins.String(),
+				score.Weight,
+				err,
+			)
+		}
+		distributedReward = distributedReward.Add(rewardCoins...)
 	}
 
 	// Move distributed reward to distribution module
 	err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.distributionName, distributedReward)
 	if err != nil {
-		return fmt.Errorf("[oracle] Failed to send coins to distribution module %w", err)
+		return fmt.Errorf("sending coins to distribution module: %w", err)
 	}
 
 	return nil

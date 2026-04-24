@@ -54,8 +54,8 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 
 		if err := k.RewardVoteWinners(
 			ctx,
-			int64(params.VotePeriod),
-			int64(params.RewardDistributionWindow),
+			params.VotePeriod,
+			params.RewardDistributionWindow,
 			validatorScoreMap,
 		); err != nil {
 			return err

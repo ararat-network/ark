@@ -33,18 +33,21 @@ func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 
 		// slash and jail validators who voted less than the minimum required rate
 		if validVoteRate.LT(params.MinValidPerWindow) {
-			validator := k.stakingKeeper.Validator(ctx, valAddr)
-			if validator != nil && validator.IsBonded() && !validator.IsJailed() {
+			if validator, err := k.stakingKeeper.Validator(ctx, valAddr); validator != nil && validator.IsBonded() && !validator.IsJailed() {
 				consAddr, err := validator.GetConsAddr()
 				if err != nil {
 					k.Logger(ctx).Warn("failed to get consensus address", "validator", validator, "error", err)
+					return false, nil
 				} else {
-					k.stakingKeeper.Slash(
-						ctx, consAddr,
-						distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction,
-					)
-					k.stakingKeeper.Jail(ctx, consAddr)
+					if _, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction); err != nil {
+						return true, fmt.Errorf("failed to slash validator %s: %w", valAddr, err)
+					} else if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
+						return true, fmt.Errorf("slashed validator, but failed to jail: %w", err)
+					}
 				}
+			} else if err != nil {
+				k.Logger(ctx).Warn("failed to get validator", "validator", valAddr, "error", err)
+				return false, nil
 			}
 		}
 

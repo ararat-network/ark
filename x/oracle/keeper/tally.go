@@ -116,7 +116,11 @@ func (k Keeper) PickReferenceDenom(ctx context.Context, voteThreshold math.Legac
 	largestVotePower := math.ZeroInt()
 	referenceNoah := ""
 
-	totalBondedPower := sdk.TokensToConsensusPower(k.stakingKeeper.TotalBondedTokens(ctx), k.stakingKeeper.PowerReduction(ctx))
+	totalValidatorPower, err := k.stakingKeeper.TotalValidatorPower(ctx)
+	if err != nil {
+		return "", err
+	}
+	totalBondedPower := sdk.TokensToConsensusPower(totalValidatorPower, k.stakingKeeper.PowerReduction(ctx))
 	thresholdVotes := voteThreshold.MulInt64(totalBondedPower).RoundInt()
 
 	for denom, votes := range voteMap {

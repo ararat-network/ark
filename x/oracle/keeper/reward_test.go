@@ -23,12 +23,11 @@ func (s *KeeperTestSuite) TestRewardVoteWinners() {
 		expectErr string
 	}{
 		{
-			name:      "empty ballot returns error",
+			name:   "empty ballot returns without distributing",
 			scores:    map[string]types.ValidatorScore{},
-			expectErr: "no votes",
 		},
 		{
-			name: "zero reward pool returns error",
+			name: "zero reward pool returns without distributing",
 			setup: func() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
@@ -37,7 +36,6 @@ func (s *KeeperTestSuite) TestRewardVoteWinners() {
 			scores: map[string]types.ValidatorScore{
 				valAddr1.String(): types.NewValidatorScore(10, 10, 1, valAddr1),
 			},
-			expectErr: "no rewards to give out",
 		},
 		{
 			name: "distributes proportional rewards",
@@ -47,16 +45,16 @@ func (s *KeeperTestSuite) TestRewardVoteWinners() {
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
 					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(400))),
 				)
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{
-					OperatorAddress: valAddr1.String(),
-					Status:          stakingtypes.Bonded,
-					Tokens:          math.NewInt(10),
-				})
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(stakingtypes.Validator{
-					OperatorAddress: valAddr2.String(),
-					Status:          stakingtypes.Bonded,
-					Tokens:          math.NewInt(10),
-				})
+					s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{
+						OperatorAddress: valAddr1.String(),
+						Status:          stakingtypes.Bonded,
+						Tokens:          math.NewInt(10),
+					}, nil)
+					s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(stakingtypes.Validator{
+						OperatorAddress: valAddr2.String(),
+						Status:          stakingtypes.Bonded,
+						Tokens:          math.NewInt(10),
+					}, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					stakingtypes.Validator{
@@ -95,11 +93,11 @@ func (s *KeeperTestSuite) TestRewardVoteWinners() {
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
 					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(100))),
 				)
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{
-					OperatorAddress: valAddr1.String(),
-					Status:          stakingtypes.Bonded,
-					Tokens:          math.NewInt(10),
-				})
+					s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{
+						OperatorAddress: valAddr1.String(),
+						Status:          stakingtypes.Bonded,
+						Tokens:          math.NewInt(10),
+					}, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					stakingtypes.Validator{
@@ -119,30 +117,25 @@ func (s *KeeperTestSuite) TestRewardVoteWinners() {
 			scores: map[string]types.ValidatorScore{
 				valAddr1.String(): types.NewValidatorScore(10, 10, 1, valAddr1),
 			},
-			expectErr: "Failed to send coins",
+				expectErr: "sending coins to distribution module",
 		},
 		{
-			name: "nil validator skips allocation and sends zero coins",
+			name: "missing validator returns error",
 			setup: func() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
 					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(100))),
 				)
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil)
-				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-					s.ctx,
-					types.ModuleName,
-					"distribution",
-					sdk.Coins(nil),
-				).Return(nil)
+					s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
 			scores: map[string]types.ValidatorScore{
 				valAddr1.String(): types.NewValidatorScore(10, 10, 1, valAddr1),
 			},
+			expectErr: "validator not found for oracle rewards",
 		},
 		{
-			name: "allocation failure skips distributed reward",
+			name: "allocation failure returns error",
 			setup: func() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				rewardPool := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(100)))
@@ -150,24 +143,19 @@ func (s *KeeperTestSuite) TestRewardVoteWinners() {
 
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(rewardPool)
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{
-					OperatorAddress: valAddr1.String(),
-					Status:          stakingtypes.Bonded,
-					Tokens:          math.NewInt(10),
-				})
+					s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{
+						OperatorAddress: valAddr1.String(),
+						Status:          stakingtypes.Bonded,
+						Tokens:          math.NewInt(10),
+					}, nil)
 				s.distrKeeper.EXPECT().
 					AllocateTokensToValidator(s.ctx, gomock.Any(), sdk.NewDecCoinsFromCoins(rewardCoins...)).
-					Return(errors.New("allocation failed"))
-				s.bankKeeper.EXPECT().
-					SendCoinsFromModuleToModule(s.ctx, types.ModuleName, "distribution", gomock.Any()).
-					DoAndReturn(func(_ sdk.Context, _, _ string, amount sdk.Coins) error {
-						s.Require().True(amount.IsZero(), "failed allocation must not be added to distributed rewards")
-						return nil
-					})
+						Return(errors.New("allocation failed"))
 			},
 			scores: map[string]types.ValidatorScore{
 				valAddr1.String(): types.NewValidatorScore(10, 10, 1, valAddr1),
 			},
+			expectErr: "allocating oracle rewards",
 		},
 	}
 

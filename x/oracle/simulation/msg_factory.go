@@ -153,8 +153,8 @@ func MsgDelegateFeedConsentFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*type
 		}
 		valAddress := sdk.ValAddress(addrBytes)
 		notValidator := simsx.SimAccountFilterFn(func(a simsx.SimAccount) bool {
-			val := k.Validator(ctx, sdk.ValAddress(a.Address))
-			return val == nil
+			val, err := k.Validator(ctx, sdk.ValAddress(a.Address))
+			return err != nil || val == nil
 		})
 		delegateAccount := testData.AnyAccount(reporter, notValidator)
 		if reporter.IsSkipped() {

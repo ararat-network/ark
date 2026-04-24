@@ -75,9 +75,11 @@ func (mr *MockStakingKeeperMockRecorder) IterateBondedValidatorsByPower(arg0, ar
 }
 
 // Jail mocks base method.
-func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) {
+func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Jail", arg0, arg1)
+	ret := m.ctrl.Call(m, "Jail", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Jail indicates an expected call of Jail.
@@ -87,11 +89,12 @@ func (mr *MockStakingKeeperMockRecorder) Jail(arg0, arg1 any) *gomock.Call {
 }
 
 // MaxValidators mocks base method.
-func (m *MockStakingKeeper) MaxValidators(arg0 context.Context) uint32 {
+func (m *MockStakingKeeper) MaxValidators(arg0 context.Context) (uint32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MaxValidators", arg0)
 	ret0, _ := ret[0].(uint32)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MaxValidators indicates an expected call of MaxValidators.
@@ -115,9 +118,12 @@ func (mr *MockStakingKeeperMockRecorder) PowerReduction(ctx any) *gomock.Call {
 }
 
 // Slash mocks base method.
-func (m *MockStakingKeeper) Slash(arg0 context.Context, arg1 types.ConsAddress, arg2, arg3 int64, arg4 math.LegacyDec) {
+func (m *MockStakingKeeper) Slash(arg0 context.Context, arg1 types.ConsAddress, arg2, arg3 int64, arg4 math.LegacyDec) (math.Int, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Slash", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "Slash", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(math.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Slash indicates an expected call of Slash.
@@ -126,26 +132,28 @@ func (mr *MockStakingKeeperMockRecorder) Slash(arg0, arg1, arg2, arg3, arg4 any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Slash", reflect.TypeOf((*MockStakingKeeper)(nil).Slash), arg0, arg1, arg2, arg3, arg4)
 }
 
-// TotalBondedTokens mocks base method.
-func (m *MockStakingKeeper) TotalBondedTokens(arg0 context.Context) math.Int {
+// TotalValidatorPower mocks base method.
+func (m *MockStakingKeeper) TotalValidatorPower(arg0 context.Context) (math.Int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TotalBondedTokens", arg0)
+	ret := m.ctrl.Call(m, "TotalValidatorPower", arg0)
 	ret0, _ := ret[0].(math.Int)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// TotalBondedTokens indicates an expected call of TotalBondedTokens.
-func (mr *MockStakingKeeperMockRecorder) TotalBondedTokens(arg0 any) *gomock.Call {
+// TotalValidatorPower indicates an expected call of TotalValidatorPower.
+func (mr *MockStakingKeeperMockRecorder) TotalValidatorPower(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalBondedTokens", reflect.TypeOf((*MockStakingKeeper)(nil).TotalBondedTokens), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalValidatorPower", reflect.TypeOf((*MockStakingKeeper)(nil).TotalValidatorPower), arg0)
 }
 
 // Validator mocks base method.
-func (m *MockStakingKeeper) Validator(ctx context.Context, arg1 types.ValAddress) types1.ValidatorI {
+func (m *MockStakingKeeper) Validator(ctx context.Context, arg1 types.ValAddress) (types1.ValidatorI, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validator", ctx, arg1)
 	ret0, _ := ret[0].(types1.ValidatorI)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Validator indicates an expected call of Validator.
@@ -207,11 +215,12 @@ func (mr *MockDistributionKeeperMockRecorder) AllocateTokensToValidator(ctx, val
 }
 
 // GetValidatorOutstandingRewardsCoins mocks base method.
-func (m *MockDistributionKeeper) GetValidatorOutstandingRewardsCoins(ctx context.Context, val types.ValAddress) types.DecCoins {
+func (m *MockDistributionKeeper) GetValidatorOutstandingRewardsCoins(ctx context.Context, val types.ValAddress) (types.DecCoins, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidatorOutstandingRewardsCoins", ctx, val)
 	ret0, _ := ret[0].(types.DecCoins)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetValidatorOutstandingRewardsCoins indicates an expected call of GetValidatorOutstandingRewardsCoins.

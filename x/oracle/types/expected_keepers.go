@@ -13,12 +13,12 @@ import (
 
 // StakingKeeper is expected keeper for staking module
 type StakingKeeper interface {
-	Validator(ctx context.Context, address sdk.ValAddress) stakingtypes.ValidatorI // get validator by operator address; nil when validator not found
-	TotalBondedTokens(context.Context) math.Int                                    // total bonded tokens within the validator set
-	Slash(context.Context, sdk.ConsAddress, int64, int64, math.LegacyDec)          // slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
-	Jail(context.Context, sdk.ConsAddress)                                         // jail a validator
+	Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error) // get validator by operator address; nil when validator not found
+	TotalValidatorPower(context.Context) (math.Int, error)                                  // total bonded tokens within the validator set
+	Slash(context.Context, sdk.ConsAddress, int64, int64, math.LegacyDec) (math.Int, error) // slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
+	Jail(context.Context, sdk.ConsAddress) error                                            // jail a validator
 	IterateBondedValidatorsByPower(context.Context, func(int64, stakingtypes.ValidatorI) bool) error
-	MaxValidators(context.Context) uint32 // MaxValidators returns the maximum amount of bonded validators
+	MaxValidators(context.Context) (uint32, error) // MaxValidators returns the maximum amount of bonded validators
 	PowerReduction(ctx context.Context) (res math.Int)
 	ValidatorAddressCodec() address.Codec
 
@@ -31,7 +31,7 @@ type DistributionKeeper interface {
 	AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) error
 
 	// only used for simulation
-	GetValidatorOutstandingRewardsCoins(ctx context.Context, val sdk.ValAddress) sdk.DecCoins
+	GetValidatorOutstandingRewardsCoins(ctx context.Context, val sdk.ValAddress) (sdk.DecCoins, error)
 }
 
 // AccountKeeper is expected keeper for auth module
