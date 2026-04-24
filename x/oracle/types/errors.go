@@ -11,7 +11,7 @@ var (
 	ErrInvalidExchangeRate   = sdkerrors.Register(ModuleName, 2, "invalid exchange rate")
 	ErrNoPrevote             = sdkerrors.Register(ModuleName, 3, "no prevote")
 	ErrNoVote                = sdkerrors.Register(ModuleName, 4, "no vote")
-	ErrNoVotingPermission    = sdkerrors.Register(ModuleName, 5, "unauthorized voter")
+	ErrNoVotingPermission    = sdkerrors.Register(ModuleName, 5, "unauthorised voter")
 	ErrInvalidHash           = sdkerrors.Register(ModuleName, 6, "invalid hash")
 	ErrInvalidHashLength     = sdkerrors.Register(ModuleName, 7, fmt.Sprintf("invalid hash length; should equal %d", TruncatedHashSize))
 	ErrVerificationFailed    = sdkerrors.Register(ModuleName, 8, "hash verification failed")

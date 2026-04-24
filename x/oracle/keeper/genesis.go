@@ -16,68 +16,68 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	for _, fd := range data.FeederDelegations {
 		voter, err := sdk.ValAddressFromBech32(fd.ValidatorAddress)
 		if err != nil {
-			return fmt.Errorf("invalid address: %w", err)
+			return fmt.Errorf("parsing feeder delegation validator address %q: %w", fd.ValidatorAddress, err)
 		}
 
 		feeder, err := sdk.AccAddressFromBech32(fd.FeederAddress)
 		if err != nil {
-			return fmt.Errorf("invalid address: %w", err)
+			return fmt.Errorf("parsing feeder delegation feeder address %q: %w", fd.FeederAddress, err)
 		}
 
 		if err := k.FeederDelegation.Set(ctx, voter, feeder); err != nil {
-			return fmt.Errorf("setting feeder delegation: %w", err)
+			return fmt.Errorf("setting feeder delegation for validator %s: %w", voter, err)
 		}
 	}
 
 	for _, er := range data.ExchangeRates {
 		if err := k.ExchangeRate.Set(ctx, er.Denom, er.Rate); err != nil {
-			return fmt.Errorf("setting exchange rate: %w", err)
+			return fmt.Errorf("setting genesis exchange rate for denom %s: %w", er.Denom, err)
 		}
 	}
 
 	for _, mc := range data.MissCounts {
 		operator, err := sdk.ValAddressFromBech32(mc.ValidatorAddress)
 		if err != nil {
-			return fmt.Errorf("invalid address: %w", err)
+			return fmt.Errorf("parsing miss count validator address %q: %w", mc.ValidatorAddress, err)
 		}
 
 		if err := k.MissCount.Set(ctx, operator, mc.MissCount); err != nil {
-			return fmt.Errorf("setting miss counter: %w", err)
+			return fmt.Errorf("setting genesis miss counter for validator %s: %w", operator, err)
 		}
 	}
 
 	for _, ap := range data.Prevotes {
 		valAddr, err := sdk.ValAddressFromBech32(ap.Voter)
 		if err != nil {
-			return fmt.Errorf("invalid address: %w", err)
+			return fmt.Errorf("parsing prevote voter address %q: %w", ap.Voter, err)
 		}
 
 		if err := k.Prevote.Set(ctx, valAddr, ap); err != nil {
-			return fmt.Errorf("setting prevote: %w", err)
+			return fmt.Errorf("setting genesis prevote for validator %s: %w", valAddr, err)
 		}
 	}
 
 	for _, av := range data.Votes {
 		valAddr, err := sdk.ValAddressFromBech32(av.Voter)
 		if err != nil {
-			return fmt.Errorf("invalid address: %w", err)
+			return fmt.Errorf("parsing vote voter address %q: %w", av.Voter, err)
 		}
 
 		if err := k.Vote.Set(ctx, valAddr, av); err != nil {
-			return fmt.Errorf("setting vote: %w", err)
+			return fmt.Errorf("setting genesis vote for validator %s: %w", valAddr, err)
 		}
 	}
 
 	if len(data.TobinTaxes) > 0 {
 		for _, tt := range data.TobinTaxes {
 			if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
-				return fmt.Errorf("setting tobin tax: %w", err)
+				return fmt.Errorf("setting genesis tobin tax for denom %s: %w", tt.Denom, err)
 			}
 		}
 	} else {
 		for _, item := range data.Params.TobinTaxes {
 			if err := k.TobinTax.Set(ctx, item.Denom, item.TobinTax); err != nil {
-				return fmt.Errorf("setting tobin tax: %w", err)
+				return fmt.Errorf("setting params tobin tax for denom %s: %w", item.Denom, err)
 			}
 		}
 	}

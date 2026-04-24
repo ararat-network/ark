@@ -1,10 +1,8 @@
 package cli
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -68,7 +66,7 @@ where "noah1..." is the address you want to delegate your voting rights to.
 			feederStr := args[0]
 			feeder, err := sdk.AccAddressFromBech32(feederStr)
 			if err != nil {
-				return err
+				return sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", feederStr, err)
 			}
 
 			msgs := []sdk.Msg{types.NewMsgDelegateFeedConsent(validator, feeder)}
@@ -111,7 +109,7 @@ $ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvalop
 			exchangeRatesStr := args[1]
 			_, err = types.ParseExchangeRates(exchangeRatesStr)
 			if err != nil {
-				return fmt.Errorf("given exchange_rates {%s} is not a valid format; exchange_rate should be formatted as DecCoins; %s", exchangeRatesStr, err.Error())
+				return sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "parsing exchange rates %q: %v", exchangeRatesStr, err)
 			}
 
 			// Get from address
@@ -124,7 +122,7 @@ $ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvalop
 			if len(args) == 3 {
 				parsedVal, err := sdk.ValAddressFromBech32(args[2])
 				if err != nil {
-					return errors.Wrap(err, "validator address is invalid")
+					return sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", args[2], err)
 				}
 				validator = parsedVal
 			}
@@ -178,7 +176,7 @@ $ noahd tx oracle aggregate-vote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1
 			}
 			exchangeRates, err := types.ParseExchangeRates(exchangeRatesStr)
 			if err != nil {
-				return fmt.Errorf("given exchange_rate {%s} is not a valid format; exchange rate should be formatted as DecCoin; %s", exchangeRatesStr, err.Error())
+				return sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "parsing exchange rates %q: %v", exchangeRatesStr, err)
 			}
 			for _, exchangeRate := range exchangeRates {
 				// Check overflow bit length
@@ -197,7 +195,7 @@ $ noahd tx oracle aggregate-vote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1
 			if len(args) == 3 {
 				parsedVal, err := sdk.ValAddressFromBech32(args[2])
 				if err != nil {
-					return errors.Wrap(err, "validator address is invalid")
+					return sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", args[2], err)
 				}
 				validator = parsedVal
 			}

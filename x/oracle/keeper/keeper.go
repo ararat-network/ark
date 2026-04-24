@@ -16,7 +16,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -144,7 +143,7 @@ func (k Keeper) GetFeederDelegation(ctx context.Context, operator sdk.ValAddress
 		if errors.Is(err, collections.ErrNotFound) {
 			return sdk.AccAddress(operator), nil
 		}
-		return nil, fmt.Errorf("getting feeder delegation: %w", err)
+		return nil, fmt.Errorf("getting feeder delegation for validator %s: %w", operator, err)
 	}
 
 	return accAddress, nil
@@ -158,7 +157,10 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 
 	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
 	if err != nil {
-		return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+		if errors.Is(err, collections.ErrNotFound) {
+			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+		}
+		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
 
 	return exchangeRate, nil
@@ -167,7 +169,7 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 // SetExchangeRate sets the consensus exchange rate of Ark denominated in the denom asset.
 func (k Keeper) SetExchangeRate(ctx context.Context, denom string, rate math.LegacyDec) error {
 	if err := k.ExchangeRate.Set(ctx, denom, rate); err != nil {
-		return sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return fmt.Errorf("setting exchange rate for denom %s: %w", denom, err)
 	}
 
 	return nil
@@ -188,7 +190,7 @@ func (k Keeper) IterateExchangeRates(ctx context.Context, handler func(denom str
 // store with ABCI event
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, denom string, exchangeRate math.LegacyDec) error {
 	if err := k.ExchangeRate.Set(ctx, denom, exchangeRate); err != nil {
-		return sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return fmt.Errorf("setting exchange rate with event for denom %s: %w", denom, err)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -207,7 +209,7 @@ func (k Keeper) ValidateFeeder(ctx context.Context, feederAddr sdk.AccAddress, v
 	if !feederAddr.Equals(validatorAddr) {
 		delegate, err := k.GetFeederDelegation(ctx, validatorAddr)
 		if err != nil {
-			return err
+			return fmt.Errorf("getting feeder delegation for validator %s while validating feeder %s: %w", validatorAddr, feederAddr, err)
 		}
 		if !delegate.Equals(feederAddr) {
 			return sdkerrors.Wrap(types.ErrNoVotingPermission, feederAddr.String())
@@ -215,7 +217,9 @@ func (k Keeper) ValidateFeeder(ctx context.Context, feederAddr sdk.AccAddress, v
 	}
 
 	// Check that the given validator exists
-	if val := k.stakingKeeper.Validator(ctx, validatorAddr); val == nil || !val.IsBonded() {
+	if val, err := k.stakingKeeper.Validator(ctx, validatorAddr); err != nil {
+		return fmt.Errorf("getting validator %s while validating feeder %s: %w", validatorAddr, feederAddr, err)
+	} else if val == nil || !val.IsBonded() {
 		return sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "validator %s is not active set", validatorAddr.String())
 	}
 
@@ -226,7 +230,10 @@ func (k Keeper) ValidateFeeder(ctx context.Context, feederAddr sdk.AccAddress, v
 func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
 	tobinTax, err := k.TobinTax.Get(ctx, denom)
 	if err != nil {
-		return math.LegacyZeroDec(), err
+		if errors.Is(err, collections.ErrNotFound) {
+			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+		}
+		return math.LegacyZeroDec(), fmt.Errorf("getting tobin tax for denom %s: %w", denom, err)
 	}
 
 	return tobinTax, nil
@@ -235,7 +242,7 @@ func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, 
 // SetTobinTax sets the tobin tax for the denom.
 func (k Keeper) SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error {
 	if err := k.TobinTax.Set(ctx, denom, tobinTax); err != nil {
-		return sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return fmt.Errorf("setting tobin tax for denom %s: %w", denom, err)
 	}
 
 	return nil
@@ -320,7 +327,7 @@ func (k Keeper) GetAllValidators(ctx context.Context) ([]stakingtypes.Validator,
 	return k.stakingKeeper.GetAllValidators(ctx)
 }
 
-func (k Keeper) Validator(ctx context.Context, address sdk.ValAddress) stakingtypes.ValidatorI {
+func (k Keeper) Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error) {
 	return k.stakingKeeper.Validator(ctx, address)
 }
 

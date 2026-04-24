@@ -28,8 +28,8 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 		expectErr bool
 	}{
 		{
-			name:      "empty denom rejected",
-			req:       &types.QueryExchangeRateRequest{},
+			name:      "invalid denom rejected",
+			req:       &types.QueryExchangeRateRequest{Denom: "/"},
 			code:      codes.InvalidArgument,
 			expectErr: true,
 		},
@@ -105,7 +105,6 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	}
 }
 
-
 func (s *KeeperTestSuite) TestQueryTobinTax() {
 	tests := []struct {
 		name      string
@@ -116,8 +115,8 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 		expectErr bool
 	}{
 		{
-			name:      "empty denom rejected",
-			req:       &types.QueryTobinTaxRequest{},
+			name:      "invalid denom rejected",
+			req:       &types.QueryTobinTaxRequest{Denom: "/"},
 			code:      codes.InvalidArgument,
 			expectErr: true,
 		},

@@ -2,7 +2,9 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
+	"cosmossdk.io/collections"
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
@@ -30,12 +32,12 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 func (m msgServer) Prevote(ctx context.Context, msg *types.MsgPrevote) (*types.MsgPrevoteResponse, error) {
 	valAddr, err := sdk.ValAddressFromBech32(msg.Validator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", msg.Validator, err)
 	}
 
 	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", msg.Feeder, err)
 	}
 
 	if err := m.k.ValidateFeeder(ctx, feederAddr, valAddr); err != nil {
@@ -50,13 +52,13 @@ func (m msgServer) Prevote(ctx context.Context, msg *types.MsgPrevote) (*types.M
 	// Convert hex string to votehash
 	voteHash, err := types.VoteHashFromHexString(msg.Hash)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrInvalidHash, err.Error())
+		return nil, sdkerrors.Wrapf(types.ErrInvalidHash, "parsing prevote hash: %v", err)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	aggregatePrevote := types.NewPrevote(voteHash, valAddr, uint64(sdkCtx.BlockHeight()))
 	if err := m.k.Prevote.Set(ctx, valAddr, aggregatePrevote); err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "storing prevote for validator %s: %v", valAddr, err)
 	}
 
 	sdkCtx.EventManager().EmitEvents(sdk.Events{
@@ -78,11 +80,11 @@ func (m msgServer) Prevote(ctx context.Context, msg *types.MsgPrevote) (*types.M
 func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVoteResponse, error) {
 	valAddr, err := sdk.ValAddressFromBech32(msg.Validator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", msg.Validator, err)
 	}
 	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", msg.Feeder, err)
 	}
 	if err := m.k.ValidateFeeder(ctx, feederAddr, valAddr); err != nil {
 		return nil, err
@@ -102,12 +104,15 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 
 	params, err := m.k.Params.Get(ctx)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "getting oracle params: %v", err)
 	}
 
 	prevote, err := m.k.Prevote.Get(ctx, valAddr)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil, sdkerrors.Wrapf(types.ErrNoPrevote, "getting prevote for validator %s", valAddr)
+		}
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "getting prevote for validator %s: %v", valAddr, err)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -118,7 +123,7 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 
 	exchangeRates, err := types.ParseExchangeRates(msg.ExchangeRates)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "parsing exchange rates: %v", err)
 	}
 	// check all denoms are in the vote target
 	for _, er := range exchangeRates {
@@ -127,7 +132,7 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 			return nil, sdkerrors.Wrap(types.ErrInvalidExchangeRate, "overflow")
 		}
 		if has, err := m.k.TobinTax.Has(ctx, er.Denom); err != nil {
-			return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+			return nil, sdkerrors.Wrapf(errortypes.ErrIO, "checking vote target for denom %s: %v", er.Denom, err)
 		} else if !has {
 			return nil, sdkerrors.Wrap(types.ErrUnknownDenom, er.Denom)
 		}
@@ -141,10 +146,10 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 
 	// Move prevote to vote with given exchange rates
 	if err := m.k.Vote.Set(ctx, valAddr, types.NewVote(exchangeRates, valAddr)); err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "storing vote for validator %s: %v", valAddr, err)
 	}
 	if err := m.k.Prevote.Remove(ctx, valAddr); err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "removing prevote for validator %s: %v", valAddr, err)
 	}
 
 	sdkCtx.EventManager().EmitEvents(sdk.Events{
@@ -167,22 +172,23 @@ func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVote
 func (m msgServer) DelegateFeedConsent(ctx context.Context, msg *types.MsgDelegateFeedConsent) (*types.MsgDelegateFeedConsentResponse, error) {
 	validatorAddr, err := sdk.ValAddressFromBech32(msg.Validator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", msg.Validator, err)
 	}
 	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", msg.Feeder, err)
 	}
 
 	// Check the delegator is a validator
-	val := m.k.stakingKeeper.Validator(ctx, validatorAddr)
-	if val == nil {
+	if val, err := m.k.stakingKeeper.Validator(ctx, validatorAddr); err != nil {
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "getting validator %s for feeder delegation: %v", validatorAddr, err)
+	} else if val == nil {
 		return nil, sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, msg.Validator)
 	}
 
 	// Set the delegation
 	if err := m.k.FeederDelegation.Set(ctx, validatorAddr, feederAddr); err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrIO, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "storing feeder delegation for validator %s: %v", validatorAddr, err)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

@@ -31,7 +31,7 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting oracle params: %v", err)
 	}
 
 	return &types.QueryParamsResponse{Params: params}, nil
@@ -42,16 +42,16 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	if len(req.Denom) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "empty denom")
+	if err := sdk.ValidateDenom(req.Denom); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
 	exchangeRate, err := q.k.GetExchangeRate(ctx, req.Denom)
 	if err != nil {
 		if errors.Is(err, types.ErrUnknownDenom) {
-			return nil, status.Error(codes.NotFound, req.Denom)
+			return nil, status.Errorf(codes.NotFound, "exchange rate not found for denom %s", req.Denom)
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting exchange rate for denom %s: %v", req.Denom, err)
 	}
 
 	return &types.QueryExchangeRateResponse{ExchangeRate: exchangeRate}, nil
@@ -64,7 +64,7 @@ func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchange
 		exchangeRates = append(exchangeRates, sdk.NewDecCoinFromDec(denom, rate))
 		return false, nil
 	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing oracle exchange rates: %v", err)
 	}
 
 	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRates}, nil
@@ -75,16 +75,16 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	if len(req.Denom) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "empty denom")
+	if err := sdk.ValidateDenom(req.Denom); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
 	tobinTax, err := q.k.TobinTax.Get(ctx, req.Denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, req.Denom)
+			return nil, status.Errorf(codes.NotFound, "tobin tax not found for denom %s", req.Denom)
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting tobin tax for denom %s: %v", req.Denom, err)
 	}
 
 	return &types.QueryTobinTaxResponse{TobinTax: tobinTax}, nil
@@ -100,7 +100,7 @@ func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesR
 		})
 		return false, nil
 	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing oracle tobin taxes: %v", err)
 	}
 
 	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
@@ -113,7 +113,7 @@ func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest
 		actives = append(actives, denom)
 		return false, nil
 	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing active oracle denoms: %v", err)
 	}
 
 	return &types.QueryActivesResponse{Actives: actives}, nil
@@ -126,7 +126,7 @@ func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTarget
 		voteTargets = append(voteTargets, denom)
 		return false, nil
 	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing oracle vote targets: %v", err)
 	}
 
 	return &types.QueryVoteTargetsResponse{VoteTargets: voteTargets}, nil
@@ -140,12 +140,12 @@ func (q queryServer) FeederDelegation(ctx context.Context, req *types.QueryFeede
 
 	valAddr, err := sdk.ValAddressFromBech32(req.ValidatorAddr)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
 
 	feederAddr, err := q.k.GetFeederDelegation(ctx, valAddr)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting feeder delegation for validator %s: %v", valAddr, err)
 	}
 	return &types.QueryFeederDelegationResponse{FeederAddr: feederAddr.String()}, nil
 }
@@ -158,11 +158,11 @@ func (q queryServer) MissCount(ctx context.Context, req *types.QueryMissCountReq
 
 	valAddr, err := sdk.ValAddressFromBech32(req.ValidatorAddr)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
 	missCount, err := q.k.MissCount.Get(ctx, valAddr)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting miss count for validator %s: %v", valAddr, err)
 	}
 
 	return &types.QueryMissCountResponse{MissCount: missCount}, nil
@@ -176,14 +176,14 @@ func (q queryServer) Prevote(ctx context.Context, req *types.QueryPrevoteRequest
 
 	valAddr, err := sdk.ValAddressFromBech32(req.ValidatorAddr)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
 	prevote, err := q.k.Prevote.Get(ctx, valAddr)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, valAddr.String())
+			return nil, status.Errorf(codes.NotFound, "prevote not found for validator %s", valAddr)
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting prevote for validator %s: %v", valAddr, err)
 	}
 
 	return &types.QueryPrevoteResponse{Prevote: prevote}, nil
@@ -196,7 +196,7 @@ func (q queryServer) Prevotes(ctx context.Context, req *types.QueryPrevotesReque
 		prevotes = append(prevotes, prevote)
 		return false, nil
 	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing oracle prevotes: %v", err)
 	}
 
 	return &types.QueryPrevotesResponse{Prevotes: prevotes}, nil
@@ -210,14 +210,14 @@ func (q queryServer) Vote(ctx context.Context, req *types.QueryVoteRequest) (*ty
 
 	valAddr, err := sdk.ValAddressFromBech32(req.ValidatorAddr)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
 	vote, err := q.k.Vote.Get(ctx, valAddr)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, valAddr.String())
+			return nil, status.Errorf(codes.NotFound, "vote not found for validator %s", valAddr)
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting vote for validator %s: %v", valAddr, err)
 	}
 
 	return &types.QueryVoteResponse{Vote: vote}, nil
@@ -230,7 +230,7 @@ func (q queryServer) Votes(ctx context.Context, req *types.QueryVotesRequest) (*
 		votes = append(votes, vote)
 		return false, nil
 	}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing oracle votes: %v", err)
 	}
 
 	return &types.QueryVotesResponse{Votes: votes}, nil

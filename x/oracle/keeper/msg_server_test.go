@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -30,7 +30,7 @@ func (s *KeeperTestSuite) TestPrevote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress) *types.MsgPrevote {
 				hash := types.GetVoteHash("salt", "1.0"+core.MicroUSDDenom, validator)
@@ -61,7 +61,7 @@ func (s *KeeperTestSuite) TestPrevote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress) *types.MsgPrevote {
 				return &types.MsgPrevote{
@@ -83,7 +83,7 @@ func (s *KeeperTestSuite) TestPrevote() {
 					Validator: "invalid",
 				}
 			},
-			errText: "decoding bech32 failed",
+			expectErr: errortypes.ErrInvalidAddress,
 		},
 		{
 			name:  "rejects invalid feeder address",
@@ -96,7 +96,7 @@ func (s *KeeperTestSuite) TestPrevote() {
 					Validator: validator.String(),
 				}
 			},
-			errText: "decoding bech32 failed",
+			expectErr: errortypes.ErrInvalidAddress,
 		},
 	}
 
@@ -110,7 +110,7 @@ func (s *KeeperTestSuite) TestPrevote() {
 			if tc.expectErr != nil || tc.errText != "" {
 				s.Require().Error(err)
 				if tc.expectErr != nil {
-					s.Require().True(errorsmod.IsOf(err, tc.expectErr))
+					s.Require().True(sdkerrors.IsOf(err, tc.expectErr))
 				}
 				if tc.errText != "" {
 					s.Require().ErrorContains(err, tc.errText)
@@ -164,7 +164,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, salt, rates string) *types.MsgVote {
 				return &types.MsgVote{
@@ -182,7 +182,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, salt, _ string) *types.MsgVote {
 				return &types.MsgVote{
@@ -205,7 +205,7 @@ func (s *KeeperTestSuite) TestVote() {
 					Validator:     "invalid",
 				}
 			},
-			errText: "decoding bech32 failed",
+			expectErr: errortypes.ErrInvalidAddress,
 		},
 		{
 			name:  "rejects invalid feeder address",
@@ -218,7 +218,7 @@ func (s *KeeperTestSuite) TestVote() {
 					Validator:     validator.String(),
 				}
 			},
-			errText: "decoding bech32 failed",
+			expectErr: errortypes.ErrInvalidAddress,
 		},
 		{
 			name: "rejects empty salt",
@@ -227,7 +227,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, _, rates string) *types.MsgVote {
 				return &types.MsgVote{
@@ -246,7 +246,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, _, rates string) *types.MsgVote {
 				return &types.MsgVote{
@@ -276,7 +276,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, salt, rates string) *types.MsgVote {
 				return &types.MsgVote{
@@ -300,7 +300,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, salt, rates string) *types.MsgVote {
 				return &types.MsgVote{
@@ -310,7 +310,7 @@ func (s *KeeperTestSuite) TestVote() {
 					Validator:     validator.String(),
 				}
 			},
-			errText: "not found",
+			expectErr: types.ErrNoPrevote,
 		},
 		{
 			name: "rejects unknown denom",
@@ -329,7 +329,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, salt, _ string) *types.MsgVote {
 				return &types.MsgVote{
@@ -359,7 +359,7 @@ func (s *KeeperTestSuite) TestVote() {
 					OperatorAddress: validator.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: func(feeder sdk.AccAddress, validator sdk.ValAddress, salt, rates string) *types.MsgVote {
 				return &types.MsgVote{
@@ -385,7 +385,7 @@ func (s *KeeperTestSuite) TestVote() {
 			if tc.expectErr != nil || tc.errText != "" {
 				s.Require().Error(err)
 				if tc.expectErr != nil {
-					s.Require().True(errorsmod.IsOf(err, tc.expectErr), err.Error())
+					s.Require().True(sdkerrors.IsOf(err, tc.expectErr), err.Error())
 				}
 				if tc.errText != "" {
 					s.Require().ErrorContains(err, tc.errText)
@@ -432,7 +432,7 @@ func (s *KeeperTestSuite) TestDelegateFeedConsent() {
 					OperatorAddress: valAddr1.String(),
 					Status:          stakingtypes.Bonded,
 					Tokens:          math.NewInt(10),
-				})
+				}, nil)
 			},
 			msg: &types.MsgDelegateFeedConsent{
 				Validator: valAddr1.String(),
@@ -442,7 +442,7 @@ func (s *KeeperTestSuite) TestDelegateFeedConsent() {
 		{
 			name: "returns error when validator missing",
 			setup: func() {
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
 			msg: &types.MsgDelegateFeedConsent{
 				Validator: valAddr1.String(),
@@ -457,7 +457,7 @@ func (s *KeeperTestSuite) TestDelegateFeedConsent() {
 				Validator: "invalid",
 				Feeder:    accAddr1.String(),
 			},
-			errText: "decoding bech32 failed",
+			expectErr: errortypes.ErrInvalidAddress,
 		},
 		{
 			name:  "rejects invalid delegate address",
@@ -466,7 +466,7 @@ func (s *KeeperTestSuite) TestDelegateFeedConsent() {
 				Validator: valAddr1.String(),
 				Feeder:    "invalid",
 			},
-			errText: "decoding bech32 failed",
+			expectErr: errortypes.ErrInvalidAddress,
 		},
 	}
 
@@ -478,7 +478,7 @@ func (s *KeeperTestSuite) TestDelegateFeedConsent() {
 			if tc.expectErr != nil || tc.errText != "" {
 				s.Require().Error(err)
 				if tc.expectErr != nil {
-					s.Require().True(errorsmod.IsOf(err, tc.expectErr))
+					s.Require().True(sdkerrors.IsOf(err, tc.expectErr))
 				}
 				if tc.errText != "" {
 					s.Require().ErrorContains(err, tc.errText)
@@ -551,7 +551,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 			if tc.expectErr != nil || tc.errText != "" {
 				s.Require().Error(err)
 				if tc.expectErr != nil {
-					s.Require().True(errorsmod.IsOf(err, tc.expectErr))
+					s.Require().True(sdkerrors.IsOf(err, tc.expectErr))
 				}
 				if tc.errText != "" {
 					s.Require().ErrorContains(err, tc.errText)

@@ -383,7 +383,7 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 		{
 			name:      "unknown denom",
 			setup:     func() {},
-			denom:     core.MicroUSDDenom,
+			denom:     "ufoo",
 			expected:  math.LegacyZeroDec(),
 			expectErr: true,
 		},
@@ -396,6 +396,7 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 			tobinTax, err := s.keeper.GetTobinTax(s.ctx, tc.denom)
 			if tc.expectErr {
 				s.Require().Error(err)
+				s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
 			} else {
 				s.Require().NoError(err)
 			}

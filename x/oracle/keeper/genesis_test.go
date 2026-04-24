@@ -89,7 +89,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return gs
 			},
-			expectErr: "invalid address",
+			expectErr: "parsing feeder delegation validator address",
 		},
 		{
 			name: "invalid feeder address in feeder delegation",
@@ -100,7 +100,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return gs
 			},
-			expectErr: "invalid address",
+			expectErr: "parsing feeder delegation feeder address",
 		},
 		{
 			name: "invalid validator address in miss count",
@@ -111,7 +111,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return gs
 			},
-			expectErr: "invalid address",
+			expectErr: "parsing miss count validator address",
 		},
 		{
 			name: "invalid voter address in prevote",
@@ -122,7 +122,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return gs
 			},
-			expectErr: "invalid address",
+			expectErr: "parsing prevote voter address",
 		},
 		{
 			name: "invalid voter address in vote",
@@ -138,7 +138,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return gs
 			},
-			expectErr: "invalid address",
+			expectErr: "parsing vote voter address",
 		},
 		{
 			name:    "nil module account returns error",
