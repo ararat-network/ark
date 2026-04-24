@@ -30,7 +30,7 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
 	}
 	return &types.QueryParamsResponse{Params: params}, nil
 }
@@ -39,7 +39,7 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 func (q queryServer) TaxRate(ctx context.Context, req *types.QueryTaxRateRequest) (*types.QueryTaxRateResponse, error) {
 	taxRate, err := q.k.TaxRate.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting treasury tax rate: %v", err)
 	}
 	return &types.QueryTaxRateResponse{TaxRate: taxRate}, nil
 }
@@ -51,7 +51,7 @@ func (q queryServer) TaxCap(ctx context.Context, req *types.QueryTaxCapRequest) 
 	}
 
 	if err := sdk.ValidateDenom(req.Denom); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid denom")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
 	taxCap, err := q.k.TaxCaps.Get(ctx, req.Denom)
@@ -59,7 +59,7 @@ func (q queryServer) TaxCap(ctx context.Context, req *types.QueryTaxCapRequest) 
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Errorf(codes.NotFound, "tax cap not found for denom %s", req.Denom)
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting tax cap for denom %s: %v", req.Denom, err)
 	}
 	return &types.QueryTaxCapResponse{TaxCap: taxCap}, nil
 }
@@ -75,7 +75,7 @@ func (q queryServer) TaxCaps(ctx context.Context, req *types.QueryTaxCapsRequest
 		return false, nil
 	})
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "listing treasury tax caps: %v", err)
 	}
 
 	return &types.QueryTaxCapsResponse{TaxCaps: taxCaps}, nil
@@ -85,7 +85,7 @@ func (q queryServer) TaxCaps(ctx context.Context, req *types.QueryTaxCapsRequest
 func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWeightRequest) (*types.QueryRewardWeightResponse, error) {
 	rewardWeight, err := q.k.RewardWeight.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting treasury reward weight: %v", err)
 	}
 	return &types.QueryRewardWeightResponse{RewardWeight: rewardWeight}, nil
 }
@@ -94,7 +94,7 @@ func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWei
 func (q queryServer) SeigniorageProceeds(ctx context.Context, req *types.QuerySeigniorageProceedsRequest) (*types.QuerySeigniorageProceedsResponse, error) {
 	epochSeiniorage, err := q.k.ComputeEpochSeigniorage(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "computing treasury seigniorage proceeds: %v", err)
 	}
 	return &types.QuerySeigniorageProceedsResponse{SeigniorageProceeds: epochSeiniorage}, nil
 }
@@ -103,7 +103,7 @@ func (q queryServer) SeigniorageProceeds(ctx context.Context, req *types.QuerySe
 func (q queryServer) TaxProceeds(ctx context.Context, req *types.QueryTaxProceedsRequest) (*types.QueryTaxProceedsResponse, error) {
 	epochTaxProceeds, err := q.k.EpochTaxProceeds.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting treasury tax proceeds: %v", err)
 	}
 	return &types.QueryTaxProceedsResponse{TaxProceeds: epochTaxProceeds.TaxProceeds}, nil
 }
@@ -111,10 +111,19 @@ func (q queryServer) TaxProceeds(ctx context.Context, req *types.QueryTaxProceed
 // Indicators returns year and month rolling averages of tax rewards per staked Ark.
 // The query blends finalised epoch indicators with the current in-progress epoch.
 func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsRequest) (*types.QueryIndicatorsResponse, error) {
-	totalStakedArk := q.k.stakingKeeper.TotalBondedTokens(ctx)
+	totalStakedArk, err := q.k.stakingKeeper.TotalValidatorPower(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting total staked ark: %v", err)
+	} else if totalStakedArk.IsZero() {
+		return &types.QueryIndicatorsResponse{
+			TRAYear:  math.LegacyZeroDec(),
+			TRAMonth: math.LegacyZeroDec(),
+		}, nil
+	}
+
 	epochTaxProceeds, err := q.k.EpochTaxProceeds.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "getting treasury tax proceeds: %v", err)
 	}
 	taxProceeds := sdk.NewDecCoinsFromCoins(epochTaxProceeds.TaxProceeds...)
 	taxRewards := q.k.alignCoins(ctx, taxProceeds, core.MicroSDRDenom)
@@ -122,31 +131,24 @@ func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsR
 	epoch := q.k.GetEpoch(ctx)
 	var res types.QueryIndicatorsResponse
 	if epoch == 0 {
-		if totalStakedArk.IsZero() {
-			res = types.QueryIndicatorsResponse{
-				TRAYear:  math.LegacyZeroDec(),
-				TRAMonth: math.LegacyZeroDec(),
-			}
-		} else {
-			res = types.QueryIndicatorsResponse{
-				TRAYear:  taxRewards.QuoInt(totalStakedArk),
-				TRAMonth: taxRewards.QuoInt(totalStakedArk),
-			}
+		res = types.QueryIndicatorsResponse{
+			TRAYear:  taxRewards.QuoInt(totalStakedArk),
+			TRAMonth: taxRewards.QuoInt(totalStakedArk),
 		}
 	} else {
 		params, err := q.k.Params.Get(ctx)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
 		}
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		previousEpochCtx := sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() - int64(core.BlocksPerWeek))
 		traYear, err := q.k.rollingAverageIndicator(previousEpochCtx, params.WindowLong-1)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Errorf(codes.Internal, "computing yearly treasury indicator average: %v", err)
 		}
 		traMonth, err := q.k.rollingAverageIndicator(previousEpochCtx, params.WindowShort-1)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Errorf(codes.Internal, "computing monthly treasury indicator average: %v", err)
 		}
 
 		computedEpochForYear := int64(math.Min(float64(params.WindowLong-1), float64(epoch)))

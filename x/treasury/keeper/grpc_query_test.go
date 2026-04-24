@@ -223,7 +223,7 @@ func (s *KeeperTestSuite) TestQueryIndicators() {
 				s.Require().NoError(s.keeper.EpochStates.Set(s.ctx, epochState.Epoch, epochState))
 			}
 
-			s.stakingKeeper.EXPECT().TotalBondedTokens(gomock.Any()).Return(tc.totalStaked)
+				s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(tc.totalStaked, nil)
 
 			qs := keeper.NewQueryServerImpl(s.keeper)
 			res, err := qs.Indicators(s.ctx, &types.QueryIndicatorsRequest{})

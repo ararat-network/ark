@@ -101,8 +101,8 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 		s.Run(tc.name, func() {
 			s.setBlockHeight(0)
 
-			s.stakingKeeper.EXPECT().TotalBondedTokens(gomock.Any()).
-				Return(tc.totalBonded)
+			s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).
+				Return(tc.totalBonded, nil)
 
 			s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
 				TaxProceeds: tc.taxProceeds,

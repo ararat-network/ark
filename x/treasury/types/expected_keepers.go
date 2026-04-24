@@ -32,7 +32,7 @@ type MarketKeeper interface {
 
 // StakingKeeper expected keeper for staking module
 type StakingKeeper interface {
-	TotalBondedTokens(context.Context) math.Int // total bonded tokens within the validator set
+	TotalValidatorPower(context.Context) (math.Int, error) // total bonded tokens within the validator set
 }
 
 // DistributionKeeper expected keeper for distribution module

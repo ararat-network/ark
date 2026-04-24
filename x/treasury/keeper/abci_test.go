@@ -28,7 +28,7 @@ func (s *KeeperTestSuite) TestEndBlocker_DuringProbation() {
 	s.setBlockHeight(int64(core.BlocksPerWeek) - 1)
 
 	// UpdateIndicators mocks
-	s.stakingKeeper.EXPECT().TotalBondedTokens(gomock.Any()).Return(math.NewInt(1000))
+	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000))
 	// No seigniorage (supply unchanged)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
@@ -80,7 +80,7 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 
 	// --- Mocks for the full EndBlocker cycle ---
 	expectedTaxCap := math.NewInt(2_000_000)
-	s.stakingKeeper.EXPECT().TotalBondedTokens(gomock.Any()).Return(math.NewInt(1000))
+	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000))
 	// GetSupply called by UpdateIndicators, SettleSeigniorage, and RecordEpochInitialIssuance
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, denom string) sdk.Coin {
@@ -167,7 +167,7 @@ func (s *KeeperTestSuite) TestEndBlocker_SparseEpochData() {
 	s.setBlockHeight(int64(2*core.BlocksPerWeek) - 1)
 
 	// UpdateIndicators mocks (these succeed — epoch 1 gets stored)
-	s.stakingKeeper.EXPECT().TotalBondedTokens(gomock.Any()).Return(math.NewInt(1000))
+	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
 	s.marketKeeper.EXPECT().
@@ -200,7 +200,7 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	// Mocks that apply across all epochs
-	s.stakingKeeper.EXPECT().TotalBondedTokens(gomock.Any()).Return(math.NewInt(1000)).AnyTimes()
+	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000)).AnyTimes()
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
 		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
 	s.marketKeeper.EXPECT().

@@ -55,7 +55,7 @@ func (q Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byte, err
 	var query CosmosQuery
 	err := json.Unmarshal(data, &query)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrJSONUnmarshal, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrJSONUnmarshal, "unmarshalling treasury custom query: %v", err)
 	}
 
 	var bz []byte
@@ -80,11 +80,11 @@ func (q Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byte, err
 			return nil, fmt.Errorf("marshalling response: %w", err)
 		}
 	default:
-		return nil, errortypes.ErrInvalidRequest
+		return nil, sdkerrors.Wrap(errortypes.ErrInvalidRequest, "unknown treasury query variant")
 	}
 
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrJSONMarshal, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrJSONMarshal, "marshalling treasury custom query response: %v", err)
 	}
 
 	return bz, nil

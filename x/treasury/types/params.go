@@ -63,7 +63,7 @@ func (p Params) Validate() error {
 	}
 
 	if p.TaxPolicy.ChangeRateMax.IsNegative() {
-		return fmt.Errorf("treasury parameter TaxPolicy.ChangeRateMax must be positive: %s", p.TaxPolicy.ChangeRateMax)
+		return fmt.Errorf("treasury parameter TaxPolicy.ChangeRateMax must be zero or positive: %s", p.TaxPolicy.ChangeRateMax)
 	}
 
 	if p.RewardPolicy.RateMax.LT(p.RewardPolicy.RateMin) {
@@ -72,23 +72,23 @@ func (p Params) Validate() error {
 	}
 
 	if p.RewardPolicy.RateMin.IsNegative() {
-		return fmt.Errorf("treasury parameter RewardPolicy.RateMin must be positive: %s", p.RewardPolicy.RateMin)
+		return fmt.Errorf("treasury parameter RewardPolicy.RateMin must be zero or positive: %s", p.RewardPolicy.RateMin)
 	}
 
 	if p.RewardPolicy.ChangeRateMax.IsNegative() {
-		return fmt.Errorf("treasury parameter RewardPolicy.ChangeRateMax must be positive: %s", p.RewardPolicy.ChangeRateMax)
+		return fmt.Errorf("treasury parameter RewardPolicy.ChangeRateMax must be zero or positive: %s", p.RewardPolicy.ChangeRateMax)
 	}
 
 	if p.SeigniorageBurdenTarget.IsNegative() {
-		return fmt.Errorf("treasury parameter SeigniorageBurdenTarget must be positive: %s", p.SeigniorageBurdenTarget)
+		return fmt.Errorf("treasury parameter SeigniorageBurdenTarget must be zero or positive: %s", p.SeigniorageBurdenTarget)
 	}
 
 	if p.MiningIncrement.IsNegative() {
-		return fmt.Errorf("treasury parameter MiningIncrement must be positive: %s", p.MiningIncrement)
+		return fmt.Errorf("treasury parameter MiningIncrement must be zero or positive: %s", p.MiningIncrement)
 	}
 
 	if p.WindowLong <= p.WindowShort {
-		return fmt.Errorf("treasury parameter WindowLong must be bigger than WindowShort: (%d, %d)", p.WindowLong, p.WindowShort)
+		return fmt.Errorf("treasury parameter WindowLong must be greater than WindowShort: (%d, %d)", p.WindowLong, p.WindowShort)
 	}
 
 	return nil

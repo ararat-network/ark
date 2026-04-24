@@ -24,7 +24,10 @@ func (k Keeper) GetEpoch(ctx context.Context) uint64 {
 // UpdateIndicators updates internal indicators
 func (k Keeper) UpdateIndicators(ctx context.Context) error {
 	epoch := k.GetEpoch(ctx)
-	totalStakedArk := k.stakingKeeper.TotalBondedTokens(ctx)
+	totalStakedArk, err := k.stakingKeeper.TotalValidatorPower(ctx)
+	if err != nil {
+		return fmt.Errorf("getting total staked ark: %w", err)
+	}
 	epochTaxProceeds, err := k.EpochTaxProceeds.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting tax proceeds: %w", err)
@@ -63,13 +66,21 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 	return nil
 }
 
-// alignCoins aligns the coins to the given denom through the market swap
+// alignCoins aligns the coins to the given denom through the market swap.
+// Failed conversions are logged and skipped so indicator updates remain best-effort.
 func (k Keeper) alignCoins(ctx context.Context, coins sdk.DecCoins, denom string) (alignedAmt math.LegacyDec) {
 	alignedAmt = math.LegacyZeroDec()
 	for _, coinReward := range coins {
 		if coinReward.Denom != denom {
 			swappedReward, err := k.marketKeeper.ComputeOracleRate(ctx, coinReward, denom)
 			if err != nil {
+				k.Logger(ctx).Warn(
+					"skipping treasury indicator coin alignment",
+					"source_denom", coinReward.Denom,
+					"source_amount", coinReward.Amount.String(),
+					"target_denom", denom,
+					"error", err,
+				)
 				continue
 			}
 			alignedAmt = alignedAmt.Add(swappedReward.Amount)

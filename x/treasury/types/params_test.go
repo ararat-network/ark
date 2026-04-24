@@ -56,7 +56,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.TaxPolicy.ChangeRateMax = math.LegacyNewDec(-1)
 			},
-			expectErr: "TaxPolicy.ChangeRateMax must be positive",
+				expectErr: "TaxPolicy.ChangeRateMax must be zero or positive",
 		},
 		{
 			name: "tax policy change rate max zero is valid",
@@ -92,7 +92,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.RewardPolicy.ChangeRateMax = math.LegacyNewDec(-1)
 			},
-			expectErr: "RewardPolicy.ChangeRateMax must be positive",
+				expectErr: "RewardPolicy.ChangeRateMax must be zero or positive",
 		},
 		{
 			name: "reward policy change rate max zero is valid",
@@ -106,7 +106,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.SeigniorageBurdenTarget = math.LegacyNewDec(-1)
 			},
-			expectErr: "SeigniorageBurdenTarget must be positive",
+				expectErr: "SeigniorageBurdenTarget must be zero or positive",
 		},
 		{
 			name: "seigniorage burden target zero is valid",
@@ -120,7 +120,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.MiningIncrement = math.LegacyNewDec(-1)
 			},
-			expectErr: "MiningIncrement must be positive",
+				expectErr: "MiningIncrement must be zero or positive",
 		},
 		{
 			name: "mining increment zero is valid",
@@ -135,7 +135,7 @@ func TestParamsValidate(t *testing.T) {
 				p.WindowLong = 4
 				p.WindowShort = 4
 			},
-			expectErr: "WindowLong must be bigger than WindowShort",
+				expectErr: "WindowLong must be greater than WindowShort",
 		},
 		{
 			name: "window long less than window short",
@@ -143,7 +143,7 @@ func TestParamsValidate(t *testing.T) {
 				p.WindowLong = 2
 				p.WindowShort = 4
 			},
-			expectErr: "WindowLong must be bigger than WindowShort",
+				expectErr: "WindowLong must be greater than WindowShort",
 		},
 		{
 			name: "window long one more than window short is valid",
