@@ -45,7 +45,7 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 	var sdkMsg CosmosMsg
 	err := json.Unmarshal(data, &sdkMsg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to parse market custom msg")
+		return nil, sdkerrors.Wrapf(errortypes.ErrJSONUnmarshal, "unmarshalling market custom message: %v", err)
 	}
 
 	if sdkMsg.Swap != nil {
@@ -71,7 +71,7 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 		return sdkMsg.SwapSend, nil
 	}
 
-	return nil, sdkerrors.Wrap(wasm.ErrInvalidMsg, "Unknown variant of Market")
+	return nil, sdkerrors.Wrap(wasm.ErrInvalidMsg, "unknown market message variant")
 }
 
 // Querier - staking query interface for wasm contract
@@ -104,7 +104,7 @@ func (querier Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byt
 	var params CosmosQuery
 	err := json.Unmarshal(data, &params)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrJSONUnmarshal, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrJSONUnmarshal, "unmarshalling market custom query: %v", err)
 	}
 
 	q := keeper.NewQueryServerImpl(querier.k)
@@ -119,7 +119,7 @@ func (querier Querier) QueryCustom(ctx sdk.Context, data json.RawMessage) ([]byt
 
 		bz, err := json.Marshal(SwapQueryResponse{Receive: wasm.EncodeSdkCoin(res.SwapCoin)})
 		if err != nil {
-			return nil, sdkerrors.Wrap(errortypes.ErrJSONMarshal, err.Error())
+			return nil, sdkerrors.Wrapf(errortypes.ErrJSONMarshal, "marshalling market custom query response: %v", err)
 		}
 
 		return bz, err

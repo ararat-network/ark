@@ -12,6 +12,7 @@ import (
 
 	core "noah/types"
 	"noah/x/market/types"
+	oracletypes "noah/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestMsgSwap() {
@@ -119,6 +120,53 @@ func (s *KeeperTestSuite) TestMsgSwapSend_Success() {
 	s.Require().Equal(expectedSwapCoin, res.SwapCoin)
 	s.Require().True(expectedSwapFee.Amount.Equal(res.SwapFee.Amount))
 	s.requireSwapEvent(fromAddr.String(), toAddr.String(), offerCoin, res.SwapCoin, res.SwapFee.String())
+}
+
+func (s *KeeperTestSuite) TestMsgSwap_ComputeSwapErrorIncludesContext() {
+	tests := []struct {
+		name string
+		msg  sdk.Msg
+	}{
+		{
+			name: "swap",
+			msg: &types.MsgSwap{
+				Trader:    sdk.AccAddress([]byte("trader_______________")).String(),
+				OfferCoin: sdk.NewCoin("uusd", math.NewInt(1000000)),
+				AskDenom:  "ufoo",
+			},
+		},
+		{
+			name: "swap send",
+			msg: &types.MsgSwapSend{
+				FromAddress: sdk.AccAddress([]byte("from________________")).String(),
+				ToAddress:   sdk.AccAddress([]byte("to__________________")).String(),
+				OfferCoin:   sdk.NewCoin("uusd", math.NewInt(1000000)),
+				AskDenom:    "ufoo",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").Return(math.LegacyOneDec(), nil)
+			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, core.MicroSDRDenom).
+				Return(math.LegacyMustNewDecFromStr("1.7"), nil).Times(2)
+			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ufoo").
+				Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
+
+			var err error
+			switch msg := tc.msg.(type) {
+			case *types.MsgSwap:
+				_, err = s.msgServer.Swap(s.ctx, msg)
+			case *types.MsgSwapSend:
+				_, err = s.msgServer.SwapSend(s.ctx, msg)
+			}
+
+			s.Require().Error(err)
+			s.Require().ErrorIs(err, types.ErrNoEffectivePrice)
+			s.Require().ErrorContains(err, "computing swap from 1000000uusd to ufoo")
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {

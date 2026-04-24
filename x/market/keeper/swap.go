@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -12,6 +13,7 @@ import (
 
 	core "noah/types"
 	"noah/x/market/types"
+	oracletypes "noah/x/oracle/types"
 )
 
 // ApplySwapToPool updates each pool with offerCoin and askCoin taken from swap operation,
@@ -153,12 +155,18 @@ func (k Keeper) ComputeOracleRate(ctx context.Context, offerCoin sdk.DecCoin, as
 
 	offerRate, err := k.oracleKeeper.GetExchangeRate(ctx, offerCoin.Denom)
 	if err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(types.ErrNoEffectivePrice, "%s: %v", offerCoin.Denom, err)
+		if errors.Is(err, oracletypes.ErrUnknownDenom) {
+			return sdk.DecCoin{}, sdkerrors.Wrapf(types.ErrNoEffectivePrice, "no oracle price for denom %s", offerCoin.Denom)
+		}
+		return sdk.DecCoin{}, fmt.Errorf("getting oracle exchange rate for denom %s: %w", offerCoin.Denom, err)
 	}
 
 	askRate, err := k.oracleKeeper.GetExchangeRate(ctx, askDenom)
 	if err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(types.ErrNoEffectivePrice, "%s: %v", askDenom, err)
+		if errors.Is(err, oracletypes.ErrUnknownDenom) {
+			return sdk.DecCoin{}, sdkerrors.Wrapf(types.ErrNoEffectivePrice, "no oracle price for denom %s", askDenom)
+		}
+		return sdk.DecCoin{}, fmt.Errorf("getting oracle exchange rate for denom %s: %w", askDenom, err)
 	}
 
 	retAmount := offerCoin.Amount.Mul(askRate).Quo(offerRate)

@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,7 +29,7 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, errors.Wrapf(errortypes.ErrInvalidAddress, "invalid trader address (%s)", err)
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid trader address (%s)", err)
 	}
 
 	if err := validateInputs(msg.OfferCoin, msg.AskDenom); err != nil {
@@ -39,7 +39,7 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 	// Compute exchange rates between the ask and offer
 	swapDecCoin, spread, err := m.k.ComputeSwap(ctx, msg.OfferCoin, msg.AskDenom)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to compute swap")
+		return nil, sdkerrors.Wrapf(err, "computing swap from %s to %s", msg.OfferCoin, msg.AskDenom)
 	}
 
 	outcome, err := buildSwapOutcome(swapDecCoin, spread)
@@ -61,11 +61,11 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types.MsgSwapSendResponse, error) {
 	fromAddr, err := sdk.AccAddressFromBech32(msg.FromAddress)
 	if err != nil {
-		return nil, errors.Wrapf(errortypes.ErrInvalidAddress, "invalid from address (%s)", err)
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid from address (%s)", err)
 	}
 	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
 	if err != nil {
-		return nil, errors.Wrapf(errortypes.ErrInvalidAddress, "invalid to address (%s)", err)
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid to address (%s)", err)
 	}
 
 	if err := validateInputs(msg.OfferCoin, msg.AskDenom); err != nil {
@@ -75,7 +75,7 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 	// Compute exchange rates between the ask and offer
 	swapDecCoin, spread, err := m.k.ComputeSwap(ctx, msg.OfferCoin, msg.AskDenom)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to compute swap")
+		return nil, sdkerrors.Wrapf(err, "computing swap from %s to %s", msg.OfferCoin, msg.AskDenom)
 	}
 
 	outcome, err := buildSwapOutcome(swapDecCoin, spread)
@@ -95,7 +95,7 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 // UpdateParams updates the params.
 func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	if m.k.authority != msg.Authority {
-		return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", m.k.authority, msg.Authority)
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", m.k.authority, msg.Authority)
 	}
 
 	if err := msg.Params.Validate(); err != nil {
@@ -112,11 +112,11 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 // validateInputs enforces the local swap input bounds before any pricing or state changes.
 func validateInputs(offerCoin sdk.Coin, askDenom string) error {
 	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
-		return errors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
+		return sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
 	}
 
 	if offerCoin.Denom == askDenom {
-		return errors.Wrap(types.ErrRecursiveSwap, askDenom)
+		return sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
 	}
 
 	return nil
@@ -161,25 +161,25 @@ func (m msgServer) settleSwap(
 	outcome *swapOutcome,
 ) error {
 	if err := m.k.ApplySwapToPool(ctx, offerCoin, outcome.swapDecCoin); err != nil {
-		return errors.Wrap(err, "failed to apply swap to pool")
+		return sdkerrors.Wrapf(err, "applying swap to pool for offer %s and receive %s", offerCoin, outcome.swapDecCoin)
 	}
 
 	offerCoins := sdk.NewCoins(offerCoin)
 	if err := m.k.bankKeeper.SendCoinsFromAccountToModule(ctx, trader, types.ModuleName, offerCoins); err != nil {
-		return errors.Wrap(err, "failed to send offer coins to module")
+		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
 	}
 
 	if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
-		return errors.Wrap(err, "failed to burn offer coins")
+		return sdkerrors.Wrapf(err, "burning offer coins %s from module", offerCoins)
 	}
 
 	swapCoins := sdk.NewCoins(outcome.swapCoin)
 	if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, swapCoins); err != nil {
-		return errors.Wrap(err, "failed to mint swap coins")
+		return sdkerrors.Wrapf(err, "minting swap coins %s in module", swapCoins)
 	}
 
 	if err := m.k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins); err != nil {
-		return errors.Wrap(err, "failed to send swap coins to receiver")
+		return sdkerrors.Wrapf(err, "sending swap coins %s from module to receiver %s", swapCoins, receiver)
 	}
 
 	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvents(sdk.Events{

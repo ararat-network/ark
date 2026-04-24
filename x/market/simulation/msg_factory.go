@@ -78,7 +78,7 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 	}
 }
 
-// MsgUpdateParamsFactory generates random MsgUpdateParams transactions with randomized market parameters.
+// MsgUpdateParamsFactory generates random MsgUpdateParams transactions with randomised market parameters.
 func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		r := testData.Rand()
@@ -97,16 +97,19 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 
 // randomDenomPairX picks a random offer/ask denom pair from available exchange rates.
 func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.SimulationReporter, k *keeper.Keeper) (offerDenom, askDenom string) {
-	whitelist := k.GetActiveDenoms(ctx)
+	activeDenoms, err := k.GetActiveDenoms(ctx)
+	if err != nil {
+		reporter.Skip(err.Error())
+	}
 
-	if len(whitelist) == 0 {
+	if len(activeDenoms) == 0 {
 		reporter.Skip("no available exchange rates")
 		return "", ""
 	}
 
-	idx := r.Intn(len(whitelist) * 2)
-	if idx < len(whitelist) {
-		return core.MicroArkDenom, whitelist[idx]
+	idx := r.Intn(len(activeDenoms) * 2)
+	if idx < len(activeDenoms) {
+		return core.MicroArkDenom, activeDenoms[idx]
 	}
-	return whitelist[idx-len(whitelist)], core.MicroArkDenom
+	return activeDenoms[idx-len(activeDenoms)], core.MicroArkDenom
 }

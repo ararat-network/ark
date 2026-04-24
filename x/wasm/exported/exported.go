@@ -5,12 +5,12 @@ import (
 
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var ErrInvalidMsg = errorsmod.Register("wasm", 8, "invalid Msg from the contract")
+var ErrInvalidMsg = sdkerrors.Register("wasm", 8, "invalid Msg from the contract")
 
 type WasmMsgParserInterface interface {
 	Parse(contractAddr sdk.AccAddress, msg wasmvmtypes.CosmosMsg) (sdk.Msg, error)
