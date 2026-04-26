@@ -3,7 +3,7 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`. The chain uses **cosmos-sdk v0.53.5** with depinject and
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/wasm/`. The chain uses **cosmos-sdk v0.53.5** with depinject and
 `cosmossdk.io/*` packages.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
@@ -30,6 +30,7 @@ Reference codebases:
 - **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Upstream Cosmos SDK reference**: `../cosmos-sdk/`
+- **Gaia reference**: `../gaia/`
 
 ## Project Structure
 
@@ -37,6 +38,7 @@ Reference codebases:
 x/market/       # DEX swap module (Ark ↔ stablecoins)
 x/oracle/       # Price oracle module (validator price voting)
 x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
+x/wasm/         # CosmWasm smart contract module (exported interfaces)
 proto/noah/     # Proto definitions (market, oracle, treasury)
 api/noah/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config
@@ -73,16 +75,8 @@ When porting from Classic, always modernize:
 
 - Before running any `git push` commands, verify that a remote is configured with `git remote -v`
 - Never assume a remote exists
-- When asked to commit all changes, split them into small commits grouped by one logical change at a time.
-- Prefer narrower commits over broad area commits. A good commit should usually represent one reviewable intent, such as:
-  renaming oracle tally helper types, moving tally logic, adding oracle ballot tests, changing treasury seigniorage
-  distribution, updating mocks for a keeper interface change, or regenerating proto output.
-- Do not group unrelated files just because they are in the same module. Separate keeper logic, type/helper refactors,
-  tests, proto definitions, generated files, mocks, and mechanical formatting when they are independently reviewable.
-- If a change requires generated files, commit the proto/source change and generated output together only when they are
-  part of the same logical change.
-- Before committing, inspect `git diff --cached --stat` and split the staged set again if the commit mixes multiple
-  reviewable intents.
+- When asked to commit all changes, split them into multiple reasonably sized commits grouped by logical area (e.g., by
+  module, by concern like proto vs keeper vs tests). Never lump unrelated changes into a single giant commit.
 - Every commit message must be detailed: a concise subject line, followed by a body explaining what changed and why.
 - Do NOT add Co-Authored-By lines to commit messages.
 
@@ -92,9 +86,6 @@ When porting from Classic, always modernize:
   diffs. Wait for approval before editing. This is especially important for proto files and keeper/module wiring.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
-- When discussing code, refer to functions, methods, types, constants, or interfaces by name first (for example,
-  `msgServer.handleSwapRequest` or `Keeper.ComputeSwap`). Include file paths when helpful, but avoid line numbers unless
-  the user explicitly asks for them or the symbol reference would be ambiguous.
 
 ## Protobuf Generation
 
@@ -137,6 +128,8 @@ string field_name = N [
 
 ## Build & Verification
 
+- Build the binary: `go build -o build/noahd ./cmd/noahd`
+- Always run `go build ./...` after making code changes to verify compilation
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`

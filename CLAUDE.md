@@ -3,7 +3,7 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`. The chain uses **cosmos-sdk v0.53.5** with depinject and
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/wasm/`. The chain uses **cosmos-sdk v0.53.5** with depinject and
 `cosmossdk.io/*` packages.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
@@ -30,6 +30,7 @@ Reference codebases:
 - **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Upstream Cosmos SDK reference**: `../cosmos-sdk/`
+- **Gaia reference**: `../gaia/`
 
 ## Project Structure
 
@@ -37,6 +38,7 @@ Reference codebases:
 x/market/       # DEX swap module (Ark ↔ stablecoins)
 x/oracle/       # Price oracle module (validator price voting)
 x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
+x/wasm/         # CosmWasm smart contract module (exported interfaces)
 proto/noah/     # Proto definitions (market, oracle, treasury)
 api/noah/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config
@@ -126,6 +128,7 @@ string field_name = N [
 
 ## Build & Verification
 
+- Build the binary: `go build -o build/noahd ./cmd/noahd`
 - Always run `go build ./...` after making code changes to verify compilation
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
