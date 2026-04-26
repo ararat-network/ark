@@ -82,7 +82,9 @@ func NewRootCmd() *cobra.Command {
 	initRootCmd(rootCmd, clientCtx.TxConfig, moduleBasicManager)
 
 	nodeCmds := nodeservice.NewNodeCommands()
-	autoCliOpts.ModuleOptions = make(map[string]*autocliv1.ModuleOptions)
+	if autoCliOpts.ModuleOptions == nil {
+		autoCliOpts.ModuleOptions = make(map[string]*autocliv1.ModuleOptions)
+	}
 	autoCliOpts.ModuleOptions[nodeCmds.Name()] = nodeCmds.AutoCLIOptions()
 
 	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
