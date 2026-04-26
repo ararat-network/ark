@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -9,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
 
 	// feeutils "noah/custom/auth/client/utils"
 	"noah/x/market/types"
@@ -39,13 +41,13 @@ func GetSwapCmd() *cobra.Command {
 		Short: "Atomically swap currencies at their target exchange rate",
 		Long: strings.TrimSpace(`
 Swap the offer-coin to the ask-denom currency at the oracle's effective exchange rate.
-
-$ noahd market swap "1000ukrw" "uusd"
-
-The to-address can be specified. A default to-address is trader.
-
-$ noahd market swap "1000ukrw" "uusd" "noah1..."
+If to-address is omitted, the swapped coins are sent back to the trader.
+If to-address is provided, the swapped coins are sent to that address.
 `),
+		Example: strings.TrimSpace(fmt.Sprintf(`
+%s tx market swap "1000ukrw" "uusd"
+%s tx market swap "1000ukrw" "uusd" "noah1..."
+`, version.AppName, version.AppName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
