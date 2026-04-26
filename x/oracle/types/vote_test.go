@@ -19,24 +19,24 @@ func TestParseExchangeRateTuples(t *testing.T) {
 	}{
 		{
 			name:  "single denom",
-			input: "123.0uluna",
+			input: "123.0uark",
 			expectedTuples: types.ExchangeRates{
-				{Denom: "uluna", Rate: math.LegacyNewDecWithPrec(1230, 1)},
+				{Denom: "uark", Rate: math.LegacyNewDecWithPrec(1230, 1)},
 			},
 		},
 		{
 			name:  "multiple denoms",
-			input: "123.0uluna,123.123ukrw",
+			input: "123.0uark,123.123ukrw",
 			expectedTuples: types.ExchangeRates{
-				{Denom: "uluna", Rate: math.LegacyNewDecWithPrec(1230, 1)},
+				{Denom: "uark", Rate: math.LegacyNewDecWithPrec(1230, 1)},
 				{Denom: "ukrw", Rate: math.LegacyMustNewDecFromStr("123.123")},
 			},
 		},
 		{
 			name:  "abstain vote (zero rate)",
-			input: "0.0uluna,123.1ukrw",
+			input: "0.0uark,123.1ukrw",
 			expectedTuples: types.ExchangeRates{
-				{Denom: "uluna", Rate: math.LegacyZeroDec()},
+				{Denom: "uark", Rate: math.LegacyZeroDec()},
 				{Denom: "ukrw", Rate: math.LegacyMustNewDecFromStr("123.1")},
 			},
 		},
@@ -52,7 +52,7 @@ func TestParseExchangeRateTuples(t *testing.T) {
 		},
 		{
 			name:      "duplicate denom",
-			input:     "100.0uluna,123.123ukrw,121233.123ukrw",
+			input:     "100.0uark,123.123ukrw,121233.123ukrw",
 			expectErr: "duplicated denom",
 		},
 		{
@@ -62,7 +62,7 @@ func TestParseExchangeRateTuples(t *testing.T) {
 		},
 		{
 			name:      "valid then missing denom",
-			input:     "123.0uluna,123.1",
+			input:     "123.0uark,123.1",
 			expectErr: "invalid decimal coin",
 		},
 	}

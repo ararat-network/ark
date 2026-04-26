@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -13,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/version"
 
 	"noah/x/oracle/types"
 )
@@ -28,77 +30,30 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	oracleTxCmd.AddCommand(
-		GetCmdDelegateFeederPermission(),
-		GetCmdAggregateExchangeRatePrevote(),
-		GetCmdAggregateExchangeRateVote(),
+		GetCmdPrevote(),
+		GetCmdVote(),
 	)
 
 	return oracleTxCmd
 }
 
-// GetCmdDelegateFeederPermission will create a feeder permission delegation tx and sign it with the given key.
-func GetCmdDelegateFeederPermission() *cobra.Command {
+// GetCmdPrevote will create a Prevote tx and sign it with the given key.
+func GetCmdPrevote() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set-feeder [feeder]",
-		Args:  cobra.ExactArgs(1),
-		Short: "Delegate the permission to vote for the oracle to an address",
-		Long: strings.TrimSpace(`
-Delegate the permission to submit exchange rate votes for the oracle to an address.
-
-Delegation can keep your validator operator key offline and use a separate replaceable key online.
-
-$ noahd tx oracle set-feeder noah1...
-
-where "noah1..." is the address you want to delegate your voting rights to.
-`),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			// Get from address
-			voter := clientCtx.GetFromAddress()
-
-			// The address the right is being delegated from
-			validator := sdk.ValAddress(voter)
-
-			feederStr := args[0]
-			feeder, err := sdk.AccAddressFromBech32(feederStr)
-			if err != nil {
-				return sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", feederStr, err)
-			}
-
-			msgs := []sdk.Msg{types.NewMsgDelegateFeedConsent(validator, feeder)}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msgs...)
-		},
-	}
-
-	flags.AddTxFlagsToCmd(cmd)
-
-	return cmd
-}
-
-// GetCmdAggregateExchangeRatePrevote will create a aggregateExchangeRatePrevote tx and sign it with the given key.
-func GetCmdAggregateExchangeRatePrevote() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "aggregate-prevote [salt] [exchange-rates] [validator]",
+		Use:   "prevote [salt] [exchange-rates] [validator]",
 		Args:  cobra.RangeArgs(2, 3),
-		Short: "Submit an oracle aggregate prevote for the exchange rates of Luna",
+		Short: "Submit an oracle prevote",
 		Long: strings.TrimSpace(`
-Submit an oracle aggregate prevote for the exchange rates of Luna denominated in multiple denoms.
-The purpose of aggregate prevote is to hide aggregate exchange rate vote with hash which is formatted 
-as hex string in SHA256("{salt}:{exchange_rate}{denom},...,{exchange_rate}{denom}:{voter}")
-
-# Aggregate Prevote
-$ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr 
-
-where "ukrw,uusd,usdr" is the denominating currencies, and "8888.0,1.243,0.99" is the exchange rates of micro Luna in micro denoms from the voter's point of view.
-
-If voting from a voting delegate, set "validator" to the address of the validator to vote on behalf of:
-$ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1...
+Submit a hashed oracle prevote for one or more exchange rates.
+The hash is SHA256("{salt}:{exchange_rate}{denom},...,{exchange_rate}{denom}:{validator}").
+Use the same salt and exchange rates when submitting the matching vote in the next vote period.
+Exchange rates use decimal coin format, such as 8888.0ukrw,1.243uusd,0.99usdr.
+When voting as a feeder, pass the validator operator address as the optional validator argument.
 `),
+		Example: strings.TrimSpace(fmt.Sprintf(`
+%s tx oracle prevote 1234 8888.0ukrw,1.243uusd,0.99usdr
+%s tx oracle prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1...
+`, version.AppName, version.AppName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -139,24 +94,22 @@ $ noahd tx oracle aggregate-prevote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvalop
 	return cmd
 }
 
-// GetCmdAggregateExchangeRateVote will create a aggregateExchangeRateVote tx and sign it with the given key.
-func GetCmdAggregateExchangeRateVote() *cobra.Command {
+// GetCmdVote will create a Vote tx and sign it with the given key.
+func GetCmdVote() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "aggregate-vote [salt] [exchange-rates] [validator]",
+		Use:   "vote [salt] [exchange-rates] [validator]",
 		Args:  cobra.RangeArgs(2, 3),
-		Short: "Submit an oracle aggregate vote for the exchange_rates of Luna",
+		Short: "Submit an oracle vote",
 		Long: strings.TrimSpace(`
-Submit a aggregate vote for the exchange_rates of Luna w.r.t the input denom. Companion to a prevote submitted in the previous vote period. 
-
-$ noahd tx oracle aggregate-vote 1234 8888.0ukrw,1.243uusd,0.99usdr 
-
-where "ukrw,uusd,usdr" is the denominating currencies, and "8888.0,1.243,0.99" is the exchange rates of micro Luna in micro denoms from the voter's point of view.
-
-"salt" should match the salt used to generate the SHA256 hex in the aggregated pre-vote. 
-
-If voting from a voting delegate, set "validator" to the address of the validator to vote on behalf of:
-$ noahd tx oracle aggregate-vote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1....
+Reveal an oracle vote that matches a prevote submitted in the previous vote period.
+The salt and exchange rates must match the values used to build the prevote hash.
+Exchange rates use decimal coin format, such as 8888.0ukrw,1.243uusd,0.99usdr.
+When voting as a feeder, pass the validator operator address as the optional validator argument.
 `),
+		Example: strings.TrimSpace(fmt.Sprintf(`
+%s tx oracle vote 1234 8888.0ukrw,1.243uusd,0.99usdr
+%s tx oracle vote 1234 8888.0ukrw,1.243uusd,0.99usdr noahvaloper1...
+`, version.AppName, version.AppName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
