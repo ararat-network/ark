@@ -56,7 +56,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.TaxPolicy.ChangeRateMax = math.LegacyNewDec(-1)
 			},
-				expectErr: "TaxPolicy.ChangeRateMax must be zero or positive",
+			expectErr: "TaxPolicy.ChangeRateMax must be zero or positive",
 		},
 		{
 			name: "tax policy change rate max zero is valid",
@@ -92,7 +92,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.RewardPolicy.ChangeRateMax = math.LegacyNewDec(-1)
 			},
-				expectErr: "RewardPolicy.ChangeRateMax must be zero or positive",
+			expectErr: "RewardPolicy.ChangeRateMax must be zero or positive",
 		},
 		{
 			name: "reward policy change rate max zero is valid",
@@ -106,7 +106,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.SeigniorageBurdenTarget = math.LegacyNewDec(-1)
 			},
-				expectErr: "SeigniorageBurdenTarget must be zero or positive",
+			expectErr: "SeigniorageBurdenTarget must be zero or positive",
 		},
 		{
 			name: "seigniorage burden target zero is valid",
@@ -116,11 +116,38 @@ func TestParamsValidate(t *testing.T) {
 		},
 		// MiningIncrement
 		{
+			name: "burn weight negative",
+			mutate: func(p *types.Params) {
+				p.BurnWeight = math.LegacyNewDec(-1)
+			},
+			expectErr: "BurnWeight must be between zero and 1 - RewardPolicy.RateMax",
+		},
+		{
+			name: "burn weight plus reward max greater than one",
+			mutate: func(p *types.Params) {
+				p.BurnWeight = math.LegacyNewDecWithPrec(60, 2)
+			},
+			expectErr: "BurnWeight must be between zero and 1 - RewardPolicy.RateMax",
+		},
+		{
+			name: "burn weight zero is valid",
+			mutate: func(p *types.Params) {
+				p.BurnWeight = math.LegacyZeroDec()
+			},
+		},
+		{
+			name: "burn weight at max allowed is valid",
+			mutate: func(p *types.Params) {
+				p.BurnWeight = math.LegacyOneDec().Sub(p.RewardPolicy.RateMax)
+			},
+		},
+		// MiningIncrement
+		{
 			name: "mining increment negative",
 			mutate: func(p *types.Params) {
 				p.MiningIncrement = math.LegacyNewDec(-1)
 			},
-				expectErr: "MiningIncrement must be zero or positive",
+			expectErr: "MiningIncrement must be zero or positive",
 		},
 		{
 			name: "mining increment zero is valid",
@@ -135,7 +162,7 @@ func TestParamsValidate(t *testing.T) {
 				p.WindowLong = 4
 				p.WindowShort = 4
 			},
-				expectErr: "WindowLong must be greater than WindowShort",
+			expectErr: "WindowLong must be greater than WindowShort",
 		},
 		{
 			name: "window long less than window short",
@@ -143,7 +170,7 @@ func TestParamsValidate(t *testing.T) {
 				p.WindowLong = 2
 				p.WindowShort = 4
 			},
-				expectErr: "WindowLong must be greater than WindowShort",
+			expectErr: "WindowLong must be greater than WindowShort",
 		},
 		{
 			name: "window long one more than window short is valid",

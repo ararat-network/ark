@@ -23,15 +23,21 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string mining_increment = 4 [
+  string burn_weight = 4 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  uint64 window_short = 5 [ (amino.dont_omitempty) = true ];
-  uint64 window_long = 6 [ (amino.dont_omitempty) = true ];
-  uint64 window_probation = 7 [ (amino.dont_omitempty) = true ];
+  string mining_increment = 5 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 window_short = 6 [ (amino.dont_omitempty) = true ];
+  uint64 window_long = 7 [ (amino.dont_omitempty) = true ];
+  uint64 window_probation = 8 [ (amino.dont_omitempty) = true ];
 }
 
 // PolicyConstraints - defines policy constraints can be applied in tax & reward

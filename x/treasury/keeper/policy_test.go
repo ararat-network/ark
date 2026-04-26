@@ -255,6 +255,7 @@ func (s *KeeperTestSuite) TestUpdateRewardPolicy() {
 		name           string
 		blockHeight    int64
 		initialWeight  *math.LegacyDec // nil = use default
+		mutateParams   func(*types.Params)
 		epochStates    map[uint64]types.EpochState
 		expectedWeight math.LegacyDec
 	}{
@@ -301,7 +302,11 @@ func (s *KeeperTestSuite) TestUpdateRewardPolicy() {
 		s.Run(tc.name, func() {
 			// Reset to defaults — sub-tests share state within a suite method
 			s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, types.DefaultRewardWeight))
-			s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
+			params := types.DefaultParams()
+			if tc.mutateParams != nil {
+				tc.mutateParams(&params)
+			}
+			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			var epochs []uint64
 			err := s.keeper.EpochStates.Walk(s.ctx, nil, func(epoch uint64, _ types.EpochState) (bool, error) {
 				epochs = append(epochs, epoch)

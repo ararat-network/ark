@@ -38,6 +38,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 						ChangeRateMax: math.LegacyNewDecWithPrec(5, 2),
 					},
 					SeigniorageBurdenTarget: math.LegacyNewDecWithPrec(70, 2),
+					BurnWeight:              math.LegacyNewDecWithPrec(20, 2),
 					MiningIncrement:         math.LegacyNewDecWithPrec(110, 2),
 					WindowShort:             5,
 					WindowLong:              53,

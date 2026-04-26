@@ -21,6 +21,7 @@ const (
 	taxPolicyKey               = "tax_policy"
 	rewardPolicyKey            = "reward_policy"
 	seigniorageBurdenTargetKey = "seigniorage_burden_target"
+	burnWeightKey              = "burn_weight"
 	miningIncrementKey         = "mining_increment"
 	windowShortKey             = "window_short"
 	windowLongKey              = "window_long"
@@ -50,6 +51,11 @@ func GenRewardPolicy(r *rand.Rand) types.PolicyConstraints {
 // GenSeigniorageBurdenTarget randomised SeigniorageBurdenTarget
 func GenSeigniorageBurdenTarget(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(int64(r.Intn(100)), 2)
+}
+
+// GenBurnWeight randomised BurnWeight
+func GenBurnWeight(r *rand.Rand) math.LegacyDec {
+	return math.LegacyNewDecWithPrec(int64(r.Intn(50)), 2)
 }
 
 // GenMiningIncrement randomised MiningIncrement
@@ -98,6 +104,14 @@ func RandomisedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { seigniorageBurdenTarget = GenSeigniorageBurdenTarget(r) },
 	)
 
+	var burnWeight math.LegacyDec
+	simState.AppParams.GetOrGenerate(
+		burnWeightKey,
+		&burnWeight,
+		simState.Rand,
+		func(r *rand.Rand) { burnWeight = GenBurnWeight(r) },
+	)
+
 	var miningIncrement math.LegacyDec
 	simState.AppParams.GetOrGenerate(
 		miningIncrementKey,
@@ -135,6 +149,7 @@ func RandomisedGenState(simState *module.SimulationState) {
 			TaxPolicy:               taxPolicy,
 			RewardPolicy:            rewardPolicy,
 			SeigniorageBurdenTarget: seigniorageBurdenTarget,
+			BurnWeight:              burnWeight,
 			MiningIncrement:         miningIncrement,
 			WindowShort:             windowShort,
 			WindowLong:              windowLong,
@@ -153,6 +168,6 @@ func RandomisedGenState(simState *module.SimulationState) {
 		panic(err)
 	}
 
-	fmt.Printf("Selected randomly generated market parameters:\n%s\n", bz)
+	fmt.Printf("Selected randomly generated treasury parameters:\n%s\n", bz)
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(treasuryGenesis)
 }

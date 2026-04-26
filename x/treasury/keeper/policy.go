@@ -119,6 +119,8 @@ func (k Keeper) UpdateRewardPolicy(ctx context.Context) (math.LegacyDec, error) 
 		newRewardWeight = oldWeight.Mul(sbTarget.Quo(sb))
 	}
 
+	// because params.Validate() ensures BurnWeight is less than 1 - RewardPolicy.RateMax we don't need a guard
+	// for rewardWeight here
 	newRewardWeight = params.RewardPolicy.Clamp(oldWeight, newRewardWeight)
 
 	// Set the new reward weight

@@ -21,6 +21,7 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 	tests := []struct {
 		name                  string
 		rewardWeight          math.LegacyDec
+		burnWeight            *math.LegacyDec
 		initialSupply         math.Int
 		currentSupply         math.Int
 		expectedMint          sdk.Coins
@@ -32,9 +33,9 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 			rewardWeight:          types.DefaultRewardWeight,
 			initialSupply:         math.NewInt(10000),
 			currentSupply:         math.NewInt(9000),
-			expectedMint:          coin(1000),
+			expectedMint:          coin(900),
 			expectedOracleReward:  coin(50),
-			expectedCommunityPool: coin(950),
+			expectedCommunityPool: coin(850),
 		},
 		{
 			name:          "zero seigniorage skips settlement",
@@ -45,6 +46,7 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 		{
 			name:                 "full reward weight sends all seigniorage to oracle",
 			rewardWeight:         math.LegacyOneDec(),
+			burnWeight:           func() *math.LegacyDec { w := math.LegacyZeroDec(); return &w }(),
 			initialSupply:        math.NewInt(10000),
 			currentSupply:        math.NewInt(9000),
 			expectedMint:         coin(1000),
@@ -55,8 +57,8 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 			rewardWeight:          math.LegacyZeroDec(),
 			initialSupply:         math.NewInt(10000),
 			currentSupply:         math.NewInt(9000),
-			expectedMint:          coin(1000),
-			expectedCommunityPool: coin(1000),
+			expectedMint:          coin(900),
+			expectedCommunityPool: coin(900),
 		},
 		{
 			name:                  "small seigniorage truncates oracle reward to zero",
@@ -71,6 +73,11 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, tc.rewardWeight))
+			params := types.DefaultParams()
+			if tc.burnWeight != nil {
+				params.BurnWeight = *tc.burnWeight
+			}
+			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
 				Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, tc.initialSupply)),
 			}))

@@ -31,6 +31,7 @@ var (
 		Cap:           sdk.NewCoin("unused", math.ZeroInt()), // UNUSED
 	}
 	DefaultSeigniorageBurdenTarget = math.LegacyNewDecWithPrec(67, 2)  // 67%
+	DefaultBurnWeight              = math.LegacyNewDecWithPrec(1, 1)   // 10%
 	DefaultMiningIncrement         = math.LegacyNewDecWithPrec(107, 2) // 1.07 mining increment; exponential growth
 )
 
@@ -40,6 +41,7 @@ func DefaultParams() Params {
 		TaxPolicy:               DefaultTaxPolicy,
 		RewardPolicy:            DefaultRewardPolicy,
 		SeigniorageBurdenTarget: DefaultSeigniorageBurdenTarget,
+		BurnWeight:              DefaultBurnWeight,
 		MiningIncrement:         DefaultMiningIncrement,
 		WindowShort:             DefaultWindowShort,
 		WindowLong:              DefaultWindowLong,
@@ -81,6 +83,10 @@ func (p Params) Validate() error {
 
 	if p.SeigniorageBurdenTarget.IsNegative() {
 		return fmt.Errorf("treasury parameter SeigniorageBurdenTarget must be zero or positive: %s", p.SeigniorageBurdenTarget)
+	}
+
+	if p.BurnWeight.Add(p.RewardPolicy.RateMax).GT(math.LegacyOneDec()) || p.BurnWeight.IsNegative() {
+		return fmt.Errorf("treasury parameter BurnWeight must be between zero and 1 - RewardPolicy.RateMax: %s", p.BurnWeight)
 	}
 
 	if p.MiningIncrement.IsNegative() {

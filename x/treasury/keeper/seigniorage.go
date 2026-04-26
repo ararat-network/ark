@@ -26,9 +26,14 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting reward weight: %w", err)
 	}
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting params: %w", err)
+	}
 
 	// Mint seigniorage
-	seigniorageCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, seigniorageArkAmt))
+	burnAmt := params.BurnWeight.MulInt(seigniorageArkAmt).TruncateInt()
+	seigniorageCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, seigniorageArkAmt.Sub(burnAmt)))
 	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, seigniorageCoins); err != nil {
 		return fmt.Errorf("minting seigniorage: %w", err)
 	}
@@ -48,11 +53,11 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 	}
 
 	// Send remaining amount to distribution module
-	remainAmt := seigniorageArkAmt.Sub(oracleRewardAmt)
+	remainAmt := seigniorageArkAmt.Sub(oracleRewardAmt).Sub(burnAmt)
 	if remainAmt.IsPositive() {
-		leftCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, remainAmt))
+		remainCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, remainAmt))
 		treasuryAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
-		if err := k.distrKeeper.FundCommunityPool(ctx, leftCoins, treasuryAddr); err != nil {
+		if err := k.distrKeeper.FundCommunityPool(ctx, remainCoins, treasuryAddr); err != nil {
 			return fmt.Errorf("funding community pool: %w", err)
 		}
 	}

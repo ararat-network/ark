@@ -60,6 +60,10 @@ func (gs GenesisState) Validate() error {
 		return fmt.Errorf("reward_weight must be less than WeightMax(%s) and greater than RateMin(%s)", gs.Params.RewardPolicy.RateMax, gs.Params.RewardPolicy.RateMin)
 	}
 
+	if gs.RewardWeight.Add(gs.Params.BurnWeight).GT(math.LegacyOneDec()) {
+		return fmt.Errorf("sum of reward_weight and BurnWeight(%s) cannot be greater than one", gs.Params.BurnWeight)
+	}
+
 	return gs.Params.Validate()
 }
 
