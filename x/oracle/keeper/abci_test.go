@@ -93,14 +93,14 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 					ValidatorAddressCodec().
 					Return(address.NewBech32Codec("cosmosvaloper")).
 					AnyTimes()
-				s.stakingKeeper.EXPECT().TotalValidatorPower(s.ctx).Return(math.NewInt(2_000_000))
+				s.stakingKeeper.EXPECT().TotalValidatorPower(s.ctx).Return(math.NewInt(2_000_000), nil)
 
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
 					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1_000_000))),
 				)
-				s.stakingKeeper.EXPECT().Validator(s.ctx, gomock.Any()).Return(validators[0]).AnyTimes()
+				s.stakingKeeper.EXPECT().Validator(s.ctx, gomock.Any()).Return(validators[0], nil).AnyTimes()
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(s.ctx, gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 				s.bankKeeper.EXPECT().
 					SendCoinsFromModuleToModule(s.ctx, types.ModuleName, "distribution", gomock.Any()).

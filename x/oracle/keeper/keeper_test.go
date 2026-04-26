@@ -297,7 +297,7 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 		{
 			name: "validator is own feeder",
 			setup: func() {
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{Status: stakingtypes.Bonded})
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{Status: stakingtypes.Bonded}, nil)
 			},
 			feeder:    sdk.AccAddress(valAddr1),
 			validator: valAddr1,
@@ -306,7 +306,7 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 			name: "delegated feeder — authorised",
 			setup: func() {
 				s.Require().NoError(s.keeper.FeederDelegation.Set(s.ctx, valAddr1, accAddr1))
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{Status: stakingtypes.Bonded})
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{Status: stakingtypes.Bonded}, nil)
 			},
 			feeder:    accAddr1,
 			validator: valAddr1,
@@ -330,7 +330,7 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 		{
 			name: "validator not bonded",
 			setup: func() {
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{Status: stakingtypes.Unbonded})
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(stakingtypes.Validator{Status: stakingtypes.Unbonded}, nil)
 			},
 			feeder:    sdk.AccAddress(valAddr1),
 			validator: valAddr1,
@@ -339,7 +339,7 @@ func (s *KeeperTestSuite) TestValidateFeeder() {
 		{
 			name: "validator not found",
 			setup: func() {
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
 			feeder:    sdk.AccAddress(valAddr1),
 			validator: valAddr1,

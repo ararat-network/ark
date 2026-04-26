@@ -118,7 +118,7 @@ func (s *KeeperTestSuite) TestUpdateExchangeRates() {
 			if bondedTokens.IsNil() {
 				bondedTokens = defaultBondedTokens
 			}
-			s.stakingKeeper.EXPECT().TotalValidatorPower(s.ctx).Return(bondedTokens)
+			s.stakingKeeper.EXPECT().TotalValidatorPower(s.ctx).Return(bondedTokens, nil)
 			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(math.NewInt(1_000_000))
 
 			validatorClaimMap := map[string]types.ValidatorScore{
@@ -439,7 +439,7 @@ func (s *KeeperTestSuite) TestPickReferenceDenom() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			s.stakingKeeper.EXPECT().TotalValidatorPower(s.ctx).Return(math.NewInt(20_000_000))
+			s.stakingKeeper.EXPECT().TotalValidatorPower(s.ctx).Return(math.NewInt(20_000_000), nil)
 			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(math.NewInt(1_000_000))
 
 			result, err := s.keeper.PickReferenceDenom(s.ctx, voteThreshold, tc.voteTargets, tc.voteMap)

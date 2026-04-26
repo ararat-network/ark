@@ -91,7 +91,7 @@ func (s *KeeperTestSuite) TestSlashAndResetMissCounts() {
 				validator.Jailed = tc.jailed
 				validator.Tokens = math.NewInt(1_000_000).MulRaw(10)
 
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
 
 				if tc.expectSlash {
 					consAddr, err := validator.GetConsAddr()
