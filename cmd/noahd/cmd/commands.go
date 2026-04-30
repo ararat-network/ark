@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"errors"
-	"io"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
+	cmtcli "github.com/cometbft/cometbft/libs/cli"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -46,58 +46,11 @@ func initCometBFTConfig() *cmtcfg.Config {
 // initAppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
 func initAppConfig() (string, interface{}) {
-	// The following code snippet is just for reference.
-
-	// CustomConfig defines an arbitrary custom config to extend app.toml.
-	// If you don't need it, you can remove it.
-	// If you wish to add fields that correspond to flags that aren't in the SDK server config,
-	// this custom config can as well help.
-	type CustomConfig struct {
-		CustomField string `mapstructure:"custom-field"`
-	}
-
-	type CustomAppConfig struct {
-		serverconfig.Config `mapstructure:",squash"`
-
-		Custom CustomConfig `mapstructure:"custom"`
-	}
-
-	// Optionally allow the chain developer to overwrite the SDK's default
-	// server config.
 	srvCfg := serverconfig.DefaultConfig()
-	// The SDK's default minimum gas price is set to "" (empty value) inside
-	// app.toml. If left empty by validators, the node will halt on startup.
-	// However, the chain developer can set a default app.toml value for their
-	// validators here.
-	//
-	// In summary:
-	// - if you leave srvCfg.MinGasPrices = "", all validators MUST tweak their
-	//   own app.toml config,
-	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their
-	//   own app.toml to override, or use this default value.
-	//
-	// In noahapp, we set the min gas prices to 0.
-	srvCfg.MinGasPrices = "0stake"
-	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
+	srvCfg.MinGasPrices = "0uark"
+	// TODO: look into other default configs I might want
 
-	// Now we set the custom config default values.
-	customAppConfig := CustomAppConfig{
-		Config: *srvCfg,
-		Custom: CustomConfig{
-			CustomField: "anything",
-		},
-	}
-
-	// The default SDK app template is defined in serverconfig.DefaultConfigTemplate.
-	// We append the custom config template to the default one.
-	// And we set the default config to the custom app template.
-	customAppTemplate := serverconfig.DefaultConfigTemplate + `
-[custom]
-# That field will be parsed by server.InterceptConfigsPreRunHandler and held by viper.
-# Do not forget to add quotes around the value if it is a string.
-custom-field = "{{ .Custom.CustomField }}"`
-
-	return customAppTemplate, customAppConfig
+	return serverconfig.DefaultConfigTemplate, srvCfg
 }
 
 func initRootCmd(
@@ -110,18 +63,15 @@ func initRootCmd(
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(basicManager, app.DefaultNodeHome),
+		cmtcli.NewCompletionCmd(rootCmd, true),
 		NewTestnetCmd(basicManager, banktypes.GenesisBalancesIterator{}),
 		debug.Cmd(),
 		confixcmd.ConfigCommand(),
 		pruning.Cmd(newApp, app.DefaultNodeHome),
 		snapshot.Cmd(newApp),
-		// NewBankSpeedTest(),
 	)
 
-	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
-		AddFlags: func(startCmd *cobra.Command) {
-		},
-	})
+	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
@@ -133,7 +83,9 @@ func initRootCmd(
 	)
 }
 
-// genesisCommand builds genesis-related `simd genesis` command. Users may provide application specific commands as a parameter
+func addModuleInitFlags(startCmd *cobra.Command) {}
+
+// genesisCommand builds genesis-related `noahd genesis` command. Users may provide application specific commands as a parameter
 func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
 	cmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
 
@@ -148,18 +100,19 @@ func queryCommand() *cobra.Command {
 		Use:                        "query",
 		Aliases:                    []string{"q"},
 		Short:                      "Querying subcommands",
-		DisableFlagParsing:         false,
+		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
 
 	cmd.AddCommand(
+		rpc.ValidatorCommand(),
 		rpc.WaitTxCmd(),
 		server.QueryBlockCmd(),
-		authcmd.QueryTxsByEventsCmd(),
 		server.QueryBlocksCmd(),
-		authcmd.QueryTxCmd(),
 		server.QueryBlockResultsCmd(),
+		authcmd.QueryTxsByEventsCmd(),
+		authcmd.QueryTxCmd(),
 	)
 
 	return cmd
@@ -169,7 +122,7 @@ func txCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
-		DisableFlagParsing:         false,
+		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
@@ -193,12 +146,11 @@ func txCommand() *cobra.Command {
 func newApp(
 	logger log.Logger,
 	db dbm.DB,
-	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
 	return app.NewNoahApp(
-		logger, db, traceStore, true,
+		logger, db, true,
 		appOpts,
 		baseappOptions...,
 	)
@@ -208,7 +160,6 @@ func newApp(
 func appExport(
 	logger log.Logger,
 	db dbm.DB,
-	traceStore io.Writer,
 	height int64,
 	forZeroHeight bool,
 	jailAllowedAddrs []string,
@@ -226,13 +177,13 @@ func appExport(
 
 	var noahApp *app.NoahApp
 	if height != -1 {
-		noahApp = app.NewNoahApp(logger, db, traceStore, false, appOpts)
+		noahApp = app.NewNoahApp(logger, db, false, appOpts)
 
 		if err := noahApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		noahApp = app.NewNoahApp(logger, db, traceStore, true, appOpts)
+		noahApp = app.NewNoahApp(logger, db, true, appOpts)
 	}
 
 	return noahApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)

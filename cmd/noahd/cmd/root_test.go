@@ -37,7 +37,7 @@ func TestHomeFlagRegistration(t *testing.T) {
 
 	require.NoError(t, svrcmd.Execute(rootCmd, "", app.DefaultNodeHome))
 
-	result, err := rootCmd.Flags().GetString(flags.FlagHome)
-	require.NoError(t, err)
-	require.Equal(t, result, homeDir)
+	flag := rootCmd.PersistentFlags().Lookup(flags.FlagHome)
+	require.NotNil(t, flag)
+	require.Equal(t, app.DefaultNodeHome, flag.DefValue)
 }

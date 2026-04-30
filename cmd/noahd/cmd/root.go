@@ -8,7 +8,7 @@ import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	"cosmossdk.io/client/v2/autocli"
 	"cosmossdk.io/depinject"
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
@@ -17,6 +17,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -49,15 +50,14 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	rootCmd := &cobra.Command{
-		Use:           "simd",
-		Short:         "simulation app",
-		SilenceErrors: true,
+		Use:   app.Name + "d",
+		Short: "Stargate Noah App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
-			clientCtx = clientCtx.WithCmdContext(cmd.Context()).WithViper("")
+			clientCtx = clientCtx.WithCmdContext(cmd.Context())
 			clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {
 				return err
@@ -68,6 +68,17 @@ func NewRootCmd() *cobra.Command {
 				return err
 			}
 
+			if !clientCtx.Offline {
+				txConfigOpts := tx.ConfigOptions{
+					EnabledSignModes:           append(tx.DefaultSignModes, signing.SignMode_SIGN_MODE_TEXTUAL),
+					TextualCoinMetadataQueryFn: authtxconfig.NewGRPCCoinMetadataQueryFn(clientCtx),
+				}
+				txConfig, err := tx.NewTxConfigWithOptions(clientCtx.Codec, txConfigOpts)
+				if err != nil {
+					return err
+				}
+				clientCtx = clientCtx.WithTxConfig(txConfig)
+			}
 			if err := client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
@@ -111,13 +122,10 @@ func ProvideClientContext(
 
 	clientCtx, _ = config.ReadFromClientConfig(clientCtx)
 
-	// textual is enabled by default, we need to re-create the tx config grpc instead of bank keeper.
-	txConfigOpts.TextualCoinMetadataQueryFn = authtxconfig.NewGRPCCoinMetadataQueryFn(clientCtx)
 	txConfig, err := tx.NewTxConfigWithOptions(clientCtx.Codec, txConfigOpts)
 	if err != nil {
 		panic(err)
 	}
-	clientCtx = clientCtx.WithTxConfig(txConfig)
 
-	return clientCtx
+	return clientCtx.WithTxConfig(txConfig)
 }
