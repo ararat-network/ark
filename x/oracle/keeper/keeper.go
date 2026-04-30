@@ -11,7 +11,7 @@ import (
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/store"
 	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"

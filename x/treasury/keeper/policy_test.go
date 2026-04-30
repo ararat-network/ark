@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	sdklog "cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -89,7 +89,7 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 			var logBuf bytes.Buffer
 			if tc.expectLog {
 				sdkCtx := sdk.UnwrapSDKContext(s.ctx)
-				s.ctx = sdkCtx.WithLogger(sdklog.NewLogger(&logBuf, sdklog.OutputJSONOption()))
+				s.ctx = sdkCtx.WithLogger(log.NewLogger(&logBuf, log.OutputJSONOption()))
 			}
 
 			var storedDenoms []string
