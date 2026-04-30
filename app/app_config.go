@@ -8,7 +8,6 @@ import (
 	bankmodulev1 "cosmossdk.io/api/cosmos/bank/module/v1"
 	consensusmodulev1 "cosmossdk.io/api/cosmos/consensus/module/v1"
 	distrmodulev1 "cosmossdk.io/api/cosmos/distribution/module/v1"
-	epochsmodulev1 "cosmossdk.io/api/cosmos/epochs/module/v1"
 	evidencemodulev1 "cosmossdk.io/api/cosmos/evidence/module/v1"
 	feegrantmodulev1 "cosmossdk.io/api/cosmos/feegrant/module/v1"
 	genutilmodulev1 "cosmossdk.io/api/cosmos/genutil/module/v1"
@@ -22,12 +21,6 @@ import (
 	vestingmodulev1 "cosmossdk.io/api/cosmos/vesting/module/v1"
 	"cosmossdk.io/core/appconfig"
 	"cosmossdk.io/depinject"
-	_ "cosmossdk.io/x/evidence" // import for side-effects
-	evidencetypes "cosmossdk.io/x/evidence/types"
-	"cosmossdk.io/x/feegrant"
-	_ "cosmossdk.io/x/feegrant/module" // import for side-effects
-	_ "cosmossdk.io/x/upgrade"         // import for side-effects
-	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -43,8 +36,10 @@ import (
 	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	_ "github.com/cosmos/cosmos-sdk/x/distribution" // import for side-effects
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	_ "github.com/cosmos/cosmos-sdk/x/epochs" // import for side-effects
-	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
+	_ "github.com/cosmos/cosmos-sdk/x/evidence" // import for side-effects
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	_ "github.com/cosmos/cosmos-sdk/x/feegrant/module" // import for side-effects
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -58,6 +53,18 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	_ "github.com/cosmos/cosmos-sdk/x/staking" // import for side-effects
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	_ "github.com/cosmos/cosmos-sdk/x/upgrade" // import for side-effects
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	marketmodulev1 "noah/api/noah/market/module/v1"
+	oraclemodulev1 "noah/api/noah/oracle/module/v1"
+	treasurymodulev1 "noah/api/noah/treasury/module/v1"
+	_ "noah/x/market/module"
+	markettypes "noah/x/market/types"
+	_ "noah/x/oracle/module"
+	oracletypes "noah/x/oracle/types"
+	_ "noah/x/treasury/module"
+	treasurytypes "noah/x/treasury/types"
 )
 
 var (
@@ -71,6 +78,9 @@ var (
 		{Account: govtypes.ModuleName, Permissions: []string{authtypes.Burner}},
 		{Account: protocolpooltypes.ModuleName},
 		{Account: protocolpooltypes.ProtocolPoolEscrowAccount},
+		{Account: markettypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
+		{Account: treasurytypes.ModuleName, Permissions: []string{authtypes.Minter}},
+		{Account: oracletypes.ModuleName},
 	}
 
 	// blocked account addresses
@@ -88,8 +98,8 @@ var (
 		{
 			Name: runtime.ModuleName,
 			Config: appconfig.WrapAny(&runtimev1alpha1.Module{
-				AppName: "NoahApp",
-				// NOTE: upgrade module is required to be prioritized
+				AppName: AppName,
+				// NOTE: upgrade module is required to be prioritised
 				PreBlockers: []string{
 					upgradetypes.ModuleName,
 					authtypes.ModuleName,
@@ -106,7 +116,6 @@ var (
 					evidencetypes.ModuleName,
 					stakingtypes.ModuleName,
 					authz.ModuleName,
-					epochstypes.ModuleName,
 				},
 				EndBlockers: []string{
 					banktypes.ModuleName,
@@ -114,6 +123,9 @@ var (
 					stakingtypes.ModuleName,
 					feegrant.ModuleName,
 					protocolpooltypes.ModuleName,
+					markettypes.ModuleName,
+					treasurytypes.ModuleName,
+					oracletypes.ModuleName,
 				},
 				OverrideStoreKeys: []*runtimev1alpha1.StoreKeyConfig{
 					{
@@ -125,7 +137,7 @@ var (
 					"tx",
 				},
 				// NOTE: The genutils module must occur after staking so that pools are
-				// properly initialized with tokens from genesis accounts.
+				// properly initialised with tokens from genesis accounts.
 				// NOTE: The genutils module must also occur after auth so that it can access the params from auth.
 				InitGenesis: []string{
 					authtypes.ModuleName,
@@ -141,8 +153,10 @@ var (
 					feegrant.ModuleName,
 					upgradetypes.ModuleName,
 					vestingtypes.ModuleName,
-					epochstypes.ModuleName,
 					protocolpooltypes.ModuleName,
+					markettypes.ModuleName,
+					treasurytypes.ModuleName,
+					oracletypes.ModuleName,
 				},
 				// When ExportGenesis is not specified, the export genesis module order
 				// is equal to the init genesis order
@@ -162,7 +176,9 @@ var (
 					feegrant.ModuleName,
 					upgradetypes.ModuleName,
 					vestingtypes.ModuleName,
-					epochstypes.ModuleName,
+					markettypes.ModuleName,
+					treasurytypes.ModuleName,
+					oracletypes.ModuleName,
 				},
 				// Uncomment if you want to set a custom migration order here.
 				// OrderMigrations: []string{},
@@ -175,7 +191,7 @@ var (
 				ModuleAccountPermissions: moduleAccPerms,
 				// By default modules authority is the governance module. This is configurable with the following:
 				// Authority: "group", // A custom module authority can be set using a module name
-				// Authority: "cosmos1cwwv22j5ca08ggdv9c2uky355k908694z577tv", // or a specific address
+				// Authority: "noah1cwwv22j5ca08ggdv9c2uky355k908694z577tv", // or a specific address
 				EnableUnorderedTransactions: true,
 			}),
 		},
@@ -245,12 +261,20 @@ var (
 			Config: appconfig.WrapAny(&consensusmodulev1.Module{}),
 		},
 		{
-			Name:   epochstypes.ModuleName,
-			Config: appconfig.WrapAny(&epochsmodulev1.Module{}),
-		},
-		{
 			Name:   protocolpooltypes.ModuleName,
 			Config: appconfig.WrapAny(&protocolpoolmodulev1.Module{}),
+		},
+		{
+			Name:   markettypes.ModuleName,
+			Config: appconfig.WrapAny(&marketmodulev1.Module{}),
+		},
+		{
+			Name:   treasurytypes.ModuleName,
+			Config: appconfig.WrapAny(&treasurymodulev1.Module{}),
+		},
+		{
+			Name:   oracletypes.ModuleName,
+			Config: appconfig.WrapAny(&oraclemodulev1.Module{}),
 		},
 	}
 

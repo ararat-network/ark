@@ -16,13 +16,7 @@ import (
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/depinject"
-	"cosmossdk.io/log"
-	"cosmossdk.io/x/evidence"
-	evidencetypes "cosmossdk.io/x/evidence/types"
-	"cosmossdk.io/x/feegrant"
-	feegrantmodule "cosmossdk.io/x/feegrant/module"
-	"cosmossdk.io/x/upgrade"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -44,6 +38,10 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/epochs"
 	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -56,6 +54,15 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	market "noah/x/market/module"
+	markettypes "noah/x/market/types"
+	oracle "noah/x/oracle/module"
+	oracletypes "noah/x/oracle/types"
+	treasury "noah/x/treasury/module"
+	treasurytypes "noah/x/treasury/types"
 )
 
 func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
@@ -83,7 +90,7 @@ func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
 		)
 	}
 
-	// finalize block so we have CheckTx state set
+	// finalise block so we have CheckTx state set
 	_, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: 1,
 	})
@@ -93,7 +100,7 @@ func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Making a new app object with the db, so that initchain hasn't been called
-	app2 := NewNoahApp(logger.With("instance", "second"), db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app2 := NewNoahApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	_, err = app2.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
 }
@@ -101,11 +108,10 @@ func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
 func TestRunMigrations(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewTestLogger(t)
-	app := NewNoahApp(logger.With("instance", "noahapp"), db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app := NewNoahApp(logger.With("instance", "noahapp"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 
 	// Create a new baseapp and configurator for the purpose of this test.
 	bApp := baseapp.NewBaseApp(app.Name(), logger.With("instance", "baseapp"), db, app.TxConfig().TxDecoder())
-	bApp.SetCommitMultiStoreTracer(nil)
 	bApp.SetInterfaceRegistry(app.InterfaceRegistry())
 	app.BaseApp = bApp
 	configurator := module.NewConfigurator(app.appCodec, bApp.MsgServiceRouter(), app.GRPCQueryRouter())
@@ -132,7 +138,7 @@ func TestRunMigrations(t *testing.T) {
 		require.NoError(t, configurator.Error())
 	}
 
-	// Initialize the chain
+	// Initialise the chain
 	_, err := app.InitChain(&abci.RequestInitChain{})
 	require.NoError(t, err)
 	_, err = app.Commit()
@@ -226,6 +232,9 @@ func TestRunMigrations(t *testing.T) {
 					genutiltypes.ModuleName:      genutil.AppModule{}.ConsensusVersion(),
 					epochstypes.ModuleName:       epochs.AppModule{}.ConsensusVersion(),
 					protocolpooltypes.ModuleName: protocolpool.AppModule{}.ConsensusVersion(),
+					markettypes.ModuleName:       market.AppModule{}.ConsensusVersion(),
+					oracletypes.ModuleName:       oracle.AppModule{}.ConsensusVersion(),
+					treasurytypes.ModuleName:     treasury.AppModule{}.ConsensusVersion(),
 				},
 			)
 			if tc.expRunErr {
@@ -241,7 +250,7 @@ func TestRunMigrations(t *testing.T) {
 
 func TestInitGenesisOnMigration(t *testing.T) {
 	db := dbm.NewMemDB()
-	app := NewNoahApp(log.NewTestLogger(t), db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app := NewNoahApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
 
 	// Create a mock module. This module will serve as the new module we're

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -45,7 +45,7 @@ func BenchmarkFullAppSimulation(b *testing.B) {
 	appOptions := viper.New()
 	appOptions.SetDefault(flags.FlagHome, DefaultNodeHome)
 
-	app := NewNoahApp(logger, db, nil, true, appOptions, interBlockCacheOpt(), baseapp.SetChainID(simsx.SimAppChainID))
+	app := NewNoahApp(logger, db, nil, true, appOptions, interBlockCacheOpt(), baseapp.SetChainID(AppChainID))
 
 	// run randomized simulation
 	simParams, _, simErr := simulation.SimulateFromSeedX(

@@ -13,14 +13,14 @@ import (
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cmttypes "github.com/cometbft/cometbft/types"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	sdkmath "cosmossdk.io/math"
-	pruningtypes "cosmossdk.io/store/pruning/types"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/v2/pruning/types"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -38,20 +38,20 @@ type SetupOptions struct {
 	AppOpts servertypes.AppOptions
 }
 
-func setup(withGenesis bool, invCheckPeriod uint) (*NoahApp, GenesisState) {
+func setup(withGenesis bool) (*NoahApp, GenesisState) {
 	db := dbm.NewMemDB()
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = DefaultNodeHome
 
-	app := NewNoahApp(log.NewNopLogger(), db, nil, true, appOptions)
+	noahApp := NewNoahApp(log.NewNopLogger(), db, true, appOptions)
 	if withGenesis {
-		return app, app.DefaultGenesis()
+		return noahApp, noahApp.DefaultGenesis()
 	}
-	return app, GenesisState{}
+	return noahApp, GenesisState{}
 }
 
-// NewNoahappWithCustomOptions initializes a new NoahApp with custom options.
+// NewNoahappWithCustomOptions initialises a new NoahApp with custom options.
 func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOptions) *NoahApp {
 	t.Helper()
 
@@ -70,7 +70,7 @@ func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(100000000000000))),
 	}
 
-	app := NewNoahApp(options.Logger, options.DB, nil, true, options.AppOpts)
+	app := NewNoahApp(options.Logger, options.DB, true, options.AppOpts)
 	genesisState := app.DefaultGenesis()
 	genesisState, err = simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, []authtypes.GenesisAccount{acc}, balance)
 	require.NoError(t, err)
@@ -80,7 +80,7 @@ func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 		stateBytes, err := cmtjson.MarshalIndent(genesisState, "", " ")
 		require.NoError(t, err)
 
-		// Initialize the chain
+		// Initialise the chain
 		_, err = app.InitChain(&abci.RequestInitChain{
 			Validators:      []abci.ValidatorUpdate{},
 			ConsensusParams: simtestutil.DefaultConsensusParams,
@@ -92,7 +92,7 @@ func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 	return app
 }
 
-// Setup initializes a new NoahApp. A Nop logger is set in NoahApp.
+// Setup initialises a new NoahApp. A Nop logger is set in NoahApp.
 func Setup(t *testing.T, isCheckTx bool) *NoahApp {
 	t.Helper()
 
@@ -117,21 +117,21 @@ func Setup(t *testing.T, isCheckTx bool) *NoahApp {
 	return app
 }
 
-// SetupWithGenesisValSet initializes a new NoahApp with a validator set and genesis accounts
+// SetupWithGenesisValSet initialises a new NoahApp with a validator set and genesis accounts
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
 // of one consensus engine unit in the default token of the NoahApp from first genesis
 // account. A Nop logger is set in NoahApp.
 func SetupWithGenesisValSet(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *NoahApp {
 	t.Helper()
 
-	app, genesisState := setup(true, 5)
+	app, genesisState := setup(true)
 	genesisState, err := simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, genAccs, balances...)
 	require.NoError(t, err)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
 	require.NoError(t, err)
 
-	// init chain will set the validator set and initialize the genesis accounts
+	// init chain will set the validator set and initialise the genesis accounts
 	_, err = app.InitChain(&abci.RequestInitChain{
 		Validators:      []abci.ValidatorUpdate{},
 		ConsensusParams: simtestutil.DefaultConsensusParams,
@@ -151,7 +151,7 @@ func SetupWithGenesisValSet(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs
 	return app
 }
 
-// GenesisStateWithSingleValidator initializes GenesisState with a single validator and genesis accounts
+// GenesisStateWithSingleValidator initialises GenesisState with a single validator and genesis accounts
 // that also act as delegators.
 func GenesisStateWithSingleValidator(t *testing.T, app *NoahApp) GenesisState {
 	t.Helper()
@@ -223,11 +223,11 @@ func NewTestNetworkFixture() network.TestFixture {
 	}
 	defer os.RemoveAll(dir)
 
-	app := NewNoahApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(dir))
+	noahApp := NewNoahApp(log.NewNopLogger(), dbm.NewMemDB(), true, simtestutil.NewAppOptionsWithFlagHome(dir))
 
 	appCtr := func(val network.ValidatorI) servertypes.Application {
 		return NewNoahApp(
-			val.GetCtx().Logger, dbm.NewMemDB(), nil, true,
+			val.GetCtx().Logger, dbm.NewMemDB(), true,
 			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
 			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
 			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
@@ -237,12 +237,12 @@ func NewTestNetworkFixture() network.TestFixture {
 
 	return network.TestFixture{
 		AppConstructor: appCtr,
-		GenesisState:   app.DefaultGenesis(),
+		GenesisState:   noahApp.DefaultGenesis(),
 		EncodingConfig: testutil.TestEncodingConfig{
-			InterfaceRegistry: app.InterfaceRegistry(),
-			Codec:             app.AppCodec(),
-			TxConfig:          app.TxConfig(),
-			Amino:             app.LegacyAmino(),
+			InterfaceRegistry: noahApp.InterfaceRegistry(),
+			Codec:             noahApp.AppCodec(),
+			TxConfig:          noahApp.TxConfig(),
+			Amino:             noahApp.LegacyAmino(),
 		},
 	}
 }

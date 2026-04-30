@@ -1,17 +1,15 @@
 package app
 
 import (
-	"io"
+	"fmt"
+	"os"
 
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/gogoproto/proto"
 
 	clienthelpers "cosmossdk.io/client/v2/helpers"
 	"cosmossdk.io/depinject"
-	"cosmossdk.io/log"
-	storetypes "cosmossdk.io/store/types"
-	evidencekeeper "cosmossdk.io/x/evidence/keeper"
-	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
-	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
+	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -22,8 +20,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -33,12 +33,29 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	consensuskeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-	epochskeeper "github.com/cosmos/cosmos-sdk/x/epochs/keeper"
+	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	protocolpoolkeeper "github.com/cosmos/cosmos-sdk/x/protocolpool/keeper"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+
+	marketkeeper "noah/x/market/keeper"
+	oraclekeeper "noah/x/oracle/keeper"
+	treasurykeeper "noah/x/treasury/keeper"
+)
+
+const (
+	// Name is the binary, environment variable, and home directory prefix.
+	Name = "noah"
+	// AppName is the BaseApp runtime name.
+	AppName = "NoahApp"
+	// AccountAddressPrefix is the prefix for accounts addresses.
+	AccountAddressPrefix = "noah"
+	// ChainCoinType is the coin type of the chain.
+	ChainCoinType = 118
 )
 
 // DefaultNodeHome default home directories for the application daemon
@@ -70,11 +87,13 @@ type NoahApp struct {
 	UpgradeKeeper         *upgradekeeper.Keeper
 	EvidenceKeeper        evidencekeeper.Keeper
 	ConsensusParamsKeeper consensuskeeper.Keeper
+	MarketKeeper          *marketkeeper.Keeper
+	TreasuryKeeper        *treasurykeeper.Keeper
+	OracleKeeper          *oraclekeeper.Keeper
 
 	// supplementary keepers
 	FeeGrantKeeper     feegrantkeeper.Keeper
 	AuthzKeeper        authzkeeper.Keeper
-	EpochsKeeper       *epochskeeper.Keeper
 	ProtocolPoolKeeper protocolpoolkeeper.Keeper
 
 	// simulation manager
@@ -83,17 +102,17 @@ type NoahApp struct {
 
 func init() {
 	var err error
-	DefaultNodeHome, err = clienthelpers.GetNodeHomeDirectory(".noah")
+	clienthelpers.EnvPrefix = Name
+	DefaultNodeHome, err = clienthelpers.GetNodeHomeDirectory("." + Name)
 	if err != nil {
 		panic(err)
 	}
 }
 
-// NewNoahApp returns a reference to an initialized NoahApp.
+// NewNoahApp returns a reference to an initialised NoahApp.
 func NewNoahApp(
 	logger log.Logger,
 	db dbm.DB,
-	traceStore io.Writer,
 	loadLatest bool,
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
@@ -106,49 +125,8 @@ func NewNoahApp(
 		appConfig = depinject.Configs(
 			AppConfig,
 			depinject.Supply(
-				// supply the application options
-				appOpts,
-				// supply the logger
-				logger,
-
-				// ADVANCED CONFIGURATION
-
-				//
-				// AUTH
-				//
-				// For providing a custom function required in auth to generate custom account types
-				// add it below. By default the auth module uses simulation.RandomGenesisAccounts.
-				//
-				// authtypes.RandomGenesisAccountsFn(simulation.RandomGenesisAccounts),
-				//
-				// For providing a custom base account type add it below.
-				// By default the auth module uses authtypes.ProtoBaseAccount().
-				//
-				// func() sdk.AccountI { return authtypes.ProtoBaseAccount() },
-				//
-				// For providing a different address codec, add it below.
-				// By default the auth module uses a Bech32 address codec,
-				// with the prefix defined in the auth module configuration.
-				//
-				// func() address.Codec { return <- custom address codec type -> }
-				//
-				// STAKING
-				//
-				// For providing a different validator and consensus address codec, add it below.
-				// By default the staking module uses the bech32 prefix provided in the auth config,
-				// and appends "valoper" and "valcons" for validator and consensus addresses respectively.
-				// When providing a custom address codec in auth, custom address codecs must be provided here as well.
-				//
-				// func() runtime.ValidatorAddressCodec { return <- custom validator address codec type -> }
-				// func() runtime.ConsensusAddressCodec { return <- custom consensus address codec type -> }
-
-				//
-				// MINT
-				//
-
-				// For providing a custom inflation function for x/mint add here your
-				// custom minting function that implements the mintkeeper.MintFn
-				// interface.
+				appOpts, // supply the application options
+				logger,  // supply the logger
 			),
 		)
 	)
@@ -171,8 +149,10 @@ func NewNoahApp(
 		&app.FeeGrantKeeper,
 		&app.EvidenceKeeper,
 		&app.ConsensusParamsKeeper,
-		&app.EpochsKeeper,
 		&app.ProtocolPoolKeeper,
+		&app.MarketKeeper,
+		&app.TreasuryKeeper,
+		&app.OracleKeeper,
 	); err != nil {
 		panic(err)
 	}
@@ -210,7 +190,7 @@ func NewNoahApp(
 	}
 	baseAppOptions = append(baseAppOptions, voteExtOp, baseapp.SetOptimisticExecution())
 
-	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
+	app.App = appBuilder.Build(db, baseAppOptions...)
 
 	// register streaming services
 	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {
@@ -252,6 +232,19 @@ func NewNoahApp(
 
 	if err := app.Load(loadLatest); err != nil {
 		panic(err)
+	}
+
+	// At startup, after all modules have been registered, check that all prot
+	// annotations are correct.
+	protoFiles, err := proto.MergedRegistry()
+	if err != nil {
+		panic(err)
+	}
+	err = msgservice.ValidateProtoAnnotations(protoFiles)
+	if err != nil {
+		// Once we switch to using protoreflect-based antehandlers, we might
+		// want to panic here instead of logging a warning.
+		fmt.Fprintln(os.Stderr, err.Error())
 	}
 
 	return app

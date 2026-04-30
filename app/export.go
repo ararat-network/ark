@@ -7,13 +7,16 @@ import (
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
-	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/math"
 
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	oracletypes "noah/x/oracle/types"
 )
 
 // ExportAppStateAndValidators exports the state of the application for a genesis
@@ -63,7 +66,7 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	for _, addr := range jailAllowedAddrs {
 		_, err := sdk.ValAddressFromBech32(addr)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		allowedAddrsMap[addr] = true
 	}
@@ -76,7 +79,10 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		if err != nil {
 			panic(err)
 		}
-		_, _ = app.DistrKeeper.WithdrawValidatorCommission(ctx, valBz)
+		_, err = app.DistrKeeper.WithdrawValidatorCommission(ctx, valBz)
+		if err != nil {
+			panic(err)
+		}
 		return false
 	})
 	if err != nil {
@@ -97,7 +103,10 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 
 		delAddr := sdk.MustAccAddressFromBech32(delegation.DelegatorAddress)
 
-		_, _ = app.DistrKeeper.WithdrawDelegationRewards(ctx, delAddr, valAddr)
+		_, err = app.DistrKeeper.WithdrawDelegationRewards(ctx, delAddr, valAddr)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// clear validator slash events
@@ -195,28 +204,27 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	store := ctx.KVStore(app.GetKey(stakingtypes.StoreKey))
 	iter := storetypes.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
 
-	for ; iter.Valid(); iter.Next() {
-		addr := sdk.ValAddress(stakingtypes.AddressFromValidatorsKey(iter.Key()))
-		validator, err := app.StakingKeeper.GetValidator(ctx, addr)
-		if err != nil {
-			panic("expected validator, not found")
-		}
+	// Closure to ensure iterator doesn't leak.
+	func() {
+		defer iter.Close()
+		for ; iter.Valid(); iter.Next() {
+			addr := sdk.ValAddress(stakingtypes.AddressFromValidatorsKey(iter.Key()))
+			validator, err := app.StakingKeeper.GetValidator(ctx, addr)
+			if err != nil {
+				panic("expected validator, not found")
+			}
 
-		validator.UnbondingHeight = 0
-		if applyAllowedAddrs && !allowedAddrsMap[addr.String()] {
-			validator.Jailed = true
-		}
+			validator.UnbondingHeight = 0
+			if applyAllowedAddrs && !allowedAddrsMap[addr.String()] {
+				validator.Jailed = true
+			}
 
-		err = app.StakingKeeper.SetValidator(ctx, validator)
-		if err != nil {
-			panic(fmt.Errorf("unable to set validator: %w", err))
-		}
-	}
+			if err = app.StakingKeeper.SetValidator(ctx, validator); err != nil {
+				panic(err)
+			}
 
-	if err := iter.Close(); err != nil {
-		app.Logger().Error("error while closing the key-value store reverse prefix iterator: ", err)
-		return
-	}
+		}
+	}()
 
 	_, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	if err != nil {
@@ -232,12 +240,58 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 			info.StartHeight = 0
 			err = app.SlashingKeeper.SetValidatorSigningInfo(ctx, addr, info)
 			if err != nil {
-				panic("unable to set validator signing info")
+				panic(err)
 			}
 			return false
 		},
 	)
 	if err != nil {
 		panic(fmt.Errorf("error while iterating validator signing info: %w", err))
+	}
+
+	/* Handle oracle state. */
+
+	// Clear all prices
+	if err := app.OracleKeeper.ExchangeRate.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
+		if err := app.OracleKeeper.ExchangeRate.Remove(ctx, denom); err != nil {
+			return false, err
+		}
+		return false, nil
+	}); err != nil {
+		panic(fmt.Errorf("error while clearing exchange rates: %w", err))
+	}
+
+	if err := app.OracleKeeper.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, _ uint64) (bool, error) {
+		if err := app.OracleKeeper.MissCount.Set(ctx, operator, 0); err != nil {
+			return false, err
+		}
+		return false, nil
+	}); err != nil {
+		panic(fmt.Errorf("error while resetting miss counters: %w", err))
+	}
+
+	if err := app.OracleKeeper.Prevote.Walk(ctx, nil, func(voterAddr sdk.ValAddress, _ oracletypes.Prevote) (bool, error) {
+		if err := app.OracleKeeper.Prevote.Remove(ctx, voterAddr); err != nil {
+			return false, err
+		}
+		return false, nil
+	}); err != nil {
+		panic(fmt.Errorf("error while clearing oracle prevotes: %w", err))
+	}
+
+	if err := app.OracleKeeper.Vote.Walk(ctx, nil, func(voterAddr sdk.ValAddress, _ oracletypes.Vote) (bool, error) {
+		if err := app.OracleKeeper.Vote.Remove(ctx, voterAddr); err != nil {
+			return false, err
+		}
+		return false, nil
+	}); err != nil {
+		panic(fmt.Errorf("error while clearing oracle votes: %w", err))
+	}
+
+	/* Handle market state. */
+
+	// clear all market pools
+	if err := app.MarketKeeper.NoahPoolDelta.Set(ctx, math.LegacyZeroDec()); err != nil {
+		panic(fmt.Errorf("error while resetting noah pool delta: %w", err))
 	}
 }
