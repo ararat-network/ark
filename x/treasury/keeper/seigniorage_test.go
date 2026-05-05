@@ -99,7 +99,7 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 
 			if tc.expectedCommunityPool != nil {
 				s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(treasuryAddr)
-				s.distrKeeper.EXPECT().
+				s.ppoolKeeper.EXPECT().
 					FundCommunityPool(gomock.Any(), tc.expectedCommunityPool, treasuryAddr).
 					Return(nil)
 			}

@@ -22,11 +22,10 @@ type Keeper struct {
 	storeService        store.KVStoreService
 	authority           string
 	rewardCollectorName string
-	distributionName    string
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
-	distrKeeper   types.DistributionKeeper
+	ppoolKeeper   types.ProtocolpoolKeeper
 	marketKeeper  types.MarketKeeper
 	oracleKeeper  types.OracleKeeper
 	stakingKeeper types.StakingKeeper
@@ -47,10 +46,9 @@ func NewKeeper(
 	storeService store.KVStoreService,
 	authority string,
 	rewardCollectorName string,
-	distributionName string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	distrKeeper types.DistributionKeeper,
+	ppoolKeeper types.ProtocolpoolKeeper,
 	marketKeeper types.MarketKeeper,
 	oracleKeeper types.OracleKeeper,
 	stakingKeeper types.StakingKeeper,
@@ -66,10 +64,9 @@ func NewKeeper(
 		storeService:        storeService,
 		authority:           authority,
 		rewardCollectorName: rewardCollectorName,
-		distributionName:    distributionName,
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
-		distrKeeper:         distrKeeper,
+		ppoolKeeper:         ppoolKeeper,
 		marketKeeper:        marketKeeper,
 		oracleKeeper:        oracleKeeper,
 		stakingKeeper:       stakingKeeper,

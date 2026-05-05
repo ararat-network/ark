@@ -36,7 +36,7 @@ type KeeperTestSuite struct {
 	queryClient   types.QueryClient
 	accountKeeper *testutil.MockAccountKeeper
 	bankKeeper    *testutil.MockBankKeeper
-	distrKeeper   *testutil.MockDistributionKeeper
+	ppoolKeeper   *testutil.MockProtocolpoolKeeper
 	marketKeeper  *testutil.MockMarketKeeper
 	oracleKeeper  *testutil.MockOracleKeeper
 	stakingKeeper *testutil.MockStakingKeeper
@@ -61,7 +61,7 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
-	s.distrKeeper = testutil.NewMockDistributionKeeper(ctrl)
+	s.ppoolKeeper = testutil.NewMockProtocolpoolKeeper(ctrl)
 	s.marketKeeper = testutil.NewMockMarketKeeper(ctrl)
 	s.oracleKeeper = testutil.NewMockOracleKeeper(ctrl)
 	s.stakingKeeper = testutil.NewMockStakingKeeper(ctrl)
@@ -74,10 +74,9 @@ func (s *KeeperTestSuite) SetupTest() {
 		storeService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		"oracle",
-		"distribution",
 		s.accountKeeper,
 		s.bankKeeper,
-		s.distrKeeper,
+		s.ppoolKeeper,
 		s.marketKeeper,
 		s.oracleKeeper,
 		s.stakingKeeper,

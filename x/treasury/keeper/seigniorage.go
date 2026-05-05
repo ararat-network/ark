@@ -57,7 +57,7 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 	if remainAmt.IsPositive() {
 		remainCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, remainAmt))
 		treasuryAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
-		if err := k.distrKeeper.FundCommunityPool(ctx, remainCoins, treasuryAddr); err != nil {
+		if err := k.ppoolKeeper.FundCommunityPool(ctx, remainCoins, treasuryAddr); err != nil {
 			return fmt.Errorf("funding community pool: %w", err)
 		}
 	}

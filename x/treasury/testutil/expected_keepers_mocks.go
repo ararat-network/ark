@@ -243,32 +243,32 @@ func (mr *MockStakingKeeperMockRecorder) TotalValidatorPower(arg0 any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalValidatorPower", reflect.TypeOf((*MockStakingKeeper)(nil).TotalValidatorPower), arg0)
 }
 
-// MockDistributionKeeper is a mock of DistributionKeeper interface.
-type MockDistributionKeeper struct {
+// MockProtocolpoolKeeper is a mock of ProtocolpoolKeeper interface.
+type MockProtocolpoolKeeper struct {
 	ctrl     *gomock.Controller
-	recorder *MockDistributionKeeperMockRecorder
+	recorder *MockProtocolpoolKeeperMockRecorder
 	isgomock struct{}
 }
 
-// MockDistributionKeeperMockRecorder is the mock recorder for MockDistributionKeeper.
-type MockDistributionKeeperMockRecorder struct {
-	mock *MockDistributionKeeper
+// MockProtocolpoolKeeperMockRecorder is the mock recorder for MockProtocolpoolKeeper.
+type MockProtocolpoolKeeperMockRecorder struct {
+	mock *MockProtocolpoolKeeper
 }
 
-// NewMockDistributionKeeper creates a new mock instance.
-func NewMockDistributionKeeper(ctrl *gomock.Controller) *MockDistributionKeeper {
-	mock := &MockDistributionKeeper{ctrl: ctrl}
-	mock.recorder = &MockDistributionKeeperMockRecorder{mock}
+// NewMockProtocolpoolKeeper creates a new mock instance.
+func NewMockProtocolpoolKeeper(ctrl *gomock.Controller) *MockProtocolpoolKeeper {
+	mock := &MockProtocolpoolKeeper{ctrl: ctrl}
+	mock.recorder = &MockProtocolpoolKeeperMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockDistributionKeeper) EXPECT() *MockDistributionKeeperMockRecorder {
+func (m *MockProtocolpoolKeeper) EXPECT() *MockProtocolpoolKeeperMockRecorder {
 	return m.recorder
 }
 
 // FundCommunityPool mocks base method.
-func (m *MockDistributionKeeper) FundCommunityPool(ctx context.Context, amount types.Coins, sender types.AccAddress) error {
+func (m *MockProtocolpoolKeeper) FundCommunityPool(ctx context.Context, amount types.Coins, sender types.AccAddress) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FundCommunityPool", ctx, amount, sender)
 	ret0, _ := ret[0].(error)
@@ -276,9 +276,9 @@ func (m *MockDistributionKeeper) FundCommunityPool(ctx context.Context, amount t
 }
 
 // FundCommunityPool indicates an expected call of FundCommunityPool.
-func (mr *MockDistributionKeeperMockRecorder) FundCommunityPool(ctx, amount, sender any) *gomock.Call {
+func (mr *MockProtocolpoolKeeperMockRecorder) FundCommunityPool(ctx, amount, sender any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FundCommunityPool", reflect.TypeOf((*MockDistributionKeeper)(nil).FundCommunityPool), ctx, amount, sender)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FundCommunityPool", reflect.TypeOf((*MockProtocolpoolKeeper)(nil).FundCommunityPool), ctx, amount, sender)
 }
 
 // MockOracleKeeper is a mock of OracleKeeper interface.

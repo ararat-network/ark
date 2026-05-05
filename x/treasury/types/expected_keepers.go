@@ -35,8 +35,8 @@ type StakingKeeper interface {
 	TotalValidatorPower(context.Context) (math.Int, error) // total bonded tokens within the validator set
 }
 
-// DistributionKeeper expected keeper for distribution module
-type DistributionKeeper interface {
+// ProtocolpoolKeeper expected keeper for distribution module
+type ProtocolpoolKeeper interface {
 	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
 }
 

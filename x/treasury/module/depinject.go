@@ -7,7 +7,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	modulev1 "noah/api/noah/treasury/module/v1"
@@ -39,7 +38,7 @@ type ModuleInputs struct {
 	BankKeeper         types.BankKeeper
 	MarketKeeper       types.MarketKeeper
 	StakingKeeper      types.StakingKeeper
-	DistributionKeeper types.DistributionKeeper
+	DistributionKeeper types.ProtocolpoolKeeper
 	OracleKeeper       types.OracleKeeper
 }
 
@@ -61,17 +60,11 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		rewardCollectorName = oracletypes.ModuleName
 	}
 
-	distributionName := in.Config.DistributionName
-	if distributionName == "" {
-		distributionName = distrtypes.ModuleName
-	}
-
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
 		authority.String(),
 		rewardCollectorName,
-		distributionName,
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.DistributionKeeper,
