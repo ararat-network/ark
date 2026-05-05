@@ -3,7 +3,9 @@ package keeper_test
 import (
 	"cosmossdk.io/math"
 
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
@@ -13,9 +15,11 @@ import (
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	consensusAuthority := authtypes.NewModuleAddress("consensus").String()
 
 	tests := []struct {
 		name        string
+		setup       func()
 		msg         *types.MsgUpdateParams
 		expectErr   string
 		expectErrIs error
@@ -47,13 +51,26 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			},
 		},
 		{
+			name: "consensus params authority overrides keeper authority",
+			setup: func() {
+				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
+					Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
+				})
+			},
+			msg: func() *types.MsgUpdateParams {
+				p := types.DefaultParams()
+				p.WindowShort = 6
+				return &types.MsgUpdateParams{Authority: consensusAuthority, Params: p}
+			}(),
+		},
+		{
 			name: "invalid authority",
 			msg: &types.MsgUpdateParams{
 				Authority: "invalid_authority",
 				Params:    types.DefaultParams(),
 			},
 			expectErr:   "invalid authority",
-			expectErrIs: govtypes.ErrInvalidSigner,
+			expectErrIs: errortypes.ErrUnauthorized,
 		},
 		{
 			name: "negative TaxPolicy.RateMin ensures params are validated",
@@ -68,6 +85,12 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
+			ctx := s.ctx
+			defer func() { s.ctx = ctx }()
+			if tc.setup != nil {
+				tc.setup()
+			}
+
 			_, err := s.msgServer.UpdateParams(s.ctx, tc.msg)
 			if tc.expectErr != "" {
 				s.Require().Error(err)

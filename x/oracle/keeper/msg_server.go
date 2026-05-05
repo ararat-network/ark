@@ -10,7 +10,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"noah/x/oracle/types"
@@ -209,8 +208,9 @@ func (m msgServer) DelegateFeedConsent(ctx context.Context, msg *types.MsgDelega
 
 // UpdateParams updates the params.
 func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
-	if m.k.authority != msg.Authority {
-		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", m.k.authority, msg.Authority)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
+		return nil, err
 	}
 
 	if err := msg.Params.Validate(); err != nil {

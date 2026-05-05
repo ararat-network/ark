@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -171,11 +172,14 @@ func (s *KeeperTestSuite) TestMsgSwap_ComputeSwapErrorIncludesContext() {
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	consensusAuthority := authtypes.NewModuleAddress("consensus").String()
 
 	tests := []struct {
-		name      string
-		msg       *types.MsgUpdateParams
-		expectErr string
+		name        string
+		setup       func()
+		msg         *types.MsgUpdateParams
+		expectErr   string
+		expectErrIs error
 	}{
 		{
 			name: "valid params",
@@ -200,12 +204,29 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			},
 		},
 		{
+			name: "consensus params authority overrides keeper authority",
+			setup: func() {
+				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
+					Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
+				})
+			},
+			msg: &types.MsgUpdateParams{
+				Authority: consensusAuthority,
+				Params: types.Params{
+					BasePool:           math.LegacyNewDec(3000000000000),
+					PoolRecoveryPeriod: 28800,
+					MinStabilitySpread: math.LegacyNewDecWithPrec(5, 2),
+				},
+			},
+		},
+		{
 			name: "invalid authority",
 			msg: &types.MsgUpdateParams{
 				Authority: "invalid_authority",
 				Params:    types.DefaultParams(),
 			},
-			expectErr: "invalid authority",
+			expectErr:   "invalid authority",
+			expectErrIs: errortypes.ErrUnauthorized,
 		},
 		{
 			name: "negative base pool",
@@ -259,10 +280,19 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
+			ctx := s.ctx
+			defer func() { s.ctx = ctx }()
+			if tc.setup != nil {
+				tc.setup()
+			}
+
 			_, err := s.msgServer.UpdateParams(s.ctx, tc.msg)
 			if tc.expectErr != "" {
 				s.Require().Error(err)
 				s.Require().ErrorContains(err, tc.expectErr)
+				if tc.expectErrIs != nil {
+					s.Require().ErrorIs(err, tc.expectErrIs)
+				}
 			} else {
 				s.Require().NoError(err)
 

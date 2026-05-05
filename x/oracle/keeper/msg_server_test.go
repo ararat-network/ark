@@ -4,6 +4,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -506,8 +507,12 @@ func (s *KeeperTestSuite) TestDelegateFeedConsent() {
 }
 
 func (s *KeeperTestSuite) TestUpdateParams() {
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	consensusAuthority := authtypes.NewModuleAddress("consensus").String()
+
 	tests := []struct {
 		name      string
+		setup     func()
 		msg       *types.MsgUpdateParams
 		expectErr error
 		errText   string
@@ -515,10 +520,26 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		{
 			name: "updates params",
 			msg: &types.MsgUpdateParams{
-				Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+				Authority: authority,
 				Params: func() types.Params {
 					params := types.DefaultParams()
 					params.VotePeriod = 42
+					return params
+				}(),
+			},
+		},
+		{
+			name: "consensus params authority overrides keeper authority",
+			setup: func() {
+				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
+					Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
+				})
+			},
+			msg: &types.MsgUpdateParams{
+				Authority: consensusAuthority,
+				Params: func() types.Params {
+					params := types.DefaultParams()
+					params.VotePeriod = 43
 					return params
 				}(),
 			},
@@ -529,12 +550,12 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 				Authority: "cosmos1invalidauthority0000000000000000000000",
 				Params:    types.DefaultParams(),
 			},
-			expectErr: govtypes.ErrInvalidSigner,
+			expectErr: errortypes.ErrUnauthorized,
 		},
 		{
 			name: "rejects invalid params",
 			msg: &types.MsgUpdateParams{
-				Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+				Authority: authority,
 				Params: func() types.Params {
 					params := types.DefaultParams()
 					params.VotePeriod = 0
@@ -547,6 +568,12 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
+			ctx := s.ctx
+			defer func() { s.ctx = ctx }()
+			if tc.setup != nil {
+				tc.setup()
+			}
+
 			_, err := s.msgServer.UpdateParams(s.ctx, tc.msg)
 			if tc.expectErr != nil || tc.errText != "" {
 				s.Require().Error(err)
@@ -562,7 +589,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 			s.Require().NoError(err)
 			params, err := s.keeper.Params.Get(s.ctx)
 			s.Require().NoError(err)
-			s.Require().Equal(uint64(42), params.VotePeriod)
+			s.Require().Equal(tc.msg.Params, params)
 		})
 	}
 }
