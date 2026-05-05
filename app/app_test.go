@@ -21,7 +21,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
-	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -64,6 +63,56 @@ import (
 	treasury "noah/x/treasury/module"
 	treasurytypes "noah/x/treasury/types"
 )
+
+func TestAppConstructs(t *testing.T) {
+	db := dbm.NewMemDB()
+	noahApp := NewNoahApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+
+	require.NotNil(t, noahApp)
+	require.NotNil(t, noahApp.BaseApp)
+	require.NotNil(t, noahApp.LegacyAmino())
+	require.NotNil(t, noahApp.AppCodec())
+	require.NotNil(t, noahApp.TxConfig())
+	require.NotNil(t, noahApp.InterfaceRegistry())
+	require.NotNil(t, noahApp.MsgServiceRouter())
+	require.NotNil(t, noahApp.GRPCQueryRouter())
+
+	require.NotNil(t, noahApp.AccountKeeper)
+	require.NotNil(t, noahApp.BankKeeper)
+	require.NotNil(t, noahApp.StakingKeeper)
+	require.NotNil(t, noahApp.GovKeeper)
+	require.NotNil(t, noahApp.UpgradeKeeper)
+	require.NotNil(t, noahApp.MarketKeeper)
+	require.NotNil(t, noahApp.TreasuryKeeper)
+	require.NotNil(t, noahApp.OracleKeeper)
+}
+
+func TestAppInitChainWithDefaultGenesis(t *testing.T) {
+	require.NotNil(t, Setup(t, false))
+}
+
+func TestAppExportLatestState(t *testing.T) {
+	db := dbm.NewMemDB()
+	logger := log.NewTestLogger(t)
+	noahApp := NewNoahappWithCustomOptions(t, false, SetupOptions{
+		Logger:  logger,
+		DB:      db,
+		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+	})
+
+	_, err := noahApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1})
+	require.NoError(t, err)
+
+	_, err = noahApp.Commit()
+	require.NoError(t, err)
+
+	exported, err := noahApp.ExportAppStateAndValidators(false, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, exported.AppState)
+
+	var state GenesisState
+	require.NoError(t, json.Unmarshal(exported.AppState, &state))
+}
 
 func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
 	db := dbm.NewMemDB()
@@ -342,7 +391,7 @@ func TestAddressCodecFactory(t *testing.T) {
 
 	err := depinject.Inject(
 		depinject.Configs(
-			network.MinimumAppConfig(),
+			AppConfig,
 			depinject.Supply(log.NewNopLogger()),
 		),
 		&addrCodec, &valAddressCodec, &consAddressCodec)
@@ -360,7 +409,7 @@ func TestAddressCodecFactory(t *testing.T) {
 	// Set the address codec to the custom one
 	err = depinject.Inject(
 		depinject.Configs(
-			network.MinimumAppConfig(),
+			AppConfig,
 			depinject.Supply(
 				log.NewNopLogger(),
 				func() address.Codec { return customAddressCodec{} },

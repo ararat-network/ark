@@ -120,8 +120,6 @@ func ProvideClientContext(
 		WithHomeDir(app.DefaultNodeHome).
 		WithViper("") // uses by default the binary name as prefix
 
-	clientCtx, _ = config.ReadFromClientConfig(clientCtx)
-
 	txConfig, err := tx.NewTxConfigWithOptions(clientCtx.Codec, txConfigOpts)
 	if err != nil {
 		panic(err)
