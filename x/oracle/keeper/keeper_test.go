@@ -101,6 +101,10 @@ var (
 	accAddr2 = sdk.AccAddress([]byte("feeder2______________"))
 )
 
+func newStoredExchangeRate(denom string, rate math.LegacyDec) types.ExchangeRate {
+	return types.ExchangeRate{Denom: denom, Rate: rate}
+}
+
 func (s *KeeperTestSuite) TestGetFeederDelegation() {
 	tests := []struct {
 		name     string
@@ -161,7 +165,7 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 		{
 			name: "known denom - returns stored rate",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", math.LegacyNewDecWithPrec(123, 2)))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", newStoredExchangeRate("uusd", math.LegacyNewDecWithPrec(123, 2))))
 			},
 			denom:    "uusd",
 			expected: math.LegacyNewDecWithPrec(123, 2),
@@ -175,8 +179,8 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 		{
 			name: "overwritten rate - returns latest",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", math.LegacyNewDec(1)))
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", math.LegacyNewDec(2)))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", newStoredExchangeRate("uusd", math.LegacyNewDec(1))))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", newStoredExchangeRate("uusd", math.LegacyNewDec(2))))
 			},
 			denom:    "uusd",
 			expected: math.LegacyNewDec(2),
@@ -202,21 +206,22 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 func (s *KeeperTestSuite) TestSetExchangeRate() {
 	rate := math.LegacyNewDecWithPrec(123, 2)
 
-	err := s.keeper.SetExchangeRate(s.ctx, "uusd", rate)
+	err := s.keeper.SetExchangeRate(s.ctx, newStoredExchangeRate("uusd", rate))
 	s.Require().NoError(err)
 
 	stored, err := s.keeper.ExchangeRate.Get(s.ctx, "uusd")
 	s.Require().NoError(err)
-	s.Require().True(rate.Equal(stored), "expected %s, got %s", rate, stored)
+	s.Require().Equal("uusd", stored.Denom)
+	s.Require().True(rate.Equal(stored.Rate), "expected %s, got %s", rate, stored.Rate)
 }
 
 func (s *KeeperTestSuite) TestIterateExchangeRates() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", math.LegacyNewDec(1)))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "ukrw", math.LegacyNewDec(2)))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", newStoredExchangeRate("uusd", math.LegacyNewDec(1))))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "ukrw", newStoredExchangeRate("ukrw", math.LegacyNewDec(2))))
 
 	visited := map[string]math.LegacyDec{}
-	s.Require().NoError(s.keeper.IterateExchangeRates(s.ctx, func(denom string, rate math.LegacyDec) bool {
-		visited[denom] = rate
+	s.Require().NoError(s.keeper.IterateExchangeRates(s.ctx, func(denom string, exchangeRate types.ExchangeRate) bool {
+		visited[denom] = exchangeRate.Rate
 		return false
 	}))
 
@@ -226,11 +231,11 @@ func (s *KeeperTestSuite) TestIterateExchangeRates() {
 }
 
 func (s *KeeperTestSuite) TestIterateExchangeRatesStops() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", math.LegacyNewDec(1)))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "ukrw", math.LegacyNewDec(2)))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "uusd", newStoredExchangeRate("uusd", math.LegacyNewDec(1))))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "ukrw", newStoredExchangeRate("ukrw", math.LegacyNewDec(2))))
 
 	count := 0
-	s.Require().NoError(s.keeper.IterateExchangeRates(s.ctx, func(_ string, _ math.LegacyDec) bool {
+	s.Require().NoError(s.keeper.IterateExchangeRates(s.ctx, func(_ string, _ types.ExchangeRate) bool {
 		count++
 		return true
 	}))
@@ -259,12 +264,13 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			err := s.keeper.SetExchangeRateWithEvent(s.ctx, "uusd", tc.rate)
+			err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate("uusd", tc.rate))
 			s.Require().NoError(err)
 
 			stored, err := s.keeper.ExchangeRate.Get(s.ctx, "uusd")
 			s.Require().NoError(err)
-			s.Require().True(tc.rate.Equal(stored), "expected %s, got %s", tc.rate, stored)
+			s.Require().Equal("uusd", stored.Denom)
+			s.Require().True(tc.rate.Equal(stored.Rate), "expected %s, got %s", tc.rate, stored.Rate)
 		})
 	}
 }
@@ -272,7 +278,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 func (s *KeeperTestSuite) TestSetExchangeRateWithEventEmitsEvent() {
 	rate := math.LegacyNewDecWithPrec(123, 2)
 
-	err := s.keeper.SetExchangeRateWithEvent(s.ctx, "uusd", rate)
+	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate("uusd", rate))
 	s.Require().NoError(err)
 
 	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()

@@ -42,7 +42,7 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 		{
 			name: "stored denom returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, math.LegacyNewDec(7)))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyNewDec(7))))
 			},
 			req:       &types.QueryExchangeRateRequest{Denom: core.MicroUSDDenom},
 			expect:    math.LegacyNewDec(7),
@@ -70,7 +70,8 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			}
 
 			s.Require().NoError(err)
-			s.Require().True(tc.expect.Equal(resp.ExchangeRate))
+			s.Require().Equal(tc.req.Denom, resp.ExchangeRate.Denom)
+			s.Require().True(tc.expect.Equal(resp.ExchangeRate.Rate))
 		})
 	}
 }
@@ -78,16 +79,16 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	tests := []struct {
 		name     string
-		expected sdk.DecCoins
+		expected types.ExchangeRates
 	}{
 		{
 			name: "empty set",
 		},
 		{
 			name: "returns all exchange rates",
-			expected: sdk.DecCoins{
-				sdk.NewDecCoinFromDec(core.MicroKRWDenom, math.LegacyNewDec(1000)),
-				sdk.NewDecCoinFromDec(core.MicroUSDDenom, math.LegacyNewDec(1)),
+			expected: types.ExchangeRates{
+				newStoredExchangeRate(core.MicroKRWDenom, math.LegacyNewDec(1000)),
+				newStoredExchangeRate(core.MicroUSDDenom, math.LegacyNewDec(1)),
 			},
 		},
 	}
@@ -95,7 +96,7 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			for _, exchangeRate := range tc.expected {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, exchangeRate.Denom, exchangeRate.Amount))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, exchangeRate.Denom, exchangeRate))
 			}
 
 			resp, err := s.queryClient.ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
@@ -204,7 +205,7 @@ func (s *KeeperTestSuite) TestQueryActives() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			for _, denom := range tc.expected {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, math.LegacyOneDec()))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, newStoredExchangeRate(denom, math.LegacyOneDec())))
 			}
 
 			resp, err := s.queryClient.Actives(s.ctx, &types.QueryActivesRequest{})

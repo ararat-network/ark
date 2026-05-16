@@ -217,7 +217,7 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 
 	// Exchange rates are keyed by denom.
 	exchangeRateCount := 0
-	err = s.keeper.ExchangeRate.Walk(s.ctx, nil, func(_ string, _ math.LegacyDec) (bool, error) {
+	err = s.keeper.ExchangeRate.Walk(s.ctx, nil, func(_ string, _ types.ExchangeRate) (bool, error) {
 		exchangeRateCount++
 		return false, nil
 	})
@@ -225,9 +225,10 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	s.Require().Len(expected.ExchangeRates, exchangeRateCount)
 
 	for _, item := range expected.ExchangeRates {
-		rate, err := s.keeper.ExchangeRate.Get(s.ctx, item.Denom)
+		exchangeRate, err := s.keeper.ExchangeRate.Get(s.ctx, item.Denom)
 		s.Require().NoError(err)
-		s.Require().True(item.Rate.Equal(rate), "expected %s for %s, got %s", item.Rate, item.Denom, rate)
+		s.Require().Equal(item.Denom, exchangeRate.Denom)
+		s.Require().True(item.Rate.Equal(exchangeRate.Rate), "expected %s for %s, got %s", item.Rate, item.Denom, exchangeRate.Rate)
 	}
 
 	// Miss counts are keyed by validator address.
@@ -344,7 +345,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		s.Require().NoError(s.keeper.FeederDelegation.Set(s.ctx, valAddr, feederAddr))
 	}
 	for _, item := range expected.ExchangeRates {
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, item.Denom, item.Rate))
+		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, item.Denom, item))
 	}
 	for _, item := range expected.MissCounts {
 		valAddr, err := sdk.ValAddressFromBech32(item.ValidatorAddress)

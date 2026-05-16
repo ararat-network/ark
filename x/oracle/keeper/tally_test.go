@@ -111,7 +111,7 @@ func (s *KeeperTestSuite) TestUpdateExchangeRates() {
 				s.Require().NoError(s.keeper.Vote.Set(s.ctx, voter, vote))
 			}
 			if tc.seedStaleRate {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "ustale", math.LegacyNewDec(999)))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, "ustale", newStoredExchangeRate("ustale", math.LegacyNewDec(999))))
 			}
 
 			bondedTokens := tc.bondedTokens
@@ -139,14 +139,14 @@ func (s *KeeperTestSuite) TestUpdateExchangeRates() {
 			s.Require().NoError(err)
 
 			for _, denom := range tc.expectedDenoms {
-				rate, err := s.keeper.ExchangeRate.Get(s.ctx, denom)
+				exchangeRate, err := s.keeper.ExchangeRate.Get(s.ctx, denom)
 				s.Require().NoError(err, "expected rate for %s", denom)
-				s.Require().True(rate.IsPositive(), "rate for %s should be positive, got %s", denom, rate)
+				s.Require().True(exchangeRate.Rate.IsPositive(), "rate for %s should be positive, got %s", denom, exchangeRate.Rate)
 			}
 
 			// Verify no extra rates (catches stale rates that should have been cleared)
 			count := 0
-			_ = s.keeper.ExchangeRate.Walk(s.ctx, nil, func(_ string, _ math.LegacyDec) (bool, error) {
+			_ = s.keeper.ExchangeRate.Walk(s.ctx, nil, func(_ string, _ types.ExchangeRate) (bool, error) {
 				count++
 				return false, nil
 			})
