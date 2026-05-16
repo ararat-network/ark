@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strings"
+	time "time"
 
 	"cosmossdk.io/math"
 
@@ -27,10 +28,12 @@ func NewVote(exchangeRates ExchangeRates, voter sdk.ValAddress) Vote {
 }
 
 // NewExchangeRate creates a ExchangeRate instance
-func NewExchangeRate(denom string, rate math.LegacyDec) ExchangeRate {
+func NewExchangeRate(denom string, rate math.LegacyDec, timestamp time.Time, height uint64) ExchangeRate {
 	return ExchangeRate{
 		denom,
 		rate,
+		timestamp,
+		height,
 	}
 }
 

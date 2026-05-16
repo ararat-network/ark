@@ -252,7 +252,7 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	/* Handle oracle state. */
 
 	// Clear all prices
-	if err := app.OracleKeeper.ExchangeRate.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
+	if err := app.OracleKeeper.ExchangeRate.Walk(ctx, nil, func(denom string, _ oracletypes.ExchangeRate) (bool, error) {
 		if err := app.OracleKeeper.ExchangeRate.Remove(ctx, denom); err != nil {
 			return false, err
 		}

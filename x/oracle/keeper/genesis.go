@@ -30,7 +30,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	}
 
 	for _, er := range data.ExchangeRates {
-		if err := k.ExchangeRate.Set(ctx, er.Denom, er.Rate); err != nil {
+		if err := k.ExchangeRate.Set(ctx, er.Denom, er); err != nil {
 			return fmt.Errorf("setting genesis exchange rate for denom %s: %w", er.Denom, err)
 		}
 	}
@@ -114,8 +114,13 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	exchangeRates := []types.ExchangeRate{}
-	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		exchangeRates = append(exchangeRates, types.ExchangeRate{Denom: denom, Rate: rate})
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
+		exchangeRates = append(exchangeRates, types.ExchangeRate{
+			Denom:          denom,
+			Rate:           exchangeRate.Rate,
+			BlockTimestamp: exchangeRate.BlockTimestamp,
+			BlockHeight:    exchangeRate.BlockHeight,
+		})
 		return false, nil
 	}); err != nil {
 		return nil, fmt.Errorf("iterating exchange rates: %w", err)

@@ -2,7 +2,6 @@ syntax = "proto3";
 package noah.oracle.v1;
 
 import "amino/amino.proto";
-import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
@@ -111,12 +110,8 @@ message QueryExchangeRateRequest {
 // Query/ExchangeRate RPC method.
 message QueryExchangeRateResponse {
   // exchange_rate defines the exchange rate of ark denominated in various noah
-  string exchange_rate = 1 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  ExchangeRate exchange_rate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryExchangeRatesRequest is the request type for the Query/ExchangeRates RPC
@@ -128,8 +123,8 @@ message QueryExchangeRatesRequest {}
 message QueryExchangeRatesResponse {
   // exchange_rates defines a list of the exchange rate for all whitelisted
   // denoms.
-  repeated cosmos.base.v1beta1.DecCoin exchange_rates = 1 [
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+  repeated ExchangeRate exchange_rates = 1 [
+    (gogoproto.castrepeated) = "ExchangeRates",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

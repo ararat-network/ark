@@ -21,7 +21,7 @@ func (k Keeper) UpdateExchangeRates(
 	validatorScoreMap map[string]types.ValidatorScore,
 ) error {
 	// Clear all exchange rates
-	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, _ types.ExchangeRate) (bool, error) {
 		if err := k.ExchangeRate.Remove(ctx, denom); err != nil {
 			return true, fmt.Errorf("removing exchange rate: %w", err)
 		}
@@ -47,6 +47,7 @@ func (k Keeper) UpdateExchangeRates(
 	referenceRates := referenceVotes.ValidatorMap()
 	referenceMedian := referenceVotes.WeightedMedian()
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	for denom, votes := range voteMap {
 		// Convert votes to cross exchange rates
 		if denom != referenceDenom {
@@ -62,7 +63,12 @@ func (k Keeper) UpdateExchangeRates(
 		}
 
 		// Set the exchange rate, emit ABCI event
-		if err := k.SetExchangeRateWithEvent(ctx, denom, exchangeRate); err != nil {
+		if err := k.SetExchangeRateWithEvent(ctx, types.NewExchangeRate(
+			denom,
+			exchangeRate,
+			sdkCtx.BlockTime(),
+			uint64(sdkCtx.BlockHeight()),
+		)); err != nil {
 			return fmt.Errorf("setting exchange rate: %w", err)
 		}
 	}

@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	core "noah/types"
 	"noah/x/oracle/types"
 )
 
@@ -46,9 +47,21 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
-	exchangeRate, err := q.k.GetExchangeRate(ctx, req.Denom)
+	if req.Denom == core.MicroArkDenom {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		return &types.QueryExchangeRateResponse{
+			ExchangeRate: types.NewExchangeRate(
+				req.Denom,
+				math.LegacyOneDec(),
+				sdkCtx.BlockTime(),
+				uint64(sdkCtx.BlockHeight()),
+			),
+		}, nil
+	}
+
+	exchangeRate, err := q.k.ExchangeRate.Get(ctx, req.Denom)
 	if err != nil {
-		if errors.Is(err, types.ErrUnknownDenom) {
+		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Errorf(codes.NotFound, "exchange rate not found for denom %s", req.Denom)
 		}
 		return nil, status.Errorf(codes.Internal, "getting exchange rate for denom %s: %v", req.Denom, err)
@@ -59,9 +72,9 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 
 // ExchangeRates queries exchange rates of all denoms
 func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchangeRatesRequest) (*types.QueryExchangeRatesResponse, error) {
-	var exchangeRates sdk.DecCoins
-	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		exchangeRates = append(exchangeRates, sdk.NewDecCoinFromDec(denom, rate))
+	var exchangeRates types.ExchangeRates
+	if err := q.k.ExchangeRate.Walk(ctx, nil, func(_ string, exchangeRate types.ExchangeRate) (bool, error) {
+		exchangeRates = append(exchangeRates, exchangeRate)
 		return false, nil
 	}); err != nil {
 		return nil, status.Errorf(codes.Internal, "listing oracle exchange rates: %v", err)
@@ -109,7 +122,7 @@ func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesR
 // Actives queries all denoms for which exchange rates exist
 func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest) (*types.QueryActivesResponse, error) {
 	var actives []string
-	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
+	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
 		actives = append(actives, denom)
 		return false, nil
 	}); err != nil {

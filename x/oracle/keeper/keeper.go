@@ -38,7 +38,7 @@ type Keeper struct {
 	Schema           collections.Schema
 	Params           collections.Item[types.Params]
 	FeederDelegation collections.Map[sdk.ValAddress, sdk.AccAddress]
-	ExchangeRate     collections.Map[string, math.LegacyDec]
+	ExchangeRate     collections.Map[string, types.ExchangeRate]
 	MissCount        collections.Map[sdk.ValAddress, uint64]
 	Prevote          collections.Map[sdk.ValAddress, types.Prevote]
 	Vote             collections.Map[sdk.ValAddress, types.Vote]
@@ -89,7 +89,7 @@ func NewKeeper(
 			types.ExchangeRateKey,
 			"exchange_rate",
 			collections.StringKey,
-			sdk.LegacyDecValue,
+			codec.CollValue[types.ExchangeRate](cdc),
 		),
 		MissCount: collections.NewMap(
 			sb,
@@ -163,22 +163,22 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
 
-	return exchangeRate, nil
+	return exchangeRate.Rate, nil
 }
 
 // SetExchangeRate sets the consensus exchange rate of Ark denominated in the denom asset.
-func (k Keeper) SetExchangeRate(ctx context.Context, denom string, rate math.LegacyDec) error {
-	if err := k.ExchangeRate.Set(ctx, denom, rate); err != nil {
-		return fmt.Errorf("setting exchange rate for denom %s: %w", denom, err)
+func (k Keeper) SetExchangeRate(ctx context.Context, exchangeRate types.ExchangeRate) error {
+	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
+		return fmt.Errorf("setting exchange rate for denom %s: %w", exchangeRate.Denom, err)
 	}
 
 	return nil
 }
 
 // IterateExchangeRates iterates over all stored exchange rates until the handler returns true.
-func (k Keeper) IterateExchangeRates(ctx context.Context, handler func(denom string, rate math.LegacyDec) (stop bool)) error {
-	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		return handler(denom, rate), nil
+func (k Keeper) IterateExchangeRates(ctx context.Context, handler func(denom string, exchangeRate types.ExchangeRate) (stop bool)) error {
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
+		return handler(denom, exchangeRate), nil
 	}); err != nil {
 		return err
 	}
@@ -188,16 +188,16 @@ func (k Keeper) IterateExchangeRates(ctx context.Context, handler func(denom str
 
 // SetExchangeRateWithEvent sets the consensus exchange rate of Ark denominated in the denom asset to the
 // store with ABCI event
-func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, denom string, exchangeRate math.LegacyDec) error {
-	if err := k.ExchangeRate.Set(ctx, denom, exchangeRate); err != nil {
-		return fmt.Errorf("setting exchange rate with event for denom %s: %w", denom, err)
+func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
+	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
+		return fmt.Errorf("setting exchange rate with event for denom %s: %w", exchangeRate.Denom, err)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeExchangeRateUpdate,
-			sdk.NewAttribute(types.AttributeKeyDenom, denom),
-			sdk.NewAttribute(types.AttributeKeyExchangeRate, exchangeRate.String()),
+			sdk.NewAttribute(types.AttributeKeyDenom, exchangeRate.Denom),
+			sdk.NewAttribute(types.AttributeKeyExchangeRate, exchangeRate.Rate.String()),
 		),
 	)
 

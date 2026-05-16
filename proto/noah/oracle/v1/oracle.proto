@@ -4,6 +4,7 @@ package noah.oracle.v1;
 import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "noah/x/oracle/types";
 
@@ -90,4 +91,12 @@ message ExchangeRate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // BlockTimestamp tracks the block height associated with this price update.
+  // We include block timestamp alongside the price to ensure that smart
+  // contracts and applications are not utilizing stale oracle prices
+  google.protobuf.Timestamp block_timestamp = 3
+      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+
+  // BlockHeight is height of block mentioned above
+  uint64 block_height = 4;
 }
