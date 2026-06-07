@@ -29,6 +29,7 @@ Reference codebases:
 
 - **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
+- **Connect reference**: `../connect/`; when the user says `connect`, use this repo.
 - **Upstream Cosmos SDK reference**: `../cosmos-sdk/`
 - **Gaia reference**: `../gaia/`
 
