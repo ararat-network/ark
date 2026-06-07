@@ -12,23 +12,32 @@ import (
 	"noah/x/oracle/types"
 )
 
-// RewardVoteWinners will give out a portion of seigniorage reward (rewardWeight) to the
+// validatorScore is used to store the scores from the store locally for reward calculations
+type validatorScore struct {
+	addr   sdk.ValAddress
+	weight uint64
+}
+
+// SettleRewards will give out a portion of seigniorage reward (rewardWeight) to the
 // oracle voters that voted faithfully at the end of every VotePeriod.
-func (k Keeper) RewardVoteWinners(
-	ctx context.Context,
-	votePeriod,
-	rewardDistributionWindow uint64,
-	validatorScores map[string]types.ValidatorScore,
-) error {
+func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistributionWindow uint64) error {
 	// sum weight of the scores
-	votePowerSum := int64(0)
-	for _, score := range validatorScores {
-		votePowerSum += score.Weight
+	votePowerSum := math.ZeroInt()
+	validatorScores := []validatorScore{}
+	if err := k.ScoreWeight.Walk(ctx, nil, func(validator sdk.ValAddress, scoreWeight uint64) (bool, error) {
+		votePowerSum = votePowerSum.Add(math.NewIntFromUint64(scoreWeight))
+		validatorScores = append(validatorScores, validatorScore{
+			addr:   validator,
+			weight: scoreWeight,
+		})
+		return false, nil
+	}); err != nil {
+		return err
 	}
 
 	// return if there are no votes
-	if votePowerSum == 0 {
-		k.Logger(ctx).Info("no votes for this period", "votePeriod", votePeriod)
+	if votePowerSum.IsZero() {
+		k.Logger(ctx).Info("no votes for this period", "rewardWindow", rewardWindow)
 		return nil
 	}
 
@@ -37,42 +46,48 @@ func (k Keeper) RewardVoteWinners(
 
 	// return if there's no rewards to give out
 	if rewardPool.IsZero() {
-		k.Logger(ctx).Info("no rewards for this period", "votePeriod", votePeriod)
+		k.Logger(ctx).Info("no rewards for this period", "rewardWindow", rewardWindow)
 		return nil
 	}
 
 	// rewardCoin  = oraclePool * VotePeriod / RewardDistributionWindow
 	periodRewards := math.LegacyNewDecFromInt(rewardPool.AmountOf(core.MicroArkDenom)).
-		MulInt64(int64(votePeriod)).
+		MulInt64(int64(rewardWindow)).
 		QuoInt64(int64(rewardDistributionWindow))
 
 	// distribute rewards
 	var distributedReward sdk.Coins
+	rewardEvents := sdk.Events{}
 	for _, score := range validatorScores {
-		rewardAmt := periodRewards.QuoInt64(votePowerSum).MulInt64(score.Weight).TruncateInt()
+		rewardAmt := periodRewards.QuoInt(votePowerSum).MulInt64(int64(score.weight)).TruncateInt()
 		rewardCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, rewardAmt))
 		if rewardCoins.IsZero() {
 			continue
 		}
 
-		validator, err := k.stakingKeeper.Validator(ctx, score.Recipient)
+		validator, err := k.stakingKeeper.Validator(ctx, score.addr)
 		if err != nil {
-			return fmt.Errorf("getting validator %s for oracle rewards: %w", score.Recipient, err)
+			return fmt.Errorf("getting validator %s for oracle rewards: %w", score.addr, err)
 		}
 		if validator == nil {
-			return fmt.Errorf("validator not found for oracle rewards: %s", score.Recipient)
+			return fmt.Errorf("validator not found for oracle rewards: %s", score.addr)
 		}
 
 		if err := k.distrKeeper.AllocateTokensToValidator(ctx, validator, sdk.NewDecCoinsFromCoins(rewardCoins...)); err != nil {
 			return fmt.Errorf(
 				"allocating oracle rewards to %s with reward %s and weight %d: %w",
-				score.Recipient,
+				score.addr,
 				rewardCoins.String(),
-				score.Weight,
+				score.weight,
 				err,
 			)
 		}
 		distributedReward = distributedReward.Add(rewardCoins...)
+		rewardEvents = append(rewardEvents, sdk.NewEvent(
+			types.EventTypeOracleReward,
+			sdk.NewAttribute(types.AttributeKeyValidator, score.addr.String()),
+			sdk.NewAttribute(types.AttributeKeyRewardAmount, rewardCoins.String()),
+		))
 	}
 
 	// Move distributed reward to distribution module
@@ -80,6 +95,8 @@ func (k Keeper) RewardVoteWinners(
 	if err != nil {
 		return fmt.Errorf("sending coins to distribution module: %w", err)
 	}
+
+	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvents(rewardEvents)
 
 	return nil
 }

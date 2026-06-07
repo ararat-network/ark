@@ -4,20 +4,25 @@
 package types
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
+	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	time "time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+var _ = time.Kitchen
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -27,13 +32,10 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // GenesisState defines the oracle module's genesis state.
 type GenesisState struct {
-	Params            Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
-	FeederDelegations []FeederDelegation `protobuf:"bytes,2,rep,name=feeder_delegations,json=feederDelegations,proto3" json:"feeder_delegations"`
-	ExchangeRates     ExchangeRates      `protobuf:"bytes,3,rep,name=exchange_rates,json=exchangeRates,proto3,castrepeated=ExchangeRates" json:"exchange_rates"`
-	MissCounts        []MissCount        `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts"`
-	Prevotes          []Prevote          `protobuf:"bytes,5,rep,name=prevotes,proto3" json:"prevotes"`
-	Votes             []Vote             `protobuf:"bytes,6,rep,name=votes,proto3" json:"votes"`
-	TobinTaxes        []TobinTax         `protobuf:"bytes,7,rep,name=tobin_taxes,json=tobinTaxes,proto3" json:"tobin_taxes"`
+	Params        Params        `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
+	ExchangeRates ExchangeRates `protobuf:"bytes,2,rep,name=exchange_rates,json=exchangeRates,proto3,castrepeated=ExchangeRates" json:"exchange_rates"`
+	ScoreWeights  []ScoreWeight `protobuf:"bytes,3,rep,name=score_weights,json=scoreWeights,proto3" json:"score_weights"`
+	MissCounts    []MissCount   `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -76,16 +78,16 @@ func (m *GenesisState) GetParams() Params {
 	return Params{}
 }
 
-func (m *GenesisState) GetFeederDelegations() []FeederDelegation {
+func (m *GenesisState) GetExchangeRates() ExchangeRates {
 	if m != nil {
-		return m.FeederDelegations
+		return m.ExchangeRates
 	}
 	return nil
 }
 
-func (m *GenesisState) GetExchangeRates() ExchangeRates {
+func (m *GenesisState) GetScoreWeights() []ScoreWeight {
 	if m != nil {
-		return m.ExchangeRates
+		return m.ScoreWeights
 	}
 	return nil
 }
@@ -97,47 +99,30 @@ func (m *GenesisState) GetMissCounts() []MissCount {
 	return nil
 }
 
-func (m *GenesisState) GetPrevotes() []Prevote {
-	if m != nil {
-		return m.Prevotes
-	}
-	return nil
+// ExchangeRate - struct to store interpreted exchange rates data to store
+type ExchangeRate struct {
+	Denom string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Rate  cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=rate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"rate"`
+	// BlockTimestamp tracks the block height associated with this price update.
+	// We include block timestamp alongside the price to ensure that smart
+	// contracts and applications are not utilizing stale oracle prices
+	BlockTimestamp time.Time `protobuf:"bytes,3,opt,name=block_timestamp,json=blockTimestamp,proto3,stdtime" json:"block_timestamp"`
+	// BlockHeight is height of block mentioned above
+	BlockHeight uint64 `protobuf:"varint,4,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 }
 
-func (m *GenesisState) GetVotes() []Vote {
-	if m != nil {
-		return m.Votes
-	}
-	return nil
-}
-
-func (m *GenesisState) GetTobinTaxes() []TobinTax {
-	if m != nil {
-		return m.TobinTaxes
-	}
-	return nil
-}
-
-// FeederDelegation is the address for where oracle feeder authority are
-// delegated to. By default this struct is only used at genesis to feed in
-// default feeder addresses.
-type FeederDelegation struct {
-	FeederAddress    string `protobuf:"bytes,1,opt,name=feeder_address,json=feederAddress,proto3" json:"feeder_address,omitempty"`
-	ValidatorAddress string `protobuf:"bytes,2,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
-}
-
-func (m *FeederDelegation) Reset()         { *m = FeederDelegation{} }
-func (m *FeederDelegation) String() string { return proto.CompactTextString(m) }
-func (*FeederDelegation) ProtoMessage()    {}
-func (*FeederDelegation) Descriptor() ([]byte, []int) {
+func (m *ExchangeRate) Reset()         { *m = ExchangeRate{} }
+func (m *ExchangeRate) String() string { return proto.CompactTextString(m) }
+func (*ExchangeRate) ProtoMessage()    {}
+func (*ExchangeRate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c062f6d23e382539, []int{1}
 }
-func (m *FeederDelegation) XXX_Unmarshal(b []byte) error {
+func (m *ExchangeRate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FeederDelegation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExchangeRate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_FeederDelegation.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ExchangeRate.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -147,33 +132,94 @@ func (m *FeederDelegation) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return b[:n], nil
 	}
 }
-func (m *FeederDelegation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FeederDelegation.Merge(m, src)
+func (m *ExchangeRate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExchangeRate.Merge(m, src)
 }
-func (m *FeederDelegation) XXX_Size() int {
+func (m *ExchangeRate) XXX_Size() int {
 	return m.Size()
 }
-func (m *FeederDelegation) XXX_DiscardUnknown() {
-	xxx_messageInfo_FeederDelegation.DiscardUnknown(m)
+func (m *ExchangeRate) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExchangeRate.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_FeederDelegation proto.InternalMessageInfo
+var xxx_messageInfo_ExchangeRate proto.InternalMessageInfo
 
-func (m *FeederDelegation) GetFeederAddress() string {
+func (m *ExchangeRate) GetDenom() string {
 	if m != nil {
-		return m.FeederAddress
+		return m.Denom
 	}
 	return ""
 }
 
-func (m *FeederDelegation) GetValidatorAddress() string {
+func (m *ExchangeRate) GetBlockTimestamp() time.Time {
+	if m != nil {
+		return m.BlockTimestamp
+	}
+	return time.Time{}
+}
+
+func (m *ExchangeRate) GetBlockHeight() uint64 {
+	if m != nil {
+		return m.BlockHeight
+	}
+	return 0
+}
+
+// ScoreWeight defines a score weight and validator address pair used in
+// oracle module's genesis state
+type ScoreWeight struct {
+	ValidatorAddress string `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	ScoreWeight      uint64 `protobuf:"varint,2,opt,name=score_weight,json=scoreWeight,proto3" json:"score_weight,omitempty"`
+}
+
+func (m *ScoreWeight) Reset()         { *m = ScoreWeight{} }
+func (m *ScoreWeight) String() string { return proto.CompactTextString(m) }
+func (*ScoreWeight) ProtoMessage()    {}
+func (*ScoreWeight) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c062f6d23e382539, []int{2}
+}
+func (m *ScoreWeight) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ScoreWeight) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ScoreWeight.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ScoreWeight) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScoreWeight.Merge(m, src)
+}
+func (m *ScoreWeight) XXX_Size() int {
+	return m.Size()
+}
+func (m *ScoreWeight) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScoreWeight.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScoreWeight proto.InternalMessageInfo
+
+func (m *ScoreWeight) GetValidatorAddress() string {
 	if m != nil {
 		return m.ValidatorAddress
 	}
 	return ""
 }
 
-// MissCounts defines a miss count and validator address pair used in
+func (m *ScoreWeight) GetScoreWeight() uint64 {
+	if m != nil {
+		return m.ScoreWeight
+	}
+	return 0
+}
+
+// MissCount defines a miss count and validator address pair used in
 // oracle module's genesis state
 type MissCount struct {
 	ValidatorAddress string `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
@@ -184,7 +230,7 @@ func (m *MissCount) Reset()         { *m = MissCount{} }
 func (m *MissCount) String() string { return proto.CompactTextString(m) }
 func (*MissCount) ProtoMessage()    {}
 func (*MissCount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c062f6d23e382539, []int{2}
+	return fileDescriptor_c062f6d23e382539, []int{3}
 }
 func (m *MissCount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -229,46 +275,51 @@ func (m *MissCount) GetMissCount() uint64 {
 
 func init() {
 	proto.RegisterType((*GenesisState)(nil), "noah.oracle.v1.GenesisState")
-	proto.RegisterType((*FeederDelegation)(nil), "noah.oracle.v1.FeederDelegation")
+	proto.RegisterType((*ExchangeRate)(nil), "noah.oracle.v1.ExchangeRate")
+	proto.RegisterType((*ScoreWeight)(nil), "noah.oracle.v1.ScoreWeight")
 	proto.RegisterType((*MissCount)(nil), "noah.oracle.v1.MissCount")
 }
 
 func init() { proto.RegisterFile("noah/oracle/v1/genesis.proto", fileDescriptor_c062f6d23e382539) }
 
 var fileDescriptor_c062f6d23e382539 = []byte{
-	// 507 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0x3f, 0x6f, 0xd3, 0x4e,
-	0x18, 0xc7, 0xe3, 0x36, 0xcd, 0xef, 0x97, 0x0b, 0x89, 0x9a, 0x23, 0x02, 0x37, 0xb4, 0x6e, 0xc8,
-	0x54, 0x21, 0xc5, 0x56, 0x8b, 0x18, 0x58, 0x40, 0x84, 0x16, 0x26, 0x10, 0x4a, 0xab, 0x0e, 0x5d,
-	0xac, 0x6b, 0xfc, 0xd4, 0xb5, 0x14, 0xfb, 0x22, 0x3f, 0x87, 0x15, 0x78, 0x09, 0x4c, 0xbc, 0x07,
-	0x16, 0xc4, 0xc4, 0xd0, 0x17, 0xd1, 0xb1, 0xea, 0xc4, 0x04, 0x28, 0x19, 0x78, 0x1b, 0xc8, 0x77,
-	0x97, 0xd4, 0x39, 0x98, 0x58, 0xa2, 0xf8, 0xfb, 0xe7, 0xe3, 0x47, 0x7e, 0xee, 0xc8, 0x66, 0xc2,
-	0xd9, 0xb9, 0xc7, 0x53, 0x36, 0x1c, 0x81, 0x97, 0xed, 0x7a, 0x21, 0x24, 0x80, 0x11, 0xba, 0xe3,
-	0x94, 0x0b, 0x4e, 0x1b, 0xb9, 0xeb, 0x2a, 0xd7, 0xcd, 0x76, 0xdb, 0x4d, 0x16, 0x47, 0x09, 0xf7,
-	0xe4, 0xaf, 0x8a, 0xb4, 0x37, 0x86, 0x1c, 0x63, 0x8e, 0xbe, 0x7c, 0xf2, 0xd4, 0x83, 0xb6, 0x5a,
-	0x21, 0x0f, 0xb9, 0xd2, 0xf3, 0x7f, 0x5a, 0xbd, 0x67, 0xbc, 0x51, 0xd3, 0xa5, 0xd9, 0xfd, 0x50,
-	0x26, 0xb7, 0x5e, 0xaa, 0x11, 0x0e, 0x05, 0x13, 0x40, 0x1f, 0x93, 0xca, 0x98, 0xa5, 0x2c, 0x46,
-	0xdb, 0xea, 0x58, 0x3b, 0xb5, 0xbd, 0x3b, 0xee, 0xf2, 0x48, 0xee, 0x1b, 0xe9, 0xf6, 0xab, 0x97,
-	0xdf, 0xb7, 0x4b, 0x9f, 0x7f, 0x7d, 0x7d, 0x60, 0x0d, 0x74, 0x81, 0x9e, 0x10, 0x7a, 0x06, 0x10,
-	0x40, 0xea, 0x07, 0x30, 0x82, 0x90, 0x89, 0x88, 0x27, 0x68, 0xaf, 0x74, 0x56, 0x77, 0x6a, 0x7b,
-	0x1d, 0x13, 0xf3, 0x42, 0x26, 0xf7, 0x17, 0xc1, 0x22, 0xb0, 0x79, 0x66, 0x98, 0x48, 0x7d, 0xd2,
-	0x80, 0xc9, 0xf0, 0x9c, 0x25, 0x21, 0xf8, 0x29, 0x13, 0x80, 0xf6, 0xaa, 0xe4, 0x6e, 0x9a, 0xdc,
-	0x03, 0x9d, 0x1a, 0x30, 0x01, 0xfd, 0x76, 0xce, 0xfc, 0xf2, 0x63, 0xbb, 0x5e, 0x54, 0x51, 0xbd,
-	0xa4, 0x0e, 0x45, 0x8d, 0x1e, 0x90, 0x5a, 0x1c, 0x21, 0xfa, 0x43, 0xfe, 0x36, 0x11, 0x68, 0x97,
-	0x25, 0x7d, 0xc3, 0xa4, 0xbf, 0x8a, 0x10, 0x9f, 0xe7, 0x89, 0xe2, 0xb8, 0x24, 0x9e, 0xab, 0x48,
-	0x9f, 0x90, 0xff, 0xc7, 0x29, 0x64, 0x3c, 0x9f, 0x70, 0x4d, 0x32, 0xee, 0xfe, 0xf1, 0x01, 0x95,
-	0x5f, 0x24, 0x2c, 0x3a, 0xf4, 0x11, 0x59, 0x53, 0xe5, 0x8a, 0x2c, 0xb7, 0xcc, 0xf2, 0xb1, 0xd1,
-	0x54, 0x69, 0xba, 0x4f, 0x6a, 0x82, 0x9f, 0x46, 0x89, 0x2f, 0xd8, 0x04, 0xd0, 0xfe, 0x4f, 0x96,
-	0x6d, 0xb3, 0x7c, 0x94, 0x47, 0x8e, 0xd8, 0x64, 0x69, 0x78, 0xa1, 0x45, 0xc0, 0xee, 0x27, 0x8b,
-	0xac, 0x9b, 0x7b, 0xa1, 0x4f, 0x49, 0x43, 0x6f, 0x95, 0x05, 0x41, 0x0a, 0xa8, 0x0e, 0x46, 0xb5,
-	0x6f, 0x5f, 0x5f, 0xf4, 0x5a, 0xfa, 0xf8, 0x3d, 0x53, 0xce, 0xa1, 0x48, 0xa3, 0x24, 0x1c, 0xd4,
-	0x55, 0x5e, 0x8b, 0xf4, 0x35, 0x69, 0x66, 0x6c, 0x14, 0x05, 0x4c, 0xf0, 0x1b, 0xc6, 0x8a, 0x64,
-	0xdc, 0xbf, 0xbe, 0xe8, 0x6d, 0x69, 0xc6, 0xf1, 0x3c, 0xb3, 0x0c, 0x5b, 0xcf, 0x0c, 0xbd, 0xfb,
-	0x9e, 0x54, 0x17, 0x6b, 0xf8, 0x3b, 0xdc, 0xfa, 0x67, 0x38, 0xdd, 0x22, 0xe4, 0xe6, 0x18, 0xc8,
-	0x29, 0xcb, 0x83, 0xea, 0x62, 0xbf, 0xfd, 0xde, 0xe5, 0xd4, 0xb1, 0xae, 0xa6, 0x8e, 0xf5, 0x73,
-	0xea, 0x58, 0x1f, 0x67, 0x4e, 0xe9, 0x6a, 0xe6, 0x94, 0xbe, 0xcd, 0x9c, 0xd2, 0xc9, 0x6d, 0x79,
-	0xcb, 0x26, 0xf3, 0x7b, 0x26, 0xde, 0x8d, 0x01, 0x4f, 0x2b, 0xf2, 0x92, 0x3d, 0xfc, 0x1d, 0x00,
-	0x00, 0xff, 0xff, 0x90, 0xb6, 0xa4, 0xa8, 0xf5, 0x03, 0x00, 0x00,
+	// 563 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x53, 0x31, 0x6f, 0xd3, 0x40,
+	0x14, 0x8e, 0x9b, 0x50, 0x91, 0x73, 0x12, 0xe8, 0x51, 0x21, 0x37, 0x69, 0x9d, 0x34, 0x53, 0x84,
+	0x94, 0xb3, 0x5a, 0x24, 0x24, 0x46, 0x4c, 0x2b, 0x10, 0x50, 0x84, 0x1c, 0x04, 0x12, 0x8b, 0x75,
+	0x71, 0x0e, 0xc7, 0x6a, 0xec, 0x8b, 0xfc, 0xae, 0xa1, 0x65, 0xe2, 0x27, 0xf4, 0x67, 0x20, 0x26,
+	0x86, 0xce, 0xcc, 0x1d, 0xab, 0x4e, 0x88, 0xa1, 0x45, 0xc9, 0xc0, 0xdf, 0x40, 0x77, 0xe7, 0xa4,
+	0x26, 0x33, 0x4b, 0x94, 0xf7, 0xbd, 0xcf, 0xdf, 0xfb, 0xf4, 0xbe, 0x77, 0x68, 0x33, 0xe1, 0x74,
+	0xe8, 0xf0, 0x94, 0x06, 0x23, 0xe6, 0x4c, 0x76, 0x9c, 0x90, 0x25, 0x0c, 0x22, 0x20, 0xe3, 0x94,
+	0x0b, 0x8e, 0x6b, 0xb2, 0x4b, 0x74, 0x97, 0x4c, 0x76, 0xea, 0x6b, 0x34, 0x8e, 0x12, 0xee, 0xa8,
+	0x5f, 0x4d, 0xa9, 0x6f, 0x04, 0x1c, 0x62, 0x0e, 0xbe, 0xaa, 0x1c, 0x5d, 0x64, 0xad, 0xf5, 0x90,
+	0x87, 0x5c, 0xe3, 0xf2, 0x5f, 0x86, 0x36, 0x43, 0xce, 0xc3, 0x11, 0x73, 0x54, 0xd5, 0x3f, 0xfa,
+	0xe8, 0x88, 0x28, 0x66, 0x20, 0x68, 0x3c, 0xce, 0x08, 0x8d, 0x25, 0x4b, 0xd9, 0x78, 0xd5, 0x6c,
+	0xff, 0x58, 0x41, 0x95, 0x67, 0xda, 0x63, 0x4f, 0x50, 0xc1, 0xf0, 0x63, 0xb4, 0x3a, 0xa6, 0x29,
+	0x8d, 0xc1, 0x32, 0x5a, 0x46, 0xc7, 0xdc, 0xbd, 0x4f, 0xfe, 0xf5, 0x4c, 0xde, 0xa8, 0xae, 0x5b,
+	0x3e, 0xbf, 0x6a, 0x16, 0xbe, 0xfe, 0xf9, 0xfe, 0xc0, 0xf0, 0xb2, 0x0f, 0xb0, 0x8f, 0x6a, 0xec,
+	0x38, 0x18, 0xd2, 0x24, 0x64, 0x7e, 0x4a, 0x05, 0x03, 0x6b, 0xa5, 0x55, 0xec, 0x98, 0xbb, 0x9b,
+	0xcb, 0x12, 0xfb, 0x19, 0xcb, 0xa3, 0x82, 0xb9, 0x75, 0x29, 0xf4, 0xed, 0xba, 0x59, 0xcd, 0xa3,
+	0xa0, 0x95, 0xab, 0x2c, 0x8f, 0xe1, 0x97, 0xa8, 0x0a, 0x01, 0x4f, 0x99, 0xff, 0x89, 0x45, 0xe1,
+	0x50, 0x80, 0x55, 0x54, 0xfa, 0x8d, 0x65, 0xfd, 0x9e, 0x24, 0xbd, 0x57, 0x9c, 0xbc, 0xcf, 0x0a,
+	0xdc, 0xe0, 0x80, 0xf7, 0x91, 0x19, 0x47, 0x00, 0x7e, 0xc0, 0x8f, 0x12, 0x01, 0x56, 0x49, 0x49,
+	0x6d, 0x2c, 0x4b, 0x1d, 0x44, 0x00, 0x4f, 0x25, 0x23, 0x2f, 0x84, 0xe2, 0x39, 0x0a, 0xed, 0xa9,
+	0x81, 0x2a, 0x79, 0xe7, 0x78, 0x1d, 0xdd, 0x1a, 0xb0, 0x84, 0xc7, 0x6a, 0x7f, 0x65, 0x4f, 0x17,
+	0xf8, 0x05, 0x2a, 0xc9, 0x95, 0x58, 0x2b, 0x12, 0x74, 0x1f, 0x49, 0xad, 0x5f, 0x57, 0xcd, 0x86,
+	0xce, 0x17, 0x06, 0x87, 0x24, 0xe2, 0x4e, 0x4c, 0xc5, 0x90, 0xbc, 0x62, 0x21, 0x0d, 0x4e, 0xf6,
+	0x58, 0x70, 0x79, 0xd6, 0x45, 0x59, 0xfc, 0x7b, 0x2c, 0xd0, 0x83, 0x95, 0x06, 0x3e, 0x40, 0x77,
+	0xfa, 0x23, 0x1e, 0x1c, 0xfa, 0x8b, 0xa4, 0xad, 0xa2, 0xca, 0xaa, 0x4e, 0xf4, 0x2d, 0x90, 0xf9,
+	0x2d, 0x90, 0xb7, 0x73, 0x86, 0x7b, 0x5b, 0x8e, 0x3c, 0xbd, 0x6e, 0x1a, 0x5e, 0x4d, 0x7d, 0xbc,
+	0xe8, 0xe0, 0x6d, 0x54, 0xd1, 0x72, 0x43, 0xb5, 0x19, 0xab, 0xd4, 0x32, 0x3a, 0x25, 0xcf, 0x54,
+	0xd8, 0x73, 0x05, 0xb5, 0xbf, 0x18, 0xc8, 0xcc, 0x2d, 0x15, 0xbf, 0x46, 0x6b, 0x13, 0x3a, 0x8a,
+	0x06, 0x54, 0xf0, 0xd4, 0xa7, 0x83, 0x41, 0xca, 0x40, 0xdf, 0x4b, 0xd9, 0xdd, 0xbe, 0x3c, 0xeb,
+	0x6e, 0x65, 0xbe, 0xdf, 0xcd, 0x39, 0x4f, 0x34, 0xa5, 0x27, 0xd2, 0x28, 0x09, 0xbd, 0xbb, 0x93,
+	0x25, 0x5c, 0x5a, 0xc8, 0x07, 0xab, 0xb6, 0x54, 0xf2, 0xcc, 0x5c, 0x5e, 0xed, 0xcf, 0xa8, 0xbc,
+	0xc8, 0xe2, 0xbf, 0xcf, 0xdf, 0x42, 0xe8, 0xe6, 0x16, 0xb2, 0xe9, 0xe5, 0x45, 0xc8, 0x6e, 0xf7,
+	0x7c, 0x6a, 0x1b, 0x17, 0x53, 0xdb, 0xf8, 0x3d, 0xb5, 0x8d, 0xd3, 0x99, 0x5d, 0xb8, 0x98, 0xd9,
+	0x85, 0x9f, 0x33, 0xbb, 0xf0, 0xe1, 0x9e, 0x7a, 0x5b, 0xc7, 0xf3, 0xd7, 0x25, 0x4e, 0xc6, 0x0c,
+	0xfa, 0xab, 0x6a, 0xfd, 0x0f, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0xb1, 0xd2, 0x7b, 0x39, 0x0c,
+	0x04, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -291,48 +342,6 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.TobinTaxes) > 0 {
-		for iNdEx := len(m.TobinTaxes) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.TobinTaxes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenesis(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x3a
-		}
-	}
-	if len(m.Votes) > 0 {
-		for iNdEx := len(m.Votes) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Votes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenesis(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x32
-		}
-	}
-	if len(m.Prevotes) > 0 {
-		for iNdEx := len(m.Prevotes) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Prevotes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenesis(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
 	if len(m.MissCounts) > 0 {
 		for iNdEx := len(m.MissCounts) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -347,10 +356,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x22
 		}
 	}
-	if len(m.ExchangeRates) > 0 {
-		for iNdEx := len(m.ExchangeRates) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.ScoreWeights) > 0 {
+		for iNdEx := len(m.ScoreWeights) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.ExchangeRates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.ScoreWeights[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -361,10 +370,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x1a
 		}
 	}
-	if len(m.FeederDelegations) > 0 {
-		for iNdEx := len(m.FeederDelegations) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.ExchangeRates) > 0 {
+		for iNdEx := len(m.ExchangeRates) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.FeederDelegations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.ExchangeRates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -388,7 +397,7 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *FeederDelegation) Marshal() (dAtA []byte, err error) {
+func (m *ExchangeRate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -398,27 +407,78 @@ func (m *FeederDelegation) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FeederDelegation) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExchangeRate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *FeederDelegation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ExchangeRate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
+	if m.BlockHeight != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.BlockHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	n2, err2 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.BlockTimestamp, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BlockTimestamp):])
+	if err2 != nil {
+		return 0, err2
+	}
+	i -= n2
+	i = encodeVarintGenesis(dAtA, i, uint64(n2))
+	i--
+	dAtA[i] = 0x1a
+	{
+		size := m.Rate.Size()
+		i -= size
+		if _, err := m.Rate.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ScoreWeight) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ScoreWeight) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ScoreWeight) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ScoreWeight != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.ScoreWeight))
+		i--
+		dAtA[i] = 0x10
+	}
 	if len(m.ValidatorAddress) > 0 {
 		i -= len(m.ValidatorAddress)
 		copy(dAtA[i:], m.ValidatorAddress)
 		i = encodeVarintGenesis(dAtA, i, uint64(len(m.ValidatorAddress)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.FeederAddress) > 0 {
-		i -= len(m.FeederAddress)
-		copy(dAtA[i:], m.FeederAddress)
-		i = encodeVarintGenesis(dAtA, i, uint64(len(m.FeederAddress)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -479,14 +539,14 @@ func (m *GenesisState) Size() (n int) {
 	_ = l
 	l = m.Params.Size()
 	n += 1 + l + sovGenesis(uint64(l))
-	if len(m.FeederDelegations) > 0 {
-		for _, e := range m.FeederDelegations {
+	if len(m.ExchangeRates) > 0 {
+		for _, e := range m.ExchangeRates {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.ExchangeRates) > 0 {
-		for _, e := range m.ExchangeRates {
+	if len(m.ScoreWeights) > 0 {
+		for _, e := range m.ScoreWeights {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
@@ -497,40 +557,41 @@ func (m *GenesisState) Size() (n int) {
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.Prevotes) > 0 {
-		for _, e := range m.Prevotes {
-			l = e.Size()
-			n += 1 + l + sovGenesis(uint64(l))
-		}
-	}
-	if len(m.Votes) > 0 {
-		for _, e := range m.Votes {
-			l = e.Size()
-			n += 1 + l + sovGenesis(uint64(l))
-		}
-	}
-	if len(m.TobinTaxes) > 0 {
-		for _, e := range m.TobinTaxes {
-			l = e.Size()
-			n += 1 + l + sovGenesis(uint64(l))
-		}
-	}
 	return n
 }
 
-func (m *FeederDelegation) Size() (n int) {
+func (m *ExchangeRate) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.FeederAddress)
+	l = len(m.Denom)
 	if l > 0 {
 		n += 1 + l + sovGenesis(uint64(l))
 	}
+	l = m.Rate.Size()
+	n += 1 + l + sovGenesis(uint64(l))
+	l = github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BlockTimestamp)
+	n += 1 + l + sovGenesis(uint64(l))
+	if m.BlockHeight != 0 {
+		n += 1 + sovGenesis(uint64(m.BlockHeight))
+	}
+	return n
+}
+
+func (m *ScoreWeight) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	l = len(m.ValidatorAddress)
 	if l > 0 {
 		n += 1 + l + sovGenesis(uint64(l))
+	}
+	if m.ScoreWeight != 0 {
+		n += 1 + sovGenesis(uint64(m.ScoreWeight))
 	}
 	return n
 }
@@ -621,40 +682,6 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FeederDelegations", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.FeederDelegations = append(m.FeederDelegations, FeederDelegation{})
-			if err := m.FeederDelegations[len(m.FeederDelegations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ExchangeRates", wireType)
 			}
 			var msglen int
@@ -684,6 +711,40 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			}
 			m.ExchangeRates = append(m.ExchangeRates, ExchangeRate{})
 			if err := m.ExchangeRates[len(m.ExchangeRates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScoreWeights", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScoreWeights = append(m.ScoreWeights, ScoreWeight{})
+			if err := m.ScoreWeights[len(m.ScoreWeights)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -721,108 +782,6 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Prevotes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Prevotes = append(m.Prevotes, Prevote{})
-			if err := m.Prevotes[len(m.Prevotes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Votes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Votes = append(m.Votes, Vote{})
-			if err := m.Votes[len(m.Votes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TobinTaxes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TobinTaxes = append(m.TobinTaxes, TobinTax{})
-			if err := m.TobinTaxes[len(m.TobinTaxes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])
@@ -844,7 +803,7 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *FeederDelegation) Unmarshal(dAtA []byte) error {
+func (m *ExchangeRate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -867,15 +826,15 @@ func (m *FeederDelegation) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: FeederDelegation: wiretype end group for non-group")
+			return fmt.Errorf("proto: ExchangeRate: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: FeederDelegation: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ExchangeRate: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FeederAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -903,9 +862,145 @@ func (m *FeederDelegation) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.FeederAddress = string(dAtA[iNdEx:postIndex])
+			m.Denom = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Rate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockTimestamp", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_cosmos_gogoproto_types.StdTimeUnmarshal(&m.BlockTimestamp, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+			}
+			m.BlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ScoreWeight) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScoreWeight: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScoreWeight: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorAddress", wireType)
 			}
@@ -937,6 +1032,25 @@ func (m *FeederDelegation) Unmarshal(dAtA []byte) error {
 			}
 			m.ValidatorAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScoreWeight", wireType)
+			}
+			m.ScoreWeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ScoreWeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])

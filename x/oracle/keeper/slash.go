@@ -7,10 +7,12 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"noah/x/oracle/types"
 )
 
-// SlashAndResetMissCounts slashes validators who missed too many votes and resets all miss counters
-func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
+// SettleSlash slashes validators who missed too many votes.
+func (k Keeper) SettleSlash(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := sdkCtx.BlockHeight()
 	distributionHeight := height - sdk.ValidatorUpdateDelay - 1
@@ -20,16 +22,18 @@ func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 		return fmt.Errorf("getting params: %w", err)
 	}
 
-	// calculate votePeriodsPerWindow = slash_window / vote_period
-	votePeriodsPerWindow := math.LegacyNewDec(int64(params.SlashWindow)).
-		Quo(math.LegacyNewDec(int64(params.VotePeriod)))
 	powerReduction := k.stakingKeeper.PowerReduction(ctx)
-
+	slashWindow := math.LegacyNewDec(int64(params.SlashWindow))
 	if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, missCount uint64) (bool, error) {
-		// calculate valid vote rate; (votePeriodsPerWindow - missCount) / votePeriodsPerWindow
-		validVoteRate := votePeriodsPerWindow.
+		// clamp missCount to slashWindow
+		if missCount > params.SlashWindow {
+			missCount = params.SlashWindow
+		}
+
+		// calculate valid vote rate; (slashWindow - missCount) / slashWindow
+		validVoteRate := slashWindow.
 			Sub(math.LegacyNewDec(int64(missCount))).
-			Quo(votePeriodsPerWindow)
+			Quo(slashWindow)
 
 		// slash and jail validators who voted less than the minimum required rate
 		if validVoteRate.LT(params.MinValidPerWindow) {
@@ -39,11 +43,20 @@ func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 					k.Logger(ctx).Warn("failed to get consensus address", "validator", validator, "error", err)
 					return false, nil
 				} else {
-					if _, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction); err != nil {
+					slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction)
+					if err != nil {
 						return true, fmt.Errorf("failed to slash validator %s: %w", valAddr, err)
 					} else if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
 						return true, fmt.Errorf("slashed validator, but failed to jail: %w", err)
 					}
+
+					sdkCtx.EventManager().EmitEvent(
+						sdk.NewEvent(
+							types.EventTypeOracleSlash,
+							sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+							sdk.NewAttribute(sdk.AttributeKeyAmount, slashAmount.String()),
+						),
+					)
 				}
 			} else if err != nil {
 				k.Logger(ctx).Warn("failed to get validator", "validator", valAddr, "error", err)
@@ -51,9 +64,6 @@ func (k Keeper) SlashAndResetMissCounts(ctx context.Context) error {
 			}
 		}
 
-		if err := k.MissCount.Remove(ctx, valAddr); err != nil {
-			return true, fmt.Errorf("removing miss counter: %w", err)
-		}
 		return false, nil
 	}); err != nil {
 		return fmt.Errorf("iterating miss counter: %w", err)

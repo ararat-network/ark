@@ -44,10 +44,10 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:   fmt.Sprintf("%s query oracle params", version.AppName),
 				},
 				{
-					RpcMethod: "FeederDelegation",
-					Use:       "feeder [validator]",
-					Short:     "Query the oracle feeder delegate account",
-					Example:   fmt.Sprintf("%s query oracle feeder noahvaloper1...", version.AppName),
+					RpcMethod: "ScoreWeight",
+					Use:       "score [validator]",
+					Short:     "Query the oracle score weight for a validator",
+					Example:   fmt.Sprintf("%s query oracle score noahvaloper1...", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "validator_addr"},
 					},
@@ -57,36 +57,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "miss [validator]",
 					Short:     "Query the oracle miss count for a validator",
 					Example:   fmt.Sprintf("%s query oracle miss noahvaloper1...", version.AppName),
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "validator_addr"},
-					},
-				},
-				{
-					RpcMethod: "Prevotes",
-					Use:       "prevotes",
-					Short:     "Query all outstanding oracle prevotes",
-					Example:   fmt.Sprintf("%s query oracle prevotes", version.AppName),
-				},
-				{
-					RpcMethod: "Prevote",
-					Use:       "prevote [validator]",
-					Short:     "Query an outstanding oracle prevote for a validator",
-					Example:   fmt.Sprintf("%s query oracle prevote noahvaloper1...", version.AppName),
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "validator_addr"},
-					},
-				},
-				{
-					RpcMethod: "Votes",
-					Use:       "votes",
-					Short:     "Query all outstanding oracle votes",
-					Example:   fmt.Sprintf("%s query oracle votes", version.AppName),
-				},
-				{
-					RpcMethod: "Vote",
-					Use:       "vote [validator]",
-					Short:     "Query an outstanding oracle vote for a validator",
-					Example:   fmt.Sprintf("%s query oracle vote noahvaloper1...", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "validator_addr"},
 					},
@@ -117,23 +87,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service: oraclev1.Msg_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-				{
-					RpcMethod: "Prevote",
-					Skip:      true,
-				},
-				{
-					RpcMethod: "Vote",
-					Skip:      true,
-				},
-				{
-					RpcMethod: "DelegateFeedConsent",
-					Use:       "set-feeder [feeder]",
-					Short:     "Delegate oracle voting rights to a feeder address",
-					Example:   fmt.Sprintf("%s tx oracle set-feeder noah1...", version.AppName),
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "feeder"},
-					},
-				},
 				{
 					RpcMethod:   "UpdateParams",
 					Use:         "update-params-proposal [params]",

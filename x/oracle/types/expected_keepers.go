@@ -3,7 +3,6 @@ package types
 import (
 	"context"
 
-	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,31 +13,20 @@ import (
 // StakingKeeper is expected keeper for staking module
 type StakingKeeper interface {
 	Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error) // get validator by operator address; nil when validator not found
-	TotalValidatorPower(context.Context) (math.Int, error)                                  // total bonded tokens within the validator set
 	Slash(context.Context, sdk.ConsAddress, int64, int64, math.LegacyDec) (math.Int, error) // slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
 	Jail(context.Context, sdk.ConsAddress) error                                            // jail a validator
-	IterateBondedValidatorsByPower(context.Context, func(int64, stakingtypes.ValidatorI) bool) error
-	MaxValidators(context.Context) (uint32, error) // MaxValidators returns the maximum amount of bonded validators
 	PowerReduction(ctx context.Context) (res math.Int)
-	ValidatorAddressCodec() address.Codec
-
-	// only used for simulation
-	GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error)
 }
 
 // DistributionKeeper is expected keeper for distribution module
 type DistributionKeeper interface {
 	AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) error
-
-	// only used for simulation
-	GetValidatorOutstandingRewardsCoins(ctx context.Context, val sdk.ValAddress) (sdk.DecCoins, error)
 }
 
 // AccountKeeper is expected keeper for auth module
 type AccountKeeper interface {
 	GetModuleAddress(name string) sdk.AccAddress
 	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
-	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI // only used for simulation
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
@@ -47,7 +35,4 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 	GetDenomMetaData(ctx context.Context, denom string) (banktypes.Metadata, bool)
 	SetDenomMetaData(ctx context.Context, denomMetaData banktypes.Metadata)
-
-	// only used for simulation
-	SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 }

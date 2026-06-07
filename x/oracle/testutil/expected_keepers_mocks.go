@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	address "cosmossdk.io/core/address"
 	math "cosmossdk.io/math"
 	types "github.com/cosmos/cosmos-sdk/types"
 	types0 "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -45,35 +44,6 @@ func (m *MockStakingKeeper) EXPECT() *MockStakingKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetAllValidators mocks base method.
-func (m *MockStakingKeeper) GetAllValidators(ctx context.Context) ([]types1.Validator, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllValidators", ctx)
-	ret0, _ := ret[0].([]types1.Validator)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllValidators indicates an expected call of GetAllValidators.
-func (mr *MockStakingKeeperMockRecorder) GetAllValidators(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllValidators", reflect.TypeOf((*MockStakingKeeper)(nil).GetAllValidators), ctx)
-}
-
-// IterateBondedValidatorsByPower mocks base method.
-func (m *MockStakingKeeper) IterateBondedValidatorsByPower(arg0 context.Context, arg1 func(int64, types1.ValidatorI) bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IterateBondedValidatorsByPower", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IterateBondedValidatorsByPower indicates an expected call of IterateBondedValidatorsByPower.
-func (mr *MockStakingKeeperMockRecorder) IterateBondedValidatorsByPower(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateBondedValidatorsByPower", reflect.TypeOf((*MockStakingKeeper)(nil).IterateBondedValidatorsByPower), arg0, arg1)
-}
-
 // Jail mocks base method.
 func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) error {
 	m.ctrl.T.Helper()
@@ -86,21 +56,6 @@ func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) e
 func (mr *MockStakingKeeperMockRecorder) Jail(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Jail", reflect.TypeOf((*MockStakingKeeper)(nil).Jail), arg0, arg1)
-}
-
-// MaxValidators mocks base method.
-func (m *MockStakingKeeper) MaxValidators(arg0 context.Context) (uint32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MaxValidators", arg0)
-	ret0, _ := ret[0].(uint32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MaxValidators indicates an expected call of MaxValidators.
-func (mr *MockStakingKeeperMockRecorder) MaxValidators(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MaxValidators", reflect.TypeOf((*MockStakingKeeper)(nil).MaxValidators), arg0)
 }
 
 // PowerReduction mocks base method.
@@ -132,48 +87,19 @@ func (mr *MockStakingKeeperMockRecorder) Slash(arg0, arg1, arg2, arg3, arg4 any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Slash", reflect.TypeOf((*MockStakingKeeper)(nil).Slash), arg0, arg1, arg2, arg3, arg4)
 }
 
-// TotalValidatorPower mocks base method.
-func (m *MockStakingKeeper) TotalValidatorPower(arg0 context.Context) (math.Int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TotalValidatorPower", arg0)
-	ret0, _ := ret[0].(math.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// TotalValidatorPower indicates an expected call of TotalValidatorPower.
-func (mr *MockStakingKeeperMockRecorder) TotalValidatorPower(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalValidatorPower", reflect.TypeOf((*MockStakingKeeper)(nil).TotalValidatorPower), arg0)
-}
-
 // Validator mocks base method.
-func (m *MockStakingKeeper) Validator(ctx context.Context, arg1 types.ValAddress) (types1.ValidatorI, error) {
+func (m *MockStakingKeeper) Validator(ctx context.Context, address types.ValAddress) (types1.ValidatorI, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Validator", ctx, arg1)
+	ret := m.ctrl.Call(m, "Validator", ctx, address)
 	ret0, _ := ret[0].(types1.ValidatorI)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Validator indicates an expected call of Validator.
-func (mr *MockStakingKeeperMockRecorder) Validator(ctx, arg1 any) *gomock.Call {
+func (mr *MockStakingKeeperMockRecorder) Validator(ctx, address any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validator", reflect.TypeOf((*MockStakingKeeper)(nil).Validator), ctx, arg1)
-}
-
-// ValidatorAddressCodec mocks base method.
-func (m *MockStakingKeeper) ValidatorAddressCodec() address.Codec {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidatorAddressCodec")
-	ret0, _ := ret[0].(address.Codec)
-	return ret0
-}
-
-// ValidatorAddressCodec indicates an expected call of ValidatorAddressCodec.
-func (mr *MockStakingKeeperMockRecorder) ValidatorAddressCodec() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorAddressCodec", reflect.TypeOf((*MockStakingKeeper)(nil).ValidatorAddressCodec))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validator", reflect.TypeOf((*MockStakingKeeper)(nil).Validator), ctx, address)
 }
 
 // MockDistributionKeeper is a mock of DistributionKeeper interface.
@@ -214,21 +140,6 @@ func (mr *MockDistributionKeeperMockRecorder) AllocateTokensToValidator(ctx, val
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllocateTokensToValidator", reflect.TypeOf((*MockDistributionKeeper)(nil).AllocateTokensToValidator), ctx, val, tokens)
 }
 
-// GetValidatorOutstandingRewardsCoins mocks base method.
-func (m *MockDistributionKeeper) GetValidatorOutstandingRewardsCoins(ctx context.Context, val types.ValAddress) (types.DecCoins, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetValidatorOutstandingRewardsCoins", ctx, val)
-	ret0, _ := ret[0].(types.DecCoins)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetValidatorOutstandingRewardsCoins indicates an expected call of GetValidatorOutstandingRewardsCoins.
-func (mr *MockDistributionKeeperMockRecorder) GetValidatorOutstandingRewardsCoins(ctx, val any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorOutstandingRewardsCoins", reflect.TypeOf((*MockDistributionKeeper)(nil).GetValidatorOutstandingRewardsCoins), ctx, val)
-}
-
 // MockAccountKeeper is a mock of AccountKeeper interface.
 type MockAccountKeeper struct {
 	ctrl     *gomock.Controller
@@ -251,20 +162,6 @@ func NewMockAccountKeeper(ctrl *gomock.Controller) *MockAccountKeeper {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 	return m.recorder
-}
-
-// GetAccount mocks base method.
-func (m *MockAccountKeeper) GetAccount(ctx context.Context, addr types.AccAddress) types.AccountI {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccount", ctx, addr)
-	ret0, _ := ret[0].(types.AccountI)
-	return ret0
-}
-
-// GetAccount indicates an expected call of GetAccount.
-func (mr *MockAccountKeeperMockRecorder) GetAccount(ctx, addr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockAccountKeeper)(nil).GetAccount), ctx, addr)
 }
 
 // GetModuleAccount mocks base method.
@@ -372,18 +269,4 @@ func (m *MockBankKeeper) SetDenomMetaData(ctx context.Context, denomMetaData typ
 func (mr *MockBankKeeperMockRecorder) SetDenomMetaData(ctx, denomMetaData any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDenomMetaData", reflect.TypeOf((*MockBankKeeper)(nil).SetDenomMetaData), ctx, denomMetaData)
-}
-
-// SpendableCoins mocks base method.
-func (m *MockBankKeeper) SpendableCoins(ctx context.Context, addr types.AccAddress) types.Coins {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SpendableCoins", ctx, addr)
-	ret0, _ := ret[0].(types.Coins)
-	return ret0
-}
-
-// SpendableCoins indicates an expected call of SpendableCoins.
-func (mr *MockBankKeeperMockRecorder) SpendableCoins(ctx, addr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpendableCoins", reflect.TypeOf((*MockBankKeeper)(nil).SpendableCoins), ctx, addr)
 }

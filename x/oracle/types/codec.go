@@ -10,9 +10,6 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgPrevote{}, "noah/x/oracle/MsgPrevote")
-	legacy.RegisterAminoMsg(cdc, &MsgVote{}, "noah/x/oracle/MsgVote")
-	legacy.RegisterAminoMsg(cdc, &MsgDelegateFeedConsent{}, "noah/x/oracle/MsgDelegateFeedConsent")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "noah/x/oracle/MsgUpdateParams")
 
 	cdc.RegisterConcrete(Params{}, "noah/x/oracle/Params", nil)
@@ -22,9 +19,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
-		&MsgPrevote{},
-		&MsgVote{},
-		&MsgDelegateFeedConsent{},
 		&MsgUpdateParams{},
 	)
 

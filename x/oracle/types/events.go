@@ -3,16 +3,11 @@ package types
 // Oracle module event types
 const (
 	EventTypeExchangeRateUpdate = "exchange_rate_update"
-	EventTypePrevote            = "prevote"
-	EventTypeVote               = "vote"
-	EventTypeFeedDelegate       = "feed_delegate"
+	EventTypeOracleSlash        = "oracle_slash"
+	EventTypeOracleReward       = "oracle_reward"
 
-	AttributeKeyDenom         = "denom"
-	AttributeKeyVoter         = "voter"
-	AttributeKeyExchangeRate  = "exchange_rate"
-	AttributeKeyExchangeRates = "exchange_rates"
-	AttributeKeyOperator      = "operator"
-	AttributeKeyFeeder        = "feeder"
-
-	AttributeValueCategory = ModuleName
+	AttributeKeyDenom        = "denom"
+	AttributeKeyExchangeRate = "exchange_rate"
+	AttributeKeyValidator    = "validator"
+	AttributeKeyRewardAmount = "reward_amount"
 )

@@ -19,10 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_Prevote_FullMethodName             = "/noah.oracle.v1.Msg/Prevote"
-	Msg_Vote_FullMethodName                = "/noah.oracle.v1.Msg/Vote"
-	Msg_DelegateFeedConsent_FullMethodName = "/noah.oracle.v1.Msg/DelegateFeedConsent"
-	Msg_UpdateParams_FullMethodName        = "/noah.oracle.v1.Msg/UpdateParams"
+	Msg_UpdateParams_FullMethodName = "/noah.oracle.v1.Msg/UpdateParams"
 )
 
 // MsgClient is the client API for Msg service.
@@ -31,12 +28,6 @@ const (
 //
 // Msg defines the oracle Msg service.
 type MsgClient interface {
-	// Prevote defines a method for submitting prevote
-	Prevote(ctx context.Context, in *MsgPrevote, opts ...grpc.CallOption) (*MsgPrevoteResponse, error)
-	// Vote defines a method for submitting vote
-	Vote(ctx context.Context, in *MsgVote, opts ...grpc.CallOption) (*MsgVoteResponse, error)
-	// DelegateFeedConsent defines a method for setting the feeder delegation
-	DelegateFeedConsent(ctx context.Context, in *MsgDelegateFeedConsent, opts ...grpc.CallOption) (*MsgDelegateFeedConsentResponse, error)
 	// UpdateParams defines an operation for updating the x/oracle module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
@@ -48,36 +39,6 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
-}
-
-func (c *msgClient) Prevote(ctx context.Context, in *MsgPrevote, opts ...grpc.CallOption) (*MsgPrevoteResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgPrevoteResponse)
-	err := c.cc.Invoke(ctx, Msg_Prevote_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) Vote(ctx context.Context, in *MsgVote, opts ...grpc.CallOption) (*MsgVoteResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgVoteResponse)
-	err := c.cc.Invoke(ctx, Msg_Vote_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) DelegateFeedConsent(ctx context.Context, in *MsgDelegateFeedConsent, opts ...grpc.CallOption) (*MsgDelegateFeedConsentResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgDelegateFeedConsentResponse)
-	err := c.cc.Invoke(ctx, Msg_DelegateFeedConsent_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
@@ -96,12 +57,6 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 //
 // Msg defines the oracle Msg service.
 type MsgServer interface {
-	// Prevote defines a method for submitting prevote
-	Prevote(context.Context, *MsgPrevote) (*MsgPrevoteResponse, error)
-	// Vote defines a method for submitting vote
-	Vote(context.Context, *MsgVote) (*MsgVoteResponse, error)
-	// DelegateFeedConsent defines a method for setting the feeder delegation
-	DelegateFeedConsent(context.Context, *MsgDelegateFeedConsent) (*MsgDelegateFeedConsentResponse, error)
 	// UpdateParams defines an operation for updating the x/oracle module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
@@ -115,15 +70,6 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
-func (UnimplementedMsgServer) Prevote(context.Context, *MsgPrevote) (*MsgPrevoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Prevote not implemented")
-}
-func (UnimplementedMsgServer) Vote(context.Context, *MsgVote) (*MsgVoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Vote not implemented")
-}
-func (UnimplementedMsgServer) DelegateFeedConsent(context.Context, *MsgDelegateFeedConsent) (*MsgDelegateFeedConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method DelegateFeedConsent not implemented")
-}
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
 }
@@ -146,60 +92,6 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Msg_ServiceDesc, srv)
-}
-
-func _Msg_Prevote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgPrevote)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).Prevote(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_Prevote_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).Prevote(ctx, req.(*MsgPrevote))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_Vote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgVote)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).Vote(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_Vote_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).Vote(ctx, req.(*MsgVote))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_DelegateFeedConsent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgDelegateFeedConsent)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).DelegateFeedConsent(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_DelegateFeedConsent_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).DelegateFeedConsent(ctx, req.(*MsgDelegateFeedConsent))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -227,18 +119,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "noah.oracle.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Prevote",
-			Handler:    _Msg_Prevote_Handler,
-		},
-		{
-			MethodName: "Vote",
-			Handler:    _Msg_Vote_Handler,
-		},
-		{
-			MethodName: "DelegateFeedConsent",
-			Handler:    _Msg_DelegateFeedConsent_Handler,
-		},
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,

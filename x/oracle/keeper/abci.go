@@ -3,12 +3,10 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"maps"
 	"time"
 
-	"cosmossdk.io/math"
-
 	"github.com/cosmos/cosmos-sdk/telemetry"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	core "noah/types"
 	"noah/x/oracle/types"
@@ -23,57 +21,29 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 		return fmt.Errorf("getting params: %w", err)
 	}
 
-	if core.IsPeriodLastBlock(ctx, params.VotePeriod) {
-		validatorScoreMap, err := k.BuildValidatorScoreMap(ctx)
-		if err != nil {
+	if core.IsPeriodLastBlock(ctx, params.RewardWindow) {
+		if err := k.SettleRewards(ctx, params.RewardWindow, params.RewardDistributionWindow); err != nil {
 			return err
 		}
 
-		voteTargets := make(map[string]math.LegacyDec)
-		if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
-			voteTargets[denom] = tobinTax
-			return false, nil
+		// reset scores for all validators
+		if err := k.ScoreWeight.Walk(ctx, nil, func(valAddr sdk.ValAddress, _ uint64) (bool, error) {
+			return false, k.ScoreWeight.Remove(ctx, valAddr)
 		}); err != nil {
-			return fmt.Errorf("iterating tobin tax: %w", err)
-		}
-		storedTobinTaxes := maps.Clone(voteTargets)
-
-		if err := k.UpdateExchangeRates(
-			ctx,
-			params.RewardBand,
-			params.VoteThreshold,
-			voteTargets,
-			validatorScoreMap,
-		); err != nil {
-			return err
-		}
-
-		if err := k.CountMisses(ctx, voteTargets, validatorScoreMap); err != nil {
-			return err
-		}
-
-		if err := k.RewardVoteWinners(
-			ctx,
-			params.VotePeriod,
-			params.RewardDistributionWindow,
-			validatorScoreMap,
-		); err != nil {
-			return err
-		}
-
-		if err := k.ClearVotes(ctx, params.VotePeriod); err != nil {
-			return err
-		}
-
-		if err := k.SyncTobinTaxes(ctx, storedTobinTaxes, params.TobinTaxes); err != nil {
-			return err
+			return fmt.Errorf("clearing score weights: %w", err)
 		}
 	}
 
-	// slash and reset miss counters at the end of each slash window
 	if core.IsPeriodLastBlock(ctx, params.SlashWindow) {
-		if err := k.SlashAndResetMissCounts(ctx); err != nil {
+		if err := k.SettleSlash(ctx); err != nil {
 			return err
+		}
+
+		// reset miss counts for all validators
+		if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, _ uint64) (bool, error) {
+			return false, k.MissCount.Remove(ctx, valAddr)
+		}); err != nil {
+			return fmt.Errorf("clearing miss counts: %w", err)
 		}
 	}
 

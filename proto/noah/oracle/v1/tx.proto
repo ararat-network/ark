@@ -13,66 +13,10 @@ option go_package = "noah/x/oracle/types";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // Prevote defines a method for submitting prevote
-  rpc Prevote(MsgPrevote) returns (MsgPrevoteResponse);
-
-  // Vote defines a method for submitting vote
-  rpc Vote(MsgVote) returns (MsgVoteResponse);
-
-  // DelegateFeedConsent defines a method for setting the feeder delegation
-  rpc DelegateFeedConsent(MsgDelegateFeedConsent)
-      returns (MsgDelegateFeedConsentResponse);
-
   // UpdateParams defines an operation for updating the x/oracle module
   // parameters.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
 }
-
-// MsgPrevote represents a message to submit prevote.
-message MsgPrevote {
-  option (cosmos.msg.v1.signer) = "feeder";
-  option (amino.name) = "noah/x/oracle/MsgPrevote";
-
-  string hash = 1;
-  string feeder = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string validator = 3
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-}
-
-// MsgPrevoteResponse defines the
-// Msg/Prevote response type.
-message MsgPrevoteResponse {}
-
-// MsgVote represents a message to submit vote.
-message MsgVote {
-  option (cosmos.msg.v1.signer) = "feeder";
-  option (amino.name) = "noah/x/oracle/MsgVote";
-
-  string salt = 1;
-  string exchange_rates = 2;
-  string feeder = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string validator = 4
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-}
-
-// MsgVoteResponse defines the
-// Msg/Vote response type.
-message MsgVoteResponse {}
-
-// MsgDelegateFeedConsent represents a message to
-// delegate oracle voting rights to another address.
-message MsgDelegateFeedConsent {
-  option (cosmos.msg.v1.signer) = "validator";
-  option (amino.name) = "noah/x/oracle/MsgDelegateFeedConsent";
-
-  string validator = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  string feeder = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-}
-
-// MsgDelegateFeedConsentResponse defines the Msg/DelegateFeedConsent response
-// type.
-message MsgDelegateFeedConsentResponse {}
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {

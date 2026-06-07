@@ -1,9 +1,6 @@
 package keeper_test
 
 import (
-	"errors"
-
-	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -11,57 +8,44 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-func (s *KeeperTestSuite) TestSlashAndResetMissCounts() {
-	type missCount struct {
-		operator sdk.ValAddress
-		count    uint64
-	}
-
+func (s *KeeperTestSuite) TestSettleSlash() {
 	tests := []struct {
 		name        string
+		missCount   uint64
 		minValid    math.LegacyDec
-		missCounts  []missCount
 		status      stakingtypes.BondStatus
 		jailed      bool
 		expectSlash bool
 	}{
 		{
 			name:        "slashes bonded validator below min valid rate",
+			missCount:   20,
 			minValid:    math.LegacyNewDecWithPrec(90, 2),
-			missCounts:  []missCount{{operator: valAddr1, count: 5}},
 			status:      stakingtypes.Bonded,
 			expectSlash: true,
 		},
 		{
-			name:       "keeps bonded validator above min valid rate",
-			minValid:   math.LegacyNewDecWithPrec(50, 2),
-			missCounts: []missCount{{operator: valAddr1, count: 4}},
+			name:      "keeps bonded validator above min valid rate",
+			missCount: 4,
+			minValid:  math.LegacyNewDecWithPrec(50, 2),
 		},
 		{
-			name:       "boundary valid vote rate is not slashed",
-			minValid:   math.LegacyNewDecWithPrec(50, 2),
-			missCounts: []missCount{{operator: valAddr1, count: 5}},
+			name:      "boundary valid vote rate is not slashed",
+			missCount: 10,
+			minValid:  math.LegacyNewDecWithPrec(50, 2),
 		},
 		{
-			name:       "unbonded validator is not slashed",
-			minValid:   math.LegacyNewDecWithPrec(90, 2),
-			missCounts: []missCount{{operator: valAddr1, count: 5}},
-			status:     stakingtypes.Unbonded,
+			name:      "unbonded validator is not slashed",
+			missCount: 20,
+			minValid:  math.LegacyNewDecWithPrec(90, 2),
+			status:    stakingtypes.Unbonded,
 		},
 		{
-			name:       "jailed validator is not slashed",
-			minValid:   math.LegacyNewDecWithPrec(90, 2),
-			missCounts: []missCount{{operator: valAddr1, count: 5}},
-			status:     stakingtypes.Bonded,
-			jailed:     true,
-		},
-		{
-			name:     "clears all counters across multiple validators",
-			minValid: math.LegacyNewDecWithPrec(50, 2),
-			missCounts: []missCount{
-				{operator: valAddr1, count: 4},
-				{operator: valAddr2, count: 1},
-			},
+			name:      "jailed validator is not slashed",
+			missCount: 20,
+			minValid:  math.LegacyNewDecWithPrec(90, 2),
+			status:    stakingtypes.Bonded,
+			jailed:    true,
 		},
 	}
 
@@ -71,17 +55,14 @@ func (s *KeeperTestSuite) TestSlashAndResetMissCounts() {
 
 			params, err := s.keeper.Params.Get(s.ctx)
 			s.Require().NoError(err)
-			params.VotePeriod = 10
-			params.SlashWindow = 100
+			params.SlashWindow = 20
 			params.MinValidPerWindow = tc.minValid
 			params.SlashFraction = math.LegacyNewDecWithPrec(1, 4)
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+			s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, tc.missCount))
 
-			for _, missCount := range tc.missCounts {
-				s.Require().NoError(s.keeper.MissCount.Set(s.ctx, missCount.operator, missCount.count))
-			}
-
-			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(math.NewInt(1_000_000))
+			powerReduction := math.NewInt(1_000_000)
+			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 
 			if tc.status != stakingtypes.Unspecified {
 				pubKey := ed25519.GenPrivKey().PubKey()
@@ -89,7 +70,7 @@ func (s *KeeperTestSuite) TestSlashAndResetMissCounts() {
 				s.Require().NoError(err)
 				validator.Status = tc.status
 				validator.Jailed = tc.jailed
-				validator.Tokens = math.NewInt(1_000_000).MulRaw(10)
+				validator.Tokens = powerReduction.MulRaw(10)
 
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
 
@@ -102,18 +83,17 @@ func (s *KeeperTestSuite) TestSlashAndResetMissCounts() {
 						100-sdk.ValidatorUpdateDelay-1,
 						int64(10),
 						params.SlashFraction,
-					)
+					).Return(math.NewInt(1), nil)
 					s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr)
 				}
 			}
 
-			err = s.keeper.SlashAndResetMissCounts(s.ctx)
+			err = s.keeper.SettleSlash(s.ctx)
 			s.Require().NoError(err)
 
-			for _, missCount := range tc.missCounts {
-				_, err := s.keeper.MissCount.Get(s.ctx, missCount.operator)
-				s.Require().True(errors.Is(err, collections.ErrNotFound), "expected miss counter to be removed, got %v", err)
-			}
+			missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.missCount, missCount)
 		})
 	}
 }

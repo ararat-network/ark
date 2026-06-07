@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	reflect "reflect"
 	sync "sync"
@@ -18,7 +19,7 @@ import (
 var _ protoreflect.List = (*_GenesisState_2_list)(nil)
 
 type _GenesisState_2_list struct {
-	list *[]*FeederDelegation
+	list *[]*ExchangeRate
 }
 
 func (x *_GenesisState_2_list) Len() int {
@@ -34,18 +35,18 @@ func (x *_GenesisState_2_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*FeederDelegation)
+	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*FeederDelegation)
+	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_2_list) AppendMutable() protoreflect.Value {
-	v := new(FeederDelegation)
+	v := new(ExchangeRate)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -58,7 +59,7 @@ func (x *_GenesisState_2_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_2_list) NewElement() protoreflect.Value {
-	v := new(FeederDelegation)
+	v := new(ExchangeRate)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -69,7 +70,7 @@ func (x *_GenesisState_2_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_3_list)(nil)
 
 type _GenesisState_3_list struct {
-	list *[]*ExchangeRate
+	list *[]*ScoreWeight
 }
 
 func (x *_GenesisState_3_list) Len() int {
@@ -85,18 +86,18 @@ func (x *_GenesisState_3_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
+	concreteValue := valueUnwrapped.Interface().(*ScoreWeight)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
+	concreteValue := valueUnwrapped.Interface().(*ScoreWeight)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_3_list) AppendMutable() protoreflect.Value {
-	v := new(ExchangeRate)
+	v := new(ScoreWeight)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -109,7 +110,7 @@ func (x *_GenesisState_3_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_3_list) NewElement() protoreflect.Value {
-	v := new(ExchangeRate)
+	v := new(ScoreWeight)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -168,180 +169,21 @@ func (x *_GenesisState_4_list) IsValid() bool {
 	return x.list != nil
 }
 
-var _ protoreflect.List = (*_GenesisState_5_list)(nil)
-
-type _GenesisState_5_list struct {
-	list *[]*Prevote
-}
-
-func (x *_GenesisState_5_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_5_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_5_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Prevote)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_5_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Prevote)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_5_list) AppendMutable() protoreflect.Value {
-	v := new(Prevote)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_5_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_5_list) NewElement() protoreflect.Value {
-	v := new(Prevote)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_5_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_GenesisState_6_list)(nil)
-
-type _GenesisState_6_list struct {
-	list *[]*Vote
-}
-
-func (x *_GenesisState_6_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_6_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Vote)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_6_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Vote)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_6_list) AppendMutable() protoreflect.Value {
-	v := new(Vote)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_6_list) NewElement() protoreflect.Value {
-	v := new(Vote)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_GenesisState_7_list)(nil)
-
-type _GenesisState_7_list struct {
-	list *[]*TobinTax
-}
-
-func (x *_GenesisState_7_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_7_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_7_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*TobinTax)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_7_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*TobinTax)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_7_list) AppendMutable() protoreflect.Value {
-	v := new(TobinTax)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_7_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_7_list) NewElement() protoreflect.Value {
-	v := new(TobinTax)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_7_list) IsValid() bool {
-	return x.list != nil
-}
-
 var (
-	md_GenesisState                    protoreflect.MessageDescriptor
-	fd_GenesisState_params             protoreflect.FieldDescriptor
-	fd_GenesisState_feeder_delegations protoreflect.FieldDescriptor
-	fd_GenesisState_exchange_rates     protoreflect.FieldDescriptor
-	fd_GenesisState_miss_counts        protoreflect.FieldDescriptor
-	fd_GenesisState_prevotes           protoreflect.FieldDescriptor
-	fd_GenesisState_votes              protoreflect.FieldDescriptor
-	fd_GenesisState_tobin_taxes        protoreflect.FieldDescriptor
+	md_GenesisState                protoreflect.MessageDescriptor
+	fd_GenesisState_params         protoreflect.FieldDescriptor
+	fd_GenesisState_exchange_rates protoreflect.FieldDescriptor
+	fd_GenesisState_score_weights  protoreflect.FieldDescriptor
+	fd_GenesisState_miss_counts    protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_oracle_v1_genesis_proto_init()
 	md_GenesisState = File_noah_oracle_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
-	fd_GenesisState_feeder_delegations = md_GenesisState.Fields().ByName("feeder_delegations")
 	fd_GenesisState_exchange_rates = md_GenesisState.Fields().ByName("exchange_rates")
+	fd_GenesisState_score_weights = md_GenesisState.Fields().ByName("score_weights")
 	fd_GenesisState_miss_counts = md_GenesisState.Fields().ByName("miss_counts")
-	fd_GenesisState_prevotes = md_GenesisState.Fields().ByName("prevotes")
-	fd_GenesisState_votes = md_GenesisState.Fields().ByName("votes")
-	fd_GenesisState_tobin_taxes = md_GenesisState.Fields().ByName("tobin_taxes")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -415,39 +257,21 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.FeederDelegations) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.FeederDelegations})
-		if !f(fd_GenesisState_feeder_delegations, value) {
+	if len(x.ExchangeRates) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.ExchangeRates})
+		if !f(fd_GenesisState_exchange_rates, value) {
 			return
 		}
 	}
-	if len(x.ExchangeRates) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.ExchangeRates})
-		if !f(fd_GenesisState_exchange_rates, value) {
+	if len(x.ScoreWeights) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.ScoreWeights})
+		if !f(fd_GenesisState_score_weights, value) {
 			return
 		}
 	}
 	if len(x.MissCounts) != 0 {
 		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.MissCounts})
 		if !f(fd_GenesisState_miss_counts, value) {
-			return
-		}
-	}
-	if len(x.Prevotes) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.Prevotes})
-		if !f(fd_GenesisState_prevotes, value) {
-			return
-		}
-	}
-	if len(x.Votes) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.Votes})
-		if !f(fd_GenesisState_votes, value) {
-			return
-		}
-	}
-	if len(x.TobinTaxes) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_7_list{list: &x.TobinTaxes})
-		if !f(fd_GenesisState_tobin_taxes, value) {
 			return
 		}
 	}
@@ -468,18 +292,12 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 	switch fd.FullName() {
 	case "noah.oracle.v1.GenesisState.params":
 		return x.Params != nil
-	case "noah.oracle.v1.GenesisState.feeder_delegations":
-		return len(x.FeederDelegations) != 0
 	case "noah.oracle.v1.GenesisState.exchange_rates":
 		return len(x.ExchangeRates) != 0
+	case "noah.oracle.v1.GenesisState.score_weights":
+		return len(x.ScoreWeights) != 0
 	case "noah.oracle.v1.GenesisState.miss_counts":
 		return len(x.MissCounts) != 0
-	case "noah.oracle.v1.GenesisState.prevotes":
-		return len(x.Prevotes) != 0
-	case "noah.oracle.v1.GenesisState.votes":
-		return len(x.Votes) != 0
-	case "noah.oracle.v1.GenesisState.tobin_taxes":
-		return len(x.TobinTaxes) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.GenesisState"))
@@ -498,18 +316,12 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "noah.oracle.v1.GenesisState.params":
 		x.Params = nil
-	case "noah.oracle.v1.GenesisState.feeder_delegations":
-		x.FeederDelegations = nil
 	case "noah.oracle.v1.GenesisState.exchange_rates":
 		x.ExchangeRates = nil
+	case "noah.oracle.v1.GenesisState.score_weights":
+		x.ScoreWeights = nil
 	case "noah.oracle.v1.GenesisState.miss_counts":
 		x.MissCounts = nil
-	case "noah.oracle.v1.GenesisState.prevotes":
-		x.Prevotes = nil
-	case "noah.oracle.v1.GenesisState.votes":
-		x.Votes = nil
-	case "noah.oracle.v1.GenesisState.tobin_taxes":
-		x.TobinTaxes = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.GenesisState"))
@@ -529,41 +341,23 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "noah.oracle.v1.GenesisState.params":
 		value := x.Params
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "noah.oracle.v1.GenesisState.feeder_delegations":
-		if len(x.FeederDelegations) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_2_list{})
-		}
-		listValue := &_GenesisState_2_list{list: &x.FeederDelegations}
-		return protoreflect.ValueOfList(listValue)
 	case "noah.oracle.v1.GenesisState.exchange_rates":
 		if len(x.ExchangeRates) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_2_list{})
+		}
+		listValue := &_GenesisState_2_list{list: &x.ExchangeRates}
+		return protoreflect.ValueOfList(listValue)
+	case "noah.oracle.v1.GenesisState.score_weights":
+		if len(x.ScoreWeights) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_3_list{})
 		}
-		listValue := &_GenesisState_3_list{list: &x.ExchangeRates}
+		listValue := &_GenesisState_3_list{list: &x.ScoreWeights}
 		return protoreflect.ValueOfList(listValue)
 	case "noah.oracle.v1.GenesisState.miss_counts":
 		if len(x.MissCounts) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_4_list{})
 		}
 		listValue := &_GenesisState_4_list{list: &x.MissCounts}
-		return protoreflect.ValueOfList(listValue)
-	case "noah.oracle.v1.GenesisState.prevotes":
-		if len(x.Prevotes) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_5_list{})
-		}
-		listValue := &_GenesisState_5_list{list: &x.Prevotes}
-		return protoreflect.ValueOfList(listValue)
-	case "noah.oracle.v1.GenesisState.votes":
-		if len(x.Votes) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_6_list{})
-		}
-		listValue := &_GenesisState_6_list{list: &x.Votes}
-		return protoreflect.ValueOfList(listValue)
-	case "noah.oracle.v1.GenesisState.tobin_taxes":
-		if len(x.TobinTaxes) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_7_list{})
-		}
-		listValue := &_GenesisState_7_list{list: &x.TobinTaxes}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -587,30 +381,18 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 	switch fd.FullName() {
 	case "noah.oracle.v1.GenesisState.params":
 		x.Params = value.Message().Interface().(*Params)
-	case "noah.oracle.v1.GenesisState.feeder_delegations":
-		lv := value.List()
-		clv := lv.(*_GenesisState_2_list)
-		x.FeederDelegations = *clv.list
 	case "noah.oracle.v1.GenesisState.exchange_rates":
 		lv := value.List()
-		clv := lv.(*_GenesisState_3_list)
+		clv := lv.(*_GenesisState_2_list)
 		x.ExchangeRates = *clv.list
+	case "noah.oracle.v1.GenesisState.score_weights":
+		lv := value.List()
+		clv := lv.(*_GenesisState_3_list)
+		x.ScoreWeights = *clv.list
 	case "noah.oracle.v1.GenesisState.miss_counts":
 		lv := value.List()
 		clv := lv.(*_GenesisState_4_list)
 		x.MissCounts = *clv.list
-	case "noah.oracle.v1.GenesisState.prevotes":
-		lv := value.List()
-		clv := lv.(*_GenesisState_5_list)
-		x.Prevotes = *clv.list
-	case "noah.oracle.v1.GenesisState.votes":
-		lv := value.List()
-		clv := lv.(*_GenesisState_6_list)
-		x.Votes = *clv.list
-	case "noah.oracle.v1.GenesisState.tobin_taxes":
-		lv := value.List()
-		clv := lv.(*_GenesisState_7_list)
-		x.TobinTaxes = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.GenesisState"))
@@ -636,41 +418,23 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.Params = new(Params)
 		}
 		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
-	case "noah.oracle.v1.GenesisState.feeder_delegations":
-		if x.FeederDelegations == nil {
-			x.FeederDelegations = []*FeederDelegation{}
-		}
-		value := &_GenesisState_2_list{list: &x.FeederDelegations}
-		return protoreflect.ValueOfList(value)
 	case "noah.oracle.v1.GenesisState.exchange_rates":
 		if x.ExchangeRates == nil {
 			x.ExchangeRates = []*ExchangeRate{}
 		}
-		value := &_GenesisState_3_list{list: &x.ExchangeRates}
+		value := &_GenesisState_2_list{list: &x.ExchangeRates}
+		return protoreflect.ValueOfList(value)
+	case "noah.oracle.v1.GenesisState.score_weights":
+		if x.ScoreWeights == nil {
+			x.ScoreWeights = []*ScoreWeight{}
+		}
+		value := &_GenesisState_3_list{list: &x.ScoreWeights}
 		return protoreflect.ValueOfList(value)
 	case "noah.oracle.v1.GenesisState.miss_counts":
 		if x.MissCounts == nil {
 			x.MissCounts = []*MissCount{}
 		}
 		value := &_GenesisState_4_list{list: &x.MissCounts}
-		return protoreflect.ValueOfList(value)
-	case "noah.oracle.v1.GenesisState.prevotes":
-		if x.Prevotes == nil {
-			x.Prevotes = []*Prevote{}
-		}
-		value := &_GenesisState_5_list{list: &x.Prevotes}
-		return protoreflect.ValueOfList(value)
-	case "noah.oracle.v1.GenesisState.votes":
-		if x.Votes == nil {
-			x.Votes = []*Vote{}
-		}
-		value := &_GenesisState_6_list{list: &x.Votes}
-		return protoreflect.ValueOfList(value)
-	case "noah.oracle.v1.GenesisState.tobin_taxes":
-		if x.TobinTaxes == nil {
-			x.TobinTaxes = []*TobinTax{}
-		}
-		value := &_GenesisState_7_list{list: &x.TobinTaxes}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
@@ -688,24 +452,15 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "noah.oracle.v1.GenesisState.params":
 		m := new(Params)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "noah.oracle.v1.GenesisState.feeder_delegations":
-		list := []*FeederDelegation{}
-		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
 	case "noah.oracle.v1.GenesisState.exchange_rates":
 		list := []*ExchangeRate{}
+		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
+	case "noah.oracle.v1.GenesisState.score_weights":
+		list := []*ScoreWeight{}
 		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
 	case "noah.oracle.v1.GenesisState.miss_counts":
 		list := []*MissCount{}
 		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
-	case "noah.oracle.v1.GenesisState.prevotes":
-		list := []*Prevote{}
-		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
-	case "noah.oracle.v1.GenesisState.votes":
-		list := []*Vote{}
-		return protoreflect.ValueOfList(&_GenesisState_6_list{list: &list})
-	case "noah.oracle.v1.GenesisState.tobin_taxes":
-		list := []*TobinTax{}
-		return protoreflect.ValueOfList(&_GenesisState_7_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.GenesisState"))
@@ -779,38 +534,20 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Params)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if len(x.FeederDelegations) > 0 {
-			for _, e := range x.FeederDelegations {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
 		if len(x.ExchangeRates) > 0 {
 			for _, e := range x.ExchangeRates {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
+		if len(x.ScoreWeights) > 0 {
+			for _, e := range x.ScoreWeights {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
 		if len(x.MissCounts) > 0 {
 			for _, e := range x.MissCounts {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if len(x.Prevotes) > 0 {
-			for _, e := range x.Prevotes {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if len(x.Votes) > 0 {
-			for _, e := range x.Votes {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if len(x.TobinTaxes) > 0 {
-			for _, e := range x.TobinTaxes {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -844,54 +581,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.TobinTaxes) > 0 {
-			for iNdEx := len(x.TobinTaxes) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.TobinTaxes[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x3a
-			}
-		}
-		if len(x.Votes) > 0 {
-			for iNdEx := len(x.Votes) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Votes[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x32
-			}
-		}
-		if len(x.Prevotes) > 0 {
-			for iNdEx := len(x.Prevotes) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Prevotes[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x2a
-			}
-		}
 		if len(x.MissCounts) > 0 {
 			for iNdEx := len(x.MissCounts) - 1; iNdEx >= 0; iNdEx-- {
 				encoded, err := options.Marshal(x.MissCounts[iNdEx])
@@ -908,9 +597,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x22
 			}
 		}
-		if len(x.ExchangeRates) > 0 {
-			for iNdEx := len(x.ExchangeRates) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.ExchangeRates[iNdEx])
+		if len(x.ScoreWeights) > 0 {
+			for iNdEx := len(x.ScoreWeights) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ScoreWeights[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -924,9 +613,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x1a
 			}
 		}
-		if len(x.FeederDelegations) > 0 {
-			for iNdEx := len(x.FeederDelegations) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.FeederDelegations[iNdEx])
+		if len(x.ExchangeRates) > 0 {
+			for iNdEx := len(x.ExchangeRates) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ExchangeRates[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1041,40 +730,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FeederDelegations", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.FeederDelegations = append(x.FeederDelegations, &FeederDelegation{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.FeederDelegations[len(x.FeederDelegations)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExchangeRates", wireType)
 				}
 				var msglen int
@@ -1104,6 +759,40 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				}
 				x.ExchangeRates = append(x.ExchangeRates, &ExchangeRate{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExchangeRates[len(x.ExchangeRates)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ScoreWeights", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ScoreWeights = append(x.ScoreWeights, &ScoreWeight{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ScoreWeights[len(x.ScoreWeights)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1138,108 +827,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				}
 				x.MissCounts = append(x.MissCounts, &MissCount{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MissCounts[len(x.MissCounts)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 5:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Prevotes", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Prevotes = append(x.Prevotes, &Prevote{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Prevotes[len(x.Prevotes)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 6:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Votes", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Votes = append(x.Votes, &Vote{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Votes[len(x.Votes)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 7:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TobinTaxes", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.TobinTaxes = append(x.TobinTaxes, &TobinTax{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TobinTaxes[len(x.TobinTaxes)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1279,27 +866,31 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_FeederDelegation                   protoreflect.MessageDescriptor
-	fd_FeederDelegation_feeder_address    protoreflect.FieldDescriptor
-	fd_FeederDelegation_validator_address protoreflect.FieldDescriptor
+	md_ExchangeRate                 protoreflect.MessageDescriptor
+	fd_ExchangeRate_denom           protoreflect.FieldDescriptor
+	fd_ExchangeRate_rate            protoreflect.FieldDescriptor
+	fd_ExchangeRate_block_timestamp protoreflect.FieldDescriptor
+	fd_ExchangeRate_block_height    protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_noah_oracle_v1_genesis_proto_init()
-	md_FeederDelegation = File_noah_oracle_v1_genesis_proto.Messages().ByName("FeederDelegation")
-	fd_FeederDelegation_feeder_address = md_FeederDelegation.Fields().ByName("feeder_address")
-	fd_FeederDelegation_validator_address = md_FeederDelegation.Fields().ByName("validator_address")
+	md_ExchangeRate = File_noah_oracle_v1_genesis_proto.Messages().ByName("ExchangeRate")
+	fd_ExchangeRate_denom = md_ExchangeRate.Fields().ByName("denom")
+	fd_ExchangeRate_rate = md_ExchangeRate.Fields().ByName("rate")
+	fd_ExchangeRate_block_timestamp = md_ExchangeRate.Fields().ByName("block_timestamp")
+	fd_ExchangeRate_block_height = md_ExchangeRate.Fields().ByName("block_height")
 }
 
-var _ protoreflect.Message = (*fastReflection_FeederDelegation)(nil)
+var _ protoreflect.Message = (*fastReflection_ExchangeRate)(nil)
 
-type fastReflection_FeederDelegation FeederDelegation
+type fastReflection_ExchangeRate ExchangeRate
 
-func (x *FeederDelegation) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_FeederDelegation)(x)
+func (x *ExchangeRate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ExchangeRate)(x)
 }
 
-func (x *FeederDelegation) slowProtoReflect() protoreflect.Message {
+func (x *ExchangeRate) slowProtoReflect() protoreflect.Message {
 	mi := &file_noah_oracle_v1_genesis_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1311,43 +902,43 @@ func (x *FeederDelegation) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_FeederDelegation_messageType fastReflection_FeederDelegation_messageType
-var _ protoreflect.MessageType = fastReflection_FeederDelegation_messageType{}
+var _fastReflection_ExchangeRate_messageType fastReflection_ExchangeRate_messageType
+var _ protoreflect.MessageType = fastReflection_ExchangeRate_messageType{}
 
-type fastReflection_FeederDelegation_messageType struct{}
+type fastReflection_ExchangeRate_messageType struct{}
 
-func (x fastReflection_FeederDelegation_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_FeederDelegation)(nil)
+func (x fastReflection_ExchangeRate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ExchangeRate)(nil)
 }
-func (x fastReflection_FeederDelegation_messageType) New() protoreflect.Message {
-	return new(fastReflection_FeederDelegation)
+func (x fastReflection_ExchangeRate_messageType) New() protoreflect.Message {
+	return new(fastReflection_ExchangeRate)
 }
-func (x fastReflection_FeederDelegation_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_FeederDelegation
+func (x fastReflection_ExchangeRate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ExchangeRate
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_FeederDelegation) Descriptor() protoreflect.MessageDescriptor {
-	return md_FeederDelegation
+func (x *fastReflection_ExchangeRate) Descriptor() protoreflect.MessageDescriptor {
+	return md_ExchangeRate
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_FeederDelegation) Type() protoreflect.MessageType {
-	return _fastReflection_FeederDelegation_messageType
+func (x *fastReflection_ExchangeRate) Type() protoreflect.MessageType {
+	return _fastReflection_ExchangeRate_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_FeederDelegation) New() protoreflect.Message {
-	return new(fastReflection_FeederDelegation)
+func (x *fastReflection_ExchangeRate) New() protoreflect.Message {
+	return new(fastReflection_ExchangeRate)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_FeederDelegation) Interface() protoreflect.ProtoMessage {
-	return (*FeederDelegation)(x)
+func (x *fastReflection_ExchangeRate) Interface() protoreflect.ProtoMessage {
+	return (*ExchangeRate)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1355,16 +946,28 @@ func (x *fastReflection_FeederDelegation) Interface() protoreflect.ProtoMessage 
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_FeederDelegation) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.FeederAddress != "" {
-		value := protoreflect.ValueOfString(x.FeederAddress)
-		if !f(fd_FeederDelegation_feeder_address, value) {
+func (x *fastReflection_ExchangeRate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_ExchangeRate_denom, value) {
 			return
 		}
 	}
-	if x.ValidatorAddress != "" {
-		value := protoreflect.ValueOfString(x.ValidatorAddress)
-		if !f(fd_FeederDelegation_validator_address, value) {
+	if x.Rate != "" {
+		value := protoreflect.ValueOfString(x.Rate)
+		if !f(fd_ExchangeRate_rate, value) {
+			return
+		}
+	}
+	if x.BlockTimestamp != nil {
+		value := protoreflect.ValueOfMessage(x.BlockTimestamp.ProtoReflect())
+		if !f(fd_ExchangeRate_block_timestamp, value) {
+			return
+		}
+	}
+	if x.BlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.BlockHeight)
+		if !f(fd_ExchangeRate_block_height, value) {
 			return
 		}
 	}
@@ -1381,17 +984,21 @@ func (x *fastReflection_FeederDelegation) Range(f func(protoreflect.FieldDescrip
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_FeederDelegation) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_ExchangeRate) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "noah.oracle.v1.FeederDelegation.feeder_address":
-		return x.FeederAddress != ""
-	case "noah.oracle.v1.FeederDelegation.validator_address":
-		return x.ValidatorAddress != ""
+	case "noah.oracle.v1.ExchangeRate.denom":
+		return x.Denom != ""
+	case "noah.oracle.v1.ExchangeRate.rate":
+		return x.Rate != ""
+	case "noah.oracle.v1.ExchangeRate.block_timestamp":
+		return x.BlockTimestamp != nil
+	case "noah.oracle.v1.ExchangeRate.block_height":
+		return x.BlockHeight != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.FeederDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.FeederDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1401,17 +1008,21 @@ func (x *fastReflection_FeederDelegation) Has(fd protoreflect.FieldDescriptor) b
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_FeederDelegation) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_ExchangeRate) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.FeederDelegation.feeder_address":
-		x.FeederAddress = ""
-	case "noah.oracle.v1.FeederDelegation.validator_address":
-		x.ValidatorAddress = ""
+	case "noah.oracle.v1.ExchangeRate.denom":
+		x.Denom = ""
+	case "noah.oracle.v1.ExchangeRate.rate":
+		x.Rate = ""
+	case "noah.oracle.v1.ExchangeRate.block_timestamp":
+		x.BlockTimestamp = nil
+	case "noah.oracle.v1.ExchangeRate.block_height":
+		x.BlockHeight = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.FeederDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.FeederDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1421,19 +1032,25 @@ func (x *fastReflection_FeederDelegation) Clear(fd protoreflect.FieldDescriptor)
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_FeederDelegation) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ExchangeRate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "noah.oracle.v1.FeederDelegation.feeder_address":
-		value := x.FeederAddress
+	case "noah.oracle.v1.ExchangeRate.denom":
+		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "noah.oracle.v1.FeederDelegation.validator_address":
-		value := x.ValidatorAddress
+	case "noah.oracle.v1.ExchangeRate.rate":
+		value := x.Rate
 		return protoreflect.ValueOfString(value)
+	case "noah.oracle.v1.ExchangeRate.block_timestamp":
+		value := x.BlockTimestamp
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "noah.oracle.v1.ExchangeRate.block_height":
+		value := x.BlockHeight
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.FeederDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.FeederDelegation does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1447,17 +1064,21 @@ func (x *fastReflection_FeederDelegation) Get(descriptor protoreflect.FieldDescr
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_FeederDelegation) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_ExchangeRate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "noah.oracle.v1.FeederDelegation.feeder_address":
-		x.FeederAddress = value.Interface().(string)
-	case "noah.oracle.v1.FeederDelegation.validator_address":
-		x.ValidatorAddress = value.Interface().(string)
+	case "noah.oracle.v1.ExchangeRate.denom":
+		x.Denom = value.Interface().(string)
+	case "noah.oracle.v1.ExchangeRate.rate":
+		x.Rate = value.Interface().(string)
+	case "noah.oracle.v1.ExchangeRate.block_timestamp":
+		x.BlockTimestamp = value.Message().Interface().(*timestamppb.Timestamp)
+	case "noah.oracle.v1.ExchangeRate.block_height":
+		x.BlockHeight = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.FeederDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.FeederDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1471,44 +1092,56 @@ func (x *fastReflection_FeederDelegation) Set(fd protoreflect.FieldDescriptor, v
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_FeederDelegation) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ExchangeRate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.FeederDelegation.feeder_address":
-		panic(fmt.Errorf("field feeder_address of message noah.oracle.v1.FeederDelegation is not mutable"))
-	case "noah.oracle.v1.FeederDelegation.validator_address":
-		panic(fmt.Errorf("field validator_address of message noah.oracle.v1.FeederDelegation is not mutable"))
+	case "noah.oracle.v1.ExchangeRate.block_timestamp":
+		if x.BlockTimestamp == nil {
+			x.BlockTimestamp = new(timestamppb.Timestamp)
+		}
+		return protoreflect.ValueOfMessage(x.BlockTimestamp.ProtoReflect())
+	case "noah.oracle.v1.ExchangeRate.denom":
+		panic(fmt.Errorf("field denom of message noah.oracle.v1.ExchangeRate is not mutable"))
+	case "noah.oracle.v1.ExchangeRate.rate":
+		panic(fmt.Errorf("field rate of message noah.oracle.v1.ExchangeRate is not mutable"))
+	case "noah.oracle.v1.ExchangeRate.block_height":
+		panic(fmt.Errorf("field block_height of message noah.oracle.v1.ExchangeRate is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.FeederDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.FeederDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_FeederDelegation) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ExchangeRate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "noah.oracle.v1.FeederDelegation.feeder_address":
+	case "noah.oracle.v1.ExchangeRate.denom":
 		return protoreflect.ValueOfString("")
-	case "noah.oracle.v1.FeederDelegation.validator_address":
+	case "noah.oracle.v1.ExchangeRate.rate":
 		return protoreflect.ValueOfString("")
+	case "noah.oracle.v1.ExchangeRate.block_timestamp":
+		m := new(timestamppb.Timestamp)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "noah.oracle.v1.ExchangeRate.block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.FeederDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ExchangeRate"))
 		}
-		panic(fmt.Errorf("message noah.oracle.v1.FeederDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message noah.oracle.v1.ExchangeRate does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_FeederDelegation) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_ExchangeRate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.FeederDelegation", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.ExchangeRate", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1516,7 +1149,7 @@ func (x *fastReflection_FeederDelegation) WhichOneof(d protoreflect.OneofDescrip
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_FeederDelegation) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_ExchangeRate) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1527,7 +1160,7 @@ func (x *fastReflection_FeederDelegation) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_FeederDelegation) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_ExchangeRate) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1539,7 +1172,7 @@ func (x *fastReflection_FeederDelegation) SetUnknown(fields protoreflect.RawFiel
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_FeederDelegation) IsValid() bool {
+func (x *fastReflection_ExchangeRate) IsValid() bool {
 	return x != nil
 }
 
@@ -1549,9 +1182,9 @@ func (x *fastReflection_FeederDelegation) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_ExchangeRate) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*FeederDelegation)
+		x := input.Message.Interface().(*ExchangeRate)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1563,13 +1196,20 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.FeederAddress)
+		l = len(x.Denom)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ValidatorAddress)
+		l = len(x.Rate)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.BlockTimestamp != nil {
+			l = options.Size(x.BlockTimestamp)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.BlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.BlockHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1581,7 +1221,7 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*FeederDelegation)
+		x := input.Message.Interface().(*ExchangeRate)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1600,17 +1240,36 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.ValidatorAddress) > 0 {
-			i -= len(x.ValidatorAddress)
-			copy(dAtA[i:], x.ValidatorAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ValidatorAddress)))
+		if x.BlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.BlockHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.BlockTimestamp != nil {
+			encoded, err := options.Marshal(x.BlockTimestamp)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.Rate) > 0 {
+			i -= len(x.Rate)
+			copy(dAtA[i:], x.Rate)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Rate)))
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.FeederAddress) > 0 {
-			i -= len(x.FeederAddress)
-			copy(dAtA[i:], x.FeederAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FeederAddress)))
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -1625,7 +1284,7 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*FeederDelegation)
+		x := input.Message.Interface().(*ExchangeRate)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1657,15 +1316,15 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: FeederDelegation: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExchangeRate: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: FeederDelegation: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExchangeRate: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FeederAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1693,9 +1352,513 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.FeederAddress = string(dAtA[iNdEx:postIndex])
+				x.Denom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Rate", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Rate = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BlockTimestamp", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.BlockTimestamp == nil {
+					x.BlockTimestamp = &timestamppb.Timestamp{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.BlockTimestamp); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+				}
+				x.BlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.BlockHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_ScoreWeight                   protoreflect.MessageDescriptor
+	fd_ScoreWeight_validator_address protoreflect.FieldDescriptor
+	fd_ScoreWeight_score_weight      protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_noah_oracle_v1_genesis_proto_init()
+	md_ScoreWeight = File_noah_oracle_v1_genesis_proto.Messages().ByName("ScoreWeight")
+	fd_ScoreWeight_validator_address = md_ScoreWeight.Fields().ByName("validator_address")
+	fd_ScoreWeight_score_weight = md_ScoreWeight.Fields().ByName("score_weight")
+}
+
+var _ protoreflect.Message = (*fastReflection_ScoreWeight)(nil)
+
+type fastReflection_ScoreWeight ScoreWeight
+
+func (x *ScoreWeight) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ScoreWeight)(x)
+}
+
+func (x *ScoreWeight) slowProtoReflect() protoreflect.Message {
+	mi := &file_noah_oracle_v1_genesis_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ScoreWeight_messageType fastReflection_ScoreWeight_messageType
+var _ protoreflect.MessageType = fastReflection_ScoreWeight_messageType{}
+
+type fastReflection_ScoreWeight_messageType struct{}
+
+func (x fastReflection_ScoreWeight_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ScoreWeight)(nil)
+}
+func (x fastReflection_ScoreWeight_messageType) New() protoreflect.Message {
+	return new(fastReflection_ScoreWeight)
+}
+func (x fastReflection_ScoreWeight_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ScoreWeight
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ScoreWeight) Descriptor() protoreflect.MessageDescriptor {
+	return md_ScoreWeight
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ScoreWeight) Type() protoreflect.MessageType {
+	return _fastReflection_ScoreWeight_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ScoreWeight) New() protoreflect.Message {
+	return new(fastReflection_ScoreWeight)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ScoreWeight) Interface() protoreflect.ProtoMessage {
+	return (*ScoreWeight)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ScoreWeight) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ValidatorAddress != "" {
+		value := protoreflect.ValueOfString(x.ValidatorAddress)
+		if !f(fd_ScoreWeight_validator_address, value) {
+			return
+		}
+	}
+	if x.ScoreWeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ScoreWeight)
+		if !f(fd_ScoreWeight_score_weight, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ScoreWeight) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "noah.oracle.v1.ScoreWeight.validator_address":
+		return x.ValidatorAddress != ""
+	case "noah.oracle.v1.ScoreWeight.score_weight":
+		return x.ScoreWeight != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ScoreWeight"))
+		}
+		panic(fmt.Errorf("message noah.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ScoreWeight) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "noah.oracle.v1.ScoreWeight.validator_address":
+		x.ValidatorAddress = ""
+	case "noah.oracle.v1.ScoreWeight.score_weight":
+		x.ScoreWeight = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ScoreWeight"))
+		}
+		panic(fmt.Errorf("message noah.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ScoreWeight) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "noah.oracle.v1.ScoreWeight.validator_address":
+		value := x.ValidatorAddress
+		return protoreflect.ValueOfString(value)
+	case "noah.oracle.v1.ScoreWeight.score_weight":
+		value := x.ScoreWeight
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ScoreWeight"))
+		}
+		panic(fmt.Errorf("message noah.oracle.v1.ScoreWeight does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ScoreWeight) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "noah.oracle.v1.ScoreWeight.validator_address":
+		x.ValidatorAddress = value.Interface().(string)
+	case "noah.oracle.v1.ScoreWeight.score_weight":
+		x.ScoreWeight = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ScoreWeight"))
+		}
+		panic(fmt.Errorf("message noah.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ScoreWeight) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "noah.oracle.v1.ScoreWeight.validator_address":
+		panic(fmt.Errorf("field validator_address of message noah.oracle.v1.ScoreWeight is not mutable"))
+	case "noah.oracle.v1.ScoreWeight.score_weight":
+		panic(fmt.Errorf("field score_weight of message noah.oracle.v1.ScoreWeight is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ScoreWeight"))
+		}
+		panic(fmt.Errorf("message noah.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ScoreWeight) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "noah.oracle.v1.ScoreWeight.validator_address":
+		return protoreflect.ValueOfString("")
+	case "noah.oracle.v1.ScoreWeight.score_weight":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.ScoreWeight"))
+		}
+		panic(fmt.Errorf("message noah.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ScoreWeight) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in noah.oracle.v1.ScoreWeight", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ScoreWeight) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ScoreWeight) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ScoreWeight) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ScoreWeight)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.ValidatorAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ScoreWeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ScoreWeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ScoreWeight)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ScoreWeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ScoreWeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.ValidatorAddress) > 0 {
+			i -= len(x.ValidatorAddress)
+			copy(dAtA[i:], x.ValidatorAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ValidatorAddress)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ScoreWeight)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ScoreWeight: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ScoreWeight: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ValidatorAddress", wireType)
 				}
@@ -1727,6 +1890,25 @@ func (x *fastReflection_FeederDelegation) ProtoMethods() *protoiface.Methods {
 				}
 				x.ValidatorAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ScoreWeight", wireType)
+				}
+				x.ScoreWeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ScoreWeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1784,7 +1966,7 @@ func (x *MissCount) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MissCount) slowProtoReflect() protoreflect.Message {
-	mi := &file_noah_oracle_v1_genesis_proto_msgTypes[2]
+	mi := &file_noah_oracle_v1_genesis_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2249,13 +2431,10 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params            *Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	FeederDelegations []*FeederDelegation `protobuf:"bytes,2,rep,name=feeder_delegations,json=feederDelegations,proto3" json:"feeder_delegations,omitempty"`
-	ExchangeRates     []*ExchangeRate     `protobuf:"bytes,3,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
-	MissCounts        []*MissCount        `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts,omitempty"`
-	Prevotes          []*Prevote          `protobuf:"bytes,5,rep,name=prevotes,proto3" json:"prevotes,omitempty"`
-	Votes             []*Vote             `protobuf:"bytes,6,rep,name=votes,proto3" json:"votes,omitempty"`
-	TobinTaxes        []*TobinTax         `protobuf:"bytes,7,rep,name=tobin_taxes,json=tobinTaxes,proto3" json:"tobin_taxes,omitempty"`
+	Params        *Params         `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	ExchangeRates []*ExchangeRate `protobuf:"bytes,2,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
+	ScoreWeights  []*ScoreWeight  `protobuf:"bytes,3,rep,name=score_weights,json=scoreWeights,proto3" json:"score_weights,omitempty"`
+	MissCounts    []*MissCount    `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -2285,16 +2464,16 @@ func (x *GenesisState) GetParams() *Params {
 	return nil
 }
 
-func (x *GenesisState) GetFeederDelegations() []*FeederDelegation {
+func (x *GenesisState) GetExchangeRates() []*ExchangeRate {
 	if x != nil {
-		return x.FeederDelegations
+		return x.ExchangeRates
 	}
 	return nil
 }
 
-func (x *GenesisState) GetExchangeRates() []*ExchangeRate {
+func (x *GenesisState) GetScoreWeights() []*ScoreWeight {
 	if x != nil {
-		return x.ExchangeRates
+		return x.ScoreWeights
 	}
 	return nil
 }
@@ -2306,41 +2485,24 @@ func (x *GenesisState) GetMissCounts() []*MissCount {
 	return nil
 }
 
-func (x *GenesisState) GetPrevotes() []*Prevote {
-	if x != nil {
-		return x.Prevotes
-	}
-	return nil
-}
-
-func (x *GenesisState) GetVotes() []*Vote {
-	if x != nil {
-		return x.Votes
-	}
-	return nil
-}
-
-func (x *GenesisState) GetTobinTaxes() []*TobinTax {
-	if x != nil {
-		return x.TobinTaxes
-	}
-	return nil
-}
-
-// FeederDelegation is the address for where oracle feeder authority are
-// delegated to. By default this struct is only used at genesis to feed in
-// default feeder addresses.
-type FeederDelegation struct {
+// ExchangeRate - struct to store interpreted exchange rates data to store
+type ExchangeRate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	FeederAddress    string `protobuf:"bytes,1,opt,name=feeder_address,json=feederAddress,proto3" json:"feeder_address,omitempty"`
-	ValidatorAddress string `protobuf:"bytes,2,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Rate  string `protobuf:"bytes,2,opt,name=rate,proto3" json:"rate,omitempty"`
+	// BlockTimestamp tracks the block height associated with this price update.
+	// We include block timestamp alongside the price to ensure that smart
+	// contracts and applications are not utilizing stale oracle prices
+	BlockTimestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=block_timestamp,json=blockTimestamp,proto3" json:"block_timestamp,omitempty"`
+	// BlockHeight is height of block mentioned above
+	BlockHeight uint64 `protobuf:"varint,4,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 }
 
-func (x *FeederDelegation) Reset() {
-	*x = FeederDelegation{}
+func (x *ExchangeRate) Reset() {
+	*x = ExchangeRate{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_noah_oracle_v1_genesis_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2348,32 +2510,91 @@ func (x *FeederDelegation) Reset() {
 	}
 }
 
-func (x *FeederDelegation) String() string {
+func (x *ExchangeRate) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FeederDelegation) ProtoMessage() {}
+func (*ExchangeRate) ProtoMessage() {}
 
-// Deprecated: Use FeederDelegation.ProtoReflect.Descriptor instead.
-func (*FeederDelegation) Descriptor() ([]byte, []int) {
+// Deprecated: Use ExchangeRate.ProtoReflect.Descriptor instead.
+func (*ExchangeRate) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_genesis_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *FeederDelegation) GetFeederAddress() string {
+func (x *ExchangeRate) GetDenom() string {
 	if x != nil {
-		return x.FeederAddress
+		return x.Denom
 	}
 	return ""
 }
 
-func (x *FeederDelegation) GetValidatorAddress() string {
+func (x *ExchangeRate) GetRate() string {
+	if x != nil {
+		return x.Rate
+	}
+	return ""
+}
+
+func (x *ExchangeRate) GetBlockTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.BlockTimestamp
+	}
+	return nil
+}
+
+func (x *ExchangeRate) GetBlockHeight() uint64 {
+	if x != nil {
+		return x.BlockHeight
+	}
+	return 0
+}
+
+// ScoreWeight defines a score weight and validator address pair used in
+// oracle module's genesis state
+type ScoreWeight struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ValidatorAddress string `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	ScoreWeight      uint64 `protobuf:"varint,2,opt,name=score_weight,json=scoreWeight,proto3" json:"score_weight,omitempty"`
+}
+
+func (x *ScoreWeight) Reset() {
+	*x = ScoreWeight{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_noah_oracle_v1_genesis_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ScoreWeight) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoreWeight) ProtoMessage() {}
+
+// Deprecated: Use ScoreWeight.ProtoReflect.Descriptor instead.
+func (*ScoreWeight) Descriptor() ([]byte, []int) {
+	return file_noah_oracle_v1_genesis_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ScoreWeight) GetValidatorAddress() string {
 	if x != nil {
 		return x.ValidatorAddress
 	}
 	return ""
 }
 
-// MissCounts defines a miss count and validator address pair used in
+func (x *ScoreWeight) GetScoreWeight() uint64 {
+	if x != nil {
+		return x.ScoreWeight
+	}
+	return 0
+}
+
+// MissCount defines a miss count and validator address pair used in
 // oracle module's genesis state
 type MissCount struct {
 	state         protoimpl.MessageState
@@ -2387,7 +2608,7 @@ type MissCount struct {
 func (x *MissCount) Reset() {
 	*x = MissCount{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_noah_oracle_v1_genesis_proto_msgTypes[2]
+		mi := &file_noah_oracle_v1_genesis_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2401,7 +2622,7 @@ func (*MissCount) ProtoMessage() {}
 
 // Deprecated: Use MissCount.ProtoReflect.Descriptor instead.
 func (*MissCount) Descriptor() ([]byte, []int) {
-	return file_noah_oracle_v1_genesis_proto_rawDescGZIP(), []int{2}
+	return file_noah_oracle_v1_genesis_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MissCount) GetValidatorAddress() string {
@@ -2428,70 +2649,71 @@ var file_noah_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f,
 	0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x1a, 0x1b, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f,
-	0x76, 0x31, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
-	0x8a, 0x04, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65,
-	0x12, 0x39, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x16, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x5a, 0x0a, 0x12, 0x66,
-	0x65, 0x65, 0x64, 0x65, 0x72, 0x5f, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x65, 0x65, 0x64, 0x65, 0x72, 0x44,
-	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x66, 0x65, 0x65, 0x64, 0x65, 0x72, 0x44, 0x65, 0x6c, 0x65,
-	0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x5f, 0x0a, 0x0e, 0x65, 0x78, 0x63, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x1c, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x42, 0x1a, 0xc8,
-	0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x0d, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52,
-	0x61, 0x74, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x65, 0x78, 0x63, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x12, 0x45, 0x0a, 0x0b, 0x6d, 0x69, 0x73, 0x73,
-	0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e,
-	0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12,
-	0x3e, 0x0a, 0x08, 0x70, 0x72, 0x65, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x17, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x76, 0x6f, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x70, 0x72, 0x65, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x12,
-	0x35, 0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14,
-	0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x56, 0x6f, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x12, 0x44, 0x0a, 0x0b, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f,
-	0x74, 0x61, 0x78, 0x65, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x6e, 0x6f,
-	0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x62,
-	0x69, 0x6e, 0x54, 0x61, 0x78, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x0a, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x22, 0xa3, 0x01, 0x0a,
-	0x10, 0x46, 0x65, 0x65, 0x64, 0x65, 0x72, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x3f, 0x0a, 0x0e, 0x66, 0x65, 0x65, 0x64, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x0d, 0x66, 0x65, 0x65, 0x64, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2,
-	0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61,
-	0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x22, 0x7a, 0x0a, 0x09, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12,
-	0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76,
-	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
-	0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x9e,
-	0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4e, 0x4f, 0x58, 0xaa, 0x02, 0x0e,
-	0x4e, 0x6f, 0x61, 0x68, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02,
-	0x0e, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2,
-	0x02, 0x1a, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4e,
-	0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2f, 0x76, 0x31, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x22, 0xbe, 0x02, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x12, 0x39, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x16, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x5f, 0x0a, 0x0e,
+	0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61,
+	0x74, 0x65, 0x42, 0x1a, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x0d, 0x45, 0x78, 0x63, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d,
+	0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x12, 0x4b, 0x0a,
+	0x0d, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x18, 0x03,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x73, 0x63,
+	0x6f, 0x72, 0x65, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x12, 0x45, 0x0a, 0x0b, 0x6d, 0x69,
+	0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74,
+	0x73, 0x22, 0xe2, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61,
+	0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4a, 0x0a, 0x04, 0x72, 0x61, 0x74, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04,
+	0x72, 0x61, 0x74, 0x65, 0x12, 0x4d, 0x0a, 0x0f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x42, 0x08, 0xc8, 0xde, 0x1f, 0x00, 0x90,
+	0xdf, 0x1f, 0x01, 0x52, 0x0e, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x80, 0x01, 0x0a, 0x0b, 0x53, 0x63, 0x6f, 0x72, 0x65,
+	0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
+	0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x21, 0x0a, 0x0c, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x5f,
+	0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x73, 0x63,
+	0x6f, 0x72, 0x65, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x7a, 0x0a, 0x09, 0x4d, 0x69, 0x73,
+	0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
+	0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x69, 0x73, 0x73,
+	0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x9e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6e, 0x6f,
+	0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65,
+	0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x6e, 0x6f,
+	0x61, 0x68, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x6f, 0x61, 0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02,
+	0x03, 0x4e, 0x4f, 0x58, 0xaa, 0x02, 0x0e, 0x4e, 0x6f, 0x61, 0x68, 0x2e, 0x4f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4e, 0x6f, 0x61, 0x68, 0x5c, 0x4f, 0x72,
+	0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4e, 0x6f, 0x61, 0x68, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2506,30 +2728,26 @@ func file_noah_oracle_v1_genesis_proto_rawDescGZIP() []byte {
 	return file_noah_oracle_v1_genesis_proto_rawDescData
 }
 
-var file_noah_oracle_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_noah_oracle_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_noah_oracle_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),     // 0: noah.oracle.v1.GenesisState
-	(*FeederDelegation)(nil), // 1: noah.oracle.v1.FeederDelegation
-	(*MissCount)(nil),        // 2: noah.oracle.v1.MissCount
-	(*Params)(nil),           // 3: noah.oracle.v1.Params
-	(*ExchangeRate)(nil),     // 4: noah.oracle.v1.ExchangeRate
-	(*Prevote)(nil),          // 5: noah.oracle.v1.Prevote
-	(*Vote)(nil),             // 6: noah.oracle.v1.Vote
-	(*TobinTax)(nil),         // 7: noah.oracle.v1.TobinTax
+	(*GenesisState)(nil),          // 0: noah.oracle.v1.GenesisState
+	(*ExchangeRate)(nil),          // 1: noah.oracle.v1.ExchangeRate
+	(*ScoreWeight)(nil),           // 2: noah.oracle.v1.ScoreWeight
+	(*MissCount)(nil),             // 3: noah.oracle.v1.MissCount
+	(*Params)(nil),                // 4: noah.oracle.v1.Params
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_noah_oracle_v1_genesis_proto_depIdxs = []int32{
-	3, // 0: noah.oracle.v1.GenesisState.params:type_name -> noah.oracle.v1.Params
-	1, // 1: noah.oracle.v1.GenesisState.feeder_delegations:type_name -> noah.oracle.v1.FeederDelegation
-	4, // 2: noah.oracle.v1.GenesisState.exchange_rates:type_name -> noah.oracle.v1.ExchangeRate
-	2, // 3: noah.oracle.v1.GenesisState.miss_counts:type_name -> noah.oracle.v1.MissCount
-	5, // 4: noah.oracle.v1.GenesisState.prevotes:type_name -> noah.oracle.v1.Prevote
-	6, // 5: noah.oracle.v1.GenesisState.votes:type_name -> noah.oracle.v1.Vote
-	7, // 6: noah.oracle.v1.GenesisState.tobin_taxes:type_name -> noah.oracle.v1.TobinTax
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	4, // 0: noah.oracle.v1.GenesisState.params:type_name -> noah.oracle.v1.Params
+	1, // 1: noah.oracle.v1.GenesisState.exchange_rates:type_name -> noah.oracle.v1.ExchangeRate
+	2, // 2: noah.oracle.v1.GenesisState.score_weights:type_name -> noah.oracle.v1.ScoreWeight
+	3, // 3: noah.oracle.v1.GenesisState.miss_counts:type_name -> noah.oracle.v1.MissCount
+	5, // 4: noah.oracle.v1.ExchangeRate.block_timestamp:type_name -> google.protobuf.Timestamp
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_noah_oracle_v1_genesis_proto_init() }
@@ -2552,7 +2770,7 @@ func file_noah_oracle_v1_genesis_proto_init() {
 			}
 		}
 		file_noah_oracle_v1_genesis_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FeederDelegation); i {
+			switch v := v.(*ExchangeRate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2564,6 +2782,18 @@ func file_noah_oracle_v1_genesis_proto_init() {
 			}
 		}
 		file_noah_oracle_v1_genesis_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ScoreWeight); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_noah_oracle_v1_genesis_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MissCount); i {
 			case 0:
 				return &v.state
@@ -2582,7 +2812,7 @@ func file_noah_oracle_v1_genesis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_noah_oracle_v1_genesis_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

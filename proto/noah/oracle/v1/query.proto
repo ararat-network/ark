@@ -6,6 +6,7 @@ import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "noah/oracle/v1/genesis.proto";
 import "noah/oracle/v1/oracle.proto";
 
 option go_package = "noah/x/oracle/types";
@@ -51,12 +52,11 @@ service Query {
     option (google.api.http).get = "/noah/oracle/v1/denoms/vote_targets";
   }
 
-  // FeederDelegation returns feeder delegation of a validator
-  rpc FeederDelegation(QueryFeederDelegationRequest)
-      returns (QueryFeederDelegationResponse) {
+  // ScoreWeight returns oracle miss count of a validator
+  rpc ScoreWeight(QueryScoreWeightRequest) returns (QueryScoreWeightResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get =
-        "/noah/oracle/v1/validators/{validator_addr}/feeder";
+        "/noah/oracle/v1/validators/{validator_addr}/score";
   }
 
   // MissCount returns oracle miss count of a validator
@@ -64,32 +64,6 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get =
         "/noah/oracle/v1/validators/{validator_addr}/miss";
-  }
-
-  // Prevote returns an aggregate prevote of a validator
-  rpc Prevote(QueryPrevoteRequest) returns (QueryPrevoteResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/noah/oracle/v1/validators/{validator_addr}/prevote";
-  }
-
-  // Prevotes returns aggregate prevotes of all validators
-  rpc Prevotes(QueryPrevotesRequest) returns (QueryPrevotesResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/noah/oracle/v1/validators/prevotes";
-  }
-
-  // Vote returns an aggregate vote of a validator
-  rpc Vote(QueryVoteRequest) returns (QueryVoteResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/noah/oracle/v1/validators/{validator_addr}/vote";
-  }
-
-  // Votes returns aggregate votes of all validators
-  rpc Votes(QueryVotesRequest) returns (QueryVotesResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/noah/oracle/v1/validators/votes";
   }
 
   // Params queries all parameters.
@@ -185,19 +159,19 @@ message QueryVoteTargetsResponse {
   repeated string vote_targets = 1;
 }
 
-// QueryFeederDelegationRequest is the request type for the
-// Query/FeederDelegation RPC method.
-message QueryFeederDelegationRequest {
+// QueryScoreWeightRequest is the request type for the Query/ScoreWeight RPC
+// method.
+message QueryScoreWeightRequest {
   // validator defines the validator address to query for.
   string validator_addr = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
 }
 
-// QueryFeederDelegationResponse is response type for the
-// Query/FeederDelegation RPC method.
-message QueryFeederDelegationResponse {
-  // feeder_addr defines the feeder delegation of a validator
-  string feeder_addr = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+// QueryScoreWeightResponse is response type for the
+// Query/ScoreWeight RPC method.
+message QueryScoreWeightResponse {
+  // score_weight defines the oracle score weight of a validator
+  uint64 score_weight = 1;
 }
 
 // QueryMissCountRequest is the request type for the Query/MissCount RPC
@@ -213,65 +187,6 @@ message QueryMissCountRequest {
 message QueryMissCountResponse {
   // miss_count defines the oracle miss counter of a validator
   uint64 miss_count = 1;
-}
-
-// QueryPrevoteRequest is the request type for the
-// Query/Prevote RPC method.
-message QueryPrevoteRequest {
-  // validator defines the validator address to query for.
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-}
-
-// QueryPrevoteResponse is response type for the
-// Query/Prevote RPC method.
-message QueryPrevoteResponse {
-  // prevote defines oracle aggregate prevote submitted by a validator
-  // in the current vote period
-  Prevote prevote = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// QueryPrevotesRequest is the request type for the
-// Query/Prevotes RPC method.
-message QueryPrevotesRequest {}
-
-// QueryPrevotesResponse is response type for the
-// Query/Prevotes RPC method.
-message QueryPrevotesResponse {
-  // prevotes defines all oracle aggregate prevotes submitted in the
-  // current vote period
-  repeated Prevote prevotes = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// QueryVoteRequest is the request type for the Query/Vote RPC
-// method.
-message QueryVoteRequest {
-  // validator defines the validator address to query for.
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-}
-
-// QueryVoteResponse is response type for the
-// Query/Vote RPC method.
-message QueryVoteResponse {
-  // vote defines oracle aggregate vote submitted by a validator in
-  // the current vote period
-  Vote vote = 1 [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// QueryVotesRequest is the request type for the Query/Votes
-// RPC method.
-message QueryVotesRequest {}
-
-// QueryVotesResponse is response type for the
-// Query/Votes RPC method.
-message QueryVotesResponse {
-  // votes defines all oracle aggregate votes submitted in the current
-  // vote period
-  repeated Vote votes = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.

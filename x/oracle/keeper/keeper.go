@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"cosmossdk.io/collections"
-	collcodec "cosmossdk.io/collections/codec"
-	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/store"
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/log/v2"
@@ -17,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	core "noah/types"
 	"noah/x/oracle/types"
@@ -35,14 +32,11 @@ type Keeper struct {
 	distrKeeper   types.DistributionKeeper
 	stakingKeeper types.StakingKeeper
 
-	Schema           collections.Schema
-	Params           collections.Item[types.Params]
-	FeederDelegation collections.Map[sdk.ValAddress, sdk.AccAddress]
-	ExchangeRate     collections.Map[string, types.ExchangeRate]
-	MissCount        collections.Map[sdk.ValAddress, uint64]
-	Prevote          collections.Map[sdk.ValAddress, types.Prevote]
-	Vote             collections.Map[sdk.ValAddress, types.Vote]
-	TobinTax         collections.Map[string, math.LegacyDec]
+	Schema       collections.Schema
+	Params       collections.Item[types.Params]
+	ExchangeRate collections.Map[string, types.ExchangeRate]
+	ScoreWeight  collections.Map[sdk.ValAddress, uint64]
+	MissCount    collections.Map[sdk.ValAddress, uint64]
 }
 
 // NewKeeper constructs a new keeper for oracle
@@ -77,13 +71,6 @@ func NewKeeper(
 			"params",
 			codec.CollValue[types.Params](cdc),
 		),
-		FeederDelegation: collections.NewMap(
-			sb,
-			types.FeederDelegationKey,
-			"feeder_delegation",
-			sdk.ValAddressKey,
-			collcodec.KeyToValueCodec(sdk.AccAddressKey),
-		),
 		ExchangeRate: collections.NewMap(
 			sb,
 			types.ExchangeRateKey,
@@ -91,33 +78,19 @@ func NewKeeper(
 			collections.StringKey,
 			codec.CollValue[types.ExchangeRate](cdc),
 		),
+		ScoreWeight: collections.NewMap(
+			sb,
+			types.ScoreWeightKey,
+			"socre_weight",
+			sdk.ValAddressKey,
+			collections.Uint64Value,
+		),
 		MissCount: collections.NewMap(
 			sb,
 			types.MissCountKey,
 			"miss_counter",
 			sdk.ValAddressKey,
 			collections.Uint64Value,
-		),
-		Prevote: collections.NewMap(
-			sb,
-			types.PrevoteKey,
-			"aggregate_exchange_rate_prevote",
-			sdk.ValAddressKey,
-			codec.CollValue[types.Prevote](cdc),
-		),
-		Vote: collections.NewMap(
-			sb,
-			types.VoteKey,
-			"aggregate_exchange_rate_vote",
-			sdk.ValAddressKey,
-			codec.CollValue[types.Vote](cdc),
-		),
-		TobinTax: collections.NewMap(
-			sb,
-			types.TobinTaxKey,
-			"tobin_tax",
-			collections.StringKey,
-			sdk.LegacyDecValue,
 		),
 	}
 
@@ -136,23 +109,25 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetFeederDelegation gets the account address that the validator operator delegated oracle vote rights to
-func (k Keeper) GetFeederDelegation(ctx context.Context, operator sdk.ValAddress) (sdk.AccAddress, error) {
-	accAddress, err := k.FeederDelegation.Get(ctx, operator)
+// GetParams returns the stored params
+func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
+	params, err := k.Params.Get(ctx)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return sdk.AccAddress(operator), nil
-		}
-		return nil, fmt.Errorf("getting feeder delegation for validator %s: %w", operator, err)
+		return types.Params{}, err
 	}
 
-	return accAddress, nil
+	return params, nil
 }
 
 // GetExchangeRate gets the consensus exchange rate of Ark denominated in the denom asset from the store.
 func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	if denom == core.MicroArkDenom {
 		return math.LegacyOneDec(), nil
+	}
+
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return math.LegacyZeroDec(), fmt.Errorf("getting params: %w", err)
 	}
 
 	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
@@ -163,27 +138,20 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := uint64(sdkCtx.BlockHeight())
+	if currentHeight > exchangeRate.BlockHeight &&
+		currentHeight-exchangeRate.BlockHeight > params.MaxExchangeRateAge {
+		return math.LegacyZeroDec(), sdkerrors.Wrapf(
+			types.ErrStaleExchangeRate,
+			"%s rate height %d, current height %d",
+			denom,
+			exchangeRate.BlockHeight,
+			currentHeight,
+		)
+	}
+
 	return exchangeRate.Rate, nil
-}
-
-// SetExchangeRate sets the consensus exchange rate of Ark denominated in the denom asset.
-func (k Keeper) SetExchangeRate(ctx context.Context, exchangeRate types.ExchangeRate) error {
-	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
-		return fmt.Errorf("setting exchange rate for denom %s: %w", exchangeRate.Denom, err)
-	}
-
-	return nil
-}
-
-// IterateExchangeRates iterates over all stored exchange rates until the handler returns true.
-func (k Keeper) IterateExchangeRates(ctx context.Context, handler func(denom string, exchangeRate types.ExchangeRate) (stop bool)) error {
-	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		return handler(denom, exchangeRate), nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // SetExchangeRateWithEvent sets the consensus exchange rate of Ark denominated in the denom asset to the
@@ -204,87 +172,81 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	return nil
 }
 
-// ValidateFeeder validates if the given feeder is allowed to feed the message or not
-func (k Keeper) ValidateFeeder(ctx context.Context, feederAddr sdk.AccAddress, validatorAddr sdk.ValAddress) error {
-	if !feederAddr.Equals(validatorAddr) {
-		delegate, err := k.GetFeederDelegation(ctx, validatorAddr)
-		if err != nil {
-			return fmt.Errorf("getting feeder delegation for validator %s while validating feeder %s: %w", validatorAddr, feederAddr, err)
-		}
-		if !delegate.Equals(feederAddr) {
-			return sdkerrors.Wrap(types.ErrNoVotingPermission, feederAddr.String())
-		}
-	}
-
-	// Check that the given validator exists
-	if val, err := k.stakingKeeper.Validator(ctx, validatorAddr); err != nil {
-		return fmt.Errorf("getting validator %s while validating feeder %s: %w", validatorAddr, feederAddr, err)
-	} else if val == nil || !val.IsBonded() {
-		return sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "validator %s is not active set", validatorAddr.String())
-	}
-
-	return nil
-}
-
-// GetTobinTax gets the tobin tax of the specified denom
-func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
-	tobinTax, err := k.TobinTax.Get(ctx, denom)
+// GetActives returns a list of denoms that with a stored exchange rate with fresh prices
+func (k Keeper) GetActives(ctx context.Context) ([]string, error) {
+	params, err := k.Params.Get(ctx)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+		return nil, fmt.Errorf("getting params: %w", err)
+	}
+
+	var actives []string
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := uint64(sdkCtx.BlockHeight())
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
+		if currentHeight > exchangeRate.BlockHeight &&
+			currentHeight-exchangeRate.BlockHeight > params.MaxExchangeRateAge {
+			return false, nil
 		}
-		return math.LegacyZeroDec(), fmt.Errorf("getting tobin tax for denom %s: %w", denom, err)
-	}
-
-	return tobinTax, nil
-}
-
-// SetTobinTax sets the tobin tax for the denom.
-func (k Keeper) SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error {
-	if err := k.TobinTax.Set(ctx, denom, tobinTax); err != nil {
-		return fmt.Errorf("setting tobin tax for denom %s: %w", denom, err)
-	}
-
-	return nil
-}
-
-// GetTobinTaxes gets the stored tobin taxes.
-func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
-	tobinTaxes := types.TobinTaxes{}
-	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
-		tobinTaxes = append(tobinTaxes, types.TobinTax{Denom: denom, TobinTax: tobinTax})
+		actives = append(actives, denom)
 		return false, nil
 	}); err != nil {
-		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+		return nil, fmt.Errorf("iterating active oracle denoms: %w", err)
 	}
 
-	return tobinTaxes, nil
+	return actives, nil
 }
 
-// SetTobinTaxes replaces the stored tobin taxes and registers bank metadata for active denoms.
-func (k Keeper) SetTobinTaxes(ctx context.Context, tobinTaxes types.TobinTaxes) error {
-	if err := k.TobinTax.Walk(
-		ctx,
-		nil,
-		func(denom string, _ math.LegacyDec) (bool, error) {
-			if err := k.TobinTax.Remove(ctx, denom); err != nil {
-				return false, err
-			}
-
-			return false, nil
-		},
-	); err != nil {
-		return err
+// GetTobinTaxes gets all tobin taxes
+func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, item := range tobinTaxes {
-		if err := k.TobinTax.Set(ctx, item.Denom, item.TobinTax); err != nil {
-			return err
+	return params.TobinTaxes, nil
+}
+
+// GetMaxTobinTax gets the tobin tax of a given denom
+func (k Keeper) GetMaxTobinTax(ctx context.Context, denoms ...string) (math.LegacyDec, error) {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return math.LegacyDec{}, fmt.Errorf("getting params: %w", err)
+	}
+
+	wanted := make(map[string]struct{}, len(denoms))
+	for _, denom := range denoms {
+		wanted[denom] = struct{}{}
+	}
+
+	maxTax := math.LegacyZeroDec()
+	found := 0
+
+	for _, tt := range params.TobinTaxes {
+		if _, ok := wanted[tt.Denom]; !ok {
+			continue
 		}
 
+		found++
+		if tt.TobinTax.GT(maxTax) {
+			maxTax = tt.TobinTax
+		}
+	}
+
+	if found != len(wanted) {
+		return math.LegacyDec{}, types.ErrUnknownDenom
+	}
+
+	return maxTax, nil
+}
+
+// ApplyTobinTaxChanges registers metadata for active Tobin tax denoms and prunes exchange rates for removed denoms.
+func (k Keeper) ApplyTobinTaxChanges(ctx context.Context, tobinTaxes types.TobinTaxes) error {
+	active := make(map[string]struct{}, len(tobinTaxes))
+	for _, tt := range tobinTaxes {
+		active[tt.Denom] = struct{}{}
 		// Register meta data to bank module
-		if _, ok := k.bankKeeper.GetDenomMetaData(ctx, item.Denom); !ok {
-			base := item.Denom
+		if _, ok := k.bankKeeper.GetDenomMetaData(ctx, tt.Denom); !ok {
+			base := tt.Denom
 			display := base[1:]
 
 			k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
@@ -302,35 +264,41 @@ func (k Keeper) SetTobinTaxes(ctx context.Context, tobinTaxes types.TobinTaxes) 
 		}
 	}
 
-	return nil
-}
-
-// SyncTobinTaxes replaces stored Tobin taxes only when params differ.
-func (k Keeper) SyncTobinTaxes(ctx context.Context, stored map[string]math.LegacyDec, tobinTaxes types.TobinTaxes) error {
-	if len(stored) != len(tobinTaxes) {
-		return k.SetTobinTaxes(ctx, tobinTaxes)
-	}
-
-	for _, item := range tobinTaxes {
-		tobinTax, ok := stored[item.Denom]
-		if !ok || !tobinTax.Equal(item.TobinTax) {
-			return k.SetTobinTaxes(ctx, tobinTaxes)
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, _ types.ExchangeRate) (bool, error) {
+		if _, ok := active[denom]; ok {
+			return false, nil
 		}
+
+		return false, k.ExchangeRate.Remove(ctx, denom)
+	}); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// These are light wrappers only used for simulation
+// IncrementMissCount adds the miss count to the given validator
+func (k Keeper) IncrementMissCount(ctx context.Context, validator sdk.ValAddress) error {
+	missCount, err := k.MissCount.Get(ctx, validator)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return fmt.Errorf("getting miss count: %w", err)
+	}
+	if err := k.MissCount.Set(ctx, validator, missCount+1); err != nil {
+		return fmt.Errorf("setting miss count: %w", err)
+	}
 
-func (k Keeper) GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error) {
-	return k.stakingKeeper.GetAllValidators(ctx)
+	return nil
 }
 
-func (k Keeper) Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error) {
-	return k.stakingKeeper.Validator(ctx, address)
-}
+// AddScoreWeight adds to the score weight for the given validator
+func (k Keeper) AddScoreWeight(ctx context.Context, validator sdk.ValAddress, scoreWeight uint64) error {
+	currentScoreWeight, err := k.ScoreWeight.Get(ctx, validator)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return fmt.Errorf("getting score weight: %w", err)
+	}
+	if err := k.ScoreWeight.Set(ctx, validator, currentScoreWeight+scoreWeight); err != nil {
+		return fmt.Errorf("setting score weight for validator %s: %w", validator, err)
+	}
 
-func (k Keeper) ValidatorAddressCodec() address.Codec {
-	return k.stakingKeeper.ValidatorAddressCodec()
+	return nil
 }

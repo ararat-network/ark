@@ -19,19 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_ExchangeRate_FullMethodName     = "/noah.oracle.v1.Query/ExchangeRate"
-	Query_ExchangeRates_FullMethodName    = "/noah.oracle.v1.Query/ExchangeRates"
-	Query_TobinTax_FullMethodName         = "/noah.oracle.v1.Query/TobinTax"
-	Query_TobinTaxes_FullMethodName       = "/noah.oracle.v1.Query/TobinTaxes"
-	Query_Actives_FullMethodName          = "/noah.oracle.v1.Query/Actives"
-	Query_VoteTargets_FullMethodName      = "/noah.oracle.v1.Query/VoteTargets"
-	Query_FeederDelegation_FullMethodName = "/noah.oracle.v1.Query/FeederDelegation"
-	Query_MissCount_FullMethodName        = "/noah.oracle.v1.Query/MissCount"
-	Query_Prevote_FullMethodName          = "/noah.oracle.v1.Query/Prevote"
-	Query_Prevotes_FullMethodName         = "/noah.oracle.v1.Query/Prevotes"
-	Query_Vote_FullMethodName             = "/noah.oracle.v1.Query/Vote"
-	Query_Votes_FullMethodName            = "/noah.oracle.v1.Query/Votes"
-	Query_Params_FullMethodName           = "/noah.oracle.v1.Query/Params"
+	Query_ExchangeRate_FullMethodName  = "/noah.oracle.v1.Query/ExchangeRate"
+	Query_ExchangeRates_FullMethodName = "/noah.oracle.v1.Query/ExchangeRates"
+	Query_TobinTax_FullMethodName      = "/noah.oracle.v1.Query/TobinTax"
+	Query_TobinTaxes_FullMethodName    = "/noah.oracle.v1.Query/TobinTaxes"
+	Query_Actives_FullMethodName       = "/noah.oracle.v1.Query/Actives"
+	Query_VoteTargets_FullMethodName   = "/noah.oracle.v1.Query/VoteTargets"
+	Query_ScoreWeight_FullMethodName   = "/noah.oracle.v1.Query/ScoreWeight"
+	Query_MissCount_FullMethodName     = "/noah.oracle.v1.Query/MissCount"
+	Query_Params_FullMethodName        = "/noah.oracle.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -52,18 +48,10 @@ type QueryClient interface {
 	Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
-	// FeederDelegation returns feeder delegation of a validator
-	FeederDelegation(ctx context.Context, in *QueryFeederDelegationRequest, opts ...grpc.CallOption) (*QueryFeederDelegationResponse, error)
+	// ScoreWeight returns oracle miss count of a validator
+	ScoreWeight(ctx context.Context, in *QueryScoreWeightRequest, opts ...grpc.CallOption) (*QueryScoreWeightResponse, error)
 	// MissCount returns oracle miss count of a validator
 	MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error)
-	// Prevote returns an aggregate prevote of a validator
-	Prevote(ctx context.Context, in *QueryPrevoteRequest, opts ...grpc.CallOption) (*QueryPrevoteResponse, error)
-	// Prevotes returns aggregate prevotes of all validators
-	Prevotes(ctx context.Context, in *QueryPrevotesRequest, opts ...grpc.CallOption) (*QueryPrevotesResponse, error)
-	// Vote returns an aggregate vote of a validator
-	Vote(ctx context.Context, in *QueryVoteRequest, opts ...grpc.CallOption) (*QueryVoteResponse, error)
-	// Votes returns aggregate votes of all validators
-	Votes(ctx context.Context, in *QueryVotesRequest, opts ...grpc.CallOption) (*QueryVotesResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 }
@@ -136,10 +124,10 @@ func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsReque
 	return out, nil
 }
 
-func (c *queryClient) FeederDelegation(ctx context.Context, in *QueryFeederDelegationRequest, opts ...grpc.CallOption) (*QueryFeederDelegationResponse, error) {
+func (c *queryClient) ScoreWeight(ctx context.Context, in *QueryScoreWeightRequest, opts ...grpc.CallOption) (*QueryScoreWeightResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryFeederDelegationResponse)
-	err := c.cc.Invoke(ctx, Query_FeederDelegation_FullMethodName, in, out, cOpts...)
+	out := new(QueryScoreWeightResponse)
+	err := c.cc.Invoke(ctx, Query_ScoreWeight_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,46 +138,6 @@ func (c *queryClient) MissCount(ctx context.Context, in *QueryMissCountRequest, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryMissCountResponse)
 	err := c.cc.Invoke(ctx, Query_MissCount_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Prevote(ctx context.Context, in *QueryPrevoteRequest, opts ...grpc.CallOption) (*QueryPrevoteResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryPrevoteResponse)
-	err := c.cc.Invoke(ctx, Query_Prevote_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Prevotes(ctx context.Context, in *QueryPrevotesRequest, opts ...grpc.CallOption) (*QueryPrevotesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryPrevotesResponse)
-	err := c.cc.Invoke(ctx, Query_Prevotes_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Vote(ctx context.Context, in *QueryVoteRequest, opts ...grpc.CallOption) (*QueryVoteResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryVoteResponse)
-	err := c.cc.Invoke(ctx, Query_Vote_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Votes(ctx context.Context, in *QueryVotesRequest, opts ...grpc.CallOption) (*QueryVotesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryVotesResponse)
-	err := c.cc.Invoke(ctx, Query_Votes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -224,18 +172,10 @@ type QueryServer interface {
 	Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
-	// FeederDelegation returns feeder delegation of a validator
-	FeederDelegation(context.Context, *QueryFeederDelegationRequest) (*QueryFeederDelegationResponse, error)
+	// ScoreWeight returns oracle miss count of a validator
+	ScoreWeight(context.Context, *QueryScoreWeightRequest) (*QueryScoreWeightResponse, error)
 	// MissCount returns oracle miss count of a validator
 	MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error)
-	// Prevote returns an aggregate prevote of a validator
-	Prevote(context.Context, *QueryPrevoteRequest) (*QueryPrevoteResponse, error)
-	// Prevotes returns aggregate prevotes of all validators
-	Prevotes(context.Context, *QueryPrevotesRequest) (*QueryPrevotesResponse, error)
-	// Vote returns an aggregate vote of a validator
-	Vote(context.Context, *QueryVoteRequest) (*QueryVoteResponse, error)
-	// Votes returns aggregate votes of all validators
-	Votes(context.Context, *QueryVotesRequest) (*QueryVotesResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	mustEmbedUnimplementedQueryServer()
@@ -266,23 +206,11 @@ func (UnimplementedQueryServer) Actives(context.Context, *QueryActivesRequest) (
 func (UnimplementedQueryServer) VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VoteTargets not implemented")
 }
-func (UnimplementedQueryServer) FeederDelegation(context.Context, *QueryFeederDelegationRequest) (*QueryFeederDelegationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method FeederDelegation not implemented")
+func (UnimplementedQueryServer) ScoreWeight(context.Context, *QueryScoreWeightRequest) (*QueryScoreWeightResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ScoreWeight not implemented")
 }
 func (UnimplementedQueryServer) MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MissCount not implemented")
-}
-func (UnimplementedQueryServer) Prevote(context.Context, *QueryPrevoteRequest) (*QueryPrevoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Prevote not implemented")
-}
-func (UnimplementedQueryServer) Prevotes(context.Context, *QueryPrevotesRequest) (*QueryPrevotesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Prevotes not implemented")
-}
-func (UnimplementedQueryServer) Vote(context.Context, *QueryVoteRequest) (*QueryVoteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Vote not implemented")
-}
-func (UnimplementedQueryServer) Votes(context.Context, *QueryVotesRequest) (*QueryVotesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Votes not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
@@ -416,20 +344,20 @@ func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_FeederDelegation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryFeederDelegationRequest)
+func _Query_ScoreWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryScoreWeightRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).FeederDelegation(ctx, in)
+		return srv.(QueryServer).ScoreWeight(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_FeederDelegation_FullMethodName,
+		FullMethod: Query_ScoreWeight_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).FeederDelegation(ctx, req.(*QueryFeederDelegationRequest))
+		return srv.(QueryServer).ScoreWeight(ctx, req.(*QueryScoreWeightRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -448,78 +376,6 @@ func _Query_MissCount_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).MissCount(ctx, req.(*QueryMissCountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Prevote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryPrevoteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Prevote(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Prevote_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Prevote(ctx, req.(*QueryPrevoteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Prevotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryPrevotesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Prevotes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Prevotes_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Prevotes(ctx, req.(*QueryPrevotesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Vote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryVoteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Vote(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Vote_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Vote(ctx, req.(*QueryVoteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Votes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryVotesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Votes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Votes_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Votes(ctx, req.(*QueryVotesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -574,28 +430,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_VoteTargets_Handler,
 		},
 		{
-			MethodName: "FeederDelegation",
-			Handler:    _Query_FeederDelegation_Handler,
+			MethodName: "ScoreWeight",
+			Handler:    _Query_ScoreWeight_Handler,
 		},
 		{
 			MethodName: "MissCount",
 			Handler:    _Query_MissCount_Handler,
-		},
-		{
-			MethodName: "Prevote",
-			Handler:    _Query_Prevote_Handler,
-		},
-		{
-			MethodName: "Prevotes",
-			Handler:    _Query_Prevotes_Handler,
-		},
-		{
-			MethodName: "Vote",
-			Handler:    _Query_Vote_Handler,
-		},
-		{
-			MethodName: "Votes",
-			Handler:    _Query_Votes_Handler,
 		},
 		{
 			MethodName: "Params",

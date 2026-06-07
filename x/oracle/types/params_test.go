@@ -20,12 +20,6 @@ func TestParamsValidate(t *testing.T) {
 			name:   "default is valid",
 			mutate: func(p *types.Params) {},
 		},
-		// VotePeriod
-		{
-			name:      "vote period zero",
-			mutate:    func(p *types.Params) { p.VotePeriod = 0 },
-			expectErr: "VotePeriod must be > 0",
-		},
 		// VoteThreshold
 		{
 			name:      "vote threshold at 33%",
@@ -60,15 +54,21 @@ func TestParamsValidate(t *testing.T) {
 			name:   "reward band at zero",
 			mutate: func(p *types.Params) { p.RewardBand = math.LegacyZeroDec() },
 		},
+		// RewardWindow
+		{
+			name:      "reward window zero",
+			mutate:    func(p *types.Params) { p.RewardWindow = 0 },
+			expectErr: "RewardWindow must be > 0",
+		},
 		// RewardDistributionWindow
 		{
-			name:      "reward distribution window less than vote period",
-			mutate:    func(p *types.Params) { p.RewardDistributionWindow = p.VotePeriod - 1 },
-			expectErr: "RewardDistributionWindow must be greater than or equal with VotePeriod",
+			name:      "reward distribution window less than reward window",
+			mutate:    func(p *types.Params) { p.RewardDistributionWindow = p.RewardWindow - 1 },
+			expectErr: "RewardDistributionWindow must be greater than or equal with RewardWindow",
 		},
 		{
-			name:   "reward distribution window equal to vote period",
-			mutate: func(p *types.Params) { p.RewardDistributionWindow = p.VotePeriod },
+			name:   "reward distribution window equal to reward window",
+			mutate: func(p *types.Params) { p.RewardDistributionWindow = p.RewardWindow },
 		},
 		// SlashFraction
 		{
@@ -87,13 +87,9 @@ func TestParamsValidate(t *testing.T) {
 		},
 		// SlashWindow
 		{
-			name:      "slash window less than vote period",
-			mutate:    func(p *types.Params) { p.SlashWindow = p.VotePeriod - 1 },
-			expectErr: "SlashWindow must be greater than or equal with VotePeriod",
-		},
-		{
-			name:   "slash window equal to vote period",
-			mutate: func(p *types.Params) { p.SlashWindow = p.VotePeriod },
+			name:      "slash window zero",
+			mutate:    func(p *types.Params) { p.SlashWindow = 0 },
+			expectErr: "SlashWindow must be > 0",
 		},
 		// MinValidPerWindow
 		{
@@ -116,7 +112,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.TobinTaxes = types.TobinTaxes{{Denom: "", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
-			expectErr: "TobinTaxes must have denom",
+			expectErr: "TobinTaxes denom must be a micro denom beginning with u",
 		},
 		{
 			name: "tobin tax negative",
@@ -137,6 +133,16 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.TobinTaxes = types.TobinTaxes{}
 			},
+		},
+		{
+			name: "duplicate tobin tax denom",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = types.TobinTaxes{
+					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+				}
+			},
+			expectErr: "TobinTaxes contains duplicate denom: uusd",
 		},
 	}
 

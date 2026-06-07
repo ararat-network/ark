@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
 	"cosmossdk.io/core/appmodule"
@@ -17,7 +16,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	oraclecli "noah/x/oracle/client/cli"
 	"noah/x/oracle/keeper"
 	"noah/x/oracle/types"
 )
@@ -50,11 +48,6 @@ func (am AppModule) IsAppModule() {}
 
 // Name returns the oracle module's name.
 func (am AppModule) Name() string { return types.ModuleName }
-
-// GetTxCmd returns the custom oracle transaction commands.
-func (am AppModule) GetTxCmd() *cobra.Command {
-	return oraclecli.GetTxCmd()
-}
 
 // RegisterLegacyAminoCodec registers the module's types on the given LegacyAmino codec.
 func (am AppModule) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {

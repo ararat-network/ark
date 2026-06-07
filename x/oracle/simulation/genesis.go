@@ -17,19 +17,14 @@ import (
 
 // Simulation parameter constants
 const (
-	votePeriodKey               = "vote_period"
 	voteThresholdKey            = "vote_threshold"
 	rewardBandKey               = "reward_band"
+	rewardWindowKey             = "reward_window"
 	rewardDistributionWindowKey = "reward_distribution_window"
 	slashFractionKey            = "slash_fraction"
 	slashWindowKey              = "slash_window"
 	minValidPerWindowKey        = "min_valid_per_window"
 )
-
-// GenVotePeriod randomised VotePeriod
-func GenVotePeriod(r *rand.Rand) uint64 {
-	return uint64(1 + r.Intn(100))
-}
 
 // GenVoteThreshold randomised VoteThreshold
 func GenVoteThreshold(r *rand.Rand) math.LegacyDec {
@@ -39,6 +34,11 @@ func GenVoteThreshold(r *rand.Rand) math.LegacyDec {
 // GenRewardBand randomised RewardBand
 func GenRewardBand(r *rand.Rand) math.LegacyDec {
 	return math.LegacyZeroDec().Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
+}
+
+// GenRewardWindow randomised VotePeriod
+func GenRewardWindow(r *rand.Rand) uint64 {
+	return uint64(1 + r.Intn(100))
 }
 
 // GenRewardDistributionWindow randomised RewardDistributionWindow
@@ -63,12 +63,6 @@ func GenMinValidPerWindow(r *rand.Rand) math.LegacyDec {
 
 // RandomisedGenState generates a random GenesisState for oracle
 func RandomisedGenState(simState *module.SimulationState) {
-	var votePeriod uint64
-	simState.AppParams.GetOrGenerate(
-		votePeriodKey, &votePeriod, simState.Rand,
-		func(r *rand.Rand) { votePeriod = GenVotePeriod(r) },
-	)
-
 	var voteThreshold math.LegacyDec
 	simState.AppParams.GetOrGenerate(
 		voteThresholdKey, &voteThreshold, simState.Rand,
@@ -79,6 +73,12 @@ func RandomisedGenState(simState *module.SimulationState) {
 	simState.AppParams.GetOrGenerate(
 		rewardBandKey, &rewardBand, simState.Rand,
 		func(r *rand.Rand) { rewardBand = GenRewardBand(r) },
+	)
+
+	var rewardWindow uint64
+	simState.AppParams.GetOrGenerate(
+		rewardWindowKey, &rewardWindow, simState.Rand,
+		func(r *rand.Rand) { rewardWindow = GenRewardWindow(r) },
 	)
 
 	var rewardDistributionWindow uint64
@@ -107,9 +107,9 @@ func RandomisedGenState(simState *module.SimulationState) {
 
 	oracleGenesis := types.NewGenesisState(
 		types.Params{
-			VotePeriod:               votePeriod,
 			VoteThreshold:            voteThreshold,
 			RewardBand:               rewardBand,
+			RewardWindow:             rewardWindow,
 			RewardDistributionWindow: rewardDistributionWindow,
 			TobinTaxes: types.TobinTaxes{
 				{Denom: core.MicroKRWDenom, TobinTax: types.DefaultTobinTax},
@@ -122,11 +122,8 @@ func RandomisedGenState(simState *module.SimulationState) {
 			MinValidPerWindow: minValidPerWindow,
 		},
 		[]types.ExchangeRate{},
-		[]types.FeederDelegation{},
+		[]types.ScoreWeight{},
 		[]types.MissCount{},
-		[]types.Prevote{},
-		[]types.Vote{},
-		[]types.TobinTax{},
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

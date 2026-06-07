@@ -2,15 +2,8 @@ package keeper
 
 import (
 	"context"
-	"errors"
-
-	"cosmossdk.io/collections"
-	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"noah/x/oracle/types"
 )
@@ -27,185 +20,6 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return &msgServer{k: k}
 }
 
-// Prevote submits a hashed exchange rate vote for the current period
-func (m msgServer) Prevote(ctx context.Context, msg *types.MsgPrevote) (*types.MsgPrevoteResponse, error) {
-	valAddr, err := sdk.ValAddressFromBech32(msg.Validator)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", msg.Validator, err)
-	}
-
-	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", msg.Feeder, err)
-	}
-
-	if err := m.k.ValidateFeeder(ctx, feederAddr, valAddr); err != nil {
-		return nil, err
-	}
-
-	// HEX encoding doubles the hash length
-	if len(msg.Hash) != types.TruncatedHashSize*2 {
-		return nil, types.ErrInvalidHashLength
-	}
-
-	// Convert hex string to votehash
-	voteHash, err := types.VoteHashFromHexString(msg.Hash)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrInvalidHash, "parsing prevote hash: %v", err)
-	}
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	aggregatePrevote := types.NewPrevote(voteHash, valAddr, uint64(sdkCtx.BlockHeight()))
-	if err := m.k.Prevote.Set(ctx, valAddr, aggregatePrevote); err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "storing prevote for validator %s: %v", valAddr, err)
-	}
-
-	sdkCtx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypePrevote,
-			sdk.NewAttribute(types.AttributeKeyVoter, msg.Validator),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Feeder),
-		),
-	})
-
-	return &types.MsgPrevoteResponse{}, nil
-}
-
-// Vote reveals exchange rates for a previously submitted prevote
-func (m msgServer) Vote(ctx context.Context, msg *types.MsgVote) (*types.MsgVoteResponse, error) {
-	valAddr, err := sdk.ValAddressFromBech32(msg.Validator)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", msg.Validator, err)
-	}
-	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", msg.Feeder, err)
-	}
-	if err := m.k.ValidateFeeder(ctx, feederAddr, valAddr); err != nil {
-		return nil, err
-	}
-
-	// Validate ExchangeRates
-	if l := len(msg.ExchangeRates); l == 0 {
-		return nil, sdkerrors.Wrap(errortypes.ErrUnknownRequest, "must provide at least one oracle exchange rate")
-	} else if l > 4096 {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidRequest, "exchange rates string can not exceed 4096 characters")
-	}
-
-	// Validate Salt
-	if len(msg.Salt) > 4 || len(msg.Salt) < 1 {
-		return nil, sdkerrors.Wrap(types.ErrInvalidSaltLength, "salt length must be [1, 4]")
-	}
-
-	params, err := m.k.Params.Get(ctx)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "getting oracle params: %v", err)
-	}
-
-	prevote, err := m.k.Prevote.Get(ctx, valAddr)
-	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return nil, sdkerrors.Wrapf(types.ErrNoPrevote, "getting prevote for validator %s", valAddr)
-		}
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "getting prevote for validator %s: %v", valAddr, err)
-	}
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	// checks the prevote was submitted in the previous period to this vote
-	if (uint64(sdkCtx.BlockHeight())/params.VotePeriod)-(prevote.SubmitBlock/params.VotePeriod) != 1 {
-		return nil, types.ErrRevealPeriodMissMatch
-	}
-
-	exchangeRates, err := types.ParseExchangeRates(msg.ExchangeRates)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "parsing exchange rates: %v", err)
-	}
-	// check all denoms are in the vote target
-	for _, er := range exchangeRates {
-		// Check overflow bit length
-		if er.Rate.BigInt().BitLen() > 255+math.LegacyDecimalPrecisionBits {
-			return nil, sdkerrors.Wrap(types.ErrInvalidExchangeRate, "overflow")
-		}
-		if has, err := m.k.TobinTax.Has(ctx, er.Denom); err != nil {
-			return nil, sdkerrors.Wrapf(errortypes.ErrIO, "checking vote target for denom %s: %v", er.Denom, err)
-		} else if !has {
-			return nil, sdkerrors.Wrap(types.ErrUnknownDenom, er.Denom)
-		}
-	}
-
-	// Verify an the vote hash against the prevote hash
-	hash := types.GetVoteHash(msg.Salt, msg.ExchangeRates, valAddr)
-	if prevote.Hash != hash.String() {
-		return nil, sdkerrors.Wrapf(types.ErrVerificationFailed, "must be given %s not %s", prevote.Hash, hash)
-	}
-
-	// Move prevote to vote with given exchange rates
-	if err := m.k.Vote.Set(ctx, valAddr, types.NewVote(exchangeRates, valAddr)); err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "storing vote for validator %s: %v", valAddr, err)
-	}
-	if err := m.k.Prevote.Remove(ctx, valAddr); err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "removing prevote for validator %s: %v", valAddr, err)
-	}
-
-	sdkCtx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeVote,
-			sdk.NewAttribute(types.AttributeKeyVoter, msg.Validator),
-			sdk.NewAttribute(types.AttributeKeyExchangeRates, msg.ExchangeRates),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Feeder),
-		),
-	})
-
-	return &types.MsgVoteResponse{}, nil
-}
-
-// DelegateFeedConsent authorises another address to submit oracle votes on behalf of a validator
-func (m msgServer) DelegateFeedConsent(ctx context.Context, msg *types.MsgDelegateFeedConsent) (*types.MsgDelegateFeedConsentResponse, error) {
-	validatorAddr, err := sdk.ValAddressFromBech32(msg.Validator)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid validator address %q: %v", msg.Validator, err)
-	}
-	feederAddr, err := sdk.AccAddressFromBech32(msg.Feeder)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid feeder address %q: %v", msg.Feeder, err)
-	}
-
-	// Check the delegator is a validator
-	if val, err := m.k.stakingKeeper.Validator(ctx, validatorAddr); err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "getting validator %s for feeder delegation: %v", validatorAddr, err)
-	} else if val == nil {
-		return nil, sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, msg.Validator)
-	}
-
-	// Set the delegation
-	if err := m.k.FeederDelegation.Set(ctx, validatorAddr, feederAddr); err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrIO, "storing feeder delegation for validator %s: %v", validatorAddr, err)
-	}
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeFeedDelegate,
-			sdk.NewAttribute(types.AttributeKeyFeeder, msg.Feeder),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.Validator),
-		),
-	})
-
-	return &types.MsgDelegateFeedConsentResponse{}, nil
-}
-
 // UpdateParams updates the params.
 func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -217,9 +31,44 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, err
 	}
 
+	oldParams, err := m.k.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
 		return nil, err
 	}
 
+	if !tobinTaxesEqual(oldParams.TobinTaxes, msg.Params.TobinTaxes) {
+		if err := m.k.ApplyTobinTaxChanges(ctx, msg.Params.TobinTaxes); err != nil {
+			return nil, err
+		}
+	}
+
 	return &types.MsgUpdateParamsResponse{}, nil
+}
+
+func tobinTaxesEqual(a, b types.TobinTaxes) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	taxes := make(map[string]types.TobinTax, len(a))
+	for _, item := range a {
+		taxes[item.Denom] = item
+	}
+	if len(taxes) != len(a) {
+		return false
+	}
+
+	for _, item := range b {
+		existing, ok := taxes[item.Denom]
+		if !ok || !existing.Equal(item) {
+			return false
+		}
+		delete(taxes, item.Denom)
+	}
+
+	return len(taxes) == 0
 }
