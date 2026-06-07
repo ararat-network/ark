@@ -3,9 +3,10 @@ package keeper_test
 import (
 	"go.uber.org/mock/gomock"
 
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+
 	"cosmossdk.io/math"
 
-	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -311,9 +312,7 @@ func (s *KeeperTestSuite) setupNoahToNoahSwapMocks(trader sdk.AccAddress, receiv
 		Return(math.LegacyMustNewDecFromStr("1.7"), nil).Times(2)
 	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ukrw").
 		Return(math.LegacyNewDec(1300), nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
-		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").
+	s.oracleKeeper.EXPECT().GetMaxTobinTax(s.ctx, "uusd", "ukrw").
 		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)
 
 	gomock.InOrder(

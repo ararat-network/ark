@@ -42,20 +42,6 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetAccount mocks base method.
-func (m *MockAccountKeeper) GetAccount(ctx context.Context, addr types.AccAddress) types.AccountI {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccount", ctx, addr)
-	ret0, _ := ret[0].(types.AccountI)
-	return ret0
-}
-
-// GetAccount indicates an expected call of GetAccount.
-func (mr *MockAccountKeeperMockRecorder) GetAccount(ctx, addr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockAccountKeeper)(nil).GetAccount), ctx, addr)
-}
-
 // GetModuleAccount mocks base method.
 func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types.ModuleAccountI {
 	m.ctrl.T.Helper()
@@ -122,34 +108,6 @@ func (mr *MockBankKeeperMockRecorder) BurnCoins(ctx, name, amt any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BurnCoins", reflect.TypeOf((*MockBankKeeper)(nil).BurnCoins), ctx, name, amt)
 }
 
-// GetBalance mocks base method.
-func (m *MockBankKeeper) GetBalance(ctx context.Context, addr types.AccAddress, denom string) types.Coin {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBalance", ctx, addr, denom)
-	ret0, _ := ret[0].(types.Coin)
-	return ret0
-}
-
-// GetBalance indicates an expected call of GetBalance.
-func (mr *MockBankKeeperMockRecorder) GetBalance(ctx, addr, denom any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalance", reflect.TypeOf((*MockBankKeeper)(nil).GetBalance), ctx, addr, denom)
-}
-
-// IsSendEnabledCoin mocks base method.
-func (m *MockBankKeeper) IsSendEnabledCoin(ctx context.Context, coin types.Coin) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSendEnabledCoin", ctx, coin)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsSendEnabledCoin indicates an expected call of IsSendEnabledCoin.
-func (mr *MockBankKeeperMockRecorder) IsSendEnabledCoin(ctx, coin any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSendEnabledCoin", reflect.TypeOf((*MockBankKeeper)(nil).IsSendEnabledCoin), ctx, coin)
-}
-
 // MintCoins mocks base method.
 func (m *MockBankKeeper) MintCoins(ctx context.Context, name string, amt types.Coins) error {
 	m.ctrl.T.Helper()
@@ -192,20 +150,6 @@ func (mr *MockBankKeeperMockRecorder) SendCoinsFromModuleToAccount(ctx, senderMo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsFromModuleToAccount", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsFromModuleToAccount), ctx, senderModule, recipientAddr, amt)
 }
 
-// SpendableCoins mocks base method.
-func (m *MockBankKeeper) SpendableCoins(ctx context.Context, addr types.AccAddress) types.Coins {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SpendableCoins", ctx, addr)
-	ret0, _ := ret[0].(types.Coins)
-	return ret0
-}
-
-// SpendableCoins indicates an expected call of SpendableCoins.
-func (mr *MockBankKeeperMockRecorder) SpendableCoins(ctx, addr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpendableCoins", reflect.TypeOf((*MockBankKeeper)(nil).SpendableCoins), ctx, addr)
-}
-
 // MockOracleKeeper is a mock of OracleKeeper interface.
 type MockOracleKeeper struct {
 	ctrl     *gomock.Controller
@@ -230,6 +174,21 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
+// GetActives mocks base method.
+func (m *MockOracleKeeper) GetActives(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActives", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActives indicates an expected call of GetActives.
+func (mr *MockOracleKeeperMockRecorder) GetActives(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActives", reflect.TypeOf((*MockOracleKeeper)(nil).GetActives), ctx)
+}
+
 // GetExchangeRate mocks base method.
 func (m *MockOracleKeeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	m.ctrl.T.Helper()
@@ -245,59 +204,22 @@ func (mr *MockOracleKeeperMockRecorder) GetExchangeRate(ctx, denom any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).GetExchangeRate), ctx, denom)
 }
 
-// GetTobinTax mocks base method.
-func (m *MockOracleKeeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
+// GetMaxTobinTax mocks base method.
+func (m *MockOracleKeeper) GetMaxTobinTax(ctx context.Context, denoms ...string) (math.LegacyDec, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTobinTax", ctx, denom)
+	varargs := []any{ctx}
+	for _, a := range denoms {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMaxTobinTax", varargs...)
 	ret0, _ := ret[0].(math.LegacyDec)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTobinTax indicates an expected call of GetTobinTax.
-func (mr *MockOracleKeeperMockRecorder) GetTobinTax(ctx, denom any) *gomock.Call {
+// GetMaxTobinTax indicates an expected call of GetMaxTobinTax.
+func (mr *MockOracleKeeperMockRecorder) GetMaxTobinTax(ctx any, denoms ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTax), ctx, denom)
-}
-
-// IterateExchangeRates mocks base method.
-func (m *MockOracleKeeper) IterateExchangeRates(ctx context.Context, handler func(string, math.LegacyDec) bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IterateExchangeRates", ctx, handler)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IterateExchangeRates indicates an expected call of IterateExchangeRates.
-func (mr *MockOracleKeeperMockRecorder) IterateExchangeRates(ctx, handler any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateExchangeRates", reflect.TypeOf((*MockOracleKeeper)(nil).IterateExchangeRates), ctx, handler)
-}
-
-// SetExchangeRate mocks base method.
-func (m *MockOracleKeeper) SetExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetExchangeRate", ctx, denom, exchangeRate)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetExchangeRate indicates an expected call of SetExchangeRate.
-func (mr *MockOracleKeeperMockRecorder) SetExchangeRate(ctx, denom, exchangeRate any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRate), ctx, denom, exchangeRate)
-}
-
-// SetTobinTax mocks base method.
-func (m *MockOracleKeeper) SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTobinTax", ctx, denom, tobinTax)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTobinTax indicates an expected call of SetTobinTax.
-func (mr *MockOracleKeeperMockRecorder) SetTobinTax(ctx, denom, tobinTax any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).SetTobinTax), ctx, denom, tobinTax)
+	varargs := append([]any{ctx}, denoms...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetMaxTobinTax), varargs...)
 }

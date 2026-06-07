@@ -12,7 +12,6 @@ import (
 type AccountKeeper interface {
 	GetModuleAddress(name string) sdk.AccAddress
 	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
-	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI // only used for simulation
 }
 
 // BankKeeper defines expected supply keeper
@@ -22,20 +21,13 @@ type BankKeeper interface {
 
 	BurnCoins(ctx context.Context, name string, amt sdk.Coins) error
 	MintCoins(ctx context.Context, name string, amt sdk.Coins) error
-
-	// only used for simulation
-	SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
-	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
-	IsSendEnabledCoin(ctx context.Context, coin sdk.Coin) bool
 }
 
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
 	GetExchangeRate(ctx context.Context, denom string) (price math.LegacyDec, err error)
-	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
+	GetMaxTobinTax(ctx context.Context, denoms ...string) (math.LegacyDec, error)
 
 	// only used for simulation
-	IterateExchangeRates(ctx context.Context, handler func(denom string, rate math.LegacyDec) (stop bool)) error
-	SetExchangeRate(ctx context.Context, denom string, rate math.LegacyDec) error
-	SetTobinTax(ctx context.Context, denom string, tobinTax math.LegacyDec) error
+	GetActives(ctx context.Context) ([]string, error)
 }

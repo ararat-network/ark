@@ -68,57 +68,6 @@ func (s *KeeperTestSuite) TestComputeSwap_RecursiveSwap() {
 	s.Require().ErrorIs(err, types.ErrRecursiveSwap)
 }
 
-func (s *KeeperTestSuite) TestComputeSwap_NoahToNoah_TobinTax() {
-	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
-		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "ukrw").
-		Return(math.LegacyNewDec(1300), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), core.MicroSDRDenom).
-		Return(math.LegacyNewDecWithPrec(17, 1), nil).AnyTimes()
-
-	offerCoin := sdk.NewCoin("uusd", math.NewInt(1000000))
-	tests := []struct {
-		name           string
-		offerTobinTax  math.LegacyDec
-		askTobinTax    math.LegacyDec
-		expectedSpread math.LegacyDec
-	}{
-		{
-			name:           "equal tobin tax uses either rate",
-			offerTobinTax:  math.LegacyNewDecWithPrec(25, 4), // 0.25%
-			askTobinTax:    math.LegacyNewDecWithPrec(25, 4), // 0.25%
-			expectedSpread: math.LegacyNewDecWithPrec(25, 4), // 0.25%
-		},
-		{
-			name:           "offer tobin tax higher uses offer rate",
-			offerTobinTax:  math.LegacyNewDecWithPrec(1, 2),  // 1%
-			askTobinTax:    math.LegacyNewDecWithPrec(25, 4), // 0.25%
-			expectedSpread: math.LegacyNewDecWithPrec(1, 2),  // 1%
-		},
-		{
-			name:           "ask tobin tax higher uses ask rate",
-			offerTobinTax:  math.LegacyNewDecWithPrec(25, 4), // 0.25%
-			askTobinTax:    math.LegacyNewDecWithPrec(50, 4), // 0.50%
-			expectedSpread: math.LegacyNewDecWithPrec(50, 4), // 0.50%
-		},
-	}
-
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), "uusd").
-				Return(tc.offerTobinTax, nil)
-			s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), "ukrw").
-				Return(tc.askTobinTax, nil)
-
-			retCoin, spread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, "ukrw")
-			s.Require().NoError(err)
-			s.Require().Equal("ukrw", retCoin.Denom)
-			s.Require().True(tc.expectedSpread.Equal(spread),
-				"expected spread %s, got %s", tc.expectedSpread, spread)
-		})
-	}
-}
-
 func (s *KeeperTestSuite) TestComputeSwap_ConstantProduct() {
 	// Unit rates (1:1:1) with a small base pool so CP spread is significant.
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
