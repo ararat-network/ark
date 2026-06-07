@@ -19,9 +19,7 @@ type AccountKeeper interface {
 // BankKeeper expected bank keeper
 type BankKeeper interface {
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
-	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
-	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 	GetSupply(ctx context.Context, denom string) sdk.Coin
 }
 
@@ -43,8 +41,4 @@ type ProtocolpoolKeeper interface {
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
 	GetTobinTaxes(ctx context.Context) (res oracletypes.TobinTaxes, err error)
-
-	// only used for test purpose
-	SetExchangeRate(ctx context.Context, denom string, exchangeRate math.LegacyDec) error
-	SetTobinTaxes(ctx context.Context, tobinTaxes oracletypes.TobinTaxes) error
 }

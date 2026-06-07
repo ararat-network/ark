@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"strconv"
+
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -72,6 +74,8 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
+			s.ctx = sdk.UnwrapSDKContext(s.ctx).WithEventManager(sdk.NewEventManager())
+
 			s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, tc.rewardWeight))
 			params := types.DefaultParams()
 			if tc.burnWeight != nil {
@@ -106,6 +110,38 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 
 			err := s.keeper.SettleSeigniorage(s.ctx)
 			s.Require().NoError(err)
+
+			sdkCtx := sdk.UnwrapSDKContext(s.ctx)
+			var found bool
+			for _, e := range sdkCtx.EventManager().Events() {
+				if e.Type != types.EventTypeSeigniorageSettle {
+					continue
+				}
+
+				found = true
+				attrMap := make(map[string]string)
+				for _, attr := range e.Attributes {
+					attrMap[attr.Key] = attr.Value
+				}
+
+				params := types.DefaultParams()
+				if tc.burnWeight != nil {
+					params.BurnWeight = *tc.burnWeight
+				}
+				seigniorageAmt := tc.initialSupply.Sub(tc.currentSupply)
+				burnAmt := params.BurnWeight.MulInt(seigniorageAmt).TruncateInt()
+				oracleRewardAmt := tc.rewardWeight.MulInt(seigniorageAmt).TruncateInt()
+				communityPoolAmt := seigniorageAmt.Sub(oracleRewardAmt).Sub(burnAmt)
+
+				s.Require().Equal(strconv.FormatUint(s.keeper.GetEpoch(s.ctx), 10), attrMap[types.AttributeKeyEpoch])
+				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, seigniorageAmt).String(), attrMap[types.AttributeKeySeigniorage])
+				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, burnAmt).String(), attrMap[types.AttributeKeyBurnAmount])
+				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, oracleRewardAmt).String(), attrMap[types.AttributeKeyOracleReward])
+				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, communityPoolAmt).String(), attrMap[types.AttributeKeyCommunityPoolReward])
+				break
+			}
+
+			s.Require().Equal(tc.expectedMint != nil, found)
 		})
 	}
 }

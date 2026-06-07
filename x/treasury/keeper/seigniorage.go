@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"cosmossdk.io/math"
 
@@ -61,6 +62,17 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 			return fmt.Errorf("funding community pool: %w", err)
 		}
 	}
+
+	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeSeigniorageSettle,
+			sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatUint(k.GetEpoch(ctx), 10)),
+			sdk.NewAttribute(types.AttributeKeySeigniorage, sdk.NewCoin(core.MicroArkDenom, seigniorageArkAmt).String()),
+			sdk.NewAttribute(types.AttributeKeyBurnAmount, sdk.NewCoin(core.MicroArkDenom, burnAmt).String()),
+			sdk.NewAttribute(types.AttributeKeyOracleReward, sdk.NewCoin(core.MicroArkDenom, oracleRewardAmt).String()),
+			sdk.NewAttribute(types.AttributeKeyCommunityPoolReward, sdk.NewCoin(core.MicroArkDenom, remainAmt).String()),
+		),
+	)
 
 	return nil
 }
