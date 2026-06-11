@@ -3,18 +3,17 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	servicemetrics "noah/service/metrics"
 	core "noah/types"
 	"noah/x/oracle/types"
 )
 
-// EndBlocker is called at the end of every block
+// EndBlocker settles periodic oracle rewards and slashing.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
+	defer servicemetrics.RecordABCIMethodLatency(ctx, types.ModuleName, servicemetrics.EndBlock)()
 
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -26,7 +25,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 			return err
 		}
 
-		// reset scores for all validators
+		// Clear score weights after reward settlement.
 		if err := k.ScoreWeight.Walk(ctx, nil, func(valAddr sdk.ValAddress, _ uint64) (bool, error) {
 			return false, k.ScoreWeight.Remove(ctx, valAddr)
 		}); err != nil {
@@ -39,7 +38,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 			return err
 		}
 
-		// reset miss counts for all validators
+		// Clear miss counts after slash settlement.
 		if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, _ uint64) (bool, error) {
 			return false, k.MissCount.Remove(ctx, valAddr)
 		}); err != nil {
