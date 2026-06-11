@@ -204,22 +204,17 @@ func (mr *MockOracleKeeperMockRecorder) GetExchangeRate(ctx, denom any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).GetExchangeRate), ctx, denom)
 }
 
-// GetMaxTobinTax mocks base method.
-func (m *MockOracleKeeper) GetMaxTobinTax(ctx context.Context, denoms ...string) (math.LegacyDec, error) {
+// GetTobinTax mocks base method.
+func (m *MockOracleKeeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{ctx}
-	for _, a := range denoms {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetMaxTobinTax", varargs...)
+	ret := m.ctrl.Call(m, "GetTobinTax", ctx, denom)
 	ret0, _ := ret[0].(math.LegacyDec)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetMaxTobinTax indicates an expected call of GetMaxTobinTax.
-func (mr *MockOracleKeeperMockRecorder) GetMaxTobinTax(ctx any, denoms ...any) *gomock.Call {
+// GetTobinTax indicates an expected call of GetTobinTax.
+func (mr *MockOracleKeeperMockRecorder) GetTobinTax(ctx, denom any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx}, denoms...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetMaxTobinTax), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTax), ctx, denom)
 }

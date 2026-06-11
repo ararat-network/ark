@@ -7,6 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"go.uber.org/mock/gomock"
 
 	core "noah/types"
 	"noah/x/oracle/types"
@@ -39,7 +41,20 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 						{ValidatorAddress: valAddr1.String(), MissCount: 5},
 						{ValidatorAddress: valAddr2.String(), MissCount: 0},
 					},
+					TobinTaxes: []types.TobinTax{
+						{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+						{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+					},
 				}
+			},
+			setup: func() {
+				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
+					authtypes.NewEmptyModuleAccount(types.ModuleName),
+				)
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroKRWDenom).Return(banktypes.Metadata{}, false)
+				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroUSDDenom).Return(banktypes.Metadata{}, false)
+				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
 			},
 		},
 		{
@@ -173,6 +188,21 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().NoError(err)
 		s.Require().Equal(item.MissCount, missCount)
 	}
+
+	// Tobin taxes are keyed by denom.
+	tobinTaxCount := 0
+	err = s.keeper.TobinTax.Walk(s.ctx, nil, func(_ string, _ math.LegacyDec) (bool, error) {
+		tobinTaxCount++
+		return false, nil
+	})
+	s.Require().NoError(err)
+	s.Require().Len(expected.TobinTaxes, tobinTaxCount)
+
+	for _, item := range expected.TobinTaxes {
+		tobinTax, err := s.keeper.TobinTax.Get(s.ctx, item.Denom)
+		s.Require().NoError(err)
+		s.Require().True(item.TobinTax.Equal(tobinTax))
+	}
 }
 
 func (s *KeeperTestSuite) TestExportGenesis() {
@@ -191,6 +221,10 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		MissCounts: []types.MissCount{
 			{ValidatorAddress: valAddr1.String(), MissCount: 5},
 			{ValidatorAddress: valAddr2.String(), MissCount: 0},
+		},
+		TobinTaxes: []types.TobinTax{
+			{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+			{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 		},
 	}
 	expected.Params.RewardWindow = 10
@@ -212,6 +246,9 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr, item.MissCount))
 	}
+	for _, item := range expected.TobinTaxes {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, item.Denom, item.TobinTax))
+	}
 
 	gs, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
@@ -227,6 +264,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	s.Require().True(expected.Params.MinValidPerWindow.Equal(gs.Params.MinValidPerWindow))
 	s.Require().Equal(expected.Params.MaxExchangeRateAge, gs.Params.MaxExchangeRateAge)
 	s.Require().Equal(expected.Params.TobinTaxes, gs.Params.TobinTaxes)
+	s.Require().Equal(expected.TobinTaxes, gs.TobinTaxes)
 
 	// Exchange rates are exported by denom.
 	s.Require().Len(gs.ExchangeRates, len(expected.ExchangeRates))

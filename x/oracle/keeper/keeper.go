@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	"cosmossdk.io/collections"
@@ -15,12 +16,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	core "noah/types"
 	"noah/x/oracle/types"
 )
 
-// Keeper of the oracle store
+// Keeper stores oracle module state.
 type Keeper struct {
 	cdc              codec.BinaryCodec
 	storeService     store.KVStoreService
@@ -37,9 +39,10 @@ type Keeper struct {
 	ExchangeRate collections.Map[string, types.ExchangeRate]
 	ScoreWeight  collections.Map[sdk.ValAddress, uint64]
 	MissCount    collections.Map[sdk.ValAddress, uint64]
+	TobinTax     collections.Map[string, math.LegacyDec]
 }
 
-// NewKeeper constructs a new keeper for oracle
+// NewKeeper constructs an oracle keeper.
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
@@ -50,7 +53,7 @@ func NewKeeper(
 	distrKeeper types.DistributionKeeper,
 	stakingKeeper types.StakingKeeper,
 ) *Keeper {
-	// ensure oracle module account is set
+	// Ensure the oracle module account is configured.
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
 	}
@@ -88,9 +91,16 @@ func NewKeeper(
 		MissCount: collections.NewMap(
 			sb,
 			types.MissCountKey,
-			"miss_counter",
+			"miss_count",
 			sdk.ValAddressKey,
 			collections.Uint64Value,
+		),
+		TobinTax: collections.NewMap(
+			sb,
+			types.TobinTaxKey,
+			"pending_tobin_taxes",
+			collections.StringKey,
+			sdk.LegacyDecValue,
 		),
 	}
 
@@ -109,7 +119,7 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetParams returns the stored params
+// GetParams returns oracle params.
 func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -119,7 +129,7 @@ func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 	return params, nil
 }
 
-// GetExchangeRate gets the consensus exchange rate of Ark denominated in the denom asset from the store.
+// GetExchangeRate returns the consensus Ark exchange rate for a denom.
 func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	if denom == core.MicroArkDenom {
 		return math.LegacyOneDec(), nil
@@ -154,8 +164,7 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 	return exchangeRate.Rate, nil
 }
 
-// SetExchangeRateWithEvent sets the consensus exchange rate of Ark denominated in the denom asset to the
-// store with ABCI event
+// SetExchangeRateWithEvent stores an exchange rate and emits an update event.
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
 	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
 		return fmt.Errorf("setting exchange rate with event for denom %s: %w", exchangeRate.Denom, err)
@@ -172,7 +181,7 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	return nil
 }
 
-// GetActives returns a list of denoms that with a stored exchange rate with fresh prices
+// GetActives returns denoms with non-stale exchange rates.
 func (k Keeper) GetActives(ctx context.Context) ([]string, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -196,107 +205,161 @@ func (k Keeper) GetActives(ctx context.Context) ([]string, error) {
 	return actives, nil
 }
 
-// GetTobinTaxes gets all tobin taxes
+// GetTobinTax returns the active Tobin tax for a denom.
+func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
+	tobinTax, err := k.TobinTax.Get(ctx, denom)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+		}
+		return math.LegacyZeroDec(), fmt.Errorf("getting tobin tax for denom %s: %w", denom, err)
+	}
+
+	return tobinTax, nil
+}
+
+// GetTobinTaxes returns active Tobin taxes.
 func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return params.TobinTaxes, nil
-}
-
-// GetMaxTobinTax gets the tobin tax of a given denom
-func (k Keeper) GetMaxTobinTax(ctx context.Context, denoms ...string) (math.LegacyDec, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return math.LegacyDec{}, fmt.Errorf("getting params: %w", err)
-	}
-
-	wanted := make(map[string]struct{}, len(denoms))
-	for _, denom := range denoms {
-		wanted[denom] = struct{}{}
-	}
-
-	maxTax := math.LegacyZeroDec()
-	found := 0
-
-	for _, tt := range params.TobinTaxes {
-		if _, ok := wanted[tt.Denom]; !ok {
-			continue
-		}
-
-		found++
-		if tt.TobinTax.GT(maxTax) {
-			maxTax = tt.TobinTax
-		}
-	}
-
-	if found != len(wanted) {
-		return math.LegacyDec{}, types.ErrUnknownDenom
-	}
-
-	return maxTax, nil
-}
-
-// ApplyTobinTaxChanges registers metadata for active Tobin tax denoms and prunes exchange rates for removed denoms.
-func (k Keeper) ApplyTobinTaxChanges(ctx context.Context, tobinTaxes types.TobinTaxes) error {
-	active := make(map[string]struct{}, len(tobinTaxes))
-	for _, tt := range tobinTaxes {
-		active[tt.Denom] = struct{}{}
-		// Register meta data to bank module
-		if _, ok := k.bankKeeper.GetDenomMetaData(ctx, tt.Denom); !ok {
-			base := tt.Denom
-			display := base[1:]
-
-			k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
-				Description: "The native stable token of Noah Icarus.",
-				DenomUnits: []*banktypes.DenomUnit{
-					{Denom: "u" + display, Exponent: uint32(0), Aliases: []string{"micro" + display}},
-					{Denom: "m" + display, Exponent: uint32(3), Aliases: []string{"milli" + display}},
-					{Denom: display, Exponent: uint32(6), Aliases: []string{}},
-				},
-				Base:    base,
-				Display: display,
-				Name:    fmt.Sprintf("%s NOAH", strings.ToUpper(display)),
-				Symbol:  fmt.Sprintf("%sN", strings.ToUpper(display[:len(display)-1])),
-			})
-		}
-	}
-
-	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, _ types.ExchangeRate) (bool, error) {
-		if _, ok := active[denom]; ok {
-			return false, nil
-		}
-
-		return false, k.ExchangeRate.Remove(ctx, denom)
+	tobinTaxes := types.TobinTaxes{}
+	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
+		tobinTaxes = append(tobinTaxes, types.TobinTax{Denom: denom, TobinTax: tobinTax})
+		return false, nil
 	}); err != nil {
-		return err
+		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+	}
+
+	return tobinTaxes, nil
+}
+
+// GetVoteTargets returns active vote targets keyed by denom.
+func (k Keeper) GetVoteTargets(ctx context.Context) (map[string]math.LegacyDec, error) {
+	voteTargets := make(map[string]math.LegacyDec)
+	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
+		voteTargets[denom] = tobinTax
+		return false, nil
+	}); err != nil {
+		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+	}
+
+	return voteTargets, nil
+}
+
+// SyncTobinTax applies params Tobin taxes to the active set and prunes removed denoms.
+func (k Keeper) SyncTobinTax(ctx context.Context, oldTobinTaxes map[string]math.LegacyDec) error {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting params: %w", err)
+	}
+
+	added := []types.TobinTax{}
+	modified := []types.TobinTax{}
+	removed := maps.Clone(oldTobinTaxes)
+	for _, tt := range params.TobinTaxes {
+		if tax, ok := removed[tt.Denom]; !ok {
+			added = append(added, tt)
+		} else if !tt.TobinTax.Equal(tax) {
+			modified = append(modified, tt)
+		}
+		delete(removed, tt.Denom)
+	}
+
+	for _, tt := range added {
+		if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
+			return fmt.Errorf("setting tobin tax: %w", err)
+		}
+		k.registerTobinTaxMetadata(ctx, tt.Denom)
+	}
+
+	for _, tt := range modified {
+		if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
+			return fmt.Errorf("setting tobin tax: %w", err)
+		}
+	}
+
+	for denom := range removed {
+		if err := k.ExchangeRate.Remove(ctx, denom); err != nil {
+			return fmt.Errorf("removing exchange rate: %w", err)
+		}
+		if err := k.TobinTax.Remove(ctx, denom); err != nil {
+			return fmt.Errorf("removing tobin tax: %w", err)
+		}
 	}
 
 	return nil
 }
 
-// IncrementMissCount adds the miss count to the given validator
-func (k Keeper) IncrementMissCount(ctx context.Context, validator sdk.ValAddress) error {
-	missCount, err := k.MissCount.Get(ctx, validator)
+func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
+	if _, ok := k.bankKeeper.GetDenomMetaData(ctx, denom); ok {
+		return
+	}
+
+	display := denom[1:]
+	k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+		Description: "The native stable token of Noah Icarus.",
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: "u" + display, Exponent: uint32(0), Aliases: []string{"micro" + display}},
+			{Denom: "m" + display, Exponent: uint32(3), Aliases: []string{"milli" + display}},
+			{Denom: display, Exponent: uint32(6), Aliases: []string{}},
+		},
+		Base:    denom,
+		Display: display,
+		Name:    fmt.Sprintf("%s NOAH", strings.ToUpper(display)),
+		Symbol:  fmt.Sprintf("%sN", strings.ToUpper(display[:len(display)-1])),
+	})
+}
+
+// IncrementMissCount increments the miss count for the validator resolved from a consensus address.
+// If the consensus address no longer resolves to a staking validator, accounting is skipped.
+func (k Keeper) IncrementMissCount(ctx context.Context, consAddr sdk.ConsAddress) error {
+	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
+	if err != nil {
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			return nil
+		}
+		return fmt.Errorf("getting validator by consensus address %s: %w", consAddr, err)
+	}
+	if validator == nil {
+		return nil
+	}
+
+	valAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return fmt.Errorf("parsing validator operator address %q: %w", validator.GetOperator(), err)
+	}
+	missCount, err := k.MissCount.Get(ctx, valAddr)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return fmt.Errorf("getting miss count: %w", err)
 	}
-	if err := k.MissCount.Set(ctx, validator, missCount+1); err != nil {
+	if err := k.MissCount.Set(ctx, valAddr, missCount+1); err != nil {
 		return fmt.Errorf("setting miss count: %w", err)
 	}
 
 	return nil
 }
 
-// AddScoreWeight adds to the score weight for the given validator
-func (k Keeper) AddScoreWeight(ctx context.Context, validator sdk.ValAddress, scoreWeight uint64) error {
-	currentScoreWeight, err := k.ScoreWeight.Get(ctx, validator)
+// AddScoreWeight adds score weight for the validator resolved from a consensus address.
+// If the consensus address no longer resolves to a staking validator, accounting is skipped.
+func (k Keeper) AddScoreWeight(ctx context.Context, consAddr sdk.ConsAddress, scoreWeight uint64) error {
+	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
+	if err != nil {
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			return nil
+		}
+		return fmt.Errorf("getting validator by consensus address %s: %w", consAddr, err)
+	}
+	if validator == nil {
+		return nil
+	}
+
+	valAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return fmt.Errorf("parsing validator operator address %q: %w", validator.GetOperator(), err)
+	}
+	currentScoreWeight, err := k.ScoreWeight.Get(ctx, valAddr)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return fmt.Errorf("getting score weight: %w", err)
 	}
-	if err := k.ScoreWeight.Set(ctx, validator, currentScoreWeight+scoreWeight); err != nil {
+	if err := k.ScoreWeight.Set(ctx, valAddr, currentScoreWeight+scoreWeight); err != nil {
 		return fmt.Errorf("setting score weight for validator %s: %w", validator, err)
 	}
 

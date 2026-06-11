@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	core "noah/types"
@@ -49,7 +48,8 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().ErrorContains(err, "RewardWindow must be > 0")
 	})
 
-	s.Run("applies tobin tax changes", func() {
+	s.Run("stores tobin tax params without syncing active targets", func() {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, core.MicroKRWDenom, math.LegacyNewDecWithPrec(25, 4)))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyOneDec())))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, newStoredExchangeRate(core.MicroKRWDenom, math.LegacyOneDec())))
 
@@ -57,8 +57,6 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		params.TobinTaxes = types.TobinTaxes{
 			{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		}
-
-		s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroUSDDenom).Return(banktypes.Metadata{}, true)
 
 		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 			Authority: authority,
@@ -72,6 +70,14 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 
 		hasKRW, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroKRWDenom)
 		s.Require().NoError(err)
-		s.Require().False(hasKRW)
+		s.Require().True(hasKRW)
+
+		hasUSDTarget, err := s.keeper.TobinTax.Has(s.ctx, core.MicroUSDDenom)
+		s.Require().NoError(err)
+		s.Require().False(hasUSDTarget)
+
+		hasKRWTarget, err := s.keeper.TobinTax.Has(s.ctx, core.MicroKRWDenom)
+		s.Require().NoError(err)
+		s.Require().True(hasKRWTarget)
 	})
 }

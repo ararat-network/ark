@@ -11,7 +11,7 @@ import (
 	"noah/x/oracle/types"
 )
 
-// SettleSlash slashes validators who missed too many votes.
+// SettleSlash slashes validators below the minimum valid vote rate.
 func (k Keeper) SettleSlash(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := sdkCtx.BlockHeight()
@@ -25,43 +25,43 @@ func (k Keeper) SettleSlash(ctx context.Context) error {
 	powerReduction := k.stakingKeeper.PowerReduction(ctx)
 	slashWindow := math.LegacyNewDec(int64(params.SlashWindow))
 	if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, missCount uint64) (bool, error) {
-		// clamp missCount to slashWindow
+		// Cap missed votes at the slash window.
 		if missCount > params.SlashWindow {
 			missCount = params.SlashWindow
 		}
 
-		// calculate valid vote rate; (slashWindow - missCount) / slashWindow
+		// validVoteRate = (slashWindow - missCount) / slashWindow.
 		validVoteRate := slashWindow.
 			Sub(math.LegacyNewDec(int64(missCount))).
 			Quo(slashWindow)
 
-		// slash and jail validators who voted less than the minimum required rate
+		// Slash and jail validators below the minimum valid vote rate.
 		if validVoteRate.LT(params.MinValidPerWindow) {
-			if validator, err := k.stakingKeeper.Validator(ctx, valAddr); validator != nil && validator.IsBonded() && !validator.IsJailed() {
-				consAddr, err := validator.GetConsAddr()
-				if err != nil {
-					k.Logger(ctx).Warn("failed to get consensus address", "validator", validator, "error", err)
-					return false, nil
-				} else {
-					slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction)
-					if err != nil {
-						return true, fmt.Errorf("failed to slash validator %s: %w", valAddr, err)
-					} else if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
-						return true, fmt.Errorf("slashed validator, but failed to jail: %w", err)
-					}
-
-					sdkCtx.EventManager().EmitEvent(
-						sdk.NewEvent(
-							types.EventTypeOracleSlash,
-							sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
-							sdk.NewAttribute(sdk.AttributeKeyAmount, slashAmount.String()),
-						),
-					)
-				}
-			} else if err != nil {
-				k.Logger(ctx).Warn("failed to get validator", "validator", valAddr, "error", err)
+			validator, err := k.stakingKeeper.Validator(ctx, valAddr)
+			if err != nil {
+				return true, fmt.Errorf("getting validator %s: %w", valAddr, err)
+			}
+			if validator == nil || !validator.IsBonded() || validator.IsJailed() {
 				return false, nil
 			}
+			consAddr, err := validator.GetConsAddr()
+			if err != nil {
+				return true, fmt.Errorf("getting consensus address for validator %s: %w", valAddr, err)
+			}
+			slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction)
+			if err != nil {
+				return true, fmt.Errorf("failed to slash validator %s: %w", valAddr, err)
+			} else if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
+				return true, fmt.Errorf("slashed validator %s, but failed to jail: %w", valAddr, err)
+			}
+
+			sdkCtx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					types.EventTypeOracleSlash,
+					sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+					sdk.NewAttribute(sdk.AttributeKeyAmount, slashAmount.String()),
+				),
+			)
 		}
 
 		return false, nil

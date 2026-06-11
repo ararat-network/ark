@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
@@ -20,6 +21,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	core "noah/types"
 	"noah/x/oracle/keeper"
@@ -184,65 +186,149 @@ func (s *KeeperTestSuite) TestGetActives() {
 }
 
 func (s *KeeperTestSuite) TestGetTobinTaxes() {
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = types.TobinTaxes{
+	expected := types.TobinTaxes{
+		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
 		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	for _, tt := range expected {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
+	}
 
 	tobinTaxes, err := s.keeper.GetTobinTaxes(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(params.TobinTaxes, tobinTaxes)
+	s.Require().ElementsMatch(expected, tobinTaxes)
 }
 
-func (s *KeeperTestSuite) TestGetMaxTobinTax() {
+func (s *KeeperTestSuite) TestGetTobinTax() {
+	expected := math.LegacyNewDecWithPrec(25, 4)
+	s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, core.MicroUSDDenom, expected))
+
+	tobinTax, err := s.keeper.GetTobinTax(s.ctx, core.MicroUSDDenom)
+	s.Require().NoError(err)
+	s.Require().True(expected.Equal(tobinTax))
+
+	_, err = s.keeper.GetTobinTax(s.ctx, "ufoo")
+	s.Require().Error(err)
+	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
+}
+
+func (s *KeeperTestSuite) TestGetVoteTargets() {
+	expected := map[string]math.LegacyDec{
+		core.MicroKRWDenom: math.LegacyNewDecWithPrec(50, 4),
+		core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+	}
+	for denom, tobinTax := range expected {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
+	}
+
+	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Len(voteTargets, len(expected))
+	for denom, expectedTobinTax := range expected {
+		s.Require().True(expectedTobinTax.Equal(voteTargets[denom]))
+	}
+}
+
+func (s *KeeperTestSuite) TestSyncTobinTax() {
+	oldTobinTaxes := map[string]math.LegacyDec{
+		core.MicroKRWDenom: math.LegacyNewDecWithPrec(25, 4),
+		core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+	}
+	for denom, tobinTax := range oldTobinTaxes {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
+		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, newStoredExchangeRate(denom, math.LegacyOneDec())))
+	}
+
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	params.TobinTaxes = types.TobinTaxes{
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
+		{Denom: core.MicroSDRDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
-	tobinTax, err := s.keeper.GetMaxTobinTax(s.ctx, core.MicroUSDDenom, core.MicroKRWDenom)
+	s.bankKeeper.EXPECT().
+		GetDenomMetaData(s.ctx, core.MicroSDRDenom).
+		Return(banktypes.Metadata{}, false)
+	s.bankKeeper.EXPECT().
+		SetDenomMetaData(s.ctx, gomock.Any()).
+		Do(func(_ context.Context, metadata banktypes.Metadata) {
+			s.Require().Equal(core.MicroSDRDenom, metadata.Base)
+			s.Require().Equal("sdr", metadata.Display)
+		})
+
+	s.Require().NoError(s.keeper.SyncTobinTax(s.ctx, oldTobinTaxes))
+
+	// SyncTobinTax copies the caller's old target map before diffing.
+	s.Require().Len(oldTobinTaxes, 2)
+	s.Require().True(oldTobinTaxes[core.MicroKRWDenom].Equal(math.LegacyNewDecWithPrec(25, 4)))
+
+	updatedTobinTax, err := s.keeper.GetTobinTax(s.ctx, core.MicroUSDDenom)
 	s.Require().NoError(err)
-	s.Require().True(math.LegacyNewDecWithPrec(50, 4).Equal(tobinTax))
+	s.Require().True(math.LegacyNewDecWithPrec(5, 2).Equal(updatedTobinTax))
 
-	_, err = s.keeper.GetMaxTobinTax(s.ctx, core.MicroUSDDenom, "ufoo")
-	s.Require().ErrorIs(err, types.ErrUnknownDenom)
-}
-
-func (s *KeeperTestSuite) TestApplyTobinTaxChanges() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyOneDec())))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, newStoredExchangeRate(core.MicroKRWDenom, math.LegacyOneDec())))
-
-	s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroUSDDenom).Return(banktypes.Metadata{}, false)
-	s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
-
-	err := s.keeper.ApplyTobinTaxChanges(s.ctx, types.TobinTaxes{
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-	})
+	addedTobinTax, err := s.keeper.GetTobinTax(s.ctx, core.MicroSDRDenom)
 	s.Require().NoError(err)
+	s.Require().True(math.LegacyNewDecWithPrec(25, 4).Equal(addedTobinTax))
 
-	hasUSD, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroUSDDenom)
+	_, err = s.keeper.GetTobinTax(s.ctx, core.MicroKRWDenom)
+	s.Require().Error(err)
+	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
+
+	hasUSDExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroUSDDenom)
 	s.Require().NoError(err)
-	s.Require().True(hasUSD)
-	hasKRW, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroKRWDenom)
+	s.Require().True(hasUSDExchangeRate)
+
+	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroKRWDenom)
 	s.Require().NoError(err)
-	s.Require().False(hasKRW)
+	s.Require().False(hasKRWExchangeRate)
 }
 
 func (s *KeeperTestSuite) TestAccountingCounters() {
-	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, valAddr1))
-	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, valAddr1))
+	pubKey := ed25519.GenPrivKey().PubKey()
+	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
+	s.Require().NoError(err)
+	consAddr, err := validator.GetConsAddr()
+	s.Require().NoError(err)
+
+	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil).Times(4)
+
+	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, consAddr))
+	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, consAddr))
 	missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(2), missCount)
 
-	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, valAddr1, 3))
-	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, valAddr1, 4))
+	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, consAddr, 3))
+	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, consAddr, 4))
 	scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(7), scoreWeight)
+}
+
+func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress() {
+	consAddr := sdk.ConsAddress([]byte("missing_validator___"))
+	s.stakingKeeper.EXPECT().
+		ValidatorByConsAddr(s.ctx, consAddr).
+		Return(nil, stakingtypes.ErrNoValidatorFound).
+		Times(2)
+
+	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, consAddr))
+	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, consAddr, 3))
+
+	missCountEntries := 0
+	err := s.keeper.MissCount.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
+		missCountEntries++
+		return false, nil
+	})
+	s.Require().NoError(err)
+	s.Require().Zero(missCountEntries)
+
+	scoreWeightEntries := 0
+	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
+		scoreWeightEntries++
+		return false, nil
+	})
+	s.Require().NoError(err)
+	s.Require().Zero(scoreWeightEntries)
 }

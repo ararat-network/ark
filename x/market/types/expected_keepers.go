@@ -26,7 +26,7 @@ type BankKeeper interface {
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
 	GetExchangeRate(ctx context.Context, denom string) (price math.LegacyDec, err error)
-	GetMaxTobinTax(ctx context.Context, denoms ...string) (math.LegacyDec, error)
+	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
 
 	// only used for simulation
 	GetActives(ctx context.Context) ([]string, error)

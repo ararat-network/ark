@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
@@ -13,12 +15,14 @@ func NewGenesisState(
 	exchangeRates []ExchangeRate,
 	scoreWeights []ScoreWeight,
 	missCounts []MissCount,
+	tobinTaxes []TobinTax,
 ) *GenesisState {
 	return &GenesisState{
 		Params:        params,
 		ExchangeRates: exchangeRates,
 		ScoreWeights:  scoreWeights,
 		MissCounts:    missCounts,
+		TobinTaxes:    tobinTaxes,
 	}
 }
 
@@ -28,6 +32,7 @@ func DefaultGenesisState() *GenesisState {
 		[]ExchangeRate{},
 		[]ScoreWeight{},
 		[]MissCount{},
+		[]TobinTax{},
 	)
 }
 
@@ -70,6 +75,21 @@ func (gs GenesisState) Validate() error {
 			return fmt.Errorf("duplicate miss count for validator %s", mc.ValidatorAddress)
 		}
 		seenValidators[mc.ValidatorAddress] = true
+	}
+
+	// TobinTaxes: no duplicates, micro denoms, tax in [0, 1]
+	seenDenoms = make(map[string]bool)
+	for _, tt := range gs.TobinTaxes {
+		if len(tt.Denom) < 3 || tt.Denom[0] != 'u' {
+			return fmt.Errorf("tobin tax denom must be a micro denom beginning with u: %s", tt.Denom)
+		}
+		if tt.TobinTax.IsNegative() || tt.TobinTax.GT(math.LegacyOneDec()) {
+			return fmt.Errorf("tobin tax for %s must be between [0, 1]: %s", tt.Denom, tt.TobinTax)
+		}
+		if seenDenoms[tt.Denom] {
+			return fmt.Errorf("duplicate tobin tax for denom %s", tt.Denom)
+		}
+		seenDenoms[tt.Denom] = true
 	}
 
 	return gs.Params.Validate()

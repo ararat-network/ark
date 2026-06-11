@@ -10,12 +10,13 @@ import (
 
 func (s *KeeperTestSuite) TestSettleSlash() {
 	tests := []struct {
-		name        string
-		missCount   uint64
-		minValid    math.LegacyDec
-		status      stakingtypes.BondStatus
-		jailed      bool
-		expectSlash bool
+		name             string
+		missCount        uint64
+		minValid         math.LegacyDec
+		status           stakingtypes.BondStatus
+		jailed           bool
+		missingValidator bool
+		expectSlash      bool
 	}{
 		{
 			name:        "slashes bonded validator below min valid rate",
@@ -47,6 +48,12 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			status:    stakingtypes.Bonded,
 			jailed:    true,
 		},
+		{
+			name:             "missing validator is not slashed",
+			missCount:        20,
+			minValid:         math.LegacyNewDecWithPrec(90, 2),
+			missingValidator: true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -64,7 +71,9 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			powerReduction := math.NewInt(1_000_000)
 			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 
-			if tc.status != stakingtypes.Unspecified {
+			if tc.missingValidator {
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
+			} else if tc.status != stakingtypes.Unspecified {
 				pubKey := ed25519.GenPrivKey().PubKey()
 				validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
 				s.Require().NoError(err)

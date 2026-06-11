@@ -93,15 +93,9 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 }
 
 func (s *KeeperTestSuite) TestQueryTobinTax() {
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = types.TobinTaxes{
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-	}
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-
 	tests := []struct {
 		name      string
+		setup     func()
 		req       *types.QueryTobinTaxRequest
 		code      codes.Code
 		expect    math.LegacyDec
@@ -114,7 +108,10 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 			expectErr: true,
 		},
 		{
-			name:   "configured tobin tax returned",
+			name: "configured tobin tax returned",
+			setup: func() {
+				s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, core.MicroUSDDenom, math.LegacyNewDecWithPrec(25, 4)))
+			},
 			req:    &types.QueryTobinTaxRequest{Denom: core.MicroUSDDenom},
 			expect: math.LegacyNewDecWithPrec(25, 4),
 		},
@@ -128,6 +125,10 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
+			if tc.setup != nil {
+				tc.setup()
+			}
+
 			resp, err := s.queryClient.TobinTax(s.ctx, tc.req)
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -142,17 +143,17 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 }
 
 func (s *KeeperTestSuite) TestQueryTobinTaxes() {
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = types.TobinTaxes{
+	expected := types.TobinTaxes{
 		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	for _, tt := range expected {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
+	}
 
 	resp, err := s.queryClient.TobinTaxes(s.ctx, &types.QueryTobinTaxesRequest{})
 	s.Require().NoError(err)
-	s.Require().Equal(params.TobinTaxes, resp.TobinTaxes)
+	s.Require().ElementsMatch(expected, resp.TobinTaxes)
 }
 
 func (s *KeeperTestSuite) TestQueryActives() {
@@ -165,13 +166,13 @@ func (s *KeeperTestSuite) TestQueryActives() {
 }
 
 func (s *KeeperTestSuite) TestQueryVoteTargets() {
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = types.TobinTaxes{
+	tobinTaxes := types.TobinTaxes{
 		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	for _, tt := range tobinTaxes {
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
+	}
 
 	resp, err := s.queryClient.VoteTargets(s.ctx, &types.QueryVoteTargetsRequest{})
 	s.Require().NoError(err)

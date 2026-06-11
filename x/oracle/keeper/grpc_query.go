@@ -22,13 +22,12 @@ type queryServer struct {
 	k *Keeper
 }
 
-// NewQueryServerImpl returns an implementation of the oracle QueryServer interface
-// for the provided Keeper.
+// NewQueryServerImpl returns an oracle QueryServer.
 func NewQueryServerImpl(k *Keeper) types.QueryServer {
 	return &queryServer{k: k}
 }
 
-// Params queries params of distribution module
+// Params queries oracle params.
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
@@ -38,7 +37,7 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 
-// ExchangeRate queries exchange rate of a denom
+// ExchangeRate queries the exchange rate for a denom.
 func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeRateRequest) (*types.QueryExchangeRateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -70,7 +69,7 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 	return &types.QueryExchangeRateResponse{ExchangeRate: exchangeRate}, nil
 }
 
-// ExchangeRates queries exchange rates of all denoms
+// ExchangeRates queries all exchange rates.
 func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchangeRatesRequest) (*types.QueryExchangeRatesResponse, error) {
 	var exchangeRates types.ExchangeRates
 	if err := q.k.ExchangeRate.Walk(ctx, nil, func(_ string, exchangeRate types.ExchangeRate) (bool, error) {
@@ -83,7 +82,7 @@ func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchange
 	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRates}, nil
 }
 
-// TobinTax queries tobin tax of a denom
+// TobinTax queries the active Tobin tax for a denom.
 func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxRequest) (*types.QueryTobinTaxResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -92,30 +91,34 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
-	params, err := q.k.Params.Get(ctx)
+	tobinTax, err := q.k.TobinTax.Get(ctx, req.Denom)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting params: %v", err)
-	}
-	for _, tt := range params.TobinTaxes {
-		if tt.Denom == req.Denom {
-			return &types.QueryTobinTaxResponse{TobinTax: tt.TobinTax}, nil
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "tobin tax not found for denom %s", req.Denom)
 		}
+		return nil, status.Errorf(codes.Internal, "getting tobin tax for denom %s: %v", req.Denom, err)
 	}
 
-	return nil, status.Errorf(codes.NotFound, "tobin tax not found for denom %s", req.Denom)
+	return &types.QueryTobinTaxResponse{TobinTax: tobinTax}, nil
 }
 
-// TobinTaxes queries tobin taxes of all denoms
+// TobinTaxes queries all active Tobin taxes.
 func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesRequest) (*types.QueryTobinTaxesResponse, error) {
-	params, err := q.k.Params.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting params: %v", err)
+	var tobinTaxes types.TobinTaxes
+	if err := q.k.TobinTax.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
+		tobinTaxes = append(tobinTaxes, types.TobinTax{
+			Denom:    denom,
+			TobinTax: rate,
+		})
+		return false, nil
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "listing oracle tobin taxes: %v", err)
 	}
 
-	return &types.QueryTobinTaxesResponse{TobinTaxes: params.TobinTaxes}, nil
+	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
 }
 
-// Actives queries all denoms for which exchange rates exist
+// Actives queries denoms with exchange rates.
 func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest) (*types.QueryActivesResponse, error) {
 	actives, err := q.k.GetActives(ctx)
 	if err != nil {
@@ -125,21 +128,20 @@ func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest
 	return &types.QueryActivesResponse{Actives: actives}, nil
 }
 
-// VoteTargets queries the voting target list on current vote period
+// VoteTargets queries active vote target denoms.
 func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTargetsRequest) (*types.QueryVoteTargetsResponse, error) {
 	var voteTargets []string
-	params, err := q.k.Params.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting params: %v", err)
-	}
-	for _, tt := range params.TobinTaxes {
-		voteTargets = append(voteTargets, tt.Denom)
+	if err := q.k.TobinTax.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
+		voteTargets = append(voteTargets, denom)
+		return false, nil
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "listing oracle vote targets: %v", err)
 	}
 
 	return &types.QueryVoteTargetsResponse{VoteTargets: voteTargets}, nil
 }
 
-// ScoreWeight queries oracle score weight of a validator
+// ScoreWeight queries a validator's oracle score weight.
 func (q queryServer) ScoreWeight(ctx context.Context, req *types.QueryScoreWeightRequest) (*types.QueryScoreWeightResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -157,7 +159,7 @@ func (q queryServer) ScoreWeight(ctx context.Context, req *types.QueryScoreWeigh
 	return &types.QueryScoreWeightResponse{ScoreWeight: score}, nil
 }
 
-// MissCount queries oracle miss count of a validator
+// MissCount queries a validator's oracle miss count.
 func (q queryServer) MissCount(ctx context.Context, req *types.QueryMissCountRequest) (*types.QueryMissCountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

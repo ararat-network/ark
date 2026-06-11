@@ -82,9 +82,21 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	// Apply only tobin tax without constant product spread
 	if offerCoin.Denom != core.MicroArkDenom && askDenom != core.MicroArkDenom {
 		var tobinTax math.LegacyDec
-		tobinTax, err := k.oracleKeeper.GetMaxTobinTax(ctx, offerCoin.Denom, askDenom)
+		offerTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
 		if err != nil {
 			return sdk.DecCoin{}, math.LegacyDec{}, err
+		}
+
+		askTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, askDenom)
+		if err != nil {
+			return sdk.DecCoin{}, math.LegacyDec{}, err
+		}
+
+		// Apply highest tobin tax for the denoms in the swap operation
+		if askTobinTax.GT(offerTobinTax) {
+			tobinTax = askTobinTax
+		} else {
+			tobinTax = offerTobinTax
 		}
 
 		return retDecCoin, tobinTax, nil

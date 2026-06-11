@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"noah/x/oracle/types"
 )
 
-// InitGenesis initialises default parameters and the keeper's address to pubkey map
+// InitGenesis imports oracle genesis state.
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
 	for _, er := range data.ExchangeRates {
 		if err := k.ExchangeRate.Set(ctx, er.Denom, er); err != nil {
@@ -39,20 +41,34 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
+	tobinTaxes := data.TobinTaxes
+	if len(tobinTaxes) == 0 {
+		tobinTaxes = data.Params.TobinTaxes
+	}
+	for _, tt := range tobinTaxes {
+		if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
+			return fmt.Errorf("setting genesis tobin tax for denom %s: %w", tt.Denom, err)
+		}
+	}
+
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
 
-	// check if the module account exists
+	// Check that the module account exists before registering denom metadata.
 	moduleAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
 	if moduleAcc == nil {
 		return fmt.Errorf("%s module account has not been set", types.ModuleName)
 	}
 
+	for _, tt := range tobinTaxes {
+		k.registerTobinTaxMetadata(ctx, tt.Denom)
+	}
+
 	return nil
 }
 
-// ExportGenesis writes the current store values to a genesis file, which can be imported again with InitGenesis
+// ExportGenesis exports oracle store state.
 func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -94,10 +110,19 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("iterating miss counts: %w", err)
 	}
 
+	tobinTaxes := []types.TobinTax{}
+	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
+		tobinTaxes = append(tobinTaxes, types.TobinTax{Denom: denom, TobinTax: tobinTax})
+		return false, nil
+	}); err != nil {
+		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+	}
+
 	return types.NewGenesisState(
 		params,
 		exchangeRates,
 		scoreWeights,
 		missCounts,
+		tobinTaxes,
 	), nil
 }

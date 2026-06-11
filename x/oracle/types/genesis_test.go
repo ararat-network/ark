@@ -89,6 +89,25 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "duplicate miss count for validator noahvaloper1abc",
 		},
+		// TobinTaxes
+		{
+			name: "tobin tax denom must be micro denom",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = []types.TobinTax{
+					{Denom: "u", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+				}
+			},
+			expectErr: "tobin tax denom must be a micro denom beginning with u: u",
+		},
+		{
+			name: "tobin tax outside valid range",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = []types.TobinTax{
+					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(101, 2)},
+				}
+			},
+			expectErr: "tobin tax for uusd must be between [0, 1]",
+		},
 		// Valid custom genesis
 		{
 			name: "custom valid genesis",
@@ -103,6 +122,9 @@ func TestValidateGenesis(t *testing.T) {
 					},
 					[]types.MissCount{
 						{ValidatorAddress: "noahvaloper1abc", MissCount: 0},
+					},
+					[]types.TobinTax{
+						{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 					},
 				)
 			},

@@ -22,6 +22,8 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated MissCount miss_counts = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated TobinTax tobin_taxes = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // ExchangeRate - struct to store interpreted exchange rates data to store

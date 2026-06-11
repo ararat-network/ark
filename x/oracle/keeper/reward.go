@@ -12,16 +12,15 @@ import (
 	"noah/x/oracle/types"
 )
 
-// validatorScore is used to store the scores from the store locally for reward calculations
+// validatorScore caches score weights for reward distribution.
 type validatorScore struct {
 	addr   sdk.ValAddress
 	weight uint64
 }
 
-// SettleRewards will give out a portion of seigniorage reward (rewardWeight) to the
-// oracle voters that voted faithfully at the end of every VotePeriod.
+// SettleRewards distributes oracle rewards by score weight.
 func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistributionWindow uint64) error {
-	// sum weight of the scores
+	// Sum validator score weights.
 	votePowerSum := math.ZeroInt()
 	validatorScores := []validatorScore{}
 	if err := k.ScoreWeight.Walk(ctx, nil, func(validator sdk.ValAddress, scoreWeight uint64) (bool, error) {
@@ -35,27 +34,27 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		return err
 	}
 
-	// return if there are no votes
+	// Skip distribution when no score weights were recorded.
 	if votePowerSum.IsZero() {
-		k.Logger(ctx).Info("no votes for this period", "rewardWindow", rewardWindow)
+		k.Logger(ctx).Debug("no votes for this period", "rewardWindow", rewardWindow)
 		return nil
 	}
 
 	rewardAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
 	rewardPool := k.bankKeeper.GetAllBalances(ctx, rewardAcc.GetAddress())
 
-	// return if there's no rewards to give out
+	// Skip distribution when the reward pool is empty.
 	if rewardPool.IsZero() {
-		k.Logger(ctx).Info("no rewards for this period", "rewardWindow", rewardWindow)
+		k.Logger(ctx).Debug("no rewards for this period", "rewardWindow", rewardWindow)
 		return nil
 	}
 
-	// rewardCoin  = oraclePool * VotePeriod / RewardDistributionWindow
+	// periodRewards = oraclePool * rewardWindow / rewardDistributionWindow.
 	periodRewards := math.LegacyNewDecFromInt(rewardPool.AmountOf(core.MicroArkDenom)).
 		MulInt64(int64(rewardWindow)).
 		QuoInt64(int64(rewardDistributionWindow))
 
-	// distribute rewards
+	// Distribute rewards by score weight.
 	var distributedReward sdk.Coins
 	rewardEvents := sdk.Events{}
 	for _, score := range validatorScores {
@@ -90,7 +89,7 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		))
 	}
 
-	// Move distributed reward to distribution module
+	// Move distributed rewards to the distribution module.
 	err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.distributionName, distributedReward)
 	if err != nil {
 		return fmt.Errorf("sending coins to distribution module: %w", err)
