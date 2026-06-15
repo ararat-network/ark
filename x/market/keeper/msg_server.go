@@ -111,6 +111,12 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 
 // validateInputs enforces the local swap input bounds before any pricing or state changes.
 func validateInputs(offerCoin sdk.Coin, askDenom string) error {
+	if err := offerCoin.Validate(); err != nil {
+		return sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin: %v", err)
+	}
+	if err := sdk.ValidateDenom(askDenom); err != nil {
+		return sdkerrors.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
+	}
 	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
 		return sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
 	}

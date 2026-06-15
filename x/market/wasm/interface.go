@@ -48,6 +48,7 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 		return nil, sdkerrors.Wrapf(errortypes.ErrJSONUnmarshal, "unmarshalling market custom message: %v", err)
 	}
 
+	// TODO: call validateInputs here instead of inline validation
 	if sdkMsg.Swap != nil {
 		sdkMsg.Swap.Trader = contractAddr.String()
 		if sdkMsg.Swap.OfferCoin.Amount.LTE(math.ZeroInt()) || sdkMsg.Swap.OfferCoin.Amount.BigInt().BitLen() > 100 {

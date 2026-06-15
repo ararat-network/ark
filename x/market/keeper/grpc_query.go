@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"noah/x/market/types"
 )
@@ -37,10 +37,6 @@ func (q queryServer) Params(ctx context.Context, _ *types.QueryParamsRequest) (*
 func (q queryServer) Swap(ctx context.Context, req *types.QuerySwapRequest) (*types.QuerySwapResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
-	}
-
-	if err := sdk.ValidateDenom(req.AskDenom); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid ask denom %q: %v", req.AskDenom, err)
 	}
 
 	offerCoin, err := sdk.ParseCoinNormalized(req.OfferCoin)
