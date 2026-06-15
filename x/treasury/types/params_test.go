@@ -32,6 +32,20 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "TaxPolicy.RateMax",
 		},
 		{
+			name: "tax policy rate max nil",
+			mutate: func(p *types.Params) {
+				p.TaxPolicy.RateMax = math.LegacyDec{}
+			},
+			expectErr: "TaxPolicy.RateMax must be set",
+		},
+		{
+			name: "tax policy rate min nil",
+			mutate: func(p *types.Params) {
+				p.TaxPolicy.RateMin = math.LegacyDec{}
+			},
+			expectErr: "TaxPolicy.RateMin must be set",
+		},
+		{
 			name: "tax policy rate min negative",
 			mutate: func(p *types.Params) {
 				p.TaxPolicy.RateMin = math.LegacyNewDec(-1)
@@ -59,6 +73,13 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "TaxPolicy.ChangeRateMax must be zero or positive",
 		},
 		{
+			name: "tax policy change rate max nil",
+			mutate: func(p *types.Params) {
+				p.TaxPolicy.ChangeRateMax = math.LegacyDec{}
+			},
+			expectErr: "TaxPolicy.ChangeRateMax must be set",
+		},
+		{
 			name: "tax policy change rate max zero is valid",
 			mutate: func(p *types.Params) {
 				p.TaxPolicy.ChangeRateMax = math.LegacyZeroDec()
@@ -72,6 +93,20 @@ func TestParamsValidate(t *testing.T) {
 				p.RewardPolicy.RateMin = math.LegacyNewDecWithPrec(10, 2)
 			},
 			expectErr: "RewardPolicy.RateMax",
+		},
+		{
+			name: "reward policy rate max nil",
+			mutate: func(p *types.Params) {
+				p.RewardPolicy.RateMax = math.LegacyDec{}
+			},
+			expectErr: "RewardPolicy.RateMax must be set",
+		},
+		{
+			name: "reward policy rate min nil",
+			mutate: func(p *types.Params) {
+				p.RewardPolicy.RateMin = math.LegacyDec{}
+			},
+			expectErr: "RewardPolicy.RateMin must be set",
 		},
 		{
 			name: "reward policy rate min negative",
@@ -95,6 +130,13 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardPolicy.ChangeRateMax must be zero or positive",
 		},
 		{
+			name: "reward policy change rate max nil",
+			mutate: func(p *types.Params) {
+				p.RewardPolicy.ChangeRateMax = math.LegacyDec{}
+			},
+			expectErr: "RewardPolicy.ChangeRateMax must be set",
+		},
+		{
 			name: "reward policy change rate max zero is valid",
 			mutate: func(p *types.Params) {
 				p.RewardPolicy.ChangeRateMax = math.LegacyZeroDec()
@@ -109,6 +151,13 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "SeigniorageBurdenTarget must be zero or positive",
 		},
 		{
+			name: "seigniorage burden target nil",
+			mutate: func(p *types.Params) {
+				p.SeigniorageBurdenTarget = math.LegacyDec{}
+			},
+			expectErr: "SeigniorageBurdenTarget must be set",
+		},
+		{
 			name: "seigniorage burden target zero is valid",
 			mutate: func(p *types.Params) {
 				p.SeigniorageBurdenTarget = math.LegacyZeroDec()
@@ -121,6 +170,13 @@ func TestParamsValidate(t *testing.T) {
 				p.BurnWeight = math.LegacyNewDec(-1)
 			},
 			expectErr: "BurnWeight must be between zero and 1 - RewardPolicy.RateMax",
+		},
+		{
+			name: "burn weight nil",
+			mutate: func(p *types.Params) {
+				p.BurnWeight = math.LegacyDec{}
+			},
+			expectErr: "BurnWeight must be set",
 		},
 		{
 			name: "burn weight plus reward max greater than one",
@@ -150,12 +206,34 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "MiningIncrement must be zero or positive",
 		},
 		{
+			name: "mining increment nil",
+			mutate: func(p *types.Params) {
+				p.MiningIncrement = math.LegacyDec{}
+			},
+			expectErr: "MiningIncrement must be set",
+		},
+		{
 			name: "mining increment zero is valid",
 			mutate: func(p *types.Params) {
 				p.MiningIncrement = math.LegacyZeroDec()
 			},
 		},
 		// WindowLong / WindowShort
+		{
+			name: "window short zero",
+			mutate: func(p *types.Params) {
+				p.WindowShort = 0
+			},
+			expectErr: "WindowShort must be positive",
+		},
+		{
+			name: "window long zero",
+			mutate: func(p *types.Params) {
+				p.WindowLong = 0
+				p.WindowShort = 0
+			},
+			expectErr: "WindowLong must be positive",
+		},
 		{
 			name: "window long equal to window short",
 			mutate: func(p *types.Params) {

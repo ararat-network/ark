@@ -51,6 +51,34 @@ func DefaultParams() Params {
 
 // Validate performs basic validation on treasury parameters.
 func (p Params) Validate() error {
+	if err := validateLegacyDecSet("TaxPolicy.RateMax", p.TaxPolicy.RateMax); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("TaxPolicy.RateMin", p.TaxPolicy.RateMin); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("TaxPolicy.ChangeRateMax", p.TaxPolicy.ChangeRateMax); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("RewardPolicy.RateMax", p.RewardPolicy.RateMax); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("RewardPolicy.RateMin", p.RewardPolicy.RateMin); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("RewardPolicy.ChangeRateMax", p.RewardPolicy.ChangeRateMax); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("SeigniorageBurdenTarget", p.SeigniorageBurdenTarget); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("BurnWeight", p.BurnWeight); err != nil {
+		return err
+	}
+	if err := validateLegacyDecSet("MiningIncrement", p.MiningIncrement); err != nil {
+		return err
+	}
+
 	if p.TaxPolicy.RateMax.LT(p.TaxPolicy.RateMin) {
 		return fmt.Errorf("treasury TaxPolicy.RateMax %s must be greater than TaxPolicy.RateMin %s",
 			p.TaxPolicy.RateMax, p.TaxPolicy.RateMin)
@@ -93,8 +121,24 @@ func (p Params) Validate() error {
 		return fmt.Errorf("treasury parameter MiningIncrement must be zero or positive: %s", p.MiningIncrement)
 	}
 
+	if p.WindowLong == 0 {
+		return fmt.Errorf("treasury parameter WindowLong must be positive")
+	}
+
+	if p.WindowShort == 0 {
+		return fmt.Errorf("treasury parameter WindowShort must be positive")
+	}
+
 	if p.WindowLong <= p.WindowShort {
 		return fmt.Errorf("treasury parameter WindowLong must be greater than WindowShort: (%d, %d)", p.WindowLong, p.WindowShort)
+	}
+
+	return nil
+}
+
+func validateLegacyDecSet(name string, dec math.LegacyDec) error {
+	if dec.IsNil() {
+		return fmt.Errorf("treasury parameter %s must be set", name)
 	}
 
 	return nil
