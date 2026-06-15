@@ -6,7 +6,10 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	core "noah/types"
+	oraclekeeper "noah/x/oracle/keeper"
 	"noah/x/oracle/types"
 )
 
@@ -22,7 +25,7 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 		setup     func()
 		req       *types.QueryExchangeRateRequest
 		code      codes.Code
-		expect    types.ExchangeRate
+		expect    math.LegacyDec
 		expectErr bool
 	}{
 		{
@@ -32,23 +35,40 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			expectErr: true,
 		},
 		{
-			name: "ark denom returns one",
-			req:  &types.QueryExchangeRateRequest{Denom: core.MicroArkDenom},
-			expect: types.ExchangeRate{
-				Denom: core.MicroArkDenom,
-				Rate:  math.LegacyOneDec(),
-			},
+			name:   "ark denom returns one",
+			req:    &types.QueryExchangeRateRequest{Denom: core.MicroArkDenom},
+			expect: math.LegacyOneDec(),
 		},
 		{
 			name: "stored denom returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyNewDec(7))))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
+					Denom:       core.MicroUSDDenom,
+					Rate:        math.LegacyNewDec(7),
+					BlockHeight: 10,
+				}))
+				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 			},
-			req: &types.QueryExchangeRateRequest{Denom: core.MicroUSDDenom},
-			expect: types.ExchangeRate{
-				Denom: core.MicroUSDDenom,
-				Rate:  math.LegacyNewDec(7),
+			req:    &types.QueryExchangeRateRequest{Denom: core.MicroUSDDenom},
+			expect: math.LegacyNewDec(7),
+		},
+		{
+			name: "stale denom maps to failed precondition",
+			setup: func() {
+				params, err := s.keeper.Params.Get(s.ctx)
+				s.Require().NoError(err)
+				params.MaxExchangeRateAge = 5
+				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
+					Denom:       core.MicroUSDDenom,
+					Rate:        math.LegacyNewDec(7),
+					BlockHeight: 1,
+				}))
+				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 			},
+			req:       &types.QueryExchangeRateRequest{Denom: core.MicroUSDDenom},
+			code:      codes.FailedPrecondition,
+			expectErr: true,
 		},
 		{
 			name:      "unknown denom maps to not found error",
@@ -64,7 +84,7 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 				tc.setup()
 			}
 
-			resp, err := s.queryClient.ExchangeRate(s.ctx, tc.req)
+			resp, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRate(s.ctx, tc.req)
 			if tc.expectErr {
 				s.Require().Error(err)
 				s.Require().Equal(tc.code, status.Code(err))
@@ -72,22 +92,30 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			}
 
 			s.Require().NoError(err)
-			s.Require().Equal(tc.expect.Denom, resp.ExchangeRate.Denom)
-			s.Require().True(tc.expect.Rate.Equal(resp.ExchangeRate.Rate))
+			s.Require().True(tc.expect.Equal(resp.ExchangeRate), "expected %s, got %s", tc.expect, resp.ExchangeRate)
 		})
 	}
 }
 
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
-	expected := types.ExchangeRates{
-		newStoredExchangeRate(core.MicroKRWDenom, math.LegacyNewDec(1000)),
-		newStoredExchangeRate(core.MicroUSDDenom, math.LegacyOneDec()),
-	}
-	for _, exchangeRate := range expected {
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, exchangeRate.Denom, exchangeRate))
-	}
+	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(core.MicroUSDDenom, math.LegacyOneDec())}
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
+		Denom:       core.MicroUSDDenom,
+		Rate:        math.LegacyOneDec(),
+		BlockHeight: 10,
+	}))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, types.ExchangeRate{
+		Denom:       core.MicroKRWDenom,
+		Rate:        math.LegacyNewDec(1000),
+		BlockHeight: 1,
+	}))
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MaxExchangeRateAge = 5
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 
-	resp, err := s.queryClient.ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
+	resp, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
 	s.Require().NoError(err)
 	s.Require().ElementsMatch(expected, resp.ExchangeRates)
 }

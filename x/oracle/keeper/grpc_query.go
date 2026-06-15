@@ -12,7 +12,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/types"
 	"noah/x/oracle/types"
 )
 
@@ -46,24 +45,16 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
-	if req.Denom == core.MicroArkDenom {
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		return &types.QueryExchangeRateResponse{
-			ExchangeRate: types.NewExchangeRate(
-				req.Denom,
-				math.LegacyOneDec(),
-				sdkCtx.BlockTime(),
-				uint64(sdkCtx.BlockHeight()),
-			),
-		}, nil
-	}
-
-	exchangeRate, err := q.k.ExchangeRate.Get(ctx, req.Denom)
+	exchangeRate, err := q.k.GetExchangeRate(ctx, req.Denom)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
+		switch {
+		case errors.Is(err, types.ErrUnknownDenom):
 			return nil, status.Errorf(codes.NotFound, "exchange rate not found for denom %s", req.Denom)
+		case errors.Is(err, types.ErrStaleExchangeRate):
+			return nil, status.Errorf(codes.FailedPrecondition, "exchange rate stale for denom %s: %v", req.Denom, err)
+		default:
+			return nil, status.Errorf(codes.Internal, "getting exchange rate for denom %s: %v", req.Denom, err)
 		}
-		return nil, status.Errorf(codes.Internal, "getting exchange rate for denom %s: %v", req.Denom, err)
 	}
 
 	return &types.QueryExchangeRateResponse{ExchangeRate: exchangeRate}, nil
@@ -71,15 +62,28 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 
 // ExchangeRates queries all exchange rates.
 func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchangeRatesRequest) (*types.QueryExchangeRatesResponse, error) {
-	var exchangeRates types.ExchangeRates
+	params, err := q.k.Params.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting oracle params: %v", err)
+	}
+
+	var exchangeRateDecCoins sdk.DecCoins
+	currentHeight := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
 	if err := q.k.ExchangeRate.Walk(ctx, nil, func(_ string, exchangeRate types.ExchangeRate) (bool, error) {
-		exchangeRates = append(exchangeRates, exchangeRate)
+		if currentHeight > exchangeRate.BlockHeight &&
+			currentHeight-exchangeRate.BlockHeight > params.MaxExchangeRateAge {
+			return false, nil
+		}
+		exchangeRateDecCoins = append(
+			exchangeRateDecCoins,
+			sdk.NewDecCoinFromDec(exchangeRate.Denom, exchangeRate.Rate),
+		)
 		return false, nil
 	}); err != nil {
 		return nil, status.Errorf(codes.Internal, "listing oracle exchange rates: %v", err)
 	}
 
-	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRates}, nil
+	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRateDecCoins}, nil
 }
 
 // TobinTax queries the active Tobin tax for a denom.

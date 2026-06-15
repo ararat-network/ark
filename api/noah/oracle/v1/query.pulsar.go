@@ -3,6 +3,7 @@ package oraclev1
 
 import (
 	_ "cosmossdk.io/api/amino"
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	_ "cosmossdk.io/api/cosmos/query/v1"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
@@ -513,8 +514,8 @@ func (x *fastReflection_QueryExchangeRateResponse) Interface() protoreflect.Prot
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_QueryExchangeRateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.ExchangeRate != nil {
-		value := protoreflect.ValueOfMessage(x.ExchangeRate.ProtoReflect())
+	if x.ExchangeRate != "" {
+		value := protoreflect.ValueOfString(x.ExchangeRate)
 		if !f(fd_QueryExchangeRateResponse_exchange_rate, value) {
 			return
 		}
@@ -535,7 +536,7 @@ func (x *fastReflection_QueryExchangeRateResponse) Range(f func(protoreflect.Fie
 func (x *fastReflection_QueryExchangeRateResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRateResponse.exchange_rate":
-		return x.ExchangeRate != nil
+		return x.ExchangeRate != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.QueryExchangeRateResponse"))
@@ -553,7 +554,7 @@ func (x *fastReflection_QueryExchangeRateResponse) Has(fd protoreflect.FieldDesc
 func (x *fastReflection_QueryExchangeRateResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRateResponse.exchange_rate":
-		x.ExchangeRate = nil
+		x.ExchangeRate = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.QueryExchangeRateResponse"))
@@ -572,7 +573,7 @@ func (x *fastReflection_QueryExchangeRateResponse) Get(descriptor protoreflect.F
 	switch descriptor.FullName() {
 	case "noah.oracle.v1.QueryExchangeRateResponse.exchange_rate":
 		value := x.ExchangeRate
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.QueryExchangeRateResponse"))
@@ -594,7 +595,7 @@ func (x *fastReflection_QueryExchangeRateResponse) Get(descriptor protoreflect.F
 func (x *fastReflection_QueryExchangeRateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRateResponse.exchange_rate":
-		x.ExchangeRate = value.Message().Interface().(*ExchangeRate)
+		x.ExchangeRate = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.QueryExchangeRateResponse"))
@@ -616,10 +617,7 @@ func (x *fastReflection_QueryExchangeRateResponse) Set(fd protoreflect.FieldDesc
 func (x *fastReflection_QueryExchangeRateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRateResponse.exchange_rate":
-		if x.ExchangeRate == nil {
-			x.ExchangeRate = new(ExchangeRate)
-		}
-		return protoreflect.ValueOfMessage(x.ExchangeRate.ProtoReflect())
+		panic(fmt.Errorf("field exchange_rate of message noah.oracle.v1.QueryExchangeRateResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.QueryExchangeRateResponse"))
@@ -634,8 +632,7 @@ func (x *fastReflection_QueryExchangeRateResponse) Mutable(fd protoreflect.Field
 func (x *fastReflection_QueryExchangeRateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRateResponse.exchange_rate":
-		m := new(ExchangeRate)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: noah.oracle.v1.QueryExchangeRateResponse"))
@@ -705,8 +702,8 @@ func (x *fastReflection_QueryExchangeRateResponse) ProtoMethods() *protoiface.Me
 		var n int
 		var l int
 		_ = l
-		if x.ExchangeRate != nil {
-			l = options.Size(x.ExchangeRate)
+		l = len(x.ExchangeRate)
+		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -738,17 +735,10 @@ func (x *fastReflection_QueryExchangeRateResponse) ProtoMethods() *protoiface.Me
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.ExchangeRate != nil {
-			encoded, err := options.Marshal(x.ExchangeRate)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		if len(x.ExchangeRate) > 0 {
+			i -= len(x.ExchangeRate)
+			copy(dAtA[i:], x.ExchangeRate)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ExchangeRate)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -805,7 +795,7 @@ func (x *fastReflection_QueryExchangeRateResponse) ProtoMethods() *protoiface.Me
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExchangeRate", wireType)
 				}
-				var msglen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -815,27 +805,23 @@ func (x *fastReflection_QueryExchangeRateResponse) ProtoMethods() *protoiface.Me
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					msglen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if msglen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + msglen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.ExchangeRate == nil {
-					x.ExchangeRate = &ExchangeRate{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExchangeRate); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
+				x.ExchangeRate = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1231,7 +1217,7 @@ func (x *fastReflection_QueryExchangeRatesRequest) ProtoMethods() *protoiface.Me
 var _ protoreflect.List = (*_QueryExchangeRatesResponse_1_list)(nil)
 
 type _QueryExchangeRatesResponse_1_list struct {
-	list *[]*ExchangeRate
+	list *[]*v1beta1.DecCoin
 }
 
 func (x *_QueryExchangeRatesResponse_1_list) Len() int {
@@ -1247,18 +1233,18 @@ func (x *_QueryExchangeRatesResponse_1_list) Get(i int) protoreflect.Value {
 
 func (x *_QueryExchangeRatesResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.DecCoin)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_QueryExchangeRatesResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ExchangeRate)
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.DecCoin)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_QueryExchangeRatesResponse_1_list) AppendMutable() protoreflect.Value {
-	v := new(ExchangeRate)
+	v := new(v1beta1.DecCoin)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -1271,7 +1257,7 @@ func (x *_QueryExchangeRatesResponse_1_list) Truncate(n int) {
 }
 
 func (x *_QueryExchangeRatesResponse_1_list) NewElement() protoreflect.Value {
-	v := new(ExchangeRate)
+	v := new(v1beta1.DecCoin)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -1464,7 +1450,7 @@ func (x *fastReflection_QueryExchangeRatesResponse) Mutable(fd protoreflect.Fiel
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRatesResponse.exchange_rates":
 		if x.ExchangeRates == nil {
-			x.ExchangeRates = []*ExchangeRate{}
+			x.ExchangeRates = []*v1beta1.DecCoin{}
 		}
 		value := &_QueryExchangeRatesResponse_1_list{list: &x.ExchangeRates}
 		return protoreflect.ValueOfList(value)
@@ -1482,7 +1468,7 @@ func (x *fastReflection_QueryExchangeRatesResponse) Mutable(fd protoreflect.Fiel
 func (x *fastReflection_QueryExchangeRatesResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "noah.oracle.v1.QueryExchangeRatesResponse.exchange_rates":
-		list := []*ExchangeRate{}
+		list := []*v1beta1.DecCoin{}
 		return protoreflect.ValueOfList(&_QueryExchangeRatesResponse_1_list{list: &list})
 	default:
 		if fd.IsExtension() {
@@ -1682,7 +1668,7 @@ func (x *fastReflection_QueryExchangeRatesResponse) ProtoMethods() *protoiface.M
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ExchangeRates = append(x.ExchangeRates, &ExchangeRate{})
+				x.ExchangeRates = append(x.ExchangeRates, &v1beta1.DecCoin{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExchangeRates[len(x.ExchangeRates)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
@@ -7582,7 +7568,7 @@ type QueryExchangeRateResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// exchange_rate defines the exchange rate of ark denominated in various noah
-	ExchangeRate *ExchangeRate `protobuf:"bytes,1,opt,name=exchange_rate,json=exchangeRate,proto3" json:"exchange_rate,omitempty"`
+	ExchangeRate string `protobuf:"bytes,1,opt,name=exchange_rate,json=exchangeRate,proto3" json:"exchange_rate,omitempty"`
 }
 
 func (x *QueryExchangeRateResponse) Reset() {
@@ -7605,11 +7591,11 @@ func (*QueryExchangeRateResponse) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_query_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *QueryExchangeRateResponse) GetExchangeRate() *ExchangeRate {
+func (x *QueryExchangeRateResponse) GetExchangeRate() string {
 	if x != nil {
 		return x.ExchangeRate
 	}
-	return nil
+	return ""
 }
 
 // QueryExchangeRatesRequest is the request type for the Query/ExchangeRates RPC
@@ -7649,7 +7635,7 @@ type QueryExchangeRatesResponse struct {
 
 	// exchange_rates defines a list of the exchange rate for all whitelisted
 	// denoms.
-	ExchangeRates []*ExchangeRate `protobuf:"bytes,1,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
+	ExchangeRates []*v1beta1.DecCoin `protobuf:"bytes,1,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
 }
 
 func (x *QueryExchangeRatesResponse) Reset() {
@@ -7672,7 +7658,7 @@ func (*QueryExchangeRatesResponse) Descriptor() ([]byte, []int) {
 	return file_noah_oracle_v1_query_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QueryExchangeRatesResponse) GetExchangeRates() []*ExchangeRate {
+func (x *QueryExchangeRatesResponse) GetExchangeRates() []*v1beta1.DecCoin {
 	if x != nil {
 		return x.ExchangeRates
 	}
@@ -8175,35 +8161,38 @@ var file_noah_oracle_v1_query_proto_rawDesc = []byte{
 	0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x6e, 0x6f,
 	0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x1a, 0x11, 0x61, 0x6d,
 	0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
+	0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2f, 0x76, 0x31,
 	0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f,
 	0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
 	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c, 0x67,
 	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c, 0x6e, 0x6f, 0x61,
-	0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x67, 0x65, 0x6e, 0x65,
-	0x73, 0x69, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x6e, 0x6f, 0x61, 0x68, 0x2f,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x30, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45,
-	0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x69, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a, 0x0d, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6e,
-	0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78,
-	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52,
-	0x61, 0x74, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x22, 0x7d, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f,
-	0x0a, 0x0e, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x73,
-	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6e, 0x6f, 0x61, 0x68, 0x2e, 0x6f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x52, 0x61, 0x74, 0x65, 0x42, 0x1a, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x0d, 0x45, 0x78,
-	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x6e, 0x6f, 0x61,
+	0x68, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x6f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x30, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x78, 0x0a, 0x19, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5b, 0x0a, 0x0d, 0x65, 0x78, 0x63, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x52, 0x61, 0x74, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x22, 0x9b, 0x01, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x7d, 0x0a, 0x0e, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74,
+	0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44,
+	0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x38, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x2b,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70,
+	0x65, 0x73, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
 	0x52, 0x0d, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x22,
 	0x2c, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
@@ -8388,38 +8377,37 @@ var file_noah_oracle_v1_query_proto_goTypes = []interface{}{
 	(*QueryMissCountResponse)(nil),     // 15: noah.oracle.v1.QueryMissCountResponse
 	(*QueryParamsRequest)(nil),         // 16: noah.oracle.v1.QueryParamsRequest
 	(*QueryParamsResponse)(nil),        // 17: noah.oracle.v1.QueryParamsResponse
-	(*ExchangeRate)(nil),               // 18: noah.oracle.v1.ExchangeRate
+	(*v1beta1.DecCoin)(nil),            // 18: cosmos.base.v1beta1.DecCoin
 	(*TobinTax)(nil),                   // 19: noah.oracle.v1.TobinTax
 	(*Params)(nil),                     // 20: noah.oracle.v1.Params
 }
 var file_noah_oracle_v1_query_proto_depIdxs = []int32{
-	18, // 0: noah.oracle.v1.QueryExchangeRateResponse.exchange_rate:type_name -> noah.oracle.v1.ExchangeRate
-	18, // 1: noah.oracle.v1.QueryExchangeRatesResponse.exchange_rates:type_name -> noah.oracle.v1.ExchangeRate
-	19, // 2: noah.oracle.v1.QueryTobinTaxesResponse.tobin_taxes:type_name -> noah.oracle.v1.TobinTax
-	20, // 3: noah.oracle.v1.QueryParamsResponse.params:type_name -> noah.oracle.v1.Params
-	0,  // 4: noah.oracle.v1.Query.ExchangeRate:input_type -> noah.oracle.v1.QueryExchangeRateRequest
-	2,  // 5: noah.oracle.v1.Query.ExchangeRates:input_type -> noah.oracle.v1.QueryExchangeRatesRequest
-	4,  // 6: noah.oracle.v1.Query.TobinTax:input_type -> noah.oracle.v1.QueryTobinTaxRequest
-	6,  // 7: noah.oracle.v1.Query.TobinTaxes:input_type -> noah.oracle.v1.QueryTobinTaxesRequest
-	8,  // 8: noah.oracle.v1.Query.Actives:input_type -> noah.oracle.v1.QueryActivesRequest
-	10, // 9: noah.oracle.v1.Query.VoteTargets:input_type -> noah.oracle.v1.QueryVoteTargetsRequest
-	12, // 10: noah.oracle.v1.Query.ScoreWeight:input_type -> noah.oracle.v1.QueryScoreWeightRequest
-	14, // 11: noah.oracle.v1.Query.MissCount:input_type -> noah.oracle.v1.QueryMissCountRequest
-	16, // 12: noah.oracle.v1.Query.Params:input_type -> noah.oracle.v1.QueryParamsRequest
-	1,  // 13: noah.oracle.v1.Query.ExchangeRate:output_type -> noah.oracle.v1.QueryExchangeRateResponse
-	3,  // 14: noah.oracle.v1.Query.ExchangeRates:output_type -> noah.oracle.v1.QueryExchangeRatesResponse
-	5,  // 15: noah.oracle.v1.Query.TobinTax:output_type -> noah.oracle.v1.QueryTobinTaxResponse
-	7,  // 16: noah.oracle.v1.Query.TobinTaxes:output_type -> noah.oracle.v1.QueryTobinTaxesResponse
-	9,  // 17: noah.oracle.v1.Query.Actives:output_type -> noah.oracle.v1.QueryActivesResponse
-	11, // 18: noah.oracle.v1.Query.VoteTargets:output_type -> noah.oracle.v1.QueryVoteTargetsResponse
-	13, // 19: noah.oracle.v1.Query.ScoreWeight:output_type -> noah.oracle.v1.QueryScoreWeightResponse
-	15, // 20: noah.oracle.v1.Query.MissCount:output_type -> noah.oracle.v1.QueryMissCountResponse
-	17, // 21: noah.oracle.v1.Query.Params:output_type -> noah.oracle.v1.QueryParamsResponse
-	13, // [13:22] is the sub-list for method output_type
-	4,  // [4:13] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	18, // 0: noah.oracle.v1.QueryExchangeRatesResponse.exchange_rates:type_name -> cosmos.base.v1beta1.DecCoin
+	19, // 1: noah.oracle.v1.QueryTobinTaxesResponse.tobin_taxes:type_name -> noah.oracle.v1.TobinTax
+	20, // 2: noah.oracle.v1.QueryParamsResponse.params:type_name -> noah.oracle.v1.Params
+	0,  // 3: noah.oracle.v1.Query.ExchangeRate:input_type -> noah.oracle.v1.QueryExchangeRateRequest
+	2,  // 4: noah.oracle.v1.Query.ExchangeRates:input_type -> noah.oracle.v1.QueryExchangeRatesRequest
+	4,  // 5: noah.oracle.v1.Query.TobinTax:input_type -> noah.oracle.v1.QueryTobinTaxRequest
+	6,  // 6: noah.oracle.v1.Query.TobinTaxes:input_type -> noah.oracle.v1.QueryTobinTaxesRequest
+	8,  // 7: noah.oracle.v1.Query.Actives:input_type -> noah.oracle.v1.QueryActivesRequest
+	10, // 8: noah.oracle.v1.Query.VoteTargets:input_type -> noah.oracle.v1.QueryVoteTargetsRequest
+	12, // 9: noah.oracle.v1.Query.ScoreWeight:input_type -> noah.oracle.v1.QueryScoreWeightRequest
+	14, // 10: noah.oracle.v1.Query.MissCount:input_type -> noah.oracle.v1.QueryMissCountRequest
+	16, // 11: noah.oracle.v1.Query.Params:input_type -> noah.oracle.v1.QueryParamsRequest
+	1,  // 12: noah.oracle.v1.Query.ExchangeRate:output_type -> noah.oracle.v1.QueryExchangeRateResponse
+	3,  // 13: noah.oracle.v1.Query.ExchangeRates:output_type -> noah.oracle.v1.QueryExchangeRatesResponse
+	5,  // 14: noah.oracle.v1.Query.TobinTax:output_type -> noah.oracle.v1.QueryTobinTaxResponse
+	7,  // 15: noah.oracle.v1.Query.TobinTaxes:output_type -> noah.oracle.v1.QueryTobinTaxesResponse
+	9,  // 16: noah.oracle.v1.Query.Actives:output_type -> noah.oracle.v1.QueryActivesResponse
+	11, // 17: noah.oracle.v1.Query.VoteTargets:output_type -> noah.oracle.v1.QueryVoteTargetsResponse
+	13, // 18: noah.oracle.v1.Query.ScoreWeight:output_type -> noah.oracle.v1.QueryScoreWeightResponse
+	15, // 19: noah.oracle.v1.Query.MissCount:output_type -> noah.oracle.v1.QueryMissCountResponse
+	17, // 20: noah.oracle.v1.Query.Params:output_type -> noah.oracle.v1.QueryParamsResponse
+	12, // [12:21] is the sub-list for method output_type
+	3,  // [3:12] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_noah_oracle_v1_query_proto_init() }
@@ -8427,7 +8415,6 @@ func file_noah_oracle_v1_query_proto_init() {
 	if File_noah_oracle_v1_query_proto != nil {
 		return
 	}
-	file_noah_oracle_v1_genesis_proto_init()
 	file_noah_oracle_v1_oracle_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_noah_oracle_v1_query_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
