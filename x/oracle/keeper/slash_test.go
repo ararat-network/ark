@@ -16,6 +16,7 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 		status           stakingtypes.BondStatus
 		jailed           bool
 		missingValidator bool
+		missingErr       bool
 		expectSlash      bool
 	}{
 		{
@@ -54,6 +55,13 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			minValid:         math.LegacyNewDecWithPrec(90, 2),
 			missingValidator: true,
 		},
+		{
+			name:             "missing validator error is not slashed",
+			missCount:        20,
+			minValid:         math.LegacyNewDecWithPrec(90, 2),
+			missingValidator: true,
+			missingErr:       true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -72,7 +80,11 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 
 			if tc.missingValidator {
-				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
+				var err error
+				if tc.missingErr {
+					err = stakingtypes.ErrNoValidatorFound
+				}
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, err)
 			} else if tc.status != stakingtypes.Unspecified {
 				pubKey := ed25519.GenPrivKey().PubKey()
 				validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})

@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewGenesisState creates a new GenesisState object
@@ -44,6 +45,9 @@ func (gs GenesisState) Validate() error {
 		if len(er.Denom) == 0 {
 			return fmt.Errorf("exchange rate denom must not be empty")
 		}
+		if er.Rate.IsNil() {
+			return fmt.Errorf("exchange rate for %s must be set", er.Denom)
+		}
 		if !er.Rate.IsPositive() {
 			return fmt.Errorf("exchange rate for %s must be positive: %s", er.Denom, er.Rate)
 		}
@@ -59,6 +63,9 @@ func (gs GenesisState) Validate() error {
 		if len(mc.ValidatorAddress) == 0 {
 			return fmt.Errorf("score weight validator address must not be empty")
 		}
+		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
+			return fmt.Errorf("score weight validator address is invalid: %s", mc.ValidatorAddress)
+		}
 		if seenValidators[mc.ValidatorAddress] {
 			return fmt.Errorf("duplicate score weight for validator %s", mc.ValidatorAddress)
 		}
@@ -71,6 +78,9 @@ func (gs GenesisState) Validate() error {
 		if len(mc.ValidatorAddress) == 0 {
 			return fmt.Errorf("miss count validator address must not be empty")
 		}
+		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
+			return fmt.Errorf("miss count validator address is invalid: %s", mc.ValidatorAddress)
+		}
 		if seenValidators[mc.ValidatorAddress] {
 			return fmt.Errorf("duplicate miss count for validator %s", mc.ValidatorAddress)
 		}
@@ -82,6 +92,9 @@ func (gs GenesisState) Validate() error {
 	for _, tt := range gs.TobinTaxes {
 		if len(tt.Denom) < 3 || tt.Denom[0] != 'u' {
 			return fmt.Errorf("tobin tax denom must be a micro denom beginning with u: %s", tt.Denom)
+		}
+		if tt.TobinTax.IsNil() {
+			return fmt.Errorf("tobin tax for %s must be set", tt.Denom)
 		}
 		if tt.TobinTax.IsNegative() || tt.TobinTax.GT(math.LegacyOneDec()) {
 			return fmt.Errorf("tobin tax for %s must be between [0, 1]: %s", tt.Denom, tt.TobinTax)

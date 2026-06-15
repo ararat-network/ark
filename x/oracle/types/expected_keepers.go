@@ -12,7 +12,7 @@ import (
 
 // StakingKeeper is expected keeper for staking module
 type StakingKeeper interface {
-	Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error) // get validator by operator address; nil when validator not found
+	Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error) // get validator by operator address; ErrNoValidatorFound or nil when missing
 	Slash(context.Context, sdk.ConsAddress, int64, int64, math.LegacyDec) (math.Int, error) // slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
 	Jail(context.Context, sdk.ConsAddress) error                                            // jail a validator
 	PowerReduction(ctx context.Context) (res math.Int)

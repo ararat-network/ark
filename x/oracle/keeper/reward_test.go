@@ -97,7 +97,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 			expectErr: "sending coins to distribution module",
 		},
 		{
-			name: "missing validator returns error",
+			name: "missing validator is skipped",
 			setup: func() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
 
@@ -108,7 +108,45 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
-			expectErr: "validator not found for oracle rewards",
+		},
+		{
+			name: "missing validator error is skipped",
+			setup: func() {
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+
+				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
+				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
+				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
+					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(100))),
+				)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
+			},
+		},
+		{
+			name: "only transfers distributed rewards",
+			setup: func() {
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, 30))
+
+				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
+				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
+				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
+					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(400))),
+				)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
+				s.distrKeeper.EXPECT().AllocateTokensToValidator(
+					s.ctx,
+					validator2,
+					sdk.NewDecCoinsFromCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(30))),
+				).Return(nil)
+				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+					s.ctx,
+					types.ModuleName,
+					"distribution",
+					sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(30))),
+				).Return(nil)
+			},
 		},
 		{
 			name: "allocation failure returns error",

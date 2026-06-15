@@ -7,10 +7,15 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"noah/x/oracle/types"
 )
 
 func TestValidateGenesis(t *testing.T) {
+	validatorAddress := sdk.ValAddress([]byte("validator-1-address")).String()
+	otherValidatorAddress := sdk.ValAddress([]byte("validator-2-address")).String()
+
 	tests := []struct {
 		name      string
 		mutate    func(*types.GenesisState)
@@ -40,6 +45,15 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "exchange rate for uusd must be positive",
 		},
 		{
+			name: "exchange rate is nil",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = types.ExchangeRates{
+					{Denom: "uusd", Rate: math.LegacyDec{}},
+				}
+			},
+			expectErr: "exchange rate for uusd must be set",
+		},
+		{
 			name: "duplicate exchange rate denom",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = types.ExchangeRates{
@@ -63,11 +77,20 @@ func TestValidateGenesis(t *testing.T) {
 			name: "duplicate score weight",
 			mutate: func(gs *types.GenesisState) {
 				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "noahvaloper1abc", ScoreWeight: 1},
-					{ValidatorAddress: "noahvaloper1abc", ScoreWeight: 2},
+					{ValidatorAddress: validatorAddress, ScoreWeight: 1},
+					{ValidatorAddress: validatorAddress, ScoreWeight: 2},
 				}
 			},
-			expectErr: "duplicate score weight for validator noahvaloper1abc",
+			expectErr: "duplicate score weight for validator " + validatorAddress,
+		},
+		{
+			name: "score weight invalid validator address",
+			mutate: func(gs *types.GenesisState) {
+				gs.ScoreWeights = []types.ScoreWeight{
+					{ValidatorAddress: "not-a-validator-address", ScoreWeight: 1},
+				}
+			},
+			expectErr: "score weight validator address is invalid",
 		},
 		// MissCounts
 		{
@@ -83,11 +106,20 @@ func TestValidateGenesis(t *testing.T) {
 			name: "duplicate miss counter",
 			mutate: func(gs *types.GenesisState) {
 				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: "noahvaloper1abc", MissCount: 1},
-					{ValidatorAddress: "noahvaloper1abc", MissCount: 2},
+					{ValidatorAddress: validatorAddress, MissCount: 1},
+					{ValidatorAddress: validatorAddress, MissCount: 2},
 				}
 			},
-			expectErr: "duplicate miss count for validator noahvaloper1abc",
+			expectErr: "duplicate miss count for validator " + validatorAddress,
+		},
+		{
+			name: "miss count invalid validator address",
+			mutate: func(gs *types.GenesisState) {
+				gs.MissCounts = []types.MissCount{
+					{ValidatorAddress: "not-a-validator-address", MissCount: 1},
+				}
+			},
+			expectErr: "miss count validator address is invalid",
 		},
 		// TobinTaxes
 		{
@@ -108,6 +140,15 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "tobin tax for uusd must be between [0, 1]",
 		},
+		{
+			name: "tobin tax is nil",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = []types.TobinTax{
+					{Denom: "uusd", TobinTax: math.LegacyDec{}},
+				}
+			},
+			expectErr: "tobin tax for uusd must be set",
+		},
 		// Valid custom genesis
 		{
 			name: "custom valid genesis",
@@ -118,10 +159,10 @@ func TestValidateGenesis(t *testing.T) {
 						{Denom: "uusd", Rate: math.LegacyOneDec()},
 					},
 					[]types.ScoreWeight{
-						{ValidatorAddress: "noahvaloper1abc", ScoreWeight: 1},
+						{ValidatorAddress: validatorAddress, ScoreWeight: 1},
 					},
 					[]types.MissCount{
-						{ValidatorAddress: "noahvaloper1abc", MissCount: 0},
+						{ValidatorAddress: otherValidatorAddress, MissCount: 0},
 					},
 					[]types.TobinTax{
 						{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},

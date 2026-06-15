@@ -2,11 +2,13 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"noah/x/oracle/types"
 )
@@ -38,6 +40,10 @@ func (k Keeper) SettleSlash(ctx context.Context) error {
 		// Slash and jail validators below the minimum valid vote rate.
 		if validVoteRate.LT(params.MinValidPerWindow) {
 			validator, err := k.stakingKeeper.Validator(ctx, valAddr)
+			if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+				k.Logger(ctx).Debug("skipping oracle slash for missing validator", "validator", valAddr.String())
+				return false, nil
+			}
 			if err != nil {
 				return true, fmt.Errorf("getting validator %s: %w", valAddr, err)
 			}

@@ -2,11 +2,13 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	core "noah/types"
 	"noah/x/oracle/types"
@@ -65,11 +67,16 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		}
 
 		validator, err := k.stakingKeeper.Validator(ctx, score.addr)
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			k.Logger(ctx).Debug("skipping oracle reward for missing validator", "validator", score.addr.String())
+			continue
+		}
 		if err != nil {
 			return fmt.Errorf("getting validator %s for oracle rewards: %w", score.addr, err)
 		}
 		if validator == nil {
-			return fmt.Errorf("validator not found for oracle rewards: %s", score.addr)
+			k.Logger(ctx).Debug("skipping oracle reward for missing validator", "validator", score.addr.String())
+			continue
 		}
 
 		if err := k.distrKeeper.AllocateTokensToValidator(ctx, validator, sdk.NewDecCoinsFromCoins(rewardCoins...)); err != nil {
@@ -87,6 +94,10 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 			sdk.NewAttribute(types.AttributeKeyValidator, score.addr.String()),
 			sdk.NewAttribute(types.AttributeKeyRewardAmount, rewardCoins.String()),
 		))
+	}
+
+	if distributedReward.IsZero() {
+		return nil
 	}
 
 	// Move distributed rewards to the distribution module.
