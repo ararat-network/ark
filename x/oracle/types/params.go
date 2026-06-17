@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	core "noah/types"
+	core "noah/pkg/types"
 )
 
 // Default parameter values
@@ -68,9 +68,6 @@ func (p Params) Validate() error {
 	}
 	if p.MinValidPerWindow.GT(math.LegacyOneDec()) || p.MinValidPerWindow.IsNegative() {
 		return fmt.Errorf("oracle parameter MinValidPerWindow must be between [0, 1]")
-	}
-	if p.MaxExchangeRateAge < 0 {
-		return fmt.Errorf("oracle parameter MaxExchangeRateAge must be >= 0, is %d", p.MaxExchangeRateAge)
 	}
 	seen := make(map[string]struct{}, len(p.TobinTaxes))
 	for _, tobinTax := range p.TobinTaxes {

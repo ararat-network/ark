@@ -7,14 +7,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicemetrics "noah/service/metrics"
-	core "noah/types"
+	noahmetrics "noah/pkg/metrics"
+	core "noah/pkg/types"
 	"noah/x/treasury/types"
 )
 
 // EndBlocker is called at the end of every block
 func (k Keeper) EndBlocker(ctx context.Context) (err error) {
-	defer servicemetrics.RecordABCIMethodLatency(ctx, types.ModuleName, servicemetrics.EndBlock)()
+	defer noahmetrics.RecordABCIMethodLatency(ctx, types.ModuleName, noahmetrics.EndBlock)()
 
 	// Check epoch last block
 	if !core.IsPeriodLastBlock(ctx, core.BlocksPerWeek) {

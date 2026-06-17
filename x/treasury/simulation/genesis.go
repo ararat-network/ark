@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/treasury/types"
 )
 

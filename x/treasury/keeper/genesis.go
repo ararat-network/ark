@@ -8,7 +8,7 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/treasury/types"
 )
 

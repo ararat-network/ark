@@ -3,14 +3,15 @@ package keeper_test
 import (
 	"time"
 
+	"go.uber.org/mock/gomock"
+
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"go.uber.org/mock/gomock"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/oracle/types"
 )
 

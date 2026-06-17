@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	oraclekeeper "noah/x/oracle/keeper"
 	"noah/x/oracle/types"
 )

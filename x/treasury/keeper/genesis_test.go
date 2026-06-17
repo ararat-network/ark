@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/treasury/types"
 )
 

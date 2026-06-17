@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	core "noah/types"
+	core "noah/pkg/types"
 )
 
 // Default parameter values

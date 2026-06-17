@@ -5,15 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 
-	core "noah/types"
 	"noah/x/oracle/types"
-)
-
-const salt = "1234"
-
-var (
-	whitelist   = []string{core.MicroKRWDenom, core.MicroUSDDenom, core.MicroSDRDenom}
-	voteHashMap = make(map[string]string)
 )
 
 // MsgUpdateParamsFactory creates a gov proposal for param updates

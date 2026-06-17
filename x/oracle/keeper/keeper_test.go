@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -23,7 +23,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/oracle/keeper"
 	"noah/x/oracle/testutil"
 	"noah/x/oracle/types"

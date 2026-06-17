@@ -11,7 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/oracle/types"
 )
 

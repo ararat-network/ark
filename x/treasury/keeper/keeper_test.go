@@ -20,7 +20,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	oracletypes "noah/x/oracle/types"
 	"noah/x/treasury/keeper"
 	"noah/x/treasury/testutil"

@@ -1,15 +1,16 @@
 package keeper_test
 
 import (
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+
 	"cosmossdk.io/math"
 
-	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/treasury/types"
 )
 

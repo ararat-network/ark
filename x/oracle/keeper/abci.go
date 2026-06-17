@@ -6,14 +6,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicemetrics "noah/service/metrics"
-	core "noah/types"
+	noahmetrics "noah/pkg/metrics"
+	core "noah/pkg/types"
 	"noah/x/oracle/types"
 )
 
 // EndBlocker settles periodic oracle rewards and slashing.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer servicemetrics.RecordABCIMethodLatency(ctx, types.ModuleName, servicemetrics.EndBlock)()
+	defer noahmetrics.RecordABCIMethodLatency(ctx, types.ModuleName, noahmetrics.EndBlock)()
 
 	params, err := k.Params.Get(ctx)
 	if err != nil {

@@ -55,7 +55,7 @@ func (app *NoahApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedA
 // prepare for fresh start at zero height
 // NOTE: zero height genesis is a temporary feature which will be deprecated
 //
-//	in favor of export at a block height
+//	in favour of export at a block height
 func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) {
 	applyAllowedAddrs := len(jailAllowedAddrs) > 0
 
@@ -261,31 +261,22 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		panic(fmt.Errorf("error while clearing exchange rates: %w", err))
 	}
 
+	if err := app.OracleKeeper.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, _ uint64) (bool, error) {
+		if err := app.OracleKeeper.ScoreWeight.Set(ctx, operator, 0); err != nil {
+			return false, err
+		}
+		return false, nil
+	}); err != nil {
+		panic(fmt.Errorf("error while resetting score weights: %w", err))
+	}
+
 	if err := app.OracleKeeper.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, _ uint64) (bool, error) {
 		if err := app.OracleKeeper.MissCount.Set(ctx, operator, 0); err != nil {
 			return false, err
 		}
 		return false, nil
 	}); err != nil {
-		panic(fmt.Errorf("error while resetting miss counters: %w", err))
-	}
-
-	if err := app.OracleKeeper.Prevote.Walk(ctx, nil, func(voterAddr sdk.ValAddress, _ oracletypes.Prevote) (bool, error) {
-		if err := app.OracleKeeper.Prevote.Remove(ctx, voterAddr); err != nil {
-			return false, err
-		}
-		return false, nil
-	}); err != nil {
-		panic(fmt.Errorf("error while clearing oracle prevotes: %w", err))
-	}
-
-	if err := app.OracleKeeper.Vote.Walk(ctx, nil, func(voterAddr sdk.ValAddress, _ oracletypes.Vote) (bool, error) {
-		if err := app.OracleKeeper.Vote.Remove(ctx, voterAddr); err != nil {
-			return false, err
-		}
-		return false, nil
-	}); err != nil {
-		panic(fmt.Errorf("error while clearing oracle votes: %w", err))
+		panic(fmt.Errorf("error while resetting miss counts: %w", err))
 	}
 
 	/* Handle market state. */

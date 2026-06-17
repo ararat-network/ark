@@ -1,11 +1,12 @@
 package keeper_test
 
 import (
-	"cosmossdk.io/math"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	core "noah/types"
+	"cosmossdk.io/math"
+
+	core "noah/pkg/types"
 	"noah/x/market/types"
 	oracletypes "noah/x/oracle/types"
 )

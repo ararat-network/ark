@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/oracle/types"
 )
 

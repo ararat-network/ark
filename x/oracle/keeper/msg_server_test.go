@@ -7,7 +7,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/types"
+	core "noah/pkg/types"
 	"noah/x/oracle/types"
 )
 
