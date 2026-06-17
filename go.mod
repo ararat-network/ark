@@ -32,7 +32,6 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/klauspost/compress v1.18.5
-	github.com/skip-mev/connect/v2 v2.3.0
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/metric v1.43.0
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
