@@ -1,22 +1,14 @@
 syntax = "proto3";
 package noah.abci;
 
-import "amino/amino.proto";
-import "cosmos_proto/cosmos.proto";
-import "gogoproto/gogo.proto";
-
 option go_package = "noah/abci/ve/types";
 
 // OracleVoteExtension defines the vote extension structure for oracle prices.
-message OracleVoteExtension { repeated Rate rates = 1; }
-
-// Rate - struct to store rates data
-message Rate {
-  string denom = 1;
-  string rate = 2 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+message OracleVoteExtension {
+  // rates maps a valid oracle denom to its reported exchange rate.
+  //
+  // Each value is the canonical byte encoding produced by
+  // cosmossdk.io/math.LegacyDec.Marshal(). Consumers must decode values with
+  // LegacyDec.Unmarshal() and reject invalid denoms or malformed rate bytes.
+  map<string, bytes> rates = 1;
 }

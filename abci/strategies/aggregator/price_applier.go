@@ -13,8 +13,7 @@ import (
 	oracletypes "noah/x/oracle/types"
 )
 
-// PriceApplier is an interface used in `ExtendVote` and `PreBlock` to apply the prices
-// derived from the latest votes to state.
+// PriceApplier applies prices derived from vote extensions to state.
 type PriceApplier struct {
 	// va is a VoteAggregator that is used to aggregate votes into prices.
 	va *VoteAggregator
@@ -22,10 +21,10 @@ type PriceApplier struct {
 	// ok is the oracle keeper that is used to write prices to state.
 	ok noahabcitypes.OracleKeeper
 
-	// logger
+	// logger is used for price application diagnostics.
 	logger log.Logger
 
-	// codecs
+	// codecs decode vote extensions and extended commit info.
 	voteExtensionCodec  codec.VoteExtensionCodec
 	extendedCommitCodec codec.ExtendedCommitCodec
 }
@@ -47,11 +46,11 @@ func NewPriceApplier(
 	}
 }
 
-// ApplyPricesFromVoteExtensions derives the aggregate prices per asset in accordance with the given
-// vote extensions + VoteAggregator. If a price exists for an asset, it is written to state. The
-// prices aggregated from vote-extensions are returned if no errors are encountered in execution,
-// otherwise an error is returned + nil prices.
-func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (map[string]math.LegacyDec, error) {
+// ApplyPricesFromVoteExtensions derives aggregate prices from vote extensions
+// using the VoteAggregator. If a price exists for an asset, it is written to
+// state. Aggregated prices and vote targets are returned on success; otherwise
+// an error is returned with nil maps.
+func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (map[string]math.LegacyDec, map[string]math.LegacyDec, error) {
 	// If vote extensions have been enabled, the extended commit info - which
 	// contains the vote extensions - must be included in the request.
 	votes, err := GetOracleVotes(req.Txs, pa.voteExtensionCodec, pa.extendedCommitCodec)
@@ -63,7 +62,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, err
+		return nil, nil, OracleKeeperError{Err: err}
 	}
 
 	pa.logger.Debug(
@@ -80,11 +79,17 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, err
+		return nil, nil, err
 	}
-	voteTargets := make(map[string]math.LegacyDec, len(params.TobinTaxes))
-	for _, tobinTax := range params.TobinTaxes {
-		voteTargets[tobinTax.Denom] = tobinTax.TobinTax
+	voteTargets, err := pa.ok.GetVoteTargets(ctx)
+	if err != nil {
+		pa.logger.Error(
+			"failed to get vote targets",
+			"height", req.Height,
+			"err", err,
+		)
+
+		return nil, nil, err
 	}
 
 	// Aggregate all oracle vote extensions into a single set of prices.
@@ -96,10 +101,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		err = PriceAggregationError{
-			Err: err,
-		}
-		return nil, err
+		return nil, nil, PriceAggregationError{Err: err}
 	}
 
 	for denom, price := range prices {
@@ -117,7 +119,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, err
+			return nil, nil, OracleKeeperError{Err: err}
 		}
 
 		pa.logger.Debug(
@@ -127,6 +129,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 		)
 	}
 
+	// Update scores in oracle.
 	for validator, score := range scoreMap {
 		if err := pa.ok.AddScoreWeight(ctx, score.Recipient, score.Weight); err != nil {
 			pa.logger.Error(
@@ -136,7 +139,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, err
+			return nil, nil, OracleKeeperError{Err: err}
 		}
 
 		if int(score.WinCount) != len(voteTargets) {
@@ -148,16 +151,16 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 					"err", err,
 				)
 
-				return nil, err
+				return nil, nil, OracleKeeperError{Err: err}
 			}
 		}
 	}
 
-	return prices, nil
+	return prices, voteTargets, nil
 }
 
-// GetPricesForValidator gets the prices reported by a given validator. This method depends
-// on the prices from the latest set of aggregated votes.
+// GetPricesForValidator gets the rates reported by a validator in the latest
+// aggregation.
 func (pa *PriceApplier) GetPricesForValidator(validator sdk.ConsAddress) map[string]math.LegacyDec {
 	return pa.va.GetPriceForValidator(validator)
 }

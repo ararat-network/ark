@@ -12,10 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"noah/abci/strategies/codec"
-	"noah/abci/strategies/currencypair"
 	noahabci "noah/abci/types"
 	"noah/abci/ve"
-	servicemetrics "noah/service/metrics"
+	noahmetrics "noah/pkg/metrics"
 )
 
 // ProposalHandler is responsible primarily for:
@@ -47,14 +46,6 @@ type ProposalHandler struct {
 	// extendedCommitCodec is used to decode extended commit info.
 	extendedCommitCodec codec.ExtendedCommitCodec
 
-	// currencyPairStrategy is the strategy used to determine the price information
-	// from a given oracle vote extension.
-	currencyPairStrategy currencypair.CurrencyPairStrategy
-
-	// metrics is responsible for reporting / aggregating consensus-specific
-	// metrics for this validator.
-	metrics servicemetrics.Metrics
-
 	// retainOracleDataInWrappedHandler is a flag that determines whether the
 	// proposal handler should pass the injected extended commit info to the
 	// wrapped proposal handler.
@@ -69,8 +60,6 @@ func NewProposalHandler(
 	validateVoteExtensionsFn ve.ValidateVoteExtensionsFn,
 	voteExtensionCodec codec.VoteExtensionCodec,
 	extendedCommitInfoCodec codec.ExtendedCommitCodec,
-	currencyPairStrategy currencypair.CurrencyPairStrategy,
-	metrics servicemetrics.Metrics,
 	opts ...Option,
 ) *ProposalHandler {
 	handler := &ProposalHandler{
@@ -80,8 +69,6 @@ func NewProposalHandler(
 		validateVoteExtensionsFn: validateVoteExtensionsFn,
 		voteExtensionCodec:       voteExtensionCodec,
 		extendedCommitCodec:      extendedCommitInfoCodec,
-		currencyPairStrategy:     currencyPairStrategy,
-		metrics:                  metrics,
 	}
 
 	// apply options
@@ -96,40 +83,32 @@ func NewProposalHandler(
 // by base app when a new block proposal is requested. The PrepareProposalHandler
 // will first fill the proposal with transactions. Then, if vote extensions are
 // enabled, the handler will inject the extended commit info into the proposal.
-// If the size of the vote extensions exceed the requests MaxTxBytes size, this
+// If the size of the vote extensions exceeds the request's MaxTxBytes size, this
 // handler will fail.
 func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestPrepareProposal) (resp *cometabci.ResponsePrepareProposal, err error) {
+		start := time.Now()
 		var (
 			extInfoBz                     []byte
 			wrappedPrepareProposalLatency time.Duration
 		)
-		startTime := time.Now()
 
-		// report the connect specific PrepareProposal latency
+		// Report the PrepareProposal latency excluding the wrapped handler.
 		defer func() {
-			totalLatency := time.Since(startTime)
-			h.logger.Debug(
-				"recording handle time metrics of prepare-proposal (seconds)",
-				"total latency", totalLatency.Seconds(),
-				"wrapped prepare proposal latency", wrappedPrepareProposalLatency.Seconds(),
-				"connect prepare proposal latency", (totalLatency - wrappedPrepareProposalLatency).Seconds(),
-			)
-
-			noahabci.RecordLatencyAndStatus(h.metrics, totalLatency-wrappedPrepareProposalLatency, err, servicemetrics.PrepareProposal)
+			totalLatency := time.Since(start)
+			noahmetrics.RecordLatencyAndStatus(totalLatency-wrappedPrepareProposalLatency, err, noahmetrics.PrepareProposal)
 		}()
 
 		if req == nil {
 			h.logger.Error("PrepareProposalHandler received a nil request")
 			err = noahabci.NilRequestError{
-				Handler: servicemetrics.PrepareProposal,
+				Handler: noahmetrics.PrepareProposal,
 			}
 			return nil, err
 		}
 
-		// If vote extensions are enabled, the current proposer must inject the extended commit
-		// info into the proposal. This extended commit info contains the oracle data
-		// for the current block.
+		// If vote extensions are enabled, the proposer must inject the previous
+		// block's extended commit info into the proposal.
 		voteExtensionsEnabled := ve.VoteExtensionsEnabled(ctx)
 		if voteExtensionsEnabled {
 			h.logger.Debug(
@@ -138,7 +117,7 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				"vote_extensions_enabled", voteExtensionsEnabled,
 			)
 
-			// get pruned ExtendedCommitInfo from LocalLastCommit
+			// Get pruned ExtendedCommitInfo from LocalLastCommit.
 			extInfo, err := h.PruneAndValidateExtendedCommitInfo(ctx, req.LocalLastCommit)
 			if err != nil {
 				h.logger.Error(
@@ -155,8 +134,8 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
-			// Create the vote extension injection data which will be injected into the proposal. These contain the
-			// oracle data for the current block which will be committed to state in PreBlock.
+			// Encode the extended commit info that will be injected into the
+			// proposal and applied in PreBlock.
 			extInfoBz, err = h.extendedCommitCodec.Encode(extInfo)
 			if err != nil {
 				h.logger.Error(
@@ -170,10 +149,11 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
-			// Adjust req.MaxTxBytes to account for extInfoBzSize so that the wrapped-proposal handler does not reap too many txs from the mempool
+			// Adjust req.MaxTxBytes so the wrapped proposal handler does not
+			// reap too many txs from the mempool.
 			extInfoBzSize := int64(len(extInfoBz))
 			if extInfoBzSize <= req.MaxTxBytes {
-				// Reserve bytes for our VE Tx
+				// Reserve bytes for the vote-extension transaction.
 				req.MaxTxBytes -= extInfoBzSize
 			} else {
 				h.logger.Error("VE size consumes greater than entire block",
@@ -183,7 +163,7 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
-			// determine whether the wrapped prepare proposal handler should retain the extended commit info
+			// Determine whether the wrapped prepare proposal handler should retain the extended commit info.
 			if h.retainOracleDataInWrappedHandler {
 				req.Txs = append([][]byte{extInfoBz}, req.Txs...) // prepend the VE Tx
 			}
@@ -196,7 +176,7 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		if err != nil {
 			h.logger.Error("failed to prepare proposal", "err", err)
 			err = noahabci.WrappedHandlerError{
-				Handler: servicemetrics.PrepareProposal,
+				Handler: noahmetrics.PrepareProposal,
 				Err:     err,
 			}
 
@@ -204,7 +184,7 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		}
 		h.logger.Debug("wrapped prepareProposalHandler produced response ", "txs", len(resp.Txs))
 
-		// Inject our VE Tx ( if extInfoBz is non-empty), and resize our response Txs to respect req.MaxTxBytes
+		// Inject the vote-extension transaction, if present, and resize the response txs to respect req.MaxTxBytes.
 		resp.Txs = h.injectAndResize(resp.Txs, extInfoBz, req.MaxTxBytes+int64(len(extInfoBz)))
 
 		h.logger.Debug(
@@ -222,24 +202,23 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 // injectTx will only appear once regardless of how many times you attempt to inject it.
 // If injectTx is large enough, all originalTxs may end up being excluded from the returned tx array.
 func (h *ProposalHandler) injectAndResize(appTxs [][]byte, injectTx []byte, maxSizeBytes int64) [][]byte {
-	//nolint: prealloc
 	var (
 		returnedTxs   [][]byte
 		consumedBytes int64
 	)
 
-	// If VEs are enabled and our VE Tx isn't already in the appTxs, inject it here
+	// If vote extensions are enabled and the injected tx is not already first, inject it here.
 	if len(injectTx) != 0 && (len(appTxs) < 1 || !bytes.Equal(appTxs[0], injectTx)) {
 		injectBytes := int64(len(injectTx))
-		// Ensure the VE Tx is in the response if we have room.
-		// We may want to be more aggressive in the future about dedicating block space for application-specific Txs.
-		// However, the VE Tx size should be relatively stable so MaxTxBytes should be set w/ plenty of headroom.
+		// Ensure the injected tx is in the response if there is room. The vote
+		// extension payload should be relatively stable, so MaxTxBytes should be
+		// configured with enough headroom.
 		if injectBytes <= maxSizeBytes {
 			consumedBytes += injectBytes
 			returnedTxs = append(returnedTxs, injectTx)
 		}
 	}
-	// Add as many appTxs to the returned proposal as possible given our maxSizeBytes constraint
+	// Add as many app txs as possible within maxSizeBytes.
 	for _, tx := range appTxs {
 		consumedBytes += int64(len(tx))
 		if consumedBytes > maxSizeBytes {
@@ -261,22 +240,15 @@ func (h *ProposalHandler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 
 		// Defer a function to record the total time it took to process the proposal.
 		defer func() {
-			// record latency
 			totalLatency := time.Since(start)
-			h.logger.Debug(
-				"recording handle time metrics of process-proposal (seconds)",
-				"total latency", totalLatency.Seconds(),
-				"wrapped prepare proposal latency", wrappedProcessProposalLatency.Seconds(),
-				"connect prepare proposal latency", (totalLatency - wrappedProcessProposalLatency).Seconds(),
-			)
-			noahabci.RecordLatencyAndStatus(h.metrics, totalLatency-wrappedProcessProposalLatency, err, servicemetrics.ProcessProposal)
+			noahmetrics.RecordLatencyAndStatus(totalLatency-wrappedProcessProposalLatency, err, noahmetrics.ProcessProposal)
 		}()
 
 		// this should never happen, but just in case
 		if req == nil {
 			h.logger.Error("ProcessProposalHandler received a nil request")
 			err = noahabci.NilRequestError{
-				Handler: servicemetrics.ProcessProposal,
+				Handler: noahmetrics.ProcessProposal,
 			}
 			return nil, err
 		}
@@ -290,7 +262,8 @@ func (h *ProposalHandler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			"vote_extensions_enabled", voteExtensionsEnabled,
 		)
 
-		// we save the injected tx so we can re-add it to the txs in case it is removed in a wrapped proposal handler.
+		// Save the injected tx so it can be restored if it is removed before the
+		// wrapped proposal handler runs.
 		var injectedTx []byte
 
 		if voteExtensionsEnabled {
@@ -331,32 +304,32 @@ func (h *ProposalHandler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 					err
 			}
 
-			// observe the size of the extended commit info
-			h.metrics.ObserveMessageSize(servicemetrics.ExtendedCommit, len(extCommitBz))
+			// Observe the size of the extended commit info.
+			noahmetrics.ObserveMessageSize(noahmetrics.ExtendedCommit, len(extCommitBz))
 
-			// Remove the extended commit info from the proposal if required
+			// Remove the extended commit info from the proposal if required.
 			if !h.retainOracleDataInWrappedHandler {
 				injectedTx = req.Txs[noahabci.OracleInfoIndex]
 				req.Txs = req.Txs[noahabci.NumInjectedTxs:]
 			}
 		}
 
-		// call the wrapped process-proposal
+		// Call the wrapped process proposal handler.
 		wrappedProcessProposalStartTime := time.Now()
 		resp, err = h.processProposalHandler(ctx, req)
+		wrappedProcessProposalLatency = time.Since(wrappedProcessProposalStartTime)
 		if err != nil {
 			err = noahabci.WrappedHandlerError{
-				Handler: servicemetrics.ProcessProposal,
+				Handler: noahmetrics.ProcessProposal,
 				Err:     err,
 			}
 		}
 
 		if !h.retainOracleDataInWrappedHandler && injectedTx != nil {
-			// Re-inject the extended commit info back into the response if it was removed
+			// Re-inject the extended commit info if it was removed before calling the wrapped handler.
 			req.Txs = append([][]byte{injectedTx}, req.Txs...)
 		}
 
-		wrappedProcessProposalLatency = time.Since(wrappedProcessProposalStartTime)
 		return resp, err
 	}
 }

@@ -4,11 +4,7 @@
 package types
 
 import (
-	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-proto"
-	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
-	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
@@ -28,7 +24,12 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // OracleVoteExtension defines the vote extension structure for oracle prices.
 type OracleVoteExtension struct {
-	Rates []*Rate `protobuf:"bytes,1,rep,name=rates,proto3" json:"rates,omitempty"`
+	// rates maps a valid oracle denom to its reported exchange rate.
+	//
+	// Each value is the canonical byte encoding produced by
+	// cosmossdk.io/math.LegacyDec.Marshal(). Consumers must decode values with
+	// LegacyDec.Unmarshal() and reject invalid denoms or malformed rate bytes.
+	Rates map[string][]byte `protobuf:"bytes,1,rep,name=rates,proto3" json:"rates,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *OracleVoteExtension) Reset()         { *m = OracleVoteExtension{} }
@@ -64,86 +65,35 @@ func (m *OracleVoteExtension) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OracleVoteExtension proto.InternalMessageInfo
 
-func (m *OracleVoteExtension) GetRates() []*Rate {
+func (m *OracleVoteExtension) GetRates() map[string][]byte {
 	if m != nil {
 		return m.Rates
 	}
 	return nil
 }
 
-// Rate - struct to store rates data
-type Rate struct {
-	Denom string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Rate  cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=rate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"rate"`
-}
-
-func (m *Rate) Reset()         { *m = Rate{} }
-func (m *Rate) String() string { return proto.CompactTextString(m) }
-func (*Rate) ProtoMessage()    {}
-func (*Rate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d6d1e40e3b2c8c00, []int{1}
-}
-func (m *Rate) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Rate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Rate.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Rate) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Rate.Merge(m, src)
-}
-func (m *Rate) XXX_Size() int {
-	return m.Size()
-}
-func (m *Rate) XXX_DiscardUnknown() {
-	xxx_messageInfo_Rate.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Rate proto.InternalMessageInfo
-
-func (m *Rate) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
 func init() {
 	proto.RegisterType((*OracleVoteExtension)(nil), "noah.abci.OracleVoteExtension")
-	proto.RegisterType((*Rate)(nil), "noah.abci.Rate")
+	proto.RegisterMapType((map[string][]byte)(nil), "noah.abci.OracleVoteExtension.RatesEntry")
 }
 
 func init() { proto.RegisterFile("noah/abci/vote_extension.proto", fileDescriptor_d6d1e40e3b2c8c00) }
 
 var fileDescriptor_d6d1e40e3b2c8c00 = []byte{
-	// 275 bytes of a gzipped FileDescriptorProto
+	// 204 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xcb, 0xcb, 0x4f, 0xcc,
 	0xd0, 0x4f, 0x4c, 0x4a, 0xce, 0xd4, 0x2f, 0xcb, 0x2f, 0x49, 0x8d, 0x4f, 0xad, 0x28, 0x49, 0xcd,
 	0x2b, 0xce, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x04, 0xc9, 0xeb, 0x81,
-	0xe4, 0xa5, 0x04, 0x13, 0x73, 0x33, 0xf3, 0xf2, 0xf5, 0xc1, 0x24, 0x44, 0x56, 0x4a, 0x32, 0x39,
-	0xbf, 0x38, 0x37, 0xbf, 0x38, 0x1e, 0xcc, 0xd3, 0x87, 0x70, 0xa0, 0x52, 0x22, 0xe9, 0xf9, 0xe9,
-	0xf9, 0x10, 0x71, 0x10, 0x0b, 0x22, 0xaa, 0x64, 0xc3, 0x25, 0xec, 0x5f, 0x94, 0x98, 0x9c, 0x93,
-	0x1a, 0x96, 0x5f, 0x92, 0xea, 0x0a, 0xb3, 0x4b, 0x48, 0x95, 0x8b, 0xb5, 0x28, 0xb1, 0x24, 0xb5,
-	0x58, 0x82, 0x51, 0x81, 0x59, 0x83, 0xdb, 0x88, 0x5f, 0x0f, 0x6e, 0xab, 0x5e, 0x50, 0x62, 0x49,
-	0x6a, 0x10, 0x44, 0x56, 0x29, 0x83, 0x8b, 0x05, 0xc4, 0x15, 0x12, 0xe1, 0x62, 0x4d, 0x49, 0xcd,
-	0xcb, 0xcf, 0x95, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x82, 0x70, 0x84, 0xbc, 0xb8, 0x58, 0x40,
-	0xca, 0x24, 0x98, 0x40, 0x82, 0x4e, 0x66, 0x27, 0xee, 0xc9, 0x33, 0xdc, 0xba, 0x27, 0x2f, 0x0d,
-	0x71, 0x55, 0x71, 0x4a, 0xb6, 0x5e, 0x66, 0xbe, 0x7e, 0x6e, 0x62, 0x49, 0x86, 0x9e, 0x4f, 0x6a,
-	0x7a, 0x62, 0x72, 0xa5, 0x4b, 0x6a, 0xf2, 0xa5, 0x2d, 0xba, 0x5c, 0x50, 0x47, 0xbb, 0xa4, 0x26,
-	0xaf, 0x78, 0xbe, 0x41, 0x8b, 0x31, 0x08, 0x6c, 0x86, 0x93, 0xce, 0x89, 0x47, 0x72, 0x8c, 0x17,
-	0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c,
-	0x37, 0x1e, 0xcb, 0x31, 0x44, 0x09, 0x21, 0x05, 0x58, 0xaa, 0x7e, 0x49, 0x65, 0x41, 0x6a, 0x71,
-	0x12, 0x1b, 0xd8, 0x73, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x7a, 0x4f, 0xba, 0x1f, 0x4d,
-	0x01, 0x00, 0x00,
+	0xe4, 0x95, 0x26, 0x30, 0x72, 0x09, 0xfb, 0x17, 0x25, 0x26, 0xe7, 0xa4, 0x86, 0xe5, 0x97, 0xa4,
+	0xba, 0xc2, 0x14, 0x0a, 0xd9, 0x73, 0xb1, 0x16, 0x25, 0x96, 0xa4, 0x16, 0x4b, 0x30, 0x2a, 0x30,
+	0x6b, 0x70, 0x1b, 0x69, 0xea, 0xc1, 0xb5, 0xe8, 0x61, 0x51, 0xae, 0x17, 0x04, 0x52, 0xeb, 0x9a,
+	0x57, 0x52, 0x54, 0x19, 0x04, 0xd1, 0x27, 0x65, 0xc1, 0xc5, 0x85, 0x10, 0x14, 0x12, 0xe0, 0x62,
+	0xce, 0x4e, 0xad, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x02, 0x31, 0x85, 0x44, 0xb8, 0x58,
+	0xcb, 0x12, 0x73, 0x4a, 0x53, 0x25, 0x98, 0x14, 0x18, 0x35, 0x78, 0x82, 0x20, 0x1c, 0x2b, 0x26,
+	0x0b, 0x46, 0x27, 0x9d, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e,
+	0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0x12, 0x42,
+	0xf2, 0x57, 0xaa, 0x7e, 0x49, 0x65, 0x41, 0x6a, 0x71, 0x12, 0x1b, 0xd8, 0x4b, 0xc6, 0x80, 0x00,
+	0x00, 0x00, 0xff, 0xff, 0xa5, 0xa0, 0x50, 0xa3, 0xf4, 0x00, 0x00, 0x00,
 }
 
 func (m *OracleVoteExtension) Marshal() (dAtA []byte, err error) {
@@ -167,58 +117,25 @@ func (m *OracleVoteExtension) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.Rates) > 0 {
-		for iNdEx := len(m.Rates) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Rates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintVoteExtension(dAtA, i, uint64(size))
+		for k := range m.Rates {
+			v := m.Rates[k]
+			baseI := i
+			if len(v) > 0 {
+				i -= len(v)
+				copy(dAtA[i:], v)
+				i = encodeVarintVoteExtension(dAtA, i, uint64(len(v)))
+				i--
+				dAtA[i] = 0x12
 			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintVoteExtension(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintVoteExtension(dAtA, i, uint64(baseI-i))
 			i--
 			dAtA[i] = 0xa
 		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Rate) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Rate) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Rate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size := m.Rate.Size()
-		i -= size
-		if _, err := m.Rate.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintVoteExtension(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintVoteExtension(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -241,26 +158,17 @@ func (m *OracleVoteExtension) Size() (n int) {
 	var l int
 	_ = l
 	if len(m.Rates) > 0 {
-		for _, e := range m.Rates {
-			l = e.Size()
-			n += 1 + l + sovVoteExtension(uint64(l))
+		for k, v := range m.Rates {
+			_ = k
+			_ = v
+			l = 0
+			if len(v) > 0 {
+				l = 1 + len(v) + sovVoteExtension(uint64(len(v)))
+			}
+			mapEntrySize := 1 + len(k) + sovVoteExtension(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovVoteExtension(uint64(mapEntrySize))
 		}
 	}
-	return n
-}
-
-func (m *Rate) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovVoteExtension(uint64(l))
-	}
-	l = m.Rate.Size()
-	n += 1 + l + sovVoteExtension(uint64(l))
 	return n
 }
 
@@ -328,126 +236,104 @@ func (m *OracleVoteExtension) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Rates = append(m.Rates, &Rate{})
-			if err := m.Rates[len(m.Rates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if m.Rates == nil {
+				m.Rates = make(map[string][]byte)
 			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipVoteExtension(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthVoteExtension
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Rate) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowVoteExtension
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Rate: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Rate: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVoteExtension
+			var mapkey string
+			mapvalue := []byte{}
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowVoteExtension
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVoteExtension
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthVoteExtension
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Rate", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVoteExtension
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowVoteExtension
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthVoteExtension
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthVoteExtension
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapbyteLen uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowVoteExtension
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapbyteLen |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intMapbyteLen := int(mapbyteLen)
+					if intMapbyteLen < 0 {
+						return ErrInvalidLengthVoteExtension
+					}
+					postbytesIndex := iNdEx + intMapbyteLen
+					if postbytesIndex < 0 {
+						return ErrInvalidLengthVoteExtension
+					}
+					if postbytesIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = make([]byte, mapbyteLen)
+					copy(mapvalue, dAtA[iNdEx:postbytesIndex])
+					iNdEx = postbytesIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipVoteExtension(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthVoteExtension
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVoteExtension
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthVoteExtension
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Rate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Rates[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

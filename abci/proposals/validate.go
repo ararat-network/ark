@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"noah/abci/strategies/codec"
-	"noah/abci/strategies/currencypair"
 	"noah/abci/ve"
 )
 
@@ -33,8 +32,8 @@ func (h *ProposalHandler) ValidateExtendedCommitInfo(
 	// Validate all oracle vote extensions.
 	for _, vote := range extendedCommitInfo.Votes {
 		address := sdk.ConsAddress(vote.Validator.Address)
-		// The vote extension are from the previous block.
-		if err := validateVoteExtension(ctx, vote, h.voteExtensionCodec, h.currencyPairStrategy); err != nil {
+		// The vote extensions are from the previous block.
+		if err := validateVoteExtension(ctx, vote, h.voteExtensionCodec); err != nil {
 			h.logger.Error(
 				"failed to validate oracle vote extension",
 				"height", height,
@@ -52,13 +51,11 @@ func (h *ProposalHandler) ValidateExtendedCommitInfo(
 // PruneAndValidateExtendedCommitInfo validates each vote-extension in the extended commit, and removes
 // any vote-extensions that are invalid. Removal will effectively treat the validator's
 // vote as absent.  This function performs all validation that ValidateExtendedCommitInfo performs.
-func (h *ProposalHandler) PruneAndValidateExtendedCommitInfo(
-	ctx sdk.Context, extendedCommitInfo cometabci.ExtendedCommitInfo,
-) (cometabci.ExtendedCommitInfo, error) {
+func (h *ProposalHandler) PruneAndValidateExtendedCommitInfo(ctx sdk.Context, extendedCommitInfo cometabci.ExtendedCommitInfo) (cometabci.ExtendedCommitInfo, error) {
 	// Validate all oracle vote extensions.
 	for i, vote := range extendedCommitInfo.Votes {
 		// validate the vote-extension
-		if err := validateVoteExtension(ctx, vote, h.voteExtensionCodec, h.currencyPairStrategy); err != nil {
+		if err := validateVoteExtension(ctx, vote, h.voteExtensionCodec); err != nil {
 			h.logger.Info(
 				"failed to validate vote extension - pruning vote",
 				"err", err,
@@ -90,10 +87,9 @@ func validateVoteExtension(
 	ctx sdk.Context,
 	vote cometabci.ExtendedVoteInfo,
 	voteExtensionCodec codec.VoteExtensionCodec,
-	currencyPairStrategy currencypair.CurrencyPairStrategy,
 ) error {
 	// vote is not voted for if VE is nil
-	if vote.VoteExtension == nil && vote.ExtensionSignature == nil {
+	if len(vote.VoteExtension) == 0 {
 		return nil
 	}
 
@@ -103,7 +99,7 @@ func validateVoteExtension(
 	}
 
 	// The vote extensions are from the previous block.
-	if err := ve.ValidateOracleVoteExtension(ctx, voteExt, currencyPairStrategy); err != nil {
+	if err := ve.ValidateOracleVoteExtension(ctx, voteExt); err != nil {
 		return err
 	}
 

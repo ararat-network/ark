@@ -10,7 +10,7 @@ type PreBlockError struct {
 }
 
 func (e PreBlockError) Error() string {
-	return fmt.Sprintf("finalize block error: %s", e.Err.Error())
+	return fmt.Sprintf("finalise block error: %s", e.Err.Error())
 }
 
 func (e PreBlockError) Label() string {
@@ -43,18 +43,18 @@ func (e OracleClientError) Label() string {
 	return "OracleClientError"
 }
 
-// TransformPricesError is an error that is returned when there is a failure in attempting to transform the prices returned
-// from the oracle server to the format expected by the validator set.
-type TransformPricesError struct {
+// InvalidOraclePricesError is returned when the oracle service returns prices
+// that cannot be used to build a valid oracle vote extension.
+type InvalidOraclePricesError struct {
 	Err error
 }
 
-func (e TransformPricesError) Error() string {
-	return fmt.Sprintf("prices transform error: %s", e.Err.Error())
+func (e InvalidOraclePricesError) Error() string {
+	return fmt.Sprintf("invalid oracle prices: %s", e.Err.Error())
 }
 
-func (e TransformPricesError) Label() string {
-	return "TransformPricesError"
+func (e InvalidOraclePricesError) Label() string {
+	return "InvalidOraclePricesError"
 }
 
 // ValidateVoteExtensionError is an error that is returned when there is a failure in validating a vote extension.

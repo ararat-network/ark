@@ -7,11 +7,11 @@ type ValidatorScore struct {
 	Power     uint64
 	Weight    uint64
 	WinCount  uint64
-	Recipient sdk.ValAddress
+	Recipient sdk.ConsAddress
 }
 
 // NewValidatorScore generates a ValidatorScore instance.
-func NewValidatorScore(power, weight, winCount uint64, recipient sdk.ValAddress) ValidatorScore {
+func NewValidatorScore(power, weight, winCount uint64, recipient sdk.ConsAddress) ValidatorScore {
 	return ValidatorScore{
 		Power:     power,
 		Weight:    weight,

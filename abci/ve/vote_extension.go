@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"time"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
@@ -15,18 +14,15 @@ import (
 
 	"noah/abci/strategies/aggregator"
 	compression "noah/abci/strategies/codec"
-	"noah/abci/strategies/currencypair"
 	noahabci "noah/abci/types"
 	"noah/abci/ve/types"
-	noahtypes "noah/pkg/types"
-	servicemetrics "noah/service/metrics"
+	noahmetrics "noah/pkg/metrics"
 	servicetypes "noah/service/servers/oracle/types"
 )
 
-// VoteExtensionHandler is a handler that extends a vote with the oracle's
-// current price feed. In the case where oracle data is unable to be fetched
-// or correctly marshalled, the handler will return an empty vote extension to
-// ensure liveliness.
+// VoteExtensionHandler extends local votes with oracle price reports. If
+// oracle data cannot be fetched, validated, or encoded, the handler returns an
+// empty vote extension to preserve liveness.
 type VoteExtensionHandler struct {
 	logger log.Logger
 
@@ -37,18 +33,11 @@ type VoteExtensionHandler struct {
 	// to a price request.
 	timeout time.Duration
 
-	// currencyPairStrategy is the strategy used to determine the price information
-	// to include in the vote extension.
-	currencyPairStrategy currencypair.CurrencyPairStrategy
-
-	// voteExtensionCodec is an interface to handle the marshalling / unmarshalling of vote-extensions
+	// voteExtensionCodec encodes and decodes oracle vote-extension payloads.
 	voteExtensionCodec compression.VoteExtensionCodec
 
-	// PriceApplier is the price applier that is used to decode vote-extensions, aggregate price reports, and write prices to state.
+	// priceApplier decodes vote extensions, aggregates price reports, and writes prices to state.
 	priceApplier aggregator.PriceApplier
-
-	// metrics is the service metrics interface that the vote-extension handler will use to report metrics.
-	metrics servicemetrics.Metrics
 }
 
 // NewVoteExtensionHandler returns a new VoteExtensionHandler.
@@ -56,33 +45,29 @@ func NewVoteExtensionHandler(
 	logger log.Logger,
 	oracleClient noahabci.OracleClient,
 	timeout time.Duration,
-	strategy currencypair.CurrencyPairStrategy,
 	codec compression.VoteExtensionCodec,
 	priceApplier aggregator.PriceApplier,
-	metrics servicemetrics.Metrics,
 ) *VoteExtensionHandler {
 	return &VoteExtensionHandler{
-		logger:               logger,
-		oracleClient:         oracleClient,
-		timeout:              timeout,
-		currencyPairStrategy: strategy,
-		voteExtensionCodec:   codec,
-		metrics:              metrics,
-		priceApplier:         priceApplier,
+		logger:             logger,
+		oracleClient:       oracleClient,
+		timeout:            timeout,
+		voteExtensionCodec: codec,
+		priceApplier:       priceApplier,
 	}
 }
 
-// ExtendVoteHandler returns a handler that extends a vote with the oracle's
-// current price feed. In the case where oracle data is unable to be fetched
-// or correctly marshalled, the handler will return an empty vote extension to
-// ensure liveness.
+// ExtendVoteHandler returns a handler that extends votes with oracle price
+// reports. If oracle data cannot be fetched, validated, or encoded, the handler
+// returns an empty vote extension to preserve liveness.
 func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestExtendVote) (resp *cometabci.ResponseExtendVote, err error) {
 		start := time.Now()
 
-		// measure latencies from invocation to return, catch panics first
+		// Recover from panics and record latency/status before returning. Non-panic
+		// failures are logged and reported to metrics, then swallowed so the validator
+		// can still return an empty vote extension.
 		defer func() {
-			// catch panics if possible
 			if r := recover(); r != nil {
 				h.logger.Error(
 					"recovered from panic in ExtendVoteHandler",
@@ -92,16 +77,15 @@ func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				resp, err = &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, ErrPanic{fmt.Errorf("%v", r)}
 			}
 
-			// measure latency
 			latency := time.Since(start)
 			h.logger.Debug(
 				"extend vote handler",
 				"duration (seconds)", latency.Seconds(),
 				"err", err,
 			)
-			noahabci.RecordLatencyAndStatus(h.metrics, latency, err, servicemetrics.ExtendVote)
+			noahmetrics.RecordLatencyAndStatus(latency, err, noahmetrics.ExtendVote)
 
-			// ignore all non-panic errors
+			// Non-panic errors have already been converted into empty vote extensions.
 			var p ErrPanic
 			if !errors.As(err, &p) {
 				err = nil
@@ -111,19 +95,18 @@ func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		if req == nil {
 			h.logger.Error("extend vote handler received a nil request")
 			err = noahabci.NilRequestError{
-				Handler: servicemetrics.ExtendVote,
+				Handler: noahmetrics.ExtendVote,
 			}
 			return nil, err
 		}
 
-		// Create a context with a timeout to ensure we do not wait forever for the oracle
-		// to respond.
+		// Create a context with a timeout to ensure we do not wait forever for the oracle to respond.
 		reqCtx, cancel := context.WithTimeout(ctx.Context(), h.timeout)
 		defer cancel()
 
-		// To ensure liveness, we return a vote even if the oracle is not running
-		// or if the oracle returns a bad response.
-		oracleResp, err := h.oracleClient.Prices(ctx.WithContext(reqCtx), &servicetypes.QueryPricesRequest{})
+		// To preserve liveness, return an empty vote extension if the oracle is
+		// unavailable or returns an invalid response.
+		oracleResp, err := h.oracleClient.Prices(ctx.WithContext(reqCtx), &servicetypes.OraclePricesRequest{})
 		if err != nil {
 			h.logger.Error(
 				"failed to retrieve oracle prices for vote extension; returning empty vote extension",
@@ -151,22 +134,20 @@ func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
-		// Transform the response prices into a vote extension.
-		voteExt, err := h.transformOracleServicePrices(ctx, oracleResp.Prices)
-		if err != nil {
+		voteExt := types.OracleVoteExtension{Rates: oracleResp.Prices}
+		if err := ValidateOracleVoteExtension(ctx, voteExt); err != nil {
 			h.logger.Error(
-				"failed to transform oracle prices for vote extension; returning empty vote extension",
+				"oracle returned invalid prices for vote extension; returning empty vote extension",
 				"height", req.Height,
 				"err", err,
 			)
 
-			err = TransformPricesError{
+			err = InvalidOraclePricesError{
 				Err: err,
 			}
 
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
-
 		bz, err := h.voteExtensionCodec.Encode(voteExt)
 		if err != nil {
 			h.logger.Error(
@@ -194,12 +175,12 @@ func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 // VerifyVoteExtensionHandler returns a handler that verifies the vote extension provided by
 // a validator is valid. In the case when the vote extension is empty, we return ACCEPT. This means
 // that the validator may have been unable to fetch prices from the oracle and is voting an empty vote extension.
-// We reject any vote extensions that are not empty and fail to unmarshal or contain invalid prices.
+// We reject any non-empty vote extensions that fail to decode or contain invalid prices.
 func (h *VoteExtensionHandler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestVerifyVoteExtension) (_ *cometabci.ResponseVerifyVoteExtension, err error) {
 		start := time.Now()
 
-		// measure latencies from invocation to return
+		// Measure latency from invocation to return.
 		defer func() {
 			latency := time.Since(start)
 			h.logger.Debug(
@@ -207,12 +188,12 @@ func (h *VoteExtensionHandler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtens
 				"duration (seconds)", latency.Seconds(),
 			)
 
-			noahabci.RecordLatencyAndStatus(h.metrics, latency, err, servicemetrics.VerifyVoteExtension)
+			noahmetrics.RecordLatencyAndStatus(latency, err, noahmetrics.VerifyVoteExtension)
 		}()
 
 		if req == nil {
 			err = noahabci.NilRequestError{
-				Handler: servicemetrics.VerifyVoteExtension,
+				Handler: noahmetrics.VerifyVoteExtension,
 			}
 			h.logger.Error("VerifyVoteExtensionHandler received a nil request")
 			return nil, err
@@ -228,7 +209,7 @@ func (h *VoteExtensionHandler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtens
 			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_ACCEPT}, nil
 		}
 
-		// decode the vote-extension bytes
+		// Decode the vote-extension bytes.
 		voteExtension, err := h.voteExtensionCodec.Decode(req.VoteExtension)
 		if err != nil {
 			h.logger.Error(
@@ -243,7 +224,7 @@ func (h *VoteExtensionHandler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtens
 			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 
-		if err := ValidateOracleVoteExtension(ctx, voteExtension, h.currencyPairStrategy); err != nil {
+		if err := ValidateOracleVoteExtension(ctx, voteExtension); err != nil {
 			h.logger.Error(
 				"failed to validate vote extension",
 				"height", req.Height,
@@ -262,67 +243,9 @@ func (h *VoteExtensionHandler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtens
 			"size (bytes)", len(req.VoteExtension),
 		)
 
-		// observe message size
-		h.metrics.ObserveMessageSize(servicemetrics.VoteExtension, len(req.VoteExtension))
+		// Observe message size.
+		noahmetrics.ObserveMessageSize(noahmetrics.VoteExtension, len(req.VoteExtension))
 
 		return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_ACCEPT}, nil
 	}
-}
-
-// transformOracleServicePrices transforms the oracle service prices into a vote extension. It
-// does this by iterating over the prices submitted by the oracle service and determining the
-// correct decoded price / ID based on the currency pair strategy.
-func (h *VoteExtensionHandler) transformOracleServicePrices(ctx sdk.Context, prices map[string]string) (types.OracleVoteExtension, error) {
-	strategyPrices := make(map[uint64][]byte)
-
-	// Iterate over the prices and transform them into the correct format.
-	for currencyPairID, priceString := range prices {
-		cp, err := noahtypes.CurrencyPairFromString(currencyPairID)
-		if err != nil {
-			return types.OracleVoteExtension{}, err
-		}
-
-		rawPrice, converted := new(big.Int).SetString(priceString, 10)
-		if !converted {
-			return types.OracleVoteExtension{}, fmt.Errorf("failed to convert price string to big.Int: %s", priceString)
-		}
-
-		// Determine if the currency pair is supported by the network.
-		cpID, err := h.currencyPairStrategy.ID(ctx, cp)
-		if err != nil {
-			h.logger.Debug(
-				"failed to get currency pair ID",
-				"currency_pair", cp,
-				"err", err,
-			)
-
-			continue
-		}
-
-		// Determine the encoded price for the currency pair based on the strategy.
-		encodedPrice, err := h.currencyPairStrategy.GetEncodedPrice(ctx, cp, rawPrice)
-		if err != nil {
-			h.logger.Debug(
-				"failed to get current price for currency pair",
-				"currency_pair", cp,
-				"err", err,
-			)
-
-			continue
-		}
-
-		h.logger.Debug(
-			"transformed oracle price",
-			"currency_pair", cp,
-			"height", ctx.BlockHeight(),
-		)
-
-		strategyPrices[cpID] = encodedPrice
-	}
-
-	h.logger.Debug("transformed oracle prices", "prices", len(strategyPrices))
-
-	return types.OracleVoteExtension{
-		Prices: strategyPrices,
-	}, nil
 }

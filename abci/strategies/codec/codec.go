@@ -17,9 +17,7 @@ var (
 	dec, _ = zstd.NewReader(nil)
 )
 
-// VoteExtensionCodec is the interface for encoding / decoding vote extensions.
-//
-//go:generate mockery --name VoteExtensionCodec --filename vote_extension_codec.go
+// VoteExtensionCodec is the interface for encoding and decoding vote extensions.
 type VoteExtensionCodec interface {
 	// Encode encodes the vote extension into a byte array.
 	Encode(ve vetypes.OracleVoteExtension) ([]byte, error)
@@ -28,9 +26,7 @@ type VoteExtensionCodec interface {
 	Decode([]byte) (vetypes.OracleVoteExtension, error)
 }
 
-// ExtendedCommitCodec is the interface for encoding / decoding extended commit info.
-//
-//go:generate mockery --name ExtendedCommitCodec --filename extended_commit_codec.go
+// ExtendedCommitCodec is the interface for encoding and decoding extended commit info.
 type ExtendedCommitCodec interface {
 	// Encode encodes the extended commit info into a byte array.
 	Encode(cometabci.ExtendedCommitInfo) ([]byte, error)
@@ -45,8 +41,8 @@ func NewDefaultVoteExtensionCodec() *DefaultVoteExtensionCodec {
 	return &DefaultVoteExtensionCodec{}
 }
 
-// DefaultVoteExtensionCodec is the default implementation of VoteExtensionCodec. It uses the
-// vanilla implementations of Unmarshal / Marshal under the hood.
+// DefaultVoteExtensionCodec is the default implementation of VoteExtensionCodec.
+// It uses the generated Marshal and Unmarshal methods.
 type DefaultVoteExtensionCodec struct{}
 
 func (codec *DefaultVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtension) ([]byte, error) {
@@ -63,20 +59,20 @@ type Compressor interface {
 	Decompress([]byte) ([]byte, error)
 }
 
-// ZLibCompressor is a Compressor that uses zlib to compress / decompress byte arrays, this object is not thread-safe.
+// ZLibCompressor is a Compressor that uses zlib to compress and decompress byte arrays.
+// This object is not thread-safe.
 type ZLibCompressor struct{}
 
-// NewZLibCompressor returns a new zlibDecompressor.
+// NewZLibCompressor returns a new ZLibCompressor.
 func NewZLibCompressor() *ZLibCompressor {
 	return &ZLibCompressor{}
 }
 
 // Compress compresses the given byte array using zlib. It returns an error if the compression fails.
-// This function is not thread-safe, and uses zlib.BestCompression as the compression level.
+// This function is not thread-safe.
 func (c *ZLibCompressor) Compress(bz []byte) ([]byte, error) {
 	var b bytes.Buffer
 
-	// we use the best compression level as size reduction is prioritised
 	w := zlib.NewWriter(&b)
 	defer w.Close()
 
@@ -100,13 +96,13 @@ func (c *ZLibCompressor) Decompress(bz []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Close()
+	defer r.Close()
 
-	// read bytes and return
 	return io.ReadAll(r)
 }
 
-// ZStdCompressor is a Compressor that uses zstd to compress / decompress byte arrays, this object is thread-safe.
+// ZStdCompressor is a Compressor that uses zstd to compress and decompress byte arrays.
+// This object is thread-safe.
 type ZStdCompressor struct{}
 
 func NewZStdCompressor() *ZStdCompressor {
@@ -121,8 +117,8 @@ func (c *ZStdCompressor) Decompress(bz []byte) ([]byte, error) {
 	return dec.DecodeAll(bz, nil)
 }
 
-// CompressionVoteExtensionCodec is a VoteExtensionCodec that uses compression to encode / decode, given a
-// VoteExtensionCodec that can encode / decode uncompressed vote extensions.
+// CompressionVoteExtensionCodec compresses encoded vote extensions and
+// decompresses them before decoding.
 type CompressionVoteExtensionCodec struct {
 	codec      VoteExtensionCodec
 	compressor Compressor
@@ -136,8 +132,8 @@ func NewCompressionVoteExtensionCodec(codec VoteExtensionCodec, compressor Compr
 	}
 }
 
-// Encode returns the encoded vote extension using the codec's Encode method and then compresses the result.
-// This implementation uses zstd compression.
+// Encode returns the encoded vote extension using the underlying codec and then
+// compresses the result.
 func (codec *CompressionVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtension) ([]byte, error) {
 	bz, err := codec.codec.Encode(ve)
 	if err != nil {
@@ -147,9 +143,10 @@ func (codec *CompressionVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtensio
 	return codec.compressor.Compress(bz)
 }
 
-// Decode decompresses the vote extension using zstd and then decodes the result using the codec's Decode method.
+// Decode decompresses the vote extension and then decodes the result using the
+// underlying codec.
 func (codec *CompressionVoteExtensionCodec) Decode(bz []byte) (vetypes.OracleVoteExtension, error) {
-	// decompress first
+	// Decompress first.
 	bz, err := codec.compressor.Decompress(bz)
 	if err != nil {
 		return vetypes.OracleVoteExtension{}, err
@@ -158,8 +155,8 @@ func (codec *CompressionVoteExtensionCodec) Decode(bz []byte) (vetypes.OracleVot
 	return codec.codec.Decode(bz)
 }
 
-// DefaultExtendedCommitCodec is the default implementation of ExtendedCommitCodec. It uses the
-// vanilla implementations of Unmarshal / Marshal under the hood.
+// DefaultExtendedCommitCodec is the default implementation of ExtendedCommitCodec.
+// It uses the generated Marshal and Unmarshal methods.
 type DefaultExtendedCommitCodec struct{}
 
 // NewDefaultExtendedCommitCodec returns a new DefaultExtendedCommitCodec.
@@ -180,8 +177,8 @@ func (codec *DefaultExtendedCommitCodec) Decode(bz []byte) (cometabci.ExtendedCo
 	return extendedCommitInfo, extendedCommitInfo.Unmarshal(bz)
 }
 
-// CompressionExtendedCommitCodec is a ExtendedCommitCodec that uses compression to encode / decode, given a
-// ExtendedCommitCodec that can encode / decode uncompressed extended commit info.
+// CompressionExtendedCommitCodec compresses encoded extended commit info and
+// decompresses it before decoding.
 type CompressionExtendedCommitCodec struct {
 	codec      ExtendedCommitCodec
 	compressor Compressor
@@ -195,8 +192,8 @@ func NewCompressionExtendedCommitCodec(codec ExtendedCommitCodec, compressor Com
 	}
 }
 
-// Encode returns the encoded extended commit info using the codec's Encode method and then compresses the result.
-// This implementation uses zstd compression.
+// Encode returns the encoded extended commit info using the underlying codec and
+// then compresses the result.
 func (codec *CompressionExtendedCommitCodec) Encode(extendedCommitInfo cometabci.ExtendedCommitInfo) ([]byte, error) {
 	bz, err := codec.codec.Encode(extendedCommitInfo)
 	if err != nil {
@@ -206,9 +203,10 @@ func (codec *CompressionExtendedCommitCodec) Encode(extendedCommitInfo cometabci
 	return codec.compressor.Compress(bz)
 }
 
-// Decode decompresses the extended commit info using zstd and then decodes the result using the codec's Decode method.
+// Decode decompresses the extended commit info and then decodes the result using
+// the underlying codec.
 func (codec *CompressionExtendedCommitCodec) Decode(bz []byte) (cometabci.ExtendedCommitInfo, error) {
-	// decompress first
+	// Decompress first.
 	bz, err := codec.compressor.Decompress(bz)
 	if err != nil {
 		return cometabci.ExtendedCommitInfo{}, err

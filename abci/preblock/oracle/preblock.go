@@ -2,12 +2,12 @@ package oracle
 
 import (
 	"fmt"
-	"math/big"
 	"time"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -16,22 +16,18 @@ import (
 	"noah/abci/strategies/codec"
 	noahabcitypes "noah/abci/types"
 	"noah/abci/ve"
-	servicemetrics "noah/service/metrics"
+	noahmetrics "noah/pkg/metrics"
 )
 
 // PreBlockHandler is responsible for aggregating oracle data from each
 // validator and writing the oracle data into the store before any transactions
-// are executed/finalized for a given block.
+// are executed/finalised for a given block.
 type PreBlockHandler struct { //golint:ignore
 	logger log.Logger
 
-	// metrics is responsible for reporting / aggregating consensus-specific
-	// metrics for this validator.
-	metrics servicemetrics.Metrics
-
-	// keeper is the keeper for the oracle module. This is utilized to write
+	// ok is the ok for the oracle module. This is utilised to write
 	// oracle data to state.
-	keeper noahabcitypes.OracleKeeper
+	ok noahabcitypes.OracleKeeper
 
 	// pa is the price applier that is used to decode vote-extensions, aggregate price reports, and write prices to state.
 	pa *abciaggregator.PriceApplier
@@ -42,7 +38,6 @@ type PreBlockHandler struct { //golint:ignore
 func NewOraclePreBlockHandler(
 	logger log.Logger,
 	oracleKeeper noahabcitypes.OracleKeeper,
-	metrics servicemetrics.Metrics,
 	veCodec codec.VoteExtensionCodec,
 	ecCodec codec.ExtendedCommitCodec,
 ) *PreBlockHandler {
@@ -58,20 +53,19 @@ func NewOraclePreBlockHandler(
 	)
 
 	return &PreBlockHandler{
-		logger:  logger,
-		keeper:  oracleKeeper,
-		metrics: metrics,
-		pa:      pa,
+		logger: logger,
+		ok:     oracleKeeper,
+		pa:     pa,
 	}
 }
 
-// WrappedPreBlocker is called by the base app before the block is finalized. It
+// WrappedPreBlocker is called by the base app before the block is finalised. It
 // is responsible for calling the module manager's PreBlock method, aggregating oracle data from each validator and
 // writing the oracle data to the store.
 func (h *PreBlockHandler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
 		if req == nil {
-			ctx.Logger().Error(
+			h.logger.Error(
 				"received nil RequestFinalizeBlock in oracle preblocker",
 				"height", ctx.BlockHeight(),
 			)
@@ -80,16 +74,17 @@ func (h *PreBlockHandler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		}
 
 		// call module manager's PreBlocker first in case there is changes made on upgrades
-		// that can modify state and lead to serialization/deserialization issues
+		// that can modify state and lead to serialisation/deserialisation issues
 		response, err = mm.PreBlock(ctx)
 		if err != nil {
 			return response, err
 		}
 
 		start := time.Now()
-		var prices map[string]*big.Int
+		var prices map[string]math.LegacyDec
+		var voteTargets map[string]math.LegacyDec
 		defer func() {
-			// only measure latency in Finalize
+			// only measure latency in Finalise
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
 				latency := time.Since(start)
 				h.logger.Debug(
@@ -97,15 +92,15 @@ func (h *PreBlockHandler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 					"height", ctx.BlockHeight(),
 					"latency (seconds)", latency.Seconds(),
 				)
-				noahabcitypes.RecordLatencyAndStatus(h.metrics, latency, err, servicemetrics.PreBlock)
+				noahmetrics.RecordLatencyAndStatus(latency, err, noahmetrics.PreBlock)
 
-				// record prices + ticker metrics per validator (only do so if there was no error writing the prices)
+				// Record price and validator-report metrics only if prices were written successfully.
 				if err == nil && prices != nil {
 					// record price metrics
 					h.recordPrices(prices)
 
 					// record validator report metrics
-					h.recordValidatorReports(ctx, req.DecidedLastCommit)
+					h.recordValidatorReports(req.DecidedLastCommit, voteTargets)
 				}
 			}
 		}()
@@ -121,12 +116,12 @@ func (h *PreBlockHandler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		}
 
 		h.logger.Debug(
-			"executing the pre-finalize block hook",
+			"executing the pre-finalise block hook",
 			"height", req.Height,
 		)
 
 		// decode vote-extensions + apply prices to state
-		prices, err = h.pa.ApplyPricesFromVoteExtensions(ctx, req)
+		prices, voteTargets, err = h.pa.ApplyPricesFromVoteExtensions(ctx, req)
 		if err != nil {
 			h.logger.Error(
 				"failed to apply prices from vote extensions",
@@ -134,6 +129,16 @@ func (h *PreBlockHandler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 				"error", err,
 			)
 
+			return response, err
+		}
+
+		err = h.ok.SyncTobinTax(ctx, voteTargets)
+		if err != nil {
+			h.logger.Error(
+				"failed to sync tobin taxes",
+				"height", req.Height,
+				"error", err,
+			)
 			return response, err
 		}
 

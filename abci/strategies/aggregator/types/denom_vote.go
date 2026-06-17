@@ -8,16 +8,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// DenomVote is a convenience wrapper to reduce redundant lookup cost
+// DenomVote is a convenience wrapper to reduce redundant lookup cost.
 type DenomVote struct {
 	Denom        string
 	ExchangeRate math.LegacyDec
-	Voter        sdk.ValAddress
+	Voter        sdk.ConsAddress
 	Power        uint64
 }
 
-// NewDenomVote returns a new VoteForTally instance
-func NewDenomVote(rate math.LegacyDec, denom string, voter sdk.ValAddress, power uint64) DenomVote {
+// NewDenomVote returns a new DenomVote.
+func NewDenomVote(rate math.LegacyDec, denom string, voter sdk.ConsAddress, power uint64) DenomVote {
 	return DenomVote{
 		ExchangeRate: rate,
 		Denom:        denom,
@@ -26,15 +26,15 @@ func NewDenomVote(rate math.LegacyDec, denom string, voter sdk.ValAddress, power
 	}
 }
 
-// DenomVotes is a convenience wrapper around a Vote slice
+// DenomVotes is a convenience wrapper around a DenomVote slice.
 type DenomVotes []DenomVote
 
-// Len implements sort.Interface
+// Len implements sort.Interface.
 func (dv DenomVotes) Len() int {
 	return len(dv)
 }
 
-// Less reports whether the element with index i should sort before the element with index j
+// Less reports whether the element with index i should sort before the element with index j.
 func (dv DenomVotes) Less(i, j int) bool {
 	return dv[i].ExchangeRate.LT(dv[j].ExchangeRate)
 }
@@ -44,7 +44,7 @@ func (dv DenomVotes) Swap(i, j int) {
 	dv[i], dv[j] = dv[j], dv[i]
 }
 
-// ValidatorMap returns a map of validators to respective exchange rate votes
+// ValidatorMap returns a map of validators to respective positive exchange rate votes.
 func (dv DenomVotes) ValidatorMap() map[string]math.LegacyDec {
 	validatorMap := make(map[string]math.LegacyDec)
 	for _, vote := range dv {
@@ -56,7 +56,7 @@ func (dv DenomVotes) ValidatorMap() map[string]math.LegacyDec {
 	return validatorMap
 }
 
-// CrossRate returns cross_rate (referenceRates/exchangeRate) ballot
+// CrossRate returns cross-rate ballots as referenceRate/exchangeRate.
 func (dv DenomVotes) CrossRate(referenceRates map[string]math.LegacyDec) (cb DenomVotes) {
 	for i := range dv {
 		vote := dv[i]
@@ -64,7 +64,7 @@ func (dv DenomVotes) CrossRate(referenceRates map[string]math.LegacyDec) (cb Den
 		if referenceRate, ok := referenceRates[string(vote.Voter)]; ok && vote.ExchangeRate.IsPositive() {
 			vote.ExchangeRate = referenceRate.Quo(vote.ExchangeRate)
 		} else {
-			// If we can't get reference noah exchange rate, we just convert the vote as abstain vote
+			// If there is no reference exchange rate, convert the vote to an abstain vote.
 			vote.ExchangeRate = math.LegacyZeroDec()
 			vote.Power = 0
 		}
@@ -75,7 +75,7 @@ func (dv DenomVotes) CrossRate(referenceRates map[string]math.LegacyDec) (cb Den
 	return cb
 }
 
-// Power returns the total amount of voting power in the denom votes
+// Power returns the total amount of voting power in the denom votes.
 func (dv DenomVotes) Power() uint64 {
 	totalPower := uint64(0)
 	for _, vote := range dv {
@@ -85,7 +85,7 @@ func (dv DenomVotes) Power() uint64 {
 	return totalPower
 }
 
-// WeightedMedian returns the median weighted by the power of the Vote
+// WeightedMedian returns the median weighted by vote power.
 func (dv DenomVotes) WeightedMedian() math.LegacyDec {
 	sort.Sort(dv)
 
@@ -104,7 +104,7 @@ func (dv DenomVotes) WeightedMedian() math.LegacyDec {
 	return math.LegacyZeroDec()
 }
 
-// StandardDeviation returns the standard deviation by the power of the votes
+// StandardDeviation returns the unweighted standard deviation of the votes.
 func (dv DenomVotes) StandardDeviation(median math.LegacyDec) (standardDeviation math.LegacyDec) {
 	if len(dv) == 0 {
 		return math.LegacyZeroDec()

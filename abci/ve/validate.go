@@ -8,7 +8,6 @@ import (
 
 	protoio "github.com/cosmos/gogoproto/io"
 	"github.com/cosmos/gogoproto/proto"
-	"github.com/skip-mev/connect/v2/abci/strategies/currencypair"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
 	cryptoenc "github.com/cometbft/cometbft/crypto/encoding"
@@ -19,30 +18,38 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	noahabci "noah/abci/types"
 	vetypes "noah/abci/ve/types"
+	oracleencoding "noah/pkg/oracle/encoding"
 )
+
+const MaxVoteExtensionRates = 1024
 
 // ValidateOracleVoteExtension validates the vote extension provided by a validator.
 func ValidateOracleVoteExtension(
 	ctx sdk.Context,
 	ve vetypes.OracleVoteExtension,
-	strategy currencypair.CurrencyPairStrategy,
 ) error {
-	maxNumCP, err := strategy.GetMaxNumCP(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to get max price bytes size: %w", err)
+	if len(ve.Rates) > MaxVoteExtensionRates {
+		return fmt.Errorf("number of oracle vote extension rates %d exceeds maximum %d", len(ve.Rates), MaxVoteExtensionRates)
 	}
 
-	if uint64(len(ve.Prices)) > maxNumCP {
-		return fmt.Errorf("number of oracle vote extension pairs of %d greater than maximum expected pairs of %d", uint64(len(ve.Prices)), maxNumCP)
-	}
-
-	// Verify prices are valid.
-	for _, bz := range ve.Prices {
-		// Ensure that the price bytes are not too long.
-		if len(bz) > noahabci.MaximumPriceSize {
-			return fmt.Errorf("price bytes are too long: %d", len(bz))
+	for denom, rawRate := range ve.Rates {
+		if rawRate == nil {
+			return fmt.Errorf("nil oracle vote extension rate")
+		}
+		rate, err := oracleencoding.DecodeRate(rawRate)
+		if err != nil {
+			return fmt.Errorf("invalid oracle vote extension rate for denom %s: %w", denom, err)
+		}
+		canonical, err := oracleencoding.EncodeRate(rate)
+		if err != nil {
+			return fmt.Errorf("canonicalize oracle vote extension rate for denom %s: %w", denom, err)
+		}
+		if !bytes.Equal(rawRate, canonical) {
+			return fmt.Errorf("non-canonical oracle vote extension rate for denom %s", denom)
+		}
+		if err := sdk.ValidateDenom(denom); err != nil {
+			return fmt.Errorf("invalid oracle vote extension denom %s: %w", denom, err)
 		}
 	}
 
@@ -51,15 +58,15 @@ func ValidateOracleVoteExtension(
 
 // VoteExtensionsEnabled determines if vote extensions are enabled for the current block. If
 // vote extensions are enabled at height h, then a proposer will receive vote extensions
-// in height h+1. This is primarily utilized by any module that needs to make state changes
-// based on whether they were included in a proposal.
+// in height h+1. This is primarily used by modules that need to make state changes
+// based on whether vote extensions were included in a proposal.
 func VoteExtensionsEnabled(ctx sdk.Context) bool {
 	cp := ctx.ConsensusParams()
 	if cp.Abci == nil || cp.Abci.VoteExtensionsEnableHeight == 0 {
 		return false
 	}
 
-	// Per the cosmos sdk, the first block should not utilize the latest finalize block state. This means
+	// Per the Cosmos SDK, the first block should not use the latest finalized block state. This means
 	// vote extensions should NOT be making state changes.
 	//
 	// Ref: https://github.com/cosmos/cosmos-sdk/blob/2100a73dcea634ce914977dbddb4991a020ee345/baseapp/baseapp.go#L488-L495
@@ -99,7 +106,7 @@ func NoOpValidateVoteExtensions(
 	return nil
 }
 
-// ValidatorStore defines the interface contract require for verifying vote
+// ValidatorStore defines the interface required for verifying vote
 // extension signatures. Typically, this will be implemented by the x/staking
 // module, which has knowledge of the CometBFT public key.
 type ValidatorStore interface {
@@ -139,9 +146,9 @@ func ValidateVoteExtensions(
 	}
 
 	var (
-		// Total voting power of all vote extensions.
+		// Total voting power of all validators in the extended commit.
 		totalVP int64
-		// Total voting power of all validators that submitted valid vote extensions.
+		// Total voting power of commit votes with vote extension signatures.
 		sumVP int64
 	)
 
@@ -179,16 +186,16 @@ func ValidateVoteExtensions(
 			continue
 		}
 
-		// Only check + include power if the vote is a commit vote. There must be super-majority, otherwise the
-		// previous block (the block vote is for) could not have been committed.
+		// Only verify signatures for commit votes. There must be a super-majority,
+		// otherwise the previous block could not have been committed.
 		if vote.BlockIdFlag != cmtproto.BlockIDFlagCommit {
 			continue
 		}
 
-		// If the validator does not have a valid public key, we skip the signature verification logic but still include
-		// the validator's voting power in the total voting power. The app may have pruned the validator's public key
-		// from the store, but comet considered the validator as active and included them in the commit since there
-		// is a 1 block delay between the validator set update on the app and comet.
+		// If the validator does not have a valid public key, skip signature
+		// verification but still include its voting power. The app may have pruned
+		// the validator's public key from the store, but CometBFT considered the
+		// validator active when it included the validator in the commit.
 		sumVP += vote.Validator.Power
 		valConsAddr := sdk.ConsAddress(vote.Validator.Address)
 		pubKeyProto, err := valStore.GetPubKeyByConsAddr(ctx, valConsAddr)
@@ -224,7 +231,7 @@ func ValidateVoteExtensions(
 	}
 
 	if extensionsEnabled {
-		// If the sum of the voting power has not reached (2/3 + 1) we need to error.
+		// Require at least 2/3 + 1 voting power with valid vote extensions.
 		if requiredVP := ((totalVP * 2) / 3) + 1; sumVP < requiredVP {
 			return fmt.Errorf(
 				"insufficient cumulative voting power received to verify vote extensions; got: %d, expected: >=%d",
@@ -237,21 +244,21 @@ func ValidateVoteExtensions(
 }
 
 // ValidateExtendedCommitAgainstLastCommit validates an ExtendedCommitInfo against a LastCommit. Specifically,
-// it checks that the ExtendedCommit + LastCommit (for the same height), are consistent with each other + that
-// they are ordered correctly (by voting power) in accordance with
+// it checks that the ExtendedCommit and LastCommit for the same height are consistent with each other and
+// ordered correctly by voting power in accordance with
 // [comet](https://github.com/cometbft/cometbft/blob/4ce0277b35f31985bbf2c25d3806a184a4510010/types/validator_set.go#L784).
 func ValidateExtendedCommitAgainstLastCommit(ec cometabci.ExtendedCommitInfo, lc comet.CommitInfo) error {
-	// check that the rounds are the same
+	// Check that the rounds are the same.
 	if ec.Round != lc.Round() {
 		return fmt.Errorf("extended commit round %d does not match last commit round %d", ec.Round, lc.Round())
 	}
 
-	// check that the # of votes are the same
+	// Check that the number of votes is the same.
 	if len(ec.Votes) != lc.Votes().Len() {
 		return fmt.Errorf("extended commit votes length %d does not match last commit votes length %d", len(ec.Votes), lc.Votes().Len())
 	}
 
-	// check sort order of extended commit votes
+	// Check sort order of extended commit votes.
 	if !slices.IsSortedFunc(ec.Votes, func(vote1, vote2 cometabci.ExtendedVoteInfo) int {
 		if vote1.Validator.Power == vote2.Validator.Power {
 			return bytes.Compare(vote1.Validator.Address, vote2.Validator.Address) // addresses sorted in ascending order (used to break vp conflicts)
@@ -262,9 +269,9 @@ func ValidateExtendedCommitAgainstLastCommit(ec cometabci.ExtendedCommitInfo, lc
 	}
 
 	addressCache := make(map[string]struct{}, len(ec.Votes))
-	// check that consistency between LastCommit and ExtendedCommit
+	// Check consistency between LastCommit and ExtendedCommit.
 	for i, vote := range ec.Votes {
-		// cache addresses to check for duplicates
+		// Cache addresses to check for duplicates.
 		if _, ok := addressCache[string(vote.Validator.Address)]; ok {
 			return fmt.Errorf("extended commit vote address %X is duplicated", vote.Validator.Address)
 		}
@@ -278,7 +285,7 @@ func ValidateExtendedCommitAgainstLastCommit(ec cometabci.ExtendedCommitInfo, lc
 			return fmt.Errorf("extended commit vote power %d does not match last commit vote power %d", vote.Validator.Power, lcVote.Validator().Power())
 		}
 
-		// only check non-absent votes (these could have been modified via pruning in prepare proposal)
+		// Only check non-absent votes, which may have been modified by PrepareProposal pruning.
 		if !(vote.BlockIdFlag == cmtproto.BlockIDFlagAbsent && len(vote.VoteExtension) == 0 && len(vote.ExtensionSignature) == 0) {
 			if int32(vote.BlockIdFlag) != int32(lcVote.GetBlockIDFlag()) {
 				return fmt.Errorf("mismatched block ID flag between extended commit vote %d and last proposed commit %d", int32(vote.BlockIdFlag), int32(lcVote.GetBlockIDFlag()))
