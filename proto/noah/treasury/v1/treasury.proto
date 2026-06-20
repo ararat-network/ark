@@ -13,10 +13,14 @@ message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "noah/x/treasury/Params";
 
-  PolicyConstraints tax_policy = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  PolicyConstraints reward_policy = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  PolicyConstraints tax_policy = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  PolicyConstraints reward_policy = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   string seigniorage_burden_target = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -35,9 +39,9 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  uint64 window_short = 6 [ (amino.dont_omitempty) = true ];
-  uint64 window_long = 7 [ (amino.dont_omitempty) = true ];
-  uint64 window_probation = 8 [ (amino.dont_omitempty) = true ];
+  uint64 window_short = 6 [(amino.dont_omitempty) = true];
+  uint64 window_long = 7 [(amino.dont_omitempty) = true];
+  uint64 window_probation = 8 [(amino.dont_omitempty) = true];
 }
 
 // PolicyConstraints - defines policy constraints can be applied in tax & reward
@@ -55,7 +59,7 @@ message PolicyConstraints {
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
-  cosmos.base.v1beta1.Coin cap = 3 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin cap = 3 [(gogoproto.nullable) = false];
   string change_rate_max = 4 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

@@ -5,23 +5,19 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "noah/service/servers/oracle/types";
+option go_package = "noah/oracle/types";
 
 // Oracle defines the gRPC oracle service.
 service Oracle {
   // Prices defines a method for fetching the latest prices.
   rpc Prices(OraclePricesRequest) returns (OraclePricesResponse) {
-    option (google.api.http) = {
-      get : "/noah/oracle/v1/prices"
-    };
+    option (google.api.http) = {get: "/noah/oracle/v1/prices"};
   }
 
   // Version defines a method for fetching the current version of the oracle
   // service.
   rpc Version(OracleVersionRequest) returns (OracleVersionResponse) {
-    option (google.api.http) = {
-      get : "/noah/oracle/v1/version"
-    };
+    option (google.api.http) = {get: "/noah/oracle/v1/version"};
   }
 }
 
@@ -31,11 +27,13 @@ message OraclePricesRequest {}
 // QueryPricesResponse defines the response type for the Prices method.
 message OraclePricesResponse {
   // Prices defines the list of prices.
-  map<string, bytes> prices = 1 [ (gogoproto.nullable) = false ];
+  map<string, bytes> prices = 1 [(gogoproto.nullable) = false];
 
   // Timestamp defines the timestamp of the prices.
-  google.protobuf.Timestamp timestamp = 2
-      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp timestamp = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
 
   // Version defines the version of the oracle service that provided the prices.
   string version = 3;

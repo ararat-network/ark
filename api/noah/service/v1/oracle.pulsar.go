@@ -3,6 +3,11 @@ package servicev1
 
 import (
 	fmt "fmt"
+	io "io"
+	reflect "reflect"
+	sort "sort"
+	sync "sync"
+
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
@@ -10,15 +15,9 @@ import (
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	io "io"
-	reflect "reflect"
-	sort "sort"
-	sync "sync"
 )
 
-var (
-	md_OraclePricesRequest protoreflect.MessageDescriptor
-)
+var md_OraclePricesRequest protoreflect.MessageDescriptor
 
 func init() {
 	file_noah_service_v1_oracle_proto_init()
@@ -45,17 +44,21 @@ func (x *OraclePricesRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_OraclePricesRequest_messageType fastReflection_OraclePricesRequest_messageType
-var _ protoreflect.MessageType = fastReflection_OraclePricesRequest_messageType{}
+var (
+	_fastReflection_OraclePricesRequest_messageType fastReflection_OraclePricesRequest_messageType
+	_                                               protoreflect.MessageType = fastReflection_OraclePricesRequest_messageType{}
+)
 
 type fastReflection_OraclePricesRequest_messageType struct{}
 
 func (x fastReflection_OraclePricesRequest_messageType) Zero() protoreflect.Message {
 	return (*fastReflection_OraclePricesRequest)(nil)
 }
+
 func (x fastReflection_OraclePricesRequest_messageType) New() protoreflect.Message {
 	return new(fastReflection_OraclePricesRequest)
 }
+
 func (x fastReflection_OraclePricesRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
 	return md_OraclePricesRequest
 }
@@ -489,17 +492,21 @@ func (x *OraclePricesResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_OraclePricesResponse_messageType fastReflection_OraclePricesResponse_messageType
-var _ protoreflect.MessageType = fastReflection_OraclePricesResponse_messageType{}
+var (
+	_fastReflection_OraclePricesResponse_messageType fastReflection_OraclePricesResponse_messageType
+	_                                                protoreflect.MessageType = fastReflection_OraclePricesResponse_messageType{}
+)
 
 type fastReflection_OraclePricesResponse_messageType struct{}
 
 func (x fastReflection_OraclePricesResponse_messageType) Zero() protoreflect.Message {
 	return (*fastReflection_OraclePricesResponse)(nil)
 }
+
 func (x fastReflection_OraclePricesResponse_messageType) New() protoreflect.Message {
 	return new(fastReflection_OraclePricesResponse)
 }
+
 func (x fastReflection_OraclePricesResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
 	return md_OraclePricesResponse
 }
@@ -1177,9 +1184,7 @@ func (x *fastReflection_OraclePricesResponse) ProtoMethods() *protoiface.Methods
 	}
 }
 
-var (
-	md_OracleVersionRequest protoreflect.MessageDescriptor
-)
+var md_OracleVersionRequest protoreflect.MessageDescriptor
 
 func init() {
 	file_noah_service_v1_oracle_proto_init()
@@ -1206,17 +1211,21 @@ func (x *OracleVersionRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_OracleVersionRequest_messageType fastReflection_OracleVersionRequest_messageType
-var _ protoreflect.MessageType = fastReflection_OracleVersionRequest_messageType{}
+var (
+	_fastReflection_OracleVersionRequest_messageType fastReflection_OracleVersionRequest_messageType
+	_                                                protoreflect.MessageType = fastReflection_OracleVersionRequest_messageType{}
+)
 
 type fastReflection_OracleVersionRequest_messageType struct{}
 
 func (x fastReflection_OracleVersionRequest_messageType) Zero() protoreflect.Message {
 	return (*fastReflection_OracleVersionRequest)(nil)
 }
+
 func (x fastReflection_OracleVersionRequest_messageType) New() protoreflect.Message {
 	return new(fastReflection_OracleVersionRequest)
 }
+
 func (x fastReflection_OracleVersionRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
 	return md_OracleVersionRequest
 }
@@ -1564,17 +1573,21 @@ func (x *OracleVersionResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_OracleVersionResponse_messageType fastReflection_OracleVersionResponse_messageType
-var _ protoreflect.MessageType = fastReflection_OracleVersionResponse_messageType{}
+var (
+	_fastReflection_OracleVersionResponse_messageType fastReflection_OracleVersionResponse_messageType
+	_                                                 protoreflect.MessageType = fastReflection_OracleVersionResponse_messageType{}
+)
 
 type fastReflection_OracleVersionResponse_messageType struct{}
 
 func (x fastReflection_OracleVersionResponse_messageType) Zero() protoreflect.Message {
 	return (*fastReflection_OracleVersionResponse)(nil)
 }
+
 func (x fastReflection_OracleVersionResponse_messageType) New() protoreflect.Message {
 	return new(fastReflection_OracleVersionResponse)
 }
+
 func (x fastReflection_OracleVersionResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
 	return md_OracleVersionResponse
 }
@@ -2187,15 +2200,17 @@ func file_noah_service_v1_oracle_proto_rawDescGZIP() []byte {
 	return file_noah_service_v1_oracle_proto_rawDescData
 }
 
-var file_noah_service_v1_oracle_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_noah_service_v1_oracle_proto_goTypes = []interface{}{
-	(*OraclePricesRequest)(nil),   // 0: noah.service.v1.OraclePricesRequest
-	(*OraclePricesResponse)(nil),  // 1: noah.service.v1.OraclePricesResponse
-	(*OracleVersionRequest)(nil),  // 2: noah.service.v1.OracleVersionRequest
-	(*OracleVersionResponse)(nil), // 3: noah.service.v1.OracleVersionResponse
-	nil,                           // 4: noah.service.v1.OraclePricesResponse.PricesEntry
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
-}
+var (
+	file_noah_service_v1_oracle_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+	file_noah_service_v1_oracle_proto_goTypes  = []interface{}{
+		(*OraclePricesRequest)(nil),   // 0: noah.service.v1.OraclePricesRequest
+		(*OraclePricesResponse)(nil),  // 1: noah.service.v1.OraclePricesResponse
+		(*OracleVersionRequest)(nil),  // 2: noah.service.v1.OracleVersionRequest
+		(*OracleVersionResponse)(nil), // 3: noah.service.v1.OracleVersionResponse
+		nil,                           // 4: noah.service.v1.OraclePricesResponse.PricesEntry
+		(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	}
+)
 var file_noah_service_v1_oracle_proto_depIdxs = []int32{
 	4, // 0: noah.service.v1.OraclePricesResponse.prices:type_name -> noah.service.v1.OraclePricesResponse.PricesEntry
 	5, // 1: noah.service.v1.OraclePricesResponse.timestamp:type_name -> google.protobuf.Timestamp

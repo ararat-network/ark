@@ -11,8 +11,10 @@ option go_package = "noah/x/market/types";
 // GenesisState defines the market module's genesis state.
 message GenesisState {
   // params defines all the parameters of the module.
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // the gap between the NoahPool and the BasePool
   string noah_pool_delta = 2 [

@@ -14,16 +14,13 @@ option go_package = "noah/x/oracle/types";
 // Query defines the gRPC querier service.
 service Query {
   // ExchangeRate returns exchange rate of a denom
-  rpc ExchangeRate(QueryExchangeRateRequest)
-      returns (QueryExchangeRateResponse) {
+  rpc ExchangeRate(QueryExchangeRateRequest) returns (QueryExchangeRateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/noah/oracle/v1/denoms/{denom}/exchange_rate";
+    option (google.api.http).get = "/noah/oracle/v1/denoms/{denom}/exchange_rate";
   }
 
   // ExchangeRates returns exchange rates of all denoms
-  rpc ExchangeRates(QueryExchangeRatesRequest)
-      returns (QueryExchangeRatesResponse) {
+  rpc ExchangeRates(QueryExchangeRatesRequest) returns (QueryExchangeRatesResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/noah/oracle/v1/denoms/exchange_rates";
   }
@@ -55,15 +52,13 @@ service Query {
   // ScoreWeight returns oracle miss count of a validator
   rpc ScoreWeight(QueryScoreWeightRequest) returns (QueryScoreWeightResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/noah/oracle/v1/validators/{validator_addr}/score";
+    option (google.api.http).get = "/noah/oracle/v1/validators/{validator_addr}/score";
   }
 
   // MissCount returns oracle miss count of a validator
   rpc MissCount(QueryMissCountRequest) returns (QueryMissCountResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/noah/oracle/v1/validators/{validator_addr}/miss";
+    option (google.api.http).get = "/noah/oracle/v1/validators/{validator_addr}/miss";
   }
 
   // Params queries all parameters.
@@ -167,8 +162,7 @@ message QueryVoteTargetsResponse {
 // method.
 message QueryScoreWeightRequest {
   // validator defines the validator address to query for.
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  string validator_addr = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
 }
 
 // QueryScoreWeightResponse is response type for the
@@ -182,8 +176,7 @@ message QueryScoreWeightResponse {
 // method.
 message QueryMissCountRequest {
   // validator defines the validator address to query for.
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  string validator_addr = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
 }
 
 // QueryMissCountResponse is response type for the
@@ -199,6 +192,8 @@ message QueryParamsRequest {}
 // QueryParamsResponse is the response type for the Query/Params RPC method.
 message QueryParamsResponse {
   // params defines the parameters of the module.
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
