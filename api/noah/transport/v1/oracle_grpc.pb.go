@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             (unknown)
-// source: noah/service/v1/oracle.proto
+// source: noah/transport/v1/oracle.proto
 
-package servicev1
+package transportv1
 
 import (
 	context "context"
@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Oracle_Prices_FullMethodName  = "/noah.service.v1.Oracle/Prices"
-	Oracle_Version_FullMethodName = "/noah.service.v1.Oracle/Version"
+	Oracle_Prices_FullMethodName  = "/noah.transport.v1.Oracle/Prices"
+	Oracle_Version_FullMethodName = "/noah.transport.v1.Oracle/Version"
 )
 
 // OracleClient is the client API for Oracle service.
@@ -152,7 +152,7 @@ func _Oracle_Version_Handler(srv interface{}, ctx context.Context, dec func(inte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Oracle_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "noah.service.v1.Oracle",
+	ServiceName: "noah.transport.v1.Oracle",
 	HandlerType: (*OracleServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -165,5 +165,5 @@ var Oracle_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "noah/service/v1/oracle.proto",
+	Metadata: "noah/transport/v1/oracle.proto",
 }

@@ -17,7 +17,7 @@ import (
 	abcioracle "noah/abci/oracle"
 	noahabci "noah/abci/types"
 	"noah/abci/ve/types"
-	servicetypes "noah/oracle/types"
+	transporttypes "noah/oracle/transport/types"
 )
 
 // VoteExtensionHandler extends local votes with oracle price reports. If
@@ -106,7 +106,7 @@ func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 
 		// To preserve liveness, return an empty vote extension if the oracle is
 		// unavailable or returns an invalid response.
-		oracleResp, err := h.oracleClient.Prices(ctx.WithContext(reqCtx), &servicetypes.OraclePricesRequest{})
+		oracleResp, err := h.oracleClient.Prices(ctx.WithContext(reqCtx), &transporttypes.OraclePricesRequest{})
 		if err != nil {
 			h.logger.Error(
 				"failed to retrieve oracle prices for vote extension; returning empty vote extension",

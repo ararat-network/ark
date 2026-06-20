@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servertypes "noah/oracle/types"
+	transporttypes "noah/oracle/transport/types"
 	oracletypes "noah/x/oracle/types"
 )
 
@@ -28,5 +28,5 @@ type OracleKeeper interface {
 // OracleClient defines the interface that must be fulfilled by the connect client.
 // This interface is utilised by the vote extension handler to fetch prices.
 type OracleClient interface {
-	Prices(ctx context.Context, in *servertypes.OraclePricesRequest, opts ...grpc.CallOption) (*servertypes.OraclePricesResponse, error)
+	Prices(ctx context.Context, in *transporttypes.OraclePricesRequest, opts ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error)
 }
