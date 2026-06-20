@@ -130,3 +130,21 @@ func (dv DenomVotes) StandardDeviation(median math.LegacyDec) (standardDeviation
 
 	return standardDeviation
 }
+
+// ValidatorScore directs oracle rewards and miss accounting to an attached validator.
+type ValidatorScore struct {
+	Power     uint64
+	Weight    uint64
+	WinCount  uint64
+	Recipient sdk.ConsAddress
+}
+
+// NewValidatorScore returns a validator score.
+func NewValidatorScore(power, weight, winCount uint64, recipient sdk.ConsAddress) ValidatorScore {
+	return ValidatorScore{
+		Power:     power,
+		Weight:    weight,
+		WinCount:  winCount,
+		Recipient: recipient,
+	}
+}

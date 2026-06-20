@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servertypes "noah/service/servers/oracle/types"
+	servertypes "noah/oracle/types"
 	oracletypes "noah/x/oracle/types"
 )
 

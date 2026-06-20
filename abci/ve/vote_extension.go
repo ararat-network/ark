@@ -12,12 +12,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/aggregator"
-	compression "noah/abci/strategies/codec"
+	compression "noah/abci/codec"
+	noahmetrics "noah/abci/metrics"
+	abcioracle "noah/abci/oracle"
 	noahabci "noah/abci/types"
 	"noah/abci/ve/types"
-	noahmetrics "noah/pkg/metrics"
-	servicetypes "noah/service/servers/oracle/types"
+	servicetypes "noah/oracle/types"
 )
 
 // VoteExtensionHandler extends local votes with oracle price reports. If
@@ -37,7 +37,7 @@ type VoteExtensionHandler struct {
 	voteExtensionCodec compression.VoteExtensionCodec
 
 	// priceApplier decodes vote extensions, aggregates price reports, and writes prices to state.
-	priceApplier aggregator.PriceApplier
+	priceApplier abcioracle.PriceApplier
 }
 
 // NewVoteExtensionHandler returns a new VoteExtensionHandler.
@@ -46,7 +46,7 @@ func NewVoteExtensionHandler(
 	oracleClient noahabci.OracleClient,
 	timeout time.Duration,
 	codec compression.VoteExtensionCodec,
-	priceApplier aggregator.PriceApplier,
+	priceApplier abcioracle.PriceApplier,
 ) *VoteExtensionHandler {
 	return &VoteExtensionHandler{
 		logger:             logger,

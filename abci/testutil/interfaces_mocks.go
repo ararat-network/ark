@@ -11,7 +11,7 @@ package testutil
 
 import (
 	context "context"
-	types0 "noah/service/servers/oracle/types"
+	types0 "noah/oracle/types"
 	types1 "noah/x/oracle/types"
 	reflect "reflect"
 

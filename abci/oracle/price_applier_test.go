@@ -1,4 +1,4 @@
-package aggregator_test
+package oracle_test
 
 import (
 	"context"
@@ -14,7 +14,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/aggregator"
+	"noah/abci/oracle"
+	abcioracletypes "noah/abci/oracle/types"
 	abcitestutil "noah/abci/testutil"
 	oracletypes "noah/x/oracle/types"
 )
@@ -40,7 +41,7 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 				Txs:    nil,
 			},
 			expectErr:         true,
-			expectedErrorType: aggregator.OracleKeeperError{},
+			expectedErrorType: abcioracletypes.OracleKeeperError{},
 		},
 		{
 			name: "valid quorum writes exchange rate and score weights",
@@ -149,8 +150,8 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(t, keeper, veCodec, extCommitCodec)
 			}
-			priceApplier := aggregator.NewPriceApplier(
-				aggregator.NewVoteAggregator(log.NewTestLogger(t)),
+			priceApplier := oracle.NewPriceApplier(
+				oracle.NewVoteAggregator(log.NewTestLogger(t)),
 				keeper,
 				veCodec,
 				extCommitCodec,

@@ -1,81 +1,17 @@
-package aggregator
+package oracle
 
 import (
 	"fmt"
-
-	cometabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/aggregator/types"
-	"noah/abci/strategies/codec"
-	noahabci "noah/abci/types"
-	vetypes "noah/abci/ve/types"
-	oracleencoding "noah/pkg/oracle/encoding"
+	oracleencoding "noah/abci/oracle/encoding"
+	abcioracletypes "noah/abci/oracle/types"
 	oracletypes "noah/x/oracle/types"
 )
-
-// Vote is the decoded oracle payload associated with one validator entry from
-// the extended commit info injected into the proposal.
-type Vote struct {
-	// Validator is the CometBFT validator metadata from ExtendedVoteInfo.
-	// Address is the consensus address and Power is the consensus voting power
-	// for this commit.
-	Validator cometabci.Validator
-
-	// OracleVoteExtension is the decoded oracle vote-extension payload. It may
-	// be empty when the validator submitted no rates or its extension was
-	// absent/pruned before proposal injection.
-	OracleVoteExtension vetypes.OracleVoteExtension
-}
-
-// GetOracleVotes decodes the injected extended commit info from the proposal
-// and returns one Vote per validator entry. It preserves entries with empty
-// vote extensions so their voting power can still count toward quorum
-// denominators.
-func GetOracleVotes(
-	proposal [][]byte,
-	veCodec codec.VoteExtensionCodec,
-	extCommitCodec codec.ExtendedCommitCodec,
-) ([]Vote, error) {
-	if len(proposal) < noahabci.NumInjectedTxs {
-		return nil, noahabci.MissingCommitInfoError{}
-	}
-
-	extendedCommitInfo, err := extCommitCodec.Decode(proposal[noahabci.OracleInfoIndex])
-	if err != nil {
-		return nil, noahabci.CodecError{
-			Err: fmt.Errorf("error decoding extended-commit-info: %w", err),
-		}
-	}
-
-	votes := make([]Vote, len(extendedCommitInfo.Votes))
-	for i, voteInfo := range extendedCommitInfo.Votes {
-		if len(voteInfo.VoteExtension) == 0 {
-			votes[i] = Vote{
-				Validator:           voteInfo.Validator,
-				OracleVoteExtension: vetypes.OracleVoteExtension{},
-			}
-			continue
-		}
-		voteExtension, err := veCodec.Decode(voteInfo.VoteExtension)
-		if err != nil {
-			return nil, noahabci.CodecError{
-				Err: fmt.Errorf("error decoding vote-extension: %w", err),
-			}
-		}
-
-		votes[i] = Vote{
-			Validator:           voteInfo.Validator,
-			OracleVoteExtension: voteExtension,
-		}
-	}
-
-	return votes, nil
-}
 
 func NewVoteAggregator(
 	logger log.Logger,
@@ -104,11 +40,11 @@ func (va *VoteAggregator) AggregateOracleVotes(
 	votes []Vote,
 	params oracletypes.Params,
 	voteTargets map[string]math.LegacyDec,
-) (map[string]math.LegacyDec, map[string]types.ValidatorScore, error) {
+) (map[string]math.LegacyDec, map[string]abcioracletypes.ValidatorScore, error) {
 	// Build validator scores, group submitted rates by denom, and
 	// track total extended-commit voting power and per-validator reported rates.
-	voteMap := make(map[string]types.DenomVotes)
-	scoreMap := make(map[string]types.ValidatorScore)
+	voteMap := make(map[string]abcioracletypes.DenomVotes)
+	scoreMap := make(map[string]abcioracletypes.ValidatorScore)
 	validatorRates := make(map[string]map[string]math.LegacyDec)
 	totalPower := math.ZeroInt()
 
@@ -117,7 +53,7 @@ func (va *VoteAggregator) AggregateOracleVotes(
 		consAddr := sdk.ConsAddress(vote.Validator.Address)
 		consAddrStr := consAddr.String()
 
-		scoreMap[consAddrStr] = types.NewValidatorScore(
+		scoreMap[consAddrStr] = abcioracletypes.NewValidatorScore(
 			uint64(vote.Validator.Power),
 			0,
 			0,
@@ -130,7 +66,7 @@ func (va *VoteAggregator) AggregateOracleVotes(
 			if err != nil {
 				return nil, nil, fmt.Errorf("decode oracle rate for validator %s denom %q: %w", consAddrStr, denom, err)
 			}
-			dv := types.NewDenomVote(
+			dv := abcioracletypes.NewDenomVote(
 				rate,
 				denom,
 				consAddr,
@@ -170,7 +106,11 @@ func (va *VoteAggregator) AggregateOracleVotes(
 // pickReferenceDenom selects the supported denom with the largest voting power
 // among denoms that meet quorum. It mutates voteMap by removing
 // unsupported or failed-quorum denoms.
-func pickReferenceDenom(voteMap map[string]types.DenomVotes, voteTargets map[string]math.LegacyDec, thresholdVotes math.Int) string {
+func pickReferenceDenom(
+	voteMap map[string]abcioracletypes.DenomVotes,
+	voteTargets map[string]math.LegacyDec,
+	thresholdVotes math.Int,
+) string {
 	largestVotePower := math.ZeroInt()
 	referenceDenom := ""
 
@@ -204,9 +144,9 @@ func pickReferenceDenom(voteMap map[string]types.DenomVotes, voteTargets map[str
 // votes and updates validator reward weights.
 func computePricesAndScores(
 	referenceDenom string,
-	voteMap map[string]types.DenomVotes,
+	voteMap map[string]abcioracletypes.DenomVotes,
 	rewardBand math.LegacyDec,
-	scoreMap map[string]types.ValidatorScore,
+	scoreMap map[string]abcioracletypes.ValidatorScore,
 ) map[string]math.LegacyDec {
 	referenceVotes := voteMap[referenceDenom]
 	referenceRates := referenceVotes.ValidatorMap()

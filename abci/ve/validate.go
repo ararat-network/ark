@@ -18,8 +18,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	oracleencoding "noah/abci/oracle/encoding"
 	vetypes "noah/abci/ve/types"
-	oracleencoding "noah/pkg/oracle/encoding"
 )
 
 const MaxVoteExtensionRates = 1024

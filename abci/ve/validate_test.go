@@ -24,6 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	oracleencoding "noah/abci/oracle/encoding"
 	abcitestutil "noah/abci/testutil"
 	"noah/abci/ve"
 	vetypes "noah/abci/ve/types"
@@ -88,6 +89,13 @@ func TestValidateOracleVoteExtension(t *testing.T) {
 			name: "malformed rate bytes reject",
 			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
 				"uusd": []byte("not-a-rate"),
+			}},
+			expectErr: true,
+		},
+		{
+			name: "oversized rate bytes reject",
+			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
+				"uusd": make([]byte, oracleencoding.MaxRateBytes+1),
 			}},
 			expectErr: true,
 		},

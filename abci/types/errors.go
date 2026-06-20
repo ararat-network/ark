@@ -3,12 +3,12 @@ package types
 import (
 	"fmt"
 
-	noahmetrics "noah/pkg/metrics"
+	noahmetrics "noah/abci/metrics"
 )
 
 // NilRequestError is an error that is returned when a nil request is given to the handler.
 type NilRequestError struct {
-	Handler noahmetrics.ABCIMethod
+	Handler noahmetrics.Method
 }
 
 func (e NilRequestError) Error() string {
@@ -22,7 +22,7 @@ func (e NilRequestError) Label() string {
 // WrappedHandlerError is an error that is returned when a handler that is wrapped by a Noah ABCI handler
 // returns an error.
 type WrappedHandlerError struct {
-	Handler noahmetrics.ABCIMethod
+	Handler noahmetrics.Method
 	Err     error
 }
 

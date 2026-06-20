@@ -16,11 +16,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/aggregator"
+	abcioracle "noah/abci/oracle"
 	abcitestutil "noah/abci/testutil"
 	"noah/abci/ve"
 	vetypes "noah/abci/ve/types"
-	servicetypes "noah/service/servers/oracle/types"
+	servicetypes "noah/oracle/types"
 )
 
 func TestExtendVoteHandler(t *testing.T) {
@@ -135,7 +135,7 @@ func TestExtendVoteHandler(t *testing.T) {
 				oracleClient,
 				time.Second,
 				voteExtensionCodec,
-				aggregator.PriceApplier{},
+				abcioracle.PriceApplier{},
 			).ExtendVoteHandler()
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)
@@ -244,7 +244,7 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				nil,
 				time.Second,
 				voteExtensionCodec,
-				aggregator.PriceApplier{},
+				abcioracle.PriceApplier{},
 			).VerifyVoteExtensionHandler()
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)

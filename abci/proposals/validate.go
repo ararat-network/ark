@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/codec"
+	"noah/abci/codec"
 	"noah/abci/ve"
 )
 

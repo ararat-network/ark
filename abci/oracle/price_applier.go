@@ -1,4 +1,4 @@
-package aggregator
+package oracle
 
 import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
@@ -8,7 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/codec"
+	"noah/abci/codec"
+	abcioracletypes "noah/abci/oracle/types"
 	noahabcitypes "noah/abci/types"
 	oracletypes "noah/x/oracle/types"
 )
@@ -62,7 +63,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, OracleKeeperError{Err: err}
+		return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
 	}
 
 	pa.logger.Debug(
@@ -101,7 +102,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, PriceAggregationError{Err: err}
+		return nil, nil, abcioracletypes.PriceAggregationError{Err: err}
 	}
 
 	for denom, price := range prices {
@@ -119,7 +120,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, nil, OracleKeeperError{Err: err}
+			return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
 		}
 
 		pa.logger.Debug(
@@ -139,7 +140,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, nil, OracleKeeperError{Err: err}
+			return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
 		}
 
 		if int(score.WinCount) != len(voteTargets) {
@@ -151,7 +152,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 					"err", err,
 				)
 
-				return nil, nil, OracleKeeperError{Err: err}
+				return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
 			}
 		}
 	}

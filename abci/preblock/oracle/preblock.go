@@ -12,11 +12,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	abciaggregator "noah/abci/strategies/aggregator"
-	"noah/abci/strategies/codec"
+	"noah/abci/codec"
+	noahmetrics "noah/abci/metrics"
+	abcioracle "noah/abci/oracle"
 	noahabcitypes "noah/abci/types"
 	"noah/abci/ve"
-	noahmetrics "noah/pkg/metrics"
 )
 
 // PreBlockHandler is responsible for aggregating oracle data from each
@@ -30,7 +30,7 @@ type PreBlockHandler struct { //golint:ignore
 	ok noahabcitypes.OracleKeeper
 
 	// pa is the price applier that is used to decode vote-extensions, aggregate price reports, and write prices to state.
-	pa *abciaggregator.PriceApplier
+	pa *abcioracle.PriceApplier
 }
 
 // NewOraclePreBlockHandler returns a new PreBlockHandler. The handler
@@ -41,10 +41,10 @@ func NewOraclePreBlockHandler(
 	veCodec codec.VoteExtensionCodec,
 	ecCodec codec.ExtendedCommitCodec,
 ) *PreBlockHandler {
-	va := abciaggregator.NewVoteAggregator(
+	va := abcioracle.NewVoteAggregator(
 		logger,
 	)
-	pa := abciaggregator.NewPriceApplier(
+	pa := abcioracle.NewPriceApplier(
 		va,
 		oracleKeeper,
 		veCodec,

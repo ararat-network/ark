@@ -8,14 +8,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	noahmetrics "noah/pkg/metrics"
+	oraclemetrics "noah/abci/oracle/metrics"
 )
 
 // recordPrices records all given prices per denom and reports them as float64 metrics.
 func (h *PreBlockHandler) recordPrices(prices map[string]math.LegacyDec) {
 	for denom, price := range prices {
 		floatPrice, _ := price.Float64()
-		noahmetrics.ObservePriceForTicker(denom, floatPrice)
+		oraclemetrics.ObservePriceForTicker(denom, floatPrice)
 	}
 }
 
@@ -35,21 +35,21 @@ func (h *PreBlockHandler) recordValidatorReports(decidedCommit cometabci.CommitI
 		for denom := range voteTargets {
 			// If the validator reported a nil vote, record that and skip.
 			if nilVote {
-				noahmetrics.AddValidatorReportForTicker(validator.String(), denom, noahmetrics.Absent)
+				oraclemetrics.AddValidatorReportForTicker(validator.String(), denom, oraclemetrics.Absent)
 				continue
 			}
 
 			// Otherwise, check if the validator reported a price for the denom.
 			price, ok := validatorPrices[denom]
 			if !ok {
-				noahmetrics.AddValidatorReportForTicker(validator.String(), denom, noahmetrics.MissingPrice)
+				oraclemetrics.AddValidatorReportForTicker(validator.String(), denom, oraclemetrics.MissingPrice)
 				continue
 			}
 
 			// If the validator reported a price, record that price.
 			floatPrice, _ := price.Float64()
-			noahmetrics.AddValidatorReportForTicker(validator.String(), denom, noahmetrics.WithPrice)
-			noahmetrics.AddValidatorPriceForTicker(validator.String(), denom, floatPrice)
+			oraclemetrics.AddValidatorReportForTicker(validator.String(), denom, oraclemetrics.WithPrice)
+			oraclemetrics.AddValidatorPriceForTicker(validator.String(), denom, floatPrice)
 		}
 	}
 }

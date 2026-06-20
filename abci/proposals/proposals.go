@@ -11,10 +11,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/strategies/codec"
+	"noah/abci/codec"
+	noahmetrics "noah/abci/metrics"
 	noahabci "noah/abci/types"
 	"noah/abci/ve"
-	noahmetrics "noah/pkg/metrics"
 )
 
 // ProposalHandler is responsible primarily for:

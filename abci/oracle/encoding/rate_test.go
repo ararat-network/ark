@@ -18,7 +18,17 @@ func TestEncodeDecodeRate(t *testing.T) {
 	require.True(t, rate.Equal(decoded))
 }
 
-func TestDecodeRateValidation(t *testing.T) {
+func TestDecodeRateRejectsOversizedBytes(t *testing.T) {
+	_, err := DecodeRate(make([]byte, MaxRateBytes+1))
+	require.ErrorContains(t, err, "exceeds maximum")
+}
+
+func TestRateValidation(t *testing.T) {
+	t.Run("nil rate", func(t *testing.T) {
+		_, err := EncodeRate(math.LegacyDec{})
+		require.Error(t, err)
+	})
+
 	tests := []struct {
 		name string
 		bz   []byte
@@ -30,10 +40,6 @@ func TestDecodeRateValidation(t *testing.T) {
 		{
 			name: "malformed bytes",
 			bz:   []byte("not-a-dec"),
-		},
-		{
-			name: "over max bytes",
-			bz:   make([]byte, MaxRateBytes+1),
 		},
 	}
 

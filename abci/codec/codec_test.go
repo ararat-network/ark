@@ -8,7 +8,7 @@ import (
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
-	compression "noah/abci/strategies/codec"
+	compression "noah/abci/codec"
 	vetypes "noah/abci/ve/types"
 )
 

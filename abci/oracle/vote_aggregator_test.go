@@ -1,4 +1,4 @@
-package aggregator
+package oracle_test
 
 import (
 	"testing"
@@ -12,12 +12,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"noah/abci/oracle"
 	abcitestutil "noah/abci/testutil"
 	oracletypes "noah/x/oracle/types"
 )
 
 func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {
-	votes := []Vote{
+	votes := []oracle.Vote{
 		newTestVote(t, []byte{1}, 1, map[string]math.LegacyDec{
 			"uusd": math.LegacyNewDec(100),
 		}),
@@ -32,7 +33,7 @@ func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {
 		"ukrw": math.LegacyZeroDec(),
 	}
 
-	prices, scoreMap, err := NewVoteAggregator(log.NewNopLogger()).
+	prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
 		AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
 
 	require.NoError(t, err)
@@ -71,7 +72,7 @@ func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			voterWithFailedQuorumDenom := []byte{1}
 			voterMissingFailedQuorumDenom := []byte{2}
-			votes := []Vote{
+			votes := []oracle.Vote{
 				newTestVote(t, voterWithFailedQuorumDenom, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 					"ukrw": tc.rate,
@@ -87,7 +88,7 @@ func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
 				"ukrw": math.LegacyZeroDec(),
 			}
 
-			prices, scoreMap, err := NewVoteAggregator(log.NewNopLogger()).
+			prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
 				AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
 
 			require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestAggregateOracleVotesCountsNonPositiveTargetRatesAsSubmitted(t *testing.
 		t.Run(tc.name, func(t *testing.T) {
 			positiveVoter := []byte{1}
 			nonPositiveVoter := []byte{2}
-			votes := []Vote{
+			votes := []oracle.Vote{
 				newTestVote(t, positiveVoter, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 				}),
@@ -138,7 +139,7 @@ func TestAggregateOracleVotesCountsNonPositiveTargetRatesAsSubmitted(t *testing.
 				"uusd": math.LegacyZeroDec(),
 			}
 
-			prices, scoreMap, err := NewVoteAggregator(log.NewNopLogger()).
+			prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
 				AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
 
 			require.NoError(t, err)
@@ -171,7 +172,7 @@ func TestAggregateOracleVotesPenalizesPositiveOutOfBandTargetRates(t *testing.T)
 			inBandVoter1 := []byte{1}
 			inBandVoter2 := []byte{2}
 			outOfBandVoter := []byte{3}
-			votes := []Vote{
+			votes := []oracle.Vote{
 				newTestVote(t, inBandVoter1, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 				}),
@@ -188,7 +189,7 @@ func TestAggregateOracleVotesPenalizesPositiveOutOfBandTargetRates(t *testing.T)
 				"uusd": math.LegacyZeroDec(),
 			}
 
-			prices, scoreMap, err := NewVoteAggregator(log.NewNopLogger()).
+			prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
 				AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
 
 			require.NoError(t, err)
@@ -209,10 +210,10 @@ func TestAggregateOracleVotesPenalizesPositiveOutOfBandTargetRates(t *testing.T)
 	}
 }
 
-func newTestVote(t *testing.T, address []byte, power int64, rates map[string]math.LegacyDec) Vote {
+func newTestVote(t *testing.T, address []byte, power int64, rates map[string]math.LegacyDec) oracle.Vote {
 	t.Helper()
 
-	return Vote{
+	return oracle.Vote{
 		Validator: cometabci.Validator{
 			Address: address,
 			Power:   power,
