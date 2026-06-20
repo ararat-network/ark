@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/market/types"
 	oracletypes "noah/x/oracle/types"
 )
@@ -21,7 +21,7 @@ import (
 // AskPool = AskPool - askAmt       (Uses askAmt from the swap pool)
 func (k Keeper) ApplySwapToPool(ctx context.Context, offerCoin sdk.Coin, askCoin sdk.DecCoin) error {
 	// No delta update in case Noah to Noah swap
-	if offerCoin.Denom != core.MicroArkDenom && askCoin.Denom != core.MicroArkDenom {
+	if offerCoin.Denom != chain.MicroArkDenom && askCoin.Denom != chain.MicroArkDenom {
 		return nil
 	}
 
@@ -31,8 +31,8 @@ func (k Keeper) ApplySwapToPool(ctx context.Context, offerCoin sdk.Coin, askCoin
 	}
 
 	// In case swapping Noah to Ark, the noah swap pool(offer) must be increased and the ark swap pool(ask) must be decreased
-	if offerCoin.Denom != core.MicroArkDenom && askCoin.Denom == core.MicroArkDenom {
-		offerBaseCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
+	if offerCoin.Denom != chain.MicroArkDenom && askCoin.Denom == chain.MicroArkDenom {
+		offerBaseCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), chain.MicroSDRDenom)
 		if err != nil {
 			return err
 		}
@@ -41,8 +41,8 @@ func (k Keeper) ApplySwapToPool(ctx context.Context, offerCoin sdk.Coin, askCoin
 	}
 
 	// In case swapping Ark to Noah, the ark swap pool(offer) must be increased and the noah swap pool(ask) must be decreased
-	if offerCoin.Denom == core.MicroArkDenom && askCoin.Denom != core.MicroArkDenom {
-		askBaseCoin, err := k.ComputeOracleRate(ctx, askCoin, core.MicroSDRDenom)
+	if offerCoin.Denom == chain.MicroArkDenom && askCoin.Denom != chain.MicroArkDenom {
+		askBaseCoin, err := k.ComputeOracleRate(ctx, askCoin, chain.MicroSDRDenom)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 	}
 
 	// Swap offer coin to base denom for simplicity of swap process
-	baseOfferDecCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
+	baseOfferDecCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), chain.MicroSDRDenom)
 	if err != nil {
 		return sdk.DecCoin{}, math.LegacyDec{}, err
 	}
@@ -80,7 +80,7 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 
 	// Noah => Noah swap
 	// Apply only tobin tax without constant product spread
-	if offerCoin.Denom != core.MicroArkDenom && askDenom != core.MicroArkDenom {
+	if offerCoin.Denom != chain.MicroArkDenom && askDenom != chain.MicroArkDenom {
 		var tobinTax math.LegacyDec
 		offerTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
 		if err != nil {
@@ -120,7 +120,7 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 
 	var offerPool math.LegacyDec // base denom(usdr) unit
 	var askPool math.LegacyDec   // base denom(usdr) unit
-	if offerCoin.Denom != core.MicroArkDenom {
+	if offerCoin.Denom != chain.MicroArkDenom {
 		// Noah->Ark swap
 		offerPool = noahPool
 		askPool = arkPool

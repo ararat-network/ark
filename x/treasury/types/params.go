@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 )
 
 // Default parameter values
@@ -19,10 +19,10 @@ const (
 
 var (
 	DefaultTaxPolicy = PolicyConstraints{
-		RateMin:       math.LegacyNewDecWithPrec(5, 4),                                       // 0.05%
-		RateMax:       math.LegacyNewDecWithPrec(1, 2),                                       // 1%
-		Cap:           sdk.NewCoin(core.MicroSDRDenom, math.OneInt().MulRaw(core.MicroUnit)), // 1 SDR Tax cap
-		ChangeRateMax: math.LegacyNewDecWithPrec(25, 5),                                      // 0.025%
+		RateMin:       math.LegacyNewDecWithPrec(5, 4),                                         // 0.05%
+		RateMax:       math.LegacyNewDecWithPrec(1, 2),                                         // 1%
+		Cap:           sdk.NewCoin(chain.MicroSDRDenom, math.OneInt().MulRaw(chain.MicroUnit)), // 1 SDR Tax cap
+		ChangeRateMax: math.LegacyNewDecWithPrec(25, 5),                                        // 0.025%
 	}
 	DefaultRewardPolicy = PolicyConstraints{
 		RateMin:       math.LegacyNewDecWithPrec(5, 2),       // 5%

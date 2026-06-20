@@ -8,7 +8,7 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -99,7 +99,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	var epochStates []types.EpochState
 	curEpoch := k.GetEpoch(ctx)
 	for e := uint64(0); e < curEpoch ||
-		(e == curEpoch && core.IsPeriodLastBlock(ctx, core.BlocksPerWeek)); e++ {
+		(e == curEpoch && chain.IsPeriodLastBlock(ctx, chain.BlocksPerWeek)); e++ {
 		epochState, err := k.EpochStates.Get(ctx, e)
 		if err != nil {
 			if errors.Is(err, collections.ErrNotFound) {

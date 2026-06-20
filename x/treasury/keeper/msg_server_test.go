@@ -10,7 +10,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -33,7 +33,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 					TaxPolicy: types.PolicyConstraints{
 						RateMin:       math.LegacyNewDecWithPrec(1, 3),
 						RateMax:       math.LegacyNewDecWithPrec(2, 2),
-						Cap:           sdk.NewCoin(core.MicroSDRDenom, math.NewInt(2000000)),
+						Cap:           sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(2000000)),
 						ChangeRateMax: math.LegacyNewDecWithPrec(5, 4),
 					},
 					RewardPolicy: types.PolicyConstraints{

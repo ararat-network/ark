@@ -11,7 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/oracle/types"
 )
 
@@ -112,10 +112,10 @@ func RandomisedGenState(simState *module.SimulationState) {
 			RewardWindow:             rewardWindow,
 			RewardDistributionWindow: rewardDistributionWindow,
 			TobinTaxes: types.TobinTaxes{
-				{Denom: core.MicroKRWDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: core.MicroSDRDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: core.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: core.MicroMNTDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
+				{Denom: chain.MicroKRWDenom, TobinTax: types.DefaultTobinTax},
+				{Denom: chain.MicroSDRDenom, TobinTax: types.DefaultTobinTax},
+				{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
+				{Denom: chain.MicroMNTDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
 			},
 			SlashFraction:     slashFraction,
 			SlashWindow:       slashWindow,

@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -20,10 +20,10 @@ func (s *KeeperTestSuite) TestGetEpoch() {
 		expected    uint64
 	}{
 		{"block 0 — epoch 0", 0, 0},
-		{"last block of epoch 0", int64(core.BlocksPerWeek) - 1, 0},
-		{"first block of epoch 1", int64(core.BlocksPerWeek), 1},
-		{"mid-epoch", int64(core.BlocksPerWeek) + int64(core.BlocksPerWeek/2), 1},
-		{"epoch 3", int64(3 * core.BlocksPerWeek), 3},
+		{"last block of epoch 0", int64(chain.BlocksPerWeek) - 1, 0},
+		{"first block of epoch 1", int64(chain.BlocksPerWeek), 1},
+		{"mid-epoch", int64(chain.BlocksPerWeek) + int64(chain.BlocksPerWeek/2), 1},
+		{"epoch 3", int64(3 * chain.BlocksPerWeek), 3},
 	}
 
 	for _, tc := range tests {
@@ -36,7 +36,7 @@ func (s *KeeperTestSuite) TestGetEpoch() {
 
 func (s *KeeperTestSuite) TestUpdateIndicators() {
 	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), core.MicroSDRDenom).
+		ComputeOracleRate(gomock.Any(), gomock.Any(), chain.MicroSDRDenom).
 		DoAndReturn(func(_ context.Context, coin sdk.DecCoin, denom string) (sdk.DecCoin, error) {
 			return sdk.NewDecCoinFromDec(denom, coin.Amount), nil
 		}).
@@ -55,7 +55,7 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 		{
 			name:                      "tax proceeds and seigniorage",
 			totalBonded:               math.NewInt(1000),
-			taxProceeds:               sdk.NewCoins(sdk.NewCoin(core.MicroSDRDenom, math.NewInt(500))),
+			taxProceeds:               sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(500))),
 			initialArkSupply:          math.NewInt(1000),
 			currentArkSupply:          math.NewInt(900),
 			expectedTaxReward:         math.LegacyNewDec(500),
@@ -76,8 +76,8 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 			name:        "multi denom tax proceeds",
 			totalBonded: math.NewInt(1000),
 			taxProceeds: sdk.NewCoins(
-				sdk.NewCoin(core.MicroUSDDenom, math.NewInt(300)),
-				sdk.NewCoin(core.MicroSDRDenom, math.NewInt(200)),
+				sdk.NewCoin(chain.MicroUSDDenom, math.NewInt(300)),
+				sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(200)),
 			),
 			initialArkSupply:          math.NewInt(1000),
 			currentArkSupply:          math.NewInt(1000),
@@ -88,7 +88,7 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 		{
 			name:                      "zero bonded tokens",
 			totalBonded:               math.ZeroInt(),
-			taxProceeds:               sdk.NewCoins(sdk.NewCoin(core.MicroSDRDenom, math.NewInt(500))),
+			taxProceeds:               sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(500))),
 			initialArkSupply:          math.NewInt(1000),
 			currentArkSupply:          math.NewInt(1000),
 			expectedTaxReward:         math.LegacyNewDec(500),
@@ -108,10 +108,10 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 				TaxProceeds: tc.taxProceeds,
 			}))
 			s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-				Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, tc.initialArkSupply)),
+				Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, tc.initialArkSupply)),
 			}))
-			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
-				Return(sdk.NewCoin(core.MicroArkDenom, tc.currentArkSupply))
+			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroArkDenom).
+				Return(sdk.NewCoin(chain.MicroArkDenom, tc.currentArkSupply))
 
 			err := s.keeper.UpdateIndicators(s.ctx)
 			s.Require().NoError(err)

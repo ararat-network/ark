@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -33,7 +33,7 @@ func GenTaxPolicy(r *rand.Rand) types.PolicyConstraints {
 	return types.PolicyConstraints{
 		RateMin:       math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3),
 		RateMax:       math.LegacyNewDecWithPrec(6, 3).Add(math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3)),
-		Cap:           sdk.NewInt64Coin(core.MicroSDRDenom, 1000000),
+		Cap:           sdk.NewInt64Coin(chain.MicroSDRDenom, 1000000),
 		ChangeRateMax: math.LegacyNewDecWithPrec(25, 5).Add(math.LegacyNewDecWithPrec(int64(r.Intn(75)), 5)),
 	}
 }

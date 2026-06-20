@@ -8,14 +8,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
 // GetEpoch returns current epoch (current block height + cumulated block height of past chains)
 func (k Keeper) GetEpoch(ctx context.Context) uint64 {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	return uint64(sdkCtx.BlockHeight()) / core.BlocksPerWeek
+	return uint64(sdkCtx.BlockHeight()) / chain.BlocksPerWeek
 }
 
 // Computes important economic indicators for the stability of Noah currencies.
@@ -33,7 +33,7 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 		return fmt.Errorf("getting tax proceeds: %w", err)
 	}
 	taxProceeds := sdk.NewDecCoinsFromCoins(epochTaxProceeds.TaxProceeds...)
-	taxRewards := k.alignCoins(ctx, taxProceeds, core.MicroSDRDenom)
+	taxRewards := k.alignCoins(ctx, taxProceeds, chain.MicroSDRDenom)
 
 	// Reset tax proceeds after computing TotalStakedArk for the next epoch
 	if err := k.EpochTaxProceeds.Set(ctx, types.EpochTaxProceeds{}); err != nil {
@@ -50,8 +50,8 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 		return fmt.Errorf("getting reward weight: %w", err)
 	}
 	seigniorageRewardsAmt := rewardWeight.MulInt(seigniorage)
-	seigniorageRewards := sdk.DecCoins{sdk.NewDecCoinFromDec(core.MicroArkDenom, seigniorageRewardsAmt)}
-	seigniorageReward := k.alignCoins(ctx, seigniorageRewards, core.MicroSDRDenom)
+	seigniorageRewards := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroArkDenom, seigniorageRewardsAmt)}
+	seigniorageReward := k.alignCoins(ctx, seigniorageRewards, chain.MicroSDRDenom)
 
 	epochState := types.EpochState{
 		Epoch:             epoch,

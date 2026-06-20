@@ -18,7 +18,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/oracle/types"
 )
 
@@ -131,7 +131,7 @@ func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 
 // GetExchangeRate returns the consensus Ark exchange rate for a denom.
 func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
-	if denom == core.MicroArkDenom {
+	if denom == chain.MicroArkDenom {
 		return math.LegacyOneDec(), nil
 	}
 

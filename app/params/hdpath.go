@@ -1,4 +1,4 @@
-package types
+package params
 
 const (
 	// https://github.com/cosmos/cosmos-sdk/pull/8629

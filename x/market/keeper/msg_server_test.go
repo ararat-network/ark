@@ -12,7 +12,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/market/types"
 	oracletypes "noah/x/oracle/types"
 )
@@ -151,7 +151,7 @@ func (s *KeeperTestSuite) TestMsgSwap_ComputeSwapErrorIncludesContext() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").Return(math.LegacyOneDec(), nil)
-			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, core.MicroSDRDenom).
+			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
 				Return(math.LegacyMustNewDecFromStr("1.7"), nil).Times(2)
 			s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ufoo").
 				Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
@@ -308,7 +308,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 func (s *KeeperTestSuite) setupNoahToNoahSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
 	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
 		Return(math.LegacyOneDec(), nil)
-	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, core.MicroSDRDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
 		Return(math.LegacyMustNewDecFromStr("1.7"), nil).Times(2)
 	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ukrw").
 		Return(math.LegacyNewDec(1300), nil)

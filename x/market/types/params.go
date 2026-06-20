@@ -5,18 +5,18 @@ import (
 
 	"cosmossdk.io/math"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 )
 
 // Default parameter values
 const (
-	DefaultPoolRecoveryPeriod = core.BlocksPerDay // 14,400
+	DefaultPoolRecoveryPeriod = chain.BlocksPerDay // 14,400
 )
 
 // Default parameter values
 var (
-	DefaultBasePool           = math.LegacyNewDec(1_000_000 * core.MicroUnit) // 1,000,000sdr = 1,000,000,000,000usdr
-	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)               // 2%
+	DefaultBasePool           = math.LegacyNewDec(1_000_000 * chain.MicroUnit) // 1,000,000sdr = 1,000,000,000,000usdr
+	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)                // 2%
 )
 
 // DefaultParams creates default market module parameters

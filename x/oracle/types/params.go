@@ -5,15 +5,15 @@ import (
 
 	"cosmossdk.io/math"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 )
 
 // Default parameter values
 const (
-	DefaultRewardWindow             = core.BlocksPerWeek       // window for a week
-	DefaultSlashWindow              = core.BlocksPerWeek       // window for a week
-	DefaultRewardDistributionWindow = core.BlocksPerYear       // window for a year
-	DefaultMaxExchangeRateAge       = core.BlocksPerMinute / 2 // 30 seconds
+	DefaultRewardWindow             = chain.BlocksPerWeek       // window for a week
+	DefaultSlashWindow              = chain.BlocksPerWeek       // window for a week
+	DefaultRewardDistributionWindow = chain.BlocksPerYear       // window for a year
+	DefaultMaxExchangeRateAge       = chain.BlocksPerMinute / 2 // 30 seconds
 )
 
 // Default parameter values
@@ -22,10 +22,10 @@ var (
 	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)  // 2% (-1, 1)
 	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4) // 0.25%
 	DefaultTobinTaxes    = TobinTaxes{
-		{Denom: core.MicroKRWDenom, TobinTax: DefaultTobinTax},
-		{Denom: core.MicroSDRDenom, TobinTax: DefaultTobinTax},
-		{Denom: core.MicroUSDDenom, TobinTax: DefaultTobinTax},
-		{Denom: core.MicroMNTDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
+		{Denom: chain.MicroKRWDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroSDRDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroUSDDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroMNTDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
 	}
 	DefaultSlashFraction     = math.LegacyNewDecWithPrec(1, 4) // 0.01%
 	DefaultMinValidPerWindow = math.LegacyNewDecWithPrec(5, 2) // 5%

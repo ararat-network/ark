@@ -3,19 +3,20 @@ package app
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	"noah/app/params"
+	"noah/pkg/chain"
 )
 
 func init() {
-	sdk.DefaultBondDenom = core.MicroArkDenom
+	sdk.DefaultBondDenom = chain.MicroArkDenom
 
 	// Set and seal config
 	config := sdk.GetConfig()
-	config.SetPurpose(core.Purpose)
-	config.SetCoinType(core.CoinType)
-	config.SetBech32PrefixForAccount(core.Bech32PrefixAccAddr, core.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(core.Bech32PrefixValAddr, core.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(core.Bech32PrefixConsAddr, core.Bech32PrefixConsPub)
-	config.SetAddressVerifier(core.AddressVerifier)
+	config.SetPurpose(params.Purpose)
+	config.SetCoinType(params.CoinType)
+	config.SetBech32PrefixForAccount(params.Bech32PrefixAccAddr, params.Bech32PrefixAccPub)
+	config.SetBech32PrefixForValidator(params.Bech32PrefixValAddr, params.Bech32PrefixValPub)
+	config.SetBech32PrefixForConsensusNode(params.Bech32PrefixConsAddr, params.Bech32PrefixConsPub)
+	config.SetAddressVerifier(params.AddressVerifier)
 	config.Seal()
 }

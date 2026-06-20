@@ -11,7 +11,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/oracle/types"
 )
 
@@ -31,8 +31,8 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				return &types.GenesisState{
 					Params: types.DefaultParams(),
 					ExchangeRates: []types.ExchangeRate{
-						{Denom: core.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-						{Denom: core.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+						{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
+						{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 					},
 					ScoreWeights: []types.ScoreWeight{
 						{ValidatorAddress: valAddr1.String(), ScoreWeight: 5},
@@ -43,8 +43,8 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 						{ValidatorAddress: valAddr2.String(), MissCount: 0},
 					},
 					TobinTaxes: []types.TobinTax{
-						{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-						{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+						{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+						{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 					},
 				}
 			},
@@ -52,9 +52,9 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
 					authtypes.NewEmptyModuleAccount(types.ModuleName),
 				)
-				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroKRWDenom).Return(banktypes.Metadata{}, false)
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.MicroKRWDenom).Return(banktypes.Metadata{}, false)
 				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
-				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, core.MicroUSDDenom).Return(banktypes.Metadata{}, false)
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.MicroUSDDenom).Return(banktypes.Metadata{}, false)
 				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
 			},
 		},
@@ -212,8 +212,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	expected := &types.GenesisState{
 		Params: types.DefaultParams(),
 		ExchangeRates: []types.ExchangeRate{
-			{Denom: core.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-			{Denom: core.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+			{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
+			{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 		},
 		ScoreWeights: []types.ScoreWeight{
 			{ValidatorAddress: valAddr1.String(), ScoreWeight: 5},
@@ -224,8 +224,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			{ValidatorAddress: valAddr2.String(), MissCount: 0},
 		},
 		TobinTaxes: []types.TobinTax{
-			{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-			{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+			{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+			{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 		},
 	}
 	expected.Params.RewardWindow = 10

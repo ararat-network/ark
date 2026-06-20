@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/keeper"
 	"noah/x/treasury/types"
 )
@@ -138,10 +138,10 @@ func (s *KeeperTestSuite) TestQueryRewardWeight() {
 
 func (s *KeeperTestSuite) TestQuerySeigniorageProceeds() {
 	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000))),
+		Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000))),
 	}))
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, core.MicroArkDenom).
-		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(800)))
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroArkDenom).
+		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(800)))
 
 	res, err := s.queryClient.SeigniorageProceeds(s.ctx, &types.QuerySeigniorageProceedsRequest{})
 	s.Require().NoError(err)
@@ -179,15 +179,15 @@ func (s *KeeperTestSuite) TestQueryIndicators() {
 		{
 			name:          "epoch 0 with tax proceeds",
 			totalStaked:   math.NewInt(1000),
-			taxProceeds:   sdk.NewCoins(sdk.NewCoin(core.MicroSDRDenom, math.NewInt(500))),
+			taxProceeds:   sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(500))),
 			expectedYear:  math.LegacyNewDecWithPrec(5, 1),
 			expectedMonth: math.LegacyNewDecWithPrec(5, 1),
 		},
 		{
 			name:        "epoch 1 blends previous epoch with current epoch",
-			blockHeight: int64(core.BlocksPerWeek),
+			blockHeight: int64(chain.BlocksPerWeek),
 			totalStaked: math.NewInt(1000),
-			taxProceeds: sdk.NewCoins(sdk.NewCoin(core.MicroSDRDenom, math.NewInt(200))),
+			taxProceeds: sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(200))),
 			epochStates: []types.EpochState{
 				{
 					Epoch:             0,

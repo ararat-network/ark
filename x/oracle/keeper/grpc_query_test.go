@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	oraclekeeper "noah/x/oracle/keeper"
 	"noah/x/oracle/types"
 )
@@ -36,20 +36,20 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 		},
 		{
 			name:   "ark denom returns one",
-			req:    &types.QueryExchangeRateRequest{Denom: core.MicroArkDenom},
+			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroArkDenom},
 			expect: math.LegacyOneDec(),
 		},
 		{
 			name: "stored denom returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
-					Denom:       core.MicroUSDDenom,
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+					Denom:       chain.MicroUSDDenom,
 					Rate:        math.LegacyNewDec(7),
 					BlockHeight: 10,
 				}))
 				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 			},
-			req:    &types.QueryExchangeRateRequest{Denom: core.MicroUSDDenom},
+			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroUSDDenom},
 			expect: math.LegacyNewDec(7),
 		},
 		{
@@ -59,14 +59,14 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 				s.Require().NoError(err)
 				params.MaxExchangeRateAge = 5
 				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
-					Denom:       core.MicroUSDDenom,
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+					Denom:       chain.MicroUSDDenom,
 					Rate:        math.LegacyNewDec(7),
 					BlockHeight: 1,
 				}))
 				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 			},
-			req:       &types.QueryExchangeRateRequest{Denom: core.MicroUSDDenom},
+			req:       &types.QueryExchangeRateRequest{Denom: chain.MicroUSDDenom},
 			code:      codes.FailedPrecondition,
 			expectErr: true,
 		},
@@ -98,14 +98,14 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 }
 
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
-	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(core.MicroUSDDenom, math.LegacyOneDec())}
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
-		Denom:       core.MicroUSDDenom,
+	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroUSDDenom, math.LegacyOneDec())}
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:       chain.MicroUSDDenom,
 		Rate:        math.LegacyOneDec(),
 		BlockHeight: 10,
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, types.ExchangeRate{
-		Denom:       core.MicroKRWDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, types.ExchangeRate{
+		Denom:       chain.MicroKRWDenom,
 		Rate:        math.LegacyNewDec(1000),
 		BlockHeight: 1,
 	}))
@@ -138,9 +138,9 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 		{
 			name: "configured tobin tax returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, core.MicroUSDDenom, math.LegacyNewDecWithPrec(25, 4)))
+				s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, chain.MicroUSDDenom, math.LegacyNewDecWithPrec(25, 4)))
 			},
-			req:    &types.QueryTobinTaxRequest{Denom: core.MicroUSDDenom},
+			req:    &types.QueryTobinTaxRequest{Denom: chain.MicroUSDDenom},
 			expect: math.LegacyNewDecWithPrec(25, 4),
 		},
 		{
@@ -172,8 +172,8 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 
 func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 	expected := types.TobinTaxes{
-		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
+		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
 	for _, tt := range expected {
 		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
@@ -185,18 +185,18 @@ func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 }
 
 func (s *KeeperTestSuite) TestQueryActives() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, newStoredExchangeRate(core.MicroKRWDenom, math.LegacyOneDec())))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyOneDec())))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, newStoredExchangeRate(chain.MicroKRWDenom, math.LegacyOneDec())))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
 
 	resp, err := s.queryClient.Actives(s.ctx, &types.QueryActivesRequest{})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch([]string{core.MicroKRWDenom, core.MicroUSDDenom}, resp.Actives)
+	s.Require().ElementsMatch([]string{chain.MicroKRWDenom, chain.MicroUSDDenom}, resp.Actives)
 }
 
 func (s *KeeperTestSuite) TestQueryVoteTargets() {
 	tobinTaxes := types.TobinTaxes{
-		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
+		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
 	for _, tt := range tobinTaxes {
 		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
@@ -204,7 +204,7 @@ func (s *KeeperTestSuite) TestQueryVoteTargets() {
 
 	resp, err := s.queryClient.VoteTargets(s.ctx, &types.QueryVoteTargetsRequest{})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch([]string{core.MicroKRWDenom, core.MicroUSDDenom}, resp.VoteTargets)
+	s.Require().ElementsMatch([]string{chain.MicroKRWDenom, chain.MicroUSDDenom}, resp.VoteTargets)
 }
 
 func (s *KeeperTestSuite) TestQueryScoreWeight() {

@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -17,7 +17,7 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 	treasuryAddr := sdk.AccAddress{1}
 
 	coin := func(amount int64) sdk.Coins {
-		return sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(amount)))
+		return sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(amount)))
 	}
 
 	tests := []struct {
@@ -83,11 +83,11 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 			}
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-				Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, tc.initialSupply)),
+				Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, tc.initialSupply)),
 			}))
 
-			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
-				Return(sdk.NewCoin(core.MicroArkDenom, tc.currentSupply))
+			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroArkDenom).
+				Return(sdk.NewCoin(chain.MicroArkDenom, tc.currentSupply))
 
 			if tc.expectedMint != nil {
 				s.bankKeeper.EXPECT().
@@ -134,10 +134,10 @@ func (s *KeeperTestSuite) TestSettleSeigniorage() {
 				communityPoolAmt := seigniorageAmt.Sub(oracleRewardAmt).Sub(burnAmt)
 
 				s.Require().Equal(strconv.FormatUint(s.keeper.GetEpoch(s.ctx), 10), attrMap[types.AttributeKeyEpoch])
-				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, seigniorageAmt).String(), attrMap[types.AttributeKeySeigniorage])
-				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, burnAmt).String(), attrMap[types.AttributeKeyBurnAmount])
-				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, oracleRewardAmt).String(), attrMap[types.AttributeKeyOracleReward])
-				s.Require().Equal(sdk.NewCoin(core.MicroArkDenom, communityPoolAmt).String(), attrMap[types.AttributeKeyCommunityPoolReward])
+				s.Require().Equal(sdk.NewCoin(chain.MicroArkDenom, seigniorageAmt).String(), attrMap[types.AttributeKeySeigniorage])
+				s.Require().Equal(sdk.NewCoin(chain.MicroArkDenom, burnAmt).String(), attrMap[types.AttributeKeyBurnAmount])
+				s.Require().Equal(sdk.NewCoin(chain.MicroArkDenom, oracleRewardAmt).String(), attrMap[types.AttributeKeyOracleReward])
+				s.Require().Equal(sdk.NewCoin(chain.MicroArkDenom, communityPoolAmt).String(), attrMap[types.AttributeKeyCommunityPoolReward])
 				break
 			}
 

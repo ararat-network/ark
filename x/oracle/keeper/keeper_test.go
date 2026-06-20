@@ -23,7 +23,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/oracle/keeper"
 	"noah/x/oracle/testutil"
 	"noah/x/oracle/types"
@@ -109,15 +109,15 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 	}{
 		{
 			name:     "ark denom returns one",
-			denom:    core.MicroArkDenom,
+			denom:    chain.MicroArkDenom,
 			expected: math.LegacyOneDec(),
 		},
 		{
 			name: "known denom returns stored rate",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyNewDecWithPrec(123, 2))))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyNewDecWithPrec(123, 2))))
 			},
-			denom:    core.MicroUSDDenom,
+			denom:    chain.MicroUSDDenom,
 			expected: math.LegacyNewDecWithPrec(123, 2),
 		},
 		{
@@ -149,12 +149,12 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 	rate := math.LegacyNewDecWithPrec(123, 2)
 
-	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate(core.MicroUSDDenom, rate))
+	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate(chain.MicroUSDDenom, rate))
 	s.Require().NoError(err)
 
-	stored, err := s.keeper.ExchangeRate.Get(s.ctx, core.MicroUSDDenom)
+	stored, err := s.keeper.ExchangeRate.Get(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(core.MicroUSDDenom, stored.Denom)
+	s.Require().Equal(chain.MicroUSDDenom, stored.Denom)
 	s.Require().True(rate.Equal(stored.Rate))
 
 	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
@@ -163,13 +163,13 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 }
 
 func (s *KeeperTestSuite) TestGetActives() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, types.ExchangeRate{
-		Denom:       core.MicroUSDDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:       chain.MicroUSDDenom,
 		Rate:        math.LegacyOneDec(),
 		BlockHeight: 10,
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, types.ExchangeRate{
-		Denom:       core.MicroKRWDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, types.ExchangeRate{
+		Denom:       chain.MicroKRWDenom,
 		Rate:        math.LegacyOneDec(),
 		BlockHeight: 1,
 	}))
@@ -182,13 +182,13 @@ func (s *KeeperTestSuite) TestGetActives() {
 
 	actives, err := s.keeper.GetActives(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal([]string{core.MicroUSDDenom}, actives)
+	s.Require().Equal([]string{chain.MicroUSDDenom}, actives)
 }
 
 func (s *KeeperTestSuite) TestGetTobinTaxes() {
 	expected := types.TobinTaxes{
-		{Denom: core.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
 	for _, tt := range expected {
 		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
@@ -201,9 +201,9 @@ func (s *KeeperTestSuite) TestGetTobinTaxes() {
 
 func (s *KeeperTestSuite) TestGetTobinTax() {
 	expected := math.LegacyNewDecWithPrec(25, 4)
-	s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, core.MicroUSDDenom, expected))
+	s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, chain.MicroUSDDenom, expected))
 
-	tobinTax, err := s.keeper.GetTobinTax(s.ctx, core.MicroUSDDenom)
+	tobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
 	s.Require().True(expected.Equal(tobinTax))
 
@@ -214,8 +214,8 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 
 func (s *KeeperTestSuite) TestGetVoteTargets() {
 	expected := map[string]math.LegacyDec{
-		core.MicroKRWDenom: math.LegacyNewDecWithPrec(50, 4),
-		core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+		chain.MicroKRWDenom: math.LegacyNewDecWithPrec(50, 4),
+		chain.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
 	}
 	for denom, tobinTax := range expected {
 		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
@@ -231,8 +231,8 @@ func (s *KeeperTestSuite) TestGetVoteTargets() {
 
 func (s *KeeperTestSuite) TestSyncTobinTax() {
 	oldTobinTaxes := map[string]math.LegacyDec{
-		core.MicroKRWDenom: math.LegacyNewDecWithPrec(25, 4),
-		core.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
+		chain.MicroKRWDenom: math.LegacyNewDecWithPrec(25, 4),
+		chain.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
 	}
 	for denom, tobinTax := range oldTobinTaxes {
 		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
@@ -242,18 +242,18 @@ func (s *KeeperTestSuite) TestSyncTobinTax() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	params.TobinTaxes = types.TobinTaxes{
-		{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
-		{Denom: core.MicroSDRDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
+		{Denom: chain.MicroSDRDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	s.bankKeeper.EXPECT().
-		GetDenomMetaData(s.ctx, core.MicroSDRDenom).
+		GetDenomMetaData(s.ctx, chain.MicroSDRDenom).
 		Return(banktypes.Metadata{}, false)
 	s.bankKeeper.EXPECT().
 		SetDenomMetaData(s.ctx, gomock.Any()).
 		Do(func(_ context.Context, metadata banktypes.Metadata) {
-			s.Require().Equal(core.MicroSDRDenom, metadata.Base)
+			s.Require().Equal(chain.MicroSDRDenom, metadata.Base)
 			s.Require().Equal("sdr", metadata.Display)
 		})
 
@@ -261,25 +261,25 @@ func (s *KeeperTestSuite) TestSyncTobinTax() {
 
 	// SyncTobinTax copies the caller's old target map before diffing.
 	s.Require().Len(oldTobinTaxes, 2)
-	s.Require().True(oldTobinTaxes[core.MicroKRWDenom].Equal(math.LegacyNewDecWithPrec(25, 4)))
+	s.Require().True(oldTobinTaxes[chain.MicroKRWDenom].Equal(math.LegacyNewDecWithPrec(25, 4)))
 
-	updatedTobinTax, err := s.keeper.GetTobinTax(s.ctx, core.MicroUSDDenom)
+	updatedTobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
 	s.Require().True(math.LegacyNewDecWithPrec(5, 2).Equal(updatedTobinTax))
 
-	addedTobinTax, err := s.keeper.GetTobinTax(s.ctx, core.MicroSDRDenom)
+	addedTobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroSDRDenom)
 	s.Require().NoError(err)
 	s.Require().True(math.LegacyNewDecWithPrec(25, 4).Equal(addedTobinTax))
 
-	_, err = s.keeper.GetTobinTax(s.ctx, core.MicroKRWDenom)
+	_, err = s.keeper.GetTobinTax(s.ctx, chain.MicroKRWDenom)
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
 
-	hasUSDExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroUSDDenom)
+	hasUSDExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
 	s.Require().True(hasUSDExchangeRate)
 
-	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroKRWDenom)
+	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
 	s.Require().NoError(err)
 	s.Require().False(hasKRWExchangeRate)
 }

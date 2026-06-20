@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	oracletypes "noah/x/oracle/types"
 	"noah/x/treasury/types"
 )
@@ -25,17 +25,17 @@ func (s *KeeperTestSuite) TestEndBlocker_NotEpochLastBlock() {
 func (s *KeeperTestSuite) TestEndBlocker_DuringProbation() {
 	// Last block of epoch 0: height = BlocksPerWeek - 1
 	// Default WindowProbation=12, so this is well within probation
-	s.setBlockHeight(int64(core.BlocksPerWeek) - 1)
+	s.setBlockHeight(int64(chain.BlocksPerWeek) - 1)
 
 	// UpdateIndicators mocks
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
 	// No seigniorage (supply unchanged)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), core.MicroArkDenom).
-		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroArkDenom).
+		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
 	// alignCoins for seigniorage reward (0 uark → usdr)
 	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), core.MicroSDRDenom).
-		Return(sdk.NewDecCoinFromDec(core.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
+		ComputeOracleRate(gomock.Any(), gomock.Any(), chain.MicroSDRDenom).
+		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
 
 	// Deferred RecordEpochInitialIssuance mocks
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{}, nil)
@@ -76,7 +76,7 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 	// Last block of epoch 1: height = 2*BlocksPerWeek - 1
 	// GetEpoch = (2*BlocksPerWeek - 1) / BlocksPerWeek = 1
 	// Probation check: 2*BlocksPerWeek - 1 >= 1*BlocksPerWeek → past probation
-	s.setBlockHeight(int64(2*core.BlocksPerWeek) - 1)
+	s.setBlockHeight(int64(2*chain.BlocksPerWeek) - 1)
 
 	// --- Mocks for the full EndBlocker cycle ---
 	expectedTaxCap := math.NewInt(2_000_000)
@@ -89,8 +89,8 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
-			if offerCoin.Denom == params.TaxPolicy.Cap.Denom && askDenom == core.MicroUSDDenom {
-				return sdk.NewDecCoin(core.MicroUSDDenom, expectedTaxCap), nil
+			if offerCoin.Denom == params.TaxPolicy.Cap.Denom && askDenom == chain.MicroUSDDenom {
+				return sdk.NewDecCoin(chain.MicroUSDDenom, expectedTaxCap), nil
 			}
 			return sdk.NewDecCoinFromDec(askDenom, math.LegacyZeroDec()), nil
 		}).AnyTimes()
@@ -100,8 +100,8 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 	// UpdateTaxCap + RecordEpochInitialIssuance both call Whitelist
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
 		Return(oracletypes.TobinTaxes{
-			{Denom: core.MicroSDRDenom},
-			{Denom: core.MicroUSDDenom},
+			{Denom: chain.MicroSDRDenom},
+			{Denom: chain.MicroUSDDenom},
 		}, nil).AnyTimes()
 
 	err := s.keeper.EndBlocker(s.ctx)
@@ -120,10 +120,10 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 		"expected reward weight %s, got %s", expectedRewardWeight, newRewardWeight)
 
 	// Verify non-SDR tax caps were converted and stored.
-	taxCap, err := s.keeper.TaxCaps.Get(s.ctx, core.MicroUSDDenom)
+	taxCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(expectedTaxCap, taxCap)
-	expectedTaxCaps := sdk.NewCoins(sdk.NewCoin(core.MicroUSDDenom, expectedTaxCap))
+	expectedTaxCaps := sdk.NewCoins(sdk.NewCoin(chain.MicroUSDDenom, expectedTaxCap))
 
 	// Verify policy update event emitted
 	var found bool
@@ -164,15 +164,15 @@ func (s *KeeperTestSuite) TestEndBlocker_SparseEpochData() {
 
 	oldTaxRate, _ := s.keeper.TaxRate.Get(s.ctx)
 
-	s.setBlockHeight(int64(2*core.BlocksPerWeek) - 1)
+	s.setBlockHeight(int64(2*chain.BlocksPerWeek) - 1)
 
 	// UpdateIndicators mocks (these succeed — epoch 1 gets stored)
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
-		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
+		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(sdk.NewDecCoinFromDec(core.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
+		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
 
 	// SettleSeigniorage: no seigniorage → early return
 
@@ -202,10 +202,10 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	// Mocks that apply across all epochs
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil).AnyTimes()
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
-		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
+		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(sdk.NewDecCoinFromDec(core.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
+		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
 		Return(oracletypes.TobinTaxes{}, nil).AnyTimes()
 	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
@@ -217,7 +217,7 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 
 	// Run 3 epochs
 	for epoch := 0; epoch < 3; epoch++ {
-		s.setBlockHeight(int64((epoch+1)*int(core.BlocksPerWeek)) - 1)
+		s.setBlockHeight(int64((epoch+1)*int(chain.BlocksPerWeek)) - 1)
 		err := s.keeper.EndBlocker(s.ctx)
 		s.Require().NoError(err, "epoch %d", epoch)
 	}

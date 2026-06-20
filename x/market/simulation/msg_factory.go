@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/market/keeper"
 	"noah/x/market/types"
 )
@@ -109,7 +109,7 @@ func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.Simula
 
 	idx := r.Intn(len(activeDenoms) * 2)
 	if idx < len(activeDenoms) {
-		return core.MicroArkDenom, activeDenoms[idx]
+		return chain.MicroArkDenom, activeDenoms[idx]
 	}
-	return activeDenoms[idx-len(activeDenoms)], core.MicroArkDenom
+	return activeDenoms[idx-len(activeDenoms)], chain.MicroArkDenom
 }

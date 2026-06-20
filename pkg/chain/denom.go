@@ -1,4 +1,4 @@
-package types
+package chain
 
 const (
 	MicroArkDenom = "uark"

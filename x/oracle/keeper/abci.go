@@ -6,21 +6,21 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	chain "noah/pkg/chain"
 	noahmetrics "noah/pkg/metrics"
-	core "noah/pkg/types"
 	"noah/x/oracle/types"
 )
 
 // EndBlocker settles periodic oracle rewards and slashing.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer noahmetrics.RecordABCIMethodLatency(ctx, types.ModuleName, noahmetrics.EndBlock)()
+	defer noahmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, noahmetrics.EndBlock)()
 
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
 
-	if core.IsPeriodLastBlock(ctx, params.RewardWindow) {
+	if chain.IsPeriodLastBlock(ctx, params.RewardWindow) {
 		if err := k.SettleRewards(ctx, params.RewardWindow, params.RewardDistributionWindow); err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 		}
 	}
 
-	if core.IsPeriodLastBlock(ctx, params.SlashWindow) {
+	if chain.IsPeriodLastBlock(ctx, params.SlashWindow) {
 		if err := k.SettleSlash(ctx); err != nil {
 			return err
 		}

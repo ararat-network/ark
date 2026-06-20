@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -36,7 +36,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 		customRewardWeight,
 		customTaxCaps,
 		sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-		sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(500000))),
+		sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(500000))),
 		customEpochStates,
 	)
 
@@ -70,7 +70,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 	// Verify epoch initial issuance
 	issuance, err := s.keeper.EpochInitialIssuance.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(500000), issuance.Issuance.AmountOf(core.MicroArkDenom))
+	s.Require().Equal(math.NewInt(500000), issuance.Issuance.AmountOf(chain.MicroArkDenom))
 
 	// Verify epoch states
 	epochState, err := s.keeper.EpochStates.Get(s.ctx, 0)
@@ -87,8 +87,8 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 
 	// When EpochInitialIssuance is empty, RecordEpochInitialIssuance is called
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(nil, nil)
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, core.MicroArkDenom).
-		Return(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000)))
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroArkDenom).
+		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000)))
 
 	genesis := types.DefaultGenesisState()
 	err := s.keeper.InitGenesis(s.ctx, genesis)
@@ -122,14 +122,14 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		customRewardWeight,
 		customTaxCaps,
 		sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-		sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(500000))),
+		sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(500000))),
 		customEpochStates,
 	)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
 	// Export at the last block of epoch 0 so the current epoch state is included.
-	s.setBlockHeight(int64(core.BlocksPerWeek) - 1)
+	s.setBlockHeight(int64(chain.BlocksPerWeek) - 1)
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
 	s.Require().NotNil(exported)
@@ -152,7 +152,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 	// Verify epoch initial issuance
 	s.Require().NoError(err)
-	s.Require().Equal(genesis.EpochInitialIssuance.AmountOf(core.MicroArkDenom), exported.EpochInitialIssuance.AmountOf(core.MicroArkDenom))
+	s.Require().Equal(genesis.EpochInitialIssuance.AmountOf(chain.MicroArkDenom), exported.EpochInitialIssuance.AmountOf(chain.MicroArkDenom))
 
 	// Verify epoch states
 	s.Require().NoError(err)

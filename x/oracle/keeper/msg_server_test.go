@@ -7,7 +7,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/oracle/types"
 )
 
@@ -49,13 +49,13 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 	})
 
 	s.Run("stores tobin tax params without syncing active targets", func() {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, core.MicroKRWDenom, math.LegacyNewDecWithPrec(25, 4)))
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroUSDDenom, newStoredExchangeRate(core.MicroUSDDenom, math.LegacyOneDec())))
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, core.MicroKRWDenom, newStoredExchangeRate(core.MicroKRWDenom, math.LegacyOneDec())))
+		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, chain.MicroKRWDenom, math.LegacyNewDecWithPrec(25, 4)))
+		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
+		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, newStoredExchangeRate(chain.MicroKRWDenom, math.LegacyOneDec())))
 
 		params := types.DefaultParams()
 		params.TobinTaxes = types.TobinTaxes{
-			{Denom: core.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+			{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		}
 
 		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -64,19 +64,19 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		})
 		s.Require().NoError(err)
 
-		hasUSD, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroUSDDenom)
+		hasUSD, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
 		s.Require().NoError(err)
 		s.Require().True(hasUSD)
 
-		hasKRW, err := s.keeper.ExchangeRate.Has(s.ctx, core.MicroKRWDenom)
+		hasKRW, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
 		s.Require().NoError(err)
 		s.Require().True(hasKRW)
 
-		hasUSDTarget, err := s.keeper.TobinTax.Has(s.ctx, core.MicroUSDDenom)
+		hasUSDTarget, err := s.keeper.TobinTax.Has(s.ctx, chain.MicroUSDDenom)
 		s.Require().NoError(err)
 		s.Require().False(hasUSDTarget)
 
-		hasKRWTarget, err := s.keeper.TobinTax.Has(s.ctx, core.MicroKRWDenom)
+		hasKRWTarget, err := s.keeper.TobinTax.Has(s.ctx, chain.MicroKRWDenom)
 		s.Require().NoError(err)
 		s.Require().True(hasKRWTarget)
 	})

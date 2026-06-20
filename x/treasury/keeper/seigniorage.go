@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -34,7 +34,7 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 
 	// Mint seigniorage
 	burnAmt := params.BurnWeight.MulInt(seigniorageArkAmt).TruncateInt()
-	seigniorageCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, seigniorageArkAmt.Sub(burnAmt)))
+	seigniorageCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, seigniorageArkAmt.Sub(burnAmt)))
 	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, seigniorageCoins); err != nil {
 		return fmt.Errorf("minting seigniorage: %w", err)
 	}
@@ -42,7 +42,7 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 	// Send reward to oracle module
 	oracleRewardAmt := rewardWeight.MulInt(seigniorageArkAmt).TruncateInt()
 	if oracleRewardAmt.IsPositive() {
-		oracleRewardCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, oracleRewardAmt))
+		oracleRewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, oracleRewardAmt))
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			types.ModuleName,
@@ -56,7 +56,7 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 	// Send remaining amount to distribution module
 	remainAmt := seigniorageArkAmt.Sub(oracleRewardAmt).Sub(burnAmt)
 	if remainAmt.IsPositive() {
-		remainCoins := sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, remainAmt))
+		remainCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, remainAmt))
 		treasuryAddr := k.accountKeeper.GetModuleAddress(types.ModuleName)
 		if err := k.ppoolKeeper.FundCommunityPool(ctx, remainCoins, treasuryAddr); err != nil {
 			return fmt.Errorf("funding community pool: %w", err)
@@ -67,10 +67,10 @@ func (k Keeper) SettleSeigniorage(ctx context.Context) error {
 		sdk.NewEvent(
 			types.EventTypeSeigniorageSettle,
 			sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatUint(k.GetEpoch(ctx), 10)),
-			sdk.NewAttribute(types.AttributeKeySeigniorage, sdk.NewCoin(core.MicroArkDenom, seigniorageArkAmt).String()),
-			sdk.NewAttribute(types.AttributeKeyBurnAmount, sdk.NewCoin(core.MicroArkDenom, burnAmt).String()),
-			sdk.NewAttribute(types.AttributeKeyOracleReward, sdk.NewCoin(core.MicroArkDenom, oracleRewardAmt).String()),
-			sdk.NewAttribute(types.AttributeKeyCommunityPoolReward, sdk.NewCoin(core.MicroArkDenom, remainAmt).String()),
+			sdk.NewAttribute(types.AttributeKeySeigniorage, sdk.NewCoin(chain.MicroArkDenom, seigniorageArkAmt).String()),
+			sdk.NewAttribute(types.AttributeKeyBurnAmount, sdk.NewCoin(chain.MicroArkDenom, burnAmt).String()),
+			sdk.NewAttribute(types.AttributeKeyOracleReward, sdk.NewCoin(chain.MicroArkDenom, oracleRewardAmt).String()),
+			sdk.NewAttribute(types.AttributeKeyCommunityPoolReward, sdk.NewCoin(chain.MicroArkDenom, remainAmt).String()),
 		),
 	)
 

@@ -20,7 +20,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	oracletypes "noah/x/oracle/types"
 	"noah/x/treasury/keeper"
 	"noah/x/treasury/testutil"
@@ -88,7 +88,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, types.DefaultRewardWeight))
 	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{}))
 	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-		Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1000000000000))),
+		Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))),
 	}))
 
 	// Wire gRPC query client
@@ -222,11 +222,11 @@ func (s *KeeperTestSuite) TestComputeEpochSeigniorage() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-				Issuance: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, tc.initialSupply)),
+				Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, tc.initialSupply)),
 			}))
 
-			s.bankKeeper.EXPECT().GetSupply(s.ctx, core.MicroArkDenom).
-				Return(sdk.NewCoin(core.MicroArkDenom, tc.currentSupply))
+			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroArkDenom).
+				Return(sdk.NewCoin(chain.MicroArkDenom, tc.currentSupply))
 
 			seigniorage, err := s.keeper.ComputeEpochSeigniorage(s.ctx)
 			s.Require().NoError(err)
@@ -246,9 +246,9 @@ func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 			name:      "no whitelist denoms — only ark",
 			whitelist: nil,
 			supplies: map[string]math.Int{
-				core.MicroArkDenom: math.NewInt(1_000_000),
+				chain.MicroArkDenom: math.NewInt(1_000_000),
 			},
-			expected: sdk.NewCoins(sdk.NewCoin(core.MicroArkDenom, math.NewInt(1_000_000))),
+			expected: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1_000_000))),
 		},
 		{
 			name: "with whitelist denoms",
@@ -257,12 +257,12 @@ func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 				{Denom: "ukrw"},
 			},
 			supplies: map[string]math.Int{
-				core.MicroArkDenom: math.NewInt(1_000_000),
-				"uusd":             math.NewInt(500_000),
-				"ukrw":             math.NewInt(2_000_000),
+				chain.MicroArkDenom: math.NewInt(1_000_000),
+				"uusd":              math.NewInt(500_000),
+				"ukrw":              math.NewInt(2_000_000),
 			},
 			expected: sdk.NewCoins(
-				sdk.NewCoin(core.MicroArkDenom, math.NewInt(1_000_000)),
+				sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1_000_000)),
 				sdk.NewCoin("uusd", math.NewInt(500_000)),
 				sdk.NewCoin("ukrw", math.NewInt(2_000_000)),
 			),
@@ -273,11 +273,11 @@ func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
 				{Denom: "uusd"},
 			},
 			supplies: map[string]math.Int{
-				core.MicroArkDenom: math.NewInt(5_000_000),
-				"uusd":             math.NewInt(100),
+				chain.MicroArkDenom: math.NewInt(5_000_000),
+				"uusd":              math.NewInt(100),
 			},
 			expected: sdk.NewCoins(
-				sdk.NewCoin(core.MicroArkDenom, math.NewInt(5_000_000)),
+				sdk.NewCoin(chain.MicroArkDenom, math.NewInt(5_000_000)),
 				sdk.NewCoin("uusd", math.NewInt(100)),
 			),
 		},

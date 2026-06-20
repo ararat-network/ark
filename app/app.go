@@ -42,6 +42,7 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
+	"noah/app/params"
 	marketkeeper "noah/x/market/keeper"
 	oraclekeeper "noah/x/oracle/keeper"
 	treasurykeeper "noah/x/treasury/keeper"
@@ -55,7 +56,7 @@ const (
 	// AccountAddressPrefix is the prefix for accounts addresses.
 	AccountAddressPrefix = "noah"
 	// ChainCoinType is the coin type of the chain.
-	ChainCoinType = 118
+	ChainCoinType = params.CoinType
 )
 
 // DefaultNodeHome default home directories for the application daemon

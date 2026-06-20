@@ -12,7 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/treasury/types"
 )
 
@@ -126,7 +126,7 @@ func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsR
 		return nil, status.Errorf(codes.Internal, "getting treasury tax proceeds: %v", err)
 	}
 	taxProceeds := sdk.NewDecCoinsFromCoins(epochTaxProceeds.TaxProceeds...)
-	taxRewards := q.k.alignCoins(ctx, taxProceeds, core.MicroSDRDenom)
+	taxRewards := q.k.alignCoins(ctx, taxProceeds, chain.MicroSDRDenom)
 
 	epoch := q.k.GetEpoch(ctx)
 	var res types.QueryIndicatorsResponse
@@ -141,7 +141,7 @@ func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsR
 			return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
 		}
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		previousEpochCtx := sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() - int64(core.BlocksPerWeek))
+		previousEpochCtx := sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() - int64(chain.BlocksPerWeek))
 		traYear, err := q.k.rollingAverageIndicator(previousEpochCtx, params.WindowLong-1)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "computing yearly treasury indicator average: %v", err)

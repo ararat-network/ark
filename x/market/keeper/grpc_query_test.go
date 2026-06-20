@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	core "noah/pkg/types"
+	chain "noah/pkg/chain"
 	"noah/x/market/types"
 	oracletypes "noah/x/oracle/types"
 )
@@ -62,9 +62,9 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 			setup: func() {
 				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
 					Return(math.LegacyNewDec(1), nil)
-				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, core.MicroSDRDenom).
+				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
 					Return(math.LegacyNewDec(1), nil)
-				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, core.MicroSDRDenom).
+				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
 					Return(math.LegacyNewDec(1), nil)
 				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "unknown").
 					Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
