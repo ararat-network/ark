@@ -6,7 +6,9 @@ import "cosmos/app/v1alpha1/module.proto";
 
 // Module is the config object for the treasury module.
 message Module {
-  option (cosmos.app.v1alpha1.module) = {go_import: "noah/x/treasury"};
+  option (cosmos.app.v1alpha1.module) = {
+    go_import : "noah/x/treasury"
+  };
 
   // authority defines the custom module authority. If not set, defaults to the
   // governance module.

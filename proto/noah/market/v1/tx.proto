@@ -32,18 +32,16 @@ message MsgSwap {
   option (cosmos.msg.v1.signer) = "trader";
   option (amino.name) = "noah/x/market/MsgSwap";
 
-  string trader = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  cosmos.base.v1beta1.Coin offer_coin = 2 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  string trader = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  cosmos.base.v1beta1.Coin offer_coin = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   string ask_denom = 3;
 }
 
 // MsgSwapResponse defines the Msg/Swap response type.
 message MsgSwapResponse {
-  cosmos.base.v1beta1.Coin swap_coin = 1 [(gogoproto.nullable) = false];
-  cosmos.base.v1beta1.DecCoin swap_fee = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin swap_coin = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
 }
 
 // MsgSwapSend represents a message to swap coin and send all result coin to
@@ -52,19 +50,17 @@ message MsgSwapSend {
   option (cosmos.msg.v1.signer) = "from_address";
   option (amino.name) = "noah/x/market/MsgSwapSend";
 
-  string from_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string to_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  cosmos.base.v1beta1.Coin offer_coin = 3 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  string from_address = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string to_address = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  cosmos.base.v1beta1.Coin offer_coin = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   string ask_denom = 4;
 }
 
 // MsgSwapSendResponse defines the Msg/SwapSend response type.
 message MsgSwapSendResponse {
-  cosmos.base.v1beta1.Coin swap_coin = 1 [(gogoproto.nullable) = false];
-  cosmos.base.v1beta1.DecCoin swap_fee = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin swap_coin = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -74,15 +70,13 @@ message MsgUpdateParams {
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
-  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 
   // params defines the x/market parameters to update.
   //
   // NOTE: All parameters must be supplied.
-  Params params = 2 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a

@@ -11,10 +11,8 @@ option go_package = "noah/x/treasury/types";
 
 // GenesisState defines the treasury module's genesis state.
 message GenesisState {
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   string tax_rate = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -27,10 +25,8 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated TaxCap tax_caps = 4 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  repeated TaxCap tax_caps = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated cosmos.base.v1beta1.Coin epoch_tax_proceeds = 5 [
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
@@ -43,10 +39,8 @@ message GenesisState {
     (amino.dont_omitempty) = true,
     (amino.encoding) = "legacy_coins"
   ];
-  repeated EpochState epoch_states = 7 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  repeated EpochState epoch_states = 7
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // EpochState is the record for each epoch state

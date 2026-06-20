@@ -32,13 +32,15 @@ service Query {
   }
 
   // RewardWeight return the current reward weight
-  rpc RewardWeight(QueryRewardWeightRequest) returns (QueryRewardWeightResponse) {
+  rpc RewardWeight(QueryRewardWeightRequest)
+      returns (QueryRewardWeightResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/noah/treasury/v1/reward_weight";
   }
 
   // SeigniorageProceeds return the current seigniorage proceeds
-  rpc SeigniorageProceeds(QuerySeigniorageProceedsRequest) returns (QuerySeigniorageProceedsResponse) {
+  rpc SeigniorageProceeds(QuerySeigniorageProceedsRequest)
+      returns (QuerySeigniorageProceedsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/noah/treasury/v1/seigniorage_proceeds";
   }
@@ -99,10 +101,8 @@ message QueryTaxCapsRequest {}
 // QueryTaxCapsResponse is response type for the
 // Query/TaxCaps RPC method.
 message QueryTaxCapsResponse {
-  repeated TaxCap tax_caps = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  repeated TaxCap tax_caps = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC
@@ -179,8 +179,6 @@ message QueryParamsRequest {}
 // QueryParamsResponse is the response type for the Query/Params RPC method.
 message QueryParamsResponse {
   // params defines the parameters of the module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
