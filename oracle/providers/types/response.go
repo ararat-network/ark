@@ -1,0 +1,92 @@
+package types
+
+import (
+	"fmt"
+	"math/big"
+	"time"
+)
+
+// Response contains resolved and unresolved ticker results.
+type Response struct {
+	Resolved   map[Ticker]Result
+	Unresolved map[Ticker]ErrorWithCode
+}
+
+// Result contains the outcome for a resolved ticker.
+type Result struct {
+	// Price is the reported ticker price. It is nil when Unchanged is true.
+	Price *big.Float
+	// Timestamp is when the result was observed.
+	Timestamp time.Time
+	// Unchanged indicates that the previously reported price remains valid.
+	Unchanged bool
+}
+
+// NewResponse returns a response with non-nil result maps.
+func NewResponse(resolved map[Ticker]Result, unresolved map[Ticker]ErrorWithCode) Response {
+	if resolved == nil {
+		resolved = make(map[Ticker]Result)
+	}
+
+	if unresolved == nil {
+		unresolved = make(map[Ticker]ErrorWithCode)
+	}
+
+	return Response{
+		Resolved:   resolved,
+		Unresolved: unresolved,
+	}
+}
+
+// NewErrorResponse returns a response marking each ticker as unresolved.
+func NewErrorResponse(tickers []Ticker, err ErrorWithCode) Response {
+	unresolved := make(map[Ticker]ErrorWithCode, len(tickers))
+	for _, id := range tickers {
+		unresolved[id] = err
+	}
+
+	return Response{
+		Resolved:   make(map[Ticker]Result),
+		Unresolved: unresolved,
+	}
+}
+
+// String returns a human-readable representation of the response.
+func (r Response) String() string {
+	return fmt.Sprintf(
+		"resolved: %v | unresolved: %v",
+		r.Resolved,
+		r.Unresolved,
+	)
+}
+
+// NewResult returns a result containing a reported price.
+func NewResult(price *big.Float, timestamp time.Time) Result {
+	return Result{
+		Price:     price,
+		Timestamp: timestamp,
+	}
+}
+
+// NewUnchangedResult returns a result indicating that the previous price remains valid.
+func NewUnchangedResult(timestamp time.Time) Result {
+	return Result{
+		Timestamp: timestamp,
+		Unchanged: true,
+	}
+}
+
+// String returns a human-readable representation of the result.
+func (r Result) String() string {
+	price := "<nil>"
+	if r.Price != nil {
+		price = r.Price.String()
+	}
+
+	return fmt.Sprintf(
+		"(price: %s, timestamp: %s, unchanged: %t)",
+		price,
+		r.Timestamp.String(),
+		r.Unchanged,
+	)
+}
