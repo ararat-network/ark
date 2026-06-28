@@ -352,10 +352,12 @@ func (f *Fetcher) recv(
 			continue
 		}
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case responseCh <- response:
+		if !response.Empty() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case responseCh <- response:
+			}
 		}
 
 		for _, msg := range updateMessage {

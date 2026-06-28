@@ -12,16 +12,6 @@ type Response struct {
 	Unresolved map[Ticker]ErrorWithCode
 }
 
-// Result contains the outcome for a resolved ticker.
-type Result struct {
-	// Price is the reported ticker price. It is nil when Unchanged is true.
-	Price *big.Float
-	// Timestamp is when the result was observed.
-	Timestamp time.Time
-	// Unchanged indicates that the previously reported price remains valid.
-	Unchanged bool
-}
-
 // NewResponse returns a response with non-nil result maps.
 func NewResponse(resolved map[Ticker]Result, unresolved map[Ticker]ErrorWithCode) Response {
 	if resolved == nil {
@@ -51,6 +41,11 @@ func NewErrorResponse(tickers []Ticker, err ErrorWithCode) Response {
 	}
 }
 
+// Empty returns true if the response is empty
+func (r Response) Empty() bool {
+	return len(r.Resolved) == 0 && len(r.Unresolved) == 0
+}
+
 // String returns a human-readable representation of the response.
 func (r Response) String() string {
 	return fmt.Sprintf(
@@ -58,6 +53,16 @@ func (r Response) String() string {
 		r.Resolved,
 		r.Unresolved,
 	)
+}
+
+// Result contains the outcome for a resolved ticker.
+type Result struct {
+	// Price is the reported ticker price. It is nil when Unchanged is true.
+	Price *big.Float
+	// Timestamp is when the result was observed.
+	Timestamp time.Time
+	// Unchanged indicates that the previously reported price remains valid.
+	Unchanged bool
 }
 
 // NewResult returns a result containing a reported price.
