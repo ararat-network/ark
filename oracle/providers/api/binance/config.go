@@ -1,10 +1,9 @@
 package binance
 
 import (
-	"encoding/json"
-	"net/http"
 	"time"
 
+	"noah/oracle/providers/base"
 	"noah/oracle/providers/base/api"
 	"noah/oracle/providers/types"
 )
@@ -33,38 +32,16 @@ var DefaultNonUSAPIConfig = api.Config{
 	Name:              Name,
 	Timeout:           3000 * time.Millisecond,
 	Interval:          750 * time.Millisecond,
-	MaxBlockHeightAge: 30 * time.Second,
+	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
+	BatchSize:         0,
+	MaxBlockHeightAge: 30 * time.Second,
 }
 
-type (
-	// Response is the expected response returned by the Binance API.
-	// The response is json formatted.
-	// Response format:
-	//
-	//	[
-	//  {
-	//    "symbol": "LTCBTC",
-	//    "price": "4.00000200"
-	//  },
-	//  {
-	//    "symbol": "ETHBTC",
-	//    "price": "0.07946600"
-	//  }
-	// ].
-	Response []Data
-
-	// Data BinanceData is the data returned by the Binance API.
-	Data struct {
-		Symbol string `json:"symbol"`
-		Price  string `json:"price"`
-	}
-)
-
-// Decode decodes the given http response into a BinanceResponse.
-func Decode(resp *http.Response) (Response, error) {
-	// Parse the response into a BinanceResponse.
-	var result Response
-	err := json.NewDecoder(resp.Body).Decode(&result)
-	return result, err
+var DefaultProviderConfig = base.Config{
+	Name: Name,
+	Type: base.API,
+	Markets: types.Markets{
+		{Denom: "uusd", Symbol: "USDTUSD"},
+	},
 }
