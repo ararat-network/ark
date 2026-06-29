@@ -11,10 +11,9 @@ package testutil
 
 import (
 	context "context"
-	reflect "reflect"
-
 	base "noah/oracle/providers/base"
 	types "noah/oracle/providers/types"
+	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -57,20 +56,6 @@ func (mr *MockFetcherMockRecorder) Name() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockFetcher)(nil).Name))
 }
 
-// Run mocks base method.
-func (m *MockFetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh chan<- types.Response) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Run", ctx, tickers, responseCh)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Run indicates an expected call of Run.
-func (mr *MockFetcherMockRecorder) Run(ctx, tickers, responseCh any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFetcher)(nil).Run), ctx, tickers, responseCh)
-}
-
 // ResponseBufferSize mocks base method.
 func (m *MockFetcher) ResponseBufferSize(tickers []types.Ticker) int {
 	m.ctrl.T.Helper()
@@ -83,6 +68,20 @@ func (m *MockFetcher) ResponseBufferSize(tickers []types.Ticker) int {
 func (mr *MockFetcherMockRecorder) ResponseBufferSize(tickers any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponseBufferSize", reflect.TypeOf((*MockFetcher)(nil).ResponseBufferSize), tickers)
+}
+
+// Run mocks base method.
+func (m *MockFetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh chan<- types.Response) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Run", ctx, tickers, responseCh)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Run indicates an expected call of Run.
+func (mr *MockFetcherMockRecorder) Run(ctx, tickers, responseCh any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFetcher)(nil).Run), ctx, tickers, responseCh)
 }
 
 // Type mocks base method.

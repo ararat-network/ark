@@ -32,10 +32,10 @@ type Fetcher struct {
 }
 
 // NewFetcher returns a websocket fetcher using dataHandler for provider-specific messages.
-func NewFetcher(config Config, dataHandler DataHandler, opts ...Option) (*Fetcher, error) {
+func NewFetcher(cfg Config, dataHandler DataHandler, opts ...Option) (*Fetcher, error) {
 	f := &Fetcher{
 		logger:           log.NewNopLogger(),
-		config:           config,
+		config:           cfg,
 		dial:             websocket.Dial,
 		endpointSelector: types.FirstEndpoint,
 		dataHandler:      dataHandler,
@@ -57,7 +57,7 @@ func NewFetcher(config Config, dataHandler DataHandler, opts ...Option) (*Fetche
 	if f.endpointSelector == nil {
 		return nil, fmt.Errorf("endpoint selector is nil")
 	}
-	if err := config.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 

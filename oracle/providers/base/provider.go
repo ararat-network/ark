@@ -33,11 +33,11 @@ type Provider struct {
 }
 
 // NewProvider returns a provider using fetcher for provider-specific price data.
-func NewProvider(config Config, fetcher Fetcher, opts ...Option) (*Provider, error) {
+func NewProvider(cfg Config, fetcher Fetcher, opts ...Option) (*Provider, error) {
 	p := &Provider{
 		logger:  log.NewNopLogger(),
 		fetcher: fetcher,
-		config:  config.Clone(),
+		config:  cfg.Clone(),
 		tickers: make([]types.Ticker, 0),
 		prices:  make(map[types.Ticker]types.Result),
 	}

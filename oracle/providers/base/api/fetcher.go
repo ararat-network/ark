@@ -34,10 +34,10 @@ type Fetcher struct {
 
 // NewFetcher returns an API fetcher using client for HTTP requests and
 // dataHandler for provider-specific URL construction and response parsing.
-func NewFetcher(config Config, client *http.Client, dataHandler DataHandler, opts ...Option) (*Fetcher, error) {
+func NewFetcher(cfg Config, client *http.Client, dataHandler DataHandler, opts ...Option) (*Fetcher, error) {
 	f := &Fetcher{
 		logger:           log.NewNopLogger(),
-		config:           config,
+		config:           cfg,
 		dataHandler:      dataHandler,
 		client:           client,
 		endpointSelector: types.FirstEndpoint,
@@ -63,12 +63,12 @@ func NewFetcher(config Config, client *http.Client, dataHandler DataHandler, opt
 	if f.endpointSelector == nil {
 		return nil, fmt.Errorf("endpoint selector is nil")
 	}
-	if err := config.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
-	if config.RequestsPerSecond > 0 {
-		f.limiter = rate.NewLimiter(rate.Limit(config.RequestsPerSecond), 1)
+	if cfg.RequestsPerSecond > 0 {
+		f.limiter = rate.NewLimiter(rate.Limit(cfg.RequestsPerSecond), 1)
 	}
 	f.logger = f.logger.With("api_fetcher", f.config.Name)
 
