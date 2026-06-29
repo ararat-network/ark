@@ -20,10 +20,10 @@ import (
 	transporttypes "noah/oracle/transport/types"
 )
 
-// VoteExtensionHandler extends local votes with oracle price reports. If
+// Handler extends local votes with oracle price reports. If
 // oracle data cannot be fetched, validated, or encoded, the handler returns an
 // empty vote extension to preserve liveness.
-type VoteExtensionHandler struct {
+type Handler struct {
 	logger log.Logger
 
 	// oracleClient is the remote oracle client that is responsible for fetching prices
@@ -40,15 +40,15 @@ type VoteExtensionHandler struct {
 	priceApplier abcioracle.PriceApplier
 }
 
-// NewVoteExtensionHandler returns a new VoteExtensionHandler.
-func NewVoteExtensionHandler(
+// NewHandler returns a new Handler.
+func NewHandler(
 	logger log.Logger,
 	oracleClient noahabci.OracleClient,
 	timeout time.Duration,
 	codec compression.VoteExtensionCodec,
 	priceApplier abcioracle.PriceApplier,
-) *VoteExtensionHandler {
-	return &VoteExtensionHandler{
+) *Handler {
+	return &Handler{
 		logger:             logger,
 		oracleClient:       oracleClient,
 		timeout:            timeout,
@@ -60,7 +60,7 @@ func NewVoteExtensionHandler(
 // ExtendVoteHandler returns a handler that extends votes with oracle price
 // reports. If oracle data cannot be fetched, validated, or encoded, the handler
 // returns an empty vote extension to preserve liveness.
-func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
+func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestExtendVote) (resp *cometabci.ResponseExtendVote, err error) {
 		start := time.Now()
 
@@ -176,7 +176,7 @@ func (h *VoteExtensionHandler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 // a validator is valid. In the case when the vote extension is empty, we return ACCEPT. This means
 // that the validator may have been unable to fetch prices from the oracle and is voting an empty vote extension.
 // We reject any non-empty vote extensions that fail to decode or contain invalid prices.
-func (h *VoteExtensionHandler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
+func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestVerifyVoteExtension) (_ *cometabci.ResponseVerifyVoteExtension, err error) {
 		start := time.Now()
 

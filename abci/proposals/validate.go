@@ -14,7 +14,7 @@ import (
 // ensures that the vote extensions compose a super-majority of the signatures and
 // voting power for the block. Then, it ensures that oracle vote extensions are correctly
 // marshalled and contain valid prices.
-func (h *ProposalHandler) ValidateExtendedCommitInfo(
+func (h *Handler) ValidateExtendedCommitInfo(
 	ctx sdk.Context,
 	height int64,
 	extendedCommitInfo cometabci.ExtendedCommitInfo,
@@ -51,7 +51,7 @@ func (h *ProposalHandler) ValidateExtendedCommitInfo(
 // PruneAndValidateExtendedCommitInfo validates each vote-extension in the extended commit, and removes
 // any vote-extensions that are invalid. Removal will effectively treat the validator's
 // vote as absent.  This function performs all validation that ValidateExtendedCommitInfo performs.
-func (h *ProposalHandler) PruneAndValidateExtendedCommitInfo(ctx sdk.Context, extendedCommitInfo cometabci.ExtendedCommitInfo) (cometabci.ExtendedCommitInfo, error) {
+func (h *Handler) PruneAndValidateExtendedCommitInfo(ctx sdk.Context, extendedCommitInfo cometabci.ExtendedCommitInfo) (cometabci.ExtendedCommitInfo, error) {
 	// Validate all oracle vote extensions.
 	for i, vote := range extendedCommitInfo.Votes {
 		// validate the vote-extension

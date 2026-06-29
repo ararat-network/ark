@@ -1,4 +1,4 @@
-package oracle
+package preblock
 
 import (
 	"fmt"
@@ -19,10 +19,10 @@ import (
 	"noah/abci/ve"
 )
 
-// PreBlockHandler is responsible for aggregating oracle data from each
+// Handler is responsible for aggregating oracle data from each
 // validator and writing the oracle data into the store before any transactions
 // are executed/finalised for a given block.
-type PreBlockHandler struct { //golint:ignore
+type Handler struct {
 	logger log.Logger
 
 	// ok is the ok for the oracle module. This is utilised to write
@@ -33,14 +33,14 @@ type PreBlockHandler struct { //golint:ignore
 	pa *abcioracle.PriceApplier
 }
 
-// NewOraclePreBlockHandler returns a new PreBlockHandler. The handler
+// NewHandler returns a new Handler. The handler
 // is responsible for writing oracle data included in vote extensions to state.
-func NewOraclePreBlockHandler(
+func NewHandler(
 	logger log.Logger,
 	oracleKeeper noahabcitypes.OracleKeeper,
 	veCodec codec.VoteExtensionCodec,
 	ecCodec codec.ExtendedCommitCodec,
-) *PreBlockHandler {
+) *Handler {
 	va := abcioracle.NewVoteAggregator(
 		logger,
 	)
@@ -52,7 +52,7 @@ func NewOraclePreBlockHandler(
 		logger,
 	)
 
-	return &PreBlockHandler{
+	return &Handler{
 		logger: logger,
 		ok:     oracleKeeper,
 		pa:     pa,
@@ -62,7 +62,7 @@ func NewOraclePreBlockHandler(
 // WrappedPreBlocker is called by the base app before the block is finalised. It
 // is responsible for calling the module manager's PreBlock method, aggregating oracle data from each validator and
 // writing the oracle data to the store.
-func (h *PreBlockHandler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
+func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
 		if req == nil {
 			h.logger.Error(

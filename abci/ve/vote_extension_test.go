@@ -130,7 +130,7 @@ func TestExtendVoteHandler(t *testing.T) {
 				tc.setup(oracleClient, voteExtensionCodec)
 			}
 
-			handler := ve.NewVoteExtensionHandler(
+			handler := ve.NewHandler(
 				log.NewNopLogger(),
 				oracleClient,
 				time.Second,
@@ -239,7 +239,7 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				tc.setup(voteExtensionCodec)
 			}
 
-			handler := ve.NewVoteExtensionHandler(
+			handler := ve.NewHandler(
 				log.NewNopLogger(),
 				nil,
 				time.Second,

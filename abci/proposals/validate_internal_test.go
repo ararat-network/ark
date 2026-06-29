@@ -234,11 +234,11 @@ func newTestProposalHandler(
 	t *testing.T,
 	veCodec *abcitestutil.MockVoteExtensionCodec,
 	validate ve.ValidateVoteExtensionsFn,
-) *ProposalHandler {
+) *Handler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	return NewProposalHandler(
+	return NewHandler(
 		log.NewTestLogger(t),
 		passThroughPrepareProposal,
 		acceptProcessProposal,

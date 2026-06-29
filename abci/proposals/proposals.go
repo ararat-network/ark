@@ -17,7 +17,7 @@ import (
 	"noah/abci/ve"
 )
 
-// ProposalHandler is responsible primarily for:
+// Handler is responsible primarily for:
 //  1. Filling a proposal with transactions.
 //  2. Injecting vote extensions into the proposal (if vote extensions are enabled).
 //  3. Verifying that the vote extensions injected are valid.
@@ -26,9 +26,9 @@ import (
 // call the validateVoteExtensionsFn. This function is responsible for verifying
 // that the vote extensions included in the proposal are valid and compose a
 // super-majority of signatures and vote extensions for the current block.
-// The given VoteExtensionCodec must be the same used by the VoteExtensionHandler,
+// The given VoteExtensionCodec must be the same used by the vote extension handler,
 // the extended commit is decoded in accordance with the given ExtendedCommitCodec.
-type ProposalHandler struct {
+type Handler struct {
 	logger log.Logger
 
 	// prepareProposalHandler fills a proposal with transactions.
@@ -52,8 +52,8 @@ type ProposalHandler struct {
 	retainOracleDataInWrappedHandler bool
 }
 
-// NewProposalHandler returns a new ProposalHandler.
-func NewProposalHandler(
+// NewHandler returns a new Handler.
+func NewHandler(
 	logger log.Logger,
 	prepareProposalHandler sdk.PrepareProposalHandler,
 	processProposalHandler sdk.ProcessProposalHandler,
@@ -61,8 +61,8 @@ func NewProposalHandler(
 	voteExtensionCodec codec.VoteExtensionCodec,
 	extendedCommitInfoCodec codec.ExtendedCommitCodec,
 	opts ...Option,
-) *ProposalHandler {
-	handler := &ProposalHandler{
+) *Handler {
+	handler := &Handler{
 		logger:                   logger,
 		prepareProposalHandler:   prepareProposalHandler,
 		processProposalHandler:   processProposalHandler,
@@ -85,7 +85,7 @@ func NewProposalHandler(
 // enabled, the handler will inject the extended commit info into the proposal.
 // If the size of the vote extensions exceeds the request's MaxTxBytes size, this
 // handler will fail.
-func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
+func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestPrepareProposal) (resp *cometabci.ResponsePrepareProposal, err error) {
 		start := time.Now()
 		var (
@@ -201,7 +201,7 @@ func (h *ProposalHandler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 // The returned transaction array is bounded by maxSizeBytes, and the function is idempotent meaning the
 // injectTx will only appear once regardless of how many times you attempt to inject it.
 // If injectTx is large enough, all originalTxs may end up being excluded from the returned tx array.
-func (h *ProposalHandler) injectAndResize(appTxs [][]byte, injectTx []byte, maxSizeBytes int64) [][]byte {
+func (h *Handler) injectAndResize(appTxs [][]byte, injectTx []byte, maxSizeBytes int64) [][]byte {
 	var (
 		returnedTxs   [][]byte
 		consumedBytes int64
@@ -233,7 +233,7 @@ func (h *ProposalHandler) injectAndResize(appTxs [][]byte, injectTx []byte, maxS
 // by base app when a new block proposal needs to be verified. The ProcessProposalHandler
 // will verify that the vote extensions included in the proposal are valid and compose
 // a super-majority of signatures and vote extensions for the current block.
-func (h *ProposalHandler) ProcessProposalHandler() sdk.ProcessProposalHandler {
+func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestProcessProposal) (resp *cometabci.ResponseProcessProposal, err error) {
 		start := time.Now()
 		var wrappedProcessProposalLatency time.Duration

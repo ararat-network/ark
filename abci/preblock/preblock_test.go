@@ -1,4 +1,4 @@
-package oracle_test
+package preblock_test
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	preblock "noah/abci/preblock/oracle"
+	"noah/abci/preblock"
 	abcitestutil "noah/abci/testutil"
 	oracletypes "noah/x/oracle/types"
 )
@@ -24,7 +24,7 @@ import (
 func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fake := &fakeModule{name: "fake"}
-	handler := preblock.NewOraclePreBlockHandler(
+	handler := preblock.NewHandler(
 		log.NewTestLogger(t),
 		abcitestutil.NewMockOracleKeeper(ctrl),
 		abcitestutil.NewMockVoteExtensionCodec(ctrl),
@@ -45,7 +45,7 @@ func TestWrappedPreBlockerCallsModuleManagerWhenVoteExtensionsDisabled(t *testin
 		response: preBlockResponse{consensusParamsChanged: true},
 	}
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
-	handler := preblock.NewOraclePreBlockHandler(
+	handler := preblock.NewHandler(
 		log.NewTestLogger(t),
 		keeper,
 		abcitestutil.NewMockVoteExtensionCodec(ctrl),
@@ -72,7 +72,7 @@ func TestWrappedPreBlockerAppliesPricesAndSyncsTobinTaxWhenVoteExtensionsEnabled
 	voteTargets := map[string]math.LegacyDec{
 		"uusd": math.LegacyZeroDec(),
 	}
-	handler := preblock.NewOraclePreBlockHandler(
+	handler := preblock.NewHandler(
 		log.NewTestLogger(t),
 		keeper,
 		veCodec,

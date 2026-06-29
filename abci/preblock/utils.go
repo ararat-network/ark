@@ -1,4 +1,4 @@
-package oracle
+package preblock
 
 import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
@@ -12,7 +12,7 @@ import (
 )
 
 // recordPrices records all given prices per denom and reports them as float64 metrics.
-func (h *PreBlockHandler) recordPrices(prices map[string]math.LegacyDec) {
+func (h *Handler) recordPrices(prices map[string]math.LegacyDec) {
 	for denom, price := range prices {
 		floatPrice, _ := price.Float64()
 		oraclemetrics.ObservePriceForTicker(denom, floatPrice)
@@ -21,7 +21,7 @@ func (h *PreBlockHandler) recordPrices(prices map[string]math.LegacyDec) {
 
 // recordValidatorReports records whether each validator in the decided commit
 // reported a price for each vote target denom and, if so, the price reported.
-func (h *PreBlockHandler) recordValidatorReports(decidedCommit cometabci.CommitInfo, voteTargets map[string]math.LegacyDec) {
+func (h *Handler) recordValidatorReports(decidedCommit cometabci.CommitInfo, voteTargets map[string]math.LegacyDec) {
 	// Iterate over each validator in the commit.
 	for _, vote := range decidedCommit.Votes {
 		var nilVote bool

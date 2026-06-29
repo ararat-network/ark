@@ -172,7 +172,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 				return tc.prepare(ctx, req)
 			})
 
-			handler := proposals.NewProposalHandler(
+			handler := proposals.NewHandler(
 				log.NewTestLogger(t),
 				prepare,
 				acceptProcessProposal,
@@ -345,7 +345,7 @@ func TestProcessProposalHandler(t *testing.T) {
 				}
 				return tc.process(ctx, req)
 			})
-			handler := proposals.NewProposalHandler(
+			handler := proposals.NewHandler(
 				log.NewTestLogger(t),
 				passThroughPrepareProposal,
 				process,
