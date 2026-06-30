@@ -2,17 +2,17 @@ package client_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"cosmossdk.io/log/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"noah/oracle/config"
+	"cosmossdk.io/log/v2"
+
 	oracleclient "noah/oracle/transport/client"
 	"noah/oracle/transport/types"
 )
@@ -21,7 +21,7 @@ func TestNewPriceDaemon(t *testing.T) {
 	tests := []struct {
 		name    string
 		logger  log.Logger
-		cfg     config.AppConfig
+		cfg     oracleclient.Config
 		wantErr bool
 	}{
 		{
@@ -37,7 +37,7 @@ func TestNewPriceDaemon(t *testing.T) {
 		{
 			name:   "invalid config",
 			logger: log.NewNopLogger(),
-			cfg: config.AppConfig{
+			cfg: oracleclient.Config{
 				Enabled: true,
 			},
 			wantErr: true,
@@ -169,7 +169,7 @@ func TestPriceDaemonStop(t *testing.T) {
 func TestPriceDaemonDoesNotCacheClientErrors(t *testing.T) {
 	addr := startTestOracleServer(t, testOracleServer{
 		pricesFn: func(context.Context) (*types.OraclePricesResponse, error) {
-			return nil, fmt.Errorf("failed to make request")
+			return nil, errors.New("failed to make request")
 		},
 	})
 	cfg := validDaemonConfig()
@@ -188,8 +188,8 @@ func TestPriceDaemonDoesNotCacheClientErrors(t *testing.T) {
 	require.EqualError(t, err, "no prices fetched by price daemon yet")
 }
 
-func validDaemonConfig() config.AppConfig {
-	return config.AppConfig{
+func validDaemonConfig() oracleclient.Config {
+	return oracleclient.Config{
 		Enabled:       true,
 		OracleAddress: "127.0.0.1:1",
 		ClientTimeout: time.Second,

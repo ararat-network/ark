@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -11,7 +12,6 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/config"
 	"noah/oracle/transport/types"
 )
 
@@ -21,7 +21,7 @@ type PriceDaemon struct {
 	// isRunning is an atomic boolean that indicates whether the daemon is running.
 	isRunning atomic.Bool
 	// config is the configuration of the daemon.
-	config config.AppConfig
+	config Config
 	// client is the underlying oracle client used to fetch prices.
 	client *Client
 	// latestResponse is the latest price response fetched by the daemon.
@@ -33,14 +33,14 @@ type PriceDaemon struct {
 // NewPriceDaemon creates a price daemon and its underlying gRPC client.
 func NewPriceDaemon(
 	logger log.Logger,
-	cfg config.AppConfig,
+	cfg Config,
 	opts ...Option,
 ) (*PriceDaemon, error) {
 	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
+		return nil, errors.New("logger cannot be nil")
 	}
 
-	if err := cfg.ValidateBasic(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -64,11 +64,13 @@ func NewPriceDaemon(
 
 // Start connects the underlying gRPC client and runs the price polling loop.
 // This method blocks until the daemon is stopped or the context is cancelled.
-func (d *PriceDaemon) Start(ctx context.Context) error {
+func (d *PriceDaemon) Start(ctx context.Context) (err error) {
 	if err := d.client.Start(ctx); err != nil {
 		return err
 	}
-	defer d.client.Stop()
+	defer func() {
+		err = errors.Join(err, d.client.Stop())
+	}()
 
 	ticker := time.NewTicker(d.config.Interval)
 	defer ticker.Stop()
@@ -130,7 +132,7 @@ func (d *PriceDaemon) Prices(
 	latest, ts := d.resp.Get()
 	if latest == nil {
 		d.logger.Error("no prices fetched by price daemon yet")
-		return nil, fmt.Errorf("no prices fetched by price daemon yet")
+		return nil, errors.New("no prices fetched by price daemon yet")
 	}
 
 	if time.Since(ts) > d.config.PriceTTL {

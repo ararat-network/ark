@@ -1,6 +1,7 @@
-package config
+package client
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -63,9 +64,9 @@ interval = "{{ .Oracle.Interval }}"
 `
 )
 
-// NewDefaultAppConfig returns a default application side oracle configuration.
-func NewDefaultAppConfig() AppConfig {
-	return AppConfig{
+// NewDefaultConfig returns a default application side oracle configuration.
+func NewDefaultConfig() Config {
+	return Config{
 		Enabled:        DefaultOracleEnabled,
 		OracleAddress:  DefaultOracleAddress,
 		ClientTimeout:  DefaultClientTimeout,
@@ -85,9 +86,9 @@ const (
 	flagInterval                = "oracle.interval"
 )
 
-// AppConfig contains the application side oracle configurations that must
+// Config contains the application side oracle configurations that must
 // be set in the app.toml file.
-type AppConfig struct {
+type Config struct {
 	// Enabled indicates whether the oracle is enabled.
 	Enabled bool `mapstructure:"enabled" toml:"enabled"`
 
@@ -110,18 +111,18 @@ type AppConfig struct {
 	Interval time.Duration `mapstructure:"interval" toml:"interval"`
 }
 
-// ValidateBasic performs basic validation of the app config.
-func (c *AppConfig) ValidateBasic() error {
+// Validate performs basic validation of the app config.
+func (c *Config) Validate() error {
 	if !c.Enabled {
 		return nil
 	}
 
 	if len(c.OracleAddress) == 0 {
-		return fmt.Errorf("poorly formatted app.toml (oracle subsection): oracle address must not be empty")
+		return errors.New("poorly formatted app.toml (oracle subsection): oracle address must not be empty")
 	}
 
 	if c.ClientTimeout <= 0 {
-		return fmt.Errorf("poorly formatted app.toml (oracle subsection): oracle client timeout must be greater than 0")
+		return errors.New("poorly formatted app.toml (oracle subsection): oracle client timeout must be greater than 0")
 	}
 
 	if c.PriceTTL <= 0 || c.PriceTTL > MaxPriceTTL {
@@ -133,16 +134,16 @@ func (c *AppConfig) ValidateBasic() error {
 	}
 
 	if c.Interval >= c.PriceTTL {
-		return fmt.Errorf("poorly formatted app.toml (oracle subsection): oracle interval must be strictly less than max age")
+		return errors.New("poorly formatted app.toml (oracle subsection): oracle interval must be strictly less than max age")
 	}
 
 	return nil
 }
 
 // ReadConfigFromAppOpts reads the config parameters from the AppOptions and returns the config.
-func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
+func ReadConfigFromAppOpts(opts servertypes.AppOptions) (Config, error) {
 	var (
-		cfg = NewDefaultAppConfig()
+		cfg = NewDefaultConfig()
 		err error
 	)
 
@@ -161,7 +162,7 @@ func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
 	if v := opts.Get(flagOracleAddress); v != nil {
 		address, err := cast.ToStringE(v)
 		if err != nil {
-			return cfg, fmt.Errorf("oracle address must be a non-empty string")
+			return cfg, errors.New("oracle address must be a non-empty string")
 		}
 
 		// only update the address if it is non-empty
@@ -174,7 +175,7 @@ func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
 	if v := opts.Get(flagClientTimeout); v != nil {
 		clientTimeout, err := cast.ToDurationE(v)
 		if err != nil {
-			return cfg, fmt.Errorf("client timeout must be a positive duration")
+			return cfg, errors.New("client timeout must be a positive duration")
 		}
 
 		// only update the client timeout if it is positive
@@ -194,7 +195,7 @@ func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
 	if v := opts.Get(flagPriceTTL); v != nil {
 		priceTTL, err := cast.ToDurationE(v)
 		if err != nil {
-			return cfg, fmt.Errorf("price ttl must be a positive duration")
+			return cfg, errors.New("price ttl must be a positive duration")
 		}
 
 		// only update the price ttl if it is positive
@@ -207,7 +208,7 @@ func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
 	if v := opts.Get(flagInterval); v != nil {
 		interval, err := cast.ToDurationE(v)
 		if err != nil {
-			return cfg, fmt.Errorf("interval must be a positive duration")
+			return cfg, errors.New("interval must be a positive duration")
 		}
 
 		// only update the interval if it is positive
@@ -216,7 +217,7 @@ func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
 		}
 	}
 
-	if err := cfg.ValidateBasic(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return cfg, err
 	}
 
@@ -224,7 +225,7 @@ func ReadConfigFromAppOpts(opts servertypes.AppOptions) (AppConfig, error) {
 }
 
 // String implements the stringer interface for the AppConfig.
-func (c AppConfig) String() string {
+func (c Config) String() string {
 	return fmt.Sprintf(`Oracle Config:
   Enabled: %v
   Oracle Address: %s

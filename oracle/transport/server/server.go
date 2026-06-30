@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,13 +21,19 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	"noah/oracle"
 	"noah/oracle/transport/types"
+	oracletypes "noah/oracle/types"
 )
 
 var _ types.OracleServer = (*Server)(nil)
 
 const DefaultServerShutdownTimeout = 3 * time.Second
+
+type oracleProvider interface {
+	IsRunning() bool
+	GetPrices() oracletypes.Prices
+	GetLastSyncTime() time.Time
+}
 
 // Server is the base implementation of the service.Server interface, this is meant to
 // serve requests from a remote OracleClient.
@@ -34,7 +41,7 @@ type Server struct {
 	types.UnimplementedOracleServer
 
 	// expected implementation of the oracle
-	o oracle.Oracle
+	o oracleProvider
 
 	// underlying grpc-server -- serves all grpc requests
 	grpcSrv *grpc.Server
@@ -53,7 +60,7 @@ type Server struct {
 }
 
 // NewOracleServer returns a new instance of the OracleServer, given an implementation of the Oracle interface.
-func NewOracleServer(o oracle.Oracle, logger log.Logger) *Server {
+func NewOracleServer(o oracleProvider, logger log.Logger) *Server {
 	os := &Server{
 		o:      o,
 		logger: logger.With("server", "oracle"),
@@ -130,7 +137,7 @@ func (os *Server) StartServerWithListener(ctx context.Context, ln net.Listener) 
 		// serve, and return any errors
 		host, port, err := net.SplitHostPort(ln.Addr().String())
 		if err != nil {
-			return fmt.Errorf("[grpc server]: invalid listener address")
+			return errors.New("[grpc server]: invalid listener address")
 		}
 		os.logger.Info("starting grpc server", "host", host, "port", port)
 

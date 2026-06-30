@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -34,7 +35,7 @@ type Client struct {
 	conn *grpc.ClientConn
 	// timeout for the client, Price requests will block for this duration.
 	timeout time.Duration
-	// blockingDial is a parameter which determines whether the client should block on dialing the server
+	// blockingDial is a parameter which determines whether the client should block on dialling the server
 	blockingDial bool
 }
 
@@ -47,11 +48,11 @@ func NewClient(
 	opts ...Option,
 ) (*Client, error) {
 	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
+		return nil, errors.New("logger cannot be nil")
 	}
 
 	if timeout <= 0 {
-		return nil, fmt.Errorf("timeout must be positive")
+		return nil, errors.New("timeout must be positive")
 	}
 
 	client := &Client{
@@ -155,7 +156,7 @@ func (c *Client) Prices(
 	defer cancel()
 
 	if c.client == nil {
-		return nil, fmt.Errorf("oracle client not started")
+		return nil, errors.New("oracle client not started")
 	}
 
 	return c.client.Prices(ctx, req, grpc.WaitForReady(true))
@@ -176,7 +177,7 @@ func (c *Client) Version(ctx context.Context, req *types.OracleVersionRequest, _
 	defer cancel()
 
 	if c.client == nil {
-		return nil, fmt.Errorf("oracle client not started")
+		return nil, errors.New("oracle client not started")
 	}
 
 	return c.client.Version(ctx, req, grpc.WaitForReady(true))
