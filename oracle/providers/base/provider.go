@@ -2,7 +2,7 @@ package base
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math/big"
 	"sync"
 
@@ -15,10 +15,12 @@ import (
 
 // Provider runs a fetcher over provider-specific tickers and exposes denom-keyed prices.
 type Provider struct {
-	logger  log.Logger
-	fetcher Fetcher
-	denoms  []string
-	config  Config
+	logger       log.Logger
+	fetcher      Fetcher
+	name         string
+	providerType TransportType
+	denoms       []string
+	markets      types.Markets
 
 	mu         sync.Mutex
 	prices     map[types.Ticker]types.Result
@@ -33,13 +35,21 @@ type Provider struct {
 }
 
 // NewProvider returns a provider using fetcher for provider-specific price data.
-func NewProvider(cfg Config, fetcher Fetcher, opts ...Option) (*Provider, error) {
+func NewProvider(
+	name string,
+	providerType TransportType,
+	markets types.Markets,
+	fetcher Fetcher,
+	opts ...Option,
+) (*Provider, error) {
 	p := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: fetcher,
-		config:  cfg.Clone(),
-		tickers: make([]types.Ticker, 0),
-		prices:  make(map[types.Ticker]types.Result),
+		logger:       log.NewNopLogger(),
+		fetcher:      fetcher,
+		name:         name,
+		providerType: providerType,
+		markets:      append(types.Markets{}, markets...),
+		tickers:      make([]types.Ticker, 0),
+		prices:       make(map[types.Ticker]types.Result),
 	}
 
 	for _, opt := range opts {
@@ -47,40 +57,41 @@ func NewProvider(cfg Config, fetcher Fetcher, opts ...Option) (*Provider, error)
 	}
 
 	if p.logger == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
-	if err := p.config.Validate(); err != nil {
+	if len(p.name) == 0 {
+		return nil, errors.New("provider name cannot be empty")
+	}
+	if len(p.providerType) == 0 {
+		return nil, errors.New("provider type cannot be empty")
+	}
+	if err := p.markets.Validate(); err != nil {
 		return nil, err
 	}
-	if err := validateFetcher(p.config, p.fetcher); err != nil {
-		return nil, err
+	if fetcher == nil {
+		return nil, errors.New("fetcher is nil")
+	}
+	if fetcher.Type() != providerType {
+		return nil, errors.New("mismatched provider and fetcher type")
+	}
+	if fetcher.Name() != name {
+		return nil, errors.New("mismatched provider and fetcher name")
 	}
 
-	p.logger = p.logger.With("provider", p.config.Name)
-	p.tickers = p.resolveTickers(p.denoms, p.config.Markets)
+	p.logger = p.logger.With("provider", p.name)
+	if len(p.denoms) == 0 {
+		p.denoms = p.markets.Denoms()
+	}
+	p.updateTickers(p.denoms, p.markets)
 
 	return p, nil
-}
-
-func validateFetcher(config Config, fetcher Fetcher) error {
-	if fetcher == nil {
-		return fmt.Errorf("fetcher is nil")
-	}
-	if fetcher.Type() != config.Type {
-		return fmt.Errorf("mismatched provider and fetcher type")
-	}
-	if fetcher.Name() != config.Name {
-		return fmt.Errorf("mismatched provider and fetcher name")
-	}
-
-	return nil
 }
 
 // Start runs the provider's fetch loop until the provider is stopped or the main
 // context is cancelled.
 func (p *Provider) Start(ctx context.Context) error {
 	if ctx == nil {
-		return fmt.Errorf("context cannot be nil")
+		return errors.New("context cannot be nil")
 	}
 
 	p.logger.Info("starting provider")
@@ -89,8 +100,8 @@ func (p *Provider) Start(ctx context.Context) error {
 	p.setMainCtx(mainCtx, mainCancel)
 
 	// Start the main loop. Each cycle runs the fetcher for the current provider tickers and
-	// updates cached prices from fetcher responses. Runtime updates cancel only the current
-	// fetch cycle, allowing the loop to restart with the new provider configuration.
+	// updates cached prices from fetcher responses. Runtime ticker updates cancel only the
+	// current fetch cycle, allowing the loop to restart with the new ticker set.
 	for {
 		tickers := p.GetTickers()
 		// Ensure that the provider has tickers set. This could be reset if the provider is
@@ -176,7 +187,7 @@ func (p *Provider) IsRunning() bool {
 
 // Name returns the name of the provider.
 func (p *Provider) Name() string {
-	return p.getConfig().Name
+	return p.name
 }
 
 // GetPrices returns a copy of the latest result for each configured denom.
@@ -186,7 +197,7 @@ func (p *Provider) GetPrices() map[string]types.Result {
 
 	cpy := make(map[string]types.Result, len(p.prices))
 	for ticker, result := range p.prices {
-		denom, ok := p.config.Markets.TickerToDenom(ticker)
+		denom, ok := p.markets.TickerToDenom(ticker)
 		if !ok {
 			continue
 		}
@@ -212,7 +223,7 @@ func (p *Provider) GetTickers() []types.Ticker {
 
 // Type returns the provider type.
 func (p *Provider) Type() TransportType {
-	return p.getConfig().Type
+	return p.providerType
 }
 
 // Provider lifecycle context helpers.

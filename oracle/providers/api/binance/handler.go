@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -35,7 +36,7 @@ func (h *Handler) CreateURL(
 	}
 
 	if len(tickerStrings) == 0 {
-		return "", fmt.Errorf("empty url created. invalid or no ticker were provided")
+		return "", errors.New("empty url created. invalid or no ticker were provided")
 	}
 
 	return fmt.Sprintf(
@@ -88,7 +89,7 @@ func (h *Handler) ParseResponse(
 		_, unresolvedOk := unresolved[ticker]
 
 		if !resolvedOk && !unresolvedOk {
-			unresolved[ticker] = types.NewErrorWithCode(fmt.Errorf("no response"), types.ErrorNoResponse)
+			unresolved[ticker] = types.NewErrorWithCode(errors.New("no response"), types.ErrorNoResponse)
 		}
 	}
 

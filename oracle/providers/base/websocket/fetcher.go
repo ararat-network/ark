@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -46,16 +45,16 @@ func NewFetcher(cfg Config, dataHandler DataHandler, opts ...Option) (*Fetcher, 
 	}
 
 	if f.logger == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
 	if f.dataHandler == nil {
-		return nil, fmt.Errorf("data handler is nil")
+		return nil, errors.New("data handler is nil")
 	}
 	if f.dial == nil {
-		return nil, fmt.Errorf("dial function is nil")
+		return nil, errors.New("dial function is nil")
 	}
 	if f.endpointSelector == nil {
-		return nil, fmt.Errorf("endpoint selector is nil")
+		return nil, errors.New("endpoint selector is nil")
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -70,7 +69,7 @@ func NewFetcher(cfg Config, dataHandler DataHandler, opts ...Option) (*Fetcher, 
 func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh chan<- types.Response) error {
 	if responseCh == nil {
 		f.logger.Debug("response channel is nil")
-		return fmt.Errorf("response channel is nil")
+		return errors.New("response channel is nil")
 	}
 	if len(tickers) == 0 {
 		f.logger.Debug("no tickers to query; exiting")

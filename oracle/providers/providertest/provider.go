@@ -2,6 +2,7 @@ package providertest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,16 +29,16 @@ type Config struct {
 // Validate checks that the test timing configuration can produce at least one poll.
 func (c Config) Validate() error {
 	if c.TestDuration == 0 {
-		return fmt.Errorf("test duration cannot be 0")
+		return errors.New("test duration cannot be 0")
 	}
 	if c.PollInterval == 0 {
-		return fmt.Errorf("poll interval cannot be 0")
+		return errors.New("poll interval cannot be 0")
 	}
 	if c.TestDuration/c.PollInterval < 1 {
-		return fmt.Errorf("ratio of test duration to poll interval must be GTE 1")
+		return errors.New("ratio of test duration to poll interval must be GTE 1")
 	}
 	if c.ExpectedPriceCount < 0 {
-		return fmt.Errorf("expected price count cannot be negative")
+		return errors.New("expected price count cannot be negative")
 	}
 
 	return nil
@@ -64,7 +65,7 @@ type PriceResult struct {
 // Run builds a provider and collects price snapshots from it.
 func Run(ctx context.Context, build Builder, cfg Config) (PriceResults, error) {
 	if build == nil {
-		return nil, fmt.Errorf("builder is nil")
+		return nil, errors.New("builder is nil")
 	}
 
 	provider, err := build(ctx)
@@ -78,10 +79,10 @@ func Run(ctx context.Context, build Builder, cfg Config) (PriceResults, error) {
 // RunProvider starts provider, samples prices, and stops provider before returning.
 func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (PriceResults, error) {
 	if ctx == nil {
-		return nil, fmt.Errorf("context cannot be nil")
+		return nil, errors.New("context cannot be nil")
 	}
 	if provider == nil {
-		return nil, fmt.Errorf("provider is nil")
+		return nil, errors.New("provider is nil")
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -92,7 +93,7 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 		expectedPriceCount = len(provider.GetTickers())
 	}
 	if expectedPriceCount == 0 {
-		return nil, fmt.Errorf("expected price count cannot be 0")
+		return nil, errors.New("expected price count cannot be 0")
 	}
 
 	runCtx, cancel := context.WithCancel(ctx)

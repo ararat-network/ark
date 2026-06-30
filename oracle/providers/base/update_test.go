@@ -16,15 +16,13 @@ import (
 
 func TestUpdateCancelsFetchContextAndReplacesTickersFromDenoms(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name: "test",
-			Type: API,
-			Markets: types.Markets{
-				{Denom: "uatom", Symbol: "ATOMUSD"},
-				{Denom: "ubtc", Symbol: "BTCUSD"},
-			},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets: types.Markets{
+			{Denom: "uatom", Symbol: "ATOMUSD"},
+			{Denom: "ubtc", Symbol: "BTCUSD"},
 		},
 	}
 	fetchCtx, fetchCancel := context.WithCancel(context.Background())
@@ -52,13 +50,11 @@ func TestGetTickersReturnsCopy(t *testing.T) {
 
 func TestWithNewDenomsCopiesInput(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-		},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets:      types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
 	}
 	denoms := []string{"uatom"}
 
@@ -68,339 +64,185 @@ func TestWithNewDenomsCopiesInput(t *testing.T) {
 	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
 }
 
-func TestUpdateResolvesTickersAfterAllOptionsRun(t *testing.T) {
-	newFetcher := newStubFetcher(WebSocket)
+func TestWithNewDenomsIgnoresEmptyAndClearsPrices(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name: "test",
-			Type: API,
-			Markets: types.Markets{
-				{Denom: "uusd", Symbol: "OLDUSD"},
-			},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets: types.Markets{
+			{Denom: "uatom", Symbol: "ATOMUSD"},
 		},
-		denoms:  []string{"uusd"},
-		tickers: []types.Ticker{"OLDUSD"},
-	}
-	newMarkets := types.Markets{
-		{Denom: "uusd", Symbol: "USDTUSD"},
-	}
-
-	require.NoError(t, provider.Update(
-		WithNewDenoms([]string{"uusd"}),
-		WithNewConfig(Config{
-			Name:    "test",
-			Type:    WebSocket,
-			Markets: newMarkets,
-		}),
-		WithNewFetcher(newFetcher),
-	))
-
-	require.Equal(t, WebSocket, provider.Type())
-	require.Equal(t, []string{"uusd"}, provider.denoms)
-	require.Equal(t, newMarkets, provider.getConfig().Markets)
-	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
-}
-
-func TestWithNewDenomsCanRunWhileProviderConfigChanges(t *testing.T) {
-	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name: "test",
-			Type: API,
-			Markets: types.Markets{
-				{Denom: "uatom", Symbol: "ATOMUSD"},
-				{Denom: "uusd", Symbol: "USDTUSD"},
-			},
-		},
+		denoms:  []string{"uatom"},
 		tickers: []types.Ticker{"ATOMUSD"},
-	}
-	apiMarkets := types.Markets{
-		{Denom: "uatom", Symbol: "ATOMUSD"},
-		{Denom: "uusd", Symbol: "USDTUSD"},
-	}
-	websocketMarkets := types.Markets{
-		{Denom: "uatom", Symbol: "ATOMUSDT"},
-		{Denom: "uusd", Symbol: "USDTUSDT"},
-	}
-
-	const iterations = 1000
-	start := make(chan struct{})
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		<-start
-		for range iterations {
-			require.NoError(t, provider.Update(WithNewDenoms([]string{"uatom", "uusd"})))
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		<-start
-		for i := range iterations {
-			fetcherType := API
-			markets := apiMarkets
-			if i%2 == 0 {
-				fetcherType = WebSocket
-				markets = websocketMarkets
-			}
-			require.NoError(t, provider.Update(
-				WithNewConfig(Config{
-					Name:    "test",
-					Type:    fetcherType,
-					Markets: markets,
-				}),
-				WithNewFetcher(newStubFetcher(fetcherType)),
-			))
-		}
-	}()
-
-	close(start)
-	wg.Wait()
-}
-
-func TestWithNewFetcherAndConfigReplaceFetcherMarketsAndTickers(t *testing.T) {
-	oldFetcher := newStubFetcher(API)
-	newFetcher := newStubFetcher(WebSocket)
-	markets := types.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
-	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: oldFetcher,
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
+		prices: map[types.Ticker]types.Result{
+			"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
 		},
-		denoms:  []string{"uusd"},
-		tickers: []types.Ticker{"ATOMUSD"},
 	}
 	fetchCtx, fetchCancel := context.WithCancel(context.Background())
 	provider.setCycleCtx(fetchCtx, fetchCancel)
 	defer fetchCancel()
 
-	require.NoError(t, provider.Update(
-		WithNewConfig(Config{
-			Name:    "test",
-			Type:    WebSocket,
-			Markets: markets,
-		}),
-		WithNewFetcher(newFetcher),
-	))
+	require.NoError(t, provider.Update(WithNewDenoms(nil)))
 
 	require.ErrorIs(t, fetchCtx.Err(), context.Canceled)
-	require.Equal(t, WebSocket, provider.Type())
-	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
-	require.Equal(t, markets, provider.getConfig().Markets)
+	require.Equal(t, []string{"uatom"}, provider.denoms)
+	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
+	require.Empty(t, provider.GetPrices())
 }
 
-func TestWithNewFetcherPreservesCachedPrices(t *testing.T) {
-	newFetcher := newStubFetcher(API)
+func TestWithNewDenomsClearsPricesForRemovedTickers(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name: "test",
-			Type: API,
-			Markets: types.Markets{
-				{Denom: "uatom", Symbol: "ATOMUSD"},
-			},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets: types.Markets{
+			{Denom: "uatom", Symbol: "ATOMUSD"},
+			{Denom: "uusd", Symbol: "USDTUSD"},
 		},
-		denoms:  []string{"uusd"},
+		denoms:  []string{"uatom", "uusd"},
+		tickers: []types.Ticker{"ATOMUSD", "USDTUSD"},
+		prices: map[types.Ticker]types.Result{
+			"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
+			"USDTUSD": types.NewResult(big.NewFloat(1), time.Unix(10, 0).UTC()),
+		},
+	}
+
+	require.NoError(t, provider.Update(WithNewDenoms([]string{"uatom"})))
+
+	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
+	require.Empty(t, provider.GetPrices())
+}
+
+func TestWithNewDenomsClearsCachedPrices(t *testing.T) {
+	provider := &Provider{
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets: types.Markets{
+			{Denom: "uatom", Symbol: "ATOMUSD"},
+			{Denom: "uusd", Symbol: "USDTUSD"},
+		},
+		denoms:  []string{"uatom"},
 		tickers: []types.Ticker{"ATOMUSD"},
 		prices: map[types.Ticker]types.Result{
 			"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
 		},
 	}
 
-	require.NoError(t, provider.Update(WithNewFetcher(newFetcher)))
+	require.NoError(t, provider.Update(WithNewDenoms([]string{"uatom", "uusd"})))
 
-	require.NotEmpty(t, provider.GetPrices())
-	require.Equal(t, API, provider.Type())
+	require.Empty(t, provider.GetPrices())
 }
 
-func TestWithNewFetcherRejectsNilFetcher(t *testing.T) {
+func TestWithNewMarketsReplacesMarketsAndTickers(t *testing.T) {
 	provider := &Provider{
-		logger: log.NewNopLogger(),
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-		},
-		fetcher: newStubFetcher(API),
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets:      types.Markets{{Denom: "uusd", Symbol: "OLDUSD"}},
+		denoms:       []string{"uusd"},
+		tickers:      []types.Ticker{"OLDUSD"},
 	}
+	markets := types.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
 
-	err := provider.Update(WithNewFetcher(nil))
+	require.NoError(t, provider.Update(WithNewMarkets(markets)))
 
-	require.ErrorContains(t, err, "fetcher is nil")
-	require.Equal(t, API, provider.Type())
+	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
+	require.Equal(t, markets, provider.markets)
 }
 
-func TestUpdateRejectsMismatchedFetcherName(t *testing.T) {
+func TestWithNewMarketsCopiesInput(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets:      types.Markets{{Denom: "uusd", Symbol: "OLDUSD"}},
+		denoms:       []string{"uusd"},
+		tickers:      []types.Ticker{"OLDUSD"},
+	}
+	markets := types.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+
+	require.NoError(t, provider.Update(WithNewMarkets(markets)))
+	markets[0].Symbol = "MUTATED"
+
+	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
+}
+
+func TestWithNewMarketsRejectsInvalidAndLeavesStateUnchanged(t *testing.T) {
+	provider := &Provider{
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets:      types.Markets{{Denom: "uusd", Symbol: "USDTUSD"}},
+		denoms:       []string{"uusd"},
+		tickers:      []types.Ticker{"USDTUSD"},
+		prices: map[types.Ticker]types.Result{
+			"USDTUSD": types.NewResult(big.NewFloat(1), time.Unix(10, 0).UTC()),
 		},
-		denoms:  []string{"uatom"},
-		tickers: []types.Ticker{"ATOMUSD"},
 	}
 	fetchCtx, fetchCancel := context.WithCancel(context.Background())
 	provider.setCycleCtx(fetchCtx, fetchCancel)
 	defer fetchCancel()
 
-	err := provider.Update(WithNewFetcher(stubFetcher{
-		name:        "other",
-		fetcherType: API,
+	err := provider.Update(WithNewMarkets(types.Markets{
+		{Denom: "uusd", Symbol: "USDTUSD"},
+		{Denom: "uusdc", Symbol: "usdtusd"},
 	}))
 
-	require.ErrorContains(t, err, "mismatched provider and fetcher name")
+	require.ErrorContains(t, err, `duplicate symbol "USDTUSD"`)
 	require.NoError(t, fetchCtx.Err())
-	require.Equal(t, "test", provider.Name())
-	require.Equal(t, API, provider.Type())
-	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
-}
-
-func TestUpdateErrorLeavesProviderStateUnchanged(t *testing.T) {
-	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-		},
-		denoms:  []string{"uatom"},
-		tickers: []types.Ticker{"ATOMUSD"},
-		prices: map[types.Ticker]types.Result{
-			"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
-		},
-	}
-	fetchCtx, fetchCancel := context.WithCancel(context.Background())
-	provider.setCycleCtx(fetchCtx, fetchCancel)
-	defer fetchCancel()
-
-	err := provider.Update(
-		WithNewConfig(Config{
-			Name:    "test",
-			Type:    WebSocket,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSDT"}},
-		}),
-		WithNewFetcher(nil),
-	)
-
-	require.ErrorContains(t, err, "fetcher is nil")
-	require.NoError(t, fetchCtx.Err())
-	require.Equal(t, API, provider.Type())
-	require.Equal(t, types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}}, provider.getConfig().Markets)
-	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
+	require.Equal(t, types.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}, provider.markets)
+	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
 	require.NotEmpty(t, provider.GetPrices())
 }
 
-func TestConfigCloneCopiesMarkets(t *testing.T) {
-	config := Config{
-		Name:    "test",
-		Type:    API,
-		Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-	}
-
-	clone := config.Clone()
-	clone.Markets[0].Symbol = "BTCUSD"
-
-	require.Equal(t, types.Ticker("ATOMUSD"), config.Markets[0].Symbol)
-}
-
-func TestNewProviderCopiesConfigMarkets(t *testing.T) {
-	config := Config{
-		Name:    "test",
-		Type:    API,
-		Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-	}
-
-	provider, err := NewProvider(config, newStubFetcher(API), WithDenoms([]string{"uatom"}))
-	require.NoError(t, err)
-
-	config.Markets[0].Symbol = "BTCUSD"
-
-	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
-}
-
-func TestWithNewConfigCopiesMarkets(t *testing.T) {
+func TestWithNewMarketsClearsCachedPricesForTickerRemap(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets:      types.Markets{{Denom: "uusd", Symbol: "USDTUSD"}},
+		denoms:       []string{"uusd"},
+		tickers:      []types.Ticker{"USDTUSD"},
+		prices: map[types.Ticker]types.Result{
+			"USDTUSD": types.NewResult(big.NewFloat(1), time.Unix(10, 0).UTC()),
 		},
-		denoms: []string{"uatom"},
-	}
-	config := Config{
-		Name:    "test",
-		Type:    API,
-		Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
 	}
 
-	require.NoError(t, provider.Update(WithNewConfig(config)))
-	config.Markets[0].Symbol = "BTCUSD"
+	require.NoError(t, provider.Update(
+		WithNewDenoms([]string{"uusdc"}),
+		WithNewMarkets(types.Markets{{Denom: "uusdc", Symbol: "USDTUSD"}}),
+	))
 
-	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
+	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
+	require.Empty(t, provider.GetPrices())
 }
 
-func TestWithNewConfigPrunesPricesForRemovedMarkets(t *testing.T) {
+func TestWithNewDenomsCanRunWhileProviderReadsState(t *testing.T) {
 	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name: "test",
-			Type: API,
-			Markets: types.Markets{
-				{Denom: "uatom", Symbol: "ATOMUSD"},
-				{Denom: "ubtc", Symbol: "BTCUSD"},
-			},
+		logger:       log.NewNopLogger(),
+		fetcher:      newStubFetcher(API),
+		name:         "test",
+		providerType: API,
+		markets: types.Markets{
+			{Denom: "uatom", Symbol: "ATOMUSD"},
+			{Denom: "ubtc", Symbol: "BTCUSD"},
 		},
-		denoms:  []string{"uatom"},
-		tickers: []types.Ticker{"ATOMUSD"},
+		denoms:  []string{"uatom", "ubtc"},
+		tickers: []types.Ticker{"ATOMUSD", "BTCUSD"},
 		prices: map[types.Ticker]types.Result{
 			"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
 			"BTCUSD":  types.NewResult(big.NewFloat(56.78), time.Unix(10, 0).UTC()),
 		},
 	}
 
-	require.NoError(t, provider.Update(WithNewConfig(Config{
-		Name:    "test",
-		Type:    API,
-		Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-	})))
-
-	prices := provider.GetPrices()
-	require.Len(t, prices, 1)
-	require.Contains(t, prices, "uatom")
-	require.NotContains(t, prices, "ubtc")
-}
-
-func TestConfigReadsCanRunWhileConfigChanges(t *testing.T) {
-	provider := &Provider{
-		logger:  log.NewNopLogger(),
-		fetcher: newStubFetcher(API),
-		config: Config{
-			Name:    "test",
-			Type:    API,
-			Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-		},
-		prices: map[types.Ticker]types.Result{
-			"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
-		},
-	}
-
 	const iterations = 1000
 	start := make(chan struct{})
 	var wg sync.WaitGroup
@@ -409,12 +251,12 @@ func TestConfigReadsCanRunWhileConfigChanges(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-start
-		for range iterations {
-			require.NoError(t, provider.Update(WithNewConfig(Config{
-				Name:    "test",
-				Type:    API,
-				Markets: types.Markets{{Denom: "uatom", Symbol: "ATOMUSD"}},
-			})))
+		for i := range iterations {
+			denoms := []string{"uatom"}
+			if i%2 == 0 {
+				denoms = []string{"uatom", "ubtc"}
+			}
+			require.NoError(t, provider.Update(WithNewDenoms(denoms)))
 		}
 	}()
 
@@ -425,6 +267,7 @@ func TestConfigReadsCanRunWhileConfigChanges(t *testing.T) {
 			_ = provider.Name()
 			_ = provider.Type()
 			_ = provider.GetPrices()
+			_ = provider.GetTickers()
 		}
 	}()
 

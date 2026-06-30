@@ -20,7 +20,7 @@ func TestStartRejectsNilContext(t *testing.T) {
 	fetcher.EXPECT().Name().Return("test").AnyTimes()
 	fetcher.EXPECT().Type().Return(base.API).AnyTimes()
 
-	provider, err := base.NewProvider(testConfig(), fetcher)
+	provider, err := newTestProvider(fetcher)
 	require.NoError(t, err)
 
 	var ctx context.Context
@@ -34,7 +34,7 @@ func TestStartExitsWhenNoTickersAreConfigured(t *testing.T) {
 	fetcher.EXPECT().Name().Return("test").AnyTimes()
 	fetcher.EXPECT().Type().Return(base.API).AnyTimes()
 
-	provider, err := base.NewProvider(testConfig(), fetcher)
+	provider, err := newTestProvider(fetcher, base.WithDenoms([]string{"umissing"}))
 	require.NoError(t, err)
 
 	require.NoError(t, provider.Start(context.Background()))
@@ -59,7 +59,7 @@ func TestStartRunsFetcherUntilStopped(t *testing.T) {
 			return ctx.Err()
 		})
 
-	provider, err := base.NewProvider(testConfigWithMarkets(markets), fetcher, base.WithDenoms(denoms))
+	provider, err := newTestProviderWithMarkets(markets, fetcher, base.WithDenoms(denoms))
 	require.NoError(t, err)
 
 	errCh := make(chan error, 1)
@@ -113,7 +113,7 @@ func TestStartUsesFetcherResponseBufferSize(t *testing.T) {
 			return ctx.Err()
 		})
 
-	provider, err := base.NewProvider(testConfigWithMarkets(markets), fetcher, base.WithDenoms(denoms))
+	provider, err := newTestProviderWithMarkets(markets, fetcher, base.WithDenoms(denoms))
 	require.NoError(t, err)
 
 	errCh := make(chan error, 1)
@@ -150,7 +150,7 @@ func TestStartReturnsNonContextFetcherError(t *testing.T) {
 		Run(gomock.Any(), tickers, gomock.Any()).
 		Return(fetchErr)
 
-	provider, err := base.NewProvider(testConfigWithMarkets(markets), fetcher, base.WithDenoms(denoms))
+	provider, err := newTestProviderWithMarkets(markets, fetcher, base.WithDenoms(denoms))
 	require.NoError(t, err)
 
 	require.ErrorIs(t, provider.Start(context.Background()), fetchErr)
@@ -162,7 +162,7 @@ func TestTypeReturnsConfiguredType(t *testing.T) {
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 	expectFetcher(fetcher, "test", base.WebSocket)
 
-	provider, err := base.NewProvider(testConfigWithType(base.WebSocket), fetcher)
+	provider, err := newTestProviderWithType(base.WebSocket, fetcher)
 	require.NoError(t, err)
 
 	require.Equal(t, base.WebSocket, provider.Type())
@@ -173,14 +173,14 @@ func TestNewProviderRejectsMismatchedFetcherName(t *testing.T) {
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 	expectFetcher(fetcher, "other", base.API)
 
-	provider, err := base.NewProvider(testConfig(), fetcher)
+	provider, err := newTestProvider(fetcher)
 
 	require.Nil(t, provider)
 	require.ErrorContains(t, err, "mismatched provider and fetcher name")
 }
 
-func testConfig() base.Config {
-	return testConfigWithMarkets(testMarkets())
+func newTestProvider(fetcher base.Fetcher, opts ...base.Option) (*base.Provider, error) {
+	return newTestProviderWithMarkets(testMarkets(), fetcher, opts...)
 }
 
 func expectFetcher(fetcher *basetestutil.MockFetcher, name string, providerType base.TransportType) {
@@ -200,18 +200,20 @@ func expectFetcher(fetcher *basetestutil.MockFetcher, name string, providerType 
 		AnyTimes()
 }
 
-func testConfigWithMarkets(markets types.Markets) base.Config {
-	return base.Config{
-		Name:    "test",
-		Type:    base.API,
-		Markets: markets,
-	}
+func newTestProviderWithMarkets(
+	markets types.Markets,
+	fetcher base.Fetcher,
+	opts ...base.Option,
+) (*base.Provider, error) {
+	return base.NewProvider("test", base.API, markets, fetcher, opts...)
 }
 
-func testConfigWithType(providerType base.TransportType) base.Config {
-	config := testConfig()
-	config.Type = providerType
-	return config
+func newTestProviderWithType(
+	providerType base.TransportType,
+	fetcher base.Fetcher,
+	opts ...base.Option,
+) (*base.Provider, error) {
+	return base.NewProvider("test", providerType, testMarkets(), fetcher, opts...)
 }
 
 func testMarkets() types.Markets {

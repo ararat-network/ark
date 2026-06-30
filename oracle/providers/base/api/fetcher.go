@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -49,19 +50,19 @@ func NewFetcher(cfg Config, client *http.Client, dataHandler DataHandler, opts .
 	}
 
 	if f.logger == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
 	if f.client == nil {
-		return nil, fmt.Errorf("client is nil")
+		return nil, errors.New("client is nil")
 	}
 	if f.dataHandler == nil {
-		return nil, fmt.Errorf("data handler is nil")
+		return nil, errors.New("data handler is nil")
 	}
 	if f.method == "" {
-		return nil, fmt.Errorf("http request method is empty")
+		return nil, errors.New("http request method is empty")
 	}
 	if f.endpointSelector == nil {
-		return nil, fmt.Errorf("endpoint selector is nil")
+		return nil, errors.New("endpoint selector is nil")
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func NewFetcher(cfg Config, client *http.Client, dataHandler DataHandler, opts .
 func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh chan<- types.Response) error {
 	if responseCh == nil {
 		f.logger.Debug("response channel is nil")
-		return fmt.Errorf("response channel is nil")
+		return errors.New("response channel is nil")
 	}
 	if len(tickers) == 0 {
 		f.logger.Debug("no tickers to query; exiting")

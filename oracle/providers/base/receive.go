@@ -26,7 +26,6 @@ func (p *Provider) recv(ctx context.Context) {
 			}
 
 			resolved, unresolved := r.Resolved, r.Unresolved
-			providerName, providerType := p.providerLabels()
 
 			for ticker, result := range resolved {
 				p.logger.Debug(
@@ -35,13 +34,13 @@ func (p *Provider) recv(ctx context.Context) {
 					"result", result,
 				)
 
-				p.updateData(ticker, result)
+				p.updateData(ctx, ticker, result)
 
 				providermetrics.RecordResponse(
 					ctx,
-					providerName,
+					p.name,
 					ticker,
-					string(providerType),
+					string(p.providerType),
 					types.OK,
 				)
 			}
@@ -56,9 +55,9 @@ func (p *Provider) recv(ctx context.Context) {
 
 				providermetrics.RecordResponse(
 					ctx,
-					providerName,
+					p.name,
 					ticker,
-					string(providerType),
+					string(p.providerType),
 					result.Code(),
 				)
 			}
@@ -68,9 +67,22 @@ func (p *Provider) recv(ctx context.Context) {
 
 // updateData stores results that are not older than the current data. An unchanged
 // result refreshes only the current result's timestamp.
-func (p *Provider) updateData(ticker types.Ticker, result types.Result) {
+func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result types.Result) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
+	if ctx.Err() != nil {
+		return
+	}
+
+	if !result.Unchanged && result.Price == nil {
+		p.logger.Debug(
+			"resolved result has no price",
+			"ticker", ticker,
+			"result", result,
+		)
+		return
+	}
 
 	current, ok := p.prices[ticker]
 	if !ok {

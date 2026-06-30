@@ -2,6 +2,7 @@ package binance
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/log/v2"
@@ -29,7 +30,7 @@ type Handler struct {
 // NewHandler returns a new Binance DataHandler.
 func NewHandler(logger log.Logger, config websocket.Config) (websocket.DataHandler, error) {
 	if logger == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
 	if config.Name != Name {
 		return nil, fmt.Errorf("expected websocket config name %s, got %s", Name, config.Name)

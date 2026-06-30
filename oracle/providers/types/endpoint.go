@@ -1,6 +1,6 @@
 package types
 
-import "fmt"
+import "errors"
 
 // Endpoint describes a provider endpoint that a fetcher can connect to.
 type Endpoint struct {
@@ -14,7 +14,7 @@ type Endpoint struct {
 // Validate performs validation of the provider endpoint.
 func (e Endpoint) Validate() error {
 	if e.URL == "" {
-		return fmt.Errorf("endpoint url cannot be empty")
+		return errors.New("endpoint url cannot be empty")
 	}
 
 	return e.Authentication.Validate()
@@ -37,11 +37,11 @@ func (a Authentication) Enabled() bool {
 // Validate performs validation of the endpoint authentication.
 func (a Authentication) Validate() error {
 	if a.APIKey != "" && a.APIKeyHeader == "" {
-		return fmt.Errorf("api key header cannot be empty when api key is set")
+		return errors.New("api key header cannot be empty when api key is set")
 	}
 
 	if a.APIKey == "" && a.APIKeyHeader != "" {
-		return fmt.Errorf("api key cannot be empty when api key header is set")
+		return errors.New("api key cannot be empty when api key header is set")
 	}
 
 	return nil
@@ -53,7 +53,7 @@ type EndpointSelector func(endpoints []Endpoint) (Endpoint, error)
 // FirstEndpoint returns the first configured provider endpoint.
 func FirstEndpoint(endpoints []Endpoint) (Endpoint, error) {
 	if len(endpoints) == 0 {
-		return Endpoint{}, fmt.Errorf("endpoints cannot be empty")
+		return Endpoint{}, errors.New("endpoints cannot be empty")
 	}
 
 	return endpoints[0], nil

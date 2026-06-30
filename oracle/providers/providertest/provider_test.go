@@ -73,11 +73,7 @@ func newTestProvider(
 		})
 	}
 
-	return base.NewProvider(base.Config{
-		Name:    "test",
-		Type:    base.API,
-		Markets: markets,
-	}, stubFetcher{
+	return base.NewProvider("test", base.API, markets, stubFetcher{
 		name:    "test",
 		tickers: tickers,
 		results: results,

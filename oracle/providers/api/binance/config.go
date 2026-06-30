@@ -3,7 +3,6 @@ package binance
 import (
 	"time"
 
-	"noah/oracle/providers/base"
 	"noah/oracle/providers/base/api"
 	"noah/oracle/providers/types"
 )
@@ -38,10 +37,6 @@ var DefaultNonUSAPIConfig = api.Config{
 	MaxBlockHeightAge: 30 * time.Second,
 }
 
-var DefaultProviderConfig = base.Config{
-	Name: Name,
-	Type: base.API,
-	Markets: types.Markets{
-		{Denom: "uusd", Symbol: "USDTUSD"},
-	},
+var DefaultMarkets = types.Markets{
+	{Denom: "uusd", Symbol: "USDTUSD"},
 }

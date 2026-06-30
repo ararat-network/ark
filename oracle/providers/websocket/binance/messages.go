@@ -2,6 +2,7 @@ package binance
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -207,7 +208,7 @@ type TickerMessageResponse struct {
 func (h *Handler) NewSubscribeRequestMessage(instruments []string) ([][]byte, error) {
 	numInstruments := len(instruments)
 	if numInstruments == 0 {
-		return nil, fmt.Errorf("no instruments to subscribe to")
+		return nil, errors.New("no instruments to subscribe to")
 	}
 
 	maxSubsPerBatch := h.config.MaxSubscriptionsPerBatch

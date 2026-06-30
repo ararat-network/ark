@@ -41,3 +41,7 @@ var DefaultWebSocketConfig = websocket.Config{
 	MaxTickersPerConnection:  DefaultMaxTickersPerConnection,
 	MaxSubscriptionsPerBatch: websocket.DefaultMaxSubscriptionsPerBatch,
 }
+
+var DefaultMarkets = types.Markets{
+	{Denom: "uusd", Symbol: "USDTUSD"},
+}

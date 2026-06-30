@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Market maps a chain denom to the provider symbol used to fetch its price.
 type Market struct {
@@ -36,20 +39,29 @@ func (m Markets) DenomToTicker(denom string) (Ticker, bool) {
 	return "", false
 }
 
+// Denoms returns a list of denoms within markets
+func (m Markets) Denoms() []string {
+	denoms := make([]string, 0, len(m))
+	for _, market := range m {
+		denoms = append(denoms, market.Denom)
+	}
+	return denoms
+}
+
 // Validate checks that markets are non-empty and contain unique denom/symbol mappings.
 func (m Markets) Validate() error {
 	if len(m) == 0 {
-		return fmt.Errorf("markets is empty")
+		return errors.New("markets is empty")
 	}
 
 	denoms := make(map[string]struct{}, len(m))
 	symbols := make(map[string]struct{}, len(m))
 	for _, market := range m {
 		if market.Denom == "" {
-			return fmt.Errorf("denom is empty")
+			return errors.New("denom is empty")
 		}
 		if market.Symbol == "" {
-			return fmt.Errorf("symbol is empty")
+			return errors.New("symbol is empty")
 		}
 
 		if _, ok := denoms[market.Denom]; ok {

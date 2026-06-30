@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -54,6 +55,9 @@ const (
 )
 
 // Config defines websocket fetcher settings for one provider.
+//
+// Config values are treated as immutable after being passed to NewFetcher.
+// Build a replacement config instead of mutating Endpoints in place.
 type Config struct {
 	// Name is the fetcher name used in logs and metrics.
 	Name string `json:"name"`
@@ -112,19 +116,19 @@ type Config struct {
 // Validate performs validation of the websocket config.
 func (c *Config) Validate() error {
 	if c.MaxBufferSize < 1 {
-		return fmt.Errorf("websocket max buffer size must be greater than 0")
+		return errors.New("websocket max buffer size must be greater than 0")
 	}
 
 	if c.ReconnectionTimeout < 0 {
-		return fmt.Errorf("websocket reconnection timeout cannot be negative")
+		return errors.New("websocket reconnection timeout cannot be negative")
 	}
 
 	if c.PostConnectionTimeout < 0 {
-		return fmt.Errorf("websocket post connection timeout cannot be negative")
+		return errors.New("websocket post connection timeout cannot be negative")
 	}
 
 	if len(c.Endpoints) == 0 {
-		return fmt.Errorf("websocket endpoints cannot be empty")
+		return errors.New("websocket endpoints cannot be empty")
 	}
 
 	for i, e := range c.Endpoints {
@@ -134,40 +138,40 @@ func (c *Config) Validate() error {
 	}
 
 	if len(c.Name) == 0 {
-		return fmt.Errorf("websocket name cannot be empty")
+		return errors.New("websocket name cannot be empty")
 	}
 
 	if c.HandshakeTimeout < 0 {
-		return fmt.Errorf("websocket handshake timeout cannot be negative")
+		return errors.New("websocket handshake timeout cannot be negative")
 	}
 
 	if c.ReadTimeout < 0 {
-		return fmt.Errorf("websocket read timeout cannot be negative")
+		return errors.New("websocket read timeout cannot be negative")
 	}
 
 	if c.WriteTimeout < 0 {
-		return fmt.Errorf("websocket write timeout cannot be negative")
+		return errors.New("websocket write timeout cannot be negative")
 	}
 
 	if c.PingInterval < 0 {
-		return fmt.Errorf("websocket ping interval cannot be negative")
+		return errors.New("websocket ping interval cannot be negative")
 	}
 
 	if c.WriteInterval < 0 {
-		return fmt.Errorf("websocket write interval cannot be negative")
+		return errors.New("websocket write interval cannot be negative")
 	}
 
 	if c.MaxReadErrorCount < 0 {
-		return fmt.Errorf("websocket max read error count cannot be negative")
+		return errors.New("websocket max read error count cannot be negative")
 	}
 
 	if c.MaxTickersPerConnection < 0 {
-		return fmt.Errorf("websocket max tickers per connection cannot be negative")
+		return errors.New("websocket max tickers per connection cannot be negative")
 	}
 
 	// TODO: can we allow 0 value? depends on data handler implementation
 	if c.MaxSubscriptionsPerBatch <= 0 {
-		return fmt.Errorf("websocket max subscriptions per batch must be greater than 0")
+		return errors.New("websocket max subscriptions per batch must be greater than 0")
 	}
 
 	return nil
