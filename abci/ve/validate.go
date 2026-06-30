@@ -3,6 +3,7 @@ package ve
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -35,7 +36,7 @@ func ValidateOracleVoteExtension(
 
 	for denom, rawRate := range ve.Rates {
 		if rawRate == nil {
-			return fmt.Errorf("nil oracle vote extension rate")
+			return errors.New("nil oracle vote extension rate")
 		}
 		rate, err := oracleencoding.DecodeRate(rawRate)
 		if err != nil {
@@ -265,7 +266,7 @@ func ValidateExtendedCommitAgainstLastCommit(ec cometabci.ExtendedCommitInfo, lc
 		}
 		return -int(vote1.Validator.Power - vote2.Validator.Power) // vp sorted in descending order
 	}) {
-		return fmt.Errorf("extended commit votes are not sorted by voting power")
+		return errors.New("extended commit votes are not sorted by voting power")
 	}
 
 	addressCache := make(map[string]struct{}, len(ec.Votes))

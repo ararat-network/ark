@@ -384,6 +384,8 @@ func acceptProcessProposal(_ sdk.Context, _ *cometabci.RequestProcessProposal) (
 }
 
 func rejectUnexpectedProcessProposal(t *testing.T) sdk.ProcessProposalHandler {
+	t.Helper()
+
 	return func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
 		require.Fail(t, "wrapped process handler should not be called")
 		return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT}, nil

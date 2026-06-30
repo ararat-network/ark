@@ -129,7 +129,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				"height", req.Height,
 			)
 
-			err = OracleClientError{fmt.Errorf("oracle returned nil prices")}
+			err = OracleClientError{errors.New("oracle returned nil prices")}
 
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
