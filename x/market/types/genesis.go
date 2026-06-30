@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 
 	"cosmossdk.io/math"
 
@@ -28,7 +28,7 @@ func DefaultGenesisState() *GenesisState {
 // Validate validates the provided market genesis state
 func (gs GenesisState) Validate() error {
 	if gs.NoahPoolDelta.IsNil() {
-		return fmt.Errorf("noah pool delta must not be nil")
+		return errors.New("noah pool delta must not be nil")
 	}
 
 	return gs.Params.Validate()

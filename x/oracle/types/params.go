@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -49,30 +50,30 @@ func DefaultParams() Params {
 // Validate performs basic validation on oracle parameters.
 func (p Params) Validate() error {
 	if p.VoteThreshold.LTE(math.LegacyNewDecWithPrec(33, 2)) {
-		return fmt.Errorf("oracle parameter VoteThreshold must be greater than 33 percent")
+		return errors.New("oracle parameter VoteThreshold must be greater than 33 percent")
 	}
 	if p.RewardBand.GT(math.LegacyOneDec()) || p.RewardBand.IsNegative() {
-		return fmt.Errorf("oracle parameter RewardBand must be between [0, 1]")
+		return errors.New("oracle parameter RewardBand must be between [0, 1]")
 	}
 	if p.RewardWindow == 0 {
 		return fmt.Errorf("oracle parameter RewardWindow must be > 0, is %d", p.RewardWindow)
 	}
 	if p.RewardDistributionWindow < p.RewardWindow {
-		return fmt.Errorf("oracle parameter RewardDistributionWindow must be greater than or equal with RewardWindow")
+		return errors.New("oracle parameter RewardDistributionWindow must be greater than or equal with RewardWindow")
 	}
 	if p.SlashFraction.GT(math.LegacyOneDec()) || p.SlashFraction.IsNegative() {
-		return fmt.Errorf("oracle parameter SlashFraction must be between [0, 1]")
+		return errors.New("oracle parameter SlashFraction must be between [0, 1]")
 	}
 	if p.SlashWindow == 0 {
 		return fmt.Errorf("oracle parameter SlashWindow must be > 0, is %d", p.SlashWindow)
 	}
 	if p.MinValidPerWindow.GT(math.LegacyOneDec()) || p.MinValidPerWindow.IsNegative() {
-		return fmt.Errorf("oracle parameter MinValidPerWindow must be between [0, 1]")
+		return errors.New("oracle parameter MinValidPerWindow must be between [0, 1]")
 	}
 	seen := make(map[string]struct{}, len(p.TobinTaxes))
 	for _, tobinTax := range p.TobinTaxes {
 		if tobinTax.TobinTax.GT(math.LegacyOneDec()) || tobinTax.TobinTax.IsNegative() {
-			return fmt.Errorf("oracle parameter TobinTaxes must have TobinTax between [0, 1]")
+			return errors.New("oracle parameter TobinTaxes must have TobinTax between [0, 1]")
 		}
 
 		if len(tobinTax.Denom) < 3 || tobinTax.Denom[0] != 'u' {

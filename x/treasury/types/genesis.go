@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -54,11 +55,11 @@ func DefaultGenesisState() *GenesisState {
 // expected invariants holds. (i.e. params in correct bounds, no duplicate validators)
 func (gs GenesisState) Validate() error {
 	if gs.TaxRate.IsNil() {
-		return fmt.Errorf("tax_rate must be set")
+		return errors.New("tax_rate must be set")
 	}
 
 	if gs.RewardWeight.IsNil() {
-		return fmt.Errorf("reward_weight must be set")
+		return errors.New("reward_weight must be set")
 	}
 
 	if err := gs.Params.Validate(); err != nil {
@@ -96,11 +97,11 @@ func (gs GenesisState) Validate() error {
 	}
 
 	if !validGenesisCoins(gs.EpochTaxProceeds) {
-		return fmt.Errorf("epoch_tax_proceeds must be valid")
+		return errors.New("epoch_tax_proceeds must be valid")
 	}
 
 	if !validGenesisCoins(gs.EpochInitialIssuance) {
-		return fmt.Errorf("epoch_initial_issuance must be valid")
+		return errors.New("epoch_initial_issuance must be valid")
 	}
 
 	seenEpochs := make(map[uint64]struct{}, len(gs.EpochStates))

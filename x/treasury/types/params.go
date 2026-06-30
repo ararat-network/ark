@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -89,7 +90,7 @@ func (p Params) Validate() error {
 	}
 
 	if !p.TaxPolicy.Cap.IsValid() {
-		return fmt.Errorf("treasury parameter TaxPolicy.Cap is invalid")
+		return errors.New("treasury parameter TaxPolicy.Cap is invalid")
 	}
 
 	if p.TaxPolicy.ChangeRateMax.IsNegative() {
@@ -122,11 +123,11 @@ func (p Params) Validate() error {
 	}
 
 	if p.WindowLong == 0 {
-		return fmt.Errorf("treasury parameter WindowLong must be positive")
+		return errors.New("treasury parameter WindowLong must be positive")
 	}
 
 	if p.WindowShort == 0 {
-		return fmt.Errorf("treasury parameter WindowShort must be positive")
+		return errors.New("treasury parameter WindowShort must be positive")
 	}
 
 	if p.WindowLong <= p.WindowShort {

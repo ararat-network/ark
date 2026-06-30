@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -43,7 +44,7 @@ func (gs GenesisState) Validate() error {
 	seenDenoms := make(map[string]bool)
 	for _, er := range gs.ExchangeRates {
 		if len(er.Denom) == 0 {
-			return fmt.Errorf("exchange rate denom must not be empty")
+			return errors.New("exchange rate denom must not be empty")
 		}
 		if er.Rate.IsNil() {
 			return fmt.Errorf("exchange rate for %s must be set", er.Denom)
@@ -61,7 +62,7 @@ func (gs GenesisState) Validate() error {
 	seenValidators := make(map[string]bool)
 	for _, mc := range gs.ScoreWeights {
 		if len(mc.ValidatorAddress) == 0 {
-			return fmt.Errorf("score weight validator address must not be empty")
+			return errors.New("score weight validator address must not be empty")
 		}
 		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
 			return fmt.Errorf("score weight validator address is invalid: %s", mc.ValidatorAddress)
@@ -76,7 +77,7 @@ func (gs GenesisState) Validate() error {
 	seenValidators = make(map[string]bool)
 	for _, mc := range gs.MissCounts {
 		if len(mc.ValidatorAddress) == 0 {
-			return fmt.Errorf("miss count validator address must not be empty")
+			return errors.New("miss count validator address must not be empty")
 		}
 		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
 			return fmt.Errorf("miss count validator address is invalid: %s", mc.ValidatorAddress)
