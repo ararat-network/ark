@@ -2,16 +2,18 @@
 
 This package contains Noah oracle price provider construction and provider-specific adapters.
 
-The shared runtime lives in `base/`. The public constructor in `factory.go` selects a transport-specific fetcher from
-the provider config, builds the matching provider adapter, and returns a `base.Provider`. Provider packages under
-`api/` and `websocket/` should stay focused on exchange-specific request, message, and response handling.
+The shared runtime lives in `base/`. The public constructor in `factory.go` validates a `providers.Config`, selects the
+configured API or WebSocket fetcher, builds the matching provider adapter, and returns a `base.Provider`. Provider
+packages under `api/` and `websocket/` should stay focused on exchange-specific request, message, and response handling.
 
 ## Package Layout
 
-- `factory.go` wires a `base.Config` to the correct API or WebSocket fetcher.
+- `config.go` defines the provider-level config, including provider identity, markets, and transport-specific config.
+- `factory.go` wires a `providers.Config` to the correct API or WebSocket fetcher.
 - `api/` contains HTTP API provider adapters.
 - `websocket/` contains WebSocket provider adapters.
-- `base/` contains the provider runtime, API fetcher, WebSocket fetcher, metrics, and shared lifecycle logic.
+- `base/` contains the provider runtime, transport fetcher interfaces, metrics, and shared lifecycle logic.
+- `base/api/` and `base/websocket/` contain the shared API and WebSocket fetcher implementations.
 - `types/` contains shared provider values such as tickers, endpoints, markets, responses, and errors.
 - `providertest/` contains helpers for tests that need runnable provider instances.
 
@@ -34,5 +36,5 @@ branch needed in `factory.go`.
 1. Add provider-specific config defaults near the provider adapter.
 2. Implement the relevant data handler interface.
 3. Add a branch in `factory.go` that selects the handler and default fetcher config.
-4. Add market mappings in the provider `base.Config` used by callers.
+4. Add market mappings in the provider `providers.Config` used by callers.
 5. Add focused tests for parsing, request/message creation, and the fetcher boundary touched by the adapter.

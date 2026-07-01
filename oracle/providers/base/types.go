@@ -9,3 +9,10 @@ const (
 	// API identifies an HTTP API provider fetcher.
 	API TransportType = "api"
 )
+
+type ProviderType string
+
+const (
+	Fiat   ProviderType = "fiat"
+	Crypto ProviderType = "crypto"
+)
