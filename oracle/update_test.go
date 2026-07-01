@@ -11,11 +11,14 @@ import (
 	"cosmossdk.io/log/v2"
 
 	"noah/oracle/providers"
+	binanceapi "noah/oracle/providers/api/binance"
 	"noah/oracle/providers/base"
 	"noah/oracle/providers/base/api"
 	basetestutil "noah/oracle/providers/base/testutil"
+	"noah/oracle/providers/base/websocket"
 	providertypes "noah/oracle/providers/types"
 	oracletestutil "noah/oracle/testutil"
+	"noah/oracle/types"
 )
 
 func TestUpdateOracleDoesNotStopExistingProviderWhenReplacementBuildFails(t *testing.T) {
@@ -97,6 +100,7 @@ func TestUpdateOracleAppliesUpdateIntervalWithoutRestart(t *testing.T) {
 	aggregator := oracletestutil.NewMockPriceAggregator(ctrl)
 	aggregateCh := make(chan struct{}, 1)
 	aggregator.EXPECT().Reset().AnyTimes()
+	aggregator.EXPECT().GetPrices().Return(types.Prices{}).AnyTimes()
 	aggregator.EXPECT().
 		AggregatePrices().
 		Do(func() {
@@ -152,6 +156,392 @@ func TestStartProviderDoesNotMarkIntentionalProviderStopAsFailed(t *testing.T) {
 
 	provider.provider.Stop()
 	requireWaitGroupDone(t, &oracle.wg)
+}
+
+func TestPlanUpdateAddsNewProvider(t *testing.T) {
+	denoms := []string{"uusd"}
+	markets := providertypes.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+	providerCfg := testBinanceAPIProviderConfig(markets)
+	oldCfg := testOracleConfig(denoms, map[string]providers.Config{})
+	newCfg := testOracleConfig(denoms, map[string]providers.Config{
+		providerCfg.Name: providerCfg,
+	})
+	oracle := &Oracle{logger: log.NewNopLogger()}
+
+	plan, err := oracle.planUpdate(oldCfg, newCfg, nil)
+
+	require.NoError(t, err)
+	require.Empty(t, plan.remove)
+	require.Empty(t, plan.stop)
+	require.Empty(t, plan.updates)
+	require.Len(t, plan.set, 1)
+	require.Contains(t, plan.set, providerCfg.Name)
+	require.Len(t, plan.start, 1)
+	require.Same(t, plan.set[providerCfg.Name], plan.start[0])
+}
+
+func TestPlanUpdateRemovesDeletedProvider(t *testing.T) {
+	denoms := []string{"uusd"}
+	markets := providertypes.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+	providerCfg := testUnknownAPIProviderConfig("unknown", markets)
+	oldCfg := testOracleConfig(denoms, map[string]providers.Config{
+		"unknown": providerCfg,
+	})
+	newCfg := testOracleConfig(denoms, map[string]providers.Config{})
+	ctrl := gomock.NewController(t)
+	provider := newMockProvider(t, ctrl, "unknown", markets, denoms)
+	oracle := &Oracle{logger: log.NewNopLogger()}
+
+	plan, err := oracle.planUpdate(oldCfg, newCfg, map[string]*base.Provider{
+		"unknown": provider.provider,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"unknown"}, plan.remove)
+	require.Equal(t, []*base.Provider{provider.provider}, plan.stop)
+	require.Empty(t, plan.set)
+	require.Empty(t, plan.start)
+	require.Empty(t, plan.updates)
+}
+
+func TestPlanUpdateReplacesProviderWhenRuntimeConfigChanges(t *testing.T) {
+	denoms := []string{"uusd"}
+	markets := providertypes.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+	providerCfg := testBinanceAPIProviderConfig(markets)
+	oldCfg := testOracleConfig(denoms, map[string]providers.Config{
+		providerCfg.Name: providerCfg,
+	})
+	newProviderCfg := providerCfg
+	newProviderCfg.API.Interval += time.Second
+	newCfg := testOracleConfig(denoms, map[string]providers.Config{
+		newProviderCfg.Name: newProviderCfg,
+	})
+	ctrl := gomock.NewController(t)
+	oldProvider := newMockProvider(t, ctrl, providerCfg.Name, markets, denoms)
+	oracle := &Oracle{logger: log.NewNopLogger()}
+
+	plan, err := oracle.planUpdate(oldCfg, newCfg, map[string]*base.Provider{
+		providerCfg.Name: oldProvider.provider,
+	})
+
+	require.NoError(t, err)
+	require.Empty(t, plan.remove)
+	require.Equal(t, []*base.Provider{oldProvider.provider}, plan.stop)
+	require.Len(t, plan.set, 1)
+	require.Contains(t, plan.set, providerCfg.Name)
+	require.NotSame(t, oldProvider.provider, plan.set[providerCfg.Name])
+	require.Len(t, plan.start, 1)
+	require.Same(t, plan.set[providerCfg.Name], plan.start[0])
+	require.Empty(t, plan.updates)
+}
+
+func TestPlanUpdateReturnsErrorWhenRuntimeProviderIsMissing(t *testing.T) {
+	denoms := []string{"uusd"}
+	markets := providertypes.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+	providerCfg := testUnknownAPIProviderConfig("unknown", markets)
+	cfg := testOracleConfig(denoms, map[string]providers.Config{
+		"unknown": providerCfg,
+	})
+	oracle := &Oracle{logger: log.NewNopLogger()}
+
+	_, err := oracle.planUpdate(cfg, cfg, map[string]*base.Provider{})
+
+	require.ErrorContains(t, err, `provider "unknown" missing from runtime state`)
+}
+
+func TestPlanUpdateReturnsNoopForEquivalentConfig(t *testing.T) {
+	denoms := []string{"uusd"}
+	markets := providertypes.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+	providerCfg := testUnknownAPIProviderConfig("unknown", markets)
+	cfg := testOracleConfig(denoms, map[string]providers.Config{
+		"unknown": providerCfg,
+	})
+	ctrl := gomock.NewController(t)
+	provider := newMockProvider(t, ctrl, "unknown", markets, denoms)
+	oracle := &Oracle{logger: log.NewNopLogger()}
+
+	plan, err := oracle.planUpdate(cfg, cfg, map[string]*base.Provider{
+		"unknown": provider.provider,
+	})
+
+	require.NoError(t, err)
+	require.Empty(t, plan.remove)
+	require.Empty(t, plan.stop)
+	require.Empty(t, plan.set)
+	require.Empty(t, plan.start)
+	require.Empty(t, plan.updates)
+}
+
+func TestSameProviderConfigComparesIdentityTypeAndTransportConfig(t *testing.T) {
+	markets := providertypes.Markets{{Denom: "uusd", Symbol: "USDTUSD"}}
+
+	testCases := []struct {
+		name string
+		a    providers.Config
+		b    providers.Config
+		want bool
+	}{
+		{
+			name: "matching api config",
+			a:    testUnknownAPIProviderConfig("unknown", markets),
+			b:    testUnknownAPIProviderConfig("unknown", markets),
+			want: true,
+		},
+		{
+			name: "different provider name",
+			a:    testUnknownAPIProviderConfig("unknown", markets),
+			b: func() providers.Config {
+				cfg := testUnknownAPIProviderConfig("other", markets)
+				return cfg
+			}(),
+			want: false,
+		},
+		{
+			name: "different provider type",
+			a:    testUnknownAPIProviderConfig("unknown", markets),
+			b:    testWebSocketProviderConfig("unknown", markets),
+			want: false,
+		},
+		{
+			name: "matching websocket config",
+			a:    testWebSocketProviderConfig("unknown", markets),
+			b:    testWebSocketProviderConfig("unknown", markets),
+			want: true,
+		},
+		{
+			name: "different websocket config",
+			a:    testWebSocketProviderConfig("unknown", markets),
+			b: func() providers.Config {
+				cfg := testWebSocketProviderConfig("unknown", markets)
+				cfg.WebSocket.ReadTimeout += time.Second
+				return cfg
+			}(),
+			want: false,
+		},
+		{
+			name: "invalid provider type",
+			a: providers.Config{
+				Name: "unknown",
+				Type: base.TransportType("unknown"),
+			},
+			b: providers.Config{
+				Name: "unknown",
+				Type: base.TransportType("unknown"),
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, sameProviderConfig(tc.a, tc.b))
+		})
+	}
+}
+
+func TestSameWebSocketConfig(t *testing.T) {
+	testCases := []struct {
+		name   string
+		mutate func(*websocket.Config)
+		want   bool
+	}{
+		{
+			name: "equal",
+			want: true,
+		},
+		{
+			name: "name differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.Name = "other"
+			},
+		},
+		{
+			name: "max buffer size differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.MaxBufferSize++
+			},
+		},
+		{
+			name: "reconnection timeout differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.ReconnectionTimeout++
+			},
+		},
+		{
+			name: "post connection timeout differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.PostConnectionTimeout++
+			},
+		},
+		{
+			name: "endpoints differ",
+			mutate: func(cfg *websocket.Config) {
+				cfg.Endpoints = append(cfg.Endpoints, providertypes.Endpoint{URL: "wss://backup.example.invalid/stream"})
+			},
+		},
+		{
+			name: "handshake timeout differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.HandshakeTimeout++
+			},
+		},
+		{
+			name: "enable compression differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.EnableCompression = !cfg.EnableCompression
+			},
+		},
+		{
+			name: "read timeout differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.ReadTimeout++
+			},
+		},
+		{
+			name: "write timeout differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.WriteTimeout++
+			},
+		},
+		{
+			name: "ping interval differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.PingInterval++
+			},
+		},
+		{
+			name: "write interval differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.WriteInterval++
+			},
+		},
+		{
+			name: "max read error count differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.MaxReadErrorCount++
+			},
+		},
+		{
+			name: "max tickers per connection differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.MaxTickersPerConnection++
+			},
+		},
+		{
+			name: "max subscriptions per batch differs",
+			mutate: func(cfg *websocket.Config) {
+				cfg.MaxSubscriptionsPerBatch++
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := testWebSocketConfig("unknown")
+			b := testWebSocketConfig("unknown")
+			if tc.mutate != nil {
+				tc.mutate(&b)
+			}
+
+			require.Equal(t, tc.want, sameWebSocketConfig(a, b))
+		})
+	}
+}
+
+func TestSameDenoms(t *testing.T) {
+	testCases := []struct {
+		name string
+		a    []string
+		b    []string
+		want bool
+	}{
+		{
+			name: "same order",
+			a:    []string{"uusd", "ukrw"},
+			b:    []string{"uusd", "ukrw"},
+			want: true,
+		},
+		{
+			name: "different order",
+			a:    []string{"uusd", "ukrw"},
+			b:    []string{"ukrw", "uusd"},
+			want: true,
+		},
+		{
+			name: "different duplicate count",
+			a:    []string{"uusd", "uusd"},
+			b:    []string{"uusd", "ukrw"},
+			want: false,
+		},
+		{
+			name: "missing denom",
+			a:    []string{"uusd", "ukrw"},
+			b:    []string{"uusd", "ueur"},
+			want: false,
+		},
+		{
+			name: "different length",
+			a:    []string{"uusd"},
+			b:    []string{"uusd", "ukrw"},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, sameDenoms(tc.a, tc.b))
+		})
+	}
+}
+
+func TestSameMarkets(t *testing.T) {
+	usdMarket := providertypes.Market{Denom: "uusd", Symbol: "USDTUSD"}
+	krwMarket := providertypes.Market{Denom: "ukrw", Symbol: "KRWUSD"}
+	eurMarket := providertypes.Market{Denom: "ueur", Symbol: "EURUSD"}
+
+	testCases := []struct {
+		name string
+		a    providertypes.Markets
+		b    providertypes.Markets
+		want bool
+	}{
+		{
+			name: "same order",
+			a:    providertypes.Markets{usdMarket, krwMarket},
+			b:    providertypes.Markets{usdMarket, krwMarket},
+			want: true,
+		},
+		{
+			name: "different order",
+			a:    providertypes.Markets{usdMarket, krwMarket},
+			b:    providertypes.Markets{krwMarket, usdMarket},
+			want: true,
+		},
+		{
+			name: "different duplicate count",
+			a:    providertypes.Markets{usdMarket, usdMarket},
+			b:    providertypes.Markets{usdMarket, krwMarket},
+			want: false,
+		},
+		{
+			name: "missing market",
+			a:    providertypes.Markets{usdMarket, krwMarket},
+			b:    providertypes.Markets{usdMarket, eurMarket},
+			want: false,
+		},
+		{
+			name: "different length",
+			a:    providertypes.Markets{usdMarket},
+			b:    providertypes.Markets{usdMarket, krwMarket},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, sameMarkets(tc.a, tc.b))
+		})
+	}
 }
 
 type mockProvider struct {
@@ -221,6 +611,47 @@ func testUnknownAPIProviderConfig(name string, markets providertypes.Markets) pr
 			Interval:  time.Second,
 			Endpoints: []providertypes.Endpoint{{URL: "https://example.invalid/prices"}},
 		},
+	}
+}
+
+func testMarkets() providertypes.Markets {
+	return providertypes.Markets{
+		{Denom: "uusd", Symbol: "USDTUSD"},
+		{Denom: "ukrw", Symbol: "KRWUSD"},
+	}
+}
+
+func testBinanceAPIProviderConfig(markets providertypes.Markets) providers.Config {
+	cfg := testUnknownAPIProviderConfig(binanceapi.Name, markets)
+	cfg.API = binanceapi.DefaultNonUSAPIConfig
+	return cfg
+}
+
+func testWebSocketProviderConfig(name string, markets providertypes.Markets) providers.Config {
+	return providers.Config{
+		Name:      name,
+		Type:      base.WebSocket,
+		Markets:   markets,
+		WebSocket: testWebSocketConfig(name),
+	}
+}
+
+func testWebSocketConfig(name string) websocket.Config {
+	return websocket.Config{
+		Name:                     name,
+		MaxBufferSize:            1,
+		ReconnectionTimeout:      time.Second,
+		PostConnectionTimeout:    time.Second,
+		Endpoints:                []providertypes.Endpoint{{URL: "wss://example.invalid/stream"}},
+		HandshakeTimeout:         time.Second,
+		EnableCompression:        false,
+		ReadTimeout:              time.Second,
+		WriteTimeout:             time.Second,
+		PingInterval:             time.Second,
+		WriteInterval:            time.Second,
+		MaxReadErrorCount:        1,
+		MaxTickersPerConnection:  1,
+		MaxSubscriptionsPerBatch: 1,
 	}
 }
 

@@ -20,7 +20,7 @@ func (o *Oracle) fetchAllPrices() {
 
 	o.aggregator.Reset()
 
-	providers, maxPriceAge := o.priceFetchSnapshot()
+	providers, maxPriceAge, denoms := o.priceFetchSnapshot()
 	for _, provider := range providers {
 		o.fetchPrices(provider, maxPriceAge)
 	}
@@ -28,6 +28,7 @@ func (o *Oracle) fetchAllPrices() {
 	o.logger.Debug("oracle fetched prices from providers")
 
 	o.aggregator.AggregatePrices()
+	o.recordMissingPrices(denoms)
 	o.setLastSyncTime(time.Now().UTC())
 	oraclemetrics.RecordOracleTick(context.Background())
 }
@@ -105,8 +106,8 @@ func (o *Oracle) fetchPrices(provider *base.Provider, maxPriceAge time.Duration)
 	o.aggregator.SetProviderPrices(provider.Name(), timeFilteredPrices)
 }
 
-// priceFetchSnapshot returns the providers and freshness window for one fetch tick.
-func (o *Oracle) priceFetchSnapshot() ([]*base.Provider, time.Duration) {
+// priceFetchSnapshot returns the providers, freshness window, and expected denoms for one fetch tick.
+func (o *Oracle) priceFetchSnapshot() ([]*base.Provider, time.Duration, []string) {
 	o.mut.RLock()
 	defer o.mut.RUnlock()
 
@@ -115,7 +116,24 @@ func (o *Oracle) priceFetchSnapshot() ([]*base.Provider, time.Duration) {
 		providers = append(providers, provider)
 	}
 
-	return providers, o.cfg.MaxPriceAge
+	return providers, o.cfg.MaxPriceAge, append([]string(nil), o.cfg.Denoms...)
+}
+
+// recordMissingPrices records expected denoms missing from the latest aggregate prices.
+func (o *Oracle) recordMissingPrices(denoms []string) {
+	if len(denoms) == 0 {
+		return
+	}
+
+	prices := o.aggregator.GetPrices()
+	missing := make([]string, 0, len(denoms))
+	for _, denom := range denoms {
+		if _, ok := prices[denom]; !ok {
+			missing = append(missing, denom)
+		}
+	}
+
+	oraclemetrics.RecordMissingPrices(context.Background(), missing)
 }
 
 // setLastSyncTime records when prices were last aggregated.
