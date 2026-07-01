@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/log/v2"
 
 	binanceapi "noah/oracle/providers/api/binance"
+	frankfurterapi "noah/oracle/providers/api/frankfurter"
 	"noah/oracle/providers/base"
 	"noah/oracle/providers/base/api"
 	"noah/oracle/providers/base/websocket"
@@ -57,6 +58,8 @@ func buildAPIFetcher(cfg Config, logger log.Logger) (*api.Fetcher, error) {
 	switch cfg.Name {
 	case binanceapi.Name:
 		dataHandler = binanceapi.NewHandler()
+	case frankfurterapi.Name:
+		dataHandler = frankfurterapi.NewHandler()
 	default:
 		return nil, fmt.Errorf("unrecognised provider name: %s", cfg.Name)
 	}

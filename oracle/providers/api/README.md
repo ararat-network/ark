@@ -20,3 +20,4 @@ shared fetcher. Endpoint authentication belongs in config; adapters should not h
 ## Supported Providers
 
 - [Binance](./binance/README.md) fetches spot ticker prices from Binance's public REST API.
+- Frankfurter fetches fiat exchange rates from Frankfurter's public REST API.
