@@ -3,16 +3,17 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/wasm/`. The chain uses **cosmos-sdk v0.53.5** with depinject and
-`cosmossdk.io/*` packages.
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/wasm/`. The chain currently uses **cosmos-sdk v0.54.2** with
+depinject and `cosmossdk.io/*` packages; always verify `go.mod` before SDK-specific work because the SDK version can
+move.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
 
 - **Dependency injection**: depinject-based module wiring, not manual constructor calls
 - **Logging**: `cosmossdk.io/log` not `tendermint/libs/log`
-- **Protobuf codegen**: dual generation — gogo (`x/*/types/*.pb.go`) + pulsar (`api/*.pulsar.go`), following upstream
-  SDK v0.53 pattern
-- **Proto annotations**: key rules (detailed reference in `.claude/` memory files):
+- **Protobuf codegen**: dual generation — gogo (`x/*/types/*.pb.go`) + pulsar (`api/*.pulsar.go`), following current
+  upstream SDK dual-generation patterns
+- **Proto annotations**: key rules:
   - Dec/Int fields: `cosmos_proto.scalar` + `gogoproto.customtype` + `gogoproto.nullable = false` +
     `amino.dont_omitempty = true`
   - Address fields: `cosmos_proto.scalar` = `cosmos.AddressString` or `cosmos.ValidatorAddressString`
@@ -30,6 +31,7 @@ Reference codebases:
 - **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Connect reference**: `../connect/`; when the user says `connect`, use this repo.
+- **Terra Feeder reference**: `../oracle-feeder/`; when the user says `feeder`, use this repo.
 - **Upstream Cosmos SDK reference**: `../cosmos-sdk/`
 - **Gaia reference**: `../gaia/`
 
@@ -40,10 +42,26 @@ x/market/       # DEX swap module (Ark ↔ stablecoins)
 x/oracle/       # Price oracle module (validator price voting)
 x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
 x/wasm/         # CosmWasm smart contract module (exported interfaces)
-proto/noah/     # Proto definitions (market, oracle, treasury)
+abci/           # Vote-extension, proposal, and preblock oracle pipeline
+oracle/         # Off-chain oracle runtime, providers, transport, and validation
+pkg/            # Shared primitives such as encoding, telemetry, and minimal metrics
+proto/noah/     # Proto definitions (modules, ABCI, transport)
 api/noah/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config
 ```
+
+## Oracle, Transport, And ABCI Boundaries
+
+- Keep `x/oracle/` as the on-chain module and top-level `oracle/` as the off-chain runtime.
+- Keep `oracle/types` domain-only. RPC structs and transport errors live under `oracle/transport/types`; routes use
+  `/noah/transport/v1/...`.
+- `oracle/providers` owns full provider config and construction. `oracle/providers/base` owns runtime fields, fetch
+  loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and `TransportType`.
+- `abci/` is fixed protocol code, not a pluggable strategy layer. Lifecycle hooks stay thin; `abci/oracle` owns vote
+  extraction, aggregation, scoring, price application, and oracle-specific encoding policy.
+- Keep primitive codecs in `pkg/encoding`; keep vote-extension size/rate policy in `abci/oracle/encoding`.
+- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `oracle/metrics`; keep
+  `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
 
 ## Cosmos SDK Conventions
 
@@ -90,7 +108,7 @@ When porting from Classic, always modernize:
 
 ## Protobuf Generation
 
-Dual generation pipeline matching upstream Cosmos SDK v0.53:
+Dual generation pipeline matching the current upstream Cosmos SDK pattern:
 
 - `proto/buf.gen.gogo.yaml`: gocosmos + grpc-gateway → `x/*/types/*.pb.go` (typed Go structs via `gogoproto.customtype`)
 - `proto/buf.gen.yaml`: go-pulsar + go-grpc → `api/*.pulsar.go` (standard protobuf, managed mode)
@@ -130,7 +148,9 @@ string field_name = N [
 ## Build & Verification
 
 - Build the binary: `go build -o build/noahd ./cmd/noahd`
-- Always run `go build ./...` after making code changes to verify compilation
+- Use scope-matched verification first. Run focused package tests for narrow changes; use `go build ./...` when the
+  change should affect the whole repo or before claiming repo-wide compile. If unrelated checkout drift blocks repo-wide
+  verification, report the exact blocker.
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`
