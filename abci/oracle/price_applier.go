@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"noah/abci/codec"
-	abcioracletypes "noah/abci/oracle/types"
 	noahabcitypes "noah/abci/types"
 	oracletypes "noah/x/oracle/types"
 )
@@ -63,7 +62,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
+		return nil, nil, OracleKeeperError{Err: err}
 	}
 
 	pa.logger.Debug(
@@ -94,7 +93,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 	}
 
 	// Aggregate all oracle vote extensions into a single set of prices.
-	prices, scoreMap, err := pa.va.AggregateOracleVotes(ctx, votes, params, voteTargets)
+	prices, scoreMap, err := pa.va.aggregateOracleVotes(ctx, votes, params, voteTargets)
 	if err != nil {
 		pa.logger.Error(
 			"failed to aggregate oracle votes",
@@ -102,7 +101,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, abcioracletypes.PriceAggregationError{Err: err}
+		return nil, nil, PriceAggregationError{Err: err}
 	}
 
 	for denom, price := range prices {
@@ -120,7 +119,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
+			return nil, nil, OracleKeeperError{Err: err}
 		}
 
 		pa.logger.Debug(
@@ -140,7 +139,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
+			return nil, nil, OracleKeeperError{Err: err}
 		}
 
 		if int(score.WinCount) != len(voteTargets) {
@@ -152,7 +151,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 					"err", err,
 				)
 
-				return nil, nil, abcioracletypes.OracleKeeperError{Err: err}
+				return nil, nil, OracleKeeperError{Err: err}
 			}
 		}
 	}

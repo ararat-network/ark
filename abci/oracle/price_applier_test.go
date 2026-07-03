@@ -15,7 +15,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"noah/abci/oracle"
-	abcioracletypes "noah/abci/oracle/types"
 	abcitestutil "noah/abci/testutil"
 	oracletypes "noah/x/oracle/types"
 )
@@ -41,7 +40,7 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 				Txs:    nil,
 			},
 			expectErr:         true,
-			expectedErrorType: abcioracletypes.OracleKeeperError{},
+			expectedErrorType: oracle.OracleKeeperError{},
 		},
 		{
 			name: "valid quorum writes exchange rate and score weights",

@@ -1,4 +1,4 @@
-package proposals
+package proposals_test
 
 import (
 	"errors"
@@ -15,85 +15,25 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"noah/abci/proposals"
 	abcitestutil "noah/abci/testutil"
 	"noah/abci/ve"
 	vetypes "noah/abci/ve/types"
 )
 
-func TestValidateVoteExtension(t *testing.T) {
-	validVoteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-		"uusd": math.LegacyNewDec(100),
-	})
-	decodeErr := errors.New("decode failed")
-
-	testCases := []struct {
-		name      string
-		vote      cometabci.ExtendedVoteInfo
-		setup     func(*abcitestutil.MockVoteExtensionCodec)
-		expectErr bool
-	}{
-		{
-			name: "empty vote extension is valid",
-			vote: abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, nil),
-		},
-		{
-			name: "codec decode error is returned",
-			vote: abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("bad")),
-			setup: func(veCodec *abcitestutil.MockVoteExtensionCodec) {
-				veCodec.EXPECT().Decode([]byte("bad")).Return(vetypes.OracleVoteExtension{}, decodeErr)
-			},
-			expectErr: true,
-		},
-		{
-			name: "invalid oracle vote extension is returned",
-			vote: abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("invalid")),
-			setup: func(veCodec *abcitestutil.MockVoteExtensionCodec) {
-				veCodec.EXPECT().Decode([]byte("invalid")).Return(vetypes.OracleVoteExtension{
-					Rates: map[string][]byte{"uusd": nil},
-				}, nil)
-			},
-			expectErr: true,
-		},
-		{
-			name: "valid oracle vote extension passes",
-			vote: abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("valid")),
-			setup: func(veCodec *abcitestutil.MockVoteExtensionCodec) {
-				veCodec.EXPECT().Decode([]byte("valid")).Return(validVoteExtension, nil)
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			veCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
-			if tc.setup != nil {
-				tc.setup(veCodec)
-			}
-
-			err := validateVoteExtension(abcitestutil.NewSDKContext(3, 2), tc.vote, veCodec)
-			if tc.expectErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestValidateExtendedCommitInfo(t *testing.T) {
 	validateErr := errors.New("commit validation failed")
+	decodeErr := errors.New("decode failed")
 	validVoteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 		"uusd": math.LegacyNewDec(100),
 	})
 
 	testCases := []struct {
-		name              string
-		extendedCommit    cometabci.ExtendedCommitInfo
-		setup             func(*abcitestutil.MockVoteExtensionCodec)
-		validate          ve.ValidateVoteExtensionsFn
-		expectErr         bool
-		expectedValidated cometabci.ExtendedCommitInfo
+		name           string
+		extendedCommit cometabci.ExtendedCommitInfo
+		setup          func(*abcitestutil.MockVoteExtensionCodec)
+		validate       ve.ValidateVoteExtensionsFn
+		expectErr      bool
 	}{
 		{
 			name: "commit validation error returns before vote extension decoding",
@@ -108,17 +48,26 @@ func TestValidateExtendedCommitInfo(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "valid commit validates non-empty vote extensions",
+			name: "empty vote extension is valid",
 			extendedCommit: cometabci.ExtendedCommitInfo{
 				Votes: []cometabci.ExtendedVoteInfo{
-					abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("valid")),
-					abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator2"), 1, nil),
+					abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, nil),
+				},
+			},
+			validate: ve.NoOpValidateVoteExtensions,
+		},
+		{
+			name: "codec decode error is returned",
+			extendedCommit: cometabci.ExtendedCommitInfo{
+				Votes: []cometabci.ExtendedVoteInfo{
+					abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("bad")),
 				},
 			},
 			setup: func(veCodec *abcitestutil.MockVoteExtensionCodec) {
-				veCodec.EXPECT().Decode([]byte("valid")).Return(validVoteExtension, nil)
+				veCodec.EXPECT().Decode([]byte("bad")).Return(vetypes.OracleVoteExtension{}, decodeErr)
 			},
-			validate: ve.NoOpValidateVoteExtensions,
+			validate:  ve.NoOpValidateVoteExtensions,
+			expectErr: true,
 		},
 		{
 			name: "invalid oracle vote extension returns error",
@@ -134,6 +83,19 @@ func TestValidateExtendedCommitInfo(t *testing.T) {
 			},
 			validate:  ve.NoOpValidateVoteExtensions,
 			expectErr: true,
+		},
+		{
+			name: "valid commit validates non-empty vote extensions",
+			extendedCommit: cometabci.ExtendedCommitInfo{
+				Votes: []cometabci.ExtendedVoteInfo{
+					abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("valid")),
+					abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator2"), 1, nil),
+				},
+			},
+			setup: func(veCodec *abcitestutil.MockVoteExtensionCodec) {
+				veCodec.EXPECT().Decode([]byte("valid")).Return(validVoteExtension, nil)
+			},
+			validate: ve.NoOpValidateVoteExtensions,
 		},
 	}
 
@@ -234,11 +196,11 @@ func newTestProposalHandler(
 	t *testing.T,
 	veCodec *abcitestutil.MockVoteExtensionCodec,
 	validate ve.ValidateVoteExtensionsFn,
-) *Handler {
+) *proposals.Handler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	return NewHandler(
+	return proposals.NewHandler(
 		log.NewTestLogger(t),
 		passThroughPrepareProposal,
 		acceptProcessProposal,
@@ -246,12 +208,4 @@ func newTestProposalHandler(
 		veCodec,
 		abcitestutil.NewMockExtendedCommitCodec(ctrl),
 	)
-}
-
-func passThroughPrepareProposal(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-	return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
-}
-
-func acceptProcessProposal(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
-	return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
 }

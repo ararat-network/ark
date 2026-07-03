@@ -1,31 +1,33 @@
-package encoding
+package encoding_test
 
 import (
 	"testing"
 
 	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
+
+	oracleencoding "noah/abci/oracle/encoding"
 )
 
 func TestEncodeDecodeRate(t *testing.T) {
 	rate := math.LegacyMustNewDecFromStr("1.23")
 
-	encoded, err := EncodeRate(rate)
+	encoded, err := oracleencoding.EncodeRate(rate)
 	require.NoError(t, err)
 
-	decoded, err := DecodeRate(encoded)
+	decoded, err := oracleencoding.DecodeRate(encoded)
 	require.NoError(t, err)
 	require.True(t, rate.Equal(decoded))
 }
 
 func TestDecodeRateRejectsOversizedBytes(t *testing.T) {
-	_, err := DecodeRate(make([]byte, MaxRateBytes+1))
+	_, err := oracleencoding.DecodeRate(make([]byte, oracleencoding.MaxRateBytes+1))
 	require.ErrorContains(t, err, "exceeds maximum")
 }
 
 func TestRateValidation(t *testing.T) {
 	t.Run("nil rate", func(t *testing.T) {
-		_, err := EncodeRate(math.LegacyDec{})
+		_, err := oracleencoding.EncodeRate(math.LegacyDec{})
 		require.Error(t, err)
 	})
 
@@ -45,7 +47,7 @@ func TestRateValidation(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := DecodeRate(tc.bz)
+			_, err := oracleencoding.DecodeRate(tc.bz)
 			require.Error(t, err)
 		})
 	}

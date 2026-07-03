@@ -1,4 +1,4 @@
-package types_test
+package oracle
 
 import (
 	"testing"
@@ -9,24 +9,23 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/oracle/types"
 	chain "noah/pkg/chain"
 )
 
-func TestValidatorMap(t *testing.T) {
+func TestDenomVotesValidatorMap(t *testing.T) {
 	valAddr1 := sdk.ConsAddress([]byte("validator1___________"))
 	valAddr2 := sdk.ConsAddress([]byte("validator2___________"))
 
 	tests := []struct {
 		name     string
-		votes    types.DenomVotes
+		votes    denomVotes
 		expected map[string]math.LegacyDec
 	}{
 		{
 			name: "filters non-positive rates",
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyNewDec(1600), chain.MicroKRWDenom, valAddr1, 100),
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr2, 100),
+			votes: denomVotes{
+				newDenomVote(math.LegacyNewDec(1600), chain.MicroKRWDenom, valAddr1, 100),
+				newDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr2, 100),
 			},
 			expected: map[string]math.LegacyDec{
 				string(valAddr1): math.LegacyNewDec(1600),
@@ -34,8 +33,8 @@ func TestValidatorMap(t *testing.T) {
 		},
 		{
 			name: "includes positive rate with zero power",
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyNewDec(1600), chain.MicroKRWDenom, valAddr1, 0),
+			votes: denomVotes{
+				newDenomVote(math.LegacyNewDec(1600), chain.MicroKRWDenom, valAddr1, 0),
 			},
 			expected: map[string]math.LegacyDec{
 				string(valAddr1): math.LegacyNewDec(1600),
@@ -43,9 +42,9 @@ func TestValidatorMap(t *testing.T) {
 		},
 		{
 			name: "duplicate zero rate does not erase previous positive rate",
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyNewDec(1600), chain.MicroKRWDenom, valAddr1, 100),
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 100),
+			votes: denomVotes{
+				newDenomVote(math.LegacyNewDec(1600), chain.MicroKRWDenom, valAddr1, 100),
+				newDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 100),
 			},
 			expected: map[string]math.LegacyDec{
 				string(valAddr1): math.LegacyNewDec(1600),
@@ -55,20 +54,20 @@ func TestValidatorMap(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.votes.ValidatorMap())
+			require.Equal(t, tc.expected, tc.votes.validatorMap())
 		})
 	}
 }
 
-func TestCrossRate(t *testing.T) {
+func TestDenomVotesCrossRate(t *testing.T) {
 	valAddr1 := sdk.ConsAddress([]byte("validator1___________"))
 	valAddr2 := sdk.ConsAddress([]byte("validator2___________"))
 
 	tests := []struct {
 		name           string
 		referenceRates map[string]math.LegacyDec
-		votes          types.DenomVotes
-		expected       types.DenomVotes
+		votes          denomVotes
+		expected       denomVotes
 	}{
 		{
 			name: "converts matching validator rates and preserves input order",
@@ -76,23 +75,23 @@ func TestCrossRate(t *testing.T) {
 				string(valAddr1): math.LegacyNewDec(1600),
 				string(valAddr2): math.LegacyNewDec(2100),
 			},
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyNewDec(100), chain.MicroKRWDenom, valAddr1, 100),
-				types.NewDenomVote(math.LegacyNewDec(300), chain.MicroKRWDenom, valAddr2, 200),
+			votes: denomVotes{
+				newDenomVote(math.LegacyNewDec(100), chain.MicroKRWDenom, valAddr1, 100),
+				newDenomVote(math.LegacyNewDec(300), chain.MicroKRWDenom, valAddr2, 200),
 			},
-			expected: types.DenomVotes{
-				types.NewDenomVote(math.LegacyNewDec(16), chain.MicroKRWDenom, valAddr1, 100),
-				types.NewDenomVote(math.LegacyNewDec(7), chain.MicroKRWDenom, valAddr2, 200),
+			expected: denomVotes{
+				newDenomVote(math.LegacyNewDec(16), chain.MicroKRWDenom, valAddr1, 100),
+				newDenomVote(math.LegacyNewDec(7), chain.MicroKRWDenom, valAddr2, 200),
 			},
 		},
 		{
 			name:           "missing reference rate becomes abstain",
 			referenceRates: map[string]math.LegacyDec{},
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyNewDec(100), chain.MicroKRWDenom, valAddr1, 100),
+			votes: denomVotes{
+				newDenomVote(math.LegacyNewDec(100), chain.MicroKRWDenom, valAddr1, 100),
 			},
-			expected: types.DenomVotes{
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 0),
+			expected: denomVotes{
+				newDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 0),
 			},
 		},
 		{
@@ -100,75 +99,93 @@ func TestCrossRate(t *testing.T) {
 			referenceRates: map[string]math.LegacyDec{
 				string(valAddr1): math.LegacyNewDec(1600),
 			},
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 100),
+			votes: denomVotes{
+				newDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 100),
 			},
-			expected: types.DenomVotes{
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 0),
+			expected: denomVotes{
+				newDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr1, 0),
 			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.votes.CrossRate(tc.referenceRates))
+			require.Equal(t, tc.expected, tc.votes.crossRate(tc.referenceRates))
 		})
 	}
 }
 
-func TestPower(t *testing.T) {
+func TestDenomVotesOverlapPower(t *testing.T) {
+	valAddr1 := sdk.ConsAddress([]byte("validator1___________"))
+	valAddr2 := sdk.ConsAddress([]byte("validator2___________"))
+	valAddr3 := sdk.ConsAddress([]byte("validator3___________"))
+
+	referenceRates := map[string]math.LegacyDec{
+		string(valAddr1): math.LegacyNewDec(1600),
+		string(valAddr2): math.LegacyNewDec(2100),
+	}
+	votes := denomVotes{
+		newDenomVote(math.LegacyNewDec(100), chain.MicroKRWDenom, valAddr1, 100),
+		newDenomVote(math.LegacyZeroDec(), chain.MicroKRWDenom, valAddr2, 200),
+		newDenomVote(math.LegacyNewDec(300), chain.MicroKRWDenom, valAddr3, 300),
+	}
+
+	require.Equal(t, uint64(100), votes.overlapPower(referenceRates))
+}
+
+func TestDenomVotesPower(t *testing.T) {
 	valAddr1 := sdk.ConsAddress([]byte("validator1___________"))
 	valAddr2 := sdk.ConsAddress([]byte("validator2___________"))
 
 	tests := []struct {
 		name     string
-		votes    types.DenomVotes
+		votes    denomVotes
 		expected uint64
 	}{
 		{
 			name: "single validator",
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr1, 100),
+			votes: denomVotes{
+				newDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr1, 100),
 			},
 			expected: 100,
 		},
 		{
 			name: "sums validator power",
-			votes: types.DenomVotes{
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr1, 100),
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr2, 200),
-				types.NewDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr1, 0),
+			votes: denomVotes{
+				newDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr1, 100),
+				newDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr2, 200),
+				newDenomVote(math.LegacyZeroDec(), chain.MicroSDRDenom, valAddr1, 0),
 			},
 			expected: 300,
 		},
 		{
 			name:     "empty ballot",
-			votes:    types.DenomVotes{},
+			votes:    denomVotes{},
 			expected: 0,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.votes.Power())
+			require.Equal(t, tc.expected, tc.votes.power())
 		})
 	}
 }
 
-func TestWeightedMedian(t *testing.T) {
+func TestDenomVotesWeightedMedian(t *testing.T) {
 	valAddr := sdk.ConsAddress([]byte("validator1___________"))
-	vote := func(rate int64, power uint64) types.DenomVote {
-		return types.NewDenomVote(math.LegacyNewDec(rate), chain.MicroSDRDenom, valAddr, power)
+	vote := func(rate int64, power uint64) denomVote {
+		return newDenomVote(math.LegacyNewDec(rate), chain.MicroSDRDenom, valAddr, power)
 	}
 
 	tests := []struct {
 		name     string
-		votes    types.DenomVotes
+		votes    denomVotes
 		expected math.LegacyDec
 	}{
 		{
 			name: "high power rate wins",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(1, 1),
 				vote(2, 1),
 				vote(10, 100),
@@ -178,7 +195,7 @@ func TestWeightedMedian(t *testing.T) {
 		},
 		{
 			name: "zero power outlier is ignored",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(1, 1),
 				vote(2, 1),
 				vote(10, 100),
@@ -189,7 +206,7 @@ func TestWeightedMedian(t *testing.T) {
 		},
 		{
 			name: "tie votes select lower pivot rate",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(1, 1),
 				vote(2, 100),
 				vote(3, 100),
@@ -199,7 +216,7 @@ func TestWeightedMedian(t *testing.T) {
 		},
 		{
 			name: "unsorted input is sorted before median",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(100000, 1),
 				vote(10, 100),
 				vote(2, 1),
@@ -209,34 +226,34 @@ func TestWeightedMedian(t *testing.T) {
 		},
 		{
 			name:     "empty ballot",
-			votes:    types.DenomVotes{},
+			votes:    denomVotes{},
 			expected: math.LegacyZeroDec(),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.votes.WeightedMedian())
+			require.Equal(t, tc.expected, tc.votes.weightedMedian())
 		})
 	}
 }
 
-func TestStandardDeviation(t *testing.T) {
+func TestDenomVotesStandardDeviation(t *testing.T) {
 	valAddr := sdk.ConsAddress([]byte("validator1___________"))
-	vote := func(rate math.LegacyDec, power uint64) types.DenomVote {
-		return types.NewDenomVote(rate, chain.MicroSDRDenom, valAddr, power)
+	vote := func(rate math.LegacyDec, power uint64) denomVote {
+		return newDenomVote(rate, chain.MicroSDRDenom, valAddr, power)
 	}
 	hugeRate, err := math.LegacyNewDecFromStr("100000000000000000000000000000000000000000000000000000000.0")
 	require.NoError(t, err)
 
 	tests := []struct {
 		name              string
-		votes             types.DenomVotes
+		votes             denomVotes
 		standardDeviation math.LegacyDec
 	}{
 		{
 			name: "wide spread around weighted median",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(math.LegacyNewDec(1), 1),
 				vote(math.LegacyNewDec(2), 1),
 				vote(math.LegacyNewDec(10), 100),
@@ -246,7 +263,7 @@ func TestStandardDeviation(t *testing.T) {
 		},
 		{
 			name: "zero power outlier still contributes to deviation",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(math.LegacyNewDec(1), 1),
 				vote(math.LegacyNewDec(2), 1),
 				vote(math.LegacyNewDec(10), 100),
@@ -257,7 +274,7 @@ func TestStandardDeviation(t *testing.T) {
 		},
 		{
 			name: "tie votes",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(math.LegacyNewDec(1), 1),
 				vote(math.LegacyNewDec(2), 100),
 				vote(math.LegacyNewDec(3), 100),
@@ -267,12 +284,12 @@ func TestStandardDeviation(t *testing.T) {
 		},
 		{
 			name:              "empty ballot",
-			votes:             types.DenomVotes{},
+			votes:             denomVotes{},
 			standardDeviation: math.LegacyZeroDec(),
 		},
 		{
 			name: "overflow returns zero",
-			votes: types.DenomVotes{
+			votes: denomVotes{
 				vote(math.LegacyZeroDec(), 2),
 				vote(hugeRate, 1),
 			},
@@ -282,7 +299,7 @@ func TestStandardDeviation(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.standardDeviation, tc.votes.StandardDeviation(tc.votes.WeightedMedian()))
+			require.Equal(t, tc.standardDeviation, tc.votes.standardDeviation(tc.votes.weightedMedian()))
 		})
 	}
 }

@@ -11,9 +11,12 @@ reports so their voting power still participates in quorum denominator logic.
 
 ## Aggregation
 
-`VoteAggregator.AggregateOracleVotes` groups reported rates by denom, filters unsupported or failed-quorum denoms, chooses
-a reference denom from the supported denoms with the largest passing voting power, and computes weighted-median exchange
-rates.
+`VoteAggregator` groups reported rates by denom, filters unsupported or failed-quorum denoms, chooses the reference denom
+that can price the most passing denoms through validator overlap, and computes weighted-median exchange rates. Ties in
+reference selection are broken by total overlap power, raw voting power, then denom order.
+
+Non-reference denoms must have enough overlap voting power with the selected reference denom before they can be priced
+through cross rates.
 
 Non-positive submitted rates are treated as abstain/outage signals. They do not add quorum power or earn reward weight,
 but they still count as submitted reports for miss-accounting purposes.
@@ -35,7 +38,7 @@ The preblock package calls the price applier and handles the ABCI lifecycle arou
 `oracle/encoding` is the oracle-specific wrapper around shared primitive encoding. It enforces the maximum encoded rate
 size before delegating LegacyDec decoding to `pkg/encoding`.
 
-## Types
+## Internal Values
 
-`oracle/types` contains aggregation values and oracle-specific error wrappers used by the vote aggregator and price
-applier. Keep these types close to the aggregation code that consumes them.
+Aggregation values live in this package because they are working state for the fixed oracle protocol. Error wrappers
+remain exported from this package where callers need to classify failures returned by the price applier.

@@ -1,6 +1,7 @@
 package oracle_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,17 +13,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"noah/abci/codec"
 	"noah/abci/oracle"
 	abcitestutil "noah/abci/testutil"
 	oracletypes "noah/x/oracle/types"
 )
 
 func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {
-	votes := []oracle.Vote{
-		newTestVote(t, []byte{1}, 1, map[string]math.LegacyDec{
+	votes := []testVote{
+		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{
 			"uusd": math.LegacyNewDec(100),
 		}),
-		newTestVote(t, []byte{2}, 10, map[string]math.LegacyDec{
+		newTestVote([]byte{2}, 10, map[string]math.LegacyDec{
 			"uusd": math.LegacyNewDec(100),
 		}),
 	}
@@ -33,19 +35,16 @@ func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {
 		"ukrw": math.LegacyZeroDec(),
 	}
 
-	prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
-		AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
+	keeper, prices, returnedTargets, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Contains(t, prices, "uusd")
 	require.NotContains(t, prices, "ukrw")
-	require.Contains(t, voteTargets, "uusd")
-	require.Contains(t, voteTargets, "ukrw")
-	require.Len(t, scoreMap, 2)
+	require.Equal(t, voteTargets, returnedTargets)
+	require.Len(t, keeper.scoreWeights, 2)
 
 	for _, vote := range votes {
-		score := scoreMap[sdk.ConsAddress(vote.Validator.Address).String()]
-		require.Equal(t, uint64(1), score.WinCount)
+		require.Equal(t, uint64(1), keeper.missCounts[vote.validator.String()])
 	}
 }
 
@@ -72,12 +71,12 @@ func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			voterWithFailedQuorumDenom := []byte{1}
 			voterMissingFailedQuorumDenom := []byte{2}
-			votes := []oracle.Vote{
-				newTestVote(t, voterWithFailedQuorumDenom, 10, map[string]math.LegacyDec{
+			votes := []testVote{
+				newTestVote(voterWithFailedQuorumDenom, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 					"ukrw": tc.rate,
 				}),
-				newTestVote(t, voterMissingFailedQuorumDenom, 10, map[string]math.LegacyDec{
+				newTestVote(voterMissingFailedQuorumDenom, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 				}),
 			}
@@ -88,22 +87,101 @@ func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
 				"ukrw": math.LegacyZeroDec(),
 			}
 
-			prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
-				AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
+			keeper, prices, returnedTargets, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "uusd")
 			require.NotContains(t, prices, "ukrw")
-			require.Contains(t, voteTargets, "uusd")
-			require.Contains(t, voteTargets, "ukrw")
-
-			score := scoreMap[sdk.ConsAddress(voterWithFailedQuorumDenom).String()]
-			require.Equal(t, uint64(2), score.WinCount)
-
-			score = scoreMap[sdk.ConsAddress(voterMissingFailedQuorumDenom).String()]
-			require.Equal(t, uint64(1), score.WinCount)
+			require.Equal(t, voteTargets, returnedTargets)
+			require.Zero(t, keeper.missCounts[sdk.ConsAddress(voterWithFailedQuorumDenom).String()])
+			require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(voterMissingFailedQuorumDenom).String()])
 		})
 	}
+}
+
+func TestAggregateOracleVotesSkipsCrossRateDenomWithoutReferenceOverlap(t *testing.T) {
+	referenceOnlyVoter := []byte{1}
+	crossOnlyVoter := []byte{2}
+	votes := []testVote{
+		newTestVote(referenceOnlyVoter, 10, map[string]math.LegacyDec{
+			"ukrw": math.LegacyNewDec(1000),
+		}),
+		newTestVote(crossOnlyVoter, 10, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+		}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+	voteTargets := map[string]math.LegacyDec{
+		"ukrw": math.LegacyZeroDec(),
+		"uusd": math.LegacyZeroDec(),
+	}
+
+	keeper, prices, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.Contains(t, prices, "ukrw")
+	require.NotContains(t, prices, "uusd")
+	require.Len(t, keeper.scoreWeights, 2)
+}
+
+func TestAggregateOracleVotesChoosesReferenceWithBestOverlapCoverage(t *testing.T) {
+	votes := []testVote{
+		newTestVote([]byte{1}, 40, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+		}),
+		newTestVote([]byte{2}, 20, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+			"ukrw": math.LegacyNewDec(1000),
+			"usdr": math.LegacyNewDec(2),
+		}),
+		newTestVote([]byte{3}, 30, map[string]math.LegacyDec{
+			"ukrw": math.LegacyNewDec(900),
+			"usdr": math.LegacyNewDec(3),
+		}),
+		newTestVote([]byte{4}, 10, map[string]math.LegacyDec{}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+	voteTargets := map[string]math.LegacyDec{
+		"uusd": math.LegacyZeroDec(),
+		"ukrw": math.LegacyZeroDec(),
+		"usdr": math.LegacyZeroDec(),
+	}
+
+	_, prices, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.NotContains(t, prices, "uusd")
+	require.True(t, math.LegacyNewDec(900).Equal(prices["ukrw"]))
+	require.True(t, math.LegacyNewDec(3).Equal(prices["usdr"]))
+}
+
+func TestAggregateOracleVotesSkipsCrossRateDenomBelowOverlapQuorum(t *testing.T) {
+	votes := []testVote{
+		newTestVote([]byte{1}, 40, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+			"ukrw": math.LegacyNewDec(1000),
+		}),
+		newTestVote([]byte{2}, 40, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+		}),
+		newTestVote([]byte{3}, 20, map[string]math.LegacyDec{
+			"ukrw": math.LegacyNewDec(1000),
+		}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+	voteTargets := map[string]math.LegacyDec{
+		"uusd": math.LegacyZeroDec(),
+		"ukrw": math.LegacyZeroDec(),
+	}
+
+	_, prices, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.Contains(t, prices, "uusd")
+	require.NotContains(t, prices, "ukrw")
 }
 
 func TestAggregateOracleVotesCountsNonPositiveTargetRatesAsSubmitted(t *testing.T) {
@@ -125,11 +203,11 @@ func TestAggregateOracleVotesCountsNonPositiveTargetRatesAsSubmitted(t *testing.
 		t.Run(tc.name, func(t *testing.T) {
 			positiveVoter := []byte{1}
 			nonPositiveVoter := []byte{2}
-			votes := []oracle.Vote{
-				newTestVote(t, positiveVoter, 10, map[string]math.LegacyDec{
+			votes := []testVote{
+				newTestVote(positiveVoter, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 				}),
-				newTestVote(t, nonPositiveVoter, 10, map[string]math.LegacyDec{
+				newTestVote(nonPositiveVoter, 10, map[string]math.LegacyDec{
 					"uusd": tc.rate,
 				}),
 			}
@@ -139,19 +217,13 @@ func TestAggregateOracleVotesCountsNonPositiveTargetRatesAsSubmitted(t *testing.
 				"uusd": math.LegacyZeroDec(),
 			}
 
-			prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
-				AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
+			keeper, prices, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "uusd")
-
-			score := scoreMap[sdk.ConsAddress(positiveVoter).String()]
-			require.Equal(t, uint64(1), score.WinCount)
-			require.Equal(t, uint64(10), score.Weight)
-
-			score = scoreMap[sdk.ConsAddress(nonPositiveVoter).String()]
-			require.Equal(t, uint64(1), score.WinCount)
-			require.Zero(t, score.Weight)
+			require.Equal(t, uint64(10), keeper.scoreWeights[sdk.ConsAddress(positiveVoter).String()])
+			require.Zero(t, keeper.scoreWeights[sdk.ConsAddress(nonPositiveVoter).String()])
+			require.Empty(t, keeper.missCounts)
 		})
 	}
 }
@@ -172,14 +244,14 @@ func TestAggregateOracleVotesPenalizesPositiveOutOfBandTargetRates(t *testing.T)
 			inBandVoter1 := []byte{1}
 			inBandVoter2 := []byte{2}
 			outOfBandVoter := []byte{3}
-			votes := []oracle.Vote{
-				newTestVote(t, inBandVoter1, 10, map[string]math.LegacyDec{
+			votes := []testVote{
+				newTestVote(inBandVoter1, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 				}),
-				newTestVote(t, inBandVoter2, 10, map[string]math.LegacyDec{
+				newTestVote(inBandVoter2, 10, map[string]math.LegacyDec{
 					"uusd": math.LegacyNewDec(100),
 				}),
-				newTestVote(t, outOfBandVoter, 10, map[string]math.LegacyDec{
+				newTestVote(outOfBandVoter, 10, map[string]math.LegacyDec{
 					"uusd": tc.outOfBand,
 				}),
 			}
@@ -189,35 +261,121 @@ func TestAggregateOracleVotesPenalizesPositiveOutOfBandTargetRates(t *testing.T)
 				"uusd": math.LegacyZeroDec(),
 			}
 
-			prices, scoreMap, err := oracle.NewVoteAggregator(log.NewNopLogger()).
-				AggregateOracleVotes(sdk.Context{}, votes, params, voteTargets)
+			keeper, prices, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.True(t, math.LegacyNewDec(100).Equal(prices["uusd"]))
-
-			score := scoreMap[sdk.ConsAddress(inBandVoter1).String()]
-			require.Equal(t, uint64(1), score.WinCount)
-			require.Equal(t, uint64(10), score.Weight)
-
-			score = scoreMap[sdk.ConsAddress(inBandVoter2).String()]
-			require.Equal(t, uint64(1), score.WinCount)
-			require.Equal(t, uint64(10), score.Weight)
-
-			score = scoreMap[sdk.ConsAddress(outOfBandVoter).String()]
-			require.Zero(t, score.WinCount)
-			require.Zero(t, score.Weight)
+			require.Equal(t, uint64(10), keeper.scoreWeights[sdk.ConsAddress(inBandVoter1).String()])
+			require.Equal(t, uint64(10), keeper.scoreWeights[sdk.ConsAddress(inBandVoter2).String()])
+			require.Zero(t, keeper.scoreWeights[sdk.ConsAddress(outOfBandVoter).String()])
+			require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(outOfBandVoter).String()])
 		})
 	}
 }
 
-func newTestVote(t *testing.T, address []byte, power int64, rates map[string]math.LegacyDec) oracle.Vote {
+type testVote struct {
+	validator sdk.ConsAddress
+	power     int64
+	rates     map[string]math.LegacyDec
+}
+
+func newTestVote(address []byte, power int64, rates map[string]math.LegacyDec) testVote {
+	return testVote{
+		validator: sdk.ConsAddress(address),
+		power:     power,
+		rates:     rates,
+	}
+}
+
+func applyOracleVoteExtensions(
+	t *testing.T,
+	votes []testVote,
+	params oracletypes.Params,
+	voteTargets map[string]math.LegacyDec,
+) (*recordingOracleKeeper, map[string]math.LegacyDec, map[string]math.LegacyDec, error) {
 	t.Helper()
 
-	return oracle.Vote{
-		Validator: cometabci.Validator{
-			Address: address,
-			Power:   power,
-		},
-		OracleVoteExtension: abcitestutil.NewOracleVoteExtension(t, rates),
+	veCodec := codec.NewDefaultVoteExtensionCodec()
+	extCommitCodec := codec.NewDefaultExtendedCommitCodec()
+	extendedVotes := make([]cometabci.ExtendedVoteInfo, 0, len(votes))
+	for _, vote := range votes {
+		voteExtension, err := veCodec.Encode(abcitestutil.NewOracleVoteExtension(t, vote.rates))
+		require.NoError(t, err)
+		extendedVotes = append(extendedVotes, abcitestutil.NewExtendedVoteInfo(vote.validator, vote.power, voteExtension))
 	}
+
+	extendedCommit, err := extCommitCodec.Encode(cometabci.ExtendedCommitInfo{Votes: extendedVotes})
+	require.NoError(t, err)
+
+	keeper := newRecordingOracleKeeper(params, voteTargets)
+	priceApplier := oracle.NewPriceApplier(
+		oracle.NewVoteAggregator(log.NewNopLogger()),
+		keeper,
+		veCodec,
+		extCommitCodec,
+		log.NewNopLogger(),
+	)
+	prices, returnedTargets, err := priceApplier.ApplyPricesFromVoteExtensions(
+		abcitestutil.NewSDKContext(3, 0),
+		&cometabci.RequestFinalizeBlock{
+			Height: 3,
+			Txs:    [][]byte{extendedCommit},
+		},
+	)
+
+	return keeper, prices, returnedTargets, err
+}
+
+type recordingOracleKeeper struct {
+	params       oracletypes.Params
+	voteTargets  map[string]math.LegacyDec
+	exchangeRate map[string]math.LegacyDec
+	scoreWeights map[string]uint64
+	missCounts   map[string]uint64
+}
+
+func newRecordingOracleKeeper(params oracletypes.Params, voteTargets map[string]math.LegacyDec) *recordingOracleKeeper {
+	return &recordingOracleKeeper{
+		params:       params,
+		voteTargets:  cloneDecMap(voteTargets),
+		exchangeRate: make(map[string]math.LegacyDec),
+		scoreWeights: make(map[string]uint64),
+		missCounts:   make(map[string]uint64),
+	}
+}
+
+func (k *recordingOracleKeeper) GetParams(context.Context) (oracletypes.Params, error) {
+	return k.params, nil
+}
+
+func (k *recordingOracleKeeper) SetExchangeRateWithEvent(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
+	k.exchangeRate[exchangeRate.Denom] = exchangeRate.Rate
+	return nil
+}
+
+func (k *recordingOracleKeeper) AddScoreWeight(_ context.Context, validator sdk.ConsAddress, scoreWeight uint64) error {
+	k.scoreWeights[validator.String()] += scoreWeight
+	return nil
+}
+
+func (k *recordingOracleKeeper) IncrementMissCount(_ context.Context, validator sdk.ConsAddress) error {
+	k.missCounts[validator.String()]++
+	return nil
+}
+
+func (k *recordingOracleKeeper) GetVoteTargets(context.Context) (map[string]math.LegacyDec, error) {
+	return cloneDecMap(k.voteTargets), nil
+}
+
+func (k *recordingOracleKeeper) SyncTobinTax(context.Context, map[string]math.LegacyDec) error {
+	return nil
+}
+
+func cloneDecMap(in map[string]math.LegacyDec) map[string]math.LegacyDec {
+	out := make(map[string]math.LegacyDec, len(in))
+	for denom, rate := range in {
+		out[denom] = rate
+	}
+
+	return out
 }

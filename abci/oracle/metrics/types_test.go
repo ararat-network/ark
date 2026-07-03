@@ -1,9 +1,11 @@
-package metrics
+package metrics_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"noah/abci/oracle/metrics"
 )
 
 func TestReportStatusString(t *testing.T) {
@@ -12,10 +14,10 @@ func TestReportStatusString(t *testing.T) {
 		got  string
 		want string
 	}{
-		{name: "absent", got: Absent.String(), want: "absent"},
-		{name: "missing price", got: MissingPrice.String(), want: "missing_price"},
-		{name: "with price", got: WithPrice.String(), want: "with_price"},
-		{name: "unknown", got: ReportStatus(-1).String(), want: "not_implemented"},
+		{name: "absent", got: metrics.Absent.String(), want: "absent"},
+		{name: "missing price", got: metrics.MissingPrice.String(), want: "missing_price"},
+		{name: "with price", got: metrics.WithPrice.String(), want: "with_price"},
+		{name: "unknown", got: metrics.ReportStatus(-1).String(), want: "not_implemented"},
 	}
 
 	for _, tt := range tests {

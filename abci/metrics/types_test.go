@@ -1,10 +1,12 @@
-package metrics
+package metrics_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"noah/abci/metrics"
 )
 
 func TestStatusFromError(t *testing.T) {
@@ -31,7 +33,7 @@ func TestStatusFromError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, StatusFromError(tt.err).Label())
+			require.Equal(t, tt.want, metrics.StatusFromError(tt.err).Label())
 		})
 	}
 }
@@ -42,13 +44,13 @@ func TestTypesString(t *testing.T) {
 		got  string
 		want string
 	}{
-		{name: "prepare proposal", got: PrepareProposal.String(), want: "prepare_proposal"},
-		{name: "process proposal", got: ProcessProposal.String(), want: "process_proposal"},
-		{name: "extend vote", got: ExtendVote.String(), want: "extend_vote"},
-		{name: "verify vote extension", got: VerifyVoteExtension.String(), want: "verify_vote_extension"},
-		{name: "pre block", got: PreBlock.String(), want: "pre_blocker"},
-		{name: "extended commit", got: ExtendedCommit.String(), want: "extended_commit"},
-		{name: "vote extension", got: VoteExtension.String(), want: "vote_extension"},
+		{name: "prepare proposal", got: metrics.PrepareProposal.String(), want: "prepare_proposal"},
+		{name: "process proposal", got: metrics.ProcessProposal.String(), want: "process_proposal"},
+		{name: "extend vote", got: metrics.ExtendVote.String(), want: "extend_vote"},
+		{name: "verify vote extension", got: metrics.VerifyVoteExtension.String(), want: "verify_vote_extension"},
+		{name: "pre block", got: metrics.PreBlock.String(), want: "pre_blocker"},
+		{name: "extended commit", got: metrics.ExtendedCommit.String(), want: "extended_commit"},
+		{name: "vote extension", got: metrics.VoteExtension.String(), want: "vote_extension"},
 	}
 
 	for _, tt := range tests {
