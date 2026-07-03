@@ -6,6 +6,8 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	chain "noah/pkg/chain"
 	"noah/x/market/types"
 	oracletypes "noah/x/oracle/types"
@@ -92,6 +94,75 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 	}
 }
 
+func (s *KeeperTestSuite) TestQuerySwapOutcome() {
+	tests := []struct {
+		name             string
+		offerRate        math.LegacyDec
+		askRate          math.LegacyDec
+		tobinTax         math.LegacyDec
+		expectedSwapCoin sdk.Coin
+		expectedSwapFee  sdk.DecCoin
+		code             codes.Code
+		expectErr        string
+	}{
+		{
+			name:             "zero spread returns truncation remainder as fee",
+			offerRate:        math.LegacyNewDec(2),
+			askRate:          math.LegacyNewDec(201),
+			tobinTax:         math.LegacyZeroDec(),
+			expectedSwapCoin: sdk.NewCoin("ukrw", math.NewInt(100)),
+			expectedSwapFee:  sdk.NewDecCoinFromDec("ukrw", math.LegacyMustNewDecFromStr("0.5")),
+		},
+		{
+			name:             "positive spread deducts explicit fee",
+			offerRate:        math.LegacyOneDec(),
+			askRate:          math.LegacyNewDec(100),
+			tobinTax:         math.LegacyMustNewDecFromStr("0.2"),
+			expectedSwapCoin: sdk.NewCoin("ukrw", math.NewInt(80)),
+			expectedSwapFee:  sdk.NewDecCoinFromDec("ukrw", math.LegacyNewDec(20)),
+		},
+		{
+			name:             "truncation remainder is folded into fee",
+			offerRate:        math.LegacyNewDec(20),
+			askRate:          math.LegacyNewDec(2011),
+			tobinTax:         math.LegacyMustNewDecFromStr("0.1"),
+			expectedSwapCoin: sdk.NewCoin("ukrw", math.NewInt(90)),
+			expectedSwapFee:  sdk.NewDecCoinFromDec("ukrw", math.LegacyMustNewDecFromStr("10.55")),
+		},
+		{
+			name:      "zero swap coin returns invalid argument",
+			offerRate: math.LegacyNewDec(2),
+			askRate:   math.LegacyOneDec(),
+			tobinTax:  math.LegacyZeroDec(),
+			code:      codes.InvalidArgument,
+			expectErr: "zero swap coin",
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.setupQuerySwapMocks(tc.offerRate, tc.askRate, tc.tobinTax)
+
+			res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+				OfferCoin: "1uusd",
+				AskDenom:  "ukrw",
+			})
+			if tc.expectErr != "" {
+				s.Require().Error(err)
+				s.Require().Equal(tc.code, status.Code(err))
+				s.Require().ErrorContains(err, tc.expectErr)
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().NotNil(res)
+			s.Require().Equal(tc.expectedSwapCoin, res.SwapCoin)
+			s.Require().Equal(tc.expectedSwapFee.Denom, res.SwapFee.Denom)
+			s.Require().True(tc.expectedSwapFee.Amount.Equal(res.SwapFee.Amount))
+		})
+	}
+}
+
 func (s *KeeperTestSuite) TestQueryNoahPoolDelta() {
 	tests := []struct {
 		name  string
@@ -122,4 +193,17 @@ func (s *KeeperTestSuite) TestQueryNoahPoolDelta() {
 			s.Require().True(tc.delta.Equal(res.NoahPoolDelta))
 		})
 	}
+}
+
+func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
+		Return(offerRate, nil)
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
+		Return(math.LegacyOneDec(), nil).Times(2)
+	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ukrw").
+		Return(askRate, nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
+		Return(tobinTax, nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").
+		Return(tobinTax, nil)
 }

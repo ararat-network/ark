@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"math/big"
+
 	"go.uber.org/mock/gomock"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -18,6 +20,9 @@ import (
 )
 
 func (s *KeeperTestSuite) TestMsgSwap() {
+	trader := sdk.AccAddress([]byte("trader_______________")).String()
+	hugeAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 101))
+
 	tests := []struct {
 		name      string
 		msg       *types.MsgSwap
@@ -37,6 +42,55 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 			},
 			expectErr: errortypes.ErrInvalidAddress,
 			errMsg:    "invalid trader address",
+		},
+		{
+			name: "recursive swap",
+			msg: &types.MsgSwap{
+				Trader:    trader,
+				OfferCoin: sdk.NewCoin("ukrw", math.NewInt(1)),
+				AskDenom:  "ukrw",
+			},
+			expectErr: types.ErrRecursiveSwap,
+			errMsg:    "recursive swap",
+		},
+		{
+			name: "zero amount",
+			msg: &types.MsgSwap{
+				Trader: trader,
+				OfferCoin: sdk.Coin{
+					Denom:  "uusd",
+					Amount: math.ZeroInt(),
+				},
+				AskDenom: "ukrw",
+			},
+			expectErr: errortypes.ErrInvalidCoins,
+			errMsg:    "invalid coins",
+		},
+		{
+			name: "negative amount",
+			msg: &types.MsgSwap{
+				Trader: trader,
+				OfferCoin: sdk.Coin{
+					Denom:  "uusd",
+					Amount: math.NewInt(-1),
+				},
+				AskDenom: "ukrw",
+			},
+			expectErr: errortypes.ErrInvalidCoins,
+			errMsg:    "invalid coins",
+		},
+		{
+			name: "huge amount",
+			msg: &types.MsgSwap{
+				Trader: trader,
+				OfferCoin: sdk.Coin{
+					Denom:  "uusd",
+					Amount: hugeAmount,
+				},
+				AskDenom: "ukrw",
+			},
+			expectErr: errortypes.ErrInvalidCoins,
+			errMsg:    "invalid coins",
 		},
 	}
 
