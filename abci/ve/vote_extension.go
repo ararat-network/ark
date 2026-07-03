@@ -17,7 +17,7 @@ import (
 	abcioracle "noah/abci/oracle"
 	noahabci "noah/abci/types"
 	"noah/abci/ve/types"
-	transporttypes "noah/oracle/transport/types"
+	transporttypes "noah/oracle/types"
 )
 
 // Handler extends local votes with oracle price reports. If

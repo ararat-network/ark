@@ -5,7 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "noah/oracle/transport/types";
+option go_package = "noah/oracle/types";
 
 // Oracle defines the gRPC oracle service.
 service Oracle {

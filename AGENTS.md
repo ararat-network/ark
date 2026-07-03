@@ -52,16 +52,21 @@ app/            # App wiring, depinject config
 
 ## Oracle, Transport, And ABCI Boundaries
 
-- Keep `x/oracle/` as the on-chain module and top-level `oracle/` as the off-chain runtime.
-- Keep `oracle/types` domain-only. RPC structs and transport errors live under `oracle/transport/types`; routes use
-  `/noah/transport/v1/...`.
-- `oracle/providers` owns full provider config and construction. `oracle/providers/base` owns runtime fields, fetch
-  loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and `TransportType`.
+- Keep `x/oracle/` as the on-chain module. Top-level `oracle/` is split into `oracle/client` for the app-side
+  cached client, `oracle/types` for generated transport API types, and `oracle/sidecar` for the off-chain sidecar.
+- `oracle/sidecar` owns the sidecar process and transport: the sidecar `Oracle` implements the generated RPC server,
+  owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `oracle/sidecar/runtime`.
+  `oracle/sidecar/runtime` owns the price-fetch loop and runtime updates.
+- Keep `oracle/types` generated transport API only. Sidecar domain structs live under `oracle/sidecar/types`; routes
+  use `/noah/transport/v1/...`.
+- `oracle/sidecar/providers` owns full provider config and construction. `oracle/sidecar/providers/base` owns provider
+  runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and
+  `TransportType`.
 - `abci/` is fixed protocol code, not a pluggable strategy layer. Lifecycle hooks stay thin; `abci/oracle` owns vote
   extraction, aggregation, scoring, price application, and oracle-specific encoding policy.
 - Keep primitive codecs in `pkg/encoding`; keep vote-extension size/rate policy in `abci/oracle/encoding`.
-- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `oracle/metrics`; keep
-  `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
+- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `oracle/client/metrics`,
+  `oracle/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
 
 ## Cosmos SDK Conventions
 

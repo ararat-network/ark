@@ -20,7 +20,7 @@ import (
 	abcitestutil "noah/abci/testutil"
 	"noah/abci/ve"
 	vetypes "noah/abci/ve/types"
-	transporttypes "noah/oracle/transport/types"
+	transporttypes "noah/oracle/types"
 )
 
 func TestExtendVoteHandler(t *testing.T) {

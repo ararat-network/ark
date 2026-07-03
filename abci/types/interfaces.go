@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	transporttypes "noah/oracle/transport/types"
+	transporttypes "noah/oracle/types"
 	oracletypes "noah/x/oracle/types"
 )
 
