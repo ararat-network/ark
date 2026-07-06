@@ -140,14 +140,11 @@ func seedProviderResponses(
 		})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- provider.Start(ctx)
-	}()
+	require.NoError(t, provider.Start(ctx))
 
 	requireSignal(t, started, "provider did not start")
 	require.Eventually(t, waitFor, time.Second, time.Millisecond)
 
 	cancel()
-	require.ErrorIs(t, <-errCh, context.Canceled)
+	provider.Stop()
 }

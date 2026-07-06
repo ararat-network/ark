@@ -4,132 +4,125 @@ import (
 	"context"
 	"errors"
 	"time"
-
-	"noah/oracle/sidecar/providers/base"
 )
 
 // Start starts the blocking oracle lifecycle and price fetch loop.
-func (o *Runtime) Start(ctx context.Context) error {
+func (r *Runtime) Start(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
 	}
 
-	o.logger.Info("starting oracle")
-	o.running.Store(true)
-	defer o.running.Store(false)
+	r.logger.Info("starting oracle")
+	r.running.Store(true)
+	defer r.running.Store(false)
 
 	mainCtx, mainCancel := context.WithCancel(ctx)
 	defer mainCancel()
-	o.setMainCtx(mainCtx, mainCancel)
+	r.setMainCtx(mainCtx, mainCancel)
 
-	// Start all configured price providers.
-	for _, provider := range o.providers {
-		o.startProvider(mainCtx, provider)
+	if client := r.getClient(); client != nil {
+		if err := client.Start(mainCtx); err != nil {
+			if mainCtx.Err() == nil && !errors.Is(err, context.Canceled) {
+				r.logger.Error("failed to start vote-target client", "error", err)
+			}
+		}
 	}
+	r.startProviders(mainCtx)
 
-	ticker := time.NewTicker(o.getUpdateInterval())
+	ticker := time.NewTicker(r.getUpdateInterval())
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-mainCtx.Done():
-			o.Stop()
-			o.logger.Info("oracle stopped via context")
+			r.Stop()
+			r.logger.Info("oracle stopped via context")
 			return mainCtx.Err()
-		case <-o.updateIntervalCh:
-			ticker.Reset(o.getUpdateInterval())
+		case <-r.updateIntervalCh:
+			ticker.Reset(r.getUpdateInterval())
 		case <-ticker.C:
-			o.fetchAllPrices(mainCtx)
+			r.fetchAllPrices(mainCtx)
 		}
 	}
 }
 
 // Stop stops the oracle. This is a synchronous operation that will
 // wait for all providers to exit.
-func (o *Runtime) Stop() {
-	o.logger.Info("stopping oracle")
-	if _, cancel := o.getMainCtx(); cancel != nil {
-		o.logger.Info("cancelling context")
+func (r *Runtime) Stop() {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
+
+	r.logger.Info("stopping oracle")
+	if _, cancel := r.getMainCtx(); cancel != nil {
+		r.logger.Info("cancelling context")
 		cancel()
 	}
+	if client := r.getClient(); client != nil {
+		client.Stop()
+	}
+	for _, provider := range r.GetProviders() {
+		provider.Stop()
+	}
 
-	o.logger.Info("waiting for routines to stop")
-	o.wg.Wait()
-	o.logger.Info("oracle exited successfully")
+	r.logger.Info("waiting for routines to stop")
+	r.wg.Wait()
+	r.logger.Info("oracle exited successfully")
 }
 
 // IsRunning returns true while Start is running.
-func (o *Runtime) IsRunning() bool { return o.running.Load() }
+func (r *Runtime) IsRunning() bool { return r.running.Load() }
 
-// startProvider runs a provider under the oracle wait group and records unexpected failures.
-func (o *Runtime) startProvider(ctx context.Context, provider *base.Provider) {
-	o.wg.Add(1)
-	go func() {
-		defer o.wg.Done()
-		defer func() {
-			if r := recover(); r != nil {
-				o.logger.Error(
-					"provider panicked",
-					"provider", provider.Name(),
-					"error", r,
-				)
-			}
-		}()
+func (r *Runtime) startProviders(ctx context.Context) {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
 
-		if ctx == nil {
-			o.logger.Error("main context is nil; cannot start provider", "provider", provider.Name())
-			return
-		}
-
+	for _, provider := range r.GetProviders() {
 		if err := provider.Start(ctx); err != nil {
-			o.logger.Error("provider exited", "provider", provider.Name(), "error", err)
+			r.logProviderStartError(ctx, provider.Name(), err)
 		}
-	}()
+	}
+}
+
+func (r *Runtime) logProviderStartError(ctx context.Context, name string, err error) {
+	if err == nil {
+		return
+	}
+	if ctx != nil && ctx.Err() != nil {
+		return
+	}
+	if errors.Is(err, context.Canceled) {
+		return
+	}
+	r.logger.Error("failed to start provider", "provider", name, "error", err)
 }
 
 // getMainCtx returns the main context for the oracle.
-func (o *Runtime) getMainCtx() (context.Context, context.CancelFunc) {
-	o.mut.RLock()
-	defer o.mut.RUnlock()
+func (r *Runtime) getMainCtx() (context.Context, context.CancelFunc) {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
 
-	return o.mainCtx, o.mainCancel
+	return r.mainCtx, r.mainCancel
 }
 
 // setMainCtx sets the main context for the oracle.
-func (o *Runtime) setMainCtx(ctx context.Context, cancel context.CancelFunc) {
-	o.mut.Lock()
-	defer o.mut.Unlock()
+func (r *Runtime) setMainCtx(ctx context.Context, cancel context.CancelFunc) {
+	r.mut.Lock()
+	defer r.mut.Unlock()
 
-	o.mainCtx, o.mainCancel = ctx, cancel
+	r.mainCtx, r.mainCancel = ctx, cancel
+}
+
+func (r *Runtime) getClient() ChainStateClient {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
+
+	return r.client
 }
 
 // getUpdateInterval returns the current price fetch interval.
-func (o *Runtime) getUpdateInterval() time.Duration {
-	o.mut.RLock()
-	defer o.mut.RUnlock()
+func (r *Runtime) getUpdateInterval() time.Duration {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
 
-	return o.cfg.UpdateInterval
-}
-
-// notifyUpdateInterval coalesces update-interval changes for the running fetch loop.
-func (o *Runtime) notifyUpdateInterval() {
-	if o.updateIntervalCh == nil {
-		return
-	}
-
-	select {
-	case o.updateIntervalCh <- struct{}{}:
-		return
-	default:
-	}
-
-	select {
-	case <-o.updateIntervalCh:
-	default:
-	}
-
-	select {
-	case o.updateIntervalCh <- struct{}{}:
-	default:
-	}
+	return r.cfg.UpdateInterval
 }

@@ -116,6 +116,24 @@ func TestRunReturnsErrorWhenCreateURLFails(t *testing.T) {
 	require.ErrorContains(t, err, "missing ticker")
 }
 
+func TestRunReturnsErrorWhenBatchLoopPanics(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	cfg := apiConfig()
+	handler := newMockDataHandler(t)
+	handler.EXPECT().
+		CreateURL(cfg.Endpoints[0], tickers).
+		DoAndReturn(func(types.Endpoint, []types.Ticker) (string, error) {
+			panic("boom")
+		})
+
+	fetcher, err := NewFetcher(cfg, &http.Client{}, handler)
+	require.NoError(t, err)
+
+	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
+	require.ErrorContains(t, err, "api batch loop panicked")
+	require.ErrorContains(t, err, "boom")
+}
+
 func TestRunSendsMethodHeadersAndParsesSuccessfulResponse(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD"}
 	expected := types.NewResponse(map[types.Ticker]types.Result{
@@ -221,7 +239,7 @@ func TestRunMapsClientErrorToUnresolvedResponse(t *testing.T) {
 func TestRunReturnsContextErrorOnCancellation(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD"}
 	cfg := apiConfig()
-	cfg.Timeout = 0
+	cfg.Timeout = time.Hour
 	handler := newMockDataHandler(t)
 	handler.EXPECT().
 		CreateURL(cfg.Endpoints[0], tickers).

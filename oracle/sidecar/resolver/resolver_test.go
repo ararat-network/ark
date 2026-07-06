@@ -30,11 +30,11 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	aggregator, err := resolver.NewResolver(resolver.Config{})
 	require.NoError(t, err)
 	aggregator.SetProviderPrices("binance", types.Prices{
-		"USDT/USD": mustBigFloat(t, "1.20"),
-		"USDT/KRW": mustBigFloat(t, "0.10"),
+		"ARK/USD": mustBigFloat(t, "1.20"),
+		"ARK/KRW": mustBigFloat(t, "0.10"),
 	})
 	aggregator.SetProviderPrices("coinbase", types.Prices{
-		"USDT/USD": mustBigFloat(t, "1.40"),
+		"ARK/USD": mustBigFloat(t, "1.40"),
 	})
 
 	families, err := registry.Gather()
@@ -43,11 +43,11 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	providerPrices := metricFamily(t, families, "noah_oracle_provider_price")
 	require.Equal(t, float64(1.20), gaugeValue(t, providerPrices, map[string]string{
 		"provider": "binance",
-		"pair":     "usdt/usd",
+		"pair":     "ark/usd",
 	}))
 	require.Equal(t, float64(1.40), gaugeValue(t, providerPrices, map[string]string{
 		"provider": "coinbase",
-		"pair":     "usdt/usd",
+		"pair":     "ark/usd",
 	}))
 
 	aggregator.ResolvePrices([]string{"uusd", "ukrw"})
@@ -57,21 +57,21 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 
 	pairSampleCounts := metricFamily(t, families, "noah_oracle_pair_sample_count")
 	require.Equal(t, float64(2), gaugeValue(t, pairSampleCounts, map[string]string{
-		"pair": "usdt/usd",
+		"pair": "ark/usd",
 	}))
 	require.Equal(t, float64(1), gaugeValue(t, pairSampleCounts, map[string]string{
-		"pair": "usdt/krw",
+		"pair": "ark/krw",
 	}))
 
 	aggregatePrices := metricFamily(t, families, "noah_oracle_aggregate_price")
 	require.Equal(t, float64(1.30), gaugeValue(t, aggregatePrices, map[string]string{
-		"pair": "usdt/usd",
+		"pair": "ark/usd",
 	}))
 	require.Equal(t, float64(0.10), gaugeValue(t, aggregatePrices, map[string]string{
-		"pair": "usdt/krw",
+		"pair": "ark/krw",
 	}))
 
-	require.Contains(t, aggregator.GetPrices(), types.Pair("USDT/USD"))
+	require.Contains(t, aggregator.GetPrices(), types.Pair("ARK/USD"))
 
 	routed, err := resolver.NewResolver(resolver.Config{
 		Routes: map[string][]resolver.Route{
@@ -174,6 +174,24 @@ func TestResolvePricesFallsBackToRequestedDirectPairs(t *testing.T) {
 	requireBigFloatEqual(t, "2000", prices[types.Pair("ARK/KRW")])
 }
 
+func TestResolvePricesUsesDefaultDirectPathForEmptyRoutes(t *testing.T) {
+	resolver, err := resolver.NewResolver(resolver.Config{
+		Routes: map[string][]resolver.Route{
+			"uusd": {},
+		},
+	})
+	require.NoError(t, err)
+	resolver.SetProviderPrices("binance", types.Prices{
+		"ARK/USD": mustBigFloat(t, "2"),
+	})
+
+	resolver.ResolvePrices([]string{"uusd"})
+
+	prices := resolver.GetPrices()
+	require.Len(t, prices, 1)
+	requireBigFloatEqual(t, "2", prices[types.Pair("ARK/USD")])
+}
+
 func TestResolvePricesUsesInverseStepPrice(t *testing.T) {
 	resolver, err := resolver.NewResolver(testResolverConfig("ukrw", "ark-usd-krw", "ARK/USD", "USD/KRW"))
 	require.NoError(t, err)
@@ -198,23 +216,13 @@ func TestUpdateConfigSwapsConfigAndClearsCachedPrices(t *testing.T) {
 	resolver.ResolvePrices([]string{"uusd"})
 	require.NotEmpty(t, resolver.GetPrices())
 
-	require.NoError(t, resolver.UpdateConfig(newCfg))
+	resolver.Update(newCfg)
 
 	require.Empty(t, resolver.GetPrices())
 }
 
-func TestUpdateConfigRejectsInvalidConfigWithoutMutation(t *testing.T) {
-	oldCfg := testResolverConfig("uusd", "ark-usd", "ARK/USD")
-	r, err := resolver.NewResolver(oldCfg)
-	require.NoError(t, err)
-	r.SetProviderPrices("binance", types.Prices{
-		"ARK/USD": mustBigFloat(t, "1.20"),
-	})
-	r.ResolvePrices([]string{"uusd"})
-	before := r.GetPrices()
-	require.NotEmpty(t, before)
-
-	err = r.UpdateConfig(resolver.Config{
+func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
+	cfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
 			"ukrw": {
 				{
@@ -222,10 +230,10 @@ func TestUpdateConfigRejectsInvalidConfigWithoutMutation(t *testing.T) {
 				},
 			},
 		},
-	})
+	}
+	err := cfg.Validate()
 
 	require.ErrorContains(t, err, "route name cannot be empty")
-	require.Equal(t, before, r.GetPrices())
 }
 
 func testResolverConfig(denom, routeName string, pairs ...types.Pair) resolver.Config {

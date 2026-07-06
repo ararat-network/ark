@@ -79,15 +79,14 @@ type Config struct {
 	Endpoints []types.Endpoint `json:"endpoints"`
 
 	// HandshakeTimeout is the maximum duration allowed for websocket dial and
-	// handshake. If zero, only the parent context deadline applies.
+	// handshake.
 	HandshakeTimeout time.Duration `json:"handshakeTimeout"`
 
 	// EnableCompression asks the websocket client to negotiate per-message
 	// compression. The server may still decline compression.
 	EnableCompression bool `json:"enableCompression"`
 
-	// ReadTimeout is the timeout applied to each websocket read. If zero, only
-	// the parent context deadline applies.
+	// ReadTimeout is the timeout applied to each websocket read.
 	ReadTimeout time.Duration `json:"readTimeout"`
 
 	// WriteTimeout is the timeout applied to each websocket write. If zero, only
@@ -116,12 +115,12 @@ type Config struct {
 
 // Validate performs validation of the websocket config.
 func (c *Config) Validate() error {
-	if c.MaxBufferSize < 1 {
+	if c.MaxBufferSize <= 0 {
 		return errors.New("websocket max buffer size must be greater than 0")
 	}
 
-	if c.ReconnectionTimeout < 0 {
-		return errors.New("websocket reconnection timeout cannot be negative")
+	if c.ReconnectionTimeout <= 0 {
+		return errors.New("websocket reconnection timeout must be greater than 0")
 	}
 
 	if c.PostConnectionTimeout < 0 {
@@ -142,16 +141,16 @@ func (c *Config) Validate() error {
 		return errors.New("websocket name cannot be empty")
 	}
 
-	if c.HandshakeTimeout < 0 {
-		return errors.New("websocket handshake timeout cannot be negative")
+	if c.HandshakeTimeout <= 0 {
+		return errors.New("websocket handshake timeout must be greater than 0")
 	}
 
-	if c.ReadTimeout < 0 {
-		return errors.New("websocket read timeout cannot be negative")
+	if c.ReadTimeout <= 0 {
+		return errors.New("websocket read timeout must be greater than 0")
 	}
 
-	if c.WriteTimeout < 0 {
-		return errors.New("websocket write timeout cannot be negative")
+	if c.WriteTimeout <= 0 {
+		return errors.New("websocket write timeout must be greater than 0")
 	}
 
 	if c.PingInterval < 0 {
@@ -170,7 +169,6 @@ func (c *Config) Validate() error {
 		return errors.New("websocket max tickers per connection cannot be negative")
 	}
 
-	// TODO: can we allow 0 value? depends on data handler implementation
 	if c.MaxSubscriptionsPerBatch <= 0 {
 		return errors.New("websocket max subscriptions per batch must be greater than 0")
 	}

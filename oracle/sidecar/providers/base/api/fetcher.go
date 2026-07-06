@@ -106,7 +106,9 @@ func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh ch
 	group, groupCtx := errgroup.WithContext(ctx)
 	for subTickers := range slices.Chunk(tickers, batchSize) {
 		group.Go(func() error {
-			return f.runBatchLoop(groupCtx, subTickers, responseCh)
+			return base.RunRecovering("api batch loop", func() error {
+				return f.runBatchLoop(groupCtx, subTickers, responseCh)
+			})
 		})
 	}
 
@@ -171,14 +173,12 @@ func (f *Fetcher) runBatchLoop(ctx context.Context, tickers []types.Ticker, resp
 			)
 		}
 
-		if f.config.Interval > 0 {
-			timer := time.NewTimer(f.config.Interval)
-			select {
-			case <-ctx.Done():
-				timer.Stop()
-				return ctx.Err()
-			case <-timer.C:
-			}
+		timer := time.NewTimer(f.config.Interval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
 		}
 	}
 }
@@ -208,12 +208,8 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 		}
 	}
 
-	requestCtx := ctx
-	var cancel context.CancelFunc
-	if f.config.Timeout > 0 {
-		requestCtx, cancel = context.WithTimeout(ctx, f.config.Timeout)
-		defer cancel()
-	}
+	requestCtx, cancel := context.WithTimeout(ctx, f.config.Timeout)
+	defer cancel()
 	req, err := http.NewRequestWithContext(requestCtx, f.method, url, nil)
 	if err != nil {
 		return types.Response{}, err

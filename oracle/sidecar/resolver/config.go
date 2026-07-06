@@ -26,26 +26,20 @@ type Route struct {
 	Pairs []types.Pair `json:"pairs"`
 }
 
-// MarketPairs returns provider market pairs required by configured routes,
-// including inverse pairs that can satisfy the same steps. In routed mode, this
-// only includes configured route pairs and their inverses. A nil result means no
-// route filter should be applied and the resolver can aggregate direct pairs.
-func (c Config) MarketPairs() map[types.Pair]struct{} {
-	if len(c.Routes) == 0 {
-		return nil
-	}
-
+// MarketPairs returns provider market pairs required to resolve active denoms,
+// including inverse pairs that can satisfy the same steps. Denoms without
+// configured routes use the default direct ARK/QUOTE path.
+func (c Config) MarketPairs(denoms []string) map[types.Pair]struct{} {
 	pairs := make(map[types.Pair]struct{})
-	for _, routes := range c.Routes {
+	for _, denom := range denoms {
+		_, routes, ok := c.RoutesForDenom(denom)
+		if !ok {
+			continue
+		}
 		for _, route := range routes {
 			for _, pair := range route.Pairs {
-				inverse := pair.Inverse()
-				if _, ok := pairs[pair]; !ok {
-					pairs[pair] = struct{}{}
-				}
-				if _, ok := pairs[inverse]; !ok {
-					pairs[inverse] = struct{}{}
-				}
+				pairs[pair] = struct{}{}
+				pairs[pair.Inverse()] = struct{}{}
 			}
 		}
 	}
@@ -53,16 +47,36 @@ func (c Config) MarketPairs() map[types.Pair]struct{} {
 	return pairs
 }
 
+// RoutesForDenom returns the output pair and effective routes for denom. Missing
+// or empty configured routes fall back to the direct ARK/QUOTE path.
+func (c Config) RoutesForDenom(denom string) (types.Pair, []Route, bool) {
+	output, err := types.FromDenom(denom)
+	if err != nil {
+		return "", nil, false
+	}
+	if routes, ok := c.Routes[denom]; ok && len(routes) > 0 {
+		return output, routes, true
+	}
+
+	return output, []Route{
+		{
+			Name:  "direct",
+			Pairs: []types.Pair{output},
+		},
+	}, true
+}
+
 // Validate checks configured resolver routes at config-update time. A nil or
-// empty Routes map enables direct aggregation mode. A denom present in Routes
-// must define at least one valid path to its canonical ARK/QUOTE output.
+// empty Routes map uses default direct routes for active denoms. A denom present
+// in Routes with an empty route list also uses the default direct route. Non-empty
+// routes must define valid paths to their canonical ARK/QUOTE outputs.
 func (c Config) Validate() error {
 	for denom, routes := range c.Routes {
 		if err := sdk.ValidateDenom(denom); err != nil {
 			return fmt.Errorf("invalid denom %q: %w", denom, err)
 		}
 		if len(routes) == 0 {
-			return fmt.Errorf("resolver denom %q must have at least one route", denom)
+			continue
 		}
 
 		names := make(map[string]struct{}, len(routes))
@@ -93,6 +107,30 @@ func (c Config) Validate() error {
 	}
 
 	return nil
+}
+
+// Equal reports whether two resolver configs define the same routes.
+func (c Config) Equal(other Config) bool {
+	if len(c.Routes) != len(other.Routes) {
+		return false
+	}
+	for denom, routes := range c.Routes {
+		otherRoutes, ok := other.Routes[denom]
+		if !ok {
+			return false
+		}
+		if len(routes) != len(otherRoutes) {
+			return false
+		}
+		for i, route := range routes {
+			otherRoute := otherRoutes[i]
+			if route.Name != otherRoute.Name || !slices.Equal(route.Pairs, otherRoute.Pairs) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // validateRouteOutput ensures a route's ordered path resolves to the requested
@@ -135,28 +173,4 @@ func routeOutput(pairs []types.Pair) (types.Pair, error) {
 	}
 
 	return types.NewPair(base, quote)
-}
-
-// Equal reports whether two resolver configs define the same routes.
-func (c Config) Equal(other Config) bool {
-	if len(c.Routes) != len(other.Routes) {
-		return false
-	}
-	for denom, routes := range c.Routes {
-		otherRoutes, ok := other.Routes[denom]
-		if !ok {
-			return false
-		}
-		if len(routes) != len(otherRoutes) {
-			return false
-		}
-		for i, route := range routes {
-			otherRoute := otherRoutes[i]
-			if route.Name != otherRoute.Name || !slices.Equal(route.Pairs, otherRoute.Pairs) {
-				return false
-			}
-		}
-	}
-
-	return true
 }

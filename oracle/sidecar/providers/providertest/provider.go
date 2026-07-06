@@ -101,21 +101,20 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 	defer cancel()
 	defer provider.Stop()
 
-	startErrCh := make(chan error, 1)
-	go func() {
-		startErrCh <- provider.Start(runCtx)
-	}()
+	if err := provider.Start(runCtx); err != nil {
+		return nil, fmt.Errorf("failed to start provider: %w", err)
+	}
 
 	if cfg.BurnInInterval > 0 {
 		burnInTimer := time.NewTimer(cfg.BurnInInterval)
 		select {
 		case <-burnInTimer.C:
-		case err := <-startErrCh:
-			burnInTimer.Stop()
-			return nil, fmt.Errorf("provider stopped during burn-in: %w", err)
 		case <-ctx.Done():
 			burnInTimer.Stop()
 			return nil, ctx.Err()
+		}
+		if !provider.IsRunning() {
+			return nil, errors.New("provider stopped during burn-in")
 		}
 	}
 
@@ -129,6 +128,9 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 	for {
 		select {
 		case <-ticker.C:
+			if !provider.IsRunning() {
+				return nil, errors.New("provider stopped while collecting prices")
+			}
 			prices := provider.GetPrices()
 			if len(prices) != expectedPriceCount {
 				return nil, fmt.Errorf("expected %d prices, got %d", expectedPriceCount, len(prices))
@@ -140,8 +142,6 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 			})
 		case <-timer.C:
 			return priceResults, nil
-		case err := <-startErrCh:
-			return nil, fmt.Errorf("provider stopped while collecting prices: %w", err)
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}

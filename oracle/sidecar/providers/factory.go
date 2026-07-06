@@ -21,9 +21,6 @@ func NewProvider(cfg Config, markets types.Markets, logger log.Logger) (*base.Pr
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	if err := markets.Validate(); err != nil {
-		return nil, err
-	}
 	var (
 		fetcher base.Fetcher
 		err     error
@@ -67,12 +64,7 @@ func buildAPIFetcher(cfg Config, logger log.Logger) (*api.Fetcher, error) {
 		return nil, fmt.Errorf("unrecognised provider name: %s", cfg.Name)
 	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-		},
-		Timeout: cfg.API.Timeout,
-	}
+	client := &http.Client{}
 
 	headers := make(map[string]string)
 	// Endpoint authentication is stored in config; the API fetcher consumes it

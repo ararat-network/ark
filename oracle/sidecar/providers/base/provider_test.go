@@ -1,10 +1,14 @@
 package base_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
+
+	"cosmossdk.io/log/v2"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -28,7 +32,7 @@ func TestStartRejectsNilContext(t *testing.T) {
 	require.ErrorContains(t, err, "context cannot be nil")
 }
 
-func TestStartRunsFetcherUntilStopped(t *testing.T) {
+func TestStartReturnsAfterStartingFetcherUntilStopped(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 	expectFetcher(fetcher, "test", base.API)
@@ -52,6 +56,7 @@ func TestStartRunsFetcherUntilStopped(t *testing.T) {
 	go func() {
 		errCh <- provider.Start(context.Background())
 	}()
+	require.NoError(t, requireProviderStartReturned(t, errCh))
 
 	select {
 	case <-started:
@@ -63,12 +68,31 @@ func TestStartRunsFetcherUntilStopped(t *testing.T) {
 
 	provider.Stop()
 
-	select {
-	case err := <-errCh:
-		require.ErrorIs(t, err, context.Canceled)
-	case <-time.After(time.Second):
-		t.Fatal("provider did not stop")
-	}
+	require.False(t, provider.IsRunning())
+}
+
+func TestStartIsIdempotentWhileProviderIsRunning(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	expectFetcher(fetcher, "test", base.API)
+
+	started := make(chan struct{})
+	fetcher.EXPECT().
+		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
+			close(started)
+			<-ctx.Done()
+			return ctx.Err()
+		})
+
+	provider, err := newTestProvider(fetcher)
+	require.NoError(t, err)
+
+	require.NoError(t, provider.Start(context.Background()))
+	require.NoError(t, provider.Start(context.Background()))
+	requireSignal(t, started, "provider did not start")
+
+	provider.Stop()
 	require.False(t, provider.IsRunning())
 }
 
@@ -101,10 +125,7 @@ func TestStartUsesFetcherResponseBufferSize(t *testing.T) {
 	provider, err := newTestProviderWithMarkets(markets, fetcher)
 	require.NoError(t, err)
 
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- provider.Start(context.Background())
-	}()
+	require.NoError(t, provider.Start(context.Background()))
 
 	select {
 	case <-started:
@@ -113,32 +134,88 @@ func TestStartUsesFetcherResponseBufferSize(t *testing.T) {
 	}
 
 	provider.Stop()
-	select {
-	case err := <-errCh:
-		require.ErrorIs(t, err, context.Canceled)
-	case <-time.After(time.Second):
-		t.Fatal("provider did not stop")
-	}
 }
 
-func TestStartReturnsNonContextFetcherError(t *testing.T) {
+func TestStartStopsAfterNonContextFetcherError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 
 	tickers := []types.Ticker{"ATOMUSD"}
 	markets := testMarkets()
 	fetchErr := errors.New("fetch failed")
+	started := make(chan struct{})
 
 	expectFetcher(fetcher, "test", base.API)
 	fetcher.EXPECT().
 		Run(gomock.Any(), tickers, gomock.Any()).
-		Return(fetchErr)
+		DoAndReturn(func(context.Context, []types.Ticker, chan<- types.Response) error {
+			close(started)
+			return fetchErr
+		})
 
 	provider, err := newTestProviderWithMarkets(markets, fetcher)
 	require.NoError(t, err)
 
-	require.ErrorIs(t, provider.Start(context.Background()), fetchErr)
-	require.False(t, provider.IsRunning())
+	require.NoError(t, provider.Start(context.Background()))
+	requireSignal(t, started, "provider did not start")
+	require.Eventually(t, func() bool {
+		return !provider.IsRunning()
+	}, time.Second, time.Millisecond)
+}
+
+func TestStartLogsUnexpectedProviderExitWithoutError(t *testing.T) {
+	logs := &lockedBuffer{}
+	logger := log.NewLogger(logs)
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+
+	expectFetcher(fetcher, "test", base.API)
+	started := make(chan struct{})
+	fetcher.EXPECT().
+		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
+		DoAndReturn(func(context.Context, []types.Ticker, chan<- types.Response) error {
+			close(started)
+			return nil
+		})
+
+	provider, err := newTestProvider(fetcher, base.WithLogger(logger))
+	require.NoError(t, err)
+
+	require.NoError(t, provider.Start(context.Background()))
+	requireSignal(t, started, "provider did not start")
+	require.Eventually(t, func() bool {
+		return !provider.IsRunning()
+	}, time.Second, time.Millisecond)
+
+	require.Contains(t, logs.String(), "provider exited")
+	require.Contains(t, logs.String(), "without error")
+}
+
+func TestStopDoesNotLogIntentionalStopAsProviderExited(t *testing.T) {
+	logs := &lockedBuffer{}
+	logger := log.NewLogger(logs)
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+
+	expectFetcher(fetcher, "test", base.API)
+	started := make(chan struct{})
+	fetcher.EXPECT().
+		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
+			close(started)
+			<-ctx.Done()
+			return ctx.Err()
+		})
+
+	provider, err := newTestProvider(fetcher, base.WithLogger(logger))
+	require.NoError(t, err)
+
+	require.NoError(t, provider.Start(context.Background()))
+	requireSignal(t, started, "provider did not start")
+
+	provider.Stop()
+
+	require.NotContains(t, logs.String(), "provider exited")
 }
 
 func TestTypeReturnsConfiguredType(t *testing.T) {
@@ -150,6 +227,17 @@ func TestTypeReturnsConfiguredType(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, base.WebSocket, provider.Type())
+}
+
+func TestNewProviderAllowsEmptyMarkets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	expectFetcher(fetcher, "test", base.API)
+
+	provider, err := base.NewProvider("test", base.API, nil, fetcher)
+
+	require.NoError(t, err)
+	require.Empty(t, provider.GetTickers())
 }
 
 func TestNewProviderRejectsMismatchedFetcherName(t *testing.T) {
@@ -202,4 +290,35 @@ func newTestProviderWithType(
 
 func testMarkets() types.Markets {
 	return types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}}
+}
+
+func requireProviderStartReturned(t *testing.T, errCh <-chan error) error {
+	t.Helper()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-time.After(time.Second):
+		t.Fatal("provider start did not return")
+		return nil
+	}
+}
+
+type lockedBuffer struct {
+	mut sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	return b.buf.Write(p)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	return b.buf.String()
 }

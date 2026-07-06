@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"errors"
+	"maps"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -10,6 +11,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"noah/oracle/sidecar/chainstate"
 	"noah/oracle/sidecar/providers"
 	provider "noah/oracle/sidecar/providers/base"
 	"noah/oracle/sidecar/resolver"
@@ -18,18 +20,19 @@ import (
 
 // Runtime runs price providers and exposes aggregated price state.
 type Runtime struct {
-	mut    sync.RWMutex
-	logger log.Logger
+	mut      sync.RWMutex
+	updateMu sync.Mutex
+	logger   log.Logger
 
 	// Dependencies.
-	resolver          PriceResolver
-	voteTargetsClient VoteTargetsClient
+	resolver PriceResolver
+	client   ChainStateClient
 
 	// Lifecycle.
 	// mainCtx is cancelled when the oracle stops; providers and tick work derive from it.
 	mainCtx    context.Context
 	mainCancel context.CancelFunc
-	// wg waits for provider goroutines started by the oracle.
+	// wg waits for auxiliary runtime goroutines started by the oracle.
 	wg      sync.WaitGroup
 	running atomic.Bool
 	// updateIntervalCh notifies the running fetch loop that its ticker interval changed.
@@ -39,8 +42,6 @@ type Runtime struct {
 	providers map[string]*provider.Provider
 	// lastPriceSync is the last time the oracle successfully updated its prices.
 	lastPriceSync time.Time
-	// lastUpdated tracks the last block height associated with an oracle update.
-	lastUpdated uint64
 	// denoms is the current effective target-denom snapshot used for missing-price accounting.
 	denoms []string
 	// denomsFromVoteTargets tracks whether denoms came from a successful on-chain vote-targets query.
@@ -55,7 +56,8 @@ func NewRuntime(
 	cfg Config,
 	opts ...Option,
 ) (*Runtime, error) {
-	o := &Runtime{
+	cfg = cfg.Clone()
+	r := &Runtime{
 		cfg:              cfg,
 		providers:        make(map[string]*provider.Provider),
 		updateIntervalCh: make(chan struct{}, 1),
@@ -63,79 +65,75 @@ func NewRuntime(
 	}
 
 	for _, opt := range opts {
-		opt(o)
+		opt(r)
 	}
 
-	if err := o.cfg.Validate(); err != nil {
+	if err := r.cfg.Validate(); err != nil {
 		return nil, err
 	}
-	if o.logger == nil {
+	if r.logger == nil {
 		return nil, errors.New("logger is nil")
 	}
-
-	if len(o.providers) == 0 {
-		for _, providerCfg := range runtimeProviderConfigs(o.cfg) {
-			p, err := providers.NewProvider(providerCfg.cfg, providerCfg.markets, o.logger)
+	r.logger = r.logger.With("runtime", "oracle")
+	if len(r.cfg.FallbackDenoms) != 0 {
+		r.denoms = append([]string(nil), r.cfg.FallbackDenoms...)
+	}
+	if len(r.providers) == 0 {
+		pairs := r.cfg.Resolver.MarketPairs(r.denoms)
+		for _, providerCfg := range r.cfg.Providers {
+			p, err := providers.NewProvider(providerCfg, providerCfg.Markets.FilterPairs(pairs), r.logger)
 			if err != nil {
 				return nil, err
 			}
 
-			o.providers[p.Name()] = p
+			r.providers[p.Name()] = p
 		}
 	}
-	if len(o.cfg.FallbackDenoms) != 0 {
-		o.denoms = append([]string(nil), o.cfg.FallbackDenoms...)
-	}
-
-	if o.resolver == nil {
-		resolver, err := resolver.NewResolver(o.cfg.Resolver)
+	if r.resolver == nil {
+		resolver, err := resolver.NewResolver(r.cfg.Resolver)
 		if err != nil {
 			return nil, err
 		}
-		o.resolver = resolver
+		r.resolver = resolver
+	}
+	if r.client == nil {
+		client, err := chainstate.NewClient(r.cfg.Client)
+		if err != nil {
+			return nil, err
+		}
+		r.client = client
 	}
 
-	return o, nil
+	return r, nil
 }
 
 // GetProviders returns a snapshot of provider pointers.
-func (o *Runtime) GetProviders() map[string]*provider.Provider {
-	o.mut.RLock()
-	defer o.mut.RUnlock()
+func (r *Runtime) GetProviders() map[string]*provider.Provider {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
 
-	providers := make(map[string]*provider.Provider, len(o.providers))
-	for name, p := range o.providers {
-		providers[name] = p
-	}
+	providers := make(map[string]*provider.Provider, len(r.providers))
+	maps.Copy(providers, r.providers)
 
 	return providers
 }
 
 // GetLastSyncTime returns the last time the oracle aggregated provider prices.
-func (o *Runtime) GetLastSyncTime() time.Time {
-	o.mut.RLock()
-	defer o.mut.RUnlock()
-	return o.lastPriceSync
+func (r *Runtime) GetLastSyncTime() time.Time {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
+	return r.lastPriceSync
 }
 
 // GetPrices returns current aggregated prices keyed by public vote-target denom.
-func (o *Runtime) GetPrices() types.DenomPrices {
-	o.mut.RLock()
-	denoms := append([]string(nil), o.denoms...)
-	abstainDenoms := append([]string(nil), o.cfg.AbstainDenoms...)
-	o.mut.RUnlock()
+func (r *Runtime) GetPrices() types.DenomPrices {
+	r.mut.RLock()
+	denoms := append([]string(nil), r.denoms...)
+	r.mut.RUnlock()
 
-	prices := types.PricesByDenom(o.resolver.GetPrices(), denoms)
-	if len(abstainDenoms) == 0 {
-		return prices
-	}
-
-	activeDenoms := make(map[string]struct{}, len(denoms))
+	prices := types.PricesByDenom(r.resolver.GetPrices(), denoms)
 	for _, denom := range denoms {
-		activeDenoms[denom] = struct{}{}
-	}
-	for _, denom := range abstainDenoms {
-		if _, ok := activeDenoms[denom]; ok {
+		if _, ok := prices[denom]; !ok {
 			prices[denom] = new(big.Float)
 		}
 	}

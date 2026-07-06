@@ -1,36 +1,45 @@
 package resolver_test
 
 import (
-	. "noah/oracle/sidecar/resolver"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"noah/oracle/sidecar/resolver"
 	"noah/oracle/sidecar/types"
 )
 
 func TestConfigMarketPairs(t *testing.T) {
 	testCases := []struct {
-		name string
-		cfg  Config
-		want map[types.Pair]struct{}
+		name   string
+		cfg    resolver.Config
+		denoms []string
+		want   map[types.Pair]struct{}
 	}{
 		{
-			name: "nil routes returns nil",
-			cfg:  Config{},
-			want: nil,
+			name:   "nil routes includes active direct pairs and inverses",
+			cfg:    resolver.Config{},
+			denoms: []string{"uusd"},
+			want: map[types.Pair]struct{}{
+				"ARK/USD": {},
+				"USD/ARK": {},
+			},
 		},
 		{
-			name: "empty routes returns nil",
-			cfg: Config{
-				Routes: map[string][]Route{},
+			name: "empty routes includes active direct pairs and inverses",
+			cfg: resolver.Config{
+				Routes: map[string][]resolver.Route{},
 			},
-			want: nil,
+			denoms: []string{"uusd"},
+			want: map[types.Pair]struct{}{
+				"ARK/USD": {},
+				"USD/ARK": {},
+			},
 		},
 		{
 			name: "includes route pairs and inverses",
-			cfg: Config{
-				Routes: map[string][]Route{
+			cfg: resolver.Config{
+				Routes: map[string][]resolver.Route{
 					"ukrw": {
 						{
 							Name:  "ark-krw",
@@ -39,6 +48,7 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
+			denoms: []string{"ukrw"},
 			want: map[types.Pair]struct{}{
 				"ARK/USD": {},
 				"USD/ARK": {},
@@ -48,8 +58,8 @@ func TestConfigMarketPairs(t *testing.T) {
 		},
 		{
 			name: "collapses duplicate direct and inverse pairs",
-			cfg: Config{
-				Routes: map[string][]Route{
+			cfg: resolver.Config{
+				Routes: map[string][]resolver.Route{
 					"uusd": {
 						{
 							Name:  "ark-usd",
@@ -58,24 +68,55 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
+			denoms: []string{"uusd"},
 			want: map[types.Pair]struct{}{
 				"ARK/USD": {},
 				"USD/ARK": {},
+			},
+		},
+		{
+			name: "adds default direct pairs for denoms without configured routes",
+			cfg: resolver.Config{
+				Routes: map[string][]resolver.Route{
+					"ukrw": {
+						{
+							Name:  "ark-krw",
+							Pairs: []types.Pair{"ARK/USD", "USD/KRW"},
+						},
+					},
+				},
+			},
+			denoms: []string{"uusd", "ukrw"},
+			want: map[types.Pair]struct{}{
+				"ARK/USD": {},
+				"USD/ARK": {},
+				"USD/KRW": {},
+				"KRW/USD": {},
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.want, tc.cfg.MarketPairs())
+			require.Equal(t, tc.want, tc.cfg.MarketPairs(tc.denoms))
 		})
 	}
+}
+
+func TestConfigValidateAllowsEmptyRoutesForDefaultDirectPath(t *testing.T) {
+	cfg := resolver.Config{
+		Routes: map[string][]resolver.Route{
+			"uusd": {},
+		},
+	}
+
+	require.NoError(t, cfg.Validate())
 }
 
 func TestConfigEqual(t *testing.T) {
 	testCases := []struct {
 		name   string
-		mutate func(*Config)
+		mutate func(*resolver.Config)
 		want   bool
 	}{
 		{
@@ -84,15 +125,15 @@ func TestConfigEqual(t *testing.T) {
 		},
 		{
 			name: "route denom differs",
-			mutate: func(cfg *Config) {
+			mutate: func(cfg *resolver.Config) {
 				cfg.Routes["ukrw"] = cfg.Routes["uusd"]
 				delete(cfg.Routes, "uusd")
 			},
 		},
 		{
 			name: "route count differs",
-			mutate: func(cfg *Config) {
-				cfg.Routes["uusd"] = append(cfg.Routes["uusd"], Route{
+			mutate: func(cfg *resolver.Config) {
+				cfg.Routes["uusd"] = append(cfg.Routes["uusd"], resolver.Route{
 					Name:  "fallback",
 					Pairs: []types.Pair{"USD/KRW"},
 				})
@@ -100,19 +141,19 @@ func TestConfigEqual(t *testing.T) {
 		},
 		{
 			name: "route name differs",
-			mutate: func(cfg *Config) {
+			mutate: func(cfg *resolver.Config) {
 				cfg.Routes["uusd"][0].Name = "fallback"
 			},
 		},
 		{
 			name: "route pairs differ",
-			mutate: func(cfg *Config) {
+			mutate: func(cfg *resolver.Config) {
 				cfg.Routes["uusd"][0].Pairs[0] = "USD/ARK"
 			},
 		},
 		{
 			name: "route order differs",
-			mutate: func(cfg *Config) {
+			mutate: func(cfg *resolver.Config) {
 				cfg.Routes["uusd"][0], cfg.Routes["uusd"][1] = cfg.Routes["uusd"][1], cfg.Routes["uusd"][0]
 			},
 		},
@@ -120,8 +161,8 @@ func TestConfigEqual(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := Config{
-				Routes: map[string][]Route{
+			a := resolver.Config{
+				Routes: map[string][]resolver.Route{
 					"uusd": {
 						{
 							Name:  "ark-usd",
@@ -134,8 +175,8 @@ func TestConfigEqual(t *testing.T) {
 					},
 				},
 			}
-			b := Config{
-				Routes: map[string][]Route{
+			b := resolver.Config{
+				Routes: map[string][]resolver.Route{
 					"uusd": {
 						{
 							Name:  "ark-usd",
@@ -158,8 +199,8 @@ func TestConfigEqual(t *testing.T) {
 }
 
 func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
-	cfg := Config{
-		Routes: map[string][]Route{
+	cfg := resolver.Config{
+		Routes: map[string][]resolver.Route{
 			"ukrw": {
 				{
 					Name:  "ark-usd",
@@ -175,8 +216,8 @@ func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 }
 
 func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
-	cfg := Config{
-		Routes: map[string][]Route{
+	cfg := resolver.Config{
+		Routes: map[string][]resolver.Route{
 			"ukrw": {
 				{
 					Name:  "bad-path",

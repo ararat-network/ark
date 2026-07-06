@@ -16,10 +16,10 @@ type Config struct {
 	// Name is the name of the Fetcher that corresponds to this config.
 	Name string `json:"name"`
 
-	// Timeout is the request timeout. If zero, requests use only the parent context deadline.
+	// Timeout is the request timeout.
 	Timeout time.Duration `json:"timeout"`
 
-	// Interval is the delay between polling cycles. If zero, cycles run without an added delay.
+	// Interval is the delay between polling cycles.
 	Interval time.Duration `json:"interval"`
 
 	// RequestsPerSecond limits request rate. If zero, requests are not rate limited.
@@ -54,11 +54,11 @@ func (c *Config) Validate() error {
 		}
 	}
 
-	if c.Interval < 0 {
-		return errors.New("interval cannot be negative")
+	if c.Timeout <= 0 {
+		return errors.New("timeout must be greater than 0")
 	}
-	if c.Timeout < 0 {
-		return errors.New("timeout cannot be negative")
+	if c.Interval <= 0 {
+		return errors.New("interval must be greater than 0")
 	}
 	if c.RequestsPerSecond < 0 {
 		return errors.New("requests per second cannot be negative")

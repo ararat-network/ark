@@ -56,10 +56,8 @@ func (r *Resolver) SetProviderPrices(provider string, data types.Prices) {
 }
 
 // ResolvePrices commits the latest final pair prices. It first builds provider
-// medians per observed pair. With no configured routes, all observed pair
-// medians are committed directly. With routes, only requested denoms are
-// resolved: configured routes are averaged, while denoms without a route fall
-// back to a direct or inverse ARK/QUOTE median when one is available.
+// medians per observed pair, then resolves only requested denoms. Configured
+// routes are averaged; missing or empty routes use the direct ARK/QUOTE path.
 func (r *Resolver) ResolvePrices(denoms []string) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -76,40 +74,21 @@ func (r *Resolver) ResolvePrices(denoms []string) {
 		oraclemetrics.RecordPairSampleCount(ctx, pair.String(), len(prices))
 	}
 
-	if len(r.cfg.Routes) == 0 {
-		r.finalPrices = recordFinalPrices(ctx, medianPrices)
-		return
-	}
-
 	voteTargets := make(map[types.Pair][]*big.Float)
 
 	for _, denom := range denoms {
-		output, err := types.FromDenom(denom)
-		if err != nil {
+		output, routes, ok := r.cfg.RoutesForDenom(denom)
+		if !ok {
 			continue
 		}
-		if routes, ok := r.cfg.Routes[denom]; ok {
-			for _, route := range routes {
-				finalPrice, ok := resolveRoutePrice(medianPrices, route.Pairs)
-				if !ok {
-					continue
-				}
-				voteTargets[output] = append(voteTargets[output], finalPrice)
-				floatPrice, _ := finalPrice.Float64()
-				oraclemetrics.RecordRoutePrice(ctx, output.String(), route.Name, floatPrice)
+		for _, route := range routes {
+			finalPrice, ok := resolveRoutePrice(medianPrices, route.Pairs)
+			if !ok {
+				continue
 			}
-		} else {
-			price, ok := medianPrices[output]
-			if !ok || price == nil {
-				inverse := output.Inverse()
-				price, ok = medianPrices[inverse]
-				if !ok || price == nil || price.Sign() != 1 {
-					continue
-				}
-
-				price = new(big.Float).Quo(new(big.Float).SetInt64(1), price)
-			}
-			voteTargets[output] = append([]*big.Float(nil), new(big.Float).Copy(price))
+			voteTargets[output] = append(voteTargets[output], finalPrice)
+			floatPrice, _ := finalPrice.Float64()
+			oraclemetrics.RecordRoutePrice(ctx, output.String(), route.Name, floatPrice)
 		}
 	}
 
@@ -138,21 +117,15 @@ func (r *Resolver) GetPrices() types.Prices {
 	return finalPrices
 }
 
-// UpdateConfig replaces the resolver config and clears current provider
-// observations and final prices.
-func (r *Resolver) UpdateConfig(cfg Config) error {
-	if err := cfg.Validate(); err != nil {
-		return err
-	}
-
+// Update replaces the resolver config and clears current provider observations
+// and final prices. The caller must validate cfg before calling Update.
+func (r *Resolver) Update(cfg Config) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
 	r.cfg = cfg
 	r.pairPrices = make(map[types.Pair][]*big.Float)
 	r.finalPrices = make(types.Prices)
-
-	return nil
 }
 
 // Reset clears current provider observations while preserving the last committed

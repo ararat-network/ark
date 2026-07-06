@@ -1,6 +1,9 @@
 package runtime
 
 import (
+	"context"
+
+	"noah/oracle/sidecar/chainstate"
 	"noah/oracle/sidecar/resolver"
 	"noah/oracle/sidecar/types"
 )
@@ -11,11 +14,14 @@ type PriceResolver interface {
 	SetProviderPrices(provider string, prices types.Prices)
 	ResolvePrices(denoms []string)
 	GetPrices() types.Prices
-	UpdateConfig(resolver.Config) error
+	Update(resolver.Config)
 	Reset()
 }
 
-// VoteTargetsClient fetches the current on-chain oracle vote targets.
-type VoteTargetsClient interface {
+// ChainStateClient fetches the current on-chain oracle vote targets.
+type ChainStateClient interface {
+	Start(context.Context) error
+	Stop()
+	Update(chainstate.Config)
 	VoteTargets() ([]string, error)
 }

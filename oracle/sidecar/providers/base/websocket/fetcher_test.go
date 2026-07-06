@@ -121,6 +121,23 @@ func TestRunPublishesDialErrorResponse(t *testing.T) {
 	require.Equal(t, types.ErrorWebsocketStartFail, response.Unresolved["ATOMUSD"].Code())
 }
 
+func TestRunReturnsErrorWhenConnectionPanics(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	handler.EXPECT().
+		Copy().
+		DoAndReturn(func() basewebsocket.DataHandler {
+			panic("connection exploded")
+		})
+
+	fetcher, err := basewebsocket.NewFetcher(websocketConfig("wss://example.invalid"), handler)
+	require.NoError(t, err)
+
+	err = fetcher.Run(context.Background(), []types.Ticker{"ATOMUSD"}, make(chan types.Response, 1))
+	require.ErrorContains(t, err, "websocket connection panicked")
+	require.ErrorContains(t, err, "connection exploded")
+}
+
 func TestRunReconnectsAfterDialError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)
@@ -128,7 +145,7 @@ func TestRunReconnectsAfterDialError(t *testing.T) {
 
 	var attempts atomic.Int32
 	cfg := websocketConfig("wss://example.invalid")
-	cfg.ReconnectionTimeout = 0
+	cfg.ReconnectionTimeout = time.Millisecond
 	fetcher, err := basewebsocket.NewFetcher(
 		cfg,
 		handler,
@@ -240,6 +257,33 @@ func TestRunPublishesHandledMessageAndWritesUpdate(t *testing.T) {
 	require.Equal(t, []byte("update"), <-readUpdate)
 }
 
+func TestRunReturnsErrorWhenReceivePanics(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	tickers := []types.Ticker{"ATOMUSD"}
+
+	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
+		require.NoError(t, conn.Write(context.Background(), coderwebsocket.MessageText, []byte("price")))
+	})
+
+	handler.EXPECT().Copy().Return(handler)
+	handler.EXPECT().CreateMessages(tickers).Return(nil, nil)
+	handler.EXPECT().
+		HandleMessage([]byte("price")).
+		DoAndReturn(func([]byte) (types.Response, [][]byte, error) {
+			panic("receive exploded")
+		})
+
+	cfg := websocketConfig(server.URL)
+	cfg.PingInterval = time.Hour
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
+	require.NoError(t, err)
+
+	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
+	require.ErrorContains(t, err, "websocket receive panicked")
+	require.ErrorContains(t, err, "receive exploded")
+}
+
 func TestRunSkipsParseErrorAndPublishesNextValidMessage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)
@@ -294,6 +338,34 @@ func TestRunPublishesUnresolvedResponseAfterMaxReadErrors(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, types.ErrorWebSocketGeneral, result.Code())
 	}
+}
+
+func TestRunReturnsErrorWhenHeartbeatPanics(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	tickers := []types.Ticker{"ATOMUSD"}
+
+	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
+		_, _, _ = conn.Read(context.Background())
+	})
+
+	handler.EXPECT().Copy().Return(handler)
+	handler.EXPECT().CreateMessages(tickers).Return(nil, nil)
+	handler.EXPECT().
+		HeartBeatMessages().
+		DoAndReturn(func() ([][]byte, error) {
+			panic("heartbeat exploded")
+		})
+
+	cfg := websocketConfig(server.URL)
+	cfg.PingInterval = time.Millisecond
+	cfg.ReadTimeout = time.Hour
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
+	require.NoError(t, err)
+
+	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
+	require.ErrorContains(t, err, "websocket heartbeat panicked")
+	require.ErrorContains(t, err, "heartbeat exploded")
 }
 
 func TestRunSendsHeartbeatMessages(t *testing.T) {

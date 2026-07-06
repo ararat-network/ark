@@ -11,53 +11,52 @@ import (
 
 // fetchAllPrices syncs the effective vote-target snapshot, copies fresh provider prices,
 // and updates aggregate price state for one runtime tick.
-func (o *Runtime) fetchAllPrices(ctx context.Context) {
-	o.logger.Debug("starting price fetch loop")
+func (r *Runtime) fetchAllPrices(ctx context.Context) {
+	r.logger.Debug("starting price fetch loop")
 	defer func() {
-		if r := recover(); r != nil {
-			o.logger.Error("fetchAllPrices tick panicked", "error", r)
+		if recErr := recover(); recErr != nil {
+			r.logger.Error("fetchAllPrices tick panicked", "error", recErr)
 		}
 	}()
 
-	o.syncVoteTargets()
-	o.resolver.Reset()
+	r.refreshVoteTargets()
+	r.resolver.Reset()
 
-	o.mut.RLock()
-	providers := make([]*base.Provider, 0, len(o.providers))
-	for _, provider := range o.providers {
+	r.mut.RLock()
+	providers := make([]*base.Provider, 0, len(r.providers))
+	for _, provider := range r.providers {
 		providers = append(providers, provider)
 	}
-
-	maxPriceAge := o.cfg.MaxPriceAge
-	denoms := append([]string(nil), o.denoms...)
-	o.mut.RUnlock()
+	maxPriceAge := r.cfg.MaxPriceAge
+	denoms := append([]string(nil), r.denoms...)
+	r.mut.RUnlock()
 
 	for _, provider := range providers {
-		o.fetchPrices(provider, maxPriceAge)
+		r.fetchPrices(provider, maxPriceAge)
 	}
 
-	o.logger.Debug("oracle fetched prices from providers")
+	r.logger.Debug("oracle fetched prices from providers")
 
-	o.resolver.ResolvePrices(denoms)
-	o.recordMissingPrices(ctx, denoms)
-	o.setLastSyncTime(time.Now().UTC())
+	r.resolver.ResolvePrices(denoms)
+	r.recordMissingPrices(ctx, denoms)
+	r.setLastSyncTime(time.Now().UTC())
 	oraclemetrics.RecordOracleTick(ctx)
 }
 
 // fetchPrices copies one provider's fresh cached prices into the resolver.
-func (o *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration) {
+func (r *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration) {
 	defer func() {
-		if r := recover(); r != nil {
-			o.logger.Error(
+		if recErr := recover(); recErr != nil {
+			r.logger.Error(
 				"provider panicked",
 				"provider_name", provider.Name(),
-				"error", r,
+				"error", recErr,
 			)
 		}
 	}()
 
 	if !provider.IsRunning() {
-		o.logger.Debug(
+		r.logger.Debug(
 			"provider is not running",
 			"provider", provider.Name(),
 		)
@@ -65,7 +64,7 @@ func (o *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration
 		return
 	}
 
-	o.logger.Debug(
+	r.logger.Debug(
 		"retrieving prices",
 		"provider", provider.Name(),
 		"data handler type", provider.Type(),
@@ -73,7 +72,7 @@ func (o *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration
 
 	prices := provider.GetPrices()
 	if prices == nil {
-		o.logger.Debug(
+		r.logger.Debug(
 			"provider returned nil prices",
 			"provider", provider.Name(),
 			"data handler type", provider.Type(),
@@ -86,7 +85,7 @@ func (o *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration
 	for pair, result := range prices {
 		diff := time.Now().UTC().Sub(result.Timestamp)
 		if diff > maxPriceAge {
-			o.logger.Debug(
+			r.logger.Debug(
 				"skipping price",
 				"provider", provider.Name(),
 				"data handler type", provider.Type(),
@@ -97,7 +96,7 @@ func (o *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration
 			continue
 		}
 
-		o.logger.Debug(
+		r.logger.Debug(
 			"adding price",
 			"provider", provider.Name(),
 			"data handler type", provider.Type(),
@@ -108,61 +107,101 @@ func (o *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration
 		timeFilteredPrices[pair] = result.Price
 	}
 
-	o.logger.Debug("provider returned prices",
+	r.logger.Debug("provider returned prices",
 		"provider", provider.Name(),
 		"data handler type", provider.Type(),
 		"prices", len(prices),
 	)
-	o.resolver.SetProviderPrices(provider.Name(), timeFilteredPrices)
+	r.resolver.SetProviderPrices(provider.Name(), timeFilteredPrices)
 }
 
-// syncVoteTargets applies the latest cached vote-target snapshot. Before the
+// refreshVoteTargets applies the latest cached vote-target snapshot. Before the
 // first successful snapshot it falls back to configured denoms; after a
 // successful snapshot it preserves the last-known vote targets on read errors.
-func (o *Runtime) syncVoteTargets() {
-	o.mut.RLock()
-	client := o.voteTargetsClient
-	fallbackDenoms := append([]string(nil), o.cfg.FallbackDenoms...)
-	hasVoteTargets := o.denomsFromVoteTargets
-	o.mut.RUnlock()
-
-	if client == nil {
-		o.setDenoms(fallbackDenoms, false)
-		return
-	}
+func (r *Runtime) refreshVoteTargets() {
+	r.mut.RLock()
+	client := r.client
+	fallbackDenoms := append([]string(nil), r.cfg.FallbackDenoms...)
+	hasVoteTargets := r.denomsFromVoteTargets
+	r.mut.RUnlock()
 
 	denoms, err := client.VoteTargets()
 	if err != nil {
 		if hasVoteTargets {
-			o.logger.Warn("failed to refresh vote targets; using last known denoms", "err", err)
+			r.logger.Warn("failed to refresh vote targets; using last known denoms", "err", err)
 			return
 		}
 
-		o.setDenoms(fallbackDenoms, false)
-		o.logger.Warn("failed to refresh vote targets; using fallback config denoms", "err", err)
+		r.setDenoms(fallbackDenoms, false)
+		r.logger.Warn("failed to refresh vote targets; using fallback config denoms", "err", err)
 		return
 	}
 
-	o.setDenoms(denoms, true)
+	r.setDenoms(denoms, true)
 }
 
-// setDenoms stores the effective vote-target denoms and whether they came from
-// the vote-target client or the fallback config.
-func (o *Runtime) setDenoms(denoms []string, fromVoteTargets bool) {
-	o.mut.Lock()
-	defer o.mut.Unlock()
+// setDenoms stores the effective vote-target denoms and updates configured
+// providers to the matching active market subset.
+func (r *Runtime) setDenoms(denoms []string, fromVoteTargets bool) {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
 
-	o.denoms = append([]string(nil), denoms...)
-	o.denomsFromVoteTargets = fromVoteTargets
+	r.mut.RLock()
+	cfg := r.cfg.Clone()
+	oldDenoms := append([]string(nil), r.denoms...)
+	oldProviders := make(map[string]*base.Provider, len(r.providers))
+	for name, provider := range r.providers {
+		oldProviders[name] = provider
+	}
+	running := r.running.Load()
+	mainCtx := r.mainCtx
+	r.mut.RUnlock()
+
+	oldPairs := cfg.Resolver.MarketPairs(oldDenoms)
+	newPairs := cfg.Resolver.MarketPairs(denoms)
+
+	updates := make([]providerUpdate, 0, len(oldProviders))
+	for name, provider := range oldProviders {
+		providerCfg, ok := cfg.Providers[name]
+		if !ok {
+			continue
+		}
+		oldMarkets := providerCfg.Markets.FilterPairs(oldPairs)
+		newMarkets := providerCfg.Markets.FilterPairs(newPairs)
+		if oldMarkets.Equal(newMarkets) {
+			continue
+		}
+		updates = append(updates, providerUpdate{
+			provider: provider,
+			markets:  newMarkets,
+		})
+	}
+
+	r.mut.Lock()
+	for _, update := range updates {
+		update.provider.Update(update.markets)
+	}
+	r.denoms = append([]string(nil), denoms...)
+	r.denomsFromVoteTargets = fromVoteTargets
+	r.mut.Unlock()
+
+	if !running || mainCtx == nil {
+		return
+	}
+	for _, update := range updates {
+		if err := update.provider.Start(mainCtx); err != nil {
+			r.logProviderStartError(mainCtx, update.provider.Name(), err)
+		}
+	}
 }
 
 // recordMissingPrices records expected denoms missing from the latest aggregate prices.
-func (o *Runtime) recordMissingPrices(ctx context.Context, denoms []string) {
+func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string) {
 	if len(denoms) == 0 {
 		return
 	}
 
-	prices := types.PricesByDenom(o.resolver.GetPrices(), denoms)
+	prices := types.PricesByDenom(r.resolver.GetPrices(), denoms)
 	missing := make([]string, 0, len(denoms))
 	for _, denom := range denoms {
 		if _, ok := prices[denom]; !ok {
@@ -171,7 +210,7 @@ func (o *Runtime) recordMissingPrices(ctx context.Context, denoms []string) {
 	}
 
 	if len(missing) > 0 {
-		o.logger.Warn(
+		r.logger.Warn(
 			"oracle missing prices for active vote targets",
 			"denoms", missing,
 			"count", len(missing),
@@ -182,9 +221,9 @@ func (o *Runtime) recordMissingPrices(ctx context.Context, denoms []string) {
 }
 
 // setLastSyncTime records when prices were last aggregated.
-func (o *Runtime) setLastSyncTime(t time.Time) {
-	o.mut.Lock()
-	defer o.mut.Unlock()
+func (r *Runtime) setLastSyncTime(t time.Time) {
+	r.mut.Lock()
+	defer r.mut.Unlock()
 
-	o.lastPriceSync = t
+	r.lastPriceSync = t
 }

@@ -93,7 +93,9 @@ func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh ch
 	group, groupCtx := errgroup.WithContext(ctx)
 	for subTickers := range slices.Chunk(tickers, maxTickersPerConn) {
 		group.Go(func() error {
-			return f.runConnection(groupCtx, subTickers, responseCh)
+			return base.RunRecovering("websocket connection", func() error {
+				return f.runConnection(groupCtx, subTickers, responseCh)
+			})
 		})
 	}
 
@@ -171,12 +173,8 @@ func (f *Fetcher) runOnce(
 	handler DataHandler,
 	responseCh chan<- types.Response,
 ) error {
-	dialCtx := ctx
-	if f.config.HandshakeTimeout > 0 {
-		var cancel context.CancelFunc
-		dialCtx, cancel = context.WithTimeout(ctx, f.config.HandshakeTimeout)
-		defer cancel()
-	}
+	dialCtx, cancel := context.WithTimeout(ctx, f.config.HandshakeTimeout)
+	defer cancel()
 	endpoint, err := f.endpointSelector(f.config.Endpoints)
 	if err != nil {
 		return ErrSelectEndpointWithErr(err)
@@ -225,10 +223,14 @@ func (f *Fetcher) runOnce(
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return f.heartBeat(groupCtx, conn, handler, tickers, responseCh)
+		return base.RunRecovering("websocket heartbeat", func() error {
+			return f.heartBeat(groupCtx, conn, handler, tickers, responseCh)
+		})
 	})
 	group.Go(func() error {
-		return f.recv(groupCtx, conn, handler, tickers, responseCh)
+		return base.RunRecovering("websocket receive", func() error {
+			return f.recv(groupCtx, conn, handler, tickers, responseCh)
+		})
 	})
 
 	return group.Wait()

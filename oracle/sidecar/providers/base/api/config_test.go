@@ -10,9 +10,11 @@ import (
 	"noah/oracle/sidecar/providers/types"
 )
 
-func TestAPIConfigValidateBasicAllowsZeroOptionalControls(t *testing.T) {
+func TestAPIConfigValidateBasicAllowsPositiveRequiredControls(t *testing.T) {
 	cfg := Config{
 		Name:      "test",
+		Timeout:   time.Second,
+		Interval:  time.Second,
 		Endpoints: []types.Endpoint{{URL: "https://provider.test"}},
 	}
 
@@ -47,18 +49,32 @@ func TestAPIConfigValidateBasicRejectsInvalidFields(t *testing.T) {
 			errContains: "endpoint url cannot be empty",
 		},
 		{
-			name: "negative interval",
+			name: "zero timeout",
 			mutate: func(cfg *Config) {
-				cfg.Interval = -time.Second
+				cfg.Timeout = 0
 			},
-			errContains: "interval cannot be negative",
+			errContains: "timeout must be greater than 0",
 		},
 		{
 			name: "negative timeout",
 			mutate: func(cfg *Config) {
 				cfg.Timeout = -time.Second
 			},
-			errContains: "timeout cannot be negative",
+			errContains: "timeout must be greater than 0",
+		},
+		{
+			name: "zero interval",
+			mutate: func(cfg *Config) {
+				cfg.Interval = 0
+			},
+			errContains: "interval must be greater than 0",
+		},
+		{
+			name: "negative interval",
+			mutate: func(cfg *Config) {
+				cfg.Interval = -time.Second
+			},
+			errContains: "interval must be greater than 0",
 		},
 		{
 			name: "negative requests per second",
@@ -101,6 +117,8 @@ func TestAPIConfigValidateBasicRejectsInvalidFields(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
 				Name:      "test",
+				Timeout:   time.Second,
+				Interval:  time.Second,
 				Endpoints: []types.Endpoint{{URL: "https://provider.test"}},
 			}
 			tt.mutate(&cfg)

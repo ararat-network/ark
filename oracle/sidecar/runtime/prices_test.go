@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,8 +32,8 @@ func TestStartFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 		DoAndReturn(func(ctx context.Context, _ []providertypes.Ticker, responseCh chan<- providertypes.Response) error {
 			responseCh <- providertypes.NewResponse(
 				map[providertypes.Ticker]providertypes.Result{
-					"USDTUSD": providertypes.NewResult(big.NewFloat(1.25), now),
-					"KRWUSD":  providertypes.NewResult(big.NewFloat(2.50), now.Add(-2*time.Minute)),
+					"ARKUSD": providertypes.NewResult(big.NewFloat(1.25), now),
+					"ARKKRW": providertypes.NewResult(big.NewFloat(2.50), now.Add(-2*time.Minute)),
 				},
 				nil,
 			)
@@ -40,7 +41,7 @@ func TestStartFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 			return ctx.Err()
 		})
 
-	cfg := testOracleConfig(nil)
+	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
 	oracle, err := runtime.NewRuntime(cfg, runtime.WithProviders(provider.provider))
 	require.NoError(t, err)
@@ -53,7 +54,7 @@ func TestStartFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 		if prices["uusd"] == nil || prices["uusd"].Cmp(big.NewFloat(1.25)) != 0 {
 			return false
 		}
-		if _, ok := prices["ukrw"]; ok {
+		if prices["ukrw"] == nil || prices["ukrw"].Sign() != 0 {
 			return false
 		}
 		return !oracle.GetLastSyncTime().IsZero()
@@ -68,19 +69,25 @@ func TestStartRecordsMissingPriceMetricsFromFallbackDenoms(t *testing.T) {
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
 
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
+	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
 	t.Cleanup(func() {
-		require.NoError(t, provider.Shutdown(context.Background()))
+		require.NoError(t, meterProvider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	otel.SetMeterProvider(meterProvider)
 
-	cfg := testOracleConfig(nil)
+	ctrl := gomock.NewController(t)
+	started := make(chan struct{})
+	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
+	expectFetcherRunAnyTimes(provider.fetcher, started)
+
+	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	oracle, err := runtime.NewRuntime(cfg)
+	oracle, err := runtime.NewRuntime(cfg, runtime.WithProviders(provider.provider))
 	require.NoError(t, err)
 
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
+	requireProviderStarted(t, started)
 
 	require.Eventually(t, func() bool {
 		families, err := registry.Gather()
@@ -101,27 +108,76 @@ func TestStartRecordsMissingPriceMetricsFromFallbackDenoms(t *testing.T) {
 
 func TestStartUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	voteTargetsClient := oracletestutil.NewMockVoteTargetsClient(ctrl)
+	started := make(chan struct{})
+	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
+	expectFetcherRunAnyTimes(provider.fetcher, started)
+	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectVoteTargetsLifecycle(voteTargetsClient)
 	voteTargetsClient.EXPECT().
 		VoteTargets().
-		Return([]string{"uusd", "ukrw"}, nil).
+		Return([]string{"uusd"}, nil).
 		AnyTimes()
 
 	resolver := newRecordingResolver(nil)
-	cfg := testOracleConfig(nil)
+	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ufallback"}
+	cfg.FallbackDenoms = []string{"ukrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
+		runtime.WithProviders(provider.provider),
 		runtime.WithResolver(resolver),
-		runtime.WithVoteTargetsClient(voteTargetsClient),
+		runtime.WithChainStateClient(voteTargetsClient),
 	)
 	require.NoError(t, err)
 
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
+	requireProviderStarted(t, started)
 
-	require.Equal(t, []string{"uusd", "ukrw"}, requireResolvedDenoms(t, resolver))
+	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, resolver))
+	require.Equal(t, []providertypes.Ticker{"ARKUSD"}, provider.provider.GetTickers())
+
+	cancel()
+	requireOracleStopped(t, errCh)
+}
+
+func TestStartRestartsStoppedProviderWhenVoteTargetsChangeMarkets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
+	firstStarted := make(chan struct{})
+	restarted := make(chan struct{})
+	expectFetcherRunErrorThenBlock(
+		t,
+		provider.fetcher,
+		firstStarted,
+		restarted,
+		testMarkets().Tickers(),
+		[]providertypes.Ticker{"ARKKRW"},
+	)
+	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectVoteTargetsLifecycle(voteTargetsClient)
+	voteTargetsClient.EXPECT().
+		VoteTargets().
+		Return([]string{"ukrw"}, nil).
+		AnyTimes()
+
+	resolver := newRecordingResolver(nil)
+	cfg := testRuntimeConfigWithUnknownProvider()
+	cfg.UpdateInterval = 5 * time.Millisecond
+	cfg.FallbackDenoms = []string{"uusd"}
+	oracle, err := runtime.NewRuntime(
+		cfg,
+		runtime.WithProviders(provider.provider),
+		runtime.WithResolver(resolver),
+		runtime.WithChainStateClient(voteTargetsClient),
+	)
+	require.NoError(t, err)
+
+	errCh, cancel := startOracle(t, oracle)
+	defer cancel()
+	requireProviderStarted(t, firstStarted)
+	requireProviderStarted(t, restarted)
+	require.Equal(t, []providertypes.Ticker{"ARKKRW"}, provider.provider.GetTickers())
 
 	cancel()
 	requireOracleStopped(t, errCh)
@@ -129,27 +185,33 @@ func TestStartUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 
 func TestStartUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	voteTargetsClient := oracletestutil.NewMockVoteTargetsClient(ctrl)
+	started := make(chan struct{})
+	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
+	expectFetcherRunAnyTimes(provider.fetcher, started)
+	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectVoteTargetsLifecycle(voteTargetsClient)
 	voteTargetsClient.EXPECT().
 		VoteTargets().
 		Return(nil, errors.New("node unavailable")).
 		AnyTimes()
 
 	resolver := newRecordingResolver(nil)
-	cfg := testOracleConfig(nil)
+	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ufallback"}
+	cfg.FallbackDenoms = []string{"ukrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
+		runtime.WithProviders(provider.provider),
 		runtime.WithResolver(resolver),
-		runtime.WithVoteTargetsClient(voteTargetsClient),
+		runtime.WithChainStateClient(voteTargetsClient),
 	)
 	require.NoError(t, err)
 
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
+	requireProviderStarted(t, started)
 
-	require.Equal(t, []string{"ufallback"}, requireResolvedDenoms(t, resolver))
+	require.Equal(t, []string{"ukrw"}, requireResolvedDenoms(t, resolver))
 
 	cancel()
 	requireOracleStopped(t, errCh)
@@ -157,7 +219,11 @@ func TestStartUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 
 func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	voteTargetsClient := oracletestutil.NewMockVoteTargetsClient(ctrl)
+	started := make(chan struct{})
+	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
+	expectFetcherRunAnyTimes(provider.fetcher, started)
+	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectVoteTargetsLifecycle(voteTargetsClient)
 	calls := 0
 	voteTargetsClient.EXPECT().
 		VoteTargets().
@@ -171,18 +237,20 @@ func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 		AnyTimes()
 
 	resolver := newRecordingResolver(nil)
-	cfg := testOracleConfig(nil)
+	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ufallback"}
+	cfg.FallbackDenoms = []string{"ukrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
+		runtime.WithProviders(provider.provider),
 		runtime.WithResolver(resolver),
-		runtime.WithVoteTargetsClient(voteTargetsClient),
+		runtime.WithChainStateClient(voteTargetsClient),
 	)
 	require.NoError(t, err)
 
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
+	requireProviderStarted(t, started)
 
 	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, resolver))
 	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, resolver))
@@ -193,9 +261,10 @@ func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 }
 
 type recordingResolver struct {
+	mut       sync.Mutex
 	prices    types.Prices
 	resolveCh chan []string
-	updateErr error
+	updates   []resolverpkg.Config
 }
 
 func newRecordingResolver(prices types.Prices) *recordingResolver {
@@ -219,9 +288,29 @@ func (r *recordingResolver) GetPrices() types.Prices {
 	return prices
 }
 
-func (r *recordingResolver) UpdateConfig(resolverpkg.Config) error { return r.updateErr }
+func (r *recordingResolver) Update(cfg resolverpkg.Config) {
+	r.mut.Lock()
+	defer r.mut.Unlock()
+
+	r.updates = append(r.updates, cfg)
+}
+
+func (r *recordingResolver) updateConfigs() []resolverpkg.Config {
+	r.mut.Lock()
+	defer r.mut.Unlock()
+
+	return append([]resolverpkg.Config(nil), r.updates...)
+}
 
 func (r *recordingResolver) Reset() {}
+
+func expectVoteTargetsLifecycle(client *oracletestutil.MockChainStateClient) {
+	client.EXPECT().
+		Start(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	client.EXPECT().Stop().AnyTimes()
+}
 
 func requireResolvedDenoms(t *testing.T, resolver *recordingResolver) []string {
 	t.Helper()

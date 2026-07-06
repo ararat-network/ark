@@ -7,8 +7,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"noah/oracle/sidecar/chainstate"
 	"noah/oracle/sidecar/providers"
+	providertypes "noah/oracle/sidecar/providers/types"
 	"noah/oracle/sidecar/resolver"
+	oracletypes "noah/oracle/sidecar/types"
 )
 
 // Config defines the price runtime configuration. The runtime is configured
@@ -32,11 +35,39 @@ type Config struct {
 	// Resolver configures how provider pair prices are resolved into final vote-target denom prices.
 	Resolver resolver.Config `json:"resolver"`
 
+	// Client configures a grpc client used to querying on chain params
+	Client chainstate.Config `json:"client"`
+
 	// FallbackDenoms is used when vote-target polling has not produced an on-chain snapshot.
 	FallbackDenoms []string `json:"fallbackDenoms"`
+}
 
-	// AbstainDenoms are active vote-target denoms to submit as explicit zero-rate abstains.
-	AbstainDenoms []string `json:"abstainDenoms"`
+// Clone returns a runtime-owned copy of c, including nested maps and slices.
+func (c Config) Clone() Config {
+	cloned := c
+	if c.Providers != nil {
+		cloned.Providers = make(map[string]providers.Config, len(c.Providers))
+		for name, providerCfg := range c.Providers {
+			providerCfg.Markets = append(providertypes.Markets(nil), providerCfg.Markets...)
+			providerCfg.API.Endpoints = append([]providertypes.Endpoint(nil), providerCfg.API.Endpoints...)
+			providerCfg.WebSocket.Endpoints = append([]providertypes.Endpoint(nil), providerCfg.WebSocket.Endpoints...)
+			cloned.Providers[name] = providerCfg
+		}
+	}
+	if c.Resolver.Routes != nil {
+		cloned.Resolver.Routes = make(map[string][]resolver.Route, len(c.Resolver.Routes))
+		for denom, routes := range c.Resolver.Routes {
+			copiedRoutes := make([]resolver.Route, len(routes))
+			for i, route := range routes {
+				route.Pairs = append([]oracletypes.Pair(nil), route.Pairs...)
+				copiedRoutes[i] = route
+			}
+			cloned.Resolver.Routes[denom] = copiedRoutes
+		}
+	}
+	cloned.FallbackDenoms = append([]string(nil), c.FallbackDenoms...)
+
+	return cloned
 }
 
 // Validate performs basic validation on the runtime config.
@@ -46,6 +77,9 @@ func (c *Config) Validate() error {
 	}
 	if c.MaxPriceAge <= 0 {
 		return errors.New("oracle max price age must be greater than 0")
+	}
+	if len(c.Providers) == 0 {
+		return errors.New("oracle needs at least one provider")
 	}
 	for name, p := range c.Providers {
 		if name != p.Name {
@@ -57,6 +91,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Resolver.Validate(); err != nil {
 		return fmt.Errorf("resolver config is invalid: %w", err)
+	}
+	if err := c.Client.Validate(); err != nil {
+		return fmt.Errorf("client config is invalid: %w", err)
 	}
 	if len(c.FallbackDenoms) == 0 {
 		return errors.New("oracle denoms fallback cannot be empty")
@@ -70,17 +107,6 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("duplicate fallback denom %q", denom)
 		}
 		fallbackDenoms[denom] = struct{}{}
-	}
-
-	abstainDenoms := make(map[string]struct{}, len(c.AbstainDenoms))
-	for _, denom := range c.AbstainDenoms {
-		if err := sdk.ValidateDenom(denom); err != nil {
-			return fmt.Errorf("invalid abstain denom %q: %w", denom, err)
-		}
-		if _, ok := abstainDenoms[denom]; ok {
-			return fmt.Errorf("duplicate abstain denom %q", denom)
-		}
-		abstainDenoms[denom] = struct{}{}
 	}
 
 	return nil

@@ -10,6 +10,8 @@
 package testutil
 
 import (
+	context "context"
+	chainstate "noah/oracle/sidecar/chainstate"
 	resolver "noah/oracle/sidecar/resolver"
 	types "noah/oracle/sidecar/types"
 	reflect "reflect"
@@ -91,46 +93,82 @@ func (mr *MockPriceResolverMockRecorder) SetProviderPrices(provider, prices any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProviderPrices", reflect.TypeOf((*MockPriceResolver)(nil).SetProviderPrices), provider, prices)
 }
 
-// UpdateConfig mocks base method.
-func (m *MockPriceResolver) UpdateConfig(arg0 resolver.Config) error {
+// Update mocks base method.
+func (m *MockPriceResolver) Update(arg0 resolver.Config) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateConfig", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", arg0)
 }
 
-// UpdateConfig indicates an expected call of UpdateConfig.
-func (mr *MockPriceResolverMockRecorder) UpdateConfig(arg0 any) *gomock.Call {
+// Update indicates an expected call of Update.
+func (mr *MockPriceResolverMockRecorder) Update(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfig", reflect.TypeOf((*MockPriceResolver)(nil).UpdateConfig), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPriceResolver)(nil).Update), arg0)
 }
 
-// MockVoteTargetsClient is a mock of VoteTargetsClient interface.
-type MockVoteTargetsClient struct {
+// MockChainStateClient is a mock of ChainStateClient interface.
+type MockChainStateClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockVoteTargetsClientMockRecorder
+	recorder *MockChainStateClientMockRecorder
 	isgomock struct{}
 }
 
-// MockVoteTargetsClientMockRecorder is the mock recorder for MockVoteTargetsClient.
-type MockVoteTargetsClientMockRecorder struct {
-	mock *MockVoteTargetsClient
+// MockChainStateClientMockRecorder is the mock recorder for MockChainStateClient.
+type MockChainStateClientMockRecorder struct {
+	mock *MockChainStateClient
 }
 
-// NewMockVoteTargetsClient creates a new mock instance.
-func NewMockVoteTargetsClient(ctrl *gomock.Controller) *MockVoteTargetsClient {
-	mock := &MockVoteTargetsClient{ctrl: ctrl}
-	mock.recorder = &MockVoteTargetsClientMockRecorder{mock}
+// NewMockChainStateClient creates a new mock instance.
+func NewMockChainStateClient(ctrl *gomock.Controller) *MockChainStateClient {
+	mock := &MockChainStateClient{ctrl: ctrl}
+	mock.recorder = &MockChainStateClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockVoteTargetsClient) EXPECT() *MockVoteTargetsClientMockRecorder {
+func (m *MockChainStateClient) EXPECT() *MockChainStateClientMockRecorder {
 	return m.recorder
 }
 
+// Start mocks base method.
+func (m *MockChainStateClient) Start(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockChainStateClientMockRecorder) Start(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockChainStateClient)(nil).Start), arg0)
+}
+
+// Stop mocks base method.
+func (m *MockChainStateClient) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockChainStateClientMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockChainStateClient)(nil).Stop))
+}
+
+// Update mocks base method.
+func (m *MockChainStateClient) Update(arg0 chainstate.Config) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Update", arg0)
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockChainStateClientMockRecorder) Update(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChainStateClient)(nil).Update), arg0)
+}
+
 // VoteTargets mocks base method.
-func (m *MockVoteTargetsClient) VoteTargets() ([]string, error) {
+func (m *MockChainStateClient) VoteTargets() ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VoteTargets")
 	ret0, _ := ret[0].([]string)
@@ -139,7 +177,7 @@ func (m *MockVoteTargetsClient) VoteTargets() ([]string, error) {
 }
 
 // VoteTargets indicates an expected call of VoteTargets.
-func (mr *MockVoteTargetsClientMockRecorder) VoteTargets() *gomock.Call {
+func (mr *MockChainStateClientMockRecorder) VoteTargets() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteTargets", reflect.TypeOf((*MockVoteTargetsClient)(nil).VoteTargets))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteTargets", reflect.TypeOf((*MockChainStateClient)(nil).VoteTargets))
 }

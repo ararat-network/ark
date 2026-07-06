@@ -31,6 +31,7 @@ type Provider struct {
 	cancelMainFn  context.CancelFunc
 	cycleCtx      context.Context
 	cancelCycleFn context.CancelFunc
+	doneCh        chan struct{}
 }
 
 // NewProvider returns a provider using fetcher for provider-specific price data.
@@ -63,8 +64,10 @@ func NewProvider(
 	if len(p.transportType) == 0 {
 		return nil, errors.New("provider transport type cannot be empty")
 	}
-	if err := p.markets.Validate(); err != nil {
-		return nil, err
+	if len(p.markets) > 0 {
+		if err := p.markets.Validate(); err != nil {
+			return nil, err
+		}
 	}
 	if fetcher == nil {
 		return nil, errors.New("fetcher is nil")
@@ -81,46 +84,126 @@ func NewProvider(
 	return p, nil
 }
 
-// Start runs the provider's fetch loop until the provider is stopped or the main
-// context is cancelled.
+// Start starts the provider's fetch loop if it is not already running.
 func (p *Provider) Start(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
 	}
 
-	p.logger.Info("starting provider")
-	mainCtx, mainCancel := context.WithCancel(ctx)
-	defer mainCancel()
-	p.setMainCtx(mainCtx, mainCancel)
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
+		mainCtx, mainCancel := context.WithCancel(ctx)
+		doneCh := make(chan struct{})
+
+		p.lifecycleMu.Lock()
+		if p.doneCh != nil {
+			running := p.mainCtx != nil && p.mainCtx.Err() == nil
+			done := p.doneCh
+			p.lifecycleMu.Unlock()
+			mainCancel()
+
+			if running {
+				p.logger.Debug("provider is already running")
+				return nil
+			}
+
+			select {
+			case <-done:
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
+		p.mainCtx = mainCtx
+		p.cancelMainFn = mainCancel
+		p.cycleCtx = nil
+		p.cancelCycleFn = nil
+		p.doneCh = doneCh
+		p.lifecycleMu.Unlock()
+
+		p.logger.Info("starting provider")
+		go p.run(mainCtx, mainCancel, doneCh)
+		return nil
+	}
+}
+
+func (p *Provider) run(mainCtx context.Context, mainCancel context.CancelFunc, doneCh chan struct{}) {
+	defer func() {
+		mainCancel()
+
+		p.lifecycleMu.Lock()
+		defer p.lifecycleMu.Unlock()
+
+		p.mainCtx = nil
+		p.cancelMainFn = nil
+		p.cycleCtx = nil
+		p.cancelCycleFn = nil
+		p.doneCh = nil
+		close(doneCh)
+	}()
+
+	err := RunRecovering("provider run loop", func() error {
+		return p.runLoop(mainCtx)
+	})
+	if err != nil {
+		if mainCtx.Err() != nil || errors.Is(err, context.Canceled) {
+			return
+		}
+		p.logger.Error("provider exited", "error", err)
+		return
+	}
+	if mainCtx.Err() == nil {
+		p.logger.Warn("provider exited without error")
+	}
+}
+
+// runLoop runs fetch cycles until the provider is stopped or mainCtx is cancelled.
+func (p *Provider) runLoop(mainCtx context.Context) error {
 	// Start the main loop. Each cycle runs the fetcher for the current provider tickers and
 	// updates cached prices from fetcher responses. Runtime ticker updates cancel only the
 	// current fetch cycle, allowing the loop to restart with the new ticker set.
 	for {
+		// Create a new context for this cycle before reading tickers, so updates
+		// can wake providers parked with no active markets.
+		cycleCtx, cycleCancel := context.WithCancel(mainCtx)
+		p.setCycleCtx(cycleCtx, cycleCancel)
+
 		tickers := p.GetTickers()
-		// Ensure that the provider has tickers set. This could be reset if the provider is
-		// restarted / reconfigured.
 		if len(tickers) == 0 {
-			p.logger.Debug("no tickers set on provider; exiting")
-			return nil
+			p.logger.Debug("no tickers set on provider; waiting for update")
+			<-cycleCtx.Done()
+			if mainCtx.Err() != nil {
+				p.logger.Info(
+					"main provider context has been cancelled; provider is exiting",
+					"error", mainCtx.Err(),
+				)
+
+				return mainCtx.Err()
+			}
+			continue
 		}
 
 		// Create the response channel used to receive fetcher responses.
 		fetcher := p.getFetcher()
 		p.responseCh = make(chan types.Response, fetcher.ResponseBufferSize(tickers))
 
-		// Create a new context for the fetch loop. This allows us to cancel the fetch loop
-		// when the provider needs to be restarted.
-		cycleCtx, cycleCancel := context.WithCancel(mainCtx)
-		p.setCycleCtx(cycleCtx, cycleCancel)
 		group, groupCtx := errgroup.WithContext(cycleCtx)
-		group.Go(func() error {
-			p.recv(groupCtx)
-			return nil
+		group.Go(func() (err error) {
+			return RunRecovering("provider recv", func() error {
+				p.recv(groupCtx)
+				return nil
+			})
 		})
-		group.Go(func() error {
+
+		group.Go(func() (err error) {
 			defer close(p.responseCh)
-			return fetcher.Run(groupCtx, tickers, p.responseCh)
+			return RunRecovering("provider fetcher", func() error {
+				return fetcher.Run(groupCtx, tickers, p.responseCh)
+			})
 		})
 
 		p.logger.Debug("started provider fetch and recv routines")
@@ -144,23 +227,27 @@ func (p *Provider) Start(ctx context.Context) error {
 	}
 }
 
-// Stop stops the provider's main loop.
+// Stop stops the provider's main loop and waits for it to exit.
 func (p *Provider) Stop() {
-	mainCtx, cancelMain := p.getMainCtx()
-	if mainCtx == nil {
+	p.lifecycleMu.Lock()
+	mainCtx := p.mainCtx
+	cancelMain := p.cancelMainFn
+	doneCh := p.doneCh
+	p.lifecycleMu.Unlock()
+
+	if doneCh == nil {
 		p.logger.Debug("provider is not running")
 		return
 	}
 
-	select {
-	case <-mainCtx.Done():
-		// The provider is already stopped.
-		p.logger.Debug("provider is not running")
-		return
-	default:
-		// Cancel the main context to stop the provider.
-		p.logger.Debug("manually stopping provider")
+	if cancelMain != nil {
+		if mainCtx != nil && mainCtx.Err() == nil {
+			p.logger.Debug("manually stopping provider")
+		}
 		cancelMain()
+	}
+	if doneCh != nil {
+		<-doneCh
 	}
 }
 
@@ -226,14 +313,6 @@ func (p *Provider) getFetcher() Fetcher {
 }
 
 // Provider lifecycle context helpers.
-
-// setMainCtx stores the provider lifecycle context.
-func (p *Provider) setMainCtx(ctx context.Context, cancel context.CancelFunc) {
-	p.lifecycleMu.Lock()
-	defer p.lifecycleMu.Unlock()
-
-	p.mainCtx, p.cancelMainFn = ctx, cancel
-}
 
 // getMainCtx returns the provider lifecycle context and its cancel function.
 func (p *Provider) getMainCtx() (context.Context, context.CancelFunc) {
