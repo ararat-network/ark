@@ -64,8 +64,6 @@ func (r *Runtime) Stop() {
 		provider.Stop()
 	}
 
-	r.logger.Info("waiting for routines to stop")
-	r.wg.Wait()
 	r.logger.Info("oracle exited successfully")
 }
 

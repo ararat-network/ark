@@ -20,35 +20,44 @@ import (
 
 // Runtime runs price providers and exposes aggregated price state.
 type Runtime struct {
-	mut      sync.RWMutex
+	// updateMu serialises config updates, vote-target market retargeting,
+	// and provider lifecycle transitions. If both locks are needed, take
+	// updateMu before mut.
 	updateMu sync.Mutex
-	logger   log.Logger
 
-	// Dependencies.
+	// mut guards the mutable runtime state below: cfg, providers, mainCtx,
+	// mainCancel, lastPriceSync, denoms, and denomsFromVoteTargets.
+	mut sync.RWMutex
+
+	logger log.Logger
+
+	// Collaborators owned by the runtime.
 	resolver PriceResolver
 	client   ChainStateClient
 
-	// Lifecycle.
-	// mainCtx is cancelled when the oracle stops; providers and tick work derive from it.
+	// Lifecycle state.
 	mainCtx    context.Context
 	mainCancel context.CancelFunc
-	// wg waits for auxiliary runtime goroutines started by the oracle.
-	wg      sync.WaitGroup
-	running atomic.Bool
-	// updateIntervalCh notifies the running fetch loop that its ticker interval changed.
+	running    atomic.Bool
+
+	// updateIntervalCh is created once and wakes the Start loop after an
+	// UpdateInterval config change.
 	updateIntervalCh chan struct{}
 
-	// Runtime state guarded by mut.
+	// Config and provider state guarded by mut.
+	cfg       Config
 	providers map[string]*provider.Provider
-	// lastPriceSync is the last time the oracle successfully updated its prices.
-	lastPriceSync time.Time
-	// denoms is the current effective target-denom snapshot used for missing-price accounting.
-	denoms []string
-	// denomsFromVoteTargets tracks whether denoms came from a successful on-chain vote-targets query.
-	denomsFromVoteTargets bool
 
-	// Configuration.
-	cfg Config
+	// Price aggregation state guarded by mut.
+	lastPriceSync time.Time
+
+	// Vote-target state guarded by mut. denoms is the effective denom snapshot
+	// used for provider market filtering, price output, and missing-price metrics.
+	denoms []string
+
+	// denomsFromVoteTargets is false while denoms comes from fallback config;
+	// once true, vote-target refresh failures preserve the last on-chain snapshot.
+	denomsFromVoteTargets bool
 }
 
 // NewRuntime returns a new Runtime.
