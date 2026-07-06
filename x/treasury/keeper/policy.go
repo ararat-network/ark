@@ -139,7 +139,7 @@ func (k Keeper) sumIndicator(ctx context.Context, epochs uint64) (math.LegacyDec
 	curEpoch := k.GetEpoch(ctx)
 
 	n := min(epochs, curEpoch+1)
-	for j := uint64(0); j < n; j++ {
+	for j := range n {
 		val, err := k.EpochStates.Get(ctx, curEpoch-j)
 		if err != nil {
 			if errors.Is(err, collections.ErrNotFound) {
@@ -164,7 +164,7 @@ func (k Keeper) rollingAverageIndicator(ctx context.Context, epochs uint64) (mat
 
 	n := min(epochs, curEpoch+1)
 	var counted uint64
-	for j := uint64(0); j < n; j++ {
+	for j := range n {
 		val, err := k.EpochStates.Get(ctx, curEpoch-j)
 		if err != nil {
 			if errors.Is(err, collections.ErrNotFound) {

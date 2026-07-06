@@ -30,19 +30,19 @@ func (h *Handler) CreateURL(
 	endpoint types.Endpoint,
 	tickers []types.Ticker,
 ) (string, error) {
-	var tickerStrings string
+	var tickerStrings strings.Builder
 	for _, ticker := range tickers {
-		tickerStrings += fmt.Sprintf("%s%s%s%s", Quotation, ticker, Quotation, Separator)
+		tickerStrings.WriteString(fmt.Sprintf("%s%s%s%s", Quotation, ticker, Quotation, Separator))
 	}
 
-	if len(tickerStrings) == 0 {
+	if len(tickerStrings.String()) == 0 {
 		return "", errors.New("empty url created. invalid or no ticker were provided")
 	}
 
 	return fmt.Sprintf(
 		endpoint.URL,
 		LeftBracket,
-		strings.TrimSuffix(tickerStrings, Separator),
+		strings.TrimSuffix(tickerStrings.String(), Separator),
 		RightBracket,
 	), nil
 }

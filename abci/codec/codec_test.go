@@ -50,7 +50,7 @@ func TestCompressionVoteExtensionCodec(t *testing.T) {
 		}
 
 		// add 200 prices
-		for i := uint64(0); i < 200; i++ {
+		for i := range uint64(200) {
 			denom := fmt.Sprintf("u%d", i)
 			ve.Rates[denom] = samplePrice
 		}

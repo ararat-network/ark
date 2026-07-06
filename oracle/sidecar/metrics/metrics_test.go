@@ -2,7 +2,6 @@ package metrics_test
 
 import (
 	"context"
-	. "noah/oracle/sidecar/metrics"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,6 +10,8 @@ import (
 	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
+	"noah/oracle/sidecar/metrics"
 )
 
 func TestRecordOracleMetrics(t *testing.T) {
@@ -24,13 +25,13 @@ func TestRecordOracleMetrics(t *testing.T) {
 	})
 	otel.SetMeterProvider(provider)
 
-	RecordOracleTick(context.Background())
-	RecordProviderPrice(context.Background(), "kraken", "ARK/USD", 1.23)
-	RecordAggregatePrice(context.Background(), "ARK/USD", 1.25)
-	RecordPairSampleCount(context.Background(), "ARK/USD", 2)
-	RecordResolvedSourceCount(context.Background(), "ARK/KRW", 3)
-	RecordRoutePrice(context.Background(), "ARK/KRW", "ark-usd-krw", 2000)
-	RecordMissingPrices(context.Background(), []string{"ukrw"})
+	metrics.RecordOracleTick(context.Background())
+	metrics.RecordProviderPrice(context.Background(), "kraken", "ARK/USD", 1.23)
+	metrics.RecordAggregatePrice(context.Background(), "ARK/USD", 1.25)
+	metrics.RecordPairSampleCount(context.Background(), "ARK/USD", 2)
+	metrics.RecordResolvedSourceCount(context.Background(), "ARK/KRW", 3)
+	metrics.RecordRoutePrice(context.Background(), "ARK/KRW", "ark-usd-krw", 2000)
+	metrics.RecordMissingPrices(context.Background(), []string{"ukrw"})
 
 	families, err := registry.Gather()
 	require.NoError(t, err)

@@ -216,7 +216,7 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	initialTaxRate, _ := s.keeper.TaxRate.Get(s.ctx)
 
 	// Run 3 epochs
-	for epoch := 0; epoch < 3; epoch++ {
+	for epoch := range 3 {
 		s.setBlockHeight(int64((epoch+1)*int(chain.BlocksPerWeek)) - 1)
 		err := s.keeper.EndBlocker(s.ctx)
 		s.Require().NoError(err, "epoch %d", epoch)

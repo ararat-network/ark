@@ -2,6 +2,7 @@ package providertest_test
 
 import (
 	"context"
+	"maps"
 	"math/big"
 	. "noah/oracle/sidecar/providers/providertest"
 	"testing"
@@ -68,9 +69,7 @@ func newTestProvider(
 		Run(gomock.Any(), tickers, gomock.Any()).
 		DoAndReturn(func(ctx context.Context, _ []types.Ticker, responseCh chan<- types.Response) error {
 			resolved := make(map[types.Ticker]types.Result, len(results))
-			for ticker, result := range results {
-				resolved[ticker] = result
-			}
+			maps.Copy(resolved, results)
 
 			select {
 			case responseCh <- types.NewResponse(resolved, nil):

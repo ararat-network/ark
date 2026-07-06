@@ -2,6 +2,7 @@ package oracle_test
 
 import (
 	"context"
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -373,9 +374,7 @@ func (k *recordingOracleKeeper) SyncTobinTax(context.Context, map[string]math.Le
 
 func cloneDecMap(in map[string]math.LegacyDec) map[string]math.LegacyDec {
 	out := make(map[string]math.LegacyDec, len(in))
-	for denom, rate := range in {
-		out[denom] = rate
-	}
+	maps.Copy(out, in)
 
 	return out
 }

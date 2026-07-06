@@ -449,7 +449,7 @@ func initGenFiles(
 
 	appGenesis := genutiltypes.NewAppGenesisWithVersion(chainID, appGenStateJSON)
 	// generate empty genesis files for each validator and save
-	for i := 0; i < numValidators; i++ {
+	for i := range numValidators {
 		if err := appGenesis.SaveAs(genFiles[i]); err != nil {
 			return err
 		}
@@ -472,7 +472,7 @@ func collectGenFiles(
 	var appState json.RawMessage
 	genTime := cmttime.Now()
 
-	for i := 0; i < numValidators; i++ {
+	for i := range numValidators {
 		if singleMachine {
 			portOffset := i
 			nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", rpcPortStart+portOffset)
@@ -541,7 +541,7 @@ func calculateIP(ip string, i int) (string, error) {
 		return "", fmt.Errorf("%v: non ipv4 address", ip)
 	}
 
-	for j := 0; j < i; j++ {
+	for range i {
 		ipv4[3]++
 	}
 

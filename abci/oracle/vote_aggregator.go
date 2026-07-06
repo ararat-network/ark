@@ -2,6 +2,7 @@ package oracle
 
 import (
 	"fmt"
+	"maps"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
@@ -256,9 +257,7 @@ func (va *VoteAggregator) GetPriceForValidator(validator sdk.ConsAddress) map[st
 	}
 
 	reportedRates := make(map[string]math.LegacyDec, len(rates))
-	for denom, rate := range rates {
-		reportedRates[denom] = rate
-	}
+	maps.Copy(reportedRates, rates)
 
 	return reportedRates
 }
