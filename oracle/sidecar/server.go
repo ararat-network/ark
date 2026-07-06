@@ -21,7 +21,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	oracletypes "noah/oracle/sidecar/types"
+	"noah/oracle/sidecar/runtime"
 	"noah/oracle/types"
 )
 
@@ -29,18 +29,12 @@ var _ types.OracleServer = (*Oracle)(nil)
 
 const DefaultServerShutdownTimeout = 3 * time.Second
 
-type oracleProvider interface {
-	IsRunning() bool
-	GetPrices() oracletypes.DenomPrices
-	GetLastSyncTime() time.Time
-}
-
 // Oracle implements the oracle sidecar process and RPC service.
 type Oracle struct {
 	types.UnimplementedOracleServer
 
 	// expected implementation of the oracle
-	o oracleProvider
+	runtime *runtime.Runtime
 
 	// underlying grpc-server -- serves all grpc requests
 	grpcSrv *grpc.Server
@@ -59,10 +53,10 @@ type Oracle struct {
 }
 
 // NewOracleServer returns a new instance of the OracleServer, given an implementation of the Oracle interface.
-func NewOracleServer(o oracleProvider, logger log.Logger) *Oracle {
+func NewOracleServer(runtime *runtime.Runtime, logger log.Logger) *Oracle {
 	os := &Oracle{
-		o:      o,
-		logger: logger.With("server", "oracle"),
+		runtime: runtime,
+		logger:  logger.With("server", "oracle"),
 	}
 	os.initCloser()
 
@@ -168,8 +162,7 @@ func (os *Oracle) StartServer(ctx context.Context, host, port string) error {
 	return os.StartServerWithListener(ctx, ln)
 }
 
-// Prices calls the underlying oracle's implementation of GetPrices. It defers to the ctx in the request, and errors if the context is cancelled
-// for any reason, or if the oracle errors.
+// Prices returns the runtime's latest cached oracle prices.
 func (os *Oracle) Prices(ctx context.Context, req *types.OraclePricesRequest) (*types.OraclePricesResponse, error) {
 	// check that the request is non-nil
 	if req == nil {
@@ -179,52 +172,24 @@ func (os *Oracle) Prices(ctx context.Context, req *types.OraclePricesRequest) (*
 	os.logger.Debug("received request for prices")
 
 	// check that oracle is running
-	if !os.o.IsRunning() {
+	if !os.runtime.IsRunning() {
 		os.logger.Error("oracle not running")
 		return nil, types.ErrOracleNotRunning
 	}
 
-	type pricesResult struct {
-		response *types.OraclePricesResponse
-		err      error
+	prices, err := ToReqPrices(os.runtime.GetPrices())
+	if err != nil {
+		return nil, fmt.Errorf("converting oracle prices: %w", err)
 	}
 
-	resultCh := make(chan pricesResult, 1)
+	// get the latest timestamp of the latest update from the oracle
+	timestamp := os.runtime.GetLastSyncTime()
 
-	// run the request in a goroutine, to unblock server + ctx cancellation
-	go func() {
-		// get the prices
-		prices, err := ToReqPrices(os.o.GetPrices())
-		if err != nil {
-			resultCh <- pricesResult{
-				err: fmt.Errorf("convert oracle prices: %w", err),
-			}
-			return
-		}
-
-		// get the latest timestamp of the latest update from the oracle
-		timestamp := os.o.GetLastSyncTime()
-
-		resultCh <- pricesResult{
-			response: &types.OraclePricesResponse{
-				Prices:    prices,
-				Timestamp: timestamp,
-				Version:   version.Version,
-			},
-		}
-	}()
-
-	// defer to context closure
-	select {
-	case <-ctx.Done():
-		os.logger.Error("context cancelled")
-		return nil, ctx.Err()
-	case result := <-resultCh:
-		if result.err != nil {
-			return nil, result.err
-		}
-		return result.response, nil
-	}
+	return &types.OraclePricesResponse{
+		Prices:    prices,
+		Timestamp: timestamp,
+		Version:   version.Version,
+	}, nil
 }
 
 // Version returns the version of the oracle server.

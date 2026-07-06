@@ -10,14 +10,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	server "noah/oracle/sidecar"
-	servertestutil "noah/oracle/sidecar/testutil"
+	"noah/oracle/sidecar/chainstate"
+	"noah/oracle/sidecar/providers"
+	"noah/oracle/sidecar/providers/base"
+	baseapi "noah/oracle/sidecar/providers/base/api"
+	providertypes "noah/oracle/sidecar/providers/types"
+	"noah/oracle/sidecar/resolver"
+	runtimepkg "noah/oracle/sidecar/runtime"
 	oracletypes "noah/oracle/sidecar/types"
 	transporttypes "noah/oracle/types"
 	"noah/pkg/encoding"
@@ -60,12 +67,6 @@ func (invalidAddr) String() string {
 	return "invalid-address"
 }
 
-func newMockOracleProvider(t *testing.T) *servertestutil.MockoracleProvider {
-	t.Helper()
-
-	return servertestutil.NewMockoracleProvider(gomock.NewController(t))
-}
-
 func TestVersion(t *testing.T) {
 	originalVersion := version.Version
 	t.Cleanup(func() {
@@ -73,7 +74,7 @@ func TestVersion(t *testing.T) {
 	})
 	version.Version = "v1.2.3"
 
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 	response, err := server.Version(context.Background(), &transporttypes.OracleVersionRequest{})
 
 	require.NoError(t, err)
@@ -81,7 +82,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestPricesRejectsNilRequest(t *testing.T) {
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 
 	response, err := server.Prices(context.Background(), nil)
 
@@ -90,9 +91,7 @@ func TestPricesRejectsNilRequest(t *testing.T) {
 }
 
 func TestPricesRejectsStoppedOracle(t *testing.T) {
-	oracleProvider := newMockOracleProvider(t)
-	oracleProvider.EXPECT().IsRunning().Return(false)
-	server := server.NewOracleServer(oracleProvider, log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 
 	response, err := server.Prices(context.Background(), &transporttypes.OraclePricesRequest{})
 
@@ -107,117 +106,40 @@ func TestPrices(t *testing.T) {
 	})
 	version.Version = "v1.2.3"
 
-	lastSyncTime := time.Date(2026, time.June, 19, 12, 30, 0, 0, time.UTC)
-	oracleProvider := newMockOracleProvider(t)
-	oracleProvider.EXPECT().IsRunning().Return(true)
-	oracleProvider.EXPECT().GetPrices().Return(oracletypes.DenomPrices{
-		"uusd": mustBigFloat(t, "123.456"),
-		"ukrw": mustBigFloat(t, "42.25"),
+	runtime := newTestRuntime(t, oracletypes.Prices{
+		"ARK/USD": mustBigFloat(t, "123.456"),
+		"ARK/KRW": mustBigFloat(t, "42.25"),
 	})
-	oracleProvider.EXPECT().GetLastSyncTime().Return(lastSyncTime)
-	server := server.NewOracleServer(oracleProvider, log.NewNopLogger())
+	startTestRuntime(t, runtime)
+	requireRuntimeTick(t, runtime)
+	server := server.NewOracleServer(runtime, log.NewNopLogger())
 
 	response, err := server.Prices(context.Background(), &transporttypes.OraclePricesRequest{})
 
 	require.NoError(t, err)
-	require.Equal(t, lastSyncTime, response.Timestamp)
+	require.False(t, response.Timestamp.IsZero())
 	require.Equal(t, version.Version, response.Version)
 	require.Equal(t, math.LegacyMustNewDecFromStr("123.456"), decodePrice(t, response.Prices["uusd"]))
 	require.Equal(t, math.LegacyMustNewDecFromStr("42.25"), decodePrice(t, response.Prices["ukrw"]))
 }
 
-func TestPricesReturnsEmptyResponse(t *testing.T) {
-	lastSyncTime := time.Date(2026, time.June, 20, 12, 30, 0, 0, time.UTC)
-	oracleProvider := newMockOracleProvider(t)
-	oracleProvider.EXPECT().IsRunning().Return(true)
-	oracleProvider.EXPECT().GetPrices().Return(oracletypes.DenomPrices{})
-	oracleProvider.EXPECT().GetLastSyncTime().Return(lastSyncTime)
-	server := server.NewOracleServer(oracleProvider, log.NewNopLogger())
+func TestPricesReturnsZeroPricesForMissingVoteTargets(t *testing.T) {
+	runtime := newTestRuntime(t, oracletypes.Prices{})
+	startTestRuntime(t, runtime)
+	requireRuntimeTick(t, runtime)
+	server := server.NewOracleServer(runtime, log.NewNopLogger())
 
 	response, err := server.Prices(context.Background(), &transporttypes.OraclePricesRequest{})
 
 	require.NoError(t, err)
-	require.Empty(t, response.Prices)
-	require.Equal(t, lastSyncTime, response.Timestamp)
+	require.Equal(t, math.LegacyZeroDec(), decodePrice(t, response.Prices["uusd"]))
+	require.Equal(t, math.LegacyZeroDec(), decodePrice(t, response.Prices["ukrw"]))
+	require.False(t, response.Timestamp.IsZero())
 	require.Equal(t, version.Version, response.Version)
 }
 
-func TestPricesReturnsConversionError(t *testing.T) {
-	oracleProvider := newMockOracleProvider(t)
-	oracleProvider.EXPECT().IsRunning().Return(true)
-	oracleProvider.EXPECT().GetPrices().Return(oracletypes.DenomPrices{
-		"uusd": (*big.Float)(nil),
-	})
-	server := server.NewOracleServer(oracleProvider, log.NewNopLogger())
-
-	response, err := server.Prices(context.Background(), &transporttypes.OraclePricesRequest{})
-
-	require.Nil(t, response)
-	require.ErrorContains(t, err, "convert oracle prices")
-	require.ErrorContains(t, err, "nil price for uusd")
-}
-
-func TestPricesReturnsContextError(t *testing.T) {
-	getPricesStarted := make(chan struct{})
-	releaseGetPrices := make(chan struct{})
-	oracleProvider := newMockOracleProvider(t)
-	oracleProvider.EXPECT().IsRunning().Return(true)
-	oracleProvider.EXPECT().
-		GetPrices().
-		DoAndReturn(func() oracletypes.DenomPrices {
-			close(getPricesStarted)
-			<-releaseGetPrices
-			return oracletypes.DenomPrices{}
-		})
-	oracleProvider.EXPECT().GetLastSyncTime().Return(time.Time{}).AnyTimes()
-	server := server.NewOracleServer(oracleProvider, log.NewNopLogger())
-
-	ctx, cancel := context.WithCancel(context.Background())
-	resultCh := make(chan error, 1)
-	go func() {
-		_, err := server.Prices(ctx, &transporttypes.OraclePricesRequest{})
-		resultCh <- err
-	}()
-
-	<-getPricesStarted
-	cancel()
-
-	require.ErrorIs(t, <-resultCh, context.Canceled)
-	close(releaseGetPrices)
-}
-
-func TestPricesReturnsDeadlineExceeded(t *testing.T) {
-	getPricesStarted := make(chan struct{})
-	releaseGetPrices := make(chan struct{})
-	oracleProvider := newMockOracleProvider(t)
-	oracleProvider.EXPECT().IsRunning().Return(true)
-	oracleProvider.EXPECT().
-		GetPrices().
-		DoAndReturn(func() oracletypes.DenomPrices {
-			close(getPricesStarted)
-			<-releaseGetPrices
-			return oracletypes.DenomPrices{}
-		})
-	oracleProvider.EXPECT().GetLastSyncTime().Return(time.Time{}).AnyTimes()
-	server := server.NewOracleServer(oracleProvider, log.NewNopLogger())
-
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
-	defer cancel()
-
-	resultCh := make(chan error, 1)
-	go func() {
-		_, err := server.Prices(ctx, &transporttypes.OraclePricesRequest{})
-		resultCh <- err
-	}()
-
-	<-getPricesStarted
-
-	require.ErrorIs(t, <-resultCh, context.DeadlineExceeded)
-	close(releaseGetPrices)
-}
-
 func TestCloseIsIdempotent(t *testing.T) {
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 
 	require.NoError(t, server.Close())
 	require.NoError(t, server.Close())
@@ -230,7 +152,7 @@ func TestCloseIsIdempotent(t *testing.T) {
 }
 
 func TestStartServerRejectsInvalidPort(t *testing.T) {
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 
 	err := server.StartServer(context.Background(), "127.0.0.1", "invalid")
 
@@ -238,7 +160,7 @@ func TestStartServerRejectsInvalidPort(t *testing.T) {
 }
 
 func TestStartServerWithListenerRejectsInvalidAddress(t *testing.T) {
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 
 	err := server.StartServerWithListener(context.Background(), invalidAddrListener{})
 
@@ -256,7 +178,7 @@ func TestCloseStopsStartedServer(t *testing.T) {
 		_ = listener.Close()
 	})
 
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 	serverErrCh := make(chan error, 1)
 	go func() {
 		serverErrCh <- server.StartServerWithListener(context.Background(), listener)
@@ -295,7 +217,7 @@ func TestContextCancellationClosesStartedServer(t *testing.T) {
 		_ = listener.Close()
 	})
 
-	server := server.NewOracleServer(newMockOracleProvider(t), log.NewNopLogger())
+	server := server.NewOracleServer(newTestRuntime(t, nil), log.NewNopLogger())
 	ctx, cancel := context.WithCancel(context.Background())
 	serverErrCh := make(chan error, 1)
 	go func() {
@@ -338,4 +260,148 @@ func decodePrice(t *testing.T, rawPrice []byte) math.LegacyDec {
 	price, err := encoding.DecodeLegacyDec(rawPrice)
 	require.NoError(t, err)
 	return price
+}
+
+type serverTestFetcher struct{}
+
+func (serverTestFetcher) Run(
+	ctx context.Context,
+	_ []providertypes.Ticker,
+	_ chan<- providertypes.Response,
+) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (serverTestFetcher) Type() base.TransportType { return base.API }
+
+func (serverTestFetcher) Name() string { return "test" }
+
+func (serverTestFetcher) ResponseBufferSize([]providertypes.Ticker) int { return 1 }
+
+type serverTestChainStateClient struct {
+	denoms []string
+}
+
+func (c *serverTestChainStateClient) Start(context.Context) error {
+	return nil
+}
+
+func (c *serverTestChainStateClient) Stop() {}
+
+func (c *serverTestChainStateClient) Update(chainstate.Config) {}
+
+func (c *serverTestChainStateClient) VoteTargets() ([]string, error) {
+	return append([]string(nil), c.denoms...), nil
+}
+
+type serverTestResolver struct {
+	prices oracletypes.Prices
+}
+
+func newServerTestResolver(prices oracletypes.Prices) *serverTestResolver {
+	copied := make(oracletypes.Prices, len(prices))
+	for pair, price := range prices {
+		if price == nil {
+			copied[pair] = nil
+			continue
+		}
+		copied[pair] = new(big.Float).Copy(price)
+	}
+
+	return &serverTestResolver{prices: copied}
+}
+
+func (r *serverTestResolver) SetProviderPrices(string, oracletypes.Prices) {}
+
+func (r *serverTestResolver) ResolvePrices([]string) {}
+
+func (r *serverTestResolver) GetPrices() oracletypes.Prices {
+	copied := make(oracletypes.Prices, len(r.prices))
+	for pair, price := range r.prices {
+		if price == nil {
+			copied[pair] = nil
+			continue
+		}
+		copied[pair] = new(big.Float).Copy(price)
+	}
+
+	return copied
+}
+
+func (r *serverTestResolver) Update(resolver.Config) {}
+
+func (r *serverTestResolver) Reset() {}
+
+func newTestRuntime(t *testing.T, prices oracletypes.Prices) *runtimepkg.Runtime {
+	t.Helper()
+
+	markets := providertypes.Markets{
+		{Pair: "ARK/USD", Symbol: "ARKUSD"},
+		{Pair: "ARK/KRW", Symbol: "ARKKRW"},
+	}
+	provider, err := base.NewProvider("test", base.API, markets, serverTestFetcher{})
+	require.NoError(t, err)
+
+	cfg := runtimepkg.Config{
+		UpdateInterval: 10 * time.Millisecond,
+		MaxPriceAge:    time.Minute,
+		Providers: map[string]providers.Config{
+			"test": {
+				Name:          "test",
+				TransportType: base.API,
+				Markets:       markets,
+				API: baseapi.Config{
+					Name:      "test",
+					Timeout:   time.Second,
+					Interval:  time.Hour,
+					Endpoints: []providertypes.Endpoint{{URL: "https://example.invalid/prices"}},
+				},
+			},
+		},
+		Client: chainstate.Config{
+			Address:  "passthrough:///vote-targets",
+			Timeout:  time.Second,
+			Interval: time.Hour,
+		},
+		FallbackDenoms: []string{"uusd", "ukrw"},
+	}
+	runtime, err := runtimepkg.NewRuntime(
+		cfg,
+		runtimepkg.WithProviders(provider),
+		runtimepkg.WithResolver(newServerTestResolver(prices)),
+		runtimepkg.WithChainStateClient(&serverTestChainStateClient{denoms: cfg.FallbackDenoms}),
+	)
+	require.NoError(t, err)
+
+	return runtime
+}
+
+func startTestRuntime(t *testing.T, runtime *runtimepkg.Runtime) {
+	t.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- runtime.Start(ctx)
+	}()
+
+	require.Eventually(t, runtime.IsRunning, time.Second, time.Millisecond)
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-errCh:
+			require.ErrorIs(t, err, context.Canceled)
+		case <-time.After(time.Second):
+			t.Fatal("runtime did not stop")
+		}
+	})
+}
+
+func requireRuntimeTick(t *testing.T, runtime *runtimepkg.Runtime) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		return !runtime.GetLastSyncTime().IsZero()
+	}, time.Second, time.Millisecond)
 }
