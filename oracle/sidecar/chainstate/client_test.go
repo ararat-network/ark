@@ -1,6 +1,7 @@
 package chainstate_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,7 +13,14 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log/v2"
+
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
@@ -81,6 +89,32 @@ func TestStartReturnsAfterLaunchingPollingLoop(t *testing.T) {
 	query.waitForCalls(t, 1)
 }
 
+func TestStartLogsLifecycleAndInitialVoteTargets(t *testing.T) {
+	logs := &lockedBuffer{}
+	query := newFakeQueryServer(queryResult{targets: []string{"uusd", "ukrw"}})
+	endpoint := newTestQueryEndpoint(t, "bufnet", query)
+	client, err := chainstate.NewClient(
+		chainstate.Config{
+			Address:  endpoint.address,
+			Timeout:  time.Second,
+			Interval: time.Hour,
+		},
+		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		chainstate.WithLogger(log.NewLogger(logs)),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	query.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"uusd", "ukrw"})
+	stopClient(cancel, client)
+
+	output := logs.String()
+	require.Contains(t, output, "starting chain state vote-target client")
+	require.Contains(t, output, "stopping chain state vote-target client")
+	require.Contains(t, output, "chain state vote-target client stopped")
+}
+
 func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 	query := newFakeQueryServer(queryResult{err: errors.New("node unavailable")})
 	client := newTestClient(t, query, chainstate.Config{
@@ -119,6 +153,87 @@ func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
 	require.Equal(t, []string{"uusd"}, got)
+}
+
+func TestStartLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
+	logs := &lockedBuffer{}
+	query := newFakeQueryServer(
+		queryResult{targets: []string{"uusd"}},
+		queryResult{err: errors.New("node unavailable")},
+		queryResult{targets: []string{"uusd", "ukrw"}},
+	)
+	endpoint := newTestQueryEndpoint(t, "bufnet", query)
+	client, err := chainstate.NewClient(
+		chainstate.Config{
+			Address:  endpoint.address,
+			Timeout:  time.Second,
+			Interval: time.Millisecond,
+		},
+		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		chainstate.WithLogger(log.NewLogger(logs)),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	query.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"uusd"})
+	query.waitForCalls(t, 2)
+	query.waitForCalls(t, 3)
+
+	require.Eventually(t, func() bool {
+		output := logs.String()
+		return strings.Contains(output, "failed to refresh chain state vote targets") &&
+			strings.Contains(output, "node unavailable")
+	}, time.Second, time.Millisecond)
+
+	got, err := client.VoteTargets()
+	require.NoError(t, err)
+	require.Equal(t, []string{"uusd", "ukrw"}, got)
+}
+
+func TestStartRecordsChainStateRefreshMetrics(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
+	require.NoError(t, err)
+
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
+	t.Cleanup(func() {
+		require.NoError(t, provider.Shutdown(context.Background()))
+	})
+	otel.SetMeterProvider(provider)
+
+	query := newFakeQueryServer(
+		queryResult{targets: []string{"uusd", "ukrw"}},
+		queryResult{err: errors.New("node unavailable")},
+	)
+	client := newTestClient(t, query, chainstate.Config{
+		Address:  "passthrough:///bufnet",
+		Timeout:  time.Second,
+		Interval: time.Millisecond,
+	})
+
+	cancel := startClient(t, client)
+
+	query.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"uusd", "ukrw"})
+	query.waitForCalls(t, 2)
+	stopClient(cancel, client)
+
+	require.Eventually(t, func() bool {
+		families, err := registry.Gather()
+		if err != nil {
+			return false
+		}
+
+		refreshes := chainStateMetricFamily(families, "noah_oracle_chainstate_refreshes_total")
+		if refreshes == nil {
+			return false
+		}
+		return chainStateCounterValue(refreshes, map[string]string{"status": "success"}) >= 1 &&
+			chainStateCounterValue(refreshes, map[string]string{"status": "error"}) >= 1
+	}, time.Second, time.Millisecond)
 }
 
 func TestStartRejectsInvalidRefreshWithoutClearingCache(t *testing.T) {
@@ -217,7 +332,47 @@ func TestUpdateConfigReconnectsWhenAddressChanges(t *testing.T) {
 	requireEventuallyTargets(t, client, []string{"ukrw"})
 }
 
-func TestUpdateConfigDropsStaleVoteTargetsFromPreviousAddress(t *testing.T) {
+func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
+	logs := &lockedBuffer{}
+	firstQuery := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
+	secondQuery := newFakeQueryServer(queryResult{targets: []string{"ukrw"}})
+	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
+	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
+
+	client, err := chainstate.NewClient(
+		chainstate.Config{
+			Address:  firstEndpoint.address,
+			Timeout:  time.Second,
+			Interval: time.Hour,
+		},
+		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
+		chainstate.WithLogger(log.NewLogger(logs)),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	firstQuery.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"uusd"})
+
+	client.Update(chainstate.Config{
+		Address:  secondEndpoint.address,
+		Timeout:  2 * time.Second,
+		Interval: time.Millisecond,
+	})
+
+	secondQuery.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"ukrw"})
+
+	require.Eventually(t, func() bool {
+		output := logs.String()
+		return strings.Contains(output, "updated chain state vote-target client config") &&
+			strings.Contains(output, "reconnecting chain state vote-target client after address update")
+	}, time.Second, time.Millisecond)
+}
+
+func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *testing.T) {
 	firstQuery := newBlockingQueryServer(queryResult{targets: []string{"uusd"}})
 	secondQuery := newBlockingQueryServer(queryResult{targets: []string{"ukrw"}})
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
@@ -246,8 +401,8 @@ func TestUpdateConfigDropsStaleVoteTargetsFromPreviousAddress(t *testing.T) {
 
 	secondQuery.waitForCalls(t, 1)
 	got, err := client.VoteTargets()
-	require.ErrorContains(t, err, "no vote targets fetched yet")
-	require.Nil(t, got)
+	require.NoError(t, err)
+	require.Equal(t, []string{"uusd"}, got)
 
 	secondQuery.release()
 	requireEventuallyTargets(t, client, []string{"ukrw"})
@@ -501,4 +656,63 @@ func requireEventuallyTargets(
 		got, err := client.VoteTargets()
 		return err == nil && reflect.DeepEqual(want, got)
 	}, time.Second, time.Millisecond)
+}
+
+func chainStateMetricFamily(families []*dto.MetricFamily, name string) *dto.MetricFamily {
+	for _, family := range families {
+		if family.GetName() == name {
+			return family
+		}
+	}
+
+	return nil
+}
+
+func chainStateCounterValue(family *dto.MetricFamily, labels map[string]string) float64 {
+	metric := chainStateMatchingMetric(family, labels)
+	if metric == nil {
+		return 0
+	}
+
+	return metric.GetCounter().GetValue()
+}
+
+func chainStateMatchingMetric(family *dto.MetricFamily, labels map[string]string) *dto.Metric {
+	for _, metric := range family.Metric {
+		actual := make(map[string]string, len(metric.Label))
+		for _, label := range metric.Label {
+			actual[label.GetName()] = label.GetValue()
+		}
+		matches := true
+		for name, value := range labels {
+			if actual[name] != value {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return metric
+		}
+	}
+
+	return nil
+}
+
+type lockedBuffer struct {
+	mut sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	return b.buf.Write(p)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	return b.buf.String()
 }
