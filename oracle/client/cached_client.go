@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc"
@@ -15,18 +14,23 @@ import (
 	"noah/oracle/types"
 )
 
+// CachedClient polls the sidecar over gRPC and serves a fresh-enough cached
+// price response to node-side callers.
 type CachedClient struct {
 	logger log.Logger
 
-	// isRunning is an atomic boolean that indicates whether the daemon is running.
-	isRunning atomic.Bool
-	// config is the configuration of the daemon.
+	// config controls polling cadence, freshness, and the underlying gRPC client.
 	config Config
 	// client is the underlying oracle client used to fetch prices.
 	client *Client
-	// latestResponse is the latest price response fetched by the daemon.
+	// resp is the latest price response fetched by the polling loop.
 	resp ThreadSafeResponse
-	// doneCh is a channel that is closed when the daemon is stopped.
+
+	// lifecycleMu guards cancel and doneCh for the active polling run.
+	lifecycleMu sync.Mutex
+	// cancel and doneCh describe the active polling run. Stop cancels the run
+	// context and waits for doneCh to close after Start has released resources.
+	cancel context.CancelFunc
 	doneCh chan struct{}
 }
 
@@ -58,49 +62,72 @@ func NewCachedClient(
 		logger: logger.With("process", "price_daemon"),
 		config: cfg,
 		client: client,
-		doneCh: make(chan struct{}),
 	}, nil
 }
 
 // Start connects the underlying gRPC client and runs the price polling loop.
-// This method blocks until the daemon is stopped or the context is cancelled.
+// This method blocks until the cached client is stopped or the context is cancelled.
 func (d *CachedClient) Start(ctx context.Context) (err error) {
-	if err := d.client.Start(ctx); err != nil {
+	if ctx == nil {
+		return errors.New("context cannot be nil")
+	}
+	if err := ctx.Err(); err != nil {
 		return err
 	}
+
+	runCtx, cancel := context.WithCancel(ctx)
+	doneCh := make(chan struct{})
+
+	d.lifecycleMu.Lock()
+	if d.doneCh != nil {
+		d.lifecycleMu.Unlock()
+		cancel()
+		return errors.New("cached client already running")
+	}
+	d.cancel = cancel
+	d.doneCh = doneCh
+	d.lifecycleMu.Unlock()
+
 	defer func() {
+		cancel()
 		err = errors.Join(err, d.client.Stop())
+
+		d.lifecycleMu.Lock()
+		d.cancel = nil
+		d.doneCh = nil
+		close(doneCh)
+		d.lifecycleMu.Unlock()
 	}()
+
+	if err := d.client.Start(runCtx); err != nil {
+		if runCtx.Err() != nil && ctx.Err() == nil {
+			return nil
+		}
+		return err
+	}
 
 	ticker := time.NewTicker(d.config.Interval)
 	defer ticker.Stop()
 
 	d.logger.Info("starting price daemon")
-	d.isRunning.Store(true)
-	defer d.isRunning.Store(false)
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-runCtx.Done():
+			if ctx.Err() == nil {
+				d.logger.Info("price daemon stopped")
+				return nil
+			}
 			d.logger.Info("stopping price daemon from context")
 			return ctx.Err()
-		case <-d.doneCh:
-			d.logger.Info("price daemon stopped")
-			return nil
 		case <-ticker.C:
-			d.fetchPrices(ctx)
+			d.fetchPrices(runCtx)
 		}
 	}
 }
 
 // fetchPrices fetches the latest prices from the oracle client.
 func (d *CachedClient) fetchPrices(ctx context.Context) {
-	defer func() {
-		if r := recover(); r != nil {
-			d.logger.Error("recovered from panic", "err", r)
-		}
-	}()
-
 	d.logger.Debug("fetching prices")
 
 	fetchCtx, cancel := context.WithTimeout(ctx, d.config.ClientTimeout)
@@ -122,8 +149,8 @@ func (d *CachedClient) fetchPrices(ctx context.Context) {
 	d.resp.Update(resp)
 }
 
-// Prices returns the latest price response fetched by the daemon. If the latest response
-// is too stale, an error is returned.
+// Prices returns the latest cached price response. If the latest response is too
+// stale, an error is returned.
 func (d *CachedClient) Prices(
 	_ context.Context,
 	_ *types.OraclePricesRequest,
@@ -153,17 +180,26 @@ func (d *CachedClient) Prices(
 	return latest, nil
 }
 
-// Stop stops the price daemon.
+// Stop stops the polling loop and waits for the underlying gRPC client to close.
 func (d *CachedClient) Stop() error {
-	if d.isRunning.Load() {
-		d.doneCh <- struct{}{}
-		close(d.doneCh)
+	d.lifecycleMu.Lock()
+	cancel := d.cancel
+	doneCh := d.doneCh
+	d.lifecycleMu.Unlock()
+
+	if doneCh == nil {
+		return nil
 	}
+
+	if cancel != nil {
+		cancel()
+	}
+	<-doneCh
 
 	return nil
 }
 
-// ThreadSafeResponse is a thread-safe wrapper around a QueryPricesResponse.
+// ThreadSafeResponse is a thread-safe wrapper around an OraclePricesResponse.
 type ThreadSafeResponse struct {
 	sync.Mutex
 

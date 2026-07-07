@@ -94,6 +94,39 @@ func TestClientStopBeforeStart(t *testing.T) {
 	require.NoError(t, client.Stop())
 }
 
+func TestClientStartWithBlockingDialReturnsDialError(t *testing.T) {
+	client, err := oracleclient.NewClient(log.NewNopLogger(), "%", time.Second, oracleclient.WithBlockingDial())
+	require.NoError(t, err)
+
+	err = client.Start(context.Background())
+
+	require.ErrorContains(t, err, "failed to dial oracle gRPC server")
+	require.ErrorContains(t, err, "invalid URL escape")
+}
+
+func TestClientStartWithBlockingDialReturnsContextErrorWhenUnavailable(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	addr := listener.Addr().String()
+	require.NoError(t, listener.Close())
+
+	client, err := oracleclient.NewClient(log.NewNopLogger(), addr, time.Second, oracleclient.WithBlockingDial())
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	err = client.Start(ctx)
+
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.ErrorContains(t, err, "failed to dial oracle gRPC server")
+
+	response, err := client.Prices(context.Background(), &types.OraclePricesRequest{})
+	require.Nil(t, response)
+	require.EqualError(t, err, "oracle client not started")
+	require.NoError(t, client.Stop())
+}
+
 func TestClientRPCs(t *testing.T) {
 	expectedPrices := &types.OraclePricesResponse{
 		Prices: map[string][]byte{

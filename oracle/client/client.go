@@ -21,25 +21,25 @@ var _ types.OracleClient = (*Client)(nil)
 
 // Client defines an implementation of a gRPC oracle client. This client can
 // be used in ABCI++ calls where the application wants the oracle process to be
-// run out-of-process. Direct users must manage its lifecycle; PriceDaemon
+// run out-of-process. Direct users must manage its lifecycle; CachedClient
 // manages it internally when used as the cached node-side oracle client.
 type Client struct {
 	logger log.Logger
 	mu     sync.Mutex
 
-	// address of remote oracle server
+	// addr is the address of the remote oracle server.
 	addr string
-	// underlying oracle client
+	// client is the generated oracle service client for conn.
 	client types.OracleClient
-	// underlying grpc connection
+	// conn is the underlying gRPC connection.
 	conn *grpc.ClientConn
-	// timeout for the client, Price requests will block for this duration.
+	// timeout bounds each RPC made through this client.
 	timeout time.Duration
-	// blockingDial is a parameter which determines whether the client should block on dialling the server
+	// blockingDial forces Start to wait until the connection reaches Ready.
 	blockingDial bool
 }
 
-// NewClient creates a new grpc client of the oracle service with the given
+// NewClient creates a new gRPC client of the oracle service with the given
 // address and timeout.
 func NewClient(
 	logger log.Logger,
@@ -69,58 +69,55 @@ func NewClient(
 	return client, nil
 }
 
-// Start starts the GRPC client. This method dials the remote oracle-service
-// and errors if the connection fails. This method may block (depending on the blockingDial option).
-func (c *Client) Start(ctx context.Context) error {
+// Start dials the remote oracle service and installs the generated client.
+// It may block until the connection is ready when WithBlockingDial is set.
+func (c *Client) Start(ctx context.Context) (err error) {
 	c.logger.Info("starting oracle client", "addr", c.addr)
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
-	// dial the client, but defer to context closure, if necessary
-	var (
-		conn *grpc.ClientConn
-		err  error
-		done = make(chan struct{})
-	)
-	go func() {
-		defer close(done)
-		conn, err = grpc.NewClient(c.addr, opts...)
-
-		// attempt to connect + wait for change in connection state
-		if c.blockingDial {
-			// connect
-			conn.Connect()
-
-			if err == nil {
-				conn.WaitForStateChange(ctx, connectivity.Ready)
-			}
-		}
-	}()
-
-	// wait for either the context to close or the dial to complete
-	select {
-	case <-ctx.Done():
-		err = fmt.Errorf("context closed before oracle client could start: %w", ctx.Err())
-	case <-done:
-	}
+	conn, err := grpc.NewClient(c.addr, opts...)
 	if err != nil {
 		c.logger.Error("failed to dial oracle gRPC server", "err", err)
 		return fmt.Errorf("failed to dial oracle gRPC server: %w", err)
+	}
+	started := false
+	defer func() {
+		if started {
+			return
+		}
+
+		if closeErr := conn.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close unstarted oracle gRPC connection: %w", closeErr))
+		}
+	}()
+
+	if c.blockingDial {
+		conn.Connect()
+
+		for state := conn.GetState(); state != connectivity.Ready; state = conn.GetState() {
+			if !conn.WaitForStateChange(ctx, state) {
+				err := fmt.Errorf("context closed before oracle client could start: %w", ctx.Err())
+				c.logger.Error("failed to dial oracle gRPC server", "err", err)
+				return fmt.Errorf("failed to dial oracle gRPC server: %w", err)
+			}
+		}
 	}
 
 	c.mu.Lock()
 	c.client = types.NewOracleClient(conn)
 	c.conn = conn
 	c.mu.Unlock()
+	started = true
 
 	c.logger.Info("oracle client started")
 
 	return nil
 }
 
-// Stop stops the GRPC client. This method closes the connection to the remote.
+// Stop closes the active gRPC connection.
 func (c *Client) Stop() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -136,8 +133,8 @@ func (c *Client) Stop() error {
 	return err
 }
 
-// Prices returns the prices from the remote oracle service. This method blocks for the timeout duration configured on the client,
-// otherwise it returns the response from the remote oracle.
+// Prices returns prices from the remote oracle service with the client timeout
+// applied to the request context.
 func (c *Client) Prices(
 	ctx context.Context,
 	req *types.OraclePricesRequest,

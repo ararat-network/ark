@@ -1,11 +1,12 @@
 package client
 
-// Option enables consumers to configure the behavior of a GRPCClient on initialization.
+// Option enables consumers to configure a Client during construction.
 type Option func(*Client)
 
-// WithBlockingDial configures the GRPCClient to block on dialing the remote oracle server.
+// WithBlockingDial makes Start block until the remote oracle connection is ready.
 //
-// NOTICE: This option is not recommended to be used in practice. See the [GRPC docs](https://github.com/grpc/grpc-go/blob/master/Documentation/anti-patterns.md)
+// NOTICE: This option is not recommended to be used in practice. See the
+// [gRPC docs](https://github.com/grpc/grpc-go/blob/master/Documentation/anti-patterns.md).
 func WithBlockingDial() Option {
 	return func(c *Client) {
 		c.blockingDial = true

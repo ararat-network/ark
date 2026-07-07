@@ -3,6 +3,7 @@ package client_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -175,6 +176,133 @@ func TestPriceDaemonStop(t *testing.T) {
 	}, time.Second, 10*time.Millisecond)
 	require.NoError(t, daemon.Stop())
 	require.NoError(t, <-resultCh)
+}
+
+func TestPriceDaemonStopCancelsBlockedFetch(t *testing.T) {
+	tests := []struct {
+		name string
+		stop func(t *testing.T, daemon *oracleclient.CachedClient, releaseFetch func())
+	}{
+		{
+			name: "single stop",
+			stop: func(t *testing.T, daemon *oracleclient.CachedClient, releaseFetch func()) {
+				t.Helper()
+
+				stopCh := make(chan error, 1)
+				go func() {
+					stopCh <- daemon.Stop()
+				}()
+
+				select {
+				case err := <-stopCh:
+					require.NoError(t, err)
+				case <-time.After(100 * time.Millisecond):
+					releaseFetch()
+					require.NoError(t, <-stopCh)
+					require.FailNow(t, "Stop did not cancel the in-flight price fetch")
+				}
+			},
+		},
+		{
+			name: "concurrent stops",
+			stop: func(t *testing.T, daemon *oracleclient.CachedClient, releaseFetch func()) {
+				t.Helper()
+
+				type stopResult struct {
+					err   error
+					panic any
+				}
+				const stopCount = 8
+				results := make(chan stopResult, stopCount)
+				for range stopCount {
+					go func() {
+						var result stopResult
+						defer func() {
+							result.panic = recover()
+							results <- result
+						}()
+						result.err = daemon.Stop()
+					}()
+				}
+
+				for i := 0; i < stopCount; i++ {
+					select {
+					case result := <-results:
+						require.Nil(t, result.panic)
+						require.NoError(t, result.err)
+					case <-time.After(time.Second):
+						releaseFetch()
+						require.FailNow(t, "concurrent Stop calls did not all return")
+					}
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			daemon, resultCh, releaseFetch := startPriceDaemonWithBlockedFetch(t)
+
+			tt.stop(t, daemon, releaseFetch)
+
+			require.NoError(t, <-resultCh)
+		})
+	}
+}
+
+func startPriceDaemonWithBlockedFetch(
+	t *testing.T,
+) (*oracleclient.CachedClient, <-chan error, func()) {
+	t.Helper()
+
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	var enteredOnce sync.Once
+	var releaseOnce sync.Once
+	releaseFetch := func() {
+		releaseOnce.Do(func() {
+			close(release)
+		})
+	}
+	t.Cleanup(releaseFetch)
+
+	mockServer := transporttypestestutil.NewMockOracleServer(gomock.NewController(t))
+	mockServer.EXPECT().
+		Prices(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ *types.OraclePricesRequest) (*types.OraclePricesResponse, error) {
+			enteredOnce.Do(func() { close(entered) })
+			select {
+			case <-ctx.Done():
+				return nil, status.FromContextError(ctx.Err()).Err()
+			case <-release:
+				return &types.OraclePricesResponse{}, nil
+			}
+		}).
+		AnyTimes()
+	addr := startTestOracleServer(t, mockServer)
+	cfg := validDaemonConfig()
+	cfg.OracleAddress = addr
+	cfg.Interval = time.Millisecond
+	cfg.ClientTimeout = time.Second
+
+	daemon, err := oracleclient.NewCachedClient(log.NewTestLogger(t), cfg)
+	require.NoError(t, err)
+
+	resultCh := make(chan error, 1)
+	go func() {
+		resultCh <- daemon.Start(context.Background())
+	}()
+
+	require.Eventually(t, func() bool {
+		select {
+		case <-entered:
+			return true
+		default:
+			return false
+		}
+	}, time.Second, 10*time.Millisecond)
+
+	return daemon, resultCh, releaseFetch
 }
 
 func TestPriceDaemonDoesNotCacheClientErrors(t *testing.T) {
