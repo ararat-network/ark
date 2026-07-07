@@ -35,7 +35,7 @@ type Config struct {
 	// Resolver configures how provider pair prices are resolved into final vote-target denom prices.
 	Resolver resolver.Config `json:"resolver"`
 
-	// Client configures a grpc client used to querying on chain params
+	// Client configures the chainstate vote-target query client.
 	Client chainstate.Config `json:"client"`
 
 	// FallbackDenoms is used when vote-target polling has not produced an on-chain snapshot.

@@ -60,7 +60,7 @@ func (r *Runtime) Stop() {
 	if client := r.getClient(); client != nil {
 		client.Stop()
 	}
-	for _, provider := range r.GetProviders() {
+	for _, provider := range r.getProviders() {
 		provider.Stop()
 	}
 
@@ -74,7 +74,7 @@ func (r *Runtime) startProviders(ctx context.Context) {
 	r.updateMu.Lock()
 	defer r.updateMu.Unlock()
 
-	for _, provider := range r.GetProviders() {
+	for _, provider := range r.getProviders() {
 		if err := provider.Start(ctx); err != nil {
 			r.logProviderStartError(ctx, provider.Name(), err)
 		}

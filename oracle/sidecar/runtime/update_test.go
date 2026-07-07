@@ -56,7 +56,7 @@ func TestUpdateConfigDoesNotStopExistingProviderWhenReplacementBuildFails(t *tes
 	err = oracle.Update(newCfg)
 	require.ErrorContains(t, err, "unrecognised provider name")
 	require.True(t, provider.provider.IsRunning())
-	require.Same(t, provider.provider, oracle.GetProviders()["unknown"])
+	require.Same(t, provider.provider, GetProvidersForTest(oracle)["unknown"])
 
 	provider.provider.Stop()
 }
@@ -98,8 +98,7 @@ func TestUpdateConfigDoesNotMutateRuntimeStateWhenProviderPlanFails(t *testing.T
 	require.ErrorContains(t, err, "unrecognised provider name")
 	require.Empty(t, resolver.updateConfigs())
 	require.Empty(t, client.updateConfigs())
-	require.Same(t, provider.provider, oracle.GetProviders()["unknown"])
-	require.Contains(t, oracle.GetPrices(), "ukrw")
+	require.Same(t, provider.provider, GetProvidersForTest(oracle)["unknown"])
 }
 
 func TestUpdateConfigInjectsMarketOnlyChangeWithoutRebuildingProvider(t *testing.T) {
@@ -127,7 +126,7 @@ func TestUpdateConfigInjectsMarketOnlyChangeWithoutRebuildingProvider(t *testing
 	})
 
 	require.NoError(t, oracle.Update(newCfg))
-	require.Same(t, provider.provider, oracle.GetProviders()["unknown"])
+	require.Same(t, provider.provider, GetProvidersForTest(oracle)["unknown"])
 	require.Equal(t, newMarkets.Tickers(), provider.provider.GetTickers())
 }
 
@@ -174,7 +173,7 @@ func TestUpdateConfigRestartsStoppedProviderOnMarketOnlyChange(t *testing.T) {
 	require.NoError(t, oracle.Update(newCfg))
 
 	requireProviderStarted(t, restarted)
-	require.Same(t, provider.provider, oracle.GetProviders()["unknown"])
+	require.Same(t, provider.provider, GetProvidersForTest(oracle)["unknown"])
 	require.Equal(t, newMarkets.Tickers(), provider.provider.GetTickers())
 
 	cancel()
@@ -196,11 +195,11 @@ func TestUpdateConfigRebuildsTargetProviderMissingFromRuntimeState(t *testing.T)
 		WithResolver(oracletestutil.NewMockPriceResolver(ctrl)),
 	)
 	require.NoError(t, err)
-	require.NotContains(t, oracle.GetProviders(), providerCfg.Name)
+	require.NotContains(t, GetProvidersForTest(oracle), providerCfg.Name)
 
 	require.NoError(t, oracle.Update(cfg))
 
-	providers := oracle.GetProviders()
+	providers := GetProvidersForTest(oracle)
 	require.Contains(t, providers, providerCfg.Name)
 	require.NotContains(t, providers, "stale")
 	require.Equal(t, markets.Tickers(), providers[providerCfg.Name].GetTickers())
@@ -306,7 +305,6 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 	err = oracle.Update(newCfg)
 
 	require.ErrorContains(t, err, "resolver denom \"ukrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"ARK/KRW\"")
-	require.Contains(t, oracle.GetPrices(), "ukrw")
 }
 
 func TestUpdateConfigUpdatesVoteTargetsClientConfig(t *testing.T) {
@@ -353,7 +351,6 @@ func TestUpdateConfigRefreshesFallbackDenomsWhenNoVoteTargetsHaveLoaded(t *testi
 	newCfg.FallbackDenoms = []string{"uusd"}
 
 	require.NoError(t, oracle.Update(newCfg))
-	require.Equal(t, types.DenomPrices{"uusd": big.NewFloat(1.25)}, oracle.GetPrices())
 	require.Equal(t, []providertypes.Ticker{"ARKUSD"}, provider.provider.GetTickers())
 }
 
@@ -376,7 +373,7 @@ func TestUpdateConfigKeepsProviderWhenFallbackDenomsDeactivateMarkets(t *testing
 	newCfg.FallbackDenoms = []string{"ueur"}
 
 	require.NoError(t, oracle.Update(newCfg))
-	require.Contains(t, oracle.GetProviders(), "unknown")
+	require.Contains(t, GetProvidersForTest(oracle), "unknown")
 	require.Empty(t, provider.provider.GetTickers())
 }
 

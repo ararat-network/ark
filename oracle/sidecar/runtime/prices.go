@@ -13,13 +13,11 @@ import (
 // and updates aggregate price state for one runtime tick.
 func (r *Runtime) fetchAllPrices(ctx context.Context) {
 	r.logger.Debug("starting price fetch loop")
-	defer func() {
-		if recErr := recover(); recErr != nil {
-			r.logger.Error("fetchAllPrices tick panicked", "error", recErr)
-		}
-	}()
 
-	r.refreshVoteTargets()
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
+
+	r.refreshVoteTargetsLocked()
 	r.resolver.Reset()
 
 	r.mut.RLock()
@@ -34,27 +32,18 @@ func (r *Runtime) fetchAllPrices(ctx context.Context) {
 	for _, provider := range providers {
 		r.fetchPrices(provider, maxPriceAge)
 	}
-
 	r.logger.Debug("oracle fetched prices from providers")
 
 	r.resolver.ResolvePrices(denoms)
-	r.recordMissingPrices(ctx, denoms)
-	r.setLastSyncTime(time.Now().UTC())
+
+	prices := types.PricesByDenom(r.resolver.GetPrices(), denoms)
+	r.recordMissingPrices(ctx, denoms, prices)
+	r.commitPriceSnapshot(prices, time.Now().UTC())
 	oraclemetrics.RecordOracleTick(ctx)
 }
 
 // fetchPrices copies one provider's fresh cached prices into the resolver.
 func (r *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration) {
-	defer func() {
-		if recErr := recover(); recErr != nil {
-			r.logger.Error(
-				"provider panicked",
-				"provider_name", provider.Name(),
-				"error", recErr,
-			)
-		}
-	}()
-
 	if !provider.IsRunning() {
 		r.logger.Debug(
 			"provider is not running",
@@ -115,10 +104,11 @@ func (r *Runtime) fetchPrices(provider *base.Provider, maxPriceAge time.Duration
 	r.resolver.SetProviderPrices(provider.Name(), timeFilteredPrices)
 }
 
-// refreshVoteTargets applies the latest cached vote-target snapshot. Before the
-// first successful snapshot it falls back to configured denoms; after a
-// successful snapshot it preserves the last-known vote targets on read errors.
-func (r *Runtime) refreshVoteTargets() {
+// refreshVoteTargetsLocked applies the latest cached vote-target snapshot while
+// the caller owns updateMu. Before the first successful snapshot it falls back
+// to configured denoms; after a successful snapshot it preserves the last-known
+// vote targets on read errors.
+func (r *Runtime) refreshVoteTargetsLocked() {
 	r.mut.RLock()
 	client := r.client
 	fallbackDenoms := append([]string(nil), r.cfg.FallbackDenoms...)
@@ -132,20 +122,18 @@ func (r *Runtime) refreshVoteTargets() {
 			return
 		}
 
-		r.setDenoms(fallbackDenoms, false)
+		r.setDenomsLocked(fallbackDenoms, false)
 		r.logger.Warn("failed to refresh vote targets; using fallback config denoms", "err", err)
 		return
 	}
 
-	r.setDenoms(denoms, true)
+	r.setDenomsLocked(denoms, true)
 }
 
-// setDenoms stores the effective vote-target denoms and updates configured
-// providers to the matching active market subset.
-func (r *Runtime) setDenoms(denoms []string, fromVoteTargets bool) {
-	r.updateMu.Lock()
-	defer r.updateMu.Unlock()
-
+// setDenomsLocked stores active denoms while the caller owns updateMu. It
+// retargets provider markets derived from the old and new denom snapshots, then
+// restarts affected providers after mutable runtime state has been committed.
+func (r *Runtime) setDenomsLocked(denoms []string, fromVoteTargets bool) {
 	r.mut.RLock()
 	cfg := r.cfg.Clone()
 	oldDenoms := append([]string(nil), r.denoms...)
@@ -196,12 +184,11 @@ func (r *Runtime) setDenoms(denoms []string, fromVoteTargets bool) {
 }
 
 // recordMissingPrices records expected denoms missing from the latest aggregate prices.
-func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string) {
+func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string, prices types.DenomPrices) {
 	if len(denoms) == 0 {
 		return
 	}
 
-	prices := types.PricesByDenom(r.resolver.GetPrices(), denoms)
 	missing := make([]string, 0, len(denoms))
 	for _, denom := range denoms {
 		if _, ok := prices[denom]; !ok {
@@ -220,10 +207,14 @@ func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string) {
 	oraclemetrics.RecordMissingPrices(ctx, missing)
 }
 
-// setLastSyncTime records when prices were last aggregated.
-func (r *Runtime) setLastSyncTime(t time.Time) {
+// commitPriceSnapshot stores a runtime-owned price snapshot from one aggregation
+// tick. The caller must not mutate prices after commit.
+func (r *Runtime) commitPriceSnapshot(prices types.DenomPrices, timestamp time.Time) {
 	r.mut.Lock()
 	defer r.mut.Unlock()
 
-	r.lastPriceSync = t
+	r.priceSnapshot = types.PriceSnapshot{
+		Prices:    prices,
+		Timestamp: timestamp,
+	}
 }

@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"cosmossdk.io/log/v2"
 
@@ -20,13 +19,13 @@ import (
 
 // Runtime runs price providers and exposes aggregated price state.
 type Runtime struct {
-	// updateMu serialises config updates, vote-target market retargeting,
-	// and provider lifecycle transitions. If both locks are needed, take
-	// updateMu before mut.
+	// updateMu serialises config updates, price aggregation ticks,
+	// vote-target market retargeting, and provider lifecycle transitions.
+	// If both locks are needed, take updateMu before mut.
 	updateMu sync.Mutex
 
 	// mut guards the mutable runtime state below: cfg, providers, mainCtx,
-	// mainCancel, lastPriceSync, denoms, and denomsFromVoteTargets.
+	// mainCancel, priceSnapshot, denoms, and denomsFromVoteTargets.
 	mut sync.RWMutex
 
 	logger log.Logger
@@ -49,7 +48,7 @@ type Runtime struct {
 	providers map[string]*provider.Provider
 
 	// Price aggregation state guarded by mut.
-	lastPriceSync time.Time
+	priceSnapshot types.PriceSnapshot
 
 	// Vote-target state guarded by mut. denoms is the effective denom snapshot
 	// used for provider market filtering, price output, and missing-price metrics.
@@ -61,10 +60,7 @@ type Runtime struct {
 }
 
 // NewRuntime returns a new Runtime.
-func NewRuntime(
-	cfg Config,
-	opts ...Option,
-) (*Runtime, error) {
+func NewRuntime(cfg Config, opts ...Option) (*Runtime, error) {
 	cfg = cfg.Clone()
 	r := &Runtime{
 		cfg:              cfg,
@@ -116,8 +112,29 @@ func NewRuntime(
 	return r, nil
 }
 
-// GetProviders returns a snapshot of provider pointers.
-func (r *Runtime) GetProviders() map[string]*provider.Provider {
+// GetPriceSnapshot returns the latest committed public price snapshot.
+func (r *Runtime) GetPriceSnapshot() types.PriceSnapshot {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
+
+	prices := make(types.DenomPrices, len(r.denoms))
+	for _, denom := range r.denoms {
+		price, ok := r.priceSnapshot.Prices[denom]
+		if !ok || price == nil {
+			prices[denom] = new(big.Float)
+			continue
+		}
+		prices[denom] = new(big.Float).Copy(price)
+	}
+
+	return types.PriceSnapshot{
+		Prices:    prices,
+		Timestamp: r.priceSnapshot.Timestamp,
+	}
+}
+
+// getProviders returns a snapshot of provider pointers for runtime-owned lifecycle work.
+func (r *Runtime) getProviders() map[string]*provider.Provider {
 	r.mut.RLock()
 	defer r.mut.RUnlock()
 
@@ -125,27 +142,4 @@ func (r *Runtime) GetProviders() map[string]*provider.Provider {
 	maps.Copy(providers, r.providers)
 
 	return providers
-}
-
-// GetLastSyncTime returns the last time the oracle aggregated provider prices.
-func (r *Runtime) GetLastSyncTime() time.Time {
-	r.mut.RLock()
-	defer r.mut.RUnlock()
-	return r.lastPriceSync
-}
-
-// GetPrices returns current aggregated prices keyed by public vote-target denom.
-func (r *Runtime) GetPrices() types.DenomPrices {
-	r.mut.RLock()
-	denoms := append([]string(nil), r.denoms...)
-	r.mut.RUnlock()
-
-	prices := types.PricesByDenom(r.resolver.GetPrices(), denoms)
-	for _, denom := range denoms {
-		if _, ok := prices[denom]; !ok {
-			prices[denom] = new(big.Float)
-		}
-	}
-
-	return prices
 }

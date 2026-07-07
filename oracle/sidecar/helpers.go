@@ -9,6 +9,11 @@ import (
 	"noah/pkg/encoding"
 )
 
+// ToReqPrices encodes public denom prices into the generated transport payload.
+//
+// Runtime already projects pair prices to active denoms. This helper preserves
+// that boundary by accepting denom-keyed prices only and rejecting nil values
+// before serializing rates as LegacyDec bytes.
 func ToReqPrices(prices types.DenomPrices) (map[string][]byte, error) {
 	result := make(map[string][]byte, len(prices))
 
