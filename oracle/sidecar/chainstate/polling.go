@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chainstatemetrics "noah/oracle/sidecar/chainstate/metrics"
+	sidecarinternal "noah/oracle/sidecar/internal"
 	oracletypes "noah/x/oracle/types"
 )
 
@@ -32,6 +33,9 @@ func (c *Client) run(ctx context.Context, cancel context.CancelFunc, updateCh, d
 
 	for {
 		if err := c.runOnce(ctx, updateCh); err != nil {
+			if sidecarinternal.IsPanic(err) {
+				panic(err)
+			}
 			if ctx.Err() != nil || errors.Is(err, context.Canceled) {
 				return
 			}
@@ -52,11 +56,9 @@ func (c *Client) run(ctx context.Context, cancel context.CancelFunc, updateCh, d
 // runOnce opens one query connection for the current address and polls it until
 // cancellation, reconnect, or an unrecoverable connection-level failure.
 func (c *Client) runOnce(ctx context.Context, updateCh <-chan struct{}) (err error) {
-	defer func() {
-		if recErr := recover(); recErr != nil {
-			err = fmt.Errorf("chain state client panicked: %v", recErr)
-		}
-	}()
+	defer sidecarinternal.HandlePanic("chain state client", func(panicErr error) {
+		err = panicErr
+	})
 
 	cfg := c.getConfig()
 	conn, err := grpc.NewClient(cfg.Address, c.dialOptions...)

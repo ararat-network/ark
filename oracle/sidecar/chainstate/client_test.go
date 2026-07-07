@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -406,44 +405,6 @@ func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *t
 
 	secondQuery.release()
 	requireEventuallyTargets(t, client, []string{"ukrw"})
-}
-
-func TestStartRecoversPollPanicAndKeepsPolling(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
-	endpoint := newTestQueryEndpoint(t, "bufnet", query)
-	var panicked atomic.Bool
-
-	client, err := chainstate.NewClient(
-		chainstate.Config{
-			Address:  endpoint.address,
-			Timeout:  time.Second,
-			Interval: time.Millisecond,
-		},
-		chainstate.WithDialOptions(
-			grpc.WithContextDialer(dialTestQueryEndpoints(endpoint)),
-			grpc.WithUnaryInterceptor(func(
-				ctx context.Context,
-				method string,
-				req any,
-				reply any,
-				cc *grpc.ClientConn,
-				invoker grpc.UnaryInvoker,
-				opts ...grpc.CallOption,
-			) error {
-				if panicked.CompareAndSwap(false, true) {
-					panic("vote target query panic")
-				}
-				return invoker(ctx, method, req, reply, cc, opts...)
-			}),
-		),
-	)
-	require.NoError(t, err)
-
-	cancel := startClient(t, client)
-	defer stopClient(cancel, client)
-
-	requireEventuallyTargets(t, client, []string{"uusd"})
-	require.True(t, panicked.Load())
 }
 
 func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
