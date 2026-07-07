@@ -7,7 +7,8 @@ import (
 	"noah/oracle/sidecar/providers/types"
 )
 
-// recv receives responses from the response channel and updates the data.
+// recv owns response-channel reads for one fetch cycle and commits successful
+// ticker results into the provider cache.
 func (p *Provider) recv(ctx context.Context) {
 	p.logger.Debug("starting recv")
 

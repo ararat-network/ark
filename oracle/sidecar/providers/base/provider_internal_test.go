@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"cosmossdk.io/log/v2"
 
 	"noah/oracle/sidecar/providers/types"
@@ -18,18 +20,19 @@ func TestRunCancelsBeforeLifecycleCleanupLock(t *testing.T) {
 	runErr := errors.New("fetch stopped")
 
 	mainCtx, realCancel := context.WithCancel(context.Background())
+	defer realCancel()
 	mainCancel := func() {
 		close(cancelCalled)
 		realCancel()
 	}
 	doneCh := make(chan struct{})
 	provider := &Provider{
-		logger:       log.NewNopLogger(),
-		fetcher:      lifecycleFetcher{started: started, allowReturn: allowReturn, err: runErr},
-		markets:      types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}},
-		mainCtx:      mainCtx,
-		cancelMainFn: mainCancel,
-		doneCh:       doneCh,
+		logger:     log.NewNopLogger(),
+		fetcher:    lifecycleFetcher{started: started, allowReturn: allowReturn, err: runErr},
+		markets:    types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}},
+		mainCtx:    mainCtx,
+		cancelMain: mainCancel,
+		doneCh:     doneCh,
 	}
 
 	finished := make(chan struct{})
@@ -58,19 +61,21 @@ func TestRunCancelsBeforeLifecycleCleanupLock(t *testing.T) {
 
 func TestRunClearsLifecycleState(t *testing.T) {
 	mainCtx, mainCancel := context.WithCancel(context.Background())
+	defer mainCancel()
 	cycleCtx, cycleCancel := context.WithCancel(mainCtx)
+	defer cycleCancel()
 	doneCh := make(chan struct{})
 	started := make(chan struct{})
 	allowReturn := make(chan struct{})
 	provider := &Provider{
-		logger:        log.NewNopLogger(),
-		fetcher:       lifecycleFetcher{started: started, allowReturn: allowReturn, err: errors.New("fetch stopped")},
-		markets:       types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}},
-		mainCtx:       mainCtx,
-		cancelMainFn:  mainCancel,
-		cycleCtx:      cycleCtx,
-		cancelCycleFn: cycleCancel,
-		doneCh:        doneCh,
+		logger:      log.NewNopLogger(),
+		fetcher:     lifecycleFetcher{started: started, allowReturn: allowReturn, err: errors.New("fetch stopped")},
+		markets:     types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}},
+		mainCtx:     mainCtx,
+		cancelMain:  mainCancel,
+		cycleCtx:    cycleCtx,
+		cancelCycle: cycleCancel,
+		doneCh:      doneCh,
 	}
 
 	finished := make(chan struct{})
@@ -85,14 +90,43 @@ func TestRunClearsLifecycleState(t *testing.T) {
 	if provider.mainCtx != nil {
 		t.Fatal("main context was not cleared")
 	}
-	if provider.cancelMainFn != nil {
+	if provider.cancelMain != nil {
 		t.Fatal("main cancel function was not cleared")
 	}
 	if provider.cycleCtx != nil {
 		t.Fatal("cycle context was not cleared")
 	}
-	if provider.cancelCycleFn != nil {
+	if provider.cancelCycle != nil {
 		t.Fatal("cycle cancel function was not cleared")
+	}
+	if provider.doneCh != nil {
+		t.Fatal("done channel was not cleared")
+	}
+	select {
+	case <-doneCh:
+	default:
+		t.Fatal("done channel was not closed")
+	}
+}
+
+func TestRunRepanicsFetcherPanicAfterLifecycleCleanup(t *testing.T) {
+	mainCtx, mainCancel := context.WithCancel(context.Background())
+	defer mainCancel()
+	doneCh := make(chan struct{})
+	provider := &Provider{
+		logger:     log.NewNopLogger(),
+		fetcher:    panicLifecycleFetcher{},
+		markets:    types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}},
+		mainCtx:    mainCtx,
+		cancelMain: mainCancel,
+		doneCh:     doneCh,
+	}
+
+	require.PanicsWithError(t, "provider fetcher panicked: fetch exploded", func() {
+		provider.run(mainCtx, mainCancel, doneCh)
+	})
+	if provider.mainCtx != nil {
+		t.Fatal("main context was not cleared")
 	}
 	if provider.doneCh != nil {
 		t.Fatal("done channel was not cleared")
@@ -125,6 +159,22 @@ func (f lifecycleFetcher) Name() string { return "test" }
 func (f lifecycleFetcher) ResponseBufferSize([]types.Ticker) int { return 0 }
 
 func (f lifecycleFetcher) Type() TransportType { return API }
+
+type panicLifecycleFetcher struct{}
+
+func (panicLifecycleFetcher) Run(
+	context.Context,
+	[]types.Ticker,
+	chan<- types.Response,
+) error {
+	panic("fetch exploded")
+}
+
+func (panicLifecycleFetcher) Name() string { return "test" }
+
+func (panicLifecycleFetcher) ResponseBufferSize([]types.Ticker) int { return 1 }
+
+func (panicLifecycleFetcher) Type() TransportType { return API }
 
 func requireSignal(t *testing.T, ch <-chan struct{}, message string) {
 	t.Helper()

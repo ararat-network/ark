@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	sidecarinternal "noah/oracle/sidecar/internal"
 	basewebsocket "noah/oracle/sidecar/providers/base/websocket"
 	wstestutil "noah/oracle/sidecar/providers/base/websocket/testutil"
 	"noah/oracle/sidecar/providers/types"
@@ -136,6 +137,7 @@ func TestRunReturnsErrorWhenConnectionPanics(t *testing.T) {
 	err = fetcher.Run(context.Background(), []types.Ticker{"ATOMUSD"}, make(chan types.Response, 1))
 	require.ErrorContains(t, err, "websocket connection panicked")
 	require.ErrorContains(t, err, "connection exploded")
+	require.True(t, sidecarinternal.IsPanic(err))
 }
 
 func TestRunReconnectsAfterDialError(t *testing.T) {
@@ -282,6 +284,7 @@ func TestRunReturnsErrorWhenReceivePanics(t *testing.T) {
 	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
 	require.ErrorContains(t, err, "websocket receive panicked")
 	require.ErrorContains(t, err, "receive exploded")
+	require.True(t, sidecarinternal.IsPanic(err))
 }
 
 func TestRunSkipsParseErrorAndPublishesNextValidMessage(t *testing.T) {
@@ -366,6 +369,7 @@ func TestRunReturnsErrorWhenHeartbeatPanics(t *testing.T) {
 	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
 	require.ErrorContains(t, err, "websocket heartbeat panicked")
 	require.ErrorContains(t, err, "heartbeat exploded")
+	require.True(t, sidecarinternal.IsPanic(err))
 }
 
 func TestRunSendsHeartbeatMessages(t *testing.T) {

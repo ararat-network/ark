@@ -13,6 +13,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	sidecarinternal "noah/oracle/sidecar/internal"
 	"noah/oracle/sidecar/providers/base"
 	apimetrics "noah/oracle/sidecar/providers/base/api/metrics"
 	"noah/oracle/sidecar/providers/types"
@@ -106,7 +107,7 @@ func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh ch
 	group, groupCtx := errgroup.WithContext(ctx)
 	for subTickers := range slices.Chunk(tickers, batchSize) {
 		group.Go(func() error {
-			return base.RunRecovering("api batch loop", func() error {
+			return sidecarinternal.RunRecovering("api batch loop", func() error {
 				return f.runBatchLoop(groupCtx, subTickers, responseCh)
 			})
 		})
@@ -217,6 +218,9 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 
 	for key, value := range f.headers {
 		req.Header.Set(key, value)
+	}
+	if auth := endpoint.Authentication; auth.Enabled() {
+		req.Header.Set(auth.APIKeyHeader, auth.APIKey)
 	}
 
 	// Measure only the HTTP request latency; limiter wait and parsing are excluded.

@@ -12,6 +12,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	sidecarinternal "noah/oracle/sidecar/internal"
 	"noah/oracle/sidecar/providers/base"
 	"noah/oracle/sidecar/providers/base/websocket/metrics"
 	"noah/oracle/sidecar/providers/types"
@@ -93,7 +94,7 @@ func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh ch
 	group, groupCtx := errgroup.WithContext(ctx)
 	for subTickers := range slices.Chunk(tickers, maxTickersPerConn) {
 		group.Go(func() error {
-			return base.RunRecovering("websocket connection", func() error {
+			return sidecarinternal.RunRecovering("websocket connection", func() error {
 				return f.runConnection(groupCtx, subTickers, responseCh)
 			})
 		})
@@ -223,12 +224,12 @@ func (f *Fetcher) runOnce(
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return base.RunRecovering("websocket heartbeat", func() error {
+		return sidecarinternal.RunRecovering("websocket heartbeat", func() error {
 			return f.heartBeat(groupCtx, conn, handler, tickers, responseCh)
 		})
 	})
 	group.Go(func() error {
-		return base.RunRecovering("websocket receive", func() error {
+		return sidecarinternal.RunRecovering("websocket receive", func() error {
 			return f.recv(groupCtx, conn, handler, tickers, responseCh)
 		})
 	})

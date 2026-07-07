@@ -10,6 +10,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	sidecarinternal "noah/oracle/sidecar/internal"
 	"noah/oracle/sidecar/providers/types"
 	oracletypes "noah/oracle/sidecar/types"
 )
@@ -22,16 +23,21 @@ type Provider struct {
 	transportType TransportType
 	markets       types.Markets
 
+	// mu guards fetcher, markets, and cached ticker prices. responseCh belongs
+	// to the active fetch cycle and is set before the receive goroutine starts.
 	mu         sync.Mutex
 	prices     map[types.Ticker]types.Result
 	responseCh chan types.Response
 
-	lifecycleMu   sync.Mutex
-	mainCtx       context.Context
-	cancelMainFn  context.CancelFunc
-	cycleCtx      context.Context
-	cancelCycleFn context.CancelFunc
-	doneCh        chan struct{}
+	// lifecycleMu guards provider lifecycle contexts and doneCh. mainCtx owns
+	// the provider lifetime; cycleCtx owns the current fetcher/receive pair and
+	// is cancelled by market updates to restart with fresh tickers.
+	lifecycleMu sync.Mutex
+	mainCtx     context.Context
+	cancelMain  context.CancelFunc
+	cycleCtx    context.Context
+	cancelCycle context.CancelFunc
+	doneCh      chan struct{}
 }
 
 // NewProvider returns a provider using fetcher for provider-specific price data.
@@ -119,9 +125,9 @@ func (p *Provider) Start(ctx context.Context) error {
 		}
 
 		p.mainCtx = mainCtx
-		p.cancelMainFn = mainCancel
+		p.cancelMain = mainCancel
 		p.cycleCtx = nil
-		p.cancelCycleFn = nil
+		p.cancelCycle = nil
 		p.doneCh = doneCh
 		p.lifecycleMu.Unlock()
 
@@ -131,6 +137,9 @@ func (p *Provider) Start(ctx context.Context) error {
 	}
 }
 
+// run owns lifecycle cleanup after Start publishes provider state. Recovered
+// panics are re-panicked after cleanup so the provider is not left marked as
+// running when the failure leaves the goroutine.
 func (p *Provider) run(mainCtx context.Context, mainCancel context.CancelFunc, doneCh chan struct{}) {
 	defer func() {
 		mainCancel()
@@ -139,17 +148,20 @@ func (p *Provider) run(mainCtx context.Context, mainCancel context.CancelFunc, d
 		defer p.lifecycleMu.Unlock()
 
 		p.mainCtx = nil
-		p.cancelMainFn = nil
+		p.cancelMain = nil
 		p.cycleCtx = nil
-		p.cancelCycleFn = nil
+		p.cancelCycle = nil
 		p.doneCh = nil
 		close(doneCh)
 	}()
 
-	err := RunRecovering("provider run loop", func() error {
+	err := sidecarinternal.RunRecovering("provider run loop", func() error {
 		return p.runLoop(mainCtx)
 	})
 	if err != nil {
+		if sidecarinternal.IsPanic(err) {
+			panic(err)
+		}
 		if mainCtx.Err() != nil || errors.Is(err, context.Canceled) {
 			return
 		}
@@ -193,7 +205,7 @@ func (p *Provider) runLoop(mainCtx context.Context) error {
 
 		group, groupCtx := errgroup.WithContext(cycleCtx)
 		group.Go(func() (err error) {
-			return RunRecovering("provider recv", func() error {
+			return sidecarinternal.RunRecovering("provider recv", func() error {
 				p.recv(groupCtx)
 				return nil
 			})
@@ -201,7 +213,7 @@ func (p *Provider) runLoop(mainCtx context.Context) error {
 
 		group.Go(func() (err error) {
 			defer close(p.responseCh)
-			return RunRecovering("provider fetcher", func() error {
+			return sidecarinternal.RunRecovering("provider fetcher", func() error {
 				return fetcher.Run(groupCtx, tickers, p.responseCh)
 			})
 		})
@@ -231,7 +243,7 @@ func (p *Provider) runLoop(mainCtx context.Context) error {
 func (p *Provider) Stop() {
 	p.lifecycleMu.Lock()
 	mainCtx := p.mainCtx
-	cancelMain := p.cancelMainFn
+	cancelMain := p.cancelMain
 	doneCh := p.doneCh
 	p.lifecycleMu.Unlock()
 
@@ -319,7 +331,7 @@ func (p *Provider) getMainCtx() (context.Context, context.CancelFunc) {
 	p.lifecycleMu.Lock()
 	defer p.lifecycleMu.Unlock()
 
-	return p.mainCtx, p.cancelMainFn
+	return p.mainCtx, p.cancelMain
 }
 
 // setCycleCtx stores the current fetch-cycle context.
@@ -327,7 +339,7 @@ func (p *Provider) setCycleCtx(ctx context.Context, cancel context.CancelFunc) {
 	p.lifecycleMu.Lock()
 	defer p.lifecycleMu.Unlock()
 
-	p.cycleCtx, p.cancelCycleFn = ctx, cancel
+	p.cycleCtx, p.cancelCycle = ctx, cancel
 }
 
 // getCycleCtx returns the current fetch-cycle context and its cancel function.
@@ -335,5 +347,5 @@ func (p *Provider) getCycleCtx() (context.Context, context.CancelFunc) {
 	p.lifecycleMu.Lock()
 	defer p.lifecycleMu.Unlock()
 
-	return p.cycleCtx, p.cancelCycleFn
+	return p.cycleCtx, p.cancelCycle
 }

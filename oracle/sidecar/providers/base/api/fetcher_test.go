@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	sidecarinternal "noah/oracle/sidecar/internal"
 	"noah/oracle/sidecar/providers/base"
 	apitestutil "noah/oracle/sidecar/providers/base/api/testutil"
 	"noah/oracle/sidecar/providers/types"
@@ -132,6 +133,7 @@ func TestRunReturnsErrorWhenBatchLoopPanics(t *testing.T) {
 	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
 	require.ErrorContains(t, err, "api batch loop panicked")
 	require.ErrorContains(t, err, "boom")
+	require.True(t, sidecarinternal.IsPanic(err))
 }
 
 func TestRunSendsMethodHeadersAndParsesSuccessfulResponse(t *testing.T) {
@@ -165,6 +167,60 @@ func TestRunSendsMethodHeadersAndParsesSuccessfulResponse(t *testing.T) {
 		handler,
 		WithHTTPMethod(http.MethodPost),
 		WithHTTPHeaders(map[string]string{"X-API-Key": "secret"}),
+	)
+	require.NoError(t, err)
+
+	response, err := runAPIOnce(fetcher, tickers)
+	require.NoError(t, err)
+	require.Equal(t, expected, response)
+}
+
+func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	expected := types.NewResponse(map[types.Ticker]types.Result{
+		"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
+	}, nil)
+
+	cfg := apiConfig()
+	cfg.Endpoints = []types.Endpoint{
+		{
+			URL: "https://first.provider.test",
+			Authentication: types.Authentication{
+				APIKeyHeader: "X-First-Key",
+				APIKey:       "first-secret",
+			},
+		},
+		{
+			URL: "https://second.provider.test",
+			Authentication: types.Authentication{
+				APIKeyHeader: "X-Second-Key",
+				APIKey:       "second-secret",
+			},
+		},
+	}
+	selectedEndpoint := cfg.Endpoints[1]
+
+	handler := newMockDataHandler(t)
+	handler.EXPECT().
+		CreateURL(selectedEndpoint, tickers).
+		Return(testURL, nil)
+	handler.EXPECT().
+		ParseResponse(tickers, gomock.Any()).
+		Return(expected)
+
+	fetcher, err := NewFetcher(
+		cfg,
+		&http.Client{
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				require.Empty(t, req.Header.Get("X-First-Key"))
+				require.Equal(t, "second-secret", req.Header.Get("X-Second-Key"))
+				return httpResponse(http.StatusOK, `{"ok":true}`), nil
+			}),
+		},
+		handler,
+		WithEndpointSelector(func(endpoints []types.Endpoint) (types.Endpoint, error) {
+			return endpoints[1], nil
+		}),
 	)
 	require.NoError(t, err)
 

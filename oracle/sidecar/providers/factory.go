@@ -66,18 +66,10 @@ func buildAPIFetcher(cfg Config, logger log.Logger) (*api.Fetcher, error) {
 
 	client := &http.Client{}
 
-	headers := make(map[string]string)
-	// Endpoint authentication is stored in config; the API fetcher consumes it
-	// as request headers.
-	if auth := cfg.API.Endpoints[0].Authentication; auth.Enabled() {
-		headers[auth.APIKeyHeader] = auth.APIKey
-	}
-
 	fetcher, err := api.NewFetcher(
 		cfg.API,
 		client,
 		dataHandler,
-		api.WithHTTPHeaders(headers),
 		api.WithLogger(logger),
 	)
 	if err != nil {
