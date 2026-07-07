@@ -164,13 +164,14 @@ func TestGetPriceSnapshotProjectsActiveDenoms(t *testing.T) {
 
 				cfg := testRuntimeConfigWithUnknownProvider()
 				cfg.UpdateInterval = 5 * time.Millisecond
+				resolver, _ := newRecordingResolver(t, ctrl, oracletypes.Prices{
+					"ARK/USD": big.NewFloat(1.25),
+					"ARK/EUR": big.NewFloat(0.90),
+				})
 				oracle, err := NewRuntime(
 					cfg,
 					WithProviders(provider.provider),
-					WithResolver(newRecordingResolver(oracletypes.Prices{
-						"ARK/USD": big.NewFloat(1.25),
-						"ARK/EUR": big.NewFloat(0.90),
-					})),
+					WithResolver(resolver),
 					WithChainStateClient(voteTargetsClient),
 				)
 				require.NoError(t, err)

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -26,9 +27,10 @@ import (
 	"noah/oracle/sidecar/providers"
 	"noah/oracle/sidecar/providers/base"
 	baseapi "noah/oracle/sidecar/providers/base/api"
+	basetestutil "noah/oracle/sidecar/providers/base/testutil"
 	providertypes "noah/oracle/sidecar/providers/types"
-	"noah/oracle/sidecar/resolver"
 	runtimepkg "noah/oracle/sidecar/runtime"
+	runtimetestutil "noah/oracle/sidecar/runtime/testutil"
 	oracletypes "noah/oracle/sidecar/types"
 	transporttypes "noah/oracle/types"
 	"noah/pkg/encoding"
@@ -161,7 +163,9 @@ func TestPricesReturnsZeroPricesForMissingVoteTargets(t *testing.T) {
 }
 
 func TestPricesReturnsCommittedPriceTimestampSnapshot(t *testing.T) {
-	resolver := newBlockingCommitResolver(
+	ctrl := gomock.NewController(t)
+	resolver, resolverRecorder := newBlockingCommitResolver(
+		ctrl,
 		oracletypes.Prices{
 			"ARK/USD": mustBigFloat(t, "1.25"),
 			"ARK/KRW": mustBigFloat(t, "1300"),
@@ -171,19 +175,19 @@ func TestPricesReturnsCommittedPriceTimestampSnapshot(t *testing.T) {
 			"ARK/KRW": mustBigFloat(t, "2600"),
 		},
 	)
-	cfg, opts := newTestRuntimeConfig(t, nil, serverTestFetcher{})
+	cfg, opts := newTestRuntimeConfigWithDefaultFetcher(t, nil)
 	cfg.UpdateInterval = time.Millisecond
 	opts = append(opts, runtimepkg.WithResolver(resolver))
 	oracle, err := sidecar.NewOracle(cfg, log.NewNopLogger(), opts...)
 	require.NoError(t, err)
 	startTestOracle(t, oracle)
-	defer resolver.release()
+	defer resolverRecorder.release()
 
 	initial := requireOracleTick(t, oracle)
 	require.Equal(t, math.LegacyMustNewDecFromStr("1.25"), decodePrice(t, initial.Prices["uusd"]))
 
-	resolver.advance()
-	requireSignal(t, resolver.blocked, "runtime did not block after resolving new prices")
+	resolverRecorder.advance()
+	requireSignal(t, resolverRecorder.blocked, "runtime did not block after resolving new prices")
 
 	response, err := oracle.Prices(context.Background(), &transporttypes.OraclePricesRequest{})
 	require.NoError(t, err)
@@ -194,8 +198,9 @@ func TestPricesReturnsCommittedPriceTimestampSnapshot(t *testing.T) {
 }
 
 func TestPricesReturnsContextErrorBeforePriceSnapshot(t *testing.T) {
-	unexpectedResolver := &unexpectedGetPricesResolver{called: make(chan struct{})}
-	cfg, opts := newTestRuntimeConfig(t, nil, serverTestFetcher{})
+	ctrl := gomock.NewController(t)
+	unexpectedResolver, unexpectedRecorder := newUnexpectedGetPricesResolver(ctrl)
+	cfg, opts := newTestRuntimeConfigWithDefaultFetcher(t, nil)
 	cfg.UpdateInterval = time.Hour
 	opts = append(opts, runtimepkg.WithResolver(unexpectedResolver))
 	oracle, err := sidecar.NewOracle(cfg, log.NewNopLogger(), opts...)
@@ -213,20 +218,22 @@ func TestPricesReturnsContextErrorBeforePriceSnapshot(t *testing.T) {
 
 	require.Nil(t, response)
 	require.ErrorIs(t, err, context.Canceled)
-	require.Never(t, unexpectedResolver.wasCalled, 25*time.Millisecond, time.Millisecond)
+	require.Never(t, unexpectedRecorder.wasCalled, 25*time.Millisecond, time.Millisecond)
 }
 
 func TestUpdateAppliesRuntimeConfig(t *testing.T) {
-	cfg, opts := newTestRuntimeConfig(t, oracletypes.Prices{
+	cfg, opts := newTestRuntimeConfigWithDefaultFetcher(t, oracletypes.Prices{
 		"ARK/USD": mustBigFloat(t, "123.456"),
 		"ARK/KRW": mustBigFloat(t, "42.25"),
-	}, serverTestFetcher{})
-	client := &serverTestChainStateClient{
-		denoms: cfg.FallbackDenoms,
-		denomsByAddress: map[string][]string{
+	})
+	ctrl := gomock.NewController(t)
+	client := newServerTestChainStateClient(
+		ctrl,
+		cfg.FallbackDenoms,
+		map[string][]string{
 			"passthrough:///uusd-vote-targets": {"uusd"},
 		},
-	}
+	)
 	opts = append(opts, runtimepkg.WithChainStateClient(client))
 	oracle, err := sidecar.NewOracle(cfg, log.NewNopLogger(), opts...)
 	require.NoError(t, err)
@@ -254,7 +261,7 @@ func TestUpdateAppliesRuntimeConfig(t *testing.T) {
 }
 
 func TestUpdateRejectsClosedOracle(t *testing.T) {
-	cfg, opts := newTestRuntimeConfig(t, nil, serverTestFetcher{})
+	cfg, opts := newTestRuntimeConfigWithDefaultFetcher(t, nil)
 	oracle, err := sidecar.NewOracle(cfg, log.NewNopLogger(), opts...)
 	require.NoError(t, err)
 	require.NoError(t, oracle.Close())
@@ -411,8 +418,9 @@ func TestContextCancellationClosesStartedServer(t *testing.T) {
 }
 
 func TestStartWithListenerReturnsRuntimePanic(t *testing.T) {
-	cfg, opts := newTestRuntimeConfig(t, nil, serverTestFetcher{})
-	opts = append(opts, runtimepkg.WithChainStateClient(panicStartChainStateClient{}))
+	ctrl := gomock.NewController(t)
+	cfg, opts := newTestRuntimeConfigWithDefaultFetcher(t, nil)
+	opts = append(opts, runtimepkg.WithChainStateClient(newPanicStartChainStateClient(ctrl)))
 	oracle, err := sidecar.NewOracle(cfg, log.NewNopLogger(), opts...)
 	require.NoError(t, err)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -445,9 +453,10 @@ func TestStartWithListenerReturnsTransportPanic(t *testing.T) {
 }
 
 func TestPricesReadsCommittedSnapshotWithoutResolver(t *testing.T) {
-	cfg, opts := newTestRuntimeConfig(t, nil, serverTestFetcher{})
+	ctrl := gomock.NewController(t)
+	cfg, opts := newTestRuntimeConfigWithDefaultFetcher(t, nil)
 	cfg.UpdateInterval = time.Hour
-	opts = append(opts, runtimepkg.WithResolver(panicGetPricesResolver{}))
+	opts = append(opts, runtimepkg.WithResolver(newPanicGetPricesResolver(ctrl)))
 	oracle, err := sidecar.NewOracle(cfg, log.NewNopLogger(), opts...)
 	require.NoError(t, err)
 	baseListener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -503,7 +512,8 @@ func TestPricesReadsCommittedSnapshotWithoutResolver(t *testing.T) {
 }
 
 func TestDoneWaitsForRuntimeShutdown(t *testing.T) {
-	fetcher := newDelayedShutdownFetcher()
+	ctrl := gomock.NewController(t)
+	fetcher, fetcherRecorder := newDelayedShutdownFetcher(t, ctrl)
 	oracle := newTestOracleWithFetcher(t, nil, fetcher)
 	baseListener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -526,7 +536,7 @@ func TestDoneWaitsForRuntimeShutdown(t *testing.T) {
 		t.Fatal("server did not start")
 	}
 	select {
-	case <-fetcher.started:
+	case <-fetcherRecorder.started:
 	case <-time.After(time.Second):
 		t.Fatal("runtime fetcher did not start")
 	}
@@ -534,7 +544,7 @@ func TestDoneWaitsForRuntimeShutdown(t *testing.T) {
 	require.NoError(t, oracle.Close())
 
 	select {
-	case <-fetcher.stopped:
+	case <-fetcherRecorder.stopped:
 	case <-time.After(time.Second):
 		t.Fatal("runtime fetcher was not stopped")
 	}
@@ -544,7 +554,7 @@ func TestDoneWaitsForRuntimeShutdown(t *testing.T) {
 	default:
 	}
 
-	close(fetcher.release)
+	close(fetcherRecorder.release)
 
 	select {
 	case err := <-oracleErrCh:
@@ -575,72 +585,132 @@ func decodePrice(t *testing.T, rawPrice []byte) math.LegacyDec {
 	return price
 }
 
-type serverTestFetcher struct{}
+func newServerTestFetcher(
+	t *testing.T,
+	ctrl *gomock.Controller,
+) *basetestutil.MockFetcher {
+	t.Helper()
 
-func (serverTestFetcher) Run(
-	ctx context.Context,
-	_ []providertypes.Ticker,
-	_ chan<- providertypes.Response,
-) error {
-	<-ctx.Done()
-	return ctx.Err()
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	expectServerTestFetcher(fetcher)
+	fetcher.EXPECT().
+		Run(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			ctx context.Context,
+			_ []providertypes.Ticker,
+			_ chan<- providertypes.Response,
+		) error {
+			<-ctx.Done()
+			return ctx.Err()
+		}).
+		AnyTimes()
+
+	return fetcher
 }
 
-func (serverTestFetcher) Type() base.TransportType { return base.API }
-
-func (serverTestFetcher) Name() string { return "test" }
-
-func (serverTestFetcher) ResponseBufferSize([]providertypes.Ticker) int { return 1 }
-
-type panicStartChainStateClient struct{}
-
-func (panicStartChainStateClient) Start(context.Context) error {
-	panic("vote-target client exploded")
+func expectServerTestFetcher(fetcher *basetestutil.MockFetcher) {
+	fetcher.EXPECT().
+		Type().
+		Return(base.API).
+		AnyTimes()
+	fetcher.EXPECT().
+		Name().
+		Return("test").
+		AnyTimes()
+	fetcher.EXPECT().
+		ResponseBufferSize(gomock.Any()).
+		Return(1).
+		AnyTimes()
 }
 
-func (panicStartChainStateClient) Stop() {}
+func newPanicStartChainStateClient(
+	ctrl *gomock.Controller,
+) *runtimetestutil.MockChainStateClient {
+	client := runtimetestutil.NewMockChainStateClient(ctrl)
+	client.EXPECT().
+		Start(gomock.Any()).
+		DoAndReturn(func(context.Context) error {
+			panic("vote-target client exploded")
+		}).
+		AnyTimes()
+	client.EXPECT().
+		Stop().
+		AnyTimes()
+	client.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	client.EXPECT().
+		VoteTargets().
+		Return([]string{"uusd"}, nil).
+		AnyTimes()
 
-func (panicStartChainStateClient) Update(chainstate.Config) {}
-
-func (panicStartChainStateClient) VoteTargets() ([]string, error) {
-	return []string{"uusd"}, nil
+	return client
 }
 
-type panicGetPricesResolver struct{}
+func newPanicGetPricesResolver(
+	ctrl *gomock.Controller,
+) *runtimetestutil.MockPriceResolver {
+	resolver := runtimetestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		DoAndReturn(func() oracletypes.Prices {
+			panic("prices exploded")
+		}).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		AnyTimes()
 
-func (panicGetPricesResolver) SetProviderPrices(string, oracletypes.Prices) {}
-
-func (panicGetPricesResolver) ResolvePrices([]string) {}
-
-func (panicGetPricesResolver) GetPrices() oracletypes.Prices {
-	panic("prices exploded")
+	return resolver
 }
 
-func (panicGetPricesResolver) Update(resolver.Config) {}
-
-func (panicGetPricesResolver) Reset() {}
-
-type unexpectedGetPricesResolver struct {
+type unexpectedGetPricesRecorder struct {
 	called     chan struct{}
 	calledOnce sync.Once
 }
 
-func (r *unexpectedGetPricesResolver) SetProviderPrices(string, oracletypes.Prices) {}
+func newUnexpectedGetPricesResolver(
+	ctrl *gomock.Controller,
+) (*runtimetestutil.MockPriceResolver, *unexpectedGetPricesRecorder) {
+	recorder := &unexpectedGetPricesRecorder{called: make(chan struct{})}
+	resolver := runtimetestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		DoAndReturn(recorder.priceSnapshot).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		AnyTimes()
 
-func (r *unexpectedGetPricesResolver) ResolvePrices([]string) {}
+	return resolver, recorder
+}
 
-func (r *unexpectedGetPricesResolver) GetPrices() oracletypes.Prices {
+func (r *unexpectedGetPricesRecorder) priceSnapshot() oracletypes.Prices {
 	r.calledOnce.Do(func() {
 		close(r.called)
 	})
 	return oracletypes.Prices{}
 }
 
-func (r *unexpectedGetPricesResolver) Update(resolver.Config) {}
-
-func (r *unexpectedGetPricesResolver) Reset() {}
-
-func (r *unexpectedGetPricesResolver) wasCalled() bool {
+func (r *unexpectedGetPricesRecorder) wasCalled() bool {
 	select {
 	case <-r.called:
 		return true
@@ -663,18 +733,42 @@ type blockingCommitResolver struct {
 	releaseCh chan struct{}
 }
 
-func newBlockingCommitResolver(current, next oracletypes.Prices) *blockingCommitResolver {
-	return &blockingCommitResolver{
+func newBlockingCommitResolver(
+	ctrl *gomock.Controller,
+	current,
+	next oracletypes.Prices,
+) (*runtimetestutil.MockPriceResolver, *blockingCommitResolver) {
+	recorder := &blockingCommitResolver{
 		current:   copyOraclePrices(current),
 		next:      copyOraclePrices(next),
 		blocked:   make(chan struct{}),
 		releaseCh: make(chan struct{}),
 	}
+	resolver := runtimetestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		Do(func([]string) {
+			recorder.recordResolvePrices()
+		}).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		DoAndReturn(recorder.priceSnapshot).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		AnyTimes()
+
+	return resolver, recorder
 }
 
-func (r *blockingCommitResolver) SetProviderPrices(string, oracletypes.Prices) {}
-
-func (r *blockingCommitResolver) ResolvePrices([]string) {
+func (r *blockingCommitResolver) recordResolvePrices() {
 	r.mut.Lock()
 	defer r.mut.Unlock()
 
@@ -684,7 +778,7 @@ func (r *blockingCommitResolver) ResolvePrices([]string) {
 	}
 }
 
-func (r *blockingCommitResolver) GetPrices() oracletypes.Prices {
+func (r *blockingCommitResolver) priceSnapshot() oracletypes.Prices {
 	r.mut.Lock()
 	prices := copyOraclePrices(r.current)
 	shouldBlock := r.resolvedAdvanced && !r.blockingStarted
@@ -700,10 +794,6 @@ func (r *blockingCommitResolver) GetPrices() oracletypes.Prices {
 
 	return prices
 }
-
-func (r *blockingCommitResolver) Update(resolver.Config) {}
-
-func (r *blockingCommitResolver) Reset() {}
 
 func (r *blockingCommitResolver) advance() {
 	r.mut.Lock()
@@ -724,15 +814,28 @@ type delayedShutdownFetcher struct {
 	stopOnce  sync.Once
 }
 
-func newDelayedShutdownFetcher() *delayedShutdownFetcher {
-	return &delayedShutdownFetcher{
+func newDelayedShutdownFetcher(
+	t *testing.T,
+	ctrl *gomock.Controller,
+) (*basetestutil.MockFetcher, *delayedShutdownFetcher) {
+	t.Helper()
+
+	recorder := &delayedShutdownFetcher{
 		started: make(chan struct{}),
 		stopped: make(chan struct{}),
 		release: make(chan struct{}),
 	}
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	expectServerTestFetcher(fetcher)
+	fetcher.EXPECT().
+		Run(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(recorder.run).
+		AnyTimes()
+
+	return fetcher, recorder
 }
 
-func (f *delayedShutdownFetcher) Run(
+func (f *delayedShutdownFetcher) run(
 	ctx context.Context,
 	_ []providertypes.Ticker,
 	_ chan<- providertypes.Response,
@@ -748,25 +851,42 @@ func (f *delayedShutdownFetcher) Run(
 	return ctx.Err()
 }
 
-func (*delayedShutdownFetcher) Type() base.TransportType { return base.API }
-
-func (*delayedShutdownFetcher) Name() string { return "test" }
-
-func (*delayedShutdownFetcher) ResponseBufferSize([]providertypes.Ticker) int { return 1 }
-
-type serverTestChainStateClient struct {
+type serverTestChainStateRecorder struct {
 	mut             sync.RWMutex
 	denoms          []string
 	denomsByAddress map[string][]string
 }
 
-func (c *serverTestChainStateClient) Start(context.Context) error {
-	return nil
+func newServerTestChainStateClient(
+	ctrl *gomock.Controller,
+	denoms []string,
+	denomsByAddress map[string][]string,
+) *runtimetestutil.MockChainStateClient {
+	recorder := &serverTestChainStateRecorder{
+		denoms:          append([]string(nil), denoms...),
+		denomsByAddress: denomsByAddress,
+	}
+	client := runtimetestutil.NewMockChainStateClient(ctrl)
+	client.EXPECT().
+		Start(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	client.EXPECT().
+		Stop().
+		AnyTimes()
+	client.EXPECT().
+		Update(gomock.Any()).
+		Do(recorder.recordUpdate).
+		AnyTimes()
+	client.EXPECT().
+		VoteTargets().
+		DoAndReturn(recorder.voteTargets).
+		AnyTimes()
+
+	return client
 }
 
-func (c *serverTestChainStateClient) Stop() {}
-
-func (c *serverTestChainStateClient) Update(cfg chainstate.Config) {
+func (c *serverTestChainStateRecorder) recordUpdate(cfg chainstate.Config) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
@@ -775,26 +895,44 @@ func (c *serverTestChainStateClient) Update(cfg chainstate.Config) {
 	}
 }
 
-func (c *serverTestChainStateClient) VoteTargets() ([]string, error) {
+func (c *serverTestChainStateRecorder) voteTargets() ([]string, error) {
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 
 	return append([]string(nil), c.denoms...), nil
 }
 
-type serverTestResolver struct {
+type serverTestResolverRecorder struct {
 	prices oracletypes.Prices
 }
 
-func newServerTestResolver(prices oracletypes.Prices) *serverTestResolver {
-	return &serverTestResolver{prices: copyOraclePrices(prices)}
+func newServerTestResolver(
+	ctrl *gomock.Controller,
+	prices oracletypes.Prices,
+) *runtimetestutil.MockPriceResolver {
+	recorder := &serverTestResolverRecorder{prices: copyOraclePrices(prices)}
+	resolver := runtimetestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		DoAndReturn(recorder.priceSnapshot).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		AnyTimes()
+
+	return resolver
 }
 
-func (r *serverTestResolver) SetProviderPrices(string, oracletypes.Prices) {}
-
-func (r *serverTestResolver) ResolvePrices([]string) {}
-
-func (r *serverTestResolver) GetPrices() oracletypes.Prices {
+func (r *serverTestResolverRecorder) priceSnapshot() oracletypes.Prices {
 	return copyOraclePrices(r.prices)
 }
 
@@ -821,14 +959,11 @@ func requireSignal(t *testing.T, ch <-chan struct{}, message string) {
 	}
 }
 
-func (r *serverTestResolver) Update(resolver.Config) {}
-
-func (r *serverTestResolver) Reset() {}
-
 func newTestOracle(t *testing.T, prices oracletypes.Prices) *sidecar.Oracle {
 	t.Helper()
 
-	return newTestOracleWithFetcher(t, prices, serverTestFetcher{})
+	ctrl := gomock.NewController(t)
+	return newTestOracleWithFetcher(t, prices, newServerTestFetcher(t, ctrl))
 }
 
 func newTestOracleWithFetcher(t *testing.T, prices oracletypes.Prices, fetcher base.Fetcher) *sidecar.Oracle {
@@ -839,6 +974,16 @@ func newTestOracleWithFetcher(t *testing.T, prices oracletypes.Prices, fetcher b
 	require.NoError(t, err)
 
 	return oracle
+}
+
+func newTestRuntimeConfigWithDefaultFetcher(
+	t *testing.T,
+	prices oracletypes.Prices,
+) (runtimepkg.Config, []runtimepkg.Option) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	return newTestRuntimeConfig(t, prices, newServerTestFetcher(t, ctrl))
 }
 
 func newTestRuntimeConfig(
@@ -878,10 +1023,11 @@ func newTestRuntimeConfig(
 		},
 		FallbackDenoms: []string{"uusd", "ukrw"},
 	}
+	ctrl := gomock.NewController(t)
 	opts := []runtimepkg.Option{
 		runtimepkg.WithProviders(provider),
-		runtimepkg.WithResolver(newServerTestResolver(prices)),
-		runtimepkg.WithChainStateClient(&serverTestChainStateClient{denoms: cfg.FallbackDenoms}),
+		runtimepkg.WithResolver(newServerTestResolver(ctrl, prices)),
+		runtimepkg.WithChainStateClient(newServerTestChainStateClient(ctrl, cfg.FallbackDenoms, nil)),
 	}
 
 	return cfg, opts

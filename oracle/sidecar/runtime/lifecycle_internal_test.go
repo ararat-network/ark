@@ -7,16 +7,45 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/log/v2"
 
 	"noah/oracle/sidecar/providers/base"
+	basetestutil "noah/oracle/sidecar/providers/base/testutil"
 	providertypes "noah/oracle/sidecar/providers/types"
 )
 
 func TestStartProvidersWaitsForRuntimeUpdate(t *testing.T) {
 	started := make(chan struct{})
-	fetcher := &lifecycleTestFetcher{started: started}
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	fetcher.EXPECT().
+		Name().
+		Return("test").
+		AnyTimes()
+	fetcher.EXPECT().
+		Type().
+		Return(base.API).
+		AnyTimes()
+	fetcher.EXPECT().
+		ResponseBufferSize(gomock.Any()).
+		Return(1).
+		AnyTimes()
+	var startedOnce sync.Once
+	fetcher.EXPECT().
+		Run(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			ctx context.Context,
+			_ []providertypes.Ticker,
+			_ chan<- providertypes.Response,
+		) error {
+			startedOnce.Do(func() {
+				close(started)
+			})
+			<-ctx.Done()
+			return ctx.Err()
+		})
 	provider, err := base.NewProvider(
 		"test",
 		base.API,
@@ -56,29 +85,6 @@ func TestStartProvidersWaitsForRuntimeUpdate(t *testing.T) {
 
 	provider.Stop()
 }
-
-type lifecycleTestFetcher struct {
-	started chan<- struct{}
-	once    sync.Once
-}
-
-func (f *lifecycleTestFetcher) Run(
-	ctx context.Context,
-	_ []providertypes.Ticker,
-	_ chan<- providertypes.Response,
-) error {
-	f.once.Do(func() {
-		close(f.started)
-	})
-	<-ctx.Done()
-	return ctx.Err()
-}
-
-func (f *lifecycleTestFetcher) Type() base.TransportType { return base.API }
-
-func (f *lifecycleTestFetcher) Name() string { return "test" }
-
-func (f *lifecycleTestFetcher) ResponseBufferSize([]providertypes.Ticker) int { return 1 }
 
 func requireSignal(t *testing.T, ch <-chan struct{}, message string) {
 	t.Helper()

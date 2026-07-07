@@ -122,7 +122,7 @@ func TestStartDoesNotRecordMissingPriceMetricForPresentZeroPrice(t *testing.T) {
 	started := make(chan struct{})
 	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(provider.fetcher, started)
-	resolver := newRecordingResolver(types.Prices{
+	resolver, _ := newRecordingResolver(t, ctrl, types.Prices{
 		"ARK/KRW": new(big.Float),
 	})
 
@@ -167,7 +167,7 @@ func TestStartUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 		Return([]string{"uusd"}, nil).
 		AnyTimes()
 
-	resolver := newRecordingResolver(nil)
+	resolver, recorder := newRecordingResolver(t, ctrl, nil)
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
 	cfg.FallbackDenoms = []string{"ukrw"}
@@ -183,7 +183,7 @@ func TestStartUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 	defer cancel()
 	requireProviderStarted(t, started)
 
-	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, resolver))
+	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, recorder))
 	require.Equal(t, []providertypes.Ticker{"ARKUSD"}, provider.provider.GetTickers())
 
 	cancel()
@@ -210,7 +210,7 @@ func TestStartRestartsStoppedProviderWhenVoteTargetsChangeMarkets(t *testing.T) 
 		Return([]string{"ukrw"}, nil).
 		AnyTimes()
 
-	resolver := newRecordingResolver(nil)
+	resolver, _ := newRecordingResolver(t, ctrl, nil)
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
 	cfg.FallbackDenoms = []string{"uusd"}
@@ -244,7 +244,7 @@ func TestStartUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 		Return(nil, errors.New("node unavailable")).
 		AnyTimes()
 
-	resolver := newRecordingResolver(nil)
+	resolver, recorder := newRecordingResolver(t, ctrl, nil)
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
 	cfg.FallbackDenoms = []string{"ukrw"}
@@ -260,7 +260,7 @@ func TestStartUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 	defer cancel()
 	requireProviderStarted(t, started)
 
-	require.Equal(t, []string{"ukrw"}, requireResolvedDenoms(t, resolver))
+	require.Equal(t, []string{"ukrw"}, requireResolvedDenoms(t, recorder))
 
 	cancel()
 	requireOracleStopped(t, errCh)
@@ -285,7 +285,7 @@ func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 		}).
 		AnyTimes()
 
-	resolver := newRecordingResolver(nil)
+	resolver, recorder := newRecordingResolver(t, ctrl, nil)
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
 	cfg.FallbackDenoms = []string{"ukrw"}
@@ -301,8 +301,8 @@ func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	defer cancel()
 	requireProviderStarted(t, started)
 
-	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, resolver))
-	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, resolver))
+	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, recorder))
+	require.Equal(t, []string{"uusd"}, requireResolvedDenoms(t, recorder))
 	require.GreaterOrEqual(t, calls, 2)
 
 	cancel()
@@ -333,7 +333,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 		Return([]string{"uusd"}, nil).
 		AnyTimes()
 
-	resolver := newBlockingTickResolver()
+	resolver, blockingResolver := newBlockingTickResolver(ctrl)
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
 	oracle, err := runtime.NewRuntime(
@@ -343,11 +343,11 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 		runtime.WithChainStateClient(voteTargetsClient),
 	)
 	require.NoError(t, err)
-	defer resolver.unblock()
+	defer blockingResolver.unblock()
 
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
-	requireSignal(t, resolver.setStartedCh, "price tick did not start")
+	requireSignal(t, blockingResolver.setStartedCh, "price tick did not start")
 
 	newCfg := cfg
 	newCfg.Resolver = testResolverConfig("uusd", "direct", "ARK/USD")
@@ -364,7 +364,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 	case <-time.After(20 * time.Millisecond):
 	}
 
-	resolver.unblock()
+	blockingResolver.unblock()
 	select {
 	case err := <-updateErrCh:
 		require.NoError(t, err)
@@ -394,7 +394,7 @@ func TestStartPanicsWhenResolverResetPanics(t *testing.T) {
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		runtime.WithProviders(provider.provider),
-		runtime.WithResolver(panicResetResolver{}),
+		runtime.WithResolver(newPanicResetResolver(ctrl)),
 		runtime.WithChainStateClient(voteTargetsClient),
 	)
 	require.NoError(t, err)
@@ -411,20 +411,45 @@ type recordingResolver struct {
 	updates   []resolverpkg.Config
 }
 
-func newRecordingResolver(prices types.Prices) *recordingResolver {
-	return &recordingResolver{
+func newRecordingResolver(
+	t *testing.T,
+	ctrl *gomock.Controller,
+	prices types.Prices,
+) (*oracletestutil.MockPriceResolver, *recordingResolver) {
+	t.Helper()
+
+	recorder := &recordingResolver{
 		prices:    prices,
 		resolveCh: make(chan []string, 10),
 	}
+	resolver := oracletestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		Do(recorder.recordResolvePrices).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		DoAndReturn(recorder.priceSnapshot).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		Do(recorder.recordUpdate).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		AnyTimes()
+
+	return resolver, recorder
 }
 
-func (r *recordingResolver) SetProviderPrices(string, types.Prices) {}
-
-func (r *recordingResolver) ResolvePrices(denoms []string) {
+func (r *recordingResolver) recordResolvePrices(denoms []string) {
 	r.resolveCh <- append([]string(nil), denoms...)
 }
 
-func (r *recordingResolver) GetPrices() types.Prices {
+func (r *recordingResolver) priceSnapshot() types.Prices {
 	prices := make(types.Prices, len(r.prices))
 	for pair, price := range r.prices {
 		prices[pair] = new(big.Float).Copy(price)
@@ -432,7 +457,7 @@ func (r *recordingResolver) GetPrices() types.Prices {
 	return prices
 }
 
-func (r *recordingResolver) Update(cfg resolverpkg.Config) {
+func (r *recordingResolver) recordUpdate(cfg resolverpkg.Config) {
 	r.mut.Lock()
 	defer r.mut.Unlock()
 
@@ -446,20 +471,31 @@ func (r *recordingResolver) updateConfigs() []resolverpkg.Config {
 	return append([]resolverpkg.Config(nil), r.updates...)
 }
 
-func (r *recordingResolver) Reset() {}
+func newPanicResetResolver(
+	ctrl *gomock.Controller,
+) *oracletestutil.MockPriceResolver {
+	resolver := oracletestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		Return(types.Prices(nil)).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		Do(func() {
+			panic("resolver reset exploded")
+		}).
+		AnyTimes()
 
-type panicResetResolver struct{}
-
-func (panicResetResolver) SetProviderPrices(string, types.Prices) {}
-
-func (panicResetResolver) ResolvePrices([]string) {}
-
-func (panicResetResolver) GetPrices() types.Prices { return nil }
-
-func (panicResetResolver) Update(resolverpkg.Config) {}
-
-func (panicResetResolver) Reset() {
-	panic("resolver reset exploded")
+	return resolver
 }
 
 type blockingTickResolver struct {
@@ -470,29 +506,43 @@ type blockingTickResolver struct {
 	allowSet     chan struct{}
 }
 
-func newBlockingTickResolver() *blockingTickResolver {
-	return &blockingTickResolver{
+func newBlockingTickResolver(
+	ctrl *gomock.Controller,
+) (*oracletestutil.MockPriceResolver, *blockingTickResolver) {
+	recorder := &blockingTickResolver{
 		setStartedCh: make(chan struct{}),
 		allowSet:     make(chan struct{}),
 	}
+	resolver := oracletestutil.NewMockPriceResolver(ctrl)
+	resolver.EXPECT().
+		SetProviderPrices(gomock.Any(), gomock.Any()).
+		Do(func(string, types.Prices) {
+			recorder.recordSetProviderPrices()
+		}).
+		AnyTimes()
+	resolver.EXPECT().
+		ResolvePrices(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		GetPrices().
+		Return(types.Prices{}).
+		AnyTimes()
+	resolver.EXPECT().
+		Update(gomock.Any()).
+		AnyTimes()
+	resolver.EXPECT().
+		Reset().
+		AnyTimes()
+
+	return resolver, recorder
 }
 
-func (r *blockingTickResolver) SetProviderPrices(string, types.Prices) {
+func (r *blockingTickResolver) recordSetProviderPrices() {
 	r.setStarted.Do(func() {
 		close(r.setStartedCh)
 	})
 	<-r.allowSet
 }
-
-func (r *blockingTickResolver) ResolvePrices([]string) {}
-
-func (r *blockingTickResolver) GetPrices() types.Prices {
-	return types.Prices{}
-}
-
-func (r *blockingTickResolver) Update(resolverpkg.Config) {}
-
-func (r *blockingTickResolver) Reset() {}
 
 func (r *blockingTickResolver) unblock() {
 	r.unblocked.Do(func() {

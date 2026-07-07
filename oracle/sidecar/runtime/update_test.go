@@ -70,11 +70,11 @@ func TestUpdateConfigDoesNotMutateRuntimeStateWhenProviderPlanFails(t *testing.T
 
 	ctrl := gomock.NewController(t)
 	provider := newMockProvider(t, ctrl, "unknown", markets)
-	resolver := newRecordingResolver(types.Prices{
+	resolver, resolverRecorder := newRecordingResolver(t, ctrl, types.Prices{
 		"ARK/USD": big.NewFloat(1.25),
 		"ARK/KRW": big.NewFloat(1300),
 	})
-	client := newRecordingChainStateClient()
+	client, clientRecorder := newRecordingChainStateClient(t, ctrl)
 	oracle, err := NewRuntime(
 		cfg,
 		WithProviders(provider.provider),
@@ -96,8 +96,8 @@ func TestUpdateConfigDoesNotMutateRuntimeStateWhenProviderPlanFails(t *testing.T
 	err = oracle.Update(newCfg)
 
 	require.ErrorContains(t, err, "unrecognised provider name")
-	require.Empty(t, resolver.updateConfigs())
-	require.Empty(t, client.updateConfigs())
+	require.Empty(t, resolverRecorder.updateConfigs())
+	require.Empty(t, clientRecorder.updateConfigs())
 	require.Same(t, provider.provider, GetProvidersForTest(oracle)["unknown"])
 }
 
@@ -153,8 +153,8 @@ func TestUpdateConfigRestartsStoppedProviderOnMarketOnlyChange(t *testing.T) {
 	oracle, err := NewRuntime(
 		cfg,
 		WithProviders(provider.provider),
-		WithResolver(newRecordingResolver(nil)),
-		WithChainStateClient(newRecordingChainStateClient()),
+		WithResolver(newPassthroughResolver(t, ctrl)),
+		WithChainStateClient(newPassthroughChainStateClient(t, ctrl)),
 	)
 	require.NoError(t, err)
 
@@ -291,7 +291,7 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 
 	ctrl := gomock.NewController(t)
 	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
-	resolver := newRecordingResolver(types.Prices{
+	resolver, _ := newRecordingResolver(t, ctrl, types.Prices{
 		"ARK/USD": big.NewFloat(1.25),
 		"ARK/KRW": big.NewFloat(1300),
 	})
@@ -316,7 +316,7 @@ func TestUpdateConfigUpdatesVoteTargetsClientConfig(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
-	voteTargetsClient := newRecordingChainStateClient()
+	voteTargetsClient, voteTargetsRecorder := newRecordingChainStateClient(t, ctrl)
 	oracle, err := NewRuntime(
 		cfg,
 		WithProviders(provider.provider),
@@ -325,7 +325,7 @@ func TestUpdateConfigUpdatesVoteTargetsClientConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, oracle.Update(newCfg))
-	require.Equal(t, []chainstate.Config{newCfg.Client}, voteTargetsClient.updateConfigs())
+	require.Equal(t, []chainstate.Config{newCfg.Client}, voteTargetsRecorder.updateConfigs())
 }
 
 func TestUpdateConfigRefreshesFallbackDenomsWhenNoVoteTargetsHaveLoaded(t *testing.T) {
@@ -336,7 +336,7 @@ func TestUpdateConfigRefreshesFallbackDenomsWhenNoVoteTargetsHaveLoaded(t *testi
 
 	ctrl := gomock.NewController(t)
 	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
-	resolver := newRecordingResolver(types.Prices{
+	resolver, _ := newRecordingResolver(t, ctrl, types.Prices{
 		"ARK/USD": big.NewFloat(1.25),
 		"ARK/KRW": big.NewFloat(1300),
 	})
@@ -387,7 +387,7 @@ func TestStartStartsAndStopsVoteTargetsClient(t *testing.T) {
 	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRun(provider.fetcher, started)
 
-	voteTargetsClient := newRecordingChainStateClient()
+	voteTargetsClient, voteTargetsRecorder := newRecordingChainStateClient(t, ctrl)
 	oracle, err := NewRuntime(
 		cfg,
 		WithProviders(provider.provider),
@@ -402,11 +402,11 @@ func TestStartStartsAndStopsVoteTargetsClient(t *testing.T) {
 	}()
 	requireOracleStarted(t, oracle)
 	requireProviderStarted(t, started)
-	voteTargetsClient.requireStarted(t)
+	voteTargetsRecorder.requireStarted(t)
 
 	cancel()
 	requireOracleStopped(t, errCh)
-	require.True(t, voteTargetsClient.stopped())
+	require.True(t, voteTargetsRecorder.stopped())
 }
 
 func TestStopWaitsForConcurrentConfigUpdateProviderStops(t *testing.T) {
@@ -441,8 +441,8 @@ func TestStopWaitsForConcurrentConfigUpdateProviderStops(t *testing.T) {
 	oracle, err := NewRuntime(
 		cfg,
 		WithProviders(provider.provider),
-		WithResolver(newRecordingResolver(nil)),
-		WithChainStateClient(newRecordingChainStateClient()),
+		WithResolver(newPassthroughResolver(t, ctrl)),
+		WithChainStateClient(newPassthroughChainStateClient(t, ctrl)),
 	)
 	require.NoError(t, err)
 	require.NoError(t, provider.provider.Start(context.Background()))
@@ -489,36 +489,81 @@ type mockProvider struct {
 
 type recordingChainStateClient struct {
 	mut           sync.Mutex
+	startOnce     sync.Once
 	started       chan struct{}
 	updates       []chainstate.Config
 	stoppedCalled bool
 }
 
-func newRecordingChainStateClient() *recordingChainStateClient {
-	return &recordingChainStateClient{started: make(chan struct{})}
+func newRecordingChainStateClient(
+	t *testing.T,
+	ctrl *gomock.Controller,
+) (*oracletestutil.MockChainStateClient, *recordingChainStateClient) {
+	t.Helper()
+
+	recorder := &recordingChainStateClient{started: make(chan struct{})}
+	client := oracletestutil.NewMockChainStateClient(ctrl)
+	client.EXPECT().
+		Start(gomock.Any()).
+		DoAndReturn(func(context.Context) error {
+			recorder.recordStart()
+			return nil
+		}).
+		AnyTimes()
+	client.EXPECT().
+		Stop().
+		Do(recorder.recordStop).
+		AnyTimes()
+	client.EXPECT().
+		Update(gomock.Any()).
+		Do(recorder.recordUpdate).
+		AnyTimes()
+	client.EXPECT().
+		VoteTargets().
+		Return([]string{"uusd"}, nil).
+		AnyTimes()
+
+	return client, recorder
 }
 
-func (c *recordingChainStateClient) Start(context.Context) error {
-	close(c.started)
-	return nil
+func newPassthroughChainStateClient(
+	t *testing.T,
+	ctrl *gomock.Controller,
+) *oracletestutil.MockChainStateClient {
+	t.Helper()
+
+	client, _ := newRecordingChainStateClient(t, ctrl)
+	return client
 }
 
-func (c *recordingChainStateClient) Stop() {
+func newPassthroughResolver(
+	t *testing.T,
+	ctrl *gomock.Controller,
+) *oracletestutil.MockPriceResolver {
+	t.Helper()
+
+	resolver, _ := newRecordingResolver(t, ctrl, nil)
+	return resolver
+}
+
+func (c *recordingChainStateClient) recordStart() {
+	c.startOnce.Do(func() {
+		close(c.started)
+	})
+}
+
+func (c *recordingChainStateClient) recordStop() {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
 	c.stoppedCalled = true
 }
 
-func (c *recordingChainStateClient) Update(cfg chainstate.Config) {
+func (c *recordingChainStateClient) recordUpdate(cfg chainstate.Config) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
 	c.updates = append(c.updates, cfg)
-}
-
-func (c *recordingChainStateClient) VoteTargets() ([]string, error) {
-	return []string{"uusd"}, nil
 }
 
 func (c *recordingChainStateClient) updateConfigs() []chainstate.Config {
