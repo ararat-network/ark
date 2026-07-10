@@ -10,9 +10,9 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "noah/oracle/sidecar/internal"
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 // Provider runs a fetcher over provider-specific tickers and exposes pair-keyed prices.
@@ -23,21 +23,9 @@ type Provider struct {
 	transportType TransportType
 	markets       types.Markets
 
-	// mu guards fetcher, markets, and cached ticker prices. responseCh belongs
-	// to the active fetch cycle and is set before the receive goroutine starts.
-	mu         sync.Mutex
-	prices     map[types.Ticker]types.Result
-	responseCh chan types.Response
-
-	// lifecycleMu guards provider lifecycle contexts and doneCh. mainCtx owns
-	// the provider lifetime; cycleCtx owns the current fetcher/receive pair and
-	// is cancelled by market updates to restart with fresh tickers.
-	lifecycleMu sync.Mutex
-	mainCtx     context.Context
-	cancelMain  context.CancelFunc
-	cycleCtx    context.Context
-	cancelCycle context.CancelFunc
-	doneCh      chan struct{}
+	// mu guards markets and cached pair prices.
+	mu     sync.RWMutex
+	prices map[oracletypes.Pair]types.Result
 }
 
 // NewProvider returns a provider using fetcher for provider-specific price data.
@@ -54,7 +42,7 @@ func NewProvider(
 		name:          name,
 		transportType: transportType,
 		markets:       append(types.Markets{}, markets...),
-		prices:        make(map[types.Ticker]types.Result),
+		prices:        make(map[oracletypes.Pair]types.Result),
 	}
 
 	for _, opt := range opts {
@@ -90,192 +78,43 @@ func NewProvider(
 	return p, nil
 }
 
-// Start starts the provider's fetch loop if it is not already running.
-func (p *Provider) Start(ctx context.Context) error {
+// Run fetches and caches prices for the current market snapshot until ctx is
+// cancelled or the fetcher exits. The caller owns goroutine lifecycle.
+func (p *Provider) Run(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
 	}
-
-	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-
-		mainCtx, mainCancel := context.WithCancel(ctx)
-		doneCh := make(chan struct{})
-
-		p.lifecycleMu.Lock()
-		if p.doneCh != nil {
-			running := p.mainCtx != nil && p.mainCtx.Err() == nil
-			done := p.doneCh
-			p.lifecycleMu.Unlock()
-			mainCancel()
-
-			if running {
-				p.logger.Debug("provider is already running")
-				return nil
-			}
-
-			select {
-			case <-done:
-				continue
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-
-		p.mainCtx = mainCtx
-		p.cancelMain = mainCancel
-		p.cycleCtx = nil
-		p.cancelCycle = nil
-		p.doneCh = doneCh
-		p.lifecycleMu.Unlock()
-
-		p.logger.Info("starting provider")
-		go p.run(mainCtx, mainCancel, doneCh)
-		return nil
-	}
-}
-
-// run owns lifecycle cleanup after Start publishes provider state. Recovered
-// panics are re-panicked after cleanup so the provider is not left marked as
-// running when the failure leaves the goroutine.
-func (p *Provider) run(mainCtx context.Context, mainCancel context.CancelFunc, doneCh chan struct{}) {
-	defer func() {
-		mainCancel()
-
-		p.lifecycleMu.Lock()
-		defer p.lifecycleMu.Unlock()
-
-		p.mainCtx = nil
-		p.cancelMain = nil
-		p.cycleCtx = nil
-		p.cancelCycle = nil
-		p.doneCh = nil
-		close(doneCh)
-	}()
-
-	err := sidecarinternal.RunRecovering("provider run loop", func() error {
-		return p.runLoop(mainCtx)
-	})
-	if err != nil {
-		if sidecarinternal.IsPanic(err) {
-			panic(err)
-		}
-		if mainCtx.Err() != nil || errors.Is(err, context.Canceled) {
-			return
-		}
-		p.logger.Error("provider exited", "error", err)
-		return
-	}
-	if mainCtx.Err() == nil {
-		p.logger.Warn("provider exited without error")
-	}
-}
-
-// runLoop runs fetch cycles until the provider is stopped or mainCtx is cancelled.
-func (p *Provider) runLoop(mainCtx context.Context) error {
-	// Start the main loop. Each cycle runs the fetcher for the current provider tickers and
-	// updates cached prices from fetcher responses. Runtime ticker updates cancel only the
-	// current fetch cycle, allowing the loop to restart with the new ticker set.
-	for {
-		// Create a new context for this cycle before reading tickers, so updates
-		// can wake providers parked with no active markets.
-		cycleCtx, cycleCancel := context.WithCancel(mainCtx)
-		p.setCycleCtx(cycleCtx, cycleCancel)
-
-		tickers := p.GetTickers()
-		if len(tickers) == 0 {
-			p.logger.Debug("no tickers set on provider; waiting for update")
-			<-cycleCtx.Done()
-			if mainCtx.Err() != nil {
-				p.logger.Info(
-					"main provider context has been cancelled; provider is exiting",
-					"error", mainCtx.Err(),
-				)
-
-				return mainCtx.Err()
-			}
-			continue
-		}
-
-		// Create the response channel used to receive fetcher responses.
-		fetcher := p.getFetcher()
-		p.responseCh = make(chan types.Response, fetcher.ResponseBufferSize(tickers))
-
-		group, groupCtx := errgroup.WithContext(cycleCtx)
-		group.Go(func() (err error) {
-			return sidecarinternal.RunRecovering("provider recv", func() error {
-				p.recv(groupCtx)
-				return nil
-			})
-		})
-
-		group.Go(func() (err error) {
-			defer close(p.responseCh)
-			return sidecarinternal.RunRecovering("provider fetcher", func() error {
-				return fetcher.Run(groupCtx, tickers, p.responseCh)
-			})
-		})
-
-		p.logger.Debug("started provider fetch and recv routines")
-		err := group.Wait()
-		p.logger.Debug("provider routines stopped", "error", err)
-
-		if mainCtx.Err() != nil {
-			p.logger.Info(
-				"main provider context has been cancelled; provider is exiting",
-				"error", mainCtx.Err(),
-			)
-
-			return err
-		}
-		// Continue to next cycle if context cancellation is on cycleCtx
-		if cycleCtx.Err() != nil {
-			continue
-		}
-
+	if err := ctx.Err(); err != nil {
 		return err
 	}
-}
 
-// Stop stops the provider's main loop and waits for it to exit.
-func (p *Provider) Stop() {
-	p.lifecycleMu.Lock()
-	mainCtx := p.mainCtx
-	cancelMain := p.cancelMain
-	doneCh := p.doneCh
-	p.lifecycleMu.Unlock()
-
-	if doneCh == nil {
-		p.logger.Debug("provider is not running")
-		return
+	tickers := p.GetTickers()
+	if len(tickers) == 0 {
+		p.logger.Debug("no tickers set on provider; waiting for cancellation")
+		<-ctx.Done()
+		return ctx.Err()
 	}
 
-	if cancelMain != nil {
-		if mainCtx != nil && mainCtx.Err() == nil {
-			p.logger.Debug("manually stopping provider")
-		}
-		cancelMain()
-	}
-	if doneCh != nil {
-		<-doneCh
-	}
-}
+	responseCh := make(chan types.Response, p.fetcher.ResponseBufferSize(tickers))
+	group, groupCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return sidecarinternal.RunRecovering("provider recv", func() error {
+			p.recv(groupCtx, responseCh)
+			return nil
+		})
+	})
+	group.Go(func() error {
+		defer close(responseCh)
+		return sidecarinternal.RunRecovering("provider fetcher", func() error {
+			return p.fetcher.Run(groupCtx, tickers, responseCh)
+		})
+	})
 
-// IsRunning returns true if the provider is running.
-func (p *Provider) IsRunning() bool {
-	mainCtx, _ := p.getMainCtx()
-	if mainCtx == nil {
-		return false
-	}
+	p.logger.Debug("started provider fetch and recv routines")
+	err := group.Wait()
+	p.logger.Debug("provider routines stopped", "error", err)
 
-	select {
-	case <-mainCtx.Done():
-		return false
-	default:
-		return true
-	}
+	return err
 }
 
 // Name returns the name of the provider.
@@ -285,15 +124,11 @@ func (p *Provider) Name() string {
 
 // GetPrices returns a copy of the latest result for each configured pair.
 func (p *Provider) GetPrices() map[oracletypes.Pair]types.Result {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
 	cpy := make(map[oracletypes.Pair]types.Result, len(p.prices))
-	for ticker, result := range p.prices {
-		pair, ok := p.markets.TickerToPair(ticker)
-		if !ok {
-			continue
-		}
+	for pair, result := range p.prices {
 		if result.Price != nil {
 			result.Price = new(big.Float).Copy(result.Price)
 		}
@@ -305,8 +140,8 @@ func (p *Provider) GetPrices() map[oracletypes.Pair]types.Result {
 
 // GetTickers returns the configured provider-specific symbols.
 func (p *Provider) GetTickers() []types.Ticker {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
 	return p.markets.Tickers()
 }
@@ -314,38 +149,4 @@ func (p *Provider) GetTickers() []types.Ticker {
 // Type returns the provider transport type.
 func (p *Provider) Type() TransportType {
 	return p.transportType
-}
-
-// getFetcher gets the providers fetcher
-func (p *Provider) getFetcher() Fetcher {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	return p.fetcher
-}
-
-// Provider lifecycle context helpers.
-
-// getMainCtx returns the provider lifecycle context and its cancel function.
-func (p *Provider) getMainCtx() (context.Context, context.CancelFunc) {
-	p.lifecycleMu.Lock()
-	defer p.lifecycleMu.Unlock()
-
-	return p.mainCtx, p.cancelMain
-}
-
-// setCycleCtx stores the current fetch-cycle context.
-func (p *Provider) setCycleCtx(ctx context.Context, cancel context.CancelFunc) {
-	p.lifecycleMu.Lock()
-	defer p.lifecycleMu.Unlock()
-
-	p.cycleCtx, p.cancelCycle = ctx, cancel
-}
-
-// getCycleCtx returns the current fetch-cycle context and its cancel function.
-func (p *Provider) getCycleCtx() (context.Context, context.CancelFunc) {
-	p.lifecycleMu.Lock()
-	defer p.lifecycleMu.Unlock()
-
-	return p.cycleCtx, p.cancelCycle
 }

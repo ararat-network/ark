@@ -3,8 +3,8 @@ package binance
 import (
 	"time"
 
-	"noah/oracle/sidecar/providers/base/websocket"
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/base/websocket"
+	"ark/oracle/sidecar/providers/types"
 )
 
 var (
@@ -37,11 +37,11 @@ var DefaultWebSocketConfig = websocket.Config{
 	WriteTimeout:             websocket.DefaultWriteTimeout,
 	PingInterval:             websocket.DefaultPingInterval,
 	WriteInterval:            DefaultWriteInterval,
-	MaxReadErrorCount:        websocket.DefaultMaxReadErrorCount,
 	MaxTickersPerConnection:  DefaultMaxTickersPerConnection,
 	MaxSubscriptionsPerBatch: websocket.DefaultMaxSubscriptionsPerBatch,
 }
 
+// DefaultMarkets defines the built-in Binance websocket pair mappings.
 var DefaultMarkets = types.Markets{
 	{Pair: "USDT/USD", Symbol: "USDTUSD"},
 }

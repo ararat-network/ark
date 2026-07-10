@@ -3,7 +3,9 @@ package runtime
 import (
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/sidecar/providers/base"
+	"ark/oracle/sidecar/providers"
+	"ark/oracle/sidecar/providers/base"
+	providertypes "ark/oracle/sidecar/providers/types"
 )
 
 // Option customises oracle construction.
@@ -16,13 +18,14 @@ func WithLogger(logger log.Logger) Option {
 	}
 }
 
-// WithProviders allows pre-instantiated price providers to be used in the Runtime's price fetching loop.
-// This option is mainly used for testing, but can be useful for programmatically setting customised providers.
-func WithProviders(ps ...*base.Provider) Option {
+// WithProviderFactory replaces provider construction while preserving
+// configuration-owned provider membership.
+func WithProviderFactory(factory func(
+	providers.Config,
+	providertypes.Markets,
+) (*base.Provider, error)) Option {
 	return func(r *Runtime) {
-		for _, p := range ps {
-			r.providers[p.Name()] = p
-		}
+		r.providerFactory = factory
 	}
 }
 
@@ -30,12 +33,5 @@ func WithProviders(ps ...*base.Provider) Option {
 func WithChainStateClient(client ChainStateClient) Option {
 	return func(r *Runtime) {
 		r.client = client
-	}
-}
-
-// WithResolver sets the price resolver used by the oracle.
-func WithResolver(resolver PriceResolver) Option {
-	return func(r *Runtime) {
-		r.resolver = resolver
 	}
 }

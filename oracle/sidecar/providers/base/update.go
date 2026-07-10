@@ -1,34 +1,32 @@
 package base
 
-import "noah/oracle/sidecar/providers/types"
+import (
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
+)
 
-// Update applies prevalidated market mappings and restarts the active fetch
-// cycle. Callers that accept external config should validate before calling it.
-func (p *Provider) Update(markets types.Markets) {
+// UpdateMarkets applies prevalidated market mappings. The runtime stops the
+// active run before calling this method and starts a new run afterward.
+func (p *Provider) UpdateMarkets(markets types.Markets) {
 	p.logger.Debug("updating provider")
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	p.setMarkets(markets)
 	p.logger.Debug("provider updated")
-
-	if _, cancel := p.getCycleCtx(); cancel != nil {
-		p.logger.Debug("canceling fetch context; restarting provider")
-		cancel()
-	}
 }
 
 // setMarkets commits provider markets and retains cached prices only for
 // unchanged pair/symbol mappings.
 func (p *Provider) setMarkets(markets types.Markets) {
 	nextMarkets := append(types.Markets(nil), markets...)
-	retained := make(map[types.Ticker]types.Result, len(p.prices))
+	retained := make(map[oracletypes.Pair]types.Result, len(p.prices))
 
-	for ticker, result := range p.prices {
-		currentPair, currentOK := p.markets.TickerToPair(ticker)
-		nextPair, nextOK := nextMarkets.TickerToPair(ticker)
-		if currentOK && nextOK && currentPair == nextPair {
-			retained[ticker] = result
+	for pair, result := range p.prices {
+		currentTicker, currentOK := p.markets.PairToTicker(pair)
+		nextTicker, nextOK := nextMarkets.PairToTicker(pair)
+		if currentOK && nextOK && currentTicker.Key() == nextTicker.Key() {
+			retained[pair] = result
 		}
 	}
 

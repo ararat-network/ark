@@ -1,6 +1,7 @@
 package runtime_test
 
 import (
+	"context"
 	"math/big"
 	"testing"
 	"time"
@@ -8,11 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"noah/oracle/sidecar/providers"
-	providertypes "noah/oracle/sidecar/providers/types"
-	. "noah/oracle/sidecar/runtime"
-	oracletestutil "noah/oracle/sidecar/runtime/testutil"
-	oracletypes "noah/oracle/sidecar/types"
+	providertypes "ark/oracle/sidecar/providers/types"
+	. "ark/oracle/sidecar/runtime"
+	oracletestutil "ark/oracle/sidecar/runtime/testutil"
 )
 
 func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
@@ -39,6 +38,12 @@ func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
 			opts:    []Option{WithLogger(nil)},
 			wantErr: "logger is nil",
 		},
+		{
+			name:    "nil provider factory",
+			cfg:     validCfg,
+			opts:    []Option{WithProviderFactory(nil)},
+			wantErr: "provider factory is nil",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -50,72 +55,16 @@ func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
 	}
 }
 
-func TestNewRuntimeBuildsConfiguredProviders(t *testing.T) {
-	markets := testMarkets()
-	providerCfg := testBinanceAPIProviderConfig(markets)
-	cfg := testOracleConfig(map[string]providers.Config{
-		providerCfg.Name: providerCfg,
-	})
+func TestConfigValidateRejectsNonCanonicalFallbackDenom(t *testing.T) {
+	cfg := testRuntimeConfigWithUnknownProvider()
+	cfg.FallbackDenoms = []string{"uUSD"}
 
-	oracle, err := NewRuntime(cfg)
+	err := cfg.Validate()
 
-	require.NoError(t, err)
-	providers := GetProvidersForTest(oracle)
-	require.Contains(t, providers, providerCfg.Name)
-	require.Equal(t, providerCfg.Name, providers[providerCfg.Name].Name())
+	require.ErrorContains(t, err, "not canonical")
 }
 
-func TestNewRuntimeFiltersProviderMarketsToFallbackDenoms(t *testing.T) {
-	markets := providertypes.Markets{
-		{Pair: "ARK/USD", Symbol: "ARKUSD"},
-		{Pair: "ARK/KRW", Symbol: "ARKKRW"},
-	}
-	providerCfg := testBinanceAPIProviderConfig(markets)
-	cfg := testOracleConfig(map[string]providers.Config{
-		providerCfg.Name: providerCfg,
-	})
-	cfg.FallbackDenoms = []string{"uusd"}
-
-	oracle, err := NewRuntime(cfg)
-
-	require.NoError(t, err)
-	require.Equal(t, []providertypes.Ticker{"ARKUSD"}, GetProvidersForTest(oracle)[providerCfg.Name].GetTickers())
-}
-
-func TestNewRuntimeKeepsConfiguredProvidersWithoutActiveFallbackMarkets(t *testing.T) {
-	markets := testMarkets()
-	providerCfg := testBinanceAPIProviderConfig(markets)
-	cfg := testOracleConfig(map[string]providers.Config{
-		providerCfg.Name: providerCfg,
-	})
-	cfg.Resolver = testResolverConfig("ueur", "ark-eur", "ARK/EUR")
-	cfg.FallbackDenoms = []string{"ueur"}
-
-	oracle, err := NewRuntime(cfg)
-
-	require.NoError(t, err)
-	providers := GetProvidersForTest(oracle)
-	require.Contains(t, providers, providerCfg.Name)
-	require.Empty(t, providers[providerCfg.Name].GetTickers())
-}
-
-func TestProviderSnapshotForTestReturnsMapSnapshot(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	provider := newMockProvider(t, ctrl, "unknown", testMarkets())
-	oracle, err := NewRuntime(
-		testRuntimeConfigWithUnknownProvider(),
-		WithProviders(provider.provider),
-		WithResolver(oracletestutil.NewMockPriceResolver(ctrl)),
-	)
-	require.NoError(t, err)
-
-	providers := GetProvidersForTest(oracle)
-	delete(providers, "unknown")
-
-	require.Contains(t, GetProvidersForTest(oracle), "unknown")
-}
-
-func TestGetPriceSnapshotProjectsActiveDenoms(t *testing.T) {
+func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 	testCases := []struct {
 		name              string
 		setup             func(t *testing.T) (*Runtime, func())
@@ -124,26 +73,22 @@ func TestGetPriceSnapshotProjectsActiveDenoms(t *testing.T) {
 		wantAbsent        []string
 	}{
 		{
-			name: "zero fills active denoms before first tick",
+			name: "empty before first tick",
 			setup: func(t *testing.T) (*Runtime, func()) {
 				t.Helper()
 
 				ctrl := gomock.NewController(t)
-				provider := newMockProvider(t, ctrl, "unknown", testMarkets())
+				mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 				oracle, err := NewRuntime(
 					testRuntimeConfigWithUnknownProvider(),
-					WithProviders(provider.provider),
-					WithResolver(oracletestutil.NewMockPriceResolver(ctrl)),
+					withInitialProviders(mp.provider),
 				)
 				require.NoError(t, err)
 
 				return oracle, func() {}
 			},
 			wantTimestampZero: true,
-			wantPrices: map[string]*big.Float{
-				"uusd": new(big.Float),
-				"ukrw": new(big.Float),
-			},
+			wantPrices:        map[string]*big.Float{},
 		},
 		{
 			name: "filters committed snapshot to active denoms",
@@ -152,8 +97,24 @@ func TestGetPriceSnapshotProjectsActiveDenoms(t *testing.T) {
 
 				ctrl := gomock.NewController(t)
 				started := make(chan struct{})
-				provider := newMockProvider(t, ctrl, "unknown", testMarkets())
-				expectFetcherRunAnyTimes(provider.fetcher, started)
+				mp := newMockProvider(t, ctrl, "unknown", testMarkets())
+				mp.fetcher.EXPECT().
+					Run(gomock.Any(), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(
+						ctx context.Context,
+						_ []providertypes.Ticker,
+						responseCh chan<- providertypes.Response,
+					) error {
+						close(started)
+						responseCh <- providertypes.NewResponse(
+							map[providertypes.Ticker]providertypes.Result{
+								"NOAHUSD": providertypes.NewResult(big.NewFloat(1.25), time.Now().UTC()),
+							},
+							nil,
+						)
+						<-ctx.Done()
+						return ctx.Err()
+					})
 
 				voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
 				expectVoteTargetsLifecycle(voteTargetsClient)
@@ -164,14 +125,9 @@ func TestGetPriceSnapshotProjectsActiveDenoms(t *testing.T) {
 
 				cfg := testRuntimeConfigWithUnknownProvider()
 				cfg.UpdateInterval = 5 * time.Millisecond
-				resolver, _ := newRecordingResolver(t, ctrl, oracletypes.Prices{
-					"ARK/USD": big.NewFloat(1.25),
-					"ARK/EUR": big.NewFloat(0.90),
-				})
 				oracle, err := NewRuntime(
 					cfg,
-					WithProviders(provider.provider),
-					WithResolver(resolver),
+					withInitialProviders(mp.provider),
 					WithChainStateClient(voteTargetsClient),
 				)
 				require.NoError(t, err)

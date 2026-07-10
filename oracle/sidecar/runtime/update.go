@@ -1,15 +1,8 @@
 package runtime
 
-import (
-	"context"
-	"maps"
-
-	"noah/oracle/sidecar/providers"
-	"noah/oracle/sidecar/providers/base"
-	providertypes "noah/oracle/sidecar/providers/types"
-)
-
-// Update applies a validated config replacement to the running oracle.
+// Update validates and serialises a config replacement with aggregation and
+// lifecycle transitions. Replacement providers are built before live state is
+// changed, so validation or construction errors leave the runtime unchanged.
 func (r *Runtime) Update(cfg Config) error {
 	nextCfg := cfg.Clone()
 	if err := nextCfg.Validate(); err != nil {
@@ -19,178 +12,121 @@ func (r *Runtime) Update(cfg Config) error {
 	r.updateMu.Lock()
 	defer r.updateMu.Unlock()
 
-	plan, err := r.planConfigUpdate(nextCfg)
+	r.mut.RLock()
+	oldCfg := r.cfg
+	oldDenoms := append([]string(nil), r.denoms...)
+	nextDenoms := append([]string(nil), oldDenoms...)
+	if !r.denomsFromVoteTargets {
+		nextDenoms = append([]string(nil), nextCfg.FallbackDenoms...)
+	}
+	mainCtx := r.mainCtx
+	mainCancel := r.mainCancel
+	r.mut.RUnlock()
+
+	plan, err := r.planProviders(oldCfg, nextCfg, oldDenoms, nextDenoms)
 	if err != nil {
 		return err
 	}
 
-	r.commitConfigUpdate(plan)
-	r.applyConfigUpdateSideEffects(plan)
-	return nil
-}
-
-type configUpdatePlan struct {
-	new    Config
-	denoms []string
-
-	providers providerUpdatePlan
-
-	running bool
-	mainCtx context.Context
-
-	intervalChanged bool
-	resolverChanged bool
-	clientChanged   bool
-}
-
-type providerUpdatePlan struct {
-	remove  []string
-	set     map[string]*base.Provider
-	stop    []*base.Provider
-	start   []*base.Provider
-	updates []providerUpdate
-}
-
-type providerUpdate struct {
-	provider *base.Provider
-	markets  providertypes.Markets
-}
-
-func (r *Runtime) planConfigUpdate(newCfg Config) (configUpdatePlan, error) {
-	r.mut.RLock()
-	oldCfg := r.cfg.Clone()
-	oldDenoms := append([]string(nil), r.denoms...)
-	newDenoms := append([]string(nil), oldDenoms...)
-	if !r.denomsFromVoteTargets {
-		newDenoms = append([]string(nil), newCfg.FallbackDenoms...)
+	for _, managed := range plan.stop {
+		managed.stop()
 	}
-	oldProviders := make(map[string]*base.Provider, len(r.providers))
-	maps.Copy(oldProviders, r.providers)
-	running := r.running.Load()
-	mainCtx := r.mainCtx
-	r.mut.RUnlock()
-
-	providerPlan, err := r.planProviderUpdate(oldCfg, newCfg, oldDenoms, newDenoms, oldProviders)
-	if err != nil {
-		return configUpdatePlan{}, err
+	for _, update := range plan.markets {
+		update.managed.provider.UpdateMarkets(update.markets)
 	}
+	r.providers = plan.next
 
-	return configUpdatePlan{
-		new:    newCfg,
-		denoms: newDenoms,
+	intervalChanged := oldCfg.UpdateInterval != nextCfg.UpdateInterval
+	clientChanged := !oldCfg.Client.Equal(nextCfg.Client)
 
-		providers: providerPlan,
-
-		running: running,
-		mainCtx: mainCtx,
-
-		intervalChanged: oldCfg.UpdateInterval != newCfg.UpdateInterval,
-		resolverChanged: !oldCfg.Resolver.Equal(newCfg.Resolver),
-		clientChanged:   !oldCfg.Client.Equal(newCfg.Client),
-	}, nil
-}
-
-func (r *Runtime) commitConfigUpdate(plan configUpdatePlan) {
 	r.mut.Lock()
-	defer r.mut.Unlock()
+	r.cfg = nextCfg
+	r.denoms = append([]string(nil), nextDenoms...)
+	r.mut.Unlock()
 
-	for _, update := range plan.providers.updates {
-		update.provider.Update(update.markets)
-	}
-	for _, name := range plan.providers.remove {
-		delete(r.providers, name)
-	}
-	maps.Copy(r.providers, plan.providers.set)
-
-	if plan.resolverChanged {
-		r.resolver.Update(plan.new.Resolver)
-	}
-	if plan.clientChanged {
-		r.client.Update(plan.new.Client)
+	if clientChanged {
+		r.client.Update(nextCfg.Client)
 	}
 
-	r.cfg = plan.new
-	r.denoms = append([]string(nil), plan.denoms...)
-}
-
-func (r *Runtime) applyConfigUpdateSideEffects(plan configUpdatePlan) {
-	for _, provider := range plan.providers.stop {
-		provider.Stop()
+	if mainCtx == nil || mainCtx.Err() != nil {
+		return nil
 	}
-	if !plan.running || plan.mainCtx == nil {
-		return
+	for _, managed := range plan.start {
+		managed.start(mainCtx, mainCancel, r.logger)
 	}
-	for _, provider := range plan.providers.start {
-		if err := provider.Start(plan.mainCtx); err != nil {
-			r.logProviderStartError(plan.mainCtx, provider.Name(), err)
-		}
-	}
-	for _, update := range plan.providers.updates {
-		if err := update.provider.Start(plan.mainCtx); err != nil {
-			r.logProviderStartError(plan.mainCtx, update.provider.Name(), err)
-		}
-	}
-	if plan.intervalChanged && r.updateIntervalCh != nil {
+	if intervalChanged && r.updateIntervalCh != nil {
 		select {
 		case r.updateIntervalCh <- struct{}{}:
 		default:
 		}
 	}
+	return nil
 }
 
-// planProviderUpdate builds the provider changes needed to move from oldCfg to newCfg.
-func (r *Runtime) planProviderUpdate(
+// providerPlan describes the complete provider transition prepared while
+// Runtime.updateMu is held.
+type providerPlan struct {
+	next    map[string]*managedProvider
+	stop    []*managedProvider
+	start   []*managedProvider
+	markets []providerMarketUpdate
+}
+
+// planProviders builds the complete next provider set before any live provider
+// is stopped, so a construction error leaves the runtime unchanged.
+func (r *Runtime) planProviders(
 	oldCfg Config,
 	newCfg Config,
 	oldDenoms []string,
 	newDenoms []string,
-	oldProviders map[string]*base.Provider,
-) (providerUpdatePlan, error) {
-	plan := providerUpdatePlan{
-		set: make(map[string]*base.Provider),
+) (providerPlan, error) {
+	plan := providerPlan{
+		next: make(map[string]*managedProvider, len(newCfg.Providers)),
 	}
 
 	oldPairs := oldCfg.Resolver.MarketPairs(oldDenoms)
 	newPairs := newCfg.Resolver.MarketPairs(newDenoms)
-	for name, provider := range oldProviders {
-		oldProviderCfg, oldOK := oldCfg.Providers[name]
-		newProviderCfg, ok := newCfg.Providers[name]
-		if !ok {
-			plan.stop = append(plan.stop, provider)
-			plan.remove = append(plan.remove, name)
+	for name, newProviderCfg := range newCfg.Providers {
+		current, exists := r.providers[name]
+		newMarkets := newProviderCfg.Markets.FilterPairs(newPairs)
+		if !exists {
+			managed, err := r.newManagedProvider(newProviderCfg, newMarkets)
+			if err != nil {
+				return providerPlan{}, err
+			}
+			plan.next[name] = managed
+			plan.start = append(plan.start, managed)
 			continue
 		}
 
-		oldMarkets := oldProviderCfg.Markets.FilterPairs(oldPairs)
-		newMarkets := newProviderCfg.Markets.FilterPairs(newPairs)
-		switch {
-		case !oldOK || !oldProviderCfg.Equal(newProviderCfg):
-			newProvider, err := providers.NewProvider(newProviderCfg, newMarkets, r.logger)
+		oldProviderCfg := oldCfg.Providers[name]
+		if !oldProviderCfg.Equal(newProviderCfg) {
+			managed, err := r.newManagedProvider(newProviderCfg, newMarkets)
 			if err != nil {
-				return providerUpdatePlan{}, err
+				return providerPlan{}, err
 			}
-			plan.stop = append(plan.stop, provider)
-			plan.set[name] = newProvider
-			plan.start = append(plan.start, newProvider)
-		case !oldMarkets.Equal(newMarkets):
-			plan.updates = append(plan.updates, providerUpdate{
-				provider: provider,
-				markets:  newMarkets,
+			plan.next[name] = managed
+			plan.stop = append(plan.stop, current)
+			plan.start = append(plan.start, managed)
+			continue
+		}
+
+		plan.next[name] = current
+		oldMarkets := oldProviderCfg.Markets.FilterPairs(oldPairs)
+		if !oldMarkets.Equal(newMarkets) {
+			plan.stop = append(plan.stop, current)
+			plan.start = append(plan.start, current)
+			plan.markets = append(plan.markets, providerMarketUpdate{
+				managed: current,
+				markets: newMarkets,
 			})
 		}
 	}
 
-	for name, newProviderCfg := range newCfg.Providers {
-		if _, ok := oldProviders[name]; ok {
-			continue
+	for name, current := range r.providers {
+		if _, ok := plan.next[name]; !ok {
+			plan.stop = append(plan.stop, current)
 		}
-
-		newProvider, err := providers.NewProvider(newProviderCfg, newProviderCfg.Markets.FilterPairs(newPairs), r.logger)
-		if err != nil {
-			return providerUpdatePlan{}, err
-		}
-		plan.set[name] = newProvider
-		plan.start = append(plan.start, newProvider)
 	}
 
 	return plan, nil

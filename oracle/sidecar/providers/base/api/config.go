@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // Config defines a config for an API based data provider.

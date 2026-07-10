@@ -1,6 +1,6 @@
 # Oracle Providers
 
-This package contains Noah oracle price provider construction and provider-specific adapters.
+This package contains Ark oracle price provider construction and provider-specific adapters.
 
 The shared runtime lives in `base/`. The public constructor in `factory.go` validates a `providers.Config`, selects the
 configured API or WebSocket fetcher, builds the matching provider adapter, and returns a `base.Provider`. Provider

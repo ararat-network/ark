@@ -22,16 +22,28 @@ func NewPair(base, quote string) (Pair, error) {
 	return pair, nil
 }
 
+// FromDenom converts a canonical u-prefixed vote-target denom into its
+// corresponding NOAH/QUOTE pair.
 func FromDenom(denom string) (Pair, error) {
-	denom = strings.TrimSpace(denom)
 	if denom == "" {
 		return "", errors.New("denom is empty")
+	}
+	if strings.TrimSpace(denom) != denom {
+		return "", fmt.Errorf("denom contains whitespace: %q", denom)
 	}
 	if !strings.HasPrefix(denom, "u") || len(denom) == 1 {
 		return "", fmt.Errorf("invalid denom %q: expected u-prefixed denom", denom)
 	}
 
-	return NewPair("ARK", denom[1:])
+	pair, err := NewPair("NOAH", denom[1:])
+	if err != nil {
+		return "", err
+	}
+	if pair.VoteTargetDenom() != denom {
+		return "", fmt.Errorf("vote-target denom %q is not canonical", denom)
+	}
+
+	return pair, nil
 }
 
 // ParsePair parses raw into a canonical BASE/QUOTE pair.

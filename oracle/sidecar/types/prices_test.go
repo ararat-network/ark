@@ -1,10 +1,26 @@
 package types_test
 
 import (
+	. "ark/oracle/sidecar/types"
 	"math/big"
-	. "noah/oracle/sidecar/types"
 	"testing"
 )
+
+func TestParsePriceUsesOraclePrecision(t *testing.T) {
+	price, err := ParsePrice("1234.123456789123456789")
+	if err != nil {
+		t.Fatalf("ParsePrice() error = %v, want nil", err)
+	}
+	if price.Prec() != 256 {
+		t.Fatalf("ParsePrice() precision = %d, want 256", price.Prec())
+	}
+}
+
+func TestParsePriceRejectsInfinity(t *testing.T) {
+	if _, err := ParsePrice("+Inf"); err == nil {
+		t.Fatal("ParsePrice() error = nil, want infinity rejection")
+	}
+}
 
 func TestPricesByDenomProjectsPairPricesToVoteTargets(t *testing.T) {
 	prices := Prices{

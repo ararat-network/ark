@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/oracle/sidecar/chainstate/metrics")
+	meter = otel.Meter("ark/oracle/sidecar/chainstate/metrics")
 
 	refreshes metric.Int64Counter
 )
@@ -19,7 +19,7 @@ func init() {
 	var err error
 
 	refreshes, err = meter.Int64Counter(
-		"noah.oracle.chainstate.refreshes",
+		"ark.oracle.chainstate.refreshes",
 		metric.WithDescription("Number of chain state vote-target refresh attempts"),
 	)
 	if err != nil {
@@ -27,6 +27,7 @@ func init() {
 	}
 }
 
+// RecordRefresh records one chainstate vote-target refresh attempt.
 func RecordRefresh(ctx context.Context, status string) {
 	refreshes.Add(
 		ctx,

@@ -9,11 +9,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 var (
-	meter = otel.Meter("noah/oracle/sidecar/providers/base/metrics")
+	meter = otel.Meter("ark/oracle/sidecar/providers/base/metrics")
 
 	responses   metric.Int64Counter
 	lastSuccess metric.Int64Gauge
@@ -22,7 +22,7 @@ var (
 func init() {
 	var err error
 	responses, err = meter.Int64Counter(
-		"noah.oracle.provider.responses",
+		"ark.oracle.provider.responses",
 		metric.WithDescription("Number of resolved and unresolved provider responses"),
 	)
 	if err != nil {
@@ -30,7 +30,7 @@ func init() {
 	}
 
 	lastSuccess, err = meter.Int64Gauge(
-		"noah.oracle.provider.last_success",
+		"ark.oracle.provider.last_success",
 		metric.WithDescription("Unix timestamp of the last resolved provider response"),
 		metric.WithUnit("s"),
 	)

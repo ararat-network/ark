@@ -5,10 +5,12 @@ import (
 	"fmt"
 )
 
-// PanicError marks a panic that was recovered only to let the owning goroutine
-// clean up or coordinate sibling workers before deciding whether to re-panic.
+// PanicError marks a recovered panic so an owning lifecycle can coordinate
+// sibling cleanup and return the original failure as its cancellation cause.
 type PanicError struct {
+	// Component identifies the lifecycle or RPC boundary that recovered the panic.
 	Component string
+	// Recovered is the original value supplied to panic.
 	Recovered any
 }
 

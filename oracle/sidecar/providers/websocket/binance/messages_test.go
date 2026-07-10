@@ -1,8 +1,8 @@
 package binance_test
 
 import (
+	. "ark/oracle/sidecar/providers/websocket/binance"
 	"encoding/json"
-	. "noah/oracle/sidecar/providers/websocket/binance"
 	"testing"
 
 	"cosmossdk.io/log/v2"

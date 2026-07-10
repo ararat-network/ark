@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-// ErrorCode is a type alias for an int error code.
+// ErrorCode classifies provider failures for response handling and metrics.
 type ErrorCode int
 
 const (
@@ -72,6 +72,7 @@ func (e ErrorCode) Error() error {
 	}
 }
 
+// ErrorWithCode couples a provider-facing error with its stable classification.
 type ErrorWithCode struct {
 	code        ErrorCode
 	internalErr error
@@ -87,6 +88,7 @@ func (ec ErrorWithCode) Code() ErrorCode {
 	return ec.code
 }
 
+// NewErrorWithCode returns err classified by ec.
 func NewErrorWithCode(err error, ec ErrorCode) ErrorWithCode {
 	return ErrorWithCode{
 		code:        ec,

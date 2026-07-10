@@ -9,10 +9,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/version"
 
-	sidecarinternal "noah/oracle/sidecar/internal"
-	"noah/oracle/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	sidecartypes "ark/oracle/sidecar/types"
+	"ark/oracle/types"
+	"ark/pkg/encoding"
 )
 
 // Prices returns the runtime's latest cached denom prices.
@@ -40,7 +44,7 @@ func (o *Oracle) Prices(ctx context.Context, req *types.OraclePricesRequest) (*t
 	}
 
 	snapshot := o.runtime.GetPriceSnapshot()
-	prices, err := ToReqPrices(snapshot.Prices)
+	prices, err := toReqPrices(snapshot.Prices)
 	if err != nil {
 		return nil, fmt.Errorf("converting oracle prices: %w", err)
 	}
@@ -50,6 +54,32 @@ func (o *Oracle) Prices(ctx context.Context, req *types.OraclePricesRequest) (*t
 		Timestamp: snapshot.Timestamp,
 		Version:   version.Version,
 	}, nil
+}
+
+// toReqPrices encodes public denom prices into the generated transport payload.
+// Runtime already projects pair prices to active denoms, so this conversion
+// accepts denom-keyed prices and rejects nil values at the RPC boundary.
+func toReqPrices(prices sidecartypes.DenomPrices) (map[string][]byte, error) {
+	result := make(map[string][]byte, len(prices))
+
+	for ticker, price := range prices {
+		if price == nil {
+			return nil, fmt.Errorf("nil price for %s", ticker)
+		}
+
+		rate, err := math.LegacyNewDecFromStr(price.Text('f', math.LegacyPrecision))
+		if err != nil {
+			return nil, fmt.Errorf("convert price %s: %w", ticker, err)
+		}
+		rawRate, err := encoding.EncodeLegacyDec(rate)
+		if err != nil {
+			return nil, fmt.Errorf("encoding rate: %w", err)
+		}
+
+		result[ticker] = rawRate
+	}
+
+	return result, nil
 }
 
 // Version returns the version of the oracle server.
@@ -62,7 +92,7 @@ func (o *Oracle) Version(_ context.Context, _ *types.OracleVersionRequest) (*typ
 // Panics in request handlers are returned as internal gRPC errors so one bad
 // request does not terminate the sidecar process. Normal handler errors are
 // mapped to explicit gRPC status codes before they leave the sidecar.
-func (o *Oracle) recoverUnaryPanic(
+func (s *server) recoverUnaryPanic(
 	ctx context.Context,
 	req any,
 	info *grpc.UnaryServerInfo,
@@ -73,7 +103,7 @@ func (o *Oracle) recoverUnaryPanic(
 		if info != nil {
 			method = info.FullMethod
 		}
-		o.logger.Error("oracle rpc panicked", "method", method, "error", panicErr)
+		s.logger.Error("oracle rpc panicked", "method", method, "error", panicErr)
 		err = status.Error(codes.Internal, "oracle rpc panicked")
 	})
 

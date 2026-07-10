@@ -1,24 +1,21 @@
 package base_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
-
-	"cosmossdk.io/log/v2"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"noah/oracle/sidecar/providers/base"
-	basetestutil "noah/oracle/sidecar/providers/base/testutil"
-	"noah/oracle/sidecar/providers/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/providers/base"
+	basetestutil "ark/oracle/sidecar/providers/base/testutil"
+	"ark/oracle/sidecar/providers/types"
 )
 
-func TestStartRejectsNilContext(t *testing.T) {
+func TestRunRejectsNilContext(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 	fetcher.EXPECT().Name().Return("test").AnyTimes()
@@ -28,50 +25,11 @@ func TestStartRejectsNilContext(t *testing.T) {
 	require.NoError(t, err)
 
 	var ctx context.Context
-	err = provider.Start(ctx)
+	err = provider.Run(ctx)
 	require.ErrorContains(t, err, "context cannot be nil")
 }
 
-func TestStartReturnsAfterStartingFetcherUntilStopped(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	fetcher := basetestutil.NewMockFetcher(ctrl)
-	expectFetcher(fetcher, "test", base.API)
-
-	tickers := []types.Ticker{"ATOMUSD"}
-	markets := testMarkets()
-	started := make(chan struct{})
-
-	fetcher.EXPECT().
-		Run(gomock.Any(), tickers, gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
-			close(started)
-			<-ctx.Done()
-			return ctx.Err()
-		})
-
-	provider, err := newTestProviderWithMarkets(markets, fetcher)
-	require.NoError(t, err)
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- provider.Start(context.Background())
-	}()
-	require.NoError(t, requireProviderStartReturned(t, errCh))
-
-	select {
-	case <-started:
-	case <-time.After(time.Second):
-		t.Fatal("fetcher did not start")
-	}
-
-	require.True(t, provider.IsRunning())
-
-	provider.Stop()
-
-	require.False(t, provider.IsRunning())
-}
-
-func TestStartIsIdempotentWhileProviderIsRunning(t *testing.T) {
+func TestRunBlocksUntilContextCancellation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 	expectFetcher(fetcher, "test", base.API)
@@ -88,15 +46,24 @@ func TestStartIsIdempotentWhileProviderIsRunning(t *testing.T) {
 	provider, err := newTestProvider(fetcher)
 	require.NoError(t, err)
 
-	require.NoError(t, provider.Start(context.Background()))
-	require.NoError(t, provider.Start(context.Background()))
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- provider.Run(ctx)
+	}()
 	requireSignal(t, started, "provider did not start")
 
-	provider.Stop()
-	require.False(t, provider.IsRunning())
+	select {
+	case err := <-errCh:
+		t.Fatalf("provider Run returned before cancellation: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	cancel()
+	require.ErrorIs(t, requireProviderRunReturned(t, errCh), context.Canceled)
 }
 
-func TestStartUsesFetcherResponseBufferSize(t *testing.T) {
+func TestRunUsesFetcherResponseBufferSize(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
 	fetcher.EXPECT().Name().Return("test").AnyTimes()
@@ -108,114 +75,74 @@ func TestStartUsesFetcherResponseBufferSize(t *testing.T) {
 		{Pair: "BTC/USD", Symbol: "BTCUSD"},
 		{Pair: "ETH/USD", Symbol: "ETHUSD"},
 	}
-	started := make(chan struct{})
-
-	fetcher.EXPECT().
-		ResponseBufferSize(tickers).
-		Return(2)
+	fetcher.EXPECT().ResponseBufferSize(tickers).Return(2)
 	fetcher.EXPECT().
 		Run(gomock.Any(), tickers, gomock.Any()).
 		DoAndReturn(func(ctx context.Context, _ []types.Ticker, responseCh chan<- types.Response) error {
 			require.Equal(t, 2, cap(responseCh))
-			close(started)
-			<-ctx.Done()
-			return ctx.Err()
-		})
-
-	provider, err := newTestProviderWithMarkets(markets, fetcher)
-	require.NoError(t, err)
-
-	require.NoError(t, provider.Start(context.Background()))
-
-	select {
-	case <-started:
-	case <-time.After(time.Second):
-		t.Fatal("fetcher did not start")
-	}
-
-	provider.Stop()
-}
-
-func TestStartStopsAfterNonContextFetcherError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	fetcher := basetestutil.NewMockFetcher(ctrl)
-
-	tickers := []types.Ticker{"ATOMUSD"}
-	markets := testMarkets()
-	fetchErr := errors.New("fetch failed")
-	started := make(chan struct{})
-
-	expectFetcher(fetcher, "test", base.API)
-	fetcher.EXPECT().
-		Run(gomock.Any(), tickers, gomock.Any()).
-		DoAndReturn(func(context.Context, []types.Ticker, chan<- types.Response) error {
-			close(started)
-			return fetchErr
-		})
-
-	provider, err := newTestProviderWithMarkets(markets, fetcher)
-	require.NoError(t, err)
-
-	require.NoError(t, provider.Start(context.Background()))
-	requireSignal(t, started, "provider did not start")
-	require.Eventually(t, func() bool {
-		return !provider.IsRunning()
-	}, time.Second, time.Millisecond)
-}
-
-func TestStartLogsUnexpectedProviderExitWithoutError(t *testing.T) {
-	logs := &lockedBuffer{}
-	logger := log.NewLogger(logs)
-	ctrl := gomock.NewController(t)
-	fetcher := basetestutil.NewMockFetcher(ctrl)
-
-	expectFetcher(fetcher, "test", base.API)
-	started := make(chan struct{})
-	fetcher.EXPECT().
-		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
-		DoAndReturn(func(context.Context, []types.Ticker, chan<- types.Response) error {
-			close(started)
 			return nil
 		})
 
-	provider, err := newTestProvider(fetcher, base.WithLogger(logger))
+	provider, err := newTestProviderWithMarkets(markets, fetcher)
 	require.NoError(t, err)
-
-	require.NoError(t, provider.Start(context.Background()))
-	requireSignal(t, started, "provider did not start")
-	require.Eventually(t, func() bool {
-		return !provider.IsRunning()
-	}, time.Second, time.Millisecond)
-
-	require.Contains(t, logs.String(), "provider exited")
-	require.Contains(t, logs.String(), "without error")
+	require.NoError(t, provider.Run(context.Background()))
 }
 
-func TestStopDoesNotLogIntentionalStopAsProviderExited(t *testing.T) {
-	logs := &lockedBuffer{}
-	logger := log.NewLogger(logs)
+func TestRunReturnsFetcherError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
-
 	expectFetcher(fetcher, "test", base.API)
-	started := make(chan struct{})
+
+	fetchErr := errors.New("fetch failed")
 	fetcher.EXPECT().
 		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
-			close(started)
-			<-ctx.Done()
-			return ctx.Err()
+		Return(fetchErr)
+
+	provider, err := newTestProvider(fetcher)
+	require.NoError(t, err)
+	require.ErrorIs(t, provider.Run(context.Background()), fetchErr)
+}
+
+func TestRunReturnsRecoveredFetcherPanic(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	expectFetcher(fetcher, "test", base.API)
+	fetcher.EXPECT().
+		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
+		DoAndReturn(func(context.Context, []types.Ticker, chan<- types.Response) error {
+			panic("fetch exploded")
 		})
 
-	provider, err := newTestProvider(fetcher, base.WithLogger(logger))
+	provider, err := newTestProvider(fetcher)
 	require.NoError(t, err)
 
-	require.NoError(t, provider.Start(context.Background()))
-	requireSignal(t, started, "provider did not start")
+	err = provider.Run(context.Background())
+	require.True(t, sidecarinternal.IsPanic(err))
+	require.ErrorContains(t, err, "provider fetcher panicked: fetch exploded")
+}
 
-	provider.Stop()
+func TestRunWaitsForCancellationWhenMarketsAreEmpty(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	fetcher := basetestutil.NewMockFetcher(ctrl)
+	expectFetcher(fetcher, "test", base.API)
 
-	require.NotContains(t, logs.String(), "provider exited")
+	provider, err := newTestProviderWithMarkets(nil, fetcher)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- provider.Run(ctx)
+	}()
+
+	select {
+	case err := <-errCh:
+		t.Fatalf("provider Run returned before cancellation: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	cancel()
+	require.ErrorIs(t, requireProviderRunReturned(t, errCh), context.Canceled)
 }
 
 func TestTypeReturnsConfiguredType(t *testing.T) {
@@ -225,7 +152,6 @@ func TestTypeReturnsConfiguredType(t *testing.T) {
 
 	provider, err := newTestProviderWithType(base.WebSocket, fetcher)
 	require.NoError(t, err)
-
 	require.Equal(t, base.WebSocket, provider.Type())
 }
 
@@ -235,7 +161,6 @@ func TestNewProviderAllowsEmptyMarkets(t *testing.T) {
 	expectFetcher(fetcher, "test", base.API)
 
 	provider, err := base.NewProvider("test", base.API, nil, fetcher)
-
 	require.NoError(t, err)
 	require.Empty(t, provider.GetTickers())
 }
@@ -246,7 +171,6 @@ func TestNewProviderRejectsMismatchedFetcherName(t *testing.T) {
 	expectFetcher(fetcher, "other", base.API)
 
 	provider, err := newTestProvider(fetcher)
-
 	require.Nil(t, provider)
 	require.ErrorContains(t, err, "mismatched provider and fetcher name")
 }
@@ -256,14 +180,8 @@ func newTestProvider(fetcher base.Fetcher, opts ...base.Option) (*base.Provider,
 }
 
 func expectFetcher(fetcher *basetestutil.MockFetcher, name string, providerType base.TransportType) {
-	fetcher.EXPECT().
-		Name().
-		Return(name).
-		AnyTimes()
-	fetcher.EXPECT().
-		Type().
-		Return(providerType).
-		AnyTimes()
+	fetcher.EXPECT().Name().Return(name).AnyTimes()
+	fetcher.EXPECT().Type().Return(providerType).AnyTimes()
 	fetcher.EXPECT().
 		ResponseBufferSize(gomock.Any()).
 		DoAndReturn(func(tickers []types.Ticker) int {
@@ -292,33 +210,14 @@ func testMarkets() types.Markets {
 	return types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}}
 }
 
-func requireProviderStartReturned(t *testing.T, errCh <-chan error) error {
+func requireProviderRunReturned(t *testing.T, errCh <-chan error) error {
 	t.Helper()
 
 	select {
 	case err := <-errCh:
 		return err
 	case <-time.After(time.Second):
-		t.Fatal("provider start did not return")
+		t.Fatal("provider Run did not return")
 		return nil
 	}
-}
-
-type lockedBuffer struct {
-	mut sync.Mutex
-	buf bytes.Buffer
-}
-
-func (b *lockedBuffer) Write(p []byte) (int, error) {
-	b.mut.Lock()
-	defer b.mut.Unlock()
-
-	return b.buf.Write(p)
-}
-
-func (b *lockedBuffer) String() string {
-	b.mut.Lock()
-	defer b.mut.Unlock()
-
-	return b.buf.String()
 }

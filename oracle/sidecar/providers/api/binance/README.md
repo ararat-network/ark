@@ -13,7 +13,7 @@ Current defaults live in `config.go`:
 
 ## Symbol Format
 
-Binance spot symbols use the `BASEQUOTE` form, such as `BTCUSDT` or `ETHUSDT`. Noah maps chain denoms to these provider
+Binance spot symbols use the `BASEQUOTE` form, such as `BTCUSDT` or `ETHUSDT`. Ark maps chain denoms to these provider
 symbols through `base.Config.Markets`; the adapter does not perform denom conversion itself.
 
 ## Request Shape

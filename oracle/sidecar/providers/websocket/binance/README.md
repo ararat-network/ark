@@ -21,7 +21,7 @@ handler processes:
 - ticker stream messages
 - subscription acknowledgement messages
 
-Both price-bearing stream types are parsed into the same Noah `types.Response` shape. Subscription failures can produce
+Both price-bearing stream types are parsed into the same Ark `types.Response` shape. Subscription failures can produce
 follow-up subscription messages, which the shared WebSocket fetcher writes back to the same connection.
 
 ## Session State

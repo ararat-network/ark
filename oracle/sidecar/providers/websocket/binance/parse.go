@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 // parsePriceUpdateMessage converts a Binance symbol and price string into a

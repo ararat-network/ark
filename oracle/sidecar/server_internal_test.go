@@ -2,7 +2,7 @@ package sidecar
 
 import (
 	"context"
-	"errors"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -11,129 +11,216 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/sidecar/chainstate"
-	"noah/oracle/sidecar/providers"
-	frankfurterapi "noah/oracle/sidecar/providers/api/frankfurter"
-	"noah/oracle/sidecar/providers/base"
-	providertypes "noah/oracle/sidecar/providers/types"
-	runtimepkg "noah/oracle/sidecar/runtime"
+	"github.com/cosmos/cosmos-sdk/version"
+
+	transporttypes "ark/oracle/types"
 )
 
-type closeRecordingListener struct {
-	closed bool
-	addr   net.Addr
+type recordingOracleService struct {
+	transporttypes.UnimplementedOracleServer
+
+	version     string
+	pricesErr   error
+	pricesPanic any
 }
 
-func (*closeRecordingListener) Accept() (net.Conn, error) {
-	return nil, errors.New("listener should not accept connections")
+func (s *recordingOracleService) Prices(
+	context.Context,
+	*transporttypes.OraclePricesRequest,
+) (*transporttypes.OraclePricesResponse, error) {
+	if s.pricesPanic != nil {
+		panic(s.pricesPanic)
+	}
+	return nil, s.pricesErr
 }
 
-func (l *closeRecordingListener) Close() error {
-	l.closed = true
+func (s *recordingOracleService) Version(
+	context.Context,
+	*transporttypes.OracleVersionRequest,
+) (*transporttypes.OracleVersionResponse, error) {
+	return &transporttypes.OracleVersionResponse{Version: s.version}, nil
+}
+
+func startBufferedServer(
+	t *testing.T,
+	srv *server,
+) (*http.Client, context.CancelFunc, <-chan error) {
+	t.Helper()
+
+	listener := bufconn.Listen(1024 * 1024)
+	dial := func(ctx context.Context) (net.Conn, error) {
+		return listener.DialContext(ctx)
+	}
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return dial(ctx)
+		},
+	}
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   time.Second,
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.serve(
+			ctx,
+			listener,
+			grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+				return dial(ctx)
+			}),
+		)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		client.CloseIdleConnections()
+	})
+
+	return client, cancel, errCh
+}
+
+func startTestServer(t *testing.T, service transporttypes.OracleServer) *http.Client {
+	t.Helper()
+
+	srv, err := newServer(service, log.NewNopLogger(), "127.0.0.1:0")
+	require.NoError(t, err)
+	client, cancel, errCh := startBufferedServer(t, srv)
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-errCh:
+			require.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Error("server did not stop")
+		}
+	})
+
+	return client
+}
+
+type blockingListener struct {
+	accepted  chan struct{}
+	closed    chan struct{}
+	acceptOne sync.Once
+	closeOne  sync.Once
+}
+
+func newBlockingListener() *blockingListener {
+	return &blockingListener{
+		accepted: make(chan struct{}),
+		closed:   make(chan struct{}),
+	}
+}
+
+func (l *blockingListener) Accept() (net.Conn, error) {
+	l.acceptOne.Do(func() {
+		close(l.accepted)
+	})
+	<-l.closed
+	return nil, net.ErrClosed
+}
+
+func (l *blockingListener) Close() error {
+	l.closeOne.Do(func() {
+		close(l.closed)
+	})
 	return nil
 }
 
-func (l *closeRecordingListener) Addr() net.Addr {
-	if l.addr != nil {
-		return l.addr
-	}
-	return fixedInternalAddr("127.0.0.1:0")
+func (l *blockingListener) Addr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)}
 }
 
-type fixedInternalAddr string
+func TestServerGatewayUsesInjectedOracleService(t *testing.T) {
+	service := &recordingOracleService{version: "v1.2.3"}
+	client := startTestServer(t, service)
 
-func (a fixedInternalAddr) Network() string {
-	return "tcp"
+	response, err := client.Get("http://oracle/ark/transport/v1/version")
+	require.NoError(t, err)
+	defer response.Body.Close()
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, response.StatusCode)
+	require.JSONEq(t, `{"version":"v1.2.3"}`, string(body))
 }
 
-func (a fixedInternalAddr) String() string {
-	return string(a)
-}
-
-func TestStartPreServeFailureListenerOwnership(t *testing.T) {
+func TestServerGatewayAppliesGRPCInterceptor(t *testing.T) {
 	testCases := []struct {
 		name       string
-		start      func(*Oracle, net.Listener) error
-		wantClosed bool
+		service    *recordingOracleService
+		statusCode int
 	}{
 		{
-			name: "owned listener is closed",
-			start: func(oracle *Oracle, listener net.Listener) error {
-				return oracle.startOwnedListener(context.Background(), listener)
-			},
-			wantClosed: true,
+			name:       "domain error",
+			service:    &recordingOracleService{pricesErr: ErrOracleNotRunning},
+			statusCode: http.StatusServiceUnavailable,
 		},
 		{
-			name: "caller-owned listener stays open",
-			start: func(oracle *Oracle, listener net.Listener) error {
-				return oracle.StartWithListener(context.Background(), listener)
-			},
-			wantClosed: false,
+			name:       "panic",
+			service:    &recordingOracleService{pricesPanic: "prices exploded"},
+			statusCode: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := testInternalRuntimeConfig()
-			oracle, err := NewOracle(cfg, log.NewNopLogger())
+			client := startTestServer(t, tc.service)
+			response, err := client.Get("http://oracle/ark/transport/v1/prices")
 			require.NoError(t, err)
-			listener := &closeRecordingListener{addr: fixedInternalAddr("invalid-address")}
+			defer response.Body.Close()
 
-			err = tc.start(oracle, listener)
-
-			require.ErrorContains(t, err, "[grpc server]: invalid listener address")
-			require.Equal(t, tc.wantClosed, listener.closed)
+			require.Equal(t, tc.statusCode, response.StatusCode)
 		})
 	}
 }
 
-func TestUpdateRejectsClosingOracle(t *testing.T) {
-	cfg := testInternalRuntimeConfig()
-	oracle, err := NewOracle(cfg, log.NewNopLogger())
+func TestNewServerAcceptsEphemeralPort(t *testing.T) {
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
 	require.NoError(t, err)
 
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = listener.Close()
-	})
+	require.Equal(t, "127.0.0.1:0", srv.address)
+}
 
+func TestServerServeReturnsListenerError(t *testing.T) {
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	require.NoError(t, err)
+	listener := bufconn.Listen(1024 * 1024)
+	require.NoError(t, listener.Close())
+
+	err = srv.serve(context.Background(), listener)
+
+	require.ErrorContains(t, err, "serve oracle requests")
+}
+
+func TestServerServeStopsOnContextCancellation(t *testing.T) {
 	started := make(chan struct{})
-	release := make(chan struct{})
 	var startedOnce sync.Once
-	var releaseOnce sync.Once
 	httpSrv := &http.Server{
 		ReadHeaderTimeout: time.Second,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			startedOnce.Do(func() {
 				close(started)
 			})
-			<-release
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusNoContent)
 		}),
 	}
 	t.Cleanup(func() {
-		releaseOnce.Do(func() {
-			close(release)
-		})
 		_ = httpSrv.Close()
 	})
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	require.NoError(t, err)
+	srv.httpSrv = httpSrv
 
-	ctx, cancel := context.WithCancel(context.Background())
-	require.NoError(t, oracle.startLifecycle(cancel, httpSrv, grpc.NewServer(), nil))
-
-	serveErrCh := make(chan error, 1)
-	go func() {
-		serveErrCh <- httpSrv.Serve(listener)
-	}()
+	client, cancel, errCh := startBufferedServer(t, srv)
 	clientErrCh := make(chan error, 1)
 	go func() {
-		resp, err := http.Get("http://" + listener.Addr().String())
+		resp, err := client.Get("http://oracle")
 		if resp != nil {
 			_ = resp.Body.Close()
 		}
@@ -146,210 +233,139 @@ func TestUpdateRejectsClosingOracle(t *testing.T) {
 		t.Fatal("test request did not start")
 	}
 
-	closeErrCh := make(chan error, 1)
+	cancel()
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("server did not stop")
+	}
+	select {
+	case <-clientErrCh:
+	case <-time.After(time.Second):
+		t.Fatal("client request did not finish")
+	}
+}
+
+func TestServerServeForceClosesActiveRequestOnCancel(t *testing.T) {
+	started := make(chan struct{})
+	stopped := make(chan struct{})
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	var startedOnce sync.Once
+	var stoppedOnce sync.Once
+
+	httpSrv := &http.Server{
+		ReadHeaderTimeout: time.Second,
+		Handler: http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+			startedOnce.Do(func() {
+				close(started)
+			})
+			select {
+			case <-r.Context().Done():
+			case <-release:
+			}
+			stoppedOnce.Do(func() {
+				close(stopped)
+			})
+		}),
+	}
+	t.Cleanup(func() {
+		releaseOnce.Do(func() {
+			close(release)
+		})
+		_ = httpSrv.Close()
+	})
+
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	require.NoError(t, err)
+	srv.httpSrv = httpSrv
+	client, cancel, runErrCh := startBufferedServer(t, srv)
+	clientErrCh := make(chan error, 1)
 	go func() {
-		closeErrCh <- oracle.Close()
+		resp, err := client.Get("http://oracle")
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+		clientErrCh <- err
 	}()
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("test request did not start")
+	}
+
+	cancel()
+
+	select {
+	case err := <-runErrCh:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("server run did not stop after cancellation")
+	}
+	select {
+	case <-stopped:
+	case <-time.After(time.Second):
+		t.Fatal("active request was not closed after cancellation")
+	}
+	select {
+	case <-clientErrCh:
+	case <-time.After(time.Second):
+		t.Fatal("client request did not finish after forced shutdown")
+	}
+}
+
+// TestServerServesInitialCommittedSnapshot intentionally exercises the actual
+// h2c/gRPC transport. Direct RPC tests run only the runtime and do not need a
+// listener.
+func TestServerServesInitialCommittedSnapshot(t *testing.T) {
+	cfg := newTestRuntimeConfig()
+	cfg.UpdateInterval = time.Hour
+	oracle := newTestOracleFromRuntime(
+		t,
+		cfg,
+		newServerTestFetcher(nil),
+		newStaticChainStateClient(cfg.FallbackDenoms),
+		ProcessConfig{ServerAddress: "127.0.0.1:0"},
+	)
+	startTestRuntime(t, oracle)
+
+	listener := bufconn.Listen(1024 * 1024)
+	dialer := func(ctx context.Context, _ string) (net.Conn, error) {
+		return listener.DialContext(ctx)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- oracle.server.serve(ctx, listener, grpc.WithContextDialer(dialer))
+	}()
+
+	conn, err := grpc.NewClient(
+		"passthrough:///oracle",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(dialer),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, conn.Close())
+	})
+	client := transporttypes.NewOracleClient(conn)
+
+	var response *transporttypes.OraclePricesResponse
 	require.Eventually(t, func() bool {
-		return ctx.Err() != nil
+		response, err = client.Prices(context.Background(), &transporttypes.OraclePricesRequest{})
+		return err == nil
 	}, time.Second, time.Millisecond)
-
-	err = oracle.Update(cfg)
-
-	require.ErrorIs(t, err, errOracleClosed)
-	releaseOnce.Do(func() {
-		close(release)
-	})
-
-	select {
-	case err := <-closeErrCh:
-		require.NoError(t, err)
-	case <-time.After(time.Second):
-		t.Fatal("oracle close did not finish")
-	}
-	select {
-	case err := <-serveErrCh:
-		require.True(t, err == nil || errors.Is(err, http.ErrServerClosed), "unexpected serve error: %v", err)
-	case <-time.After(time.Second):
-		t.Fatal("server did not stop after shutdown")
-	}
-	select {
-	case err := <-clientErrCh:
-		require.NoError(t, err)
-	case <-time.After(time.Second):
-		t.Fatal("client request did not finish")
-	}
-}
-
-func TestStartLifecycleRejectsClosingOracle(t *testing.T) {
-	cfg := testInternalRuntimeConfig()
-	oracle, err := NewOracle(cfg, log.NewNopLogger())
 	require.NoError(t, err)
+	require.NotNil(t, response)
+	require.True(t, response.Timestamp.IsZero())
+	require.Equal(t, version.Version, response.Version)
 
-	oracle.lifecycleMu.Lock()
-	oracle.closing = true
-	oracle.lifecycleMu.Unlock()
-
-	err = oracle.startLifecycle(func() {}, nil, grpc.NewServer(), nil)
-
-	require.ErrorIs(t, err, errOracleClosed)
-}
-
-func TestCloseReturnsShutdownError(t *testing.T) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	versionResponse, err := client.Version(context.Background(), &transporttypes.OracleVersionRequest{})
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = listener.Close()
-	})
+	require.Equal(t, version.Version, versionResponse.Version)
 
-	started := make(chan struct{})
-	release := make(chan struct{})
-	var startedOnce sync.Once
-	var releaseOnce sync.Once
-	httpSrv := &http.Server{
-		ReadHeaderTimeout: time.Second,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			startedOnce.Do(func() {
-				close(started)
-			})
-			<-release
-			w.WriteHeader(http.StatusOK)
-		}),
-	}
-	t.Cleanup(func() {
-		releaseOnce.Do(func() {
-			close(release)
-		})
-		_ = httpSrv.Close()
-	})
-
-	oracle := &Oracle{
-		logger: log.NewNopLogger(),
-		doneCh: make(chan struct{}),
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	require.NoError(t, oracle.startLifecycle(cancel, httpSrv, grpc.NewServer(), nil))
-
-	serveErrCh := make(chan error, 1)
-	go func() {
-		serveErrCh <- httpSrv.Serve(listener)
-	}()
-
-	clientErrCh := make(chan error, 1)
-	go func() {
-		resp, err := http.Get("http://" + listener.Addr().String())
-		if resp != nil {
-			_ = resp.Body.Close()
-		}
-		clientErrCh <- err
-	}()
-
-	select {
-	case <-started:
-	case <-time.After(time.Second):
-		t.Fatal("test request did not start")
-	}
-
-	err = oracle.Close()
-	require.ErrorIs(t, err, context.DeadlineExceeded)
-	require.ErrorIs(t, oracle.Close(), context.DeadlineExceeded)
-	require.ErrorIs(t, ctx.Err(), context.Canceled)
-	releaseOnce.Do(func() {
-		close(release)
-	})
-
-	select {
-	case err := <-serveErrCh:
-		require.True(t, err == nil || errors.Is(err, http.ErrServerClosed), "unexpected serve error: %v", err)
-	case <-time.After(time.Second):
-		t.Fatal("server did not stop after shutdown")
-	}
-	select {
-	case err := <-clientErrCh:
-		require.NoError(t, err)
-	case <-time.After(time.Second):
-		t.Fatal("client request did not finish")
-	}
-}
-
-func TestRecoverUnaryPanicMapsHandlerErrorsToStatusCodes(t *testing.T) {
-	oracle := &Oracle{logger: log.NewNopLogger()}
-
-	testCases := []struct {
-		name string
-		err  error
-		code codes.Code
-	}{
-		{
-			name: "nil request",
-			err:  ErrNilRequest,
-			code: codes.InvalidArgument,
-		},
-		{
-			name: "oracle not running",
-			err:  ErrOracleNotRunning,
-			code: codes.Unavailable,
-		},
-		{
-			name: "context canceled",
-			err:  context.Canceled,
-			code: codes.Canceled,
-		},
-		{
-			name: "deadline exceeded",
-			err:  context.DeadlineExceeded,
-			code: codes.DeadlineExceeded,
-		},
-		{
-			name: "existing status error",
-			err:  status.Error(codes.ResourceExhausted, "rate limited"),
-			code: codes.ResourceExhausted,
-		},
-		{
-			name: "unexpected handler error",
-			err:  errors.New("conversion failed"),
-			code: codes.Internal,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			response, err := oracle.recoverUnaryPanic(
-				context.Background(),
-				nil,
-				&grpc.UnaryServerInfo{FullMethod: "/noah.transport.v1.Oracle/Prices"},
-				func(context.Context, any) (any, error) {
-					return nil, tc.err
-				},
-			)
-
-			require.Nil(t, response)
-			require.Equal(t, tc.code, status.Code(err))
-		})
-	}
-}
-
-func testInternalRuntimeConfig() runtimepkg.Config {
-	providerCfg := providers.Config{
-		Name:          frankfurterapi.Name,
-		TransportType: base.API,
-		Markets: providertypes.Markets{
-			{Pair: "ARK/USD", Symbol: "ARKUSD"},
-		},
-		API: frankfurterapi.DefaultAPIConfig,
-	}
-
-	return runtimepkg.Config{
-		UpdateInterval: time.Second,
-		MaxPriceAge:    time.Minute,
-		Providers: map[string]providers.Config{
-			providerCfg.Name: providerCfg,
-		},
-		Client: chainstate.Config{
-			Address:  "passthrough:///oracle",
-			Timeout:  time.Second,
-			Interval: time.Second,
-		},
-		FallbackDenoms: []string{"uusd"},
-	}
+	cancel()
+	requireOracleStopped(t, errCh)
 }

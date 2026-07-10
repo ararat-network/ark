@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/oracle/client/metrics")
+	meter = otel.Meter("ark/oracle/client/metrics")
 
 	oracleResponseLatency metric.Float64Histogram
 	oracleResponses       metric.Int64Counter
@@ -19,7 +19,7 @@ var (
 func init() {
 	var err error
 	oracleResponseLatency, err = meter.Float64Histogram(
-		"noah.oracle.response.duration",
+		"ark.oracle.response.duration",
 		metric.WithDescription("Duration of oracle service responses"),
 		metric.WithUnit("ms"),
 	)
@@ -28,7 +28,7 @@ func init() {
 	}
 
 	oracleResponses, err = meter.Int64Counter(
-		"noah.oracle.responses",
+		"ark.oracle.responses",
 		metric.WithDescription("Number of oracle service responses"),
 	)
 	if err != nil {
@@ -36,6 +36,7 @@ func init() {
 	}
 }
 
+// RecordOracleResponse records the latency and outcome of one sidecar request.
 func RecordOracleResponse(duration time.Duration, err error) {
 	oracleResponseLatency.Record(
 		context.Background(),

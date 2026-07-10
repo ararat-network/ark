@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"noah/oracle/sidecar/providers/base"
-	basetestutil "noah/oracle/sidecar/providers/base/testutil"
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/providers/base"
+	basetestutil "ark/oracle/sidecar/providers/base/testutil"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 func TestProviderStoresResultAndGetPricesReturnsDeepCopy(t *testing.T) {
@@ -78,7 +78,7 @@ func TestProviderIgnoresResolvedResultWithoutPrice(t *testing.T) {
 	), 0)
 }
 
-func TestGetPricesSkipsTickersWithoutMarketMapping(t *testing.T) {
+func TestProviderIgnoresResultsWithoutMarketMapping(t *testing.T) {
 	fetcher := newMockFetcher(t)
 	provider := newProvider(t, testMarkets(), fetcher)
 
@@ -140,11 +140,14 @@ func seedProviderResponses(
 		})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	require.NoError(t, provider.Start(ctx))
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- provider.Run(ctx)
+	}()
 
 	requireSignal(t, started, "provider did not start")
 	require.Eventually(t, waitFor, time.Second, time.Millisecond)
 
 	cancel()
-	provider.Stop()
+	require.ErrorIs(t, requireProviderRunReturned(t, errCh), context.Canceled)
 }

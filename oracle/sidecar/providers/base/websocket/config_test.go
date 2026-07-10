@@ -1,13 +1,13 @@
 package websocket_test
 
 import (
-	. "noah/oracle/sidecar/providers/base/websocket"
+	. "ark/oracle/sidecar/providers/base/websocket"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 func TestConfigEqual(t *testing.T) {
@@ -87,12 +87,6 @@ func TestConfigEqual(t *testing.T) {
 			},
 		},
 		{
-			name: "max read error count differs",
-			mutate: func(cfg *Config) {
-				cfg.MaxReadErrorCount++
-			},
-		},
-		{
 			name: "max tickers per connection differs",
 			mutate: func(cfg *Config) {
 				cfg.MaxTickersPerConnection++
@@ -132,7 +126,6 @@ func testConfig(name string) Config {
 		WriteTimeout:             time.Second,
 		PingInterval:             time.Second,
 		WriteInterval:            time.Second,
-		MaxReadErrorCount:        1,
 		MaxTickersPerConnection:  1,
 		MaxSubscriptionsPerBatch: 1,
 	}

@@ -1,12 +1,12 @@
 package api_test
 
 import (
+	. "ark/oracle/sidecar/providers/base/api"
 	"context"
 	"errors"
 	"io"
 	"math/big"
 	"net/http"
-	. "noah/oracle/sidecar/providers/base/api"
 	"strings"
 	"testing"
 	"time"
@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	sidecarinternal "noah/oracle/sidecar/internal"
-	"noah/oracle/sidecar/providers/base"
-	apitestutil "noah/oracle/sidecar/providers/base/api/testutil"
-	"noah/oracle/sidecar/providers/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/providers/base"
+	apitestutil "ark/oracle/sidecar/providers/base/api/testutil"
+	"ark/oracle/sidecar/providers/types"
 )
 
 const testURL = "https://provider.test/prices"
@@ -251,6 +251,7 @@ func TestRunMapsHTTPFailuresToUnresolvedResponses(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tickers := []types.Ticker{"ATOMUSD"}
 			cfg := apiConfig()
+			body := &trackingReadCloser{Reader: strings.NewReader(`{"error":"provider failure"}`)}
 
 			handler := newMockDataHandler(t)
 			handler.EXPECT().
@@ -259,7 +260,7 @@ func TestRunMapsHTTPFailuresToUnresolvedResponses(t *testing.T) {
 
 			fetcher, err := NewFetcher(cfg, &http.Client{
 				Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-					return httpResponse(tt.code, ""), nil
+					return &http.Response{StatusCode: tt.code, Body: body}, nil
 				}),
 			}, handler)
 			require.NoError(t, err)
@@ -268,6 +269,8 @@ func TestRunMapsHTTPFailuresToUnresolvedResponses(t *testing.T) {
 			require.NoError(t, err)
 			require.Empty(t, response.Resolved)
 			require.Equal(t, tt.want, response.Unresolved["ATOMUSD"].Code())
+			require.True(t, body.readToEOF)
+			require.True(t, body.closed)
 		})
 	}
 }
@@ -489,6 +492,25 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+type trackingReadCloser struct {
+	io.Reader
+	readToEOF bool
+	closed    bool
+}
+
+func (r *trackingReadCloser) Read(p []byte) (int, error) {
+	n, err := r.Reader.Read(p)
+	if errors.Is(err, io.EOF) {
+		r.readToEOF = true
+	}
+	return n, err
+}
+
+func (r *trackingReadCloser) Close() error {
+	r.closed = true
+	return nil
 }
 
 func httpResponse(status int, body string) *http.Response {

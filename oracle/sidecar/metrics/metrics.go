@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/oracle/sidecar/metrics")
+	meter = otel.Meter("ark/oracle/sidecar/metrics")
 
 	ticks                metric.Int64Counter
 	providerPrices       metric.Float64Gauge
@@ -19,13 +19,14 @@ var (
 	pairSampleCounts     metric.Int64Gauge
 	resolvedSourceCounts metric.Int64Gauge
 	missingPrices        metric.Int64Counter
+	bootstrapPriceUses   metric.Int64Counter
 )
 
 func init() {
 	var err error
 
 	ticks, err = meter.Int64Counter(
-		"noah.oracle.ticks",
+		"ark.oracle.ticks",
 		metric.WithDescription("Number of standalone oracle aggregation ticks"),
 	)
 	if err != nil {
@@ -33,7 +34,7 @@ func init() {
 	}
 
 	providerPrices, err = meter.Float64Gauge(
-		"noah.oracle.provider.price",
+		"ark.oracle.provider.price",
 		metric.WithDescription("Provider price used by standalone oracle aggregation"),
 	)
 	if err != nil {
@@ -41,7 +42,7 @@ func init() {
 	}
 
 	aggregatePrices, err = meter.Float64Gauge(
-		"noah.oracle.aggregate.price",
+		"ark.oracle.aggregate.price",
 		metric.WithDescription("Aggregated standalone oracle price"),
 	)
 	if err != nil {
@@ -49,7 +50,7 @@ func init() {
 	}
 
 	routePrices, err = meter.Float64Gauge(
-		"noah.oracle.route.price",
+		"ark.oracle.route.price",
 		metric.WithDescription("Resolved standalone oracle route price before final aggregation"),
 	)
 	if err != nil {
@@ -57,7 +58,7 @@ func init() {
 	}
 
 	pairSampleCounts, err = meter.Int64Gauge(
-		"noah.oracle.pair.sample.count",
+		"ark.oracle.pair.sample.count",
 		metric.WithDescription("Number of provider price samples used to aggregate an oracle pair"),
 	)
 	if err != nil {
@@ -65,7 +66,7 @@ func init() {
 	}
 
 	resolvedSourceCounts, err = meter.Int64Gauge(
-		"noah.oracle.resolved.source.count",
+		"ark.oracle.resolved.source.count",
 		metric.WithDescription("Number of resolved route sources used for a standalone oracle pair"),
 	)
 	if err != nil {
@@ -73,18 +74,28 @@ func init() {
 	}
 
 	missingPrices, err = meter.Int64Counter(
-		"noah.oracle.missing.prices",
+		"ark.oracle.missing.prices",
 		metric.WithDescription("Number of standalone oracle aggregation ticks missing a denom price"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	bootstrapPriceUses, err = meter.Int64Counter(
+		"ark.oracle.bootstrap.price.uses",
+		metric.WithDescription("Number of standalone oracle route legs resolved with a bootstrap price"),
 	)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// RecordOracleTick records a completed standalone oracle aggregation tick.
 func RecordOracleTick(ctx context.Context) {
 	ticks.Add(ctx, 1)
 }
 
+// RecordProviderPrice records a fresh provider observation used by aggregation.
 func RecordProviderPrice(ctx context.Context, provider string, pair string, price float64) {
 	providerPrices.Record(
 		ctx,
@@ -96,6 +107,7 @@ func RecordProviderPrice(ctx context.Context, provider string, pair string, pric
 	)
 }
 
+// RecordAggregatePrice records the final aggregated price for a pair.
 func RecordAggregatePrice(ctx context.Context, pair string, price float64) {
 	aggregatePrices.Record(
 		ctx,
@@ -104,6 +116,7 @@ func RecordAggregatePrice(ctx context.Context, pair string, price float64) {
 	)
 }
 
+// RecordRoutePrice records one resolved route before final route averaging.
 func RecordRoutePrice(ctx context.Context, pair string, route string, price float64) {
 	routePrices.Record(
 		ctx,
@@ -112,6 +125,7 @@ func RecordRoutePrice(ctx context.Context, pair string, route string, price floa
 	)
 }
 
+// RecordPairSampleCount records how many provider samples contributed to a pair median.
 func RecordPairSampleCount(ctx context.Context, pair string, count int) {
 	pairSampleCounts.Record(
 		ctx,
@@ -120,6 +134,7 @@ func RecordPairSampleCount(ctx context.Context, pair string, count int) {
 	)
 }
 
+// RecordResolvedSourceCount records how many routes contributed to a final pair price.
 func RecordResolvedSourceCount(ctx context.Context, pair string, count int) {
 	resolvedSourceCounts.Record(
 		ctx,
@@ -128,6 +143,16 @@ func RecordResolvedSourceCount(ctx context.Context, pair string, count int) {
 	)
 }
 
+// RecordBootstrapPriceUse records a route leg resolved without a fresh provider sample.
+func RecordBootstrapPriceUse(ctx context.Context, pair string) {
+	bootstrapPriceUses.Add(
+		ctx,
+		1,
+		metric.WithAttributes(attribute.String("pair", normaliseLabelValue(pair))),
+	)
+}
+
+// RecordMissingPrice records an active denom missing before snapshot zero-filling.
 func RecordMissingPrice(ctx context.Context, denom string) {
 	missingPrices.Add(
 		ctx,
@@ -136,6 +161,7 @@ func RecordMissingPrice(ctx context.Context, denom string) {
 	)
 }
 
+// RecordMissingPrices records every active denom missing from an aggregation tick.
 func RecordMissingPrices(ctx context.Context, denoms []string) {
 	for _, denom := range denoms {
 		RecordMissingPrice(ctx, denom)

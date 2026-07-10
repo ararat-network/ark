@@ -10,8 +10,8 @@
 package testutil
 
 import (
-	websocket "noah/oracle/sidecar/providers/base/websocket"
-	types "noah/oracle/sidecar/providers/types"
+	websocket "ark/oracle/sidecar/providers/base/websocket"
+	types "ark/oracle/sidecar/providers/types"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

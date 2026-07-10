@@ -2,11 +2,12 @@ package providers
 
 import (
 	"errors"
+	"time"
 
-	"noah/oracle/sidecar/providers/base"
-	"noah/oracle/sidecar/providers/base/api"
-	"noah/oracle/sidecar/providers/base/websocket"
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/base"
+	"ark/oracle/sidecar/providers/base/api"
+	"ark/oracle/sidecar/providers/base/websocket"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // Config describes a provider and the transport config used to build it.
@@ -20,6 +21,8 @@ type Config struct {
 	TransportType base.TransportType `json:"transportType"`
 	// Markets maps canonical oracle pairs to provider-specific symbols.
 	Markets types.Markets `json:"markets"`
+	// MaxPriceAge is the maximum age of a cached price accepted from this provider.
+	MaxPriceAge time.Duration `json:"maxPriceAge"`
 
 	// API configures an HTTP API provider when TransportType is base.API.
 	API api.Config `json:"api"`
@@ -35,6 +38,9 @@ func (c *Config) Validate() error {
 	}
 	if len(c.TransportType) == 0 {
 		return errors.New("provider transport type cannot be empty")
+	}
+	if c.MaxPriceAge <= 0 {
+		return errors.New("provider max price age must be greater than 0")
 	}
 
 	if err := c.Markets.Validate(); err != nil {
@@ -65,8 +71,8 @@ func (c *Config) Validate() error {
 
 // Equal reports whether two configs can use the same runtime provider.
 //
-// Markets are intentionally excluded because market-only changes can be applied
-// to an existing provider without rebuilding its transport.
+// Markets and MaxPriceAge are intentionally excluded because both are runtime
+// policy changes that do not require rebuilding the provider transport.
 func (c Config) Equal(other Config) bool {
 	if c.Name != other.Name || c.TransportType != other.TransportType {
 		return false

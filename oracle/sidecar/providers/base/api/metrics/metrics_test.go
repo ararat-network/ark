@@ -1,9 +1,9 @@
 package metrics_test
 
 import (
+	. "ark/oracle/sidecar/providers/base/api/metrics"
 	"context"
 	"net/http"
-	. "noah/oracle/sidecar/providers/base/api/metrics"
 	"testing"
 	"time"
 
@@ -38,7 +38,7 @@ func TestRecordAPIMetrics(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	requests := metricFamily(t, families, "noah_oracle_provider_api_requests_total")
+	requests := metricFamily(t, families, "ark_oracle_provider_api_requests_total")
 	require.Equal(t, float64(1), counterValue(t, requests, map[string]string{
 		"provider":     "kraken",
 		"status":       "failure",
@@ -46,7 +46,7 @@ func TestRecordAPIMetrics(t *testing.T) {
 		"status_class": "5xx",
 	}))
 
-	cycles := metricFamily(t, families, "noah_oracle_provider_api_cycle_duration_milliseconds")
+	cycles := metricFamily(t, families, "ark_oracle_provider_api_cycle_duration_milliseconds")
 	require.Equal(t, uint64(1), histogramSampleCount(t, cycles, map[string]string{
 		"provider": "kraken",
 		"status":   "success",

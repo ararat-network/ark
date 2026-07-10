@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	meter = otel.Meter("noah/oracle/sidecar/providers/base/websocket/metrics")
+	meter = otel.Meter("ark/oracle/sidecar/providers/base/websocket/metrics")
 
 	connectionEvents metric.Int64Counter
 	reconnects       metric.Int64Counter
@@ -39,7 +39,7 @@ func init() {
 	var err error
 
 	connectionEvents, err = meter.Int64Counter(
-		"noah.oracle.provider.websocket.connection.events",
+		"ark.oracle.provider.websocket.connection.events",
 		metric.WithDescription("Number of websocket provider connection lifecycle events"),
 	)
 	if err != nil {
@@ -47,7 +47,7 @@ func init() {
 	}
 
 	reconnects, err = meter.Int64Counter(
-		"noah.oracle.provider.websocket.reconnects",
+		"ark.oracle.provider.websocket.reconnects",
 		metric.WithDescription("Number of websocket provider reconnect attempts"),
 	)
 	if err != nil {
@@ -55,7 +55,7 @@ func init() {
 	}
 
 	parseErrors, err = meter.Int64Counter(
-		"noah.oracle.provider.websocket.parse_errors",
+		"ark.oracle.provider.websocket.parse_errors",
 		metric.WithDescription("Number of websocket provider message parse errors"),
 	)
 	if err != nil {
@@ -63,7 +63,7 @@ func init() {
 	}
 
 	writeErrors, err = meter.Int64Counter(
-		"noah.oracle.provider.websocket.write_errors",
+		"ark.oracle.provider.websocket.write_errors",
 		metric.WithDescription("Number of websocket provider write errors"),
 	)
 	if err != nil {

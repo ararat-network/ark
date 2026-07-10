@@ -13,7 +13,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	otelmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	clientmetrics "noah/oracle/client/metrics"
+	clientmetrics "ark/oracle/client/metrics"
 )
 
 func TestRecordOracleResponse(t *testing.T) {
@@ -38,12 +38,12 @@ func TestRecordOracleResponse(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	responses := metricFamily(t, families, "noah_oracle_responses_total")
+	responses := metricFamily(t, families, "ark_oracle_responses_total")
 	require.Len(t, responses.Metric, 2)
 	require.Equal(t, float64(1), counterValue(t, responses, "Success"))
 	require.Equal(t, float64(1), counterValue(t, responses, "Failure"))
 
-	duration := metricFamily(t, families, "noah_oracle_response_duration_milliseconds")
+	duration := metricFamily(t, families, "ark_oracle_response_duration_milliseconds")
 	require.Len(t, duration.Metric, 1)
 	require.Equal(t, uint64(2), duration.Metric[0].GetHistogram().GetSampleCount())
 	require.InDelta(t, 1500, duration.Metric[0].GetHistogram().GetSampleSum(), 0.001)

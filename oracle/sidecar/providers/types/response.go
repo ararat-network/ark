@@ -8,7 +8,9 @@ import (
 
 // Response contains resolved and unresolved ticker results.
 type Response struct {
-	Resolved   map[Ticker]Result
+	// Resolved contains successful or unchanged results keyed by provider ticker.
+	Resolved map[Ticker]Result
+	// Unresolved contains classified failures keyed by provider ticker.
 	Unresolved map[Ticker]ErrorWithCode
 }
 
@@ -41,7 +43,7 @@ func NewErrorResponse(tickers []Ticker, err ErrorWithCode) Response {
 	}
 }
 
-// Empty returns true if the response is empty
+// Empty returns true if the response contains no resolved or unresolved tickers.
 func (r Response) Empty() bool {
 	return len(r.Resolved) == 0 && len(r.Unresolved) == 0
 }

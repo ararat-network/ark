@@ -1,4 +1,4 @@
-package chainstate_test
+package chainstate
 
 import (
 	"bytes"
@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"cosmossdk.io/log/v2"
-
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
@@ -23,16 +21,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"noah/oracle/sidecar/chainstate"
-	oracletypes "noah/x/oracle/types"
+	"cosmossdk.io/log/v2"
+
+	oracletypes "ark/x/oracle/types"
 )
 
 const bufSize = 1024 * 1024
 
-func TestStartPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
+func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
 	source := []string{"uusd", "ukrw"}
 	query := newFakeQueryServer(queryResult{targets: source})
-	client := newTestClient(t, query, chainstate.Config{
+	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
 		Interval: time.Hour,
@@ -55,9 +54,9 @@ func TestStartPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
 	require.Equal(t, []string{"uusd", "ukrw"}, got)
 }
 
-func TestStartReturnsAfterLaunchingPollingLoop(t *testing.T) {
+func TestRunBlocksUntilContextCancellation(t *testing.T) {
 	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
-	client := newTestClient(t, query, chainstate.Config{
+	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
 		Interval: time.Hour,
@@ -68,38 +67,39 @@ func TestStartReturnsAfterLaunchingPollingLoop(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- client.Start(ctx)
+		errCh <- client.Run(ctx)
 	}()
+
+	query.waitForCalls(t, 1)
 
 	select {
 	case err := <-errCh:
 		require.NoError(t, err)
+		t.Fatal("Run returned before context cancellation")
 	case <-time.After(100 * time.Millisecond):
-		client.Stop()
-		cancel()
-		select {
-		case <-errCh:
-		case <-time.After(time.Second):
-		}
-		t.Fatal("Start blocked after launching polling loop")
 	}
-	defer client.Stop()
 
-	query.waitForCalls(t, 1)
+	cancel()
+	select {
+	case err := <-errCh:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(time.Second):
+		t.Fatal("Run did not return after context cancellation")
+	}
 }
 
-func TestStartLogsLifecycleAndInitialVoteTargets(t *testing.T) {
+func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 	logs := &lockedBuffer{}
 	query := newFakeQueryServer(queryResult{targets: []string{"uusd", "ukrw"}})
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
-	client, err := chainstate.NewClient(
-		chainstate.Config{
+	client, err := NewClient(
+		Config{
 			Address:  endpoint.address,
 			Timeout:  time.Second,
 			Interval: time.Hour,
 		},
-		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
-		chainstate.WithLogger(log.NewLogger(logs)),
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		WithLogger(log.NewLogger(logs)),
 	)
 	require.NoError(t, err)
 
@@ -109,34 +109,43 @@ func TestStartLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 	stopClient(cancel, client)
 
 	output := logs.String()
-	require.Contains(t, output, "starting chain state vote-target client")
-	require.Contains(t, output, "stopping chain state vote-target client")
-	require.Contains(t, output, "chain state vote-target client stopped")
+	require.Contains(t, output, "starting chain state client")
 }
 
 func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
+	logs := &lockedBuffer{}
 	query := newFakeQueryServer(queryResult{err: errors.New("node unavailable")})
-	client := newTestClient(t, query, chainstate.Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
-	})
+	endpoint := newTestQueryEndpoint(t, "bufnet", query)
+	client, err := NewClient(
+		Config{
+			Address:  endpoint.address,
+			Timeout:  time.Second,
+			Interval: time.Hour,
+		},
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		WithLogger(log.NewLogger(logs)),
+	)
+	require.NoError(t, err)
 
 	cancel := startClient(t, client)
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
+	require.Eventually(t, func() bool {
+		return strings.Contains(logs.String(), "failed to refresh chain state vote targets")
+	}, time.Second, time.Millisecond)
+
 	got, err := client.VoteTargets()
-	require.ErrorContains(t, err, "no vote targets fetched yet")
+	require.EqualError(t, err, "no vote targets fetched yet")
 	require.Nil(t, got)
 }
 
-func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
+func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	query := newFakeQueryServer(
 		queryResult{targets: []string{"uusd"}},
 		queryResult{err: errors.New("node unavailable")},
 	)
-	client := newTestClient(t, query, chainstate.Config{
+	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
 		Interval: time.Millisecond,
@@ -154,7 +163,7 @@ func TestStartKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	require.Equal(t, []string{"uusd"}, got)
 }
 
-func TestStartLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
+func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 	logs := &lockedBuffer{}
 	query := newFakeQueryServer(
 		queryResult{targets: []string{"uusd"}},
@@ -162,14 +171,14 @@ func TestStartLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 		queryResult{targets: []string{"uusd", "ukrw"}},
 	)
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
-	client, err := chainstate.NewClient(
-		chainstate.Config{
+	client, err := NewClient(
+		Config{
 			Address:  endpoint.address,
 			Timeout:  time.Second,
 			Interval: time.Millisecond,
 		},
-		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
-		chainstate.WithLogger(log.NewLogger(logs)),
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		WithLogger(log.NewLogger(logs)),
 	)
 	require.NoError(t, err)
 
@@ -192,7 +201,7 @@ func TestStartLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 	require.Equal(t, []string{"uusd", "ukrw"}, got)
 }
 
-func TestStartRecordsChainStateRefreshMetrics(t *testing.T) {
+func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
@@ -207,7 +216,7 @@ func TestStartRecordsChainStateRefreshMetrics(t *testing.T) {
 		queryResult{targets: []string{"uusd", "ukrw"}},
 		queryResult{err: errors.New("node unavailable")},
 	)
-	client := newTestClient(t, query, chainstate.Config{
+	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
 		Interval: time.Millisecond,
@@ -226,7 +235,7 @@ func TestStartRecordsChainStateRefreshMetrics(t *testing.T) {
 			return false
 		}
 
-		refreshes := chainStateMetricFamily(families, "noah_oracle_chainstate_refreshes_total")
+		refreshes := chainStateMetricFamily(families, "ark_oracle_chainstate_refreshes_total")
 		if refreshes == nil {
 			return false
 		}
@@ -235,12 +244,12 @@ func TestStartRecordsChainStateRefreshMetrics(t *testing.T) {
 	}, time.Second, time.Millisecond)
 }
 
-func TestStartRejectsInvalidRefreshWithoutClearingCache(t *testing.T) {
+func TestRunRejectsInvalidRefreshWithoutClearingCache(t *testing.T) {
 	query := newFakeQueryServer(
 		queryResult{targets: []string{"uusd"}},
 		queryResult{targets: []string{"uusd", "uusd"}},
 	)
-	client := newTestClient(t, query, chainstate.Config{
+	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
 		Interval: time.Millisecond,
@@ -258,60 +267,84 @@ func TestStartRejectsInvalidRefreshWithoutClearingCache(t *testing.T) {
 	require.Equal(t, []string{"uusd"}, got)
 }
 
-func TestStopCancelsStart(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
-	client := newTestClient(t, query, chainstate.Config{
+func TestRunRejectsNonCanonicalVoteTargetsWithoutClearingCache(t *testing.T) {
+	query := newFakeQueryServer(
+		queryResult{targets: []string{"uusd"}},
+		queryResult{targets: []string{"uUSD"}},
+	)
+	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
-		Interval: time.Hour,
-	})
-
-	cancel := startClient(t, client)
-	defer cancel()
-
-	query.waitForCalls(t, 1)
-	client.Stop()
-
-	restartCtx, restartCancel := context.WithCancel(context.Background())
-	defer restartCancel()
-	require.NoError(t, client.Start(restartCtx))
-	client.Stop()
-}
-
-func TestUpdateConfigAppliesIntervalChange(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
-	client := newTestClient(t, query, chainstate.Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
+		Interval: time.Millisecond,
 	})
 
 	cancel := startClient(t, client)
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	client.Update(chainstate.Config{
+	requireEventuallyTargets(t, client, []string{"uusd"})
+	query.waitForCalls(t, 2)
+
+	got, err := client.VoteTargets()
+	require.NoError(t, err)
+	require.Equal(t, []string{"uusd"}, got)
+}
+
+func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
+	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
+	client := newTestClient(t, query, Config{
+		Address:  "passthrough:///bufnet",
+		Timeout:  time.Second,
+		Interval: time.Hour,
+	})
+
+	cancel := startClient(t, client)
+	query.waitForCalls(t, 1)
+	cancel()
+
+	restartCleanup := startClient(t, client)
+	query.waitForCalls(t, 1)
+	restartCleanup()
+}
+
+func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
+	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
+	originalInterval := 75 * time.Millisecond
+	client := newTestClient(t, query, Config{
+		Address:  "passthrough:///bufnet",
+		Timeout:  time.Second,
+		Interval: originalInterval,
+	})
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	query.waitForCalls(t, 1)
+	client.Update(Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
 		Interval: time.Millisecond,
 	})
 
-	query.waitForCalls(t, 2)
+	query.requireNoCalls(t, originalInterval/3)
+	query.waitForCalls(t, 1)
+	query.waitForCalls(t, 1)
 }
 
-func TestUpdateConfigReconnectsWhenAddressChanges(t *testing.T) {
+func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 	firstQuery := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
 	secondQuery := newFakeQueryServer(queryResult{targets: []string{"ukrw"}})
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
+	originalInterval := 75 * time.Millisecond
 
-	client, err := chainstate.NewClient(
-		chainstate.Config{
+	client, err := NewClient(
+		Config{
 			Address:  firstEndpoint.address,
 			Timeout:  time.Second,
-			Interval: time.Hour,
+			Interval: originalInterval,
 		},
-		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
 	)
 	require.NoError(t, err)
 
@@ -321,12 +354,13 @@ func TestUpdateConfigReconnectsWhenAddressChanges(t *testing.T) {
 	firstQuery.waitForCalls(t, 1)
 	requireEventuallyTargets(t, client, []string{"uusd"})
 
-	client.Update(chainstate.Config{
+	client.Update(Config{
 		Address:  secondEndpoint.address,
 		Timeout:  time.Second,
-		Interval: time.Hour,
+		Interval: originalInterval,
 	})
 
+	secondQuery.requireNoCalls(t, originalInterval/3)
 	secondQuery.waitForCalls(t, 1)
 	requireEventuallyTargets(t, client, []string{"ukrw"})
 }
@@ -338,14 +372,14 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 
-	client, err := chainstate.NewClient(
-		chainstate.Config{
+	client, err := NewClient(
+		Config{
 			Address:  firstEndpoint.address,
 			Timeout:  time.Second,
-			Interval: time.Hour,
+			Interval: 75 * time.Millisecond,
 		},
-		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
-		chainstate.WithLogger(log.NewLogger(logs)),
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
+		WithLogger(log.NewLogger(logs)),
 	)
 	require.NoError(t, err)
 
@@ -355,7 +389,7 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	firstQuery.waitForCalls(t, 1)
 	requireEventuallyTargets(t, client, []string{"uusd"})
 
-	client.Update(chainstate.Config{
+	client.Update(Config{
 		Address:  secondEndpoint.address,
 		Timeout:  2 * time.Second,
 		Interval: time.Millisecond,
@@ -376,14 +410,15 @@ func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *t
 	secondQuery := newBlockingQueryServer(queryResult{targets: []string{"ukrw"}})
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
+	originalInterval := 75 * time.Millisecond
 
-	client, err := chainstate.NewClient(
-		chainstate.Config{
+	client, err := NewClient(
+		Config{
 			Address:  firstEndpoint.address,
 			Timeout:  time.Second,
-			Interval: time.Hour,
+			Interval: originalInterval,
 		},
-		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
 	)
 	require.NoError(t, err)
 
@@ -391,13 +426,16 @@ func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *t
 	defer stopClient(cancel, client)
 
 	firstQuery.waitForCalls(t, 1)
-	client.Update(chainstate.Config{
+	client.Update(Config{
 		Address:  secondEndpoint.address,
 		Timeout:  time.Second,
-		Interval: time.Hour,
+		Interval: originalInterval,
 	})
 	firstQuery.release()
 
+	requireEventuallyTargets(t, client, []string{"uusd"})
+
+	secondQuery.requireNoCalls(t, originalInterval/3)
 	secondQuery.waitForCalls(t, 1)
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
@@ -408,7 +446,7 @@ func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *t
 }
 
 func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
-	cfg := chainstate.Config{
+	cfg := Config{
 		Address:  "",
 		Timeout:  time.Second,
 		Interval: time.Second,
@@ -419,7 +457,7 @@ func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
 }
 
 func TestNewClientRejectsMissingAddress(t *testing.T) {
-	client, err := chainstate.NewClient(chainstate.Config{
+	client, err := NewClient(Config{
 		Timeout:  time.Second,
 		Interval: time.Second,
 	})
@@ -477,6 +515,15 @@ func (b *blockingQueryServer) waitForCalls(t *testing.T, want int) {
 	}
 }
 
+func (b *blockingQueryServer) requireNoCalls(t *testing.T, duration time.Duration) {
+	t.Helper()
+	select {
+	case <-b.calls:
+		t.Fatal("unexpected vote-target query call")
+	case <-time.After(duration):
+	}
+}
+
 func (b *blockingQueryServer) release() {
 	b.once.Do(func() {
 		close(b.releaseCh)
@@ -530,14 +577,23 @@ func (f *fakeQueryServer) waitForCalls(t *testing.T, want int) {
 	}
 }
 
-func newTestClient(t *testing.T, query oracletypes.QueryServer, cfg chainstate.Config) *chainstate.Client {
+func (f *fakeQueryServer) requireNoCalls(t *testing.T, duration time.Duration) {
+	t.Helper()
+	select {
+	case <-f.calls:
+		t.Fatal("unexpected vote-target query call")
+	case <-time.After(duration):
+	}
+}
+
+func newTestClient(t *testing.T, query oracletypes.QueryServer, cfg Config) *Client {
 	t.Helper()
 
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 
-	client, err := chainstate.NewClient(
+	client, err := NewClient(
 		cfg,
-		chainstate.WithDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
 	)
 	require.NoError(t, err)
 
@@ -585,8 +641,7 @@ func dialTestQueryEndpoints(endpoints ...testQueryEndpoint) func(context.Context
 }
 
 type pollingClient interface {
-	Start(context.Context) error
-	Stop()
+	Run(context.Context) error
 	VoteTargets() ([]string, error)
 }
 
@@ -594,14 +649,24 @@ func startClient(t *testing.T, client pollingClient) context.CancelFunc {
 	t.Helper()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	require.NoError(t, client.Start(ctx))
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- client.Run(ctx)
+	}()
 
-	return cancel
+	return func() {
+		cancel()
+		select {
+		case err := <-errCh:
+			require.ErrorIs(t, err, context.Canceled)
+		case <-time.After(time.Second):
+			t.Fatal("chain state client did not stop")
+		}
+	}
 }
 
-func stopClient(cancel context.CancelFunc, client pollingClient) {
+func stopClient(cancel context.CancelFunc, _ pollingClient) {
 	cancel()
-	client.Stop()
 }
 
 func requireEventuallyTargets(

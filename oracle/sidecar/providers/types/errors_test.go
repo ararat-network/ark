@@ -1,8 +1,8 @@
 package types_test
 
 import (
+	. "ark/oracle/sidecar/providers/types"
 	"errors"
-	. "noah/oracle/sidecar/providers/types"
 	"testing"
 
 	"github.com/stretchr/testify/require"

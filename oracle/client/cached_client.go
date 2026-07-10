@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -8,226 +9,168 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/types"
+	clientmetrics "ark/oracle/client/metrics"
+	"ark/oracle/types"
 )
 
-// CachedClient polls the sidecar over gRPC and serves a fresh-enough cached
-// price response to node-side callers.
-type CachedClient struct {
+// Client polls the sidecar and serves its latest fresh price
+// snapshot to node-side callers without performing network I/O on the request
+// path.
+type Client struct {
 	logger log.Logger
-
-	// config controls polling cadence, freshness, and the underlying gRPC client.
 	config Config
-	// client is the underlying oracle client used to fetch prices.
-	client *Client
-	// resp is the latest price response fetched by the polling loop.
-	resp ThreadSafeResponse
 
-	// lifecycleMu guards cancel and doneCh for the active polling run.
-	lifecycleMu sync.Mutex
-	// cancel and doneCh describe the active polling run. Stop cancels the run
-	// context and waits for doneCh to close after Start has released resources.
-	cancel context.CancelFunc
-	doneCh chan struct{}
+	respMu sync.RWMutex
+	resp   *types.OraclePricesResponse
 }
 
-// NewCachedClient creates a cached gRPC client.
-func NewCachedClient(
-	logger log.Logger,
-	cfg Config,
-	opts ...Option,
-) (*CachedClient, error) {
+// NewClient creates a cached node-side price client. The gRPC
+// connection is created and owned by Run for each polling run.
+func NewClient(logger log.Logger, cfg Config) (*Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger cannot be nil")
 	}
-
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
-	client, err := NewClient(
-		logger.With("client", "oracle"),
-		cfg.OracleAddress,
-		cfg.ClientTimeout,
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CachedClient{
-		logger: logger.With("process", "price_daemon"),
+	return &Client{
+		logger: logger.With("client", "cached_prices"),
 		config: cfg,
-		client: client,
 	}, nil
 }
 
-// Start connects the underlying gRPC client and runs the price polling loop.
-// This method blocks until the cached client is stopped or the context is cancelled.
-func (d *CachedClient) Start(ctx context.Context) (err error) {
+// Run connects to the sidecar and polls prices until ctx is cancelled. The
+// caller owns cancellation and must wait for Run to return before discarding c.
+// Run must not be called concurrently on the same client.
+func (c *Client) Run(ctx context.Context) (err error) {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
 	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-
-	runCtx, cancel := context.WithCancel(ctx)
-	doneCh := make(chan struct{})
-
-	d.lifecycleMu.Lock()
-	if d.doneCh != nil {
-		d.lifecycleMu.Unlock()
-		cancel()
-		return errors.New("cached client already running")
+	conn, err := grpc.NewClient(
+		c.config.OracleAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return fmt.Errorf("dial oracle gRPC server: %w", err)
 	}
-	d.cancel = cancel
-	d.doneCh = doneCh
-	d.lifecycleMu.Unlock()
-
 	defer func() {
-		cancel()
-		err = errors.Join(err, d.client.Stop())
-
-		d.lifecycleMu.Lock()
-		d.cancel = nil
-		d.doneCh = nil
-		close(doneCh)
-		d.lifecycleMu.Unlock()
+		if closeErr := conn.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close oracle gRPC connection: %w", closeErr))
+		}
 	}()
 
-	if err := d.client.Start(runCtx); err != nil {
-		if runCtx.Err() != nil && ctx.Err() == nil {
-			return nil
-		}
-		return err
-	}
+	return c.poll(ctx, types.NewOracleClient(conn))
+}
 
-	ticker := time.NewTicker(d.config.Interval)
+func (c *Client) poll(ctx context.Context, rpc types.OracleClient) error {
+	c.logger.Info("starting cached price client")
+	c.fetchPrices(ctx, rpc)
+
+	ticker := time.NewTicker(c.config.Interval)
 	defer ticker.Stop()
-
-	d.logger.Info("starting price daemon")
 
 	for {
 		select {
-		case <-runCtx.Done():
-			if ctx.Err() == nil {
-				d.logger.Info("price daemon stopped")
-				return nil
-			}
-			d.logger.Info("stopping price daemon from context")
+		case <-ctx.Done():
+			c.logger.Info("stopping cached price client from context")
 			return ctx.Err()
 		case <-ticker.C:
-			d.fetchPrices(runCtx)
+			c.fetchPrices(ctx, rpc)
 		}
 	}
 }
 
-// fetchPrices fetches the latest prices from the oracle client.
-func (d *CachedClient) fetchPrices(ctx context.Context) {
-	d.logger.Debug("fetching prices")
+func (c *Client) fetchPrices(ctx context.Context, rpc types.OracleClient) {
+	c.logger.Debug("fetching prices")
 
-	fetchCtx, cancel := context.WithTimeout(ctx, d.config.ClientTimeout)
+	fetchCtx, cancel := context.WithTimeout(ctx, c.config.ClientTimeout)
 	defer cancel()
 
-	resp, err := d.client.Prices(fetchCtx, &types.OraclePricesRequest{})
+	start := time.Now()
+	resp, err := rpc.Prices(fetchCtx, &types.OraclePricesRequest{}, grpc.WaitForReady(true))
+	if err == nil && resp == nil {
+		err = errors.New("sidecar returned a nil price response")
+	}
+	clientmetrics.RecordOracleResponse(time.Since(start), err)
 	if err != nil {
-		d.logger.Error(
-			"failed to fetch prices from sidecar",
-			"err", err,
-			"address", d.config.OracleAddress,
-		)
-
+		if ctx.Err() == nil {
+			c.logger.Error(
+				"failed to fetch prices from sidecar",
+				"err", err,
+				"address", c.config.OracleAddress,
+			)
+		}
 		return
 	}
 
-	ts := time.Now().UTC()
-	d.logger.Debug("fetched prices", "timestamp", ts, "prices", resp.Prices)
-	d.resp.Update(resp)
+	c.logger.Debug(
+		"fetched prices",
+		"timestamp", resp.Timestamp,
+		"prices", resp.Prices,
+	)
+
+	c.respMu.Lock()
+	c.resp = resp
+	c.respMu.Unlock()
 }
 
-// Prices returns the latest cached price response. If the latest response is too
-// stale, an error is returned.
-func (d *CachedClient) Prices(
-	_ context.Context,
+// Prices returns the latest cached price snapshot. The snapshot timestamp is
+// supplied by the sidecar and must be fresh enough for node-side use.
+func (c *Client) Prices(
+	ctx context.Context,
 	_ *types.OraclePricesRequest,
 	_ ...grpc.CallOption,
 ) (*types.OraclePricesResponse, error) {
-	latest, ts := d.resp.Get()
+	if ctx == nil {
+		return nil, errors.New("context cannot be nil")
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	c.respMu.RLock()
+	latest := c.resp
+	c.respMu.RUnlock()
 	if latest == nil {
-		d.logger.Error("no prices fetched by price daemon yet")
-		return nil, errors.New("no prices fetched by price daemon yet")
+		return nil, errors.New("no prices fetched from the sidecar yet")
 	}
 
-	if time.Since(ts) > d.config.PriceTTL {
-		d.logger.Error(
-			"latest prices from the price daemon are too stale",
-			"last_fetched_at", ts.String(),
-			"diff", time.Since(ts).String(),
-			"ttl", d.config.PriceTTL.String(),
-		)
-
+	age := time.Since(latest.Timestamp)
+	if latest.Timestamp.IsZero() || age > c.config.PriceTTL {
 		return nil, fmt.Errorf(
-			"latest prices from the price daemon are too stale; last fetched at %s; diff %s ago",
-			ts.Format(time.RFC3339),
-			time.Since(ts).String(),
+			"latest sidecar price snapshot is too stale; timestamp %s; age %s",
+			latest.Timestamp.Format(time.RFC3339),
+			age,
 		)
 	}
 
-	return latest, nil
+	return clonePricesResponse(latest), nil
 }
 
-// Stop stops the polling loop and waits for the underlying gRPC client to close.
-func (d *CachedClient) Stop() error {
-	d.lifecycleMu.Lock()
-	cancel := d.cancel
-	doneCh := d.doneCh
-	d.lifecycleMu.Unlock()
-
-	if doneCh == nil {
+func clonePricesResponse(resp *types.OraclePricesResponse) *types.OraclePricesResponse {
+	if resp == nil {
 		return nil
 	}
 
-	if cancel != nil {
-		cancel()
+	var prices map[string][]byte
+	if resp.Prices != nil {
+		prices = make(map[string][]byte, len(resp.Prices))
+		for denom, price := range resp.Prices {
+			prices[denom] = bytes.Clone(price)
+		}
 	}
-	<-doneCh
 
-	return nil
-}
-
-// ThreadSafeResponse is a thread-safe wrapper around an OraclePricesResponse.
-type ThreadSafeResponse struct {
-	sync.Mutex
-
-	resp      *types.OraclePricesResponse
-	timestamp time.Time
-}
-
-// NewThreadSafeResponse creates a new thread-safe response.
-func NewThreadSafeResponse() *ThreadSafeResponse {
-	return &ThreadSafeResponse{
-		resp:      nil,
-		timestamp: time.Time{},
+	return &types.OraclePricesResponse{
+		Prices:    prices,
+		Timestamp: resp.Timestamp,
+		Version:   resp.Version,
 	}
-}
-
-// Update updates the response and timestamp of the thread-safe response.
-func (r *ThreadSafeResponse) Update(resp *types.OraclePricesResponse) {
-	r.Lock()
-	defer r.Unlock()
-
-	r.resp = resp
-	r.timestamp = time.Now().UTC()
-}
-
-// Get returns the response and timestamp of the thread-safe response.
-func (r *ThreadSafeResponse) Get() (*types.OraclePricesResponse, time.Time) {
-	r.Lock()
-	defer r.Unlock()
-
-	return r.resp, r.timestamp
 }

@@ -1,7 +1,7 @@
 package types_test
 
 import (
-	. "noah/oracle/sidecar/providers/types"
+	. "ark/oracle/sidecar/providers/types"
 	"strings"
 	"testing"
 )

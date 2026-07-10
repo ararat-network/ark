@@ -1,15 +1,15 @@
 package frankfurter_test
 
 import (
+	. "ark/oracle/sidecar/providers/api/frankfurter"
 	"io"
 	"net/http"
-	. "noah/oracle/sidecar/providers/api/frankfurter"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 func TestCreateURL(t *testing.T) {
@@ -63,6 +63,19 @@ func TestCreateURL(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Equal(t, tt.wantURL, gotURL)
+		})
+	}
+}
+
+func TestDefaultMarketSymbolsCreateURLs(t *testing.T) {
+	handler := NewHandler()
+	endpoint := types.Endpoint{URL: URL}
+
+	for _, market := range DefaultMarkets {
+		t.Run(market.Pair.String(), func(t *testing.T) {
+			gotURL, err := handler.CreateURL(endpoint, []types.Ticker{market.Symbol})
+			require.NoError(t, err)
+			require.Contains(t, gotURL, string(market.Symbol))
 		})
 	}
 }

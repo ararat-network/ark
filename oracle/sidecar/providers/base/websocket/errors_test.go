@@ -1,8 +1,8 @@
 package websocket_test
 
 import (
+	. "ark/oracle/sidecar/providers/base/websocket"
 	"errors"
-	. "noah/oracle/sidecar/providers/base/websocket"
 	"testing"
 
 	"github.com/stretchr/testify/require"

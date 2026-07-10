@@ -2,21 +2,28 @@ package resolver
 
 import (
 	"fmt"
-	"slices"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/types"
 )
 
 // Config defines optional routes for resolving provider pair medians into
 // vote-target pair prices.
 type Config struct {
+	// Routes maps vote-target denoms to alternate resolution paths. Missing or
+	// empty entries use the canonical direct NOAH/QUOTE route.
 	Routes map[string][]Route `json:"routes"`
+
+	// BootstrapPrices supplies temporary route-leg prices when no provider has
+	// a fresh direct or inverse observation. Provider observations always take
+	// precedence, and each bootstrap price expires at its absolute deadline.
+	BootstrapPrices []BootstrapPrice `json:"bootstrapPrices"`
 }
 
-// Route is one named path from ARK to a vote-target quote denom.
+// Route is one named path from NOAH to a vote-target quote denom.
 type Route struct {
 	// Name identifies this path in per-route metrics.
 	Name string `json:"name"`
@@ -26,9 +33,41 @@ type Route struct {
 	Pairs []types.Pair `json:"pairs"`
 }
 
+// BootstrapPrice is an expiring, last-resort price for one canonical route
+// pair. Price is a decimal string so operator configuration does not lose
+// precision through float decoding.
+type BootstrapPrice struct {
+	Pair       types.Pair `json:"pair"`
+	Price      string     `json:"price"`
+	ValidUntil string     `json:"validUntil"`
+}
+
+// Clone returns a deep copy of c, including nested route slices.
+func (c Config) Clone() Config {
+	cloned := c
+	if c.Routes != nil {
+		cloned.Routes = make(map[string][]Route, len(c.Routes))
+		for denom, routes := range c.Routes {
+			if routes == nil {
+				cloned.Routes[denom] = nil
+				continue
+			}
+			copiedRoutes := make([]Route, len(routes))
+			for i, route := range routes {
+				route.Pairs = append([]types.Pair(nil), route.Pairs...)
+				copiedRoutes[i] = route
+			}
+			cloned.Routes[denom] = copiedRoutes
+		}
+	}
+	cloned.BootstrapPrices = append([]BootstrapPrice(nil), c.BootstrapPrices...)
+
+	return cloned
+}
+
 // MarketPairs returns provider market pairs required to resolve active denoms,
 // including inverse pairs that can satisfy the same steps. Denoms without
-// configured routes use the default direct ARK/QUOTE path.
+// configured routes use the default direct NOAH/QUOTE path.
 func (c Config) MarketPairs(denoms []string) map[types.Pair]struct{} {
 	pairs := make(map[types.Pair]struct{})
 	for _, denom := range denoms {
@@ -48,7 +87,7 @@ func (c Config) MarketPairs(denoms []string) map[types.Pair]struct{} {
 }
 
 // RoutesForDenom returns the output pair and effective routes for denom. Missing
-// or empty configured routes fall back to the direct ARK/QUOTE path.
+// or empty configured routes fall back to the direct NOAH/QUOTE path.
 func (c Config) RoutesForDenom(denom string) (types.Pair, []Route, bool) {
 	output, err := types.FromDenom(denom)
 	if err != nil {
@@ -66,14 +105,44 @@ func (c Config) RoutesForDenom(denom string) (types.Pair, []Route, bool) {
 	}, true
 }
 
-// Validate checks configured resolver routes at config-update time. A nil or
-// empty Routes map uses default direct routes for active denoms. A denom present
-// in Routes with an empty route list also uses the default direct route. Non-empty
-// routes must define valid paths to their canonical ARK/QUOTE outputs.
+// Validate checks bootstrap prices and resolver routes at config-update time. A
+// nil or empty Routes map uses default direct routes for active denoms. A denom
+// present in Routes with an empty route list also uses the default direct route.
+// Non-empty routes must define valid paths to their canonical NOAH/QUOTE outputs.
 func (c Config) Validate() error {
+	bootstrapPairs := make(map[types.Pair]struct{}, len(c.BootstrapPrices))
+	for _, bootstrap := range c.BootstrapPrices {
+		if err := bootstrap.Pair.Validate(); err != nil {
+			return fmt.Errorf("bootstrap price pair %q is invalid: %w", bootstrap.Pair, err)
+		}
+		if _, ok := bootstrapPairs[bootstrap.Pair]; ok {
+			return fmt.Errorf("duplicate bootstrap price pair %q", bootstrap.Pair)
+		}
+		bootstrapPairs[bootstrap.Pair] = struct{}{}
+
+		price, err := types.ParsePrice(bootstrap.Price)
+		if err != nil {
+			return fmt.Errorf("bootstrap price for %s is invalid: %w", bootstrap.Pair, err)
+		}
+		if price.Sign() != 1 {
+			return fmt.Errorf("bootstrap price for %s must be positive", bootstrap.Pair)
+		}
+		if _, err := time.Parse(time.RFC3339, bootstrap.ValidUntil); err != nil {
+			return fmt.Errorf(
+				"bootstrap price for %s validUntil %q must be RFC3339: %w",
+				bootstrap.Pair,
+				bootstrap.ValidUntil,
+				err,
+			)
+		}
+	}
+
 	for denom, routes := range c.Routes {
 		if err := sdk.ValidateDenom(denom); err != nil {
 			return fmt.Errorf("invalid denom %q: %w", denom, err)
+		}
+		if _, err := types.FromDenom(denom); err != nil {
+			return fmt.Errorf("invalid resolver denom %q: %w", denom, err)
 		}
 		if len(routes) == 0 {
 			continue
@@ -109,32 +178,8 @@ func (c Config) Validate() error {
 	return nil
 }
 
-// Equal reports whether two resolver configs define the same routes.
-func (c Config) Equal(other Config) bool {
-	if len(c.Routes) != len(other.Routes) {
-		return false
-	}
-	for denom, routes := range c.Routes {
-		otherRoutes, ok := other.Routes[denom]
-		if !ok {
-			return false
-		}
-		if len(routes) != len(otherRoutes) {
-			return false
-		}
-		for i, route := range routes {
-			otherRoute := otherRoutes[i]
-			if route.Name != otherRoute.Name || !slices.Equal(route.Pairs, otherRoute.Pairs) {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
 // validateRouteOutput ensures a route's ordered path resolves to the requested
-// denom's canonical ARK/QUOTE pair.
+// denom's canonical NOAH/QUOTE pair.
 func validateRouteOutput(denom string, route Route) error {
 	expected, err := types.FromDenom(denom)
 	if err != nil {

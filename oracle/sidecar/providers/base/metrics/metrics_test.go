@@ -1,8 +1,8 @@
 package metrics_test
 
 import (
+	. "ark/oracle/sidecar/providers/base/metrics"
 	"context"
-	. "noah/oracle/sidecar/providers/base/metrics"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,7 +12,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 func TestRecordResponse(t *testing.T) {
@@ -44,7 +44,7 @@ func TestRecordResponse(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	responses := metricFamily(t, families, "noah_oracle_provider_responses_total")
+	responses := metricFamily(t, families, "ark_oracle_provider_responses_total")
 	require.Len(t, responses.Metric, 2)
 	require.Equal(t, float64(1), counterValue(t, responses, map[string]string{
 		"provider":   "kraken",
@@ -61,7 +61,7 @@ func TestRecordResponse(t *testing.T) {
 		"error_code": "7",
 	}))
 
-	lastSuccess := metricFamily(t, families, "noah_oracle_provider_last_success_seconds")
+	lastSuccess := metricFamily(t, families, "ark_oracle_provider_last_success_seconds")
 	require.Len(t, lastSuccess.Metric, 1)
 	require.Positive(t, gaugeValue(t, lastSuccess, map[string]string{
 		"provider": "kraken",

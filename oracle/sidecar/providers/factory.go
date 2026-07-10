@@ -6,13 +6,13 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	binanceapi "noah/oracle/sidecar/providers/api/binance"
-	frankfurterapi "noah/oracle/sidecar/providers/api/frankfurter"
-	"noah/oracle/sidecar/providers/base"
-	"noah/oracle/sidecar/providers/base/api"
-	"noah/oracle/sidecar/providers/base/websocket"
-	"noah/oracle/sidecar/providers/types"
-	binancews "noah/oracle/sidecar/providers/websocket/binance"
+	binanceapi "ark/oracle/sidecar/providers/api/binance"
+	frankfurterapi "ark/oracle/sidecar/providers/api/frankfurter"
+	"ark/oracle/sidecar/providers/base"
+	"ark/oracle/sidecar/providers/base/api"
+	"ark/oracle/sidecar/providers/base/websocket"
+	"ark/oracle/sidecar/providers/types"
+	binancews "ark/oracle/sidecar/providers/websocket/binance"
 )
 
 // NewProvider builds the provider runtime and the transport-specific fetcher

@@ -10,9 +10,9 @@
 package testutil
 
 import (
+	base "ark/oracle/sidecar/providers/base"
+	types "ark/oracle/sidecar/providers/types"
 	context "context"
-	base "noah/oracle/sidecar/providers/base"
-	types "noah/oracle/sidecar/providers/types"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

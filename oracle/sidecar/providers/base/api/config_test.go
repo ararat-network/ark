@@ -1,13 +1,13 @@
 package api_test
 
 import (
-	. "noah/oracle/sidecar/providers/base/api"
+	. "ark/oracle/sidecar/providers/base/api"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 func TestAPIConfigValidateBasicAllowsPositiveRequiredControls(t *testing.T) {

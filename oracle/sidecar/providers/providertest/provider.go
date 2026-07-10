@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"noah/oracle/sidecar/providers/base"
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/providers/base"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 // Builder constructs a provider for a test run.
@@ -77,7 +77,7 @@ func Run(ctx context.Context, build Builder, cfg Config) (PriceResults, error) {
 	return RunProvider(ctx, provider, cfg)
 }
 
-// RunProvider starts provider, samples prices, and stops provider before returning.
+// RunProvider runs provider, samples prices, and waits for cleanup before returning.
 func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (PriceResults, error) {
 	if ctx == nil {
 		return nil, errors.New("context cannot be nil")
@@ -98,23 +98,26 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 	}
 
 	runCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	defer provider.Stop()
-
-	if err := provider.Start(runCtx); err != nil {
-		return nil, fmt.Errorf("failed to start provider: %w", err)
-	}
+	doneCh := make(chan struct{})
+	var runErr error
+	go func() {
+		defer close(doneCh)
+		runErr = provider.Run(runCtx)
+	}()
+	defer func() {
+		cancel()
+		<-doneCh
+	}()
 
 	if cfg.BurnInInterval > 0 {
 		burnInTimer := time.NewTimer(cfg.BurnInInterval)
 		select {
 		case <-burnInTimer.C:
+		case <-doneCh:
+			return nil, providerStoppedError("provider stopped during burn-in", runErr)
 		case <-ctx.Done():
 			burnInTimer.Stop()
 			return nil, ctx.Err()
-		}
-		if !provider.IsRunning() {
-			return nil, errors.New("provider stopped during burn-in")
 		}
 	}
 
@@ -128,9 +131,6 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 	for {
 		select {
 		case <-ticker.C:
-			if !provider.IsRunning() {
-				return nil, errors.New("provider stopped while collecting prices")
-			}
 			prices := provider.GetPrices()
 			if len(prices) != expectedPriceCount {
 				return nil, fmt.Errorf("expected %d prices, got %d", expectedPriceCount, len(prices))
@@ -142,8 +142,18 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 			})
 		case <-timer.C:
 			return priceResults, nil
+		case <-doneCh:
+			return nil, providerStoppedError("provider stopped while collecting prices", runErr)
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
 	}
+}
+
+func providerStoppedError(message string, err error) error {
+	if err == nil {
+		return errors.New(message)
+	}
+
+	return fmt.Errorf("%s: %w", message, err)
 }

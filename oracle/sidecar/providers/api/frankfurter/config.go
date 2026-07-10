@@ -3,8 +3,8 @@ package frankfurter
 import (
 	"time"
 
-	"noah/oracle/sidecar/providers/base/api"
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/base/api"
+	"ark/oracle/sidecar/providers/types"
 )
 
 const (
@@ -13,6 +13,9 @@ const (
 
 	// URL is the Frankfurter single-pair rate endpoint.
 	URL = "https://api.frankfurter.dev/v2/rate/%s/%s"
+
+	// DefaultMaxPriceAge is the default freshness window for Frankfurter prices.
+	DefaultMaxPriceAge = 90 * time.Second
 )
 
 // DefaultAPIConfig is the default configuration for the Frankfurter API.
@@ -24,4 +27,15 @@ var DefaultAPIConfig = api.Config{
 	Endpoints:         []types.Endpoint{{URL: URL}},
 	BatchSize:         1,
 	MaxBlockHeightAge: 0,
+}
+
+// DefaultMarkets defines the built-in Frankfurter fiat pair mappings.
+var DefaultMarkets = types.Markets{
+	{Pair: "USD/KRW", Symbol: "USD/KRW"},
+	{Pair: "USD/SDR", Symbol: "USD/XDR"},
+	{Pair: "USD/CNY", Symbol: "USD/CNY"},
+	{Pair: "USD/JPY", Symbol: "USD/JPY"},
+	{Pair: "USD/EUR", Symbol: "USD/EUR"},
+	{Pair: "USD/GBP", Symbol: "USD/GBP"},
+	{Pair: "USD/MNT", Symbol: "USD/MNT"},
 }

@@ -11,7 +11,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"noah/oracle/sidecar/metrics"
+	"ark/oracle/sidecar/metrics"
 )
 
 func TestRecordOracleMetrics(t *testing.T) {
@@ -26,49 +26,49 @@ func TestRecordOracleMetrics(t *testing.T) {
 	otel.SetMeterProvider(provider)
 
 	metrics.RecordOracleTick(context.Background())
-	metrics.RecordProviderPrice(context.Background(), "kraken", "ARK/USD", 1.23)
-	metrics.RecordAggregatePrice(context.Background(), "ARK/USD", 1.25)
-	metrics.RecordPairSampleCount(context.Background(), "ARK/USD", 2)
-	metrics.RecordResolvedSourceCount(context.Background(), "ARK/KRW", 3)
-	metrics.RecordRoutePrice(context.Background(), "ARK/KRW", "ark-usd-krw", 2000)
+	metrics.RecordProviderPrice(context.Background(), "kraken", "NOAH/USD", 1.23)
+	metrics.RecordAggregatePrice(context.Background(), "NOAH/USD", 1.25)
+	metrics.RecordPairSampleCount(context.Background(), "NOAH/USD", 2)
+	metrics.RecordResolvedSourceCount(context.Background(), "NOAH/KRW", 3)
+	metrics.RecordRoutePrice(context.Background(), "NOAH/KRW", "noah-usd-krw", 2000)
 	metrics.RecordMissingPrices(context.Background(), []string{"ukrw"})
 
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	ticks := metricFamily(t, families, "noah_oracle_ticks_total")
+	ticks := metricFamily(t, families, "ark_oracle_ticks_total")
 	require.Equal(t, float64(1), counterValue(t, ticks, nil))
 
-	providerPrices := metricFamily(t, families, "noah_oracle_provider_price")
+	providerPrices := metricFamily(t, families, "ark_oracle_provider_price")
 	require.Equal(t, float64(1.23), gaugeValue(t, providerPrices, map[string]string{
 		"provider": "kraken",
-		"pair":     "ark/usd",
+		"pair":     "noah/usd",
 	}))
 
-	aggregatePrices := metricFamily(t, families, "noah_oracle_aggregate_price")
+	aggregatePrices := metricFamily(t, families, "ark_oracle_aggregate_price")
 	require.Equal(t, float64(1.25), gaugeValue(t, aggregatePrices, map[string]string{
-		"pair": "ark/usd",
+		"pair": "noah/usd",
 	}))
 
-	pairSampleCounts := metricFamily(t, families, "noah_oracle_pair_sample_count")
+	pairSampleCounts := metricFamily(t, families, "ark_oracle_pair_sample_count")
 	require.Equal(t, float64(2), gaugeValue(t, pairSampleCounts, map[string]string{
-		"pair": "ark/usd",
+		"pair": "noah/usd",
 	}))
 
-	resolvedSourceCounts := metricFamily(t, families, "noah_oracle_resolved_source_count")
+	resolvedSourceCounts := metricFamily(t, families, "ark_oracle_resolved_source_count")
 	require.Equal(t, float64(3), gaugeValue(t, resolvedSourceCounts, map[string]string{
-		"pair": "ark/krw",
+		"pair": "noah/krw",
 	}))
 
-	routePrices := metricFamily(t, families, "noah_oracle_route_price")
+	routePrices := metricFamily(t, families, "ark_oracle_route_price")
 	routePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "ark/krw",
-		"route": "ark-usd-krw",
+		"pair":  "noah/krw",
+		"route": "noah-usd-krw",
 	})
 	require.Equal(t, float64(2000), routePrice.GetGauge().GetValue())
 	requireNoLabel(t, routePrice, "denom")
 
-	missingPrices := metricFamily(t, families, "noah_oracle_missing_prices_total")
+	missingPrices := metricFamily(t, families, "ark_oracle_missing_prices_total")
 	require.Equal(t, float64(1), counterValue(t, missingPrices, map[string]string{
 		"denom": "ukrw",
 	}))

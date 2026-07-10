@@ -1,0 +1,167 @@
+package sidecar
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
+
+	"cosmossdk.io/log/v2"
+
+	oracleconfig "ark/oracle/config"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/runtime"
+	"ark/oracle/types"
+)
+
+var _ types.OracleServer = (*Oracle)(nil)
+
+// Oracle owns the sidecar process and implements the generated RPC service.
+//
+// Runtime owns price fetching and cache state. The private server component owns
+// transport mechanics and calls back into Oracle through the generated service
+// interface.
+type Oracle struct {
+	types.UnimplementedOracleServer
+
+	// runtime owns providers, aggregation, updates, and cached price snapshots.
+	runtime *runtime.Runtime
+
+	// server owns the prepared gRPC/gateway transport stack.
+	server *server
+	// adminServer owns the optional process-local administration transport.
+	adminServer *adminServer
+
+	// runtimeConfigPath is immutable process state used by live reloads.
+	runtimeConfigPath string
+	// reloadMu serialises config file reads and runtime replacements.
+	reloadMu sync.Mutex
+
+	// logger is scoped once at construction and shared by transport/RPC paths.
+	logger log.Logger
+}
+
+// NewOracle constructs a sidecar process around a validated runtime.
+func NewOracle(cfg Config, logger log.Logger) (*Oracle, error) {
+	if logger == nil {
+		logger = log.NewNopLogger()
+	}
+	r, err := runtime.NewRuntime(cfg.Runtime, runtime.WithLogger(logger))
+	if err != nil {
+		return nil, err
+	}
+
+	process := cfg.Process
+	if process.ServerAddress == "" {
+		process.ServerAddress = defaultServerAddress
+	}
+
+	o := &Oracle{
+		runtime:           r,
+		runtimeConfigPath: process.RuntimeConfigPath,
+		logger:            logger.With("component", "oracle"),
+	}
+	server, err := newServer(o, logger, process.ServerAddress)
+	if err != nil {
+		return nil, err
+	}
+	o.server = server
+	if process.AdminAddress != "" {
+		if strings.TrimSpace(process.RuntimeConfigPath) == "" {
+			return nil, errors.New("oracle runtime config path is required when admin service is enabled")
+		}
+
+		adminServer, err := newAdminServer(o, logger, process.AdminAddress)
+		if err != nil {
+			return nil, err
+		}
+		o.adminServer = adminServer
+	}
+
+	return o, nil
+}
+
+// Run starts the runtime and serves the prepared transport stack.
+//
+// Run is a blocking, single-use lifecycle call. Parent cancellation or a child
+// failure stops both runtime and transport, and Run returns after both have
+// completed cleanup.
+func (o *Oracle) Run(ctx context.Context) error {
+	if ctx == nil {
+		return errors.New("context cannot be nil")
+	}
+	var adminRun func(context.Context) error
+	if o.adminServer != nil {
+		adminRun = o.adminServer.run
+	}
+	return runOracle(ctx, o.runtime.Run, o.server.run, adminRun)
+}
+
+// runOracle is the process failure boundary: any child failure cancels the
+// others, and it returns only after every child has completed cleanup.
+func runOracle(
+	ctx context.Context,
+	runtimeRun func(context.Context) error,
+	transportRun func(context.Context) error,
+	adminRun func(context.Context) error,
+) error {
+	eg, groupCtx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		return sidecarinternal.RunRecovering("oracle runtime", func() error {
+			err := runtimeRun(groupCtx)
+			if groupCtx.Err() != nil && errors.Is(err, context.Canceled) {
+				return nil
+			}
+			return err
+		})
+	})
+
+	if adminRun != nil {
+		eg.Go(func() error {
+			return sidecarinternal.RunRecovering("oracle admin transport", func() error {
+				return adminRun(groupCtx)
+			})
+		})
+	}
+
+	eg.Go(func() error {
+		return sidecarinternal.RunRecovering("oracle transport", func() error {
+			return transportRun(groupCtx)
+		})
+	})
+
+	return eg.Wait()
+}
+
+// ReloadConfig reloads and applies the runtime config file fixed at construction.
+func (o *Oracle) ReloadConfig(ctx context.Context) error {
+	if ctx == nil {
+		return errors.New("context cannot be nil")
+	}
+	if strings.TrimSpace(o.runtimeConfigPath) == "" {
+		return errors.New("oracle runtime config path is not configured")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	o.reloadMu.Lock()
+	defer o.reloadMu.Unlock()
+
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	cfg, err := oracleconfig.Load(o.runtimeConfigPath)
+	if err != nil {
+		return fmt.Errorf("loading oracle runtime config: %w", err)
+	}
+	if err := o.runtime.Update(cfg); err != nil {
+		return fmt.Errorf("updating oracle runtime config: %w", err)
+	}
+
+	return nil
+}

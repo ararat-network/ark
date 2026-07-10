@@ -10,56 +10,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chainstatemetrics "noah/oracle/sidecar/chainstate/metrics"
-	sidecarinternal "noah/oracle/sidecar/internal"
-	oracletypes "noah/x/oracle/types"
+	chainstatemetrics "ark/oracle/sidecar/chainstate/metrics"
+	sidecartypes "ark/oracle/sidecar/types"
+	oracletypes "ark/x/oracle/types"
 )
-
-// run owns the long-lived polling lifecycle and clears Start state before
-// returning. Connection-level failures are recorded, logged, and retried.
-func (c *Client) run(ctx context.Context, cancel context.CancelFunc, updateCh, doneCh chan struct{}) {
-	defer func() {
-		cancel()
-
-		c.mut.Lock()
-		c.isRunning.Store(false)
-		c.cancleFn = nil
-		close(updateCh)
-		c.updateCh = nil
-		close(doneCh)
-		c.doneCh = nil
-		c.mut.Unlock()
-	}()
-
-	for {
-		if err := c.runOnce(ctx, updateCh); err != nil {
-			if sidecarinternal.IsPanic(err) {
-				panic(err)
-			}
-			if ctx.Err() != nil || errors.Is(err, context.Canceled) {
-				return
-			}
-
-			c.mut.Lock()
-			c.lastErr = err
-			c.mut.Unlock()
-			c.logger.Error("chain state client poll failed", "error", err)
-
-			cfg := c.getConfig()
-			if err := waitForRetry(ctx, updateCh, cfg.Interval); err != nil {
-				return
-			}
-		}
-	}
-}
 
 // runOnce opens one query connection for the current address and polls it until
 // cancellation, reconnect, or an unrecoverable connection-level failure.
-func (c *Client) runOnce(ctx context.Context, updateCh <-chan struct{}) (err error) {
-	defer sidecarinternal.HandlePanic("chain state client", func(panicErr error) {
-		err = panicErr
-	})
-
+func (c *Client) runOnce(ctx context.Context) (err error) {
 	cfg := c.getConfig()
 	conn, err := grpc.NewClient(cfg.Address, c.dialOptions...)
 	if err != nil {
@@ -76,14 +34,14 @@ func (c *Client) runOnce(ctx context.Context, updateCh <-chan struct{}) (err err
 	}()
 
 	query := oracletypes.NewQueryClient(conn)
-	return c.poll(ctx, updateCh, cfg.Address, cfg.Interval, query)
+	return c.poll(ctx, cfg.Address, cfg.Interval, query)
 }
 
 // poll refreshes vote targets immediately and then at the configured interval.
-// Address updates end this connection so run can reconnect with fresh config.
+// Config changes are observed on ticks. Address updates end this connection so
+// Run can reconnect with fresh config.
 func (c *Client) poll(
 	ctx context.Context,
-	updateCh <-chan struct{},
 	address string,
 	interval time.Duration,
 	query oracletypes.QueryClient,
@@ -97,37 +55,28 @@ func (c *Client) poll(
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-updateCh:
+		case <-ticker.C:
 			nextCfg := c.getConfig()
 			if nextCfg.Address != address {
 				c.logger.Info("reconnecting chain state vote-target client after address update")
 				return nil
 			}
 			if nextCfg.Interval != interval {
-				c.logger.Debug(
-					"updated chain state vote-target poll interval",
-					"old_interval", interval,
-					"new_interval", nextCfg.Interval,
-				)
+				c.logger.Debug("updated chain state vote-target poll interval")
 				ticker.Reset(nextCfg.Interval)
 				interval = nextCfg.Interval
 			}
-		case <-ticker.C:
 			c.refresh(ctx, query)
 		}
 	}
 }
 
-// refresh commits only valid snapshots. Failures update lastErr, log a warning,
-// and preserve the previous snapshot so the runtime can keep using last-known
-// vote targets with operator-visible refresh errors.
+// refresh commits only valid snapshots. Failures log a warning and preserve the
+// previous snapshot so the runtime can keep using last-known vote targets with
+// operator-visible refresh errors.
 func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
 	targets, err := c.queryVoteTargets(ctx, query)
 	if err != nil {
-		c.mut.Lock()
-		c.lastErr = err
-		c.mut.Unlock()
-
 		chainstatemetrics.RecordRefresh(ctx, "error")
 		c.logger.Warn("failed to refresh chain state vote targets", "error", err)
 		return
@@ -135,7 +84,6 @@ func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
 
 	c.mut.Lock()
 	c.targets = targets
-	c.lastErr = nil
 	c.mut.Unlock()
 
 	chainstatemetrics.RecordRefresh(ctx, "success")
@@ -166,6 +114,9 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 		if err := sdk.ValidateDenom(denom); err != nil {
 			return nil, fmt.Errorf("invalid vote target denom %q: %w", denom, err)
 		}
+		if _, err := sidecartypes.FromDenom(denom); err != nil {
+			return nil, fmt.Errorf("invalid vote target denom %q: %w", denom, err)
+		}
 		if _, ok := seen[denom]; ok {
 			return nil, fmt.Errorf("duplicate vote target denom %q", denom)
 		}
@@ -174,16 +125,14 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 	return targets, nil
 }
 
-// waitForRetry sleeps until the next retry, a config update, or cancellation.
-func waitForRetry(ctx context.Context, updateCh <-chan struct{}, interval time.Duration) error {
+// waitForRetry sleeps until the next retry or cancellation.
+func waitForRetry(ctx context.Context, interval time.Duration) error {
 	timer := time.NewTimer(interval)
 	defer timer.Stop()
 
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-updateCh:
-		return nil
 	case <-timer.C:
 		return nil
 	}

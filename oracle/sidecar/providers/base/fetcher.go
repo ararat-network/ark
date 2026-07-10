@@ -3,7 +3,7 @@ package base
 import (
 	"context"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // Fetcher retrieves provider-specific ticker prices and publishes ticker-keyed responses.

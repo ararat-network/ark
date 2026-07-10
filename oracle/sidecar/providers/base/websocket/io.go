@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/coder/websocket"
+
+	"ark/oracle/sidecar/providers/types"
 )
 
 // DialFunc opens a websocket connection to url using opts.
@@ -14,16 +16,24 @@ type DialFunc func(
 	opts *websocket.DialOptions,
 ) (*websocket.Conn, *http.Response, error)
 
-// dialOptions builds the coder/websocket dial options from fetcher settings.
-func (f *Fetcher) dialOptions() *websocket.DialOptions {
+// dialOptions builds the coder/websocket dial options for endpoint.
+func (f *Fetcher) dialOptions(endpoint types.Endpoint) *websocket.DialOptions {
 	mode := websocket.CompressionDisabled
 	if f.config.EnableCompression {
 		mode = websocket.CompressionNoContextTakeover
 	}
 
+	headers := f.headers.Clone()
+	if auth := endpoint.Authentication; auth.Enabled() {
+		if headers == nil {
+			headers = make(http.Header)
+		}
+		headers.Set(auth.APIKeyHeader, auth.APIKey)
+	}
+
 	return &websocket.DialOptions{
 		HTTPClient:      f.httpClient,
-		HTTPHeader:      f.headers,
+		HTTPHeader:      headers,
 		CompressionMode: mode,
 	}
 }

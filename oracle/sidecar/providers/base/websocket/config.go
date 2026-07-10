@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 const (
@@ -42,10 +42,6 @@ const (
 	// writes in a subscription batch.
 	DefaultWriteInterval = 100 * time.Millisecond
 
-	// DefaultMaxReadErrorCount is the default number of consecutive read errors
-	// tolerated before the connection is treated as failed.
-	DefaultMaxReadErrorCount = 100
-
 	// DefaultMaxTickersPerConnection disables connection sharding by default, so
 	// one connection handles all tickers.
 	DefaultMaxTickersPerConnection = 0
@@ -66,8 +62,8 @@ type Config struct {
 	// MaxBufferSize is the provider response channel capacity.
 	MaxBufferSize int `json:"maxBufferSize"`
 
-	// ReconnectionTimeout is the delay before reconnecting after a connection
-	// session fails. If zero, reconnects are immediate.
+	// ReconnectionTimeout is the required positive delay before reconnecting after
+	// a connection session fails.
 	ReconnectionTimeout time.Duration `json:"reconnectionTimeout"`
 
 	// PostConnectionTimeout is the delay after dial before sending subscription
@@ -89,8 +85,7 @@ type Config struct {
 	// ReadTimeout is the timeout applied to each websocket read.
 	ReadTimeout time.Duration `json:"readTimeout"`
 
-	// WriteTimeout is the timeout applied to each websocket write. If zero, only
-	// the parent context deadline applies.
+	// WriteTimeout is the required positive timeout applied to each websocket write.
 	WriteTimeout time.Duration `json:"writeTimeout"`
 
 	// PingInterval is the heartbeat interval. If zero, heartbeat messages are not
@@ -99,10 +94,6 @@ type Config struct {
 
 	// WriteInterval is the delay between consecutive subscription writes.
 	WriteInterval time.Duration `json:"writeInterval"`
-
-	// MaxReadErrorCount is the number of consecutive read errors tolerated before
-	// the connection is treated as failed.
-	MaxReadErrorCount int `json:"maxReadErrorCount"`
 
 	// MaxTickersPerConnection is the maximum number of tickers assigned to
 	// one websocket connection. If zero, all tickers share one connection.
@@ -161,10 +152,6 @@ func (c *Config) Validate() error {
 		return errors.New("websocket write interval cannot be negative")
 	}
 
-	if c.MaxReadErrorCount < 0 {
-		return errors.New("websocket max read error count cannot be negative")
-	}
-
 	if c.MaxTickersPerConnection < 0 {
 		return errors.New("websocket max tickers per connection cannot be negative")
 	}
@@ -189,7 +176,6 @@ func (c Config) Equal(other Config) bool {
 		c.WriteTimeout == other.WriteTimeout &&
 		c.PingInterval == other.PingInterval &&
 		c.WriteInterval == other.WriteInterval &&
-		c.MaxReadErrorCount == other.MaxReadErrorCount &&
 		c.MaxTickersPerConnection == other.MaxTickersPerConnection &&
 		c.MaxSubscriptionsPerBatch == other.MaxSubscriptionsPerBatch
 }

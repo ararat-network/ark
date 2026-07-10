@@ -2,11 +2,12 @@ package resolver_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"noah/oracle/sidecar/resolver"
-	"noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/resolver"
+	"ark/oracle/sidecar/types"
 )
 
 func TestConfigMarketPairs(t *testing.T) {
@@ -21,8 +22,8 @@ func TestConfigMarketPairs(t *testing.T) {
 			cfg:    resolver.Config{},
 			denoms: []string{"uusd"},
 			want: map[types.Pair]struct{}{
-				"ARK/USD": {},
-				"USD/ARK": {},
+				"NOAH/USD": {},
+				"USD/NOAH": {},
 			},
 		},
 		{
@@ -32,8 +33,8 @@ func TestConfigMarketPairs(t *testing.T) {
 			},
 			denoms: []string{"uusd"},
 			want: map[types.Pair]struct{}{
-				"ARK/USD": {},
-				"USD/ARK": {},
+				"NOAH/USD": {},
+				"USD/NOAH": {},
 			},
 		},
 		{
@@ -42,18 +43,18 @@ func TestConfigMarketPairs(t *testing.T) {
 				Routes: map[string][]resolver.Route{
 					"ukrw": {
 						{
-							Name:  "ark-krw",
-							Pairs: []types.Pair{"ARK/USD", "USD/KRW"},
+							Name:  "noah-krw",
+							Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
 						},
 					},
 				},
 			},
 			denoms: []string{"ukrw"},
 			want: map[types.Pair]struct{}{
-				"ARK/USD": {},
-				"USD/ARK": {},
-				"USD/KRW": {},
-				"KRW/USD": {},
+				"NOAH/USD": {},
+				"USD/NOAH": {},
+				"USD/KRW":  {},
+				"KRW/USD":  {},
 			},
 		},
 		{
@@ -62,16 +63,16 @@ func TestConfigMarketPairs(t *testing.T) {
 				Routes: map[string][]resolver.Route{
 					"uusd": {
 						{
-							Name:  "ark-usd",
-							Pairs: []types.Pair{"ARK/USD", "USD/ARK", "ARK/USD"},
+							Name:  "noah-usd",
+							Pairs: []types.Pair{"NOAH/USD", "USD/NOAH", "NOAH/USD"},
 						},
 					},
 				},
 			},
 			denoms: []string{"uusd"},
 			want: map[types.Pair]struct{}{
-				"ARK/USD": {},
-				"USD/ARK": {},
+				"NOAH/USD": {},
+				"USD/NOAH": {},
 			},
 		},
 		{
@@ -80,18 +81,18 @@ func TestConfigMarketPairs(t *testing.T) {
 				Routes: map[string][]resolver.Route{
 					"ukrw": {
 						{
-							Name:  "ark-krw",
-							Pairs: []types.Pair{"ARK/USD", "USD/KRW"},
+							Name:  "noah-krw",
+							Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
 						},
 					},
 				},
 			},
 			denoms: []string{"uusd", "ukrw"},
 			want: map[types.Pair]struct{}{
-				"ARK/USD": {},
-				"USD/ARK": {},
-				"USD/KRW": {},
-				"KRW/USD": {},
+				"NOAH/USD": {},
+				"USD/NOAH": {},
+				"USD/KRW":  {},
+				"KRW/USD":  {},
 			},
 		},
 	}
@@ -113,89 +114,104 @@ func TestConfigValidateAllowsEmptyRoutesForDefaultDirectPath(t *testing.T) {
 	require.NoError(t, cfg.Validate())
 }
 
-func TestConfigEqual(t *testing.T) {
+func TestConfigValidateRejectsNonCanonicalDenomWithEmptyRoutes(t *testing.T) {
+	cfg := resolver.Config{
+		Routes: map[string][]resolver.Route{
+			"uUSD": {},
+		},
+	}
+
+	err := cfg.Validate()
+
+	require.ErrorContains(t, err, "not canonical")
+}
+
+func TestConfigValidateBootstrapPrices(t *testing.T) {
+	valid := resolver.BootstrapPrice{
+		Pair:       "NOAH/USD",
+		Price:      "0.25",
+		ValidUntil: "2030-01-01T00:00:00Z",
+	}
 	testCases := []struct {
-		name   string
-		mutate func(*resolver.Config)
-		want   bool
+		name      string
+		bootstrap []resolver.BootstrapPrice
+		expectErr string
 	}{
 		{
-			name: "equal",
-			want: true,
+			name:      "valid",
+			bootstrap: []resolver.BootstrapPrice{valid},
 		},
 		{
-			name: "route denom differs",
-			mutate: func(cfg *resolver.Config) {
-				cfg.Routes["ukrw"] = cfg.Routes["uusd"]
-				delete(cfg.Routes, "uusd")
-			},
+			name: "invalid pair",
+			bootstrap: []resolver.BootstrapPrice{{
+				Pair:       "noah/usd",
+				Price:      valid.Price,
+				ValidUntil: valid.ValidUntil,
+			}},
+			expectErr: "bootstrap price pair",
 		},
 		{
-			name: "route count differs",
-			mutate: func(cfg *resolver.Config) {
-				cfg.Routes["uusd"] = append(cfg.Routes["uusd"], resolver.Route{
-					Name:  "fallback",
-					Pairs: []types.Pair{"USD/KRW"},
-				})
-			},
+			name: "invalid price",
+			bootstrap: []resolver.BootstrapPrice{{
+				Pair:       valid.Pair,
+				Price:      "not-a-price",
+				ValidUntil: valid.ValidUntil,
+			}},
+			expectErr: "bootstrap price for NOAH/USD is invalid",
 		},
 		{
-			name: "route name differs",
-			mutate: func(cfg *resolver.Config) {
-				cfg.Routes["uusd"][0].Name = "fallback"
-			},
+			name: "non-positive price",
+			bootstrap: []resolver.BootstrapPrice{{
+				Pair:       valid.Pair,
+				Price:      "0",
+				ValidUntil: valid.ValidUntil,
+			}},
+			expectErr: "bootstrap price for NOAH/USD must be positive",
 		},
 		{
-			name: "route pairs differ",
-			mutate: func(cfg *resolver.Config) {
-				cfg.Routes["uusd"][0].Pairs[0] = "USD/ARK"
-			},
+			name: "invalid expiry",
+			bootstrap: []resolver.BootstrapPrice{{
+				Pair:       valid.Pair,
+				Price:      valid.Price,
+				ValidUntil: "tomorrow",
+			}},
+			expectErr: "bootstrap price for NOAH/USD validUntil",
 		},
 		{
-			name: "route order differs",
-			mutate: func(cfg *resolver.Config) {
-				cfg.Routes["uusd"][0], cfg.Routes["uusd"][1] = cfg.Routes["uusd"][1], cfg.Routes["uusd"][0]
-			},
+			name:      "duplicate pair",
+			bootstrap: []resolver.BootstrapPrice{valid, valid},
+			expectErr: "duplicate bootstrap price pair",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := resolver.Config{
-				Routes: map[string][]resolver.Route{
-					"uusd": {
-						{
-							Name:  "ark-usd",
-							Pairs: []types.Pair{"ARK/USD"},
-						},
-						{
-							Name:  "ark-usdt-usd",
-							Pairs: []types.Pair{"ARK/USDT", "USDT/USD"},
-						},
-					},
-				},
-			}
-			b := resolver.Config{
-				Routes: map[string][]resolver.Route{
-					"uusd": {
-						{
-							Name:  "ark-usd",
-							Pairs: []types.Pair{"ARK/USD"},
-						},
-						{
-							Name:  "ark-usdt-usd",
-							Pairs: []types.Pair{"ARK/USDT", "USDT/USD"},
-						},
-					},
-				},
-			}
-			if tc.mutate != nil {
-				tc.mutate(&b)
-			}
+			cfg := resolver.Config{BootstrapPrices: tc.bootstrap}
 
-			require.Equal(t, tc.want, a.Equal(b))
+			err := cfg.Validate()
+
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
 		})
 	}
+}
+
+func TestConfigCloneCopiesBootstrapPrices(t *testing.T) {
+	cfg := resolver.Config{
+		BootstrapPrices: []resolver.BootstrapPrice{{
+			Pair:       "NOAH/USD",
+			Price:      "0.25",
+			ValidUntil: time.Date(2030, time.January, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		}},
+	}
+
+	cloned := cfg.Clone()
+	cloned.BootstrapPrices[0].Price = "1.00"
+
+	require.Equal(t, "0.25", cfg.BootstrapPrices[0].Price)
 }
 
 func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
@@ -203,8 +219,8 @@ func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 		Routes: map[string][]resolver.Route{
 			"ukrw": {
 				{
-					Name:  "ark-usd",
-					Pairs: []types.Pair{"ARK/USD"},
+					Name:  "noah-usd",
+					Pairs: []types.Pair{"NOAH/USD"},
 				},
 			},
 		},
@@ -212,7 +228,7 @@ func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, `resolver denom "ukrw" route "ark-usd" resolves to "ARK/USD", want "ARK/KRW"`)
+	require.ErrorContains(t, err, `resolver denom "ukrw" route "noah-usd" resolves to "NOAH/USD", want "NOAH/KRW"`)
 }
 
 func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
@@ -221,7 +237,7 @@ func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
 			"ukrw": {
 				{
 					Name:  "bad-path",
-					Pairs: []types.Pair{"ARK/USD", "EUR/KRW"},
+					Pairs: []types.Pair{"NOAH/USD", "EUR/KRW"},
 				},
 			},
 		},

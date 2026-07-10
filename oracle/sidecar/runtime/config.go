@@ -7,11 +7,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/oracle/sidecar/chainstate"
-	"noah/oracle/sidecar/providers"
-	providertypes "noah/oracle/sidecar/providers/types"
-	"noah/oracle/sidecar/resolver"
-	oracletypes "noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/chainstate"
+	"ark/oracle/sidecar/providers"
+	providertypes "ark/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/resolver"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 // Config defines the price runtime configuration. The runtime is configured
@@ -21,13 +21,9 @@ import (
 // Config values are treated as immutable after being passed to the runtime. Build
 // a replacement config instead of mutating nested maps or slices in place.
 type Config struct {
-	// UpdateInterval is the interval at which the oracle will fetch prices from providers.
+	// UpdateInterval is the interval at which cached provider prices are resolved
+	// into a new public price snapshot.
 	UpdateInterval time.Duration `json:"updateInterval"`
-
-	// MaxPriceAge is the maximum age of a price that the oracle will consider valid. If a
-	// price is older than this, the oracle will not consider it valid and will not return it in /prices
-	// requests.
-	MaxPriceAge time.Duration `json:"maxPriceAge"`
 
 	// Providers is the set of providers that the oracle will fetch prices from, keyed by provider name.
 	Providers map[string]providers.Config `json:"providers"`
@@ -38,7 +34,9 @@ type Config struct {
 	// Client configures the chainstate vote-target query client.
 	Client chainstate.Config `json:"client"`
 
-	// FallbackDenoms is used when vote-target polling has not produced an on-chain snapshot.
+	// FallbackDenoms is used until vote-target polling produces its first on-chain
+	// snapshot. Later polling failures preserve the last on-chain snapshot instead
+	// of returning to these defaults.
 	FallbackDenoms []string `json:"fallbackDenoms"`
 }
 
@@ -54,17 +52,7 @@ func (c Config) Clone() Config {
 			cloned.Providers[name] = providerCfg
 		}
 	}
-	if c.Resolver.Routes != nil {
-		cloned.Resolver.Routes = make(map[string][]resolver.Route, len(c.Resolver.Routes))
-		for denom, routes := range c.Resolver.Routes {
-			copiedRoutes := make([]resolver.Route, len(routes))
-			for i, route := range routes {
-				route.Pairs = append([]oracletypes.Pair(nil), route.Pairs...)
-				copiedRoutes[i] = route
-			}
-			cloned.Resolver.Routes[denom] = copiedRoutes
-		}
-	}
+	cloned.Resolver = c.Resolver.Clone()
 	cloned.FallbackDenoms = append([]string(nil), c.FallbackDenoms...)
 
 	return cloned
@@ -74,9 +62,6 @@ func (c Config) Clone() Config {
 func (c *Config) Validate() error {
 	if c.UpdateInterval <= 0 {
 		return errors.New("oracle update interval must be greater than 0")
-	}
-	if c.MaxPriceAge <= 0 {
-		return errors.New("oracle max price age must be greater than 0")
 	}
 	if len(c.Providers) == 0 {
 		return errors.New("oracle needs at least one provider")
@@ -101,6 +86,9 @@ func (c *Config) Validate() error {
 	fallbackDenoms := make(map[string]struct{}, len(c.FallbackDenoms))
 	for _, denom := range c.FallbackDenoms {
 		if err := sdk.ValidateDenom(denom); err != nil {
+			return fmt.Errorf("invalid fallback denom %q: %w", denom, err)
+		}
+		if _, err := oracletypes.FromDenom(denom); err != nil {
 			return fmt.Errorf("invalid fallback denom %q: %w", denom, err)
 		}
 		if _, ok := fallbackDenoms[denom]; ok {

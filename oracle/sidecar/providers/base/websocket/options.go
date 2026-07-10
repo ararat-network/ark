@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // Option configures a websocket fetcher.

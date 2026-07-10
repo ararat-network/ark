@@ -3,9 +3,7 @@ package chainstate
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -24,21 +22,12 @@ type Client struct {
 	// Config is mutable through Update and read by the polling loop.
 	cfg Config
 
-	// Cached chain state. targets is the last valid snapshot; lastErr is only
-	// surfaced while no snapshot exists.
+	// Cached chain state. targets is the last valid snapshot.
 	targets []string
-	lastErr error
-
-	// Poll-loop lifecycle. These are set by Start, cleared by run, and read by
-	// Stop/Update under mut.
-	isRunning atomic.Bool
-	cancleFn  context.CancelFunc
-	doneCh    chan struct{}
-	updateCh  chan struct{}
 }
 
-// NewClient validates cfg, applies opts, and returns a stopped chainstate
-// client ready to be started by the sidecar owner.
+// NewClient validates cfg, applies opts, and returns a chainstate client ready
+// to be run by the sidecar owner.
 func NewClient(cfg Config, opts ...Option) (*Client, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -63,99 +52,59 @@ func NewClient(cfg Config, opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-// Start launches the background poll loop. It returns after the loop has been
-// initialised; callers should use VoteTargets to read the cached snapshot.
-func (c *Client) Start(ctx context.Context) error {
+// Run blocks on the poll loop and cleans up lifecycle state before returning.
+// Callers should run it in the owning lifecycle and use VoteTargets to read the
+// cached snapshot.
+func (c *Client) Run(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
 	}
-	if err := ctx.Err(); err != nil {
-		return err
+
+	c.logger.Info("starting chain state client")
+
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		if err := c.runOnce(ctx); err != nil {
+			if ctx.Err() != nil || errors.Is(err, context.Canceled) {
+				return ctx.Err()
+			}
+
+			c.logger.Error("chain state client poll failed", "error", err)
+
+			cfg := c.getConfig()
+			if err := waitForRetry(ctx, cfg.Interval); err != nil {
+				return err
+			}
+		}
 	}
-
-	runCtx, cancel := context.WithCancel(ctx)
-	updateCh := make(chan struct{}, 1)
-	doneCh := make(chan struct{})
-
-	c.mut.Lock()
-	if c.isRunning.Load() {
-		c.mut.Unlock()
-		cancel()
-		return errors.New("vote targets client already running")
-	}
-	c.isRunning.Store(true)
-	c.cancleFn = cancel
-	c.doneCh = doneCh
-	c.updateCh = updateCh
-	c.mut.Unlock()
-
-	cfg := c.getConfig()
-	c.logger.Info(
-		"starting chain state vote-target client",
-		"address", cfg.Address,
-		"interval", cfg.Interval,
-		"timeout", cfg.Timeout,
-	)
-
-	go c.run(runCtx, cancel, updateCh, doneCh)
-
-	return nil
 }
 
-// Stop cancels the poll loop and waits until it has released its lifecycle
-// state. Calling Stop on an already stopped client is a no-op.
-func (c *Client) Stop() {
-	c.mut.RLock()
-	cancel := c.cancleFn
-	doneCh := c.doneCh
-	c.mut.RUnlock()
-
-	if doneCh == nil {
-		c.logger.Debug("chain state vote-target client is not running")
-		return
-	}
-
-	c.logger.Info("stopping chain state vote-target client")
-	if cancel != nil {
-		cancel()
-	}
-	<-doneCh
-	c.logger.Info("chain state vote-target client stopped")
-}
-
-// Update replaces the client config and wakes the polling loop. The caller must
-// validate cfg before calling Update. Address changes reconnect the query
-// client; timeout and interval changes take effect on the next loop wake-up.
+// Update replaces the client config. The caller must validate cfg before
+// calling Update. Run observes address, timeout, and interval changes on the
+// next poll or retry cycle.
 func (c *Client) Update(cfg Config) {
 	c.mut.Lock()
 	if c.cfg.Equal(cfg) {
 		c.mut.Unlock()
 		return
 	}
-
 	c.cfg = cfg
-
-	if c.updateCh != nil {
-		select {
-		case c.updateCh <- struct{}{}:
-		default:
-		}
-	}
 	c.mut.Unlock()
 
 	c.logger.Info("updated chain state vote-target client config")
 }
 
-// VoteTargets returns a copy of the latest valid vote-target snapshot. It only
-// returns the latest refresh error while no successful snapshot has been cached.
+// VoteTargets returns a copy of the latest valid vote-target snapshot. It
+// returns an error until the first successful non-empty snapshot is cached;
+// later refresh failures preserve the last successful snapshot.
 func (c *Client) VoteTargets() ([]string, error) {
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 
 	if len(c.targets) == 0 {
-		if c.lastErr != nil {
-			return nil, fmt.Errorf("no vote targets fetched yet: %w", c.lastErr)
-		}
 		return nil, errors.New("no vote targets fetched yet")
 	}
 

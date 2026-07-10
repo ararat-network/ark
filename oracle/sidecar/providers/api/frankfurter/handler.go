@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	api "noah/oracle/sidecar/providers/base/api"
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	api "ark/oracle/sidecar/providers/base/api"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 var _ api.DataHandler = (*Handler)(nil)

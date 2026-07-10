@@ -1,20 +1,20 @@
 package providertest_test
 
 import (
+	. "ark/oracle/sidecar/providers/providertest"
 	"context"
 	"maps"
 	"math/big"
-	. "noah/oracle/sidecar/providers/providertest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"noah/oracle/sidecar/providers/base"
-	basetestutil "noah/oracle/sidecar/providers/base/testutil"
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/providers/base"
+	basetestutil "ark/oracle/sidecar/providers/base/testutil"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 func TestRunBuildsProviderAndCollectsPriceSnapshots(t *testing.T) {

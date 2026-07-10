@@ -10,92 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	base "noah/oracle/sidecar/providers/base"
-	basetestutil "noah/oracle/sidecar/providers/base/testutil"
-	"noah/oracle/sidecar/providers/types"
-	oracletypes "noah/oracle/sidecar/types"
+	base "ark/oracle/sidecar/providers/base"
+	basetestutil "ark/oracle/sidecar/providers/base/testutil"
+	"ark/oracle/sidecar/providers/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
-
-func TestUpdateCancelsFetchContextAndReplacesTickersFromMarkets(t *testing.T) {
-	fetcher := newMockFetcher(t)
-	provider := newProvider(t, types.Markets{
-		{Pair: "ATOM/USD", Symbol: "ATOMUSD"},
-	}, fetcher)
-
-	firstStarted := make(chan struct{})
-	firstCanceled := make(chan struct{})
-	secondStarted := make(chan struct{})
-	releaseSecond := make(chan struct{})
-
-	fetcher.EXPECT().
-		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
-			close(firstStarted)
-			<-ctx.Done()
-			close(firstCanceled)
-			return ctx.Err()
-		})
-	fetcher.EXPECT().
-		Run(gomock.Any(), []types.Ticker{"ATOMUSD", "BTCUSD"}, gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
-			close(secondStarted)
-			select {
-			case <-releaseSecond:
-				return nil
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		})
-
-	require.NoError(t, provider.Start(context.Background()))
-
-	requireSignal(t, firstStarted, "provider did not start")
-
-	markets := types.Markets{
-		{Pair: "ATOM/USD", Symbol: "ATOMUSD"},
-		{Pair: "BTC/USD", Symbol: "BTCUSD"},
-	}
-	provider.Update(markets)
-
-	requireSignal(t, firstCanceled, "fetch cycle was not canceled")
-	requireSignal(t, secondStarted, "provider did not restart")
-	require.Equal(t, []types.Ticker{"ATOMUSD", "BTCUSD"}, provider.GetTickers())
-
-	close(releaseSecond)
-	require.Eventually(t, func() bool {
-		return !provider.IsRunning()
-	}, time.Second, time.Millisecond)
-}
-
-func TestStartWaitsForMarketsWhenTickersAreEmpty(t *testing.T) {
-	fetcher := newMockFetcher(t)
-	provider := newProvider(t, types.Markets{
-		{Pair: "ATOM/USD", Symbol: "ATOMUSD"},
-	}, fetcher)
-	provider.Update(nil)
-
-	started := make(chan struct{})
-	fetcher.EXPECT().
-		Run(gomock.Any(), []types.Ticker{"ATOMUSD"}, gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ []types.Ticker, _ chan<- types.Response) error {
-			close(started)
-			<-ctx.Done()
-			return ctx.Err()
-		})
-
-	require.NoError(t, provider.Start(context.Background()))
-
-	select {
-	case <-started:
-		t.Fatal("provider started before markets were added")
-	case <-time.After(20 * time.Millisecond):
-	}
-
-	provider.Update(types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}})
-	requireSignal(t, started, "provider did not start after markets were added")
-
-	provider.Stop()
-}
 
 func TestGetTickersReturnsCopy(t *testing.T) {
 	provider := newProvider(t, types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}}, newMockFetcher(t))
@@ -106,7 +25,7 @@ func TestGetTickersReturnsCopy(t *testing.T) {
 	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
 }
 
-func TestUpdateRetainsPricesForUnchangedMarketsAndPrunesRemovedMarkets(t *testing.T) {
+func TestUpdateMarketsRetainsPricesForUnchangedMarketsAndPrunesRemovedMarkets(t *testing.T) {
 	fetcher := newMockFetcher(t)
 	provider := newProvider(t, types.Markets{
 		{Pair: "ATOM/USD", Symbol: "ATOMUSD"},
@@ -120,7 +39,7 @@ func TestUpdateRetainsPricesForUnchangedMarketsAndPrunesRemovedMarkets(t *testin
 		nil,
 	), 2)
 
-	provider.Update(types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}})
+	provider.UpdateMarkets(types.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}})
 
 	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
 	prices := provider.GetPrices()
@@ -130,20 +49,64 @@ func TestUpdateRetainsPricesForUnchangedMarketsAndPrunesRemovedMarkets(t *testin
 	require.Zero(t, prices[oracletypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
 }
 
-func TestUpdateReplacesMarketsAndTickers(t *testing.T) {
+func TestUpdateMarketsRetainsCaseOnlySymbolChangeAndAppliesNewerObservation(t *testing.T) {
+	fetcher := newMockFetcher(t)
+	pair := oracletypes.Pair("ATOM/USD")
+	provider := newProvider(t, types.Markets{{Pair: pair, Symbol: "ATOMUSD"}}, fetcher)
+	oldTimestamp := time.Unix(10, 0).UTC()
+	newTimestamp := time.Unix(20, 0).UTC()
+
+	seedProviderResponses(t, provider, fetcher, []types.Ticker{"ATOMUSD"}, []types.Response{
+		types.NewResponse(map[types.Ticker]types.Result{
+			"ATOMUSD": types.NewResult(big.NewFloat(1), oldTimestamp),
+		}, nil),
+	}, func() bool {
+		result, ok := provider.GetPrices()[pair]
+		return ok && result.Timestamp.Equal(oldTimestamp)
+	})
+
+	provider.UpdateMarkets(types.Markets{{Pair: pair, Symbol: "atomusd"}})
+
+	require.Equal(t, []types.Ticker{"atomusd"}, provider.GetTickers())
+	retained := provider.GetPrices()[pair]
+	require.Equal(t, oldTimestamp, retained.Timestamp)
+	require.Zero(t, retained.Price.Cmp(big.NewFloat(1)))
+
+	seedProviderResponses(t, provider, fetcher, []types.Ticker{"atomusd"}, []types.Response{
+		types.NewResponse(map[types.Ticker]types.Result{
+			"atomusd": types.NewResult(big.NewFloat(2), newTimestamp),
+		}, nil),
+	}, func() bool {
+		result, ok := provider.GetPrices()[pair]
+		return ok &&
+			result.Price != nil &&
+			result.Timestamp.Equal(newTimestamp) &&
+			result.Price.Cmp(big.NewFloat(2)) == 0
+	})
+
+	// A case-only symbol change must not leave two raw ticker entries competing
+	// to project onto the same pair.
+	for range 1000 {
+		result := provider.GetPrices()[pair]
+		require.Equal(t, newTimestamp, result.Timestamp)
+		require.Zero(t, result.Price.Cmp(big.NewFloat(2)))
+	}
+}
+
+func TestUpdateMarketsReplacesMarketsAndTickers(t *testing.T) {
 	provider := newProvider(t, types.Markets{{Pair: "USDT/USD", Symbol: "OLDUSD"}}, newMockFetcher(t))
 	markets := types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}}
 
-	provider.Update(markets)
+	provider.UpdateMarkets(markets)
 
 	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
 }
 
-func TestUpdateCopiesInput(t *testing.T) {
+func TestUpdateMarketsCopiesInput(t *testing.T) {
 	provider := newProvider(t, types.Markets{{Pair: "USDT/USD", Symbol: "OLDUSD"}}, newMockFetcher(t))
 	markets := types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}}
 
-	provider.Update(markets)
+	provider.UpdateMarkets(markets)
 	markets[0].Symbol = "MUTATED"
 
 	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
@@ -170,7 +133,7 @@ func TestMarketsValidateRejectsDuplicateSymbolsBeforeUpdate(t *testing.T) {
 	require.Contains(t, provider.GetPrices(), oracletypes.Pair("USDT/USD"))
 }
 
-func TestUpdateClearsCachedPricesForPairRemap(t *testing.T) {
+func TestUpdateMarketsClearsCachedPricesForPairRemap(t *testing.T) {
 	fetcher := newMockFetcher(t)
 	provider := newProvider(t, types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}}, fetcher)
 	seedProviderPrices(t, provider, fetcher, []types.Ticker{"USDTUSD"}, types.NewResponse(
@@ -180,13 +143,13 @@ func TestUpdateClearsCachedPricesForPairRemap(t *testing.T) {
 		nil,
 	), 1)
 
-	provider.Update(types.Markets{{Pair: "USDC/USD", Symbol: "USDTUSD"}})
+	provider.UpdateMarkets(types.Markets{{Pair: "USDC/USD", Symbol: "USDTUSD"}})
 
 	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
 	require.Empty(t, provider.GetPrices())
 }
 
-func TestUpdateClearsCachedPricesForSymbolRemap(t *testing.T) {
+func TestUpdateMarketsClearsCachedPricesForSymbolRemap(t *testing.T) {
 	fetcher := newMockFetcher(t)
 	provider := newProvider(t, types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}}, fetcher)
 	seedProviderPrices(t, provider, fetcher, []types.Ticker{"USDTUSD"}, types.NewResponse(
@@ -196,13 +159,13 @@ func TestUpdateClearsCachedPricesForSymbolRemap(t *testing.T) {
 		nil,
 	), 1)
 
-	provider.Update(types.Markets{{Pair: "USDT/USD", Symbol: "USDCUSD"}})
+	provider.UpdateMarkets(types.Markets{{Pair: "USDT/USD", Symbol: "USDCUSD"}})
 
 	require.Equal(t, []types.Ticker{"USDCUSD"}, provider.GetTickers())
 	require.Empty(t, provider.GetPrices())
 }
 
-func TestUpdateCanRunWhileProviderReadsState(t *testing.T) {
+func TestUpdateMarketsCanRunWhileProviderReadsState(t *testing.T) {
 	provider := newProvider(t, types.Markets{
 		{Pair: "ATOM/USD", Symbol: "ATOMUSD"},
 		{Pair: "BTC/USD", Symbol: "BTCUSD"},
@@ -224,7 +187,7 @@ func TestUpdateCanRunWhileProviderReadsState(t *testing.T) {
 					{Pair: "BTC/USD", Symbol: "BTCUSD"},
 				}
 			}
-			provider.Update(markets)
+			provider.UpdateMarkets(markets)
 		}
 	}()
 
@@ -295,7 +258,10 @@ func seedProviderPrices(
 		})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	require.NoError(t, provider.Start(ctx))
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- provider.Run(ctx)
+	}()
 
 	requireSignal(t, started, "provider did not start")
 	require.Eventually(t, func() bool {
@@ -303,7 +269,7 @@ func seedProviderPrices(
 	}, time.Second, time.Millisecond)
 
 	cancel()
-	provider.Stop()
+	require.ErrorIs(t, requireProviderRunReturned(t, errCh), context.Canceled)
 }
 
 func requireSignal(t *testing.T, ch <-chan struct{}, message string) {

@@ -1,6 +1,6 @@
 # API Providers
 
-API providers fetch prices over HTTP. Each adapter translates Noah provider tickers into a provider-specific request and
+API providers fetch prices over HTTP. Each adapter translates Ark provider tickers into a provider-specific request and
 translates the HTTP response back into `types.Response`.
 
 The shared API fetcher in `base/api` owns polling, batching, request timing, endpoint selection, response publication,

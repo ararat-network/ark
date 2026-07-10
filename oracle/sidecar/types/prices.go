@@ -12,6 +12,11 @@ type Prices map[Pair]*big.Float
 // DenomPrices is the public/API-facing price map keyed by vote-target denom.
 type DenomPrices map[string]*big.Float
 
+// PricePrecisionBits is the precision used for provider prices and resolver
+// arithmetic. It comfortably exceeds the 18 decimal places serialised at the
+// public LegacyDec boundary.
+const PricePrecisionBits uint = 256
+
 // Clone returns a deep copy of p.
 func (p DenomPrices) Clone() DenomPrices {
 	copied := make(DenomPrices, len(p))
@@ -27,16 +32,10 @@ func (p DenomPrices) Clone() DenomPrices {
 
 // PriceSnapshot is a committed public price view from one runtime aggregation.
 type PriceSnapshot struct {
-	Prices    DenomPrices
+	// Prices is the complete denom-keyed public view committed by the tick.
+	Prices DenomPrices
+	// Timestamp is the aggregation time shared by every price in Prices.
 	Timestamp time.Time
-}
-
-// Clone returns a deep copy of s.
-func (s PriceSnapshot) Clone() PriceSnapshot {
-	return PriceSnapshot{
-		Prices:    s.Prices.Clone(),
-		Timestamp: s.Timestamp,
-	}
 }
 
 // PricesByDenom projects internal pair prices to public vote-target denom prices.
@@ -65,10 +64,10 @@ func PricesByDenom(prices Prices, denoms []string) DenomPrices {
 	return result
 }
 
-// ParsePrice parses a decimal string into an oracle price.
+// ParsePrice parses a finite decimal string into an oracle price.
 func ParsePrice(s string) (*big.Float, error) {
-	price, ok := new(big.Float).SetString(s)
-	if !ok {
+	price, ok := new(big.Float).SetPrec(PricePrecisionBits).SetString(s)
+	if !ok || price.IsInf() {
 		return nil, fmt.Errorf("failed to parse oracle price %q", s)
 	}
 

@@ -1,339 +1,311 @@
-package client_test
+package client
 
 import (
 	"context"
-	"errors"
+	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/log/v2"
 
-	oracleclient "noah/oracle/client"
-	"noah/oracle/types"
-	transporttypestestutil "noah/oracle/types/testutil"
+	"ark/oracle/types"
+	transporttypestestutil "ark/oracle/types/testutil"
 )
 
-func TestNewPriceDaemon(t *testing.T) {
+func TestNewCachedPriceClient(t *testing.T) {
 	tests := []struct {
 		name    string
 		logger  log.Logger
-		cfg     oracleclient.Config
-		wantErr bool
+		cfg     Config
+		wantErr string
 	}{
 		{
 			name:   "valid",
 			logger: log.NewNopLogger(),
-			cfg:    validDaemonConfig(),
+			cfg:    validClientConfig(),
 		},
 		{
 			name:    "nil logger",
-			cfg:     validDaemonConfig(),
-			wantErr: true,
+			cfg:     validClientConfig(),
+			wantErr: "logger cannot be nil",
 		},
 		{
-			name:   "invalid config",
+			name:   "disabled does not relax runtime validation",
 			logger: log.NewNopLogger(),
-			cfg: oracleclient.Config{
-				Enabled: true,
+			cfg: Config{
+				Enabled:       false,
+				OracleAddress: "127.0.0.1:1",
+				ClientTimeout: time.Second,
 			},
-			wantErr: true,
+			wantErr: "oracle price time to live",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			daemon, err := oracleclient.NewCachedClient(tt.logger, tt.cfg)
-			if tt.wantErr {
-				require.Nil(t, daemon)
-				require.Error(t, err)
+			client, err := NewClient(tt.logger, tt.cfg)
+			if tt.wantErr != "" {
+				require.Nil(t, client)
+				require.ErrorContains(t, err, tt.wantErr)
 				return
 			}
 
 			require.NoError(t, err)
-			require.NotNil(t, daemon)
+			require.NotNil(t, client)
 		})
 	}
 }
 
-func TestPriceDaemonCachesPrices(t *testing.T) {
-	prices := map[string][]byte{
-		"btc/usd": []byte("10000"),
-	}
-	mockServer := transporttypestestutil.NewMockOracleServer(gomock.NewController(t))
-	mockServer.EXPECT().
-		Prices(gomock.Any(), gomock.Any()).
-		Return(&types.OraclePricesResponse{Prices: prices}, nil).
-		AnyTimes()
-	addr := startTestOracleServer(t, mockServer)
-	cfg := validDaemonConfig()
-	cfg.OracleAddress = addr
-	cfg.Interval = 20 * time.Millisecond
-
-	daemon, err := oracleclient.NewCachedClient(log.NewTestLogger(t), cfg)
+func TestCachedPriceClientRunReturnsDialError(t *testing.T) {
+	cfg := validClientConfig()
+	cfg.OracleAddress = "%"
+	client, err := NewClient(log.NewNopLogger(), cfg)
 	require.NoError(t, err)
+
+	err = client.Run(context.Background())
+
+	require.ErrorContains(t, err, "dial oracle gRPC server")
+	require.ErrorContains(t, err, "invalid URL escape")
+}
+
+func TestCachedPriceClientRunRejectsInvalidContext(t *testing.T) {
+	client := newTestCachedPriceClient(t, validClientConfig())
+
+	require.EqualError(t, client.Run(nil), "context cannot be nil")
 
 	ctx, cancel := context.WithCancel(context.Background())
-	resultCh := make(chan error, 1)
-	go func() {
-		resultCh <- daemon.Start(ctx)
-	}()
+	cancel()
+	require.ErrorIs(t, client.Run(ctx), context.Canceled)
+}
+
+func TestCachedPriceClientFetchesImmediately(t *testing.T) {
+	response := freshResponse()
+	rpc := transporttypestestutil.NewMockOracleClient(gomock.NewController(t))
+	rpc.EXPECT().
+		Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(response, nil)
+	client := newTestCachedPriceClient(t, validClientConfig())
+	cancel, resultCh := runCachedPricePoller(client, rpc)
 
 	require.Eventually(t, func() bool {
-		response, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-		return err == nil && response != nil
-	}, time.Second, 10*time.Millisecond)
-
-	response, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-	require.NoError(t, err)
-	require.Equal(t, prices, response.Prices)
+		got, err := client.Prices(context.Background(), &types.OraclePricesRequest{})
+		return err == nil && got.Timestamp.Equal(response.Timestamp)
+	}, time.Second, time.Millisecond)
 
 	cancel()
-	require.ErrorIs(t, <-resultCh, context.Canceled)
+	require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
 }
 
-func TestPriceDaemonRejectsStalePrices(t *testing.T) {
-	prices := map[string][]byte{
-		"btc/usd": []byte("10000"),
-	}
-	var calls atomic.Int64
-	mockServer := transporttypestestutil.NewMockOracleServer(gomock.NewController(t))
-	mockServer.EXPECT().
-		Prices(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(context.Context, *types.OraclePricesRequest) (*types.OraclePricesResponse, error) {
-			if calls.Add(1) == 1 {
-				return &types.OraclePricesResponse{Prices: prices}, nil
-			}
-			return nil, status.Error(codes.Unavailable, "failed to make request")
-		}).
-		AnyTimes()
-	addr := startTestOracleServer(t, mockServer)
-	cfg := validDaemonConfig()
-	cfg.OracleAddress = addr
-	cfg.Interval = 20 * time.Millisecond
-	cfg.PriceTTL = 50 * time.Millisecond
-
-	daemon, err := oracleclient.NewCachedClient(log.NewTestLogger(t), cfg)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	resultCh := make(chan error, 1)
-	go func() {
-		resultCh <- daemon.Start(ctx)
-	}()
-
-	require.Eventually(t, func() bool {
-		_, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-		return err == nil
-	}, time.Second, 10*time.Millisecond)
-	require.Eventually(t, func() bool {
-		_, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-		return err != nil
-	}, time.Second, 10*time.Millisecond)
-
-	cancel()
-	require.ErrorIs(t, <-resultCh, context.Canceled)
-}
-
-func TestPriceDaemonPricesBeforeStart(t *testing.T) {
-	daemon, err := oracleclient.NewCachedClient(log.NewNopLogger(), validDaemonConfig())
-	require.NoError(t, err)
-
-	response, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-
-	require.Nil(t, response)
-	require.EqualError(t, err, "no prices fetched by price daemon yet")
-}
-
-func TestPriceDaemonStop(t *testing.T) {
-	mockServer := transporttypestestutil.NewMockOracleServer(gomock.NewController(t))
-	mockServer.EXPECT().
-		Prices(gomock.Any(), gomock.Any()).
-		Return(&types.OraclePricesResponse{}, nil).
-		AnyTimes()
-	addr := startTestOracleServer(t, mockServer)
-	cfg := validDaemonConfig()
-	cfg.OracleAddress = addr
-	cfg.Interval = 20 * time.Millisecond
-
-	daemon, err := oracleclient.NewCachedClient(log.NewTestLogger(t), cfg)
-	require.NoError(t, err)
-
-	resultCh := make(chan error, 1)
-	go func() {
-		resultCh <- daemon.Start(context.Background())
-	}()
-
-	require.Eventually(t, func() bool {
-		_, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-		return err == nil
-	}, time.Second, 10*time.Millisecond)
-	require.NoError(t, daemon.Stop())
-	require.NoError(t, <-resultCh)
-}
-
-func TestPriceDaemonStopCancelsBlockedFetch(t *testing.T) {
+func TestCachedPriceClientRejectsStaleSnapshots(t *testing.T) {
 	tests := []struct {
-		name string
-		stop func(t *testing.T, daemon *oracleclient.CachedClient, releaseFetch func())
+		name      string
+		timestamp time.Time
 	}{
 		{
-			name: "single stop",
-			stop: func(t *testing.T, daemon *oracleclient.CachedClient, releaseFetch func()) {
-				t.Helper()
-
-				stopCh := make(chan error, 1)
-				go func() {
-					stopCh <- daemon.Stop()
-				}()
-
-				select {
-				case err := <-stopCh:
-					require.NoError(t, err)
-				case <-time.After(100 * time.Millisecond):
-					releaseFetch()
-					require.NoError(t, <-stopCh)
-					require.FailNow(t, "Stop did not cancel the in-flight price fetch")
-				}
-			},
+			name:      "zero timestamp",
+			timestamp: time.Time{},
 		},
 		{
-			name: "concurrent stops",
-			stop: func(t *testing.T, daemon *oracleclient.CachedClient, releaseFetch func()) {
-				t.Helper()
-
-				type stopResult struct {
-					err   error
-					panic any
-				}
-				const stopCount = 8
-				results := make(chan stopResult, stopCount)
-				for range stopCount {
-					go func() {
-						var result stopResult
-						defer func() {
-							result.panic = recover()
-							results <- result
-						}()
-						result.err = daemon.Stop()
-					}()
-				}
-
-				for i := 0; i < stopCount; i++ {
-					select {
-					case result := <-results:
-						require.Nil(t, result.panic)
-						require.NoError(t, result.err)
-					case <-time.After(time.Second):
-						releaseFetch()
-						require.FailNow(t, "concurrent Stop calls did not all return")
-					}
-				}
-			},
+			name:      "expired timestamp",
+			timestamp: time.Now().UTC().Add(-time.Minute),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			daemon, resultCh, releaseFetch := startPriceDaemonWithBlockedFetch(t)
+			response := freshResponse()
+			response.Timestamp = tt.timestamp
+			rpc := transporttypestestutil.NewMockOracleClient(gomock.NewController(t))
+			rpc.EXPECT().
+				Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(response, nil)
+			client := newTestCachedPriceClient(t, validClientConfig())
+			cancel, resultCh := runCachedPricePoller(client, rpc)
 
-			tt.stop(t, daemon, releaseFetch)
+			require.Eventually(t, func() bool {
+				_, err := client.Prices(context.Background(), &types.OraclePricesRequest{})
+				return err != nil && strings.Contains(err.Error(), "too stale")
+			}, time.Second, time.Millisecond)
 
-			require.NoError(t, <-resultCh)
+			cancel()
+			require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
 		})
 	}
 }
 
-func startPriceDaemonWithBlockedFetch(
-	t *testing.T,
-) (*oracleclient.CachedClient, <-chan error, func()) {
+func TestCachedPriceClientProtectsCachedResponse(t *testing.T) {
+	response := freshResponse()
+	rpc := transporttypestestutil.NewMockOracleClient(gomock.NewController(t))
+	rpc.EXPECT().
+		Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(response, nil)
+	client := newTestCachedPriceClient(t, validClientConfig())
+	cancel, resultCh := runCachedPricePoller(client, rpc)
+
+	var first *types.OraclePricesResponse
+	require.Eventually(t, func() bool {
+		var err error
+		first, err = client.Prices(context.Background(), &types.OraclePricesRequest{})
+		return err == nil
+	}, time.Second, time.Millisecond)
+
+	first.Prices["btc/usd"][0] = 8
+	first.Version = "mutated"
+
+	second, err := client.Prices(context.Background(), &types.OraclePricesRequest{})
+	require.NoError(t, err)
+	require.Equal(t, []byte{1, 2, 3}, second.Prices["btc/usd"])
+	require.Equal(t, "v1.2.3", second.Version)
+
+	cancel()
+	require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
+}
+
+func TestCachedPriceClientDoesNotCacheFailedFetch(t *testing.T) {
+	tests := []struct {
+		name     string
+		response *types.OraclePricesResponse
+		err      error
+	}{
+		{
+			name: "rpc error",
+			err:  status.Error(codes.Unavailable, "sidecar unavailable"),
+		},
+		{
+			name: "nil response",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fetched := make(chan struct{})
+			rpc := transporttypestestutil.NewMockOracleClient(gomock.NewController(t))
+			rpc.EXPECT().
+				Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+				DoAndReturn(func(context.Context, *types.OraclePricesRequest, ...grpc.CallOption) (*types.OraclePricesResponse, error) {
+					close(fetched)
+					return tt.response, tt.err
+				})
+			client := newTestCachedPriceClient(t, validClientConfig())
+			cancel, resultCh := runCachedPricePoller(client, rpc)
+			requireSignal(t, fetched)
+
+			response, err := client.Prices(context.Background(), &types.OraclePricesRequest{})
+			require.Nil(t, response)
+			require.EqualError(t, err, "no prices fetched from the sidecar yet")
+
+			cancel()
+			require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
+		})
+	}
+}
+
+func TestCachedPriceClientPricesHonoursContext(t *testing.T) {
+	client := newTestCachedPriceClient(t, validClientConfig())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	response, err := client.Prices(ctx, &types.OraclePricesRequest{})
+
+	require.Nil(t, response)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestCachedPriceClientPollCancellationCancelsBlockedFetch(t *testing.T) {
+	entered := make(chan struct{})
+	rpc := blockingPriceClient(t, entered)
+	client := newTestCachedPriceClient(t, validClientConfig())
+	cancel, resultCh := runCachedPricePoller(client, rpc)
+	requireSignal(t, entered)
+
+	cancel()
+	require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
+}
+
+func blockingPriceClient(t *testing.T, entered chan<- struct{}) *transporttypestestutil.MockOracleClient {
 	t.Helper()
 
-	entered := make(chan struct{})
-	release := make(chan struct{})
 	var enteredOnce sync.Once
-	var releaseOnce sync.Once
-	releaseFetch := func() {
-		releaseOnce.Do(func() {
-			close(release)
-		})
-	}
-	t.Cleanup(releaseFetch)
-
-	mockServer := transporttypestestutil.NewMockOracleServer(gomock.NewController(t))
-	mockServer.EXPECT().
-		Prices(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ *types.OraclePricesRequest) (*types.OraclePricesResponse, error) {
+	rpc := transporttypestestutil.NewMockOracleClient(gomock.NewController(t))
+	rpc.EXPECT().
+		Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ *types.OraclePricesRequest, _ ...grpc.CallOption) (*types.OraclePricesResponse, error) {
 			enteredOnce.Do(func() { close(entered) })
-			select {
-			case <-ctx.Done():
-				return nil, status.FromContextError(ctx.Err()).Err()
-			case <-release:
-				return &types.OraclePricesResponse{}, nil
-			}
-		}).
-		AnyTimes()
-	addr := startTestOracleServer(t, mockServer)
-	cfg := validDaemonConfig()
-	cfg.OracleAddress = addr
-	cfg.Interval = time.Millisecond
-	cfg.ClientTimeout = time.Second
+			<-ctx.Done()
+			return nil, status.FromContextError(ctx.Err()).Err()
+		})
 
-	daemon, err := oracleclient.NewCachedClient(log.NewTestLogger(t), cfg)
+	return rpc
+}
+
+func newTestCachedPriceClient(
+	t *testing.T,
+	cfg Config,
+) *Client {
+	t.Helper()
+
+	client, err := NewClient(log.NewTestLogger(t), cfg)
 	require.NoError(t, err)
+	return client
+}
 
+func runCachedPricePoller(
+	client *Client,
+	rpc types.OracleClient,
+) (context.CancelFunc, <-chan error) {
+	ctx, cancel := context.WithCancel(context.Background())
 	resultCh := make(chan error, 1)
 	go func() {
-		resultCh <- daemon.Start(context.Background())
+		resultCh <- client.poll(ctx, rpc)
 	}()
-
-	require.Eventually(t, func() bool {
-		select {
-		case <-entered:
-			return true
-		default:
-			return false
-		}
-	}, time.Second, 10*time.Millisecond)
-
-	return daemon, resultCh, releaseFetch
+	return cancel, resultCh
 }
 
-func TestPriceDaemonDoesNotCacheClientErrors(t *testing.T) {
-	mockServer := transporttypestestutil.NewMockOracleServer(gomock.NewController(t))
-	mockServer.EXPECT().
-		Prices(gomock.Any(), gomock.Any()).
-		Return(nil, errors.New("failed to make request")).
-		AnyTimes()
-	addr := startTestOracleServer(t, mockServer)
-	cfg := validDaemonConfig()
-	cfg.OracleAddress = addr
-	cfg.Interval = 20 * time.Millisecond
+func requireSignal(t *testing.T, ch <-chan struct{}) {
+	t.Helper()
 
-	daemon, err := oracleclient.NewCachedClient(log.NewTestLogger(t), cfg)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	require.ErrorIs(t, daemon.Start(ctx), context.DeadlineExceeded)
-	response, err := daemon.Prices(context.Background(), &types.OraclePricesRequest{})
-	require.Nil(t, response)
-	require.EqualError(t, err, "no prices fetched by price daemon yet")
+	select {
+	case <-ch:
+	case <-time.After(time.Second):
+		require.FailNow(t, "timed out waiting for signal")
+	}
 }
 
-func validDaemonConfig() oracleclient.Config {
-	return oracleclient.Config{
+func receiveError(t *testing.T, ch <-chan error) error {
+	t.Helper()
+
+	select {
+	case err := <-ch:
+		return err
+	case <-time.After(time.Second):
+		require.FailNow(t, "timed out waiting for result")
+		return nil
+	}
+}
+
+func freshResponse() *types.OraclePricesResponse {
+	return &types.OraclePricesResponse{
+		Prices: map[string][]byte{
+			"btc/usd": {1, 2, 3},
+		},
+		Timestamp: time.Now().UTC(),
+		Version:   "v1.2.3",
+	}
+}
+
+func validClientConfig() Config {
+	return Config{
 		Enabled:       true,
 		OracleAddress: "127.0.0.1:1",
 		ClientTimeout: time.Second,
-		Interval:      time.Second,
-		PriceTTL:      2 * time.Second,
+		Interval:      5 * time.Second,
+		PriceTTL:      10 * time.Second,
 	}
 }

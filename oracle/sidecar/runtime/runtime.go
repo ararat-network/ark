@@ -3,18 +3,15 @@ package runtime
 import (
 	"context"
 	"errors"
-	"maps"
-	"math/big"
 	"sync"
-	"sync/atomic"
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/sidecar/chainstate"
-	"noah/oracle/sidecar/providers"
-	provider "noah/oracle/sidecar/providers/base"
-	"noah/oracle/sidecar/resolver"
-	"noah/oracle/sidecar/types"
+	"ark/oracle/sidecar/chainstate"
+	"ark/oracle/sidecar/providers"
+	"ark/oracle/sidecar/providers/base"
+	providertypes "ark/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/types"
 )
 
 // Runtime runs price providers and exposes aggregated price state.
@@ -24,28 +21,31 @@ type Runtime struct {
 	// If both locks are needed, take updateMu before mut.
 	updateMu sync.Mutex
 
-	// mut guards the mutable runtime state below: cfg, providers, mainCtx,
-	// mainCancel, priceSnapshot, denoms, and denomsFromVoteTargets.
+	// mut guards the mutable runtime state below: cfg, mainCtx, mainCancel,
+	// priceSnapshot, denoms, and denomsFromVoteTargets.
 	mut sync.RWMutex
 
 	logger log.Logger
 
 	// Collaborators owned by the runtime.
-	resolver PriceResolver
-	client   ChainStateClient
+	providerFactory func(providers.Config, providertypes.Markets) (*base.Provider, error)
+	client          ChainStateClient
 
-	// Lifecycle state.
+	// mainCtx and mainCancel are non-nil while the blocking Run lifecycle is
+	// active. They are published and cleared together during updateMu-protected
+	// lifecycle transitions.
 	mainCtx    context.Context
-	mainCancel context.CancelFunc
-	running    atomic.Bool
+	mainCancel context.CancelCauseFunc
 
-	// updateIntervalCh is created once and wakes the Start loop after an
+	// updateIntervalCh is created once and wakes the Run loop after an
 	// UpdateInterval config change.
 	updateIntervalCh chan struct{}
 
-	// Config and provider state guarded by mut.
-	cfg       Config
-	providers map[string]*provider.Provider
+	// Config state guarded by mut.
+	cfg Config
+
+	// Provider map membership is guarded by updateMu.
+	providers map[string]*managedProvider
 
 	// Price aggregation state guarded by mut.
 	priceSnapshot types.PriceSnapshot
@@ -59,14 +59,18 @@ type Runtime struct {
 	denomsFromVoteTargets bool
 }
 
-// NewRuntime returns a new Runtime.
+// NewRuntime clones and validates cfg, constructs the configured providers and
+// chainstate client, and returns them unstarted under runtime ownership.
 func NewRuntime(cfg Config, opts ...Option) (*Runtime, error) {
 	cfg = cfg.Clone()
 	r := &Runtime{
 		cfg:              cfg,
-		providers:        make(map[string]*provider.Provider),
+		providers:        make(map[string]*managedProvider),
 		updateIntervalCh: make(chan struct{}, 1),
 		logger:           log.NewNopLogger(),
+	}
+	r.providerFactory = func(cfg providers.Config, markets providertypes.Markets) (*base.Provider, error) {
+		return providers.NewProvider(cfg, markets, r.logger)
 	}
 
 	for _, opt := range opts {
@@ -79,30 +83,24 @@ func NewRuntime(cfg Config, opts ...Option) (*Runtime, error) {
 	if r.logger == nil {
 		return nil, errors.New("logger is nil")
 	}
-	r.logger = r.logger.With("runtime", "oracle")
+	if r.providerFactory == nil {
+		return nil, errors.New("provider factory is nil")
+	}
+	r.logger = r.logger.With("component", "runtime")
 	if len(r.cfg.FallbackDenoms) != 0 {
 		r.denoms = append([]string(nil), r.cfg.FallbackDenoms...)
 	}
-	if len(r.providers) == 0 {
-		pairs := r.cfg.Resolver.MarketPairs(r.denoms)
-		for _, providerCfg := range r.cfg.Providers {
-			p, err := providers.NewProvider(providerCfg, providerCfg.Markets.FilterPairs(pairs), r.logger)
-			if err != nil {
-				return nil, err
-			}
-
-			r.providers[p.Name()] = p
-		}
-	}
-	if r.resolver == nil {
-		resolver, err := resolver.NewResolver(r.cfg.Resolver)
+	pairs := r.cfg.Resolver.MarketPairs(r.denoms)
+	for _, providerCfg := range r.cfg.Providers {
+		managed, err := r.newManagedProvider(providerCfg, providerCfg.Markets.FilterPairs(pairs))
 		if err != nil {
 			return nil, err
 		}
-		r.resolver = resolver
+
+		r.providers[managed.provider.Name()] = managed
 	}
 	if r.client == nil {
-		client, err := chainstate.NewClient(r.cfg.Client)
+		client, err := chainstate.NewClient(r.cfg.Client, chainstate.WithLogger(r.logger))
 		if err != nil {
 			return nil, err
 		}
@@ -112,34 +110,14 @@ func NewRuntime(cfg Config, opts ...Option) (*Runtime, error) {
 	return r, nil
 }
 
-// GetPriceSnapshot returns the latest committed public price snapshot.
+// GetPriceSnapshot returns a deep copy of the latest coherent public price and
+// timestamp snapshot, so callers cannot mutate runtime-owned cache state.
 func (r *Runtime) GetPriceSnapshot() types.PriceSnapshot {
 	r.mut.RLock()
 	defer r.mut.RUnlock()
 
-	prices := make(types.DenomPrices, len(r.denoms))
-	for _, denom := range r.denoms {
-		price, ok := r.priceSnapshot.Prices[denom]
-		if !ok || price == nil {
-			prices[denom] = new(big.Float)
-			continue
-		}
-		prices[denom] = new(big.Float).Copy(price)
-	}
-
 	return types.PriceSnapshot{
-		Prices:    prices,
+		Prices:    r.priceSnapshot.Prices.Clone(),
 		Timestamp: r.priceSnapshot.Timestamp,
 	}
-}
-
-// getProviders returns a snapshot of provider pointers for runtime-owned lifecycle work.
-func (r *Runtime) getProviders() map[string]*provider.Provider {
-	r.mut.RLock()
-	defer r.mut.RUnlock()
-
-	providers := make(map[string]*provider.Provider, len(r.providers))
-	maps.Copy(providers, r.providers)
-
-	return providers
 }

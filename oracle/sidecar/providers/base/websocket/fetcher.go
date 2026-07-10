@@ -12,10 +12,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "noah/oracle/sidecar/internal"
-	"noah/oracle/sidecar/providers/base"
-	"noah/oracle/sidecar/providers/base/websocket/metrics"
-	"noah/oracle/sidecar/providers/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/providers/base"
+	"ark/oracle/sidecar/providers/base/websocket/metrics"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // Fetcher maintains websocket subscriptions for provider ticker prices.
@@ -181,7 +181,7 @@ func (f *Fetcher) runOnce(
 		return ErrSelectEndpointWithErr(err)
 	}
 
-	conn, _, err := f.dial(dialCtx, endpoint.URL, f.dialOptions())
+	conn, _, err := f.dial(dialCtx, endpoint.URL, f.dialOptions(endpoint))
 	if err != nil {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -304,9 +304,6 @@ func (f *Fetcher) recv(
 	tickers []types.Ticker,
 	responseCh chan<- types.Response,
 ) error {
-	// Tolerate transient read errors before reconnecting.
-	readErrCount := 0
-
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -324,28 +321,21 @@ func (f *Fetcher) recv(
 			)
 			metrics.RecordConnectionEvent(ctx, f.config.Name, metrics.ConnectionEventReadError)
 
-			readErrCount++
-			if readErrCount >= f.config.MaxReadErrorCount {
-				f.logger.Error("max read errors reached", "error", err)
-
-				readErr := ErrReadWithErr(err)
-				response := types.NewErrorResponse(
-					tickers,
-					types.NewErrorWithCode(
-						readErr,
-						types.ErrorWebSocketGeneral,
-					),
-				)
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case responseCh <- response:
-					return reconnectWithErr(readErr)
-				}
+			readErr := ErrReadWithErr(err)
+			response := types.NewErrorResponse(
+				tickers,
+				types.NewErrorWithCode(
+					readErr,
+					types.ErrorWebSocketGeneral,
+				),
+			)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case responseCh <- response:
+				return reconnectWithErr(readErr)
 			}
-			continue
 		}
-		readErrCount = 0
 
 		response, updateMessage, err := handler.HandleMessage(message)
 		if err != nil {

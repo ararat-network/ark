@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	oracletypes "noah/oracle/sidecar/types"
+	oracletypes "ark/oracle/sidecar/types"
 )
 
 // Market maps an exchange-rate pair to the provider symbol used to fetch its price.
@@ -41,7 +41,7 @@ func (m Markets) PairToTicker(pair oracletypes.Pair) (Ticker, bool) {
 	return "", false
 }
 
-// Tickers returns a list of Symbols within markets
+// Tickers returns the configured provider symbols in market order.
 func (m Markets) Tickers() []Ticker {
 	tickers := make([]Ticker, 0, len(m))
 	for _, market := range m {
@@ -75,7 +75,8 @@ func (m Markets) Equal(other Markets) bool {
 	return len(counts) == 0
 }
 
-// FilterPairs will filter the market by a given set of pairs
+// FilterPairs returns markets whose pairs are in pairs. A nil set means no
+// filtering; a non-nil empty set returns no markets.
 func (m Markets) FilterPairs(pairs map[oracletypes.Pair]struct{}) Markets {
 	if pairs == nil {
 		return append(Markets(nil), m...)

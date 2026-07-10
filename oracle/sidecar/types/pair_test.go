@@ -1,7 +1,7 @@
 package types_test
 
 import (
-	. "noah/oracle/sidecar/types"
+	. "ark/oracle/sidecar/types"
 	"strings"
 	"testing"
 )
@@ -50,6 +50,52 @@ func TestNewPair(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Fatalf("NewPair() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFromDenom(t *testing.T) {
+	tests := []struct {
+		name    string
+		denom   string
+		want    Pair
+		wantErr string
+	}{
+		{
+			name:  "converts canonical vote target",
+			denom: "uusd",
+			want:  "NOAH/USD",
+		},
+		{
+			name:    "rejects uppercase vote target",
+			denom:   "uUSD",
+			wantErr: "not canonical",
+		},
+		{
+			name:    "rejects path denom",
+			denom:   "ufoo/bar",
+			wantErr: "invalid pair",
+		},
+		{
+			name:    "rejects surrounding whitespace",
+			denom:   " uusd ",
+			wantErr: "contains whitespace",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FromDenom(tt.denom)
+			if tt.wantErr != "" {
+				assertErrorContains(t, err, tt.wantErr)
+				return
+			}
+			if err != nil {
+				t.Fatalf("FromDenom() error = %v, want nil", err)
+			}
+			if got != tt.want {
+				t.Fatalf("FromDenom() = %q, want %q", got, tt.want)
 			}
 		})
 	}

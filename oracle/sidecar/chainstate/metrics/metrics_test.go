@@ -11,7 +11,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"noah/oracle/sidecar/chainstate/metrics"
+	"ark/oracle/sidecar/chainstate/metrics"
 )
 
 func TestRecordRefresh(t *testing.T) {
@@ -31,7 +31,7 @@ func TestRecordRefresh(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	refreshes := metricFamily(t, families, "noah_oracle_chainstate_refreshes_total")
+	refreshes := metricFamily(t, families, "ark_oracle_chainstate_refreshes_total")
 	require.Equal(t, float64(1), counterValue(t, refreshes, map[string]string{
 		"status": "success",
 	}))

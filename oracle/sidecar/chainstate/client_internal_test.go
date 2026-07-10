@@ -2,7 +2,6 @@ package chainstate
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -11,7 +10,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestStopClosesUpdateChannel(t *testing.T) {
+func withDialOptions(opts ...grpc.DialOption) Option {
+	return func(c *Client) {
+		c.dialOptions = append(c.dialOptions, opts...)
+	}
+}
+
+func TestRunReturnsContextCancellation(t *testing.T) {
 	dialer := func(context.Context, string) (net.Conn, error) {
 		clientConn, serverConn := net.Pipe()
 		t.Cleanup(func() { _ = serverConn.Close() })
@@ -24,43 +29,36 @@ func TestStopClosesUpdateChannel(t *testing.T) {
 			Timeout:  time.Hour,
 			Interval: time.Hour,
 		},
-		WithDialOptions(grpc.WithContextDialer(dialer)),
+		withDialOptions(grpc.WithContextDialer(dialer)),
 	)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	require.NoError(t, client.Start(ctx))
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- client.Run(ctx)
+	}()
 
-	require.Eventually(t, func() bool {
-		client.mut.RLock()
-		defer client.mut.RUnlock()
-		return client.updateCh != nil
-	}, time.Second, time.Millisecond)
-
-	client.mut.RLock()
-	updateCh := client.updateCh
-	client.mut.RUnlock()
-
-	client.Stop()
-
+	cancel()
 	select {
-	case _, ok := <-updateCh:
-		require.False(t, ok)
-	default:
-		t.Fatal("update channel should be closed on stop")
+	case err := <-errCh:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(time.Second):
+		t.Fatal("chain state client did not stop")
 	}
 }
 
-func TestRunRepanicsPollPanicAfterLifecycleCleanup(t *testing.T) {
+func TestRunPropagatesPollPanic(t *testing.T) {
+	allowPanic := make(chan struct{})
 	client, err := NewClient(
 		Config{
 			Address:  "passthrough:///unused",
 			Timeout:  time.Second,
 			Interval: time.Hour,
 		},
-		WithDialOptions(grpc.WithUnaryInterceptor(func(
+		withDialOptions(grpc.WithUnaryInterceptor(func(
 			context.Context,
 			string,
 			any,
@@ -69,40 +67,29 @@ func TestRunRepanicsPollPanicAfterLifecycleCleanup(t *testing.T) {
 			grpc.UnaryInvoker,
 			...grpc.CallOption,
 		) error {
+			<-allowPanic
 			panic("vote target query panic")
 		})),
 	)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	updateCh := make(chan struct{}, 1)
-	doneCh := make(chan struct{})
+	defer cancel()
 	recoveredCh := make(chan any, 1)
 	go func() {
 		defer func() {
 			recoveredCh <- recover()
 		}()
-		client.run(ctx, cancel, updateCh, doneCh)
+		_ = client.Run(ctx)
 	}()
+
+	close(allowPanic)
 
 	select {
 	case recovered := <-recoveredCh:
-		require.ErrorContains(t, recovered.(error), "chain state client panicked")
-		require.Contains(t, fmt.Sprint(recovered), "vote target query panic")
+		require.Equal(t, "vote target query panic", recovered)
 	case <-time.After(time.Second):
 		cancel()
-		t.Fatal("chain state client did not re-panic")
-	}
-
-	select {
-	case <-doneCh:
-	default:
-		t.Fatal("done channel was not closed")
-	}
-	select {
-	case _, ok := <-updateCh:
-		require.False(t, ok)
-	default:
-		t.Fatal("update channel was not closed")
+		t.Fatal("chain state client did not propagate panic")
 	}
 }

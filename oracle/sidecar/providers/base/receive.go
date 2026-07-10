@@ -3,13 +3,13 @@ package base
 import (
 	"context"
 
-	providermetrics "noah/oracle/sidecar/providers/base/metrics"
-	"noah/oracle/sidecar/providers/types"
+	providermetrics "ark/oracle/sidecar/providers/base/metrics"
+	"ark/oracle/sidecar/providers/types"
 )
 
-// recv owns response-channel reads for one fetch cycle and commits successful
+// recv owns response-channel reads for one provider run and commits successful
 // ticker results into the provider cache.
-func (p *Provider) recv(ctx context.Context) {
+func (p *Provider) recv(ctx context.Context, responseCh <-chan types.Response) {
 	p.logger.Debug("starting recv")
 
 	for {
@@ -20,7 +20,7 @@ func (p *Provider) recv(ctx context.Context) {
 				"error", ctx.Err(),
 			)
 			return
-		case r, ok := <-p.responseCh:
+		case r, ok := <-responseCh:
 			if !ok {
 				p.logger.Debug("response channel closed; stopping recv")
 				return
@@ -76,6 +76,16 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 		return
 	}
 
+	pair, ok := p.markets.TickerToPair(ticker)
+	if !ok {
+		p.logger.Debug(
+			"resolved result is not for a configured market",
+			"ticker", ticker,
+			"result", result,
+		)
+		return
+	}
+
 	if !result.Unchanged && result.Price == nil {
 		p.logger.Debug(
 			"resolved result has no price",
@@ -85,7 +95,7 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 		return
 	}
 
-	current, ok := p.prices[ticker]
+	current, ok := p.prices[pair]
 	if !ok {
 		// Ignore an unchanged result when no previous value exists.
 		if result.Unchanged {
@@ -97,7 +107,7 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 			return
 		}
 
-		p.prices[ticker] = result
+		p.prices[pair] = result
 		return
 	}
 
@@ -106,7 +116,7 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 		p.logger.Debug(
 			"result timestamp is before current timestamp",
 			"result_timestamp", result.Timestamp,
-			"current_timestamp", p.prices[ticker].Timestamp,
+			"current_timestamp", current.Timestamp,
 			"ticker", ticker,
 		)
 		return
@@ -121,13 +131,13 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 		)
 
 		current.Timestamp = result.Timestamp
-		p.prices[ticker] = current
+		p.prices[pair] = current
 	} else {
 		p.logger.Debug(
 			"updating base provider data",
 			"ticker", ticker,
 			"result", result,
 		)
-		p.prices[ticker] = result
+		p.prices[pair] = result
 	}
 }

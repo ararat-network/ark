@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // DataHandler defines provider-specific websocket protocol behaviour.

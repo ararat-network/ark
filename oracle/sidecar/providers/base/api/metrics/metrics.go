@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/oracle/sidecar/providers/base/api/metrics")
+	meter = otel.Meter("ark/oracle/sidecar/providers/base/api/metrics")
 
 	requestDuration metric.Float64Histogram
 	requests        metric.Int64Counter
@@ -23,7 +23,7 @@ func init() {
 	var err error
 
 	requestDuration, err = meter.Float64Histogram(
-		"noah.oracle.provider.api.request.duration",
+		"ark.oracle.provider.api.request.duration",
 		metric.WithDescription("Duration of API provider HTTP requests"),
 		metric.WithUnit("ms"),
 	)
@@ -32,7 +32,7 @@ func init() {
 	}
 
 	requests, err = meter.Int64Counter(
-		"noah.oracle.provider.api.requests",
+		"ark.oracle.provider.api.requests",
 		metric.WithDescription("Number of API provider HTTP requests"),
 	)
 	if err != nil {
@@ -40,7 +40,7 @@ func init() {
 	}
 
 	cycleDuration, err = meter.Float64Histogram(
-		"noah.oracle.provider.api.cycle.duration",
+		"ark.oracle.provider.api.cycle.duration",
 		metric.WithDescription("Duration of API provider polling cycles"),
 		metric.WithUnit("ms"),
 	)

@@ -1,9 +1,9 @@
 package types_test
 
 import (
+	. "ark/oracle/sidecar/providers/types"
 	"errors"
 	"math/big"
-	. "noah/oracle/sidecar/providers/types"
 	"testing"
 	"time"
 

@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cast"
@@ -10,16 +11,15 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 )
 
-var (
+const (
 	DefaultOracleEnabled  = false
 	DefaultOracleAddress  = "localhost:8080"
 	DefaultClientTimeout  = 3 * time.Second
 	DefaultMetricsEnabled = false
 	DefaultPriceTTL       = 10 * time.Second
 	DefaultInterval       = 1500 * time.Millisecond
-
-	MaxInterval = 1 * time.Minute
-	MaxPriceTTL = 1 * time.Minute
+	MaxInterval           = 1 * time.Minute
+	MaxPriceTTL           = 1 * time.Minute
 )
 
 const (
@@ -52,7 +52,7 @@ client_timeout = "{{ .Oracle.ClientTimeout }}"
 # the oracle and the app.
 metrics_enabled = "{{ .Oracle.MetricsEnabled }}"
 
-# PriceTTL is the maximum age of the latest price response before it is considered stale.
+# PriceTTL is the maximum age of the sidecar snapshot timestamp before it is considered stale.
 # The recommended max age is 10 seconds (10s). If this is greater than 1 minute (1m), the app
 # will not start.
 price_ttl = "{{ .Oracle.PriceTTL }}"
@@ -77,13 +77,12 @@ func NewDefaultConfig() Config {
 }
 
 const (
-	flagEnabled                 = "oracle.enabled"
-	flagOracleAddress           = "oracle.oracle_address"
-	flagClientTimeout           = "oracle.client_timeout"
-	flagMetricsEnabled          = "oracle.metrics_enabled"
-	flagPrometheusServerAddress = "oracle.prometheus_server_address"
-	flagPriceTTL                = "oracle.price_ttl"
-	flagInterval                = "oracle.interval"
+	flagEnabled        = "oracle.enabled"
+	flagOracleAddress  = "oracle.oracle_address"
+	flagClientTimeout  = "oracle.client_timeout"
+	flagMetricsEnabled = "oracle.metrics_enabled"
+	flagPriceTTL       = "oracle.price_ttl"
+	flagInterval       = "oracle.interval"
 )
 
 // Config contains the application side oracle configurations that must
@@ -103,21 +102,18 @@ type Config struct {
 	// MetricsEnabled is a flag that determines whether oracle metrics are enabled.
 	MetricsEnabled bool `mapstructure:"metrics_enabled" toml:"metrics_enabled"`
 
-	// PriceTTL is the maximum age of the latest price response before it is considered
-	// stale.
+	// PriceTTL is the maximum accepted age of the sidecar snapshot timestamp.
 	PriceTTL time.Duration `mapstructure:"price_ttl" toml:"price_ttl"`
 
 	// Interval is the time between each price update request.
 	Interval time.Duration `mapstructure:"interval" toml:"interval"`
 }
 
-// Validate performs basic validation of the app config.
-func (c *Config) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
-
-	if len(c.OracleAddress) == 0 {
+// Validate checks whether the client runtime fields are safe to use. Enabled
+// controls whether app wiring constructs the client; it does not relax the
+// runtime invariants.
+func (c Config) Validate() error {
+	if strings.TrimSpace(c.OracleAddress) == "" {
 		return errors.New("poorly formatted app.toml (oracle subsection): oracle address must not be empty")
 	}
 
@@ -142,89 +138,68 @@ func (c *Config) Validate() error {
 
 // ReadConfigFromAppOpts reads the config parameters from the AppOptions and returns the config.
 func ReadConfigFromAppOpts(opts servertypes.AppOptions) (Config, error) {
-	var (
-		cfg = NewDefaultConfig()
-		err error
-	)
+	cfg := NewDefaultConfig()
 
-	// determine if the oracle is enabled
 	if v := opts.Get(flagEnabled); v != nil {
-		if cfg.Enabled, err = cast.ToBoolE(v); err != nil {
+		enabled, err := cast.ToBoolE(v)
+		if err != nil {
 			return cfg, err
 		}
+		cfg.Enabled = enabled
 	}
 
 	if !cfg.Enabled {
-		return cfg, nil
+		return cfg, cfg.Validate()
 	}
 
-	// get the oracle address
 	if v := opts.Get(flagOracleAddress); v != nil {
 		address, err := cast.ToStringE(v)
-		if err != nil {
+		if err != nil || strings.TrimSpace(address) == "" {
 			return cfg, errors.New("oracle address must be a non-empty string")
 		}
-
-		// only update the address if it is non-empty
-		if len(address) > 0 {
-			cfg.OracleAddress = address
-		}
+		cfg.OracleAddress = address
 	}
 
-	// get the client timeout
 	if v := opts.Get(flagClientTimeout); v != nil {
 		clientTimeout, err := cast.ToDurationE(v)
 		if err != nil {
 			return cfg, errors.New("client timeout must be a positive duration")
 		}
-
-		// only update the client timeout if it is positive
-		if clientTimeout > 0 {
-			cfg.ClientTimeout = clientTimeout
-		}
+		cfg.ClientTimeout = clientTimeout
 	}
 
-	// get the metrics enabled
 	if v := opts.Get(flagMetricsEnabled); v != nil {
-		if cfg.MetricsEnabled, err = cast.ToBoolE(v); err != nil {
+		metricsEnabled, err := cast.ToBoolE(v)
+		if err != nil {
 			return cfg, err
 		}
+		cfg.MetricsEnabled = metricsEnabled
 	}
 
-	// get the price ttl
 	if v := opts.Get(flagPriceTTL); v != nil {
 		priceTTL, err := cast.ToDurationE(v)
 		if err != nil {
 			return cfg, errors.New("price ttl must be a positive duration")
 		}
-
-		// only update the price ttl if it is positive
-		if priceTTL > 0 {
-			cfg.PriceTTL = priceTTL
-		}
+		cfg.PriceTTL = priceTTL
 	}
 
-	// get the interval
 	if v := opts.Get(flagInterval); v != nil {
 		interval, err := cast.ToDurationE(v)
 		if err != nil {
 			return cfg, errors.New("interval must be a positive duration")
 		}
-
-		// only update the interval if it is positive
-		if interval > 0 {
-			cfg.Interval = interval
-		}
+		cfg.Interval = interval
 	}
 
 	if err := cfg.Validate(); err != nil {
 		return cfg, err
 	}
 
-	return cfg, err
+	return cfg, nil
 }
 
-// String implements the stringer interface for the AppConfig.
+// String implements fmt.Stringer.
 func (c Config) String() string {
 	return fmt.Sprintf(`Oracle Config:
   Enabled: %v

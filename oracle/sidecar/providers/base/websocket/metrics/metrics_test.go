@@ -1,8 +1,8 @@
 package metrics_test
 
 import (
+	. "ark/oracle/sidecar/providers/base/websocket/metrics"
 	"context"
-	. "noah/oracle/sidecar/providers/base/websocket/metrics"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -32,23 +32,23 @@ func TestRecordWebSocketMetrics(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	connectionEvents := metricFamily(t, families, "noah_oracle_provider_websocket_connection_events_total")
+	connectionEvents := metricFamily(t, families, "ark_oracle_provider_websocket_connection_events_total")
 	require.Equal(t, float64(1), counterValue(t, connectionEvents, map[string]string{
 		"provider": "kraken",
 		"event":    ConnectionEventHealthy,
 	}))
 
-	reconnects := metricFamily(t, families, "noah_oracle_provider_websocket_reconnects_total")
+	reconnects := metricFamily(t, families, "ark_oracle_provider_websocket_reconnects_total")
 	require.Equal(t, float64(1), counterValue(t, reconnects, map[string]string{
 		"provider": "kraken",
 	}))
 
-	parseErrors := metricFamily(t, families, "noah_oracle_provider_websocket_parse_errors_total")
+	parseErrors := metricFamily(t, families, "ark_oracle_provider_websocket_parse_errors_total")
 	require.Equal(t, float64(1), counterValue(t, parseErrors, map[string]string{
 		"provider": "kraken",
 	}))
 
-	writeErrors := metricFamily(t, families, "noah_oracle_provider_websocket_write_errors_total")
+	writeErrors := metricFamily(t, families, "ark_oracle_provider_websocket_write_errors_total")
 	require.Equal(t, float64(1), counterValue(t, writeErrors, map[string]string{
 		"provider":  "kraken",
 		"operation": WriteOperationHeartbeat,

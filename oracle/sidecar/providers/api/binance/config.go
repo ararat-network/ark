@@ -3,8 +3,8 @@ package binance
 import (
 	"time"
 
-	"noah/oracle/sidecar/providers/base/api"
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/base/api"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // NOTE: All documentation for this file can be located on the Binance GitHub
@@ -20,9 +20,13 @@ const (
 	// by Non-US users.
 	URL = "https://api.binance.com/api/v3/ticker/price?symbols=%s%s%s"
 
-	Quotation    = "%22"
-	Separator    = ","
-	LeftBracket  = "%5B"
+	// Quotation is the percent-encoded quote used around symbols in the request URL.
+	Quotation = "%22"
+	// Separator separates symbols in the encoded request list.
+	Separator = ","
+	// LeftBracket opens the percent-encoded symbol list.
+	LeftBracket = "%5B"
+	// RightBracket closes the percent-encoded symbol list.
 	RightBracket = "%5D"
 )
 
@@ -37,6 +41,7 @@ var DefaultNonUSAPIConfig = api.Config{
 	MaxBlockHeightAge: 30 * time.Second,
 }
 
+// DefaultMarkets defines the built-in Binance API pair mappings.
 var DefaultMarkets = types.Markets{
 	{Pair: "USDT/USD", Symbol: "USDTUSD"},
 }

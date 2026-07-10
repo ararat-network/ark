@@ -1,16 +1,16 @@
 package providers_test
 
 import (
-	. "noah/oracle/sidecar/providers"
+	. "ark/oracle/sidecar/providers"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"noah/oracle/sidecar/providers/base"
-	"noah/oracle/sidecar/providers/base/api"
-	"noah/oracle/sidecar/providers/base/websocket"
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/base"
+	"ark/oracle/sidecar/providers/base/api"
+	"ark/oracle/sidecar/providers/base/websocket"
+	"ark/oracle/sidecar/providers/types"
 )
 
 func TestConfigEqualComparesIdentityTypeAndTransportConfig(t *testing.T) {
@@ -45,6 +45,16 @@ func TestConfigEqualComparesIdentityTypeAndTransportConfig(t *testing.T) {
 			a:    testAPIProviderConfig("unknown", markets),
 			b: func() Config {
 				cfg := testAPIProviderConfig("unknown", types.Markets{{Pair: "USDT/KRW", Symbol: "USDTKRW"}})
+				return cfg
+			}(),
+			want: true,
+		},
+		{
+			name: "different max price age only",
+			a:    testAPIProviderConfig("unknown", markets),
+			b: func() Config {
+				cfg := testAPIProviderConfig("unknown", markets)
+				cfg.MaxPriceAge += time.Second
 				return cfg
 			}(),
 			want: true,
@@ -86,13 +96,36 @@ func TestConfigEqualComparesIdentityTypeAndTransportConfig(t *testing.T) {
 	}
 }
 
+func TestConfigValidateRejectsNonPositiveMaxPriceAge(t *testing.T) {
+	testCases := []struct {
+		name        string
+		maxPriceAge time.Duration
+	}{
+		{name: "zero", maxPriceAge: 0},
+		{name: "negative", maxPriceAge: -time.Second},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := testAPIProviderConfig("unknown", types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}})
+			cfg.MaxPriceAge = tc.maxPriceAge
+
+			err := cfg.Validate()
+
+			require.ErrorContains(t, err, "provider max price age must be greater than 0")
+		})
+	}
+}
+
 func testAPIProviderConfig(name string, markets types.Markets) Config {
 	return Config{
 		Name:          name,
 		TransportType: base.API,
 		Markets:       markets,
+		MaxPriceAge:   time.Minute,
 		API: api.Config{
 			Name:      name,
+			Timeout:   time.Second,
 			Interval:  time.Second,
 			Endpoints: []types.Endpoint{{URL: "https://example.invalid/prices"}},
 		},
@@ -104,6 +137,7 @@ func testWebSocketProviderConfig(name string, markets types.Markets) Config {
 		Name:          name,
 		TransportType: base.WebSocket,
 		Markets:       markets,
+		MaxPriceAge:   time.Minute,
 		WebSocket: websocket.Config{
 			Name:                     name,
 			MaxBufferSize:            1,
@@ -116,7 +150,6 @@ func testWebSocketProviderConfig(name string, markets types.Markets) Config {
 			WriteTimeout:             time.Second,
 			PingInterval:             time.Second,
 			WriteInterval:            time.Second,
-			MaxReadErrorCount:        1,
 			MaxTickersPerConnection:  1,
 			MaxSubscriptionsPerBatch: 1,
 		},

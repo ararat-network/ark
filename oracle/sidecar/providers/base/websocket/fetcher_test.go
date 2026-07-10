@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	sidecarinternal "noah/oracle/sidecar/internal"
-	basewebsocket "noah/oracle/sidecar/providers/base/websocket"
-	wstestutil "noah/oracle/sidecar/providers/base/websocket/testutil"
-	"noah/oracle/sidecar/providers/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	basewebsocket "ark/oracle/sidecar/providers/base/websocket"
+	wstestutil "ark/oracle/sidecar/providers/base/websocket/testutil"
+	"ark/oracle/sidecar/providers/types"
 )
 
 func TestNewFetcherValidatesInputs(t *testing.T) {
@@ -187,6 +187,64 @@ func TestRunReconnectsAfterDialError(t *testing.T) {
 	require.GreaterOrEqual(t, attempts.Load(), int32(2))
 }
 
+func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	handler.EXPECT().Copy().Return(handler)
+
+	cfg := websocketConfig("wss://example.invalid")
+	cfg.Endpoints = []types.Endpoint{
+		{
+			URL: "wss://first.example.invalid",
+			Authentication: types.Authentication{
+				APIKeyHeader: "X-First-Key",
+				APIKey:       "first-secret",
+			},
+		},
+		{
+			URL: "wss://second.example.invalid",
+			Authentication: types.Authentication{
+				APIKeyHeader: "X-Second-Key",
+				APIKey:       "second-secret",
+			},
+		},
+	}
+
+	type dialAttempt struct {
+		url     string
+		headers http.Header
+	}
+	attempts := make(chan dialAttempt, 1)
+	staticHeaders := http.Header{
+		"X-Static":     []string{"static"},
+		"X-Second-Key": []string{"stale-secret"},
+	}
+
+	fetcher, err := basewebsocket.NewFetcher(
+		cfg,
+		handler,
+		basewebsocket.WithHeaders(staticHeaders),
+		basewebsocket.WithEndpointSelector(func(endpoints []types.Endpoint) (types.Endpoint, error) {
+			return endpoints[1], nil
+		}),
+		basewebsocket.WithDialFunc(func(_ context.Context, url string, opts *coderwebsocket.DialOptions) (*coderwebsocket.Conn, *http.Response, error) {
+			attempts <- dialAttempt{url: url, headers: opts.HTTPHeader.Clone()}
+			return nil, nil, errors.New("dial failed")
+		}),
+	)
+	require.NoError(t, err)
+
+	_, err = runUntilResponse(fetcher, []types.Ticker{"ATOMUSD"})
+	require.NoError(t, err)
+
+	attempt := <-attempts
+	require.Equal(t, cfg.Endpoints[1].URL, attempt.url)
+	require.Empty(t, attempt.headers.Get("X-First-Key"))
+	require.Equal(t, "second-secret", attempt.headers.Get("X-Second-Key"))
+	require.Equal(t, "static", attempt.headers.Get("X-Static"))
+	require.Equal(t, "stale-secret", staticHeaders.Get("X-Second-Key"))
+}
+
 func TestRunPublishesSubscribeWriteErrorResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)
@@ -313,7 +371,7 @@ func TestRunSkipsParseErrorAndPublishesNextValidMessage(t *testing.T) {
 	require.Equal(t, expected, response)
 }
 
-func TestRunPublishesUnresolvedResponseAfterMaxReadErrors(t *testing.T) {
+func TestRunPublishesUnresolvedResponseAfterReadError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD"}
@@ -328,7 +386,6 @@ func TestRunPublishesUnresolvedResponseAfterMaxReadErrors(t *testing.T) {
 	handler.EXPECT().CreateMessages(tickers).Return(nil, nil)
 
 	cfg := websocketConfig(server.URL)
-	cfg.MaxReadErrorCount = 1
 	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
 	require.NoError(t, err)
 
@@ -446,7 +503,6 @@ func websocketConfig(url string) basewebsocket.Config {
 		WriteTimeout:             basewebsocket.DefaultWriteTimeout,
 		PingInterval:             basewebsocket.DefaultPingInterval,
 		WriteInterval:            basewebsocket.DefaultWriteInterval,
-		MaxReadErrorCount:        1,
 		MaxTickersPerConnection:  basewebsocket.DefaultMaxTickersPerConnection,
 		MaxSubscriptionsPerBatch: basewebsocket.DefaultMaxSubscriptionsPerBatch,
 		Endpoints: []types.Endpoint{

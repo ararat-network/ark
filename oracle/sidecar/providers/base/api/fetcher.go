@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"slices"
 	"time"
@@ -13,10 +14,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "noah/oracle/sidecar/internal"
-	"noah/oracle/sidecar/providers/base"
-	apimetrics "noah/oracle/sidecar/providers/base/api/metrics"
-	"noah/oracle/sidecar/providers/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/providers/base"
+	apimetrics "ark/oracle/sidecar/providers/base/api/metrics"
+	"ark/oracle/sidecar/providers/types"
 )
 
 // Fetcher polls an HTTP API for provider ticker prices and publishes responses
@@ -251,6 +252,11 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 			)), nil
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		if _, err := io.Copy(io.Discard, resp.Body); err != nil && ctx.Err() == nil {
+			f.logger.Debug("failed to drain API response body", "error", err)
+		}
+	}
 
 	f.logger.Debug(
 		"received API response",

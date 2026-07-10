@@ -11,12 +11,13 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/sidecar/providers/base"
-	basetestutil "noah/oracle/sidecar/providers/base/testutil"
-	providertypes "noah/oracle/sidecar/providers/types"
+	sidecarinternal "ark/oracle/sidecar/internal"
+	"ark/oracle/sidecar/providers/base"
+	basetestutil "ark/oracle/sidecar/providers/base/testutil"
+	providertypes "ark/oracle/sidecar/providers/types"
 )
 
-func TestStartProvidersWaitsForRuntimeUpdate(t *testing.T) {
+func TestRunDoesNotPublishRunningBeforeInitialProvidersStart(t *testing.T) {
 	started := make(chan struct{})
 	ctrl := gomock.NewController(t)
 	fetcher := basetestutil.NewMockFetcher(ctrl)
@@ -56,34 +57,118 @@ func TestStartProvidersWaitsForRuntimeUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	oracle := &Runtime{
-		logger: log.NewNopLogger(),
-		providers: map[string]*base.Provider{
-			provider.Name(): provider,
+		logger:           log.NewNopLogger(),
+		updateIntervalCh: make(chan struct{}, 1),
+		cfg: Config{
+			UpdateInterval: time.Hour,
+		},
+		providers: map[string]*managedProvider{
+			provider.Name(): {provider: provider},
 		},
 	}
 
 	oracle.updateMu.Lock()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	startDone := make(chan struct{})
+	runErrCh := make(chan error, 1)
 	go func() {
-		oracle.startProviders(ctx)
-		close(startDone)
+		runErrCh <- oracle.Run(ctx)
 	}()
 
+	require.Never(t, oracle.IsRunning, 20*time.Millisecond, time.Millisecond)
 	select {
-	case <-startDone:
-		t.Fatal("startProviders returned while runtime update lock was held")
-	case <-time.After(20 * time.Millisecond):
+	case <-started:
+		t.Fatal("provider started while runtime update lock was held")
+	default:
 	}
 
 	oracle.updateMu.Unlock()
 
-	requireSignal(t, startDone, "startProviders did not return")
 	requireSignal(t, started, "provider did not start")
+	require.Eventually(t, oracle.IsRunning, time.Second, time.Millisecond)
 
-	provider.Stop()
+	cancel()
+	select {
+	case err := <-runErrCh:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(time.Second):
+		t.Fatal("runtime did not stop")
+	}
+}
+
+func TestRunReturnsProviderPanicAfterSiblingCleanup(t *testing.T) {
+	siblingStarted := make(chan struct{})
+	cleanupStarted := make(chan struct{})
+	allowCleanup := make(chan struct{})
+
+	ctrl := gomock.NewController(t)
+	panicFetcher := basetestutil.NewMockFetcher(ctrl)
+	panicFetcher.EXPECT().Name().Return("panic").AnyTimes()
+	panicFetcher.EXPECT().Type().Return(base.API).AnyTimes()
+	panicFetcher.EXPECT().ResponseBufferSize(gomock.Any()).Return(1)
+	panicFetcher.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, []providertypes.Ticker, chan<- providertypes.Response) error {
+			<-siblingStarted
+			panic("fetcher exploded")
+		})
+
+	siblingFetcher := basetestutil.NewMockFetcher(ctrl)
+	siblingFetcher.EXPECT().Name().Return("sibling").AnyTimes()
+	siblingFetcher.EXPECT().Type().Return(base.API).AnyTimes()
+	siblingFetcher.EXPECT().ResponseBufferSize(gomock.Any()).Return(1)
+	siblingFetcher.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ []providertypes.Ticker, _ chan<- providertypes.Response) error {
+			close(siblingStarted)
+			<-ctx.Done()
+			close(cleanupStarted)
+			<-allowCleanup
+			return ctx.Err()
+		})
+
+	panicProvider, err := base.NewProvider(
+		"panic",
+		base.API,
+		providertypes.Markets{{Pair: "ATOM/USD", Symbol: "ATOMUSD"}},
+		panicFetcher,
+	)
+	require.NoError(t, err)
+	siblingProvider, err := base.NewProvider(
+		"sibling",
+		base.API,
+		providertypes.Markets{{Pair: "NOAH/USD", Symbol: "NOAHUSD"}},
+		siblingFetcher,
+	)
+	require.NoError(t, err)
+
+	oracle := &Runtime{
+		logger:           log.NewNopLogger(),
+		updateIntervalCh: make(chan struct{}, 1),
+		cfg:              Config{UpdateInterval: time.Hour},
+		providers: map[string]*managedProvider{
+			panicProvider.Name():   {provider: panicProvider},
+			siblingProvider.Name(): {provider: siblingProvider},
+		},
+	}
+
+	runErrCh := make(chan error, 1)
+	go func() {
+		runErrCh <- oracle.Run(context.Background())
+	}()
+	requireSignal(t, cleanupStarted, "sibling cleanup did not start")
+
+	select {
+	case err := <-runErrCh:
+		t.Fatalf("runtime returned before sibling cleanup completed: %v", err)
+	default:
+	}
+
+	close(allowCleanup)
+	select {
+	case err := <-runErrCh:
+		require.True(t, sidecarinternal.IsPanic(err), "expected panic-derived error, got %v", err)
+		require.ErrorContains(t, err, "fetcher exploded")
+	case <-time.After(time.Second):
+		t.Fatal("runtime did not return after sibling cleanup")
+	}
 }
 
 func requireSignal(t *testing.T, ch <-chan struct{}, message string) {

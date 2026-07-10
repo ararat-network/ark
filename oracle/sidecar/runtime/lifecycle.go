@@ -6,28 +6,30 @@ import (
 	"time"
 )
 
-// Start starts the blocking oracle lifecycle and price fetch loop.
-func (r *Runtime) Start(ctx context.Context) error {
+// Run is a blocking, single-use lifecycle call. It starts runtime-owned
+// providers and chainstate polling, runs price aggregation until cancellation
+// or a fatal child failure, and waits for collaborator cleanup before returning.
+func (r *Runtime) Run(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
 	}
 
 	r.logger.Info("starting oracle")
-	r.running.Store(true)
-	defer r.running.Store(false)
 
-	mainCtx, mainCancel := context.WithCancel(ctx)
-	defer mainCancel()
-	r.setMainCtx(mainCtx, mainCancel)
-
-	if client := r.getClient(); client != nil {
-		if err := client.Start(mainCtx); err != nil {
-			if mainCtx.Err() == nil && !errors.Is(err, context.Canceled) {
-				r.logger.Error("failed to start vote-target client", "error", err)
-			}
-		}
+	mainCtx, cancelCause := context.WithCancelCause(ctx)
+	var clientDone <-chan struct{}
+	r.updateMu.Lock()
+	clientDone = r.startClient(mainCtx, cancelCause)
+	for _, managed := range r.providers {
+		managed.start(mainCtx, cancelCause, r.logger)
 	}
-	r.startProviders(mainCtx)
+	r.mut.Lock()
+	r.mainCtx = mainCtx
+	r.mainCancel = cancelCause
+	r.mut.Unlock()
+	r.updateMu.Unlock()
+
+	defer r.shutdown(cancelCause, clientDone)
 
 	ticker := time.NewTicker(r.getUpdateInterval())
 	defer ticker.Stop()
@@ -35,89 +37,49 @@ func (r *Runtime) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-mainCtx.Done():
-			r.Stop()
-			r.logger.Info("oracle stopped via context")
-			return mainCtx.Err()
+			cause := context.Cause(mainCtx)
+			r.logger.Info("oracle stopped via context", "error", cause)
+			return cause
 		case <-r.updateIntervalCh:
 			ticker.Reset(r.getUpdateInterval())
 		case <-ticker.C:
-			r.fetchAllPrices(mainCtx)
+			r.updatePriceSnapshot(mainCtx)
 		}
 	}
 }
 
-// Stop stops the oracle. This is a synchronous operation that will
-// wait for all providers to exit.
-func (r *Runtime) Stop() {
+// IsRunning returns true while Run is active.
+func (r *Runtime) IsRunning() bool {
+	r.mut.RLock()
+	defer r.mut.RUnlock()
+
+	return r.mainCtx != nil
+}
+
+// shutdown stops runtime-owned collaborators before Run returns.
+func (r *Runtime) shutdown(cancel context.CancelCauseFunc, clientDone <-chan struct{}) {
 	r.updateMu.Lock()
 	defer r.updateMu.Unlock()
 
 	r.logger.Info("stopping oracle")
-	if _, cancel := r.getMainCtx(); cancel != nil {
-		r.logger.Info("cancelling context")
-		cancel()
+	r.logger.Info("cancelling context")
+	cancel(context.Canceled)
+	for _, managed := range r.providers {
+		managed.stop()
 	}
-	if client := r.getClient(); client != nil {
-		client.Stop()
+	if clientDone != nil {
+		<-clientDone
 	}
-	for _, provider := range r.getProviders() {
-		provider.Stop()
-	}
+
+	r.mut.Lock()
+	r.mainCtx = nil
+	r.mainCancel = nil
+	r.mut.Unlock()
 
 	r.logger.Info("oracle exited successfully")
 }
 
-// IsRunning returns true while Start is running.
-func (r *Runtime) IsRunning() bool { return r.running.Load() }
-
-func (r *Runtime) startProviders(ctx context.Context) {
-	r.updateMu.Lock()
-	defer r.updateMu.Unlock()
-
-	for _, provider := range r.getProviders() {
-		if err := provider.Start(ctx); err != nil {
-			r.logProviderStartError(ctx, provider.Name(), err)
-		}
-	}
-}
-
-func (r *Runtime) logProviderStartError(ctx context.Context, name string, err error) {
-	if err == nil {
-		return
-	}
-	if ctx != nil && ctx.Err() != nil {
-		return
-	}
-	if errors.Is(err, context.Canceled) {
-		return
-	}
-	r.logger.Error("failed to start provider", "provider", name, "error", err)
-}
-
-// getMainCtx returns the main context for the oracle.
-func (r *Runtime) getMainCtx() (context.Context, context.CancelFunc) {
-	r.mut.RLock()
-	defer r.mut.RUnlock()
-
-	return r.mainCtx, r.mainCancel
-}
-
-// setMainCtx sets the main context for the oracle.
-func (r *Runtime) setMainCtx(ctx context.Context, cancel context.CancelFunc) {
-	r.mut.Lock()
-	defer r.mut.Unlock()
-
-	r.mainCtx, r.mainCancel = ctx, cancel
-}
-
-func (r *Runtime) getClient() ChainStateClient {
-	r.mut.RLock()
-	defer r.mut.RUnlock()
-
-	return r.client
-}
-
-// getUpdateInterval returns the current price fetch interval.
+// getUpdateInterval returns the current price aggregation interval.
 func (r *Runtime) getUpdateInterval() time.Duration {
 	r.mut.RLock()
 	defer r.mut.RUnlock()

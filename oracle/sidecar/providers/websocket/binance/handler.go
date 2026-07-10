@@ -7,8 +7,8 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"noah/oracle/sidecar/providers/base/websocket"
-	"noah/oracle/sidecar/providers/types"
+	"ark/oracle/sidecar/providers/base/websocket"
+	"ark/oracle/sidecar/providers/types"
 )
 
 var _ websocket.DataHandler = (*Handler)(nil)
