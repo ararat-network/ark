@@ -38,15 +38,15 @@ Reference codebases:
 ## Project Structure
 
 ```text
-x/market/       # DEX swap module (Ark ↔ stablecoins)
+x/market/       # DEX swap module (Noah ↔ stablecoins)
 x/oracle/       # Price oracle module (validator price voting)
 x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
 x/wasm/         # CosmWasm smart contract module (exported interfaces)
 abci/           # Vote-extension, proposal, and preblock oracle pipeline
 oracle/         # Off-chain oracle runtime, providers, transport, and validation
 pkg/            # Shared primitives such as encoding, telemetry, and minimal metrics
-proto/noah/     # Proto definitions (modules, ABCI, transport)
-api/noah/       # Pulsar-generated code (runtime only, never import in module code)
+proto/ark/     # Proto definitions (modules, ABCI, transport)
+api/ark/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config
 ```
 
@@ -58,7 +58,7 @@ app/            # App wiring, depinject config
   owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `oracle/sidecar/runtime`.
   `oracle/sidecar/runtime` owns the price-fetch loop and runtime updates.
 - Keep `oracle/types` generated transport API only. Sidecar domain structs live under `oracle/sidecar/types`; routes
-  use `/noah/transport/v1/...`.
+  use `/ark/transport/v1/...`.
 - `oracle/sidecar/providers` owns full provider config and construction. `oracle/sidecar/providers/base` owns provider
   runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and
   `TransportType`.
@@ -117,9 +117,9 @@ Dual generation pipeline matching the current upstream Cosmos SDK pattern:
 
 - `proto/buf.gen.gogo.yaml`: gocosmos + grpc-gateway → `x/*/types/*.pb.go` (typed Go structs via `gogoproto.customtype`)
 - `proto/buf.gen.yaml`: go-pulsar + go-grpc → `api/*.pulsar.go` (standard protobuf, managed mode)
-- Proto files use `option go_package = "noah/x/{module}/types"` to route gogo output
+- Proto files use `option go_package = "ark/x/{module}/types"` to route gogo output
 - Run `make proto-gen` to regenerate (runs Docker proto-builder)
-- Proto-gen uses a named Docker volume (`noah-proto-cache`) for BSR dependency caching
+- Proto-gen uses a named Docker volume (`ark-proto-cache`) for BSR dependency caching
 - `go mod tidy` runs on the host (in Makefile), not inside the container — avoids re-downloading Go modules every run
 - Proto-builder image is Alpine — scripts must use `#!/bin/sh`, not `#!/usr/bin/env bash`
 - If a proto message has `gogoproto.equal = true` and contains a sub-message field, that sub-message must also have
@@ -145,14 +145,14 @@ string field_name = N [
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
   - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTax.Get(ctx, denom)` directly
   - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetFeederDelegation`
-    defaults to validator itself), domain checks (e.g., `GetExchangeRate` has MicroArkDenom identity), side effects
+    defaults to validator itself), domain checks (e.g., `GetExchangeRate` has MicroNoahDenom identity), side effects
     (e.g., `SetExchangeRateWithEvent` emits events)
   - If a wrapper is just `return k.Collection.Get(ctx, key)` with no extra logic, delete it — the collection IS the
     getter
 
 ## Build & Verification
 
-- Build the binary: `go build -o build/noahd ./cmd/noahd`
+- Build the binary: `go build -o build/arkd ./cmd/arkd`
 - Use scope-matched verification first. Run focused package tests for narrow changes; use `go build ./...` when the
   change should affect the whole repo or before claiming repo-wide compile. If unrelated checkout drift blocks repo-wide
   verification, report the exact blocker.

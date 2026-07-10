@@ -32,12 +32,12 @@ Legacy gogoproto annotations to remove:
 
 ### Modern (Dual: gogo + pulsar)
 
-Following upstream SDK v0.53, we use **both** gogo and pulsar codegen. Proto files in `proto/noah/*/v1/` use the full
+Following upstream SDK v0.53, we use **both** gogo and pulsar codegen. Proto files in `proto/ark/*/v1/` use the full
 annotation pattern:
 
 ```protobuf
 message Params {
-  option (amino.name) = "noah/market/Params";
+  option (amino.name) = "ark/market/Params";
 
   string base_pool = 1 [
     (cosmos_proto.scalar)  = "cosmos.Dec",
@@ -113,7 +113,7 @@ For repeated Coin fields:
 ### Files
 
 - Classic: `classic-core/proto/terra/*/v1beta1/{market,tx,query,genesis}.proto`
-- Modern: `proto/noah/*/v1/{market,tx,query,genesis}.proto`
+- Modern: `proto/ark/*/v1/{market,tx,query,genesis}.proto`
 - Gogo config: `proto/buf.gen.gogo.yaml`
 - Pulsar config: `proto/buf.gen.yaml`
 
@@ -170,7 +170,7 @@ type Keeper struct {
 
     Schema        collections.Schema
     Params        collections.Item[types.Params]        // gogo value type, not pointer
-    NoahPoolDelta collections.Item[math.LegacyDec]
+    ArkPoolDelta collections.Item[math.LegacyDec]
 }
 
 func NewKeeper(
@@ -186,7 +186,7 @@ func NewKeeper(
         cdc: cdc, storeService: storeService, authority: authority,
         AccountKeeper: accountKeeper, BankKeeper: bankKeeper, OracleKeeper: oracleKeeper,
         Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
-        NoahPoolDelta: collections.NewItem(sb, types.NoahPoolDeltaKey, "noah_pool_delta", sdk.LegacyDecValue),
+        ArkPoolDelta: collections.NewItem(sb, types.ArkPoolDeltaKey, "ark_pool_delta", sdk.LegacyDecValue),
     }
     schema, err := sb.Build()
     if err != nil { panic(err) }
@@ -261,7 +261,7 @@ Keys defined in `x/{module}/types/keys.go`:
 ```go
 var (
     ParamsKey        = collections.NewPrefix(0)
-    NoahPoolDeltaKey = collections.NewPrefix(1)
+    ArkPoolDeltaKey = collections.NewPrefix(1)
 )
 ```
 
@@ -467,12 +467,12 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 }
 ```
 
-Module config proto in `proto/noah/{module}/module/v1/module.proto`:
+Module config proto in `proto/ark/{module}/module/v1/module.proto`:
 
 ```protobuf
 message Module {
     option (cosmos.app.v1alpha1.module) = {
-        go_import : "noah/x/market"
+        go_import : "ark/x/market"
     };
     string authority = 1;
 }
@@ -484,7 +484,7 @@ Module registered in `app/app_config.yaml` (not manually in app.go):
 modules:
   - name: market
     config:
-      "@type": noah.market.module.v1.Module
+      "@type": ark.market.module.v1.Module
       authority: cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn
 ```
 
