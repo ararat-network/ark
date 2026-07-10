@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracletypes "noah/x/oracle/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 // AccountKeeper expected account keeper

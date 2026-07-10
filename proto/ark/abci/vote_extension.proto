@@ -1,0 +1,14 @@
+syntax = "proto3";
+package ark.abci;
+
+option go_package = "ark/abci/ve/types";
+
+// OracleVoteExtension defines the vote extension structure for oracle prices.
+message OracleVoteExtension {
+  // rates maps a valid oracle denom to its reported exchange rate.
+  //
+  // Each value is the canonical byte encoding produced by
+  // cosmossdk.io/math.LegacyDec.Marshal(). Consumers must decode values with
+  // LegacyDec.Unmarshal() and reject invalid denoms or malformed rate bytes.
+  map<string, bytes> rates = 1;
+}

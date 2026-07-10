@@ -3,10 +3,12 @@ package types
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
+	chain "ark/pkg/chain"
 )
 
 // Default parameter values
@@ -76,14 +78,27 @@ func (p Params) Validate() error {
 			return errors.New("oracle parameter TobinTaxes must have TobinTax between [0, 1]")
 		}
 
-		if len(tobinTax.Denom) < 3 || tobinTax.Denom[0] != 'u' {
-			return fmt.Errorf("oracle parameter TobinTaxes denom must be a micro denom beginning with u: %s", tobinTax.Denom)
+		if err := validateVoteTargetDenom(tobinTax.Denom); err != nil {
+			return fmt.Errorf("oracle parameter TobinTaxes %w", err)
 		}
 
 		if _, ok := seen[tobinTax.Denom]; ok {
 			return fmt.Errorf("oracle parameter TobinTaxes contains duplicate denom: %s", tobinTax.Denom)
 		}
 		seen[tobinTax.Denom] = struct{}{}
+	}
+
+	return nil
+}
+
+func validateVoteTargetDenom(denom string) error {
+	if len(denom) < 3 || denom[0] != 'u' {
+		return fmt.Errorf("denom must be a micro denom beginning with u: %s", denom)
+	}
+	if err := sdk.ValidateDenom(denom); err != nil ||
+		denom != strings.ToLower(denom) ||
+		strings.Contains(denom[1:], "/") {
+		return fmt.Errorf("denom must be a canonical lowercase micro denom without path separators: %s", denom)
 	}
 
 	return nil

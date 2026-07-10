@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/abci/oracle/metrics")
+	meter = otel.Meter("ark/abci/oracle/metrics")
 
 	prices                   metric.Float64Gauge
 	reportsPerValidator      metric.Float64Gauge
@@ -20,7 +20,7 @@ var (
 func init() {
 	var err error
 	prices, err = meter.Float64Gauge(
-		"noah.oracle.price",
+		"ark.oracle.price",
 		metric.WithDescription("Oracle price written to state"),
 	)
 	if err != nil {
@@ -28,7 +28,7 @@ func init() {
 	}
 
 	reportsPerValidator, err = meter.Float64Gauge(
-		"noah.oracle.validator.price",
+		"ark.oracle.validator.price",
 		metric.WithDescription("Oracle price reported by a validator"),
 	)
 	if err != nil {
@@ -36,7 +36,7 @@ func init() {
 	}
 
 	reportStatusPerValidator, err = meter.Int64Counter(
-		"noah.oracle.validator.reports",
+		"ark.oracle.validator.reports",
 		metric.WithDescription("Number of validator oracle reports by status"),
 	)
 	if err != nil {

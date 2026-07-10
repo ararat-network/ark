@@ -11,8 +11,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestSettleRewards() {
@@ -54,25 +54,25 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(400))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400))),
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					validator1,
-					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(10))),
+					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(10))),
 				).Return(nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					validator2,
-					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(30))),
+					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(30))),
 				).Return(nil)
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					s.ctx,
 					types.ModuleName,
 					"distribution",
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(40))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(40))),
 				).Return(nil)
 			},
 		},
@@ -84,7 +84,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(100))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().
@@ -104,7 +104,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(100))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
@@ -117,7 +117,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(100))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
 			},
@@ -131,20 +131,20 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(400))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400))),
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					validator2,
-					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(30))),
+					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(30))),
 				).Return(nil)
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					s.ctx,
 					types.ModuleName,
 					"distribution",
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(30))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(30))),
 				).Return(nil)
 			},
 		},
@@ -156,7 +156,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
 				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(100))),
+					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
 				)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().

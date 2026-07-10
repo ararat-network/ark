@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
+	chain "ark/pkg/chain"
 )
 
 func TestDenomVotesValidatorMap(t *testing.T) {

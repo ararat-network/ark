@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 func TestValidateParams(t *testing.T) {

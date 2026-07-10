@@ -1,0 +1,28 @@
+syntax = "proto3";
+package ark.market.v1;
+
+import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/market/types";
+
+// Params defines the parameters for the market module.
+message Params {
+  option (gogoproto.equal) = true;
+  option (amino.name) = "ark/x/market/Params";
+
+  string base_pool = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 pool_recovery_period = 2;
+  string min_stability_spread = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}

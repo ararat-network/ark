@@ -11,8 +11,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestEndBlocker() {
@@ -51,8 +51,8 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
 
 		rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-		rewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(100)))
-		distributedCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(10)))
+		rewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
+		distributedCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(10)))
 		validator := stakingtypes.Validator{
 			OperatorAddress: valAddr1.String(),
 			Status:          stakingtypes.Bonded,

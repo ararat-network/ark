@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 
-	"noah/x/treasury/types"
+	"ark/x/treasury/types"
 )
 
 // MsgUpdateParamsFactory creates a gov proposal for param updates

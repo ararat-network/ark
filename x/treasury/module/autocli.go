@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	treasuryv1 "noah/api/noah/treasury/v1"
+	treasuryv1 "ark/api/ark/treasury/v1"
 )
 
 // AutoCLIOptions returns the treasury module's AutoCLI configuration.

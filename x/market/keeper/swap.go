@@ -11,46 +11,46 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	chain "noah/pkg/chain"
-	"noah/x/market/types"
-	oracletypes "noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/market/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 // ApplySwapToPool updates each pool with offerCoin and askCoin taken from swap operation,
 // OfferPool = OfferPool + offerAmt (Fills the swap pool with offerAmt)
 // AskPool = AskPool - askAmt       (Uses askAmt from the swap pool)
 func (k Keeper) ApplySwapToPool(ctx context.Context, offerCoin sdk.Coin, askCoin sdk.DecCoin) error {
-	// No delta update in case Noah to Noah swap
-	if offerCoin.Denom != chain.MicroArkDenom && askCoin.Denom != chain.MicroArkDenom {
+	// No delta update in case Ark to Ark swap
+	if offerCoin.Denom != chain.MicroNoahDenom && askCoin.Denom != chain.MicroNoahDenom {
 		return nil
 	}
 
-	noahPoolDelta, err := k.NoahPoolDelta.Get(ctx)
+	arkPoolDelta, err := k.ArkPoolDelta.Get(ctx)
 	if err != nil {
 		return err
 	}
 
-	// In case swapping Noah to Ark, the noah swap pool(offer) must be increased and the ark swap pool(ask) must be decreased
-	if offerCoin.Denom != chain.MicroArkDenom && askCoin.Denom == chain.MicroArkDenom {
+	// In case swapping Ark to Noah, the ark swap pool(offer) must be increased and the noah swap pool(ask) must be decreased
+	if offerCoin.Denom != chain.MicroNoahDenom && askCoin.Denom == chain.MicroNoahDenom {
 		offerBaseCoin, err := k.ComputeOracleRate(ctx, sdk.NewDecCoinFromCoin(offerCoin), chain.MicroSDRDenom)
 		if err != nil {
 			return err
 		}
 
-		noahPoolDelta = noahPoolDelta.Add(offerBaseCoin.Amount)
+		arkPoolDelta = arkPoolDelta.Add(offerBaseCoin.Amount)
 	}
 
-	// In case swapping Ark to Noah, the ark swap pool(offer) must be increased and the noah swap pool(ask) must be decreased
-	if offerCoin.Denom == chain.MicroArkDenom && askCoin.Denom != chain.MicroArkDenom {
+	// In case swapping Noah to Ark, the noah swap pool(offer) must be increased and the ark swap pool(ask) must be decreased
+	if offerCoin.Denom == chain.MicroNoahDenom && askCoin.Denom != chain.MicroNoahDenom {
 		askBaseCoin, err := k.ComputeOracleRate(ctx, askCoin, chain.MicroSDRDenom)
 		if err != nil {
 			return err
 		}
 
-		noahPoolDelta = noahPoolDelta.Sub(askBaseCoin.Amount)
+		arkPoolDelta = arkPoolDelta.Sub(askBaseCoin.Amount)
 	}
 
-	if err := k.NoahPoolDelta.Set(ctx, noahPoolDelta); err != nil {
+	if err := k.ArkPoolDelta.Set(ctx, arkPoolDelta); err != nil {
 		return err
 	}
 
@@ -78,9 +78,9 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 		return sdk.DecCoin{}, math.LegacyDec{}, err
 	}
 
-	// Noah => Noah swap
+	// Ark => Ark swap
 	// Apply only tobin tax without constant product spread
-	if offerCoin.Denom != chain.MicroArkDenom && askDenom != chain.MicroArkDenom {
+	if offerCoin.Denom != chain.MicroNoahDenom && askDenom != chain.MicroNoahDenom {
 		var tobinTax math.LegacyDec
 		offerTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
 		if err != nil {
@@ -111,23 +111,23 @@ func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom st
 
 	// constantProduct is square of base pool
 	constantProduct := basePool.Mul(basePool)
-	noahPoolDelta, err := k.NoahPoolDelta.Get(ctx)
+	arkPoolDelta, err := k.ArkPoolDelta.Get(ctx)
 	if err != nil {
-		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("getting NoahPoolDelta: %w", err)
+		return sdk.DecCoin{}, math.LegacyDec{}, fmt.Errorf("getting ArkPoolDelta: %w", err)
 	}
-	noahPool := basePool.Add(noahPoolDelta)
-	arkPool := constantProduct.Quo(noahPool)
+	arkPool := basePool.Add(arkPoolDelta)
+	noahPool := constantProduct.Quo(arkPool)
 
 	var offerPool math.LegacyDec // base denom(usdr) unit
 	var askPool math.LegacyDec   // base denom(usdr) unit
-	if offerCoin.Denom != chain.MicroArkDenom {
-		// Noah->Ark swap
-		offerPool = noahPool
-		askPool = arkPool
-	} else {
+	if offerCoin.Denom != chain.MicroNoahDenom {
 		// Ark->Noah swap
 		offerPool = arkPool
 		askPool = noahPool
+	} else {
+		// Noah->Ark swap
+		offerPool = noahPool
+		askPool = arkPool
 	}
 
 	// Get constantProduct based swap amount

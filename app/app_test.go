@@ -56,35 +56,35 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	market "noah/x/market/module"
-	markettypes "noah/x/market/types"
-	oracle "noah/x/oracle/module"
-	oracletypes "noah/x/oracle/types"
-	treasury "noah/x/treasury/module"
-	treasurytypes "noah/x/treasury/types"
+	market "ark/x/market/module"
+	markettypes "ark/x/market/types"
+	oracle "ark/x/oracle/module"
+	oracletypes "ark/x/oracle/types"
+	treasury "ark/x/treasury/module"
+	treasurytypes "ark/x/treasury/types"
 )
 
 func TestAppConstructs(t *testing.T) {
 	db := dbm.NewMemDB()
-	noahApp := NewNoahApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	arkApp := NewArkApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 
-	require.NotNil(t, noahApp)
-	require.NotNil(t, noahApp.BaseApp)
-	require.NotNil(t, noahApp.LegacyAmino())
-	require.NotNil(t, noahApp.AppCodec())
-	require.NotNil(t, noahApp.TxConfig())
-	require.NotNil(t, noahApp.InterfaceRegistry())
-	require.NotNil(t, noahApp.MsgServiceRouter())
-	require.NotNil(t, noahApp.GRPCQueryRouter())
+	require.NotNil(t, arkApp)
+	require.NotNil(t, arkApp.BaseApp)
+	require.NotNil(t, arkApp.LegacyAmino())
+	require.NotNil(t, arkApp.AppCodec())
+	require.NotNil(t, arkApp.TxConfig())
+	require.NotNil(t, arkApp.InterfaceRegistry())
+	require.NotNil(t, arkApp.MsgServiceRouter())
+	require.NotNil(t, arkApp.GRPCQueryRouter())
 
-	require.NotNil(t, noahApp.AccountKeeper)
-	require.NotNil(t, noahApp.BankKeeper)
-	require.NotNil(t, noahApp.StakingKeeper)
-	require.NotNil(t, noahApp.GovKeeper)
-	require.NotNil(t, noahApp.UpgradeKeeper)
-	require.NotNil(t, noahApp.MarketKeeper)
-	require.NotNil(t, noahApp.TreasuryKeeper)
-	require.NotNil(t, noahApp.OracleKeeper)
+	require.NotNil(t, arkApp.AccountKeeper)
+	require.NotNil(t, arkApp.BankKeeper)
+	require.NotNil(t, arkApp.StakingKeeper)
+	require.NotNil(t, arkApp.GovKeeper)
+	require.NotNil(t, arkApp.UpgradeKeeper)
+	require.NotNil(t, arkApp.MarketKeeper)
+	require.NotNil(t, arkApp.TreasuryKeeper)
+	require.NotNil(t, arkApp.OracleKeeper)
 }
 
 func TestAppInitChainWithDefaultGenesis(t *testing.T) {
@@ -94,19 +94,19 @@ func TestAppInitChainWithDefaultGenesis(t *testing.T) {
 func TestAppExportLatestState(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewTestLogger(t)
-	noahApp := NewNoahappWithCustomOptions(t, false, SetupOptions{
+	arkApp := NewArkappWithCustomOptions(t, false, SetupOptions{
 		Logger:  logger,
 		DB:      db,
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
 	})
 
-	_, err := noahApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1})
+	_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1})
 	require.NoError(t, err)
 
-	_, err = noahApp.Commit()
+	_, err = arkApp.Commit()
 	require.NoError(t, err)
 
-	exported, err := noahApp.ExportAppStateAndValidators(false, nil, nil)
+	exported, err := arkApp.ExportAppStateAndValidators(false, nil, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, exported.AppState)
 
@@ -114,10 +114,10 @@ func TestAppExportLatestState(t *testing.T) {
 	require.NoError(t, json.Unmarshal(exported.AppState, &state))
 }
 
-func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
+func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewTestLogger(t)
-	app := NewNoahappWithCustomOptions(t, false, SetupOptions{
+	app := NewArkappWithCustomOptions(t, false, SetupOptions{
 		Logger:  logger.With("instance", "first"),
 		DB:      db,
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
@@ -149,7 +149,7 @@ func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Making a new app object with the db, so that initchain hasn't been called
-	app2 := NewNoahApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app2 := NewArkApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	_, err = app2.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
 }
@@ -157,7 +157,7 @@ func TestNoahAppExportAndBlockedAddrs(t *testing.T) {
 func TestRunMigrations(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewTestLogger(t)
-	app := NewNoahApp(logger.With("instance", "noahapp"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app := NewArkApp(logger.With("instance", "arkapp"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 
 	// Create a new baseapp and configurator for the purpose of this test.
 	bApp := baseapp.NewBaseApp(app.Name(), logger.With("instance", "baseapp"), db, app.TxConfig().TxDecoder())
@@ -299,7 +299,7 @@ func TestRunMigrations(t *testing.T) {
 
 func TestInitGenesisOnMigration(t *testing.T) {
 	db := dbm.NewMemDB()
-	app := NewNoahApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app := NewArkApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
 
 	// Create a mock module. This module will serve as the new module we're
@@ -338,7 +338,7 @@ func TestInitGenesisOnMigration(t *testing.T) {
 
 func TestUpgradeStateOnGenesis(t *testing.T) {
 	db := dbm.NewMemDB()
-	app := NewNoahappWithCustomOptions(t, false, SetupOptions{
+	app := NewArkappWithCustomOptions(t, false, SetupOptions{
 		Logger:  log.NewTestLogger(t),
 		DB:      db,
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),

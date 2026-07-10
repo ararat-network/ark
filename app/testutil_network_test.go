@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 
-	"noah/app"
+	"ark/app"
 )
 
 type IntegrationTestSuite struct {

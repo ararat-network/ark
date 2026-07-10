@@ -14,9 +14,9 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/market/types"
-	oracletypes "noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/market/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestMsgSwap() {
@@ -163,7 +163,7 @@ func (s *KeeperTestSuite) TestMsgSwapSend_Success() {
 	expectedSwapCoin := sdk.NewCoin("ukrw", math.NewInt(1296750000))
 	expectedSwapFee := sdk.NewDecCoinFromDec("ukrw", math.LegacyNewDec(3250000))
 
-	s.setupNoahToNoahSwapMocks(fromAddr, toAddr, offerCoin, expectedSwapCoin)
+	s.setupArkToArkSwapMocks(fromAddr, toAddr, offerCoin, expectedSwapCoin)
 
 	res, err := s.msgServer.SwapSend(s.ctx, &types.MsgSwapSend{
 		FromAddress: fromAddr.String(),
@@ -359,7 +359,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	}
 }
 
-func (s *KeeperTestSuite) setupNoahToNoahSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
+func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
 	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
 		Return(math.LegacyOneDec(), nil)
 	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).

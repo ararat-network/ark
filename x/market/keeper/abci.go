@@ -3,13 +3,13 @@ package keeper
 import (
 	"context"
 
-	noahmetrics "noah/pkg/metrics"
-	"noah/x/market/types"
+	arkmetrics "ark/pkg/metrics"
+	"ark/x/market/types"
 )
 
 // EndBlocker is called at the end of every block
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer noahmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, noahmetrics.EndBlock)()
+	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
 
 	return k.ReplenishPools(ctx)
 }

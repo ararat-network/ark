@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"noah/x/oracle/types"
+	"ark/x/oracle/types"
 )
 
 // SettleSlash slashes validators below the minimum valid vote rate.

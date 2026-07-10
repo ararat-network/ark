@@ -1,6 +1,6 @@
 # ABCI Oracle Flow
 
-This tree contains Noah's ABCI integration for oracle vote extensions. The flow is fixed protocol code, not a
+This tree contains Ark's ABCI integration for oracle vote extensions. The flow is fixed protocol code, not a
 pluggable strategy layer: validators extend votes with oracle prices, proposers inject the previous extended commit into
 block proposals, and the preblock hook aggregates those reports before transactions execute.
 

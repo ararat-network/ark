@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/pkg/chain"
+	"ark/pkg/chain"
 )
 
 func TestIsPeriodLastBlock(t *testing.T) {

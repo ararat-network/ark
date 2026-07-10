@@ -1,4 +1,4 @@
-module noah
+module ark
 
 go 1.25.9
 
@@ -337,7 +337,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// Below are the long-lived replace of the NoahApp
+// Below are the long-lived replace of the ArkApp
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0

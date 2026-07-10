@@ -12,11 +12,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"noah/abci/codec"
-	noahmetrics "noah/abci/metrics"
-	abcioracle "noah/abci/oracle"
-	noahabcitypes "noah/abci/types"
-	"noah/abci/ve"
+	"ark/abci/codec"
+	arkmetrics "ark/abci/metrics"
+	abcioracle "ark/abci/oracle"
+	arkabcitypes "ark/abci/types"
+	"ark/abci/ve"
 )
 
 // Handler is responsible for aggregating oracle data from each
@@ -27,7 +27,7 @@ type Handler struct {
 
 	// ok is the ok for the oracle module. This is utilised to write
 	// oracle data to state.
-	ok noahabcitypes.OracleKeeper
+	ok arkabcitypes.OracleKeeper
 
 	// pa is the price applier that is used to decode vote-extensions, aggregate price reports, and write prices to state.
 	pa *abcioracle.PriceApplier
@@ -37,7 +37,7 @@ type Handler struct {
 // is responsible for writing oracle data included in vote extensions to state.
 func NewHandler(
 	logger log.Logger,
-	oracleKeeper noahabcitypes.OracleKeeper,
+	oracleKeeper arkabcitypes.OracleKeeper,
 	veCodec codec.VoteExtensionCodec,
 	ecCodec codec.ExtendedCommitCodec,
 ) *Handler {
@@ -92,7 +92,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 					"height", ctx.BlockHeight(),
 					"latency (seconds)", latency.Seconds(),
 				)
-				noahmetrics.RecordLatencyAndStatus(latency, err, noahmetrics.PreBlock)
+				arkmetrics.RecordLatencyAndStatus(latency, err, arkmetrics.PreBlock)
 
 				// Record price and validator-report metrics only if prices were written successfully.
 				if err == nil && prices != nil {

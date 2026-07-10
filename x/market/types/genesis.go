@@ -10,25 +10,25 @@ import (
 )
 
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(noahPoolDelta math.LegacyDec, params Params) *GenesisState {
+func NewGenesisState(arkPoolDelta math.LegacyDec, params Params) *GenesisState {
 	return &GenesisState{
-		NoahPoolDelta: noahPoolDelta,
-		Params:        params,
+		ArkPoolDelta: arkPoolDelta,
+		Params:       params,
 	}
 }
 
 // DefaultGenesisState returns raw genesis raw message for testing
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		NoahPoolDelta: math.LegacyZeroDec(),
-		Params:        DefaultParams(),
+		ArkPoolDelta: math.LegacyZeroDec(),
+		Params:       DefaultParams(),
 	}
 }
 
 // Validate validates the provided market genesis state
 func (gs GenesisState) Validate() error {
-	if gs.NoahPoolDelta.IsNil() {
-		return errors.New("noah pool delta must not be nil")
+	if gs.ArkPoolDelta.IsNil() {
+		return errors.New("ark pool delta must not be nil")
 	}
 
 	return gs.Params.Validate()

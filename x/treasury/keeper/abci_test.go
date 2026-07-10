@@ -9,9 +9,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	oracletypes "noah/x/oracle/types"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
+	"ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestEndBlocker_NotEpochLastBlock() {
@@ -30,9 +30,9 @@ func (s *KeeperTestSuite) TestEndBlocker_DuringProbation() {
 	// UpdateIndicators mocks
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
 	// No seigniorage (supply unchanged)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroArkDenom).
-		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
-	// alignCoins for seigniorage reward (0 uark → usdr)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroNoahDenom).
+		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))).AnyTimes()
+	// alignCoins for seigniorage reward (0 unoah → usdr)
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), chain.MicroSDRDenom).
 		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
@@ -66,7 +66,7 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 		Epoch:             0,
 		TaxReward:         math.LegacyZeroDec(),
 		SeigniorageReward: math.LegacyZeroDec(),
-		TotalStakedArk:    math.NewInt(1000),
+		TotalStakedNoah:   math.NewInt(1000),
 	}))
 
 	// Capture old rates before EndBlocker
@@ -169,7 +169,7 @@ func (s *KeeperTestSuite) TestEndBlocker_SparseEpochData() {
 	// UpdateIndicators mocks (these succeed — epoch 1 gets stored)
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
-		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
+		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))).AnyTimes()
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
@@ -202,7 +202,7 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	// Mocks that apply across all epochs
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil).AnyTimes()
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
-		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000000000))).AnyTimes()
+		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))).AnyTimes()
 	s.marketKeeper.EXPECT().
 		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()

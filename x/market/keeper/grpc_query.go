@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 var _ types.QueryServer = queryServer{}
@@ -71,11 +71,11 @@ func (q queryServer) Swap(ctx context.Context, req *types.QuerySwapRequest) (*ty
 	}, nil
 }
 
-// NoahPoolDelta queries noah pool delta
-func (q queryServer) NoahPoolDelta(ctx context.Context, _ *types.QueryNoahPoolDeltaRequest) (*types.QueryNoahPoolDeltaResponse, error) {
-	noahPoolDelta, err := q.k.NoahPoolDelta.Get(ctx)
+// ArkPoolDelta queries ark pool delta
+func (q queryServer) ArkPoolDelta(ctx context.Context, _ *types.QueryArkPoolDeltaRequest) (*types.QueryArkPoolDeltaResponse, error) {
+	arkPoolDelta, err := q.k.ArkPoolDelta.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting market noah pool delta: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting market ark pool delta: %v", err)
 	}
-	return &types.QueryNoahPoolDeltaResponse{NoahPoolDelta: noahPoolDelta}, nil
+	return &types.QueryArkPoolDeltaResponse{ArkPoolDelta: arkPoolDelta}, nil
 }

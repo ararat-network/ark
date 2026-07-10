@@ -11,7 +11,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	otelmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"noah/pkg/metrics"
+	"ark/pkg/metrics"
 )
 
 func TestRecordModuleMethodLatency(t *testing.T) {
@@ -35,7 +35,7 @@ func TestRecordModuleMethodLatency(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	duration := metricFamily(t, families, "noah_module_method_duration_milliseconds")
+	duration := metricFamily(t, families, "ark_module_method_duration_milliseconds")
 	require.Len(t, duration.Metric, 1)
 
 	metric := duration.Metric[0]

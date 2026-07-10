@@ -5,8 +5,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"noah/x/treasury/simulation"
-	"noah/x/treasury/types"
+	"ark/x/treasury/simulation"
+	"ark/x/treasury/types"
 )
 
 // GenerateGenesisState creates a randomised GenState of the treasury module.

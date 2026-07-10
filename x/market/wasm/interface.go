@@ -11,9 +11,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"noah/x/market/keeper"
-	"noah/x/market/types"
-	wasm "noah/x/wasm/exported"
+	"ark/x/market/keeper"
+	"ark/x/market/types"
+	wasm "ark/x/wasm/exported"
 )
 
 var (

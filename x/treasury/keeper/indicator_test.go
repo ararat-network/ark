@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestGetEpoch() {
@@ -46,31 +46,31 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 		name                      string
 		totalBonded               math.Int
 		taxProceeds               sdk.Coins
-		initialArkSupply          math.Int
-		currentArkSupply          math.Int
+		initialNoahSupply         math.Int
+		currentNoahSupply         math.Int
 		expectedTaxReward         math.LegacyDec
 		expectedSeigniorageReward math.LegacyDec
-		expectedTotalStakedArk    math.Int
+		expectedTotalStakedNoah   math.Int
 	}{
 		{
 			name:                      "tax proceeds and seigniorage",
 			totalBonded:               math.NewInt(1000),
 			taxProceeds:               sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(500))),
-			initialArkSupply:          math.NewInt(1000),
-			currentArkSupply:          math.NewInt(900),
+			initialNoahSupply:         math.NewInt(1000),
+			currentNoahSupply:         math.NewInt(900),
 			expectedTaxReward:         math.LegacyNewDec(500),
 			expectedSeigniorageReward: math.LegacyNewDec(5),
-			expectedTotalStakedArk:    math.NewInt(1000),
+			expectedTotalStakedNoah:   math.NewInt(1000),
 		},
 		{
 			name:                      "zero tax proceeds",
 			totalBonded:               math.NewInt(1000),
 			taxProceeds:               sdk.Coins{},
-			initialArkSupply:          math.NewInt(1000),
-			currentArkSupply:          math.NewInt(1000),
+			initialNoahSupply:         math.NewInt(1000),
+			currentNoahSupply:         math.NewInt(1000),
 			expectedTaxReward:         math.LegacyZeroDec(),
 			expectedSeigniorageReward: math.LegacyZeroDec(),
-			expectedTotalStakedArk:    math.NewInt(1000),
+			expectedTotalStakedNoah:   math.NewInt(1000),
 		},
 		{
 			name:        "multi denom tax proceeds",
@@ -79,21 +79,21 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 				sdk.NewCoin(chain.MicroUSDDenom, math.NewInt(300)),
 				sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(200)),
 			),
-			initialArkSupply:          math.NewInt(1000),
-			currentArkSupply:          math.NewInt(1000),
+			initialNoahSupply:         math.NewInt(1000),
+			currentNoahSupply:         math.NewInt(1000),
 			expectedTaxReward:         math.LegacyNewDec(500),
 			expectedSeigniorageReward: math.LegacyZeroDec(),
-			expectedTotalStakedArk:    math.NewInt(1000),
+			expectedTotalStakedNoah:   math.NewInt(1000),
 		},
 		{
 			name:                      "zero bonded tokens",
 			totalBonded:               math.ZeroInt(),
 			taxProceeds:               sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(500))),
-			initialArkSupply:          math.NewInt(1000),
-			currentArkSupply:          math.NewInt(1000),
+			initialNoahSupply:         math.NewInt(1000),
+			currentNoahSupply:         math.NewInt(1000),
 			expectedTaxReward:         math.LegacyNewDec(500),
 			expectedSeigniorageReward: math.LegacyZeroDec(),
-			expectedTotalStakedArk:    math.ZeroInt(),
+			expectedTotalStakedNoah:   math.ZeroInt(),
 		},
 	}
 
@@ -108,10 +108,10 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 				TaxProceeds: tc.taxProceeds,
 			}))
 			s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-				Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, tc.initialArkSupply)),
+				Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, tc.initialNoahSupply)),
 			}))
-			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroArkDenom).
-				Return(sdk.NewCoin(chain.MicroArkDenom, tc.currentArkSupply))
+			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroNoahDenom).
+				Return(sdk.NewCoin(chain.MicroNoahDenom, tc.currentNoahSupply))
 
 			err := s.keeper.UpdateIndicators(s.ctx)
 			s.Require().NoError(err)
@@ -123,7 +123,7 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 				"expected tax reward %s, got %s", tc.expectedTaxReward, epochState.TaxReward)
 			s.Require().True(epochState.SeigniorageReward.Equal(tc.expectedSeigniorageReward),
 				"expected seigniorage reward %s, got %s", tc.expectedSeigniorageReward, epochState.SeigniorageReward)
-			s.Require().Equal(tc.expectedTotalStakedArk, epochState.TotalStakedArk)
+			s.Require().Equal(tc.expectedTotalStakedNoah, epochState.TotalStakedNoah)
 
 			proceeds, err := s.keeper.EpochTaxProceeds.Get(s.ctx)
 			s.Require().NoError(err)

@@ -123,11 +123,11 @@ func (gs GenesisState) Validate() error {
 		if epochState.SeigniorageReward.IsNegative() {
 			return fmt.Errorf("epoch state %d seigniorage_reward must be zero or positive: %s", epochState.Epoch, epochState.SeigniorageReward)
 		}
-		if epochState.TotalStakedArk.IsNil() {
-			return fmt.Errorf("epoch state %d total_staked_ark must be set", epochState.Epoch)
+		if epochState.TotalStakedNoah.IsNil() {
+			return fmt.Errorf("epoch state %d total_staked_noah must be set", epochState.Epoch)
 		}
-		if epochState.TotalStakedArk.IsNegative() {
-			return fmt.Errorf("epoch state %d total_staked_ark must be zero or positive: %s", epochState.Epoch, epochState.TotalStakedArk)
+		if epochState.TotalStakedNoah.IsNegative() {
+			return fmt.Errorf("epoch state %d total_staked_noah must be zero or positive: %s", epochState.Epoch, epochState.TotalStakedNoah)
 		}
 	}
 

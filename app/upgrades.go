@@ -9,7 +9,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
-// UpgradeName defines the on-chain upgrade name for the sample NoahApp upgrade
+// UpgradeName defines the on-chain upgrade name for the sample ArkApp upgrade
 // from v053 to v054.
 //
 // NOTE: This upgrade defines a reference implementation of what an upgrade
@@ -17,7 +17,7 @@ import (
 // v0.53.x to v0.54.x.
 const UpgradeName = "v053-to-v054"
 
-func (app *NoahApp) RegisterUpgradeHandlers() {
+func (app *ArkApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(
 		UpgradeName,
 		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {

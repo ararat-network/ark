@@ -7,8 +7,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestUpdateParams() {

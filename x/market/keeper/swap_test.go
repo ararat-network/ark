@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/market/types"
+	chain "ark/pkg/chain"
+	"ark/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestApplySwapToPool() {
@@ -25,21 +25,21 @@ func (s *KeeperTestSuite) TestApplySwapToPool() {
 		expectedDelta math.LegacyDec
 	}{
 		{
-			name:      "noah to ark — delta increases by offer SDR value",
+			name:      "ark to noah — delta increases by offer SDR value",
 			offerCoin: sdk.NewCoin("uusd", math.NewInt(1000)),
-			askCoin:   sdk.NewDecCoinFromDec(chain.MicroArkDenom, math.LegacyNewDec(800)),
+			askCoin:   sdk.NewDecCoinFromDec(chain.MicroNoahDenom, math.LegacyNewDec(800)),
 			// delta = offerCoin in SDR = 1000
 			expectedDelta: math.LegacyNewDec(1000),
 		},
 		{
-			name:      "ark to noah — delta decreases by ask SDR value",
-			offerCoin: sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000)),
+			name:      "noah to ark — delta decreases by ask SDR value",
+			offerCoin: sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000)),
 			askCoin:   sdk.NewDecCoinFromDec("uusd", math.LegacyNewDec(800)),
 			// delta = -(askCoin in SDR) = -800
 			expectedDelta: math.LegacyNewDec(-800),
 		},
 		{
-			name:          "noah to noah — no delta change",
+			name:          "ark to ark — no delta change",
 			offerCoin:     sdk.NewCoin("uusd", math.NewInt(1000000)),
 			askCoin:       sdk.NewDecCoinFromDec("ukrw", math.LegacyNewDec(1300000000)),
 			expectedDelta: math.LegacyZeroDec(),
@@ -49,12 +49,12 @@ func (s *KeeperTestSuite) TestApplySwapToPool() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			// Reset pool delta
-			s.Require().NoError(s.keeper.NoahPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
+			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
 			err := s.keeper.ApplySwapToPool(s.ctx, tc.offerCoin, tc.askCoin)
 			s.Require().NoError(err)
 
-			delta, err := s.keeper.NoahPoolDelta.Get(s.ctx)
+			delta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 			s.Require().NoError(err)
 			s.Require().True(tc.expectedDelta.Equal(delta),
 				"expected delta %s, got %s", tc.expectedDelta, delta)
@@ -68,7 +68,7 @@ func (s *KeeperTestSuite) TestComputeSwap_RecursiveSwap() {
 	s.Require().ErrorIs(err, types.ErrRecursiveSwap)
 }
 
-func (s *KeeperTestSuite) TestComputeSwap_NoahToNoah_TobinTax() {
+func (s *KeeperTestSuite) TestComputeSwap_ArkToArk_TobinTax() {
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "ukrw").
@@ -123,7 +123,7 @@ func (s *KeeperTestSuite) TestComputeSwap_ConstantProduct() {
 	// Unit rates (1:1:1) with a small base pool so CP spread is significant.
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroArkDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroNoahDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroSDRDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
@@ -144,16 +144,16 @@ func (s *KeeperTestSuite) TestComputeSwap_ConstantProduct() {
 		expectedSpread math.LegacyDec
 	}{
 		{
-			name:           "noah to ark — CP spread = 100/500 = 0.2",
+			name:           "ark to noah — CP spread = 100/500 = 0.2",
 			offerCoin:      sdk.NewCoin("uusd", math.NewInt(100)),
-			askDenom:       chain.MicroArkDenom,
-			expectedDenom:  chain.MicroArkDenom,
+			askDenom:       chain.MicroNoahDenom,
+			expectedDenom:  chain.MicroNoahDenom,
 			expectedAmount: math.LegacyNewDec(100),
 			expectedSpread: math.LegacyNewDecWithPrec(2, 1), // 0.2
 		},
 		{
-			name:           "ark to noah — symmetric with balanced pools",
-			offerCoin:      sdk.NewCoin(chain.MicroArkDenom, math.NewInt(100)),
+			name:           "noah to ark — symmetric with balanced pools",
+			offerCoin:      sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)),
 			askDenom:       "uusd",
 			expectedDenom:  "uusd",
 			expectedAmount: math.LegacyNewDec(100),
@@ -179,7 +179,7 @@ func (s *KeeperTestSuite) TestComputeSwap_SpreadNeverBelowMinSpread() {
 	// The minimum stability spread (2%) should always be the floor.
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroArkDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroNoahDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroSDRDenom).
 		Return(math.LegacyOneDec(), nil).AnyTimes()
@@ -188,7 +188,7 @@ func (s *KeeperTestSuite) TestComputeSwap_SpreadNeverBelowMinSpread() {
 
 	for _, amt := range []int64{1, 10, 100, 1000, 10000} {
 		offerCoin := sdk.NewCoin("uusd", math.NewInt(amt))
-		_, spread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, chain.MicroArkDenom)
+		_, spread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, chain.MicroNoahDenom)
 		s.Require().NoError(err)
 		s.Require().True(spread.GTE(minSpread),
 			"spread %s below minSpread %s for amount %d", spread, minSpread, amt)
@@ -198,7 +198,7 @@ func (s *KeeperTestSuite) TestComputeSwap_SpreadNeverBelowMinSpread() {
 func (s *KeeperTestSuite) TestComputeSwap_PoolImbalanceIncreasesSpread() {
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), "uusd").
 		Return(math.LegacyOneDec(), nil).AnyTimes()
-	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroArkDenom).
+	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroNoahDenom).
 		Return(math.LegacyNewDecWithPrec(5, 1), nil).AnyTimes()
 	s.oracleKeeper.EXPECT().GetExchangeRate(gomock.Any(), chain.MicroSDRDenom).
 		Return(math.LegacyNewDecWithPrec(17, 1), nil).AnyTimes()
@@ -206,15 +206,15 @@ func (s *KeeperTestSuite) TestComputeSwap_PoolImbalanceIncreasesSpread() {
 	offerCoin := sdk.NewCoin("uusd", math.NewInt(1000))
 
 	// Get spread with balanced pool
-	_, balancedSpread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, chain.MicroArkDenom)
+	_, balancedSpread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, chain.MicroNoahDenom)
 	s.Require().NoError(err)
 
 	// Set large pool delta (imbalanced)
-	err = s.keeper.NoahPoolDelta.Set(s.ctx, math.LegacyNewDec(1000000000000))
+	err = s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(1000000000000))
 	s.Require().NoError(err)
 
 	// Spread should be larger with imbalanced pool
-	_, imbalancedSpread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, chain.MicroArkDenom)
+	_, imbalancedSpread, err := s.keeper.ComputeSwap(s.ctx, offerCoin, chain.MicroNoahDenom)
 	s.Require().NoError(err)
 	s.Require().True(imbalancedSpread.GT(balancedSpread))
 }

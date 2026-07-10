@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/treasury/types"
+	"ark/x/treasury/types"
 )
 
 var _ types.MsgServer = msgServer{}

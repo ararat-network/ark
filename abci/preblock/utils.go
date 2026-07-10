@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oraclemetrics "noah/abci/oracle/metrics"
+	oraclemetrics "ark/abci/oracle/metrics"
 )
 
 // recordPrices records all given prices per denom and reports them as float64 metrics.

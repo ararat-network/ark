@@ -12,12 +12,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	compression "noah/abci/codec"
-	noahmetrics "noah/abci/metrics"
-	abcioracle "noah/abci/oracle"
-	noahabci "noah/abci/types"
-	"noah/abci/ve/types"
-	transporttypes "noah/oracle/types"
+	compression "ark/abci/codec"
+	arkmetrics "ark/abci/metrics"
+	abcioracle "ark/abci/oracle"
+	arkabci "ark/abci/types"
+	"ark/abci/ve/types"
+	transporttypes "ark/oracle/types"
 )
 
 // Handler extends local votes with oracle price reports. If
@@ -27,7 +27,7 @@ type Handler struct {
 	logger log.Logger
 
 	// oracleClient is the remote oracle client that is responsible for fetching prices
-	oracleClient noahabci.OracleClient
+	oracleClient arkabci.OracleClient
 
 	// timeout is the maximum amount of time to wait for the oracle to respond
 	// to a price request.
@@ -43,7 +43,7 @@ type Handler struct {
 // NewHandler returns a new Handler.
 func NewHandler(
 	logger log.Logger,
-	oracleClient noahabci.OracleClient,
+	oracleClient arkabci.OracleClient,
 	timeout time.Duration,
 	codec compression.VoteExtensionCodec,
 	priceApplier abcioracle.PriceApplier,
@@ -83,7 +83,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				"duration (seconds)", latency.Seconds(),
 				"err", err,
 			)
-			noahmetrics.RecordLatencyAndStatus(latency, err, noahmetrics.ExtendVote)
+			arkmetrics.RecordLatencyAndStatus(latency, err, arkmetrics.ExtendVote)
 
 			// Non-panic errors have already been converted into empty vote extensions.
 			var p ErrPanic
@@ -94,8 +94,8 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 
 		if req == nil {
 			h.logger.Error("extend vote handler received a nil request")
-			err = noahabci.NilRequestError{
-				Handler: noahmetrics.ExtendVote,
+			err = arkabci.NilRequestError{
+				Handler: arkmetrics.ExtendVote,
 			}
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				"err", err,
 			)
 
-			err = noahabci.CodecError{
+			err = arkabci.CodecError{
 				Err: err,
 			}
 
@@ -188,12 +188,12 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 				"duration (seconds)", latency.Seconds(),
 			)
 
-			noahmetrics.RecordLatencyAndStatus(latency, err, noahmetrics.VerifyVoteExtension)
+			arkmetrics.RecordLatencyAndStatus(latency, err, arkmetrics.VerifyVoteExtension)
 		}()
 
 		if req == nil {
-			err = noahabci.NilRequestError{
-				Handler: noahmetrics.VerifyVoteExtension,
+			err = arkabci.NilRequestError{
+				Handler: arkmetrics.VerifyVoteExtension,
 			}
 			h.logger.Error("VerifyVoteExtensionHandler received a nil request")
 			return nil, err
@@ -217,7 +217,7 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 				"height", req.Height,
 				"err", err,
 			)
-			err = noahabci.CodecError{
+			err = arkabci.CodecError{
 				Err: err,
 			}
 
@@ -244,7 +244,7 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		)
 
 		// Observe message size.
-		noahmetrics.ObserveMessageSize(noahmetrics.VoteExtension, len(req.VoteExtension))
+		arkmetrics.ObserveMessageSize(arkmetrics.VoteExtension, len(req.VoteExtension))
 
 		return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_ACCEPT}, nil
 	}

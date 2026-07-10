@@ -7,9 +7,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/keeper"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/keeper"
+	"ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestQueryParams() {
@@ -138,10 +138,10 @@ func (s *KeeperTestSuite) TestQueryRewardWeight() {
 
 func (s *KeeperTestSuite) TestQuerySeigniorageProceeds() {
 	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-		Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000))),
+		Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000))),
 	}))
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroArkDenom).
-		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(800)))
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroNoahDenom).
+		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(800)))
 
 	res, err := s.queryClient.SeigniorageProceeds(s.ctx, &types.QuerySeigniorageProceedsRequest{})
 	s.Require().NoError(err)
@@ -193,7 +193,7 @@ func (s *KeeperTestSuite) TestQueryIndicators() {
 					Epoch:             0,
 					TaxReward:         math.LegacyNewDec(100),
 					SeigniorageReward: math.LegacyZeroDec(),
-					TotalStakedArk:    math.NewInt(1000),
+					TotalStakedNoah:   math.NewInt(1000),
 				},
 			},
 			expectedYear:  math.LegacyNewDecWithPrec(15, 2),

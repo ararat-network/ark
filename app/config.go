@@ -3,12 +3,12 @@ package app
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/app/params"
-	"noah/pkg/chain"
+	"ark/app/params"
+	"ark/pkg/chain"
 )
 
 func init() {
-	sdk.DefaultBondDenom = chain.MicroArkDenom
+	sdk.DefaultBondDenom = chain.MicroNoahDenom
 
 	// Set and seal config
 	config := sdk.GetConfig()

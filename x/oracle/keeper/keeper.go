@@ -18,8 +18,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 // Keeper stores oracle module state.
@@ -129,9 +129,9 @@ func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 	return params, nil
 }
 
-// GetExchangeRate returns the consensus Ark exchange rate for a denom.
+// GetExchangeRate returns the consensus Noah exchange rate for a denom.
 func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
-	if denom == chain.MicroArkDenom {
+	if denom == chain.MicroNoahDenom {
 		return math.LegacyOneDec(), nil
 	}
 
@@ -295,7 +295,7 @@ func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
 
 	display := denom[1:]
 	k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
-		Description: "The native stable token of Noah Icarus.",
+		Description: "The native stable token of Ark Icarus.",
 		DenomUnits: []*banktypes.DenomUnit{
 			{Denom: "u" + display, Exponent: uint32(0), Aliases: []string{"micro" + display}},
 			{Denom: "m" + display, Exponent: uint32(3), Aliases: []string{"milli" + display}},
@@ -303,8 +303,8 @@ func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
 		},
 		Base:    denom,
 		Display: display,
-		Name:    fmt.Sprintf("%s NOAH", strings.ToUpper(display)),
-		Symbol:  fmt.Sprintf("%sN", strings.ToUpper(display[:len(display)-1])),
+		Name:    fmt.Sprintf("%s ARK", strings.ToUpper(display)),
+		Symbol:  fmt.Sprintf("%sA", strings.ToUpper(display[:len(display)-1])),
 	})
 }
 

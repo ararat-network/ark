@@ -24,10 +24,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracleencoding "noah/abci/oracle/encoding"
-	abcitestutil "noah/abci/testutil"
-	"noah/abci/ve"
-	vetypes "noah/abci/ve/types"
+	oracleencoding "ark/abci/oracle/encoding"
+	abcitestutil "ark/abci/testutil"
+	"ark/abci/ve"
+	vetypes "ark/abci/ve/types"
 )
 
 const testChainID = "test-chain"

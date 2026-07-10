@@ -10,8 +10,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {

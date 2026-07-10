@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/oracle/types"
+	"ark/x/oracle/types"
 )
 
 func TestValidateGenesis(t *testing.T) {
@@ -130,6 +130,24 @@ func TestValidateGenesis(t *testing.T) {
 				}
 			},
 			expectErr: "tobin tax denom must be a micro denom beginning with u: u",
+		},
+		{
+			name: "tobin tax denom must be canonical lowercase",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = []types.TobinTax{
+					{Denom: "uUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+				}
+			},
+			expectErr: "canonical lowercase micro denom",
+		},
+		{
+			name: "tobin tax denom cannot contain path separators",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = []types.TobinTax{
+					{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+				}
+			},
+			expectErr: "canonical lowercase micro denom",
 		},
 		{
 			name: "tobin tax outside valid range",

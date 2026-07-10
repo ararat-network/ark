@@ -16,12 +16,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	oracletypes "noah/x/oracle/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 // ExportAppStateAndValidators exports the state of the application for a genesis
 // file.
-func (app *NoahApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAddrs, modulesToExport []string) (servertypes.ExportedApp, error) {
+func (app *ArkApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAddrs, modulesToExport []string) (servertypes.ExportedApp, error) {
 	// as if they could withdraw from the start of the next block
 	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
 
@@ -56,7 +56,7 @@ func (app *NoahApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedA
 // NOTE: zero height genesis is a temporary feature which will be deprecated
 //
 //	in favour of export at a block height
-func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) {
+func (app *ArkApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) {
 	applyAllowedAddrs := len(jailAllowedAddrs) > 0
 
 	// check if there is a allowed address list
@@ -282,7 +282,7 @@ func (app *NoahApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	/* Handle market state. */
 
 	// clear all market pools
-	if err := app.MarketKeeper.NoahPoolDelta.Set(ctx, math.LegacyZeroDec()); err != nil {
-		panic(fmt.Errorf("error while resetting noah pool delta: %w", err))
+	if err := app.MarketKeeper.ArkPoolDelta.Set(ctx, math.LegacyZeroDec()); err != nil {
+		panic(fmt.Errorf("error while resetting ark pool delta: %w", err))
 	}
 }

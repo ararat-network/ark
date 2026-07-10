@@ -12,8 +12,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/types"
 )
 
 var _ types.QueryServer = queryServer{}
@@ -108,13 +108,13 @@ func (q queryServer) TaxProceeds(ctx context.Context, req *types.QueryTaxProceed
 	return &types.QueryTaxProceedsResponse{TaxProceeds: epochTaxProceeds.TaxProceeds}, nil
 }
 
-// Indicators returns year and month rolling averages of tax rewards per staked Ark.
+// Indicators returns year and month rolling averages of tax rewards per staked Noah.
 // The query blends finalised epoch indicators with the current in-progress epoch.
 func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsRequest) (*types.QueryIndicatorsResponse, error) {
-	totalStakedArk, err := q.k.stakingKeeper.TotalValidatorPower(ctx)
+	totalStakedNoah, err := q.k.stakingKeeper.TotalValidatorPower(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting total staked ark: %v", err)
-	} else if totalStakedArk.IsZero() {
+		return nil, status.Errorf(codes.Internal, "getting total staked noah: %v", err)
+	} else if totalStakedNoah.IsZero() {
 		return &types.QueryIndicatorsResponse{
 			TRAYear:  math.LegacyZeroDec(),
 			TRAMonth: math.LegacyZeroDec(),
@@ -132,8 +132,8 @@ func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsR
 	var res types.QueryIndicatorsResponse
 	if epoch == 0 {
 		res = types.QueryIndicatorsResponse{
-			TRAYear:  taxRewards.QuoInt(totalStakedArk),
-			TRAMonth: taxRewards.QuoInt(totalStakedArk),
+			TRAYear:  taxRewards.QuoInt(totalStakedNoah),
+			TRAMonth: taxRewards.QuoInt(totalStakedNoah),
 		}
 	} else {
 		params, err := q.k.Params.Get(ctx)
@@ -154,8 +154,8 @@ func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsR
 		computedEpochForYear := int64(math.Min(float64(params.WindowLong-1), float64(epoch)))
 		computedEpochForMonth := int64(math.Min(float64(params.WindowShort-1), float64(epoch)))
 
-		traYear = traYear.MulInt64(computedEpochForYear).Add(taxRewards.QuoInt(totalStakedArk)).QuoInt64(computedEpochForYear + 1)
-		traMonth = traMonth.MulInt64(computedEpochForMonth).Add(taxRewards.QuoInt(totalStakedArk)).QuoInt64(computedEpochForMonth + 1)
+		traYear = traYear.MulInt64(computedEpochForYear).Add(taxRewards.QuoInt(totalStakedNoah)).QuoInt64(computedEpochForYear + 1)
+		traMonth = traMonth.MulInt64(computedEpochForMonth).Add(taxRewards.QuoInt(totalStakedNoah)).QuoInt64(computedEpochForMonth + 1)
 
 		res = types.QueryIndicatorsResponse{
 			TRAYear:  traYear,

@@ -11,10 +11,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/codec"
-	noahmetrics "noah/abci/metrics"
-	noahabci "noah/abci/types"
-	"noah/abci/ve"
+	"ark/abci/codec"
+	arkmetrics "ark/abci/metrics"
+	arkabci "ark/abci/types"
+	"ark/abci/ve"
 )
 
 // Handler is responsible primarily for:
@@ -96,13 +96,13 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		// Report the PrepareProposal latency excluding the wrapped handler.
 		defer func() {
 			totalLatency := time.Since(start)
-			noahmetrics.RecordLatencyAndStatus(totalLatency-wrappedPrepareProposalLatency, err, noahmetrics.PrepareProposal)
+			arkmetrics.RecordLatencyAndStatus(totalLatency-wrappedPrepareProposalLatency, err, arkmetrics.PrepareProposal)
 		}()
 
 		if req == nil {
 			h.logger.Error("PrepareProposalHandler received a nil request")
-			err = noahabci.NilRequestError{
-				Handler: noahmetrics.PrepareProposal,
+			err = arkabci.NilRequestError{
+				Handler: arkmetrics.PrepareProposal,
 			}
 			return nil, err
 		}
@@ -143,7 +143,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 					"commit_info", extInfo,
 					"err", err,
 				)
-				err = noahabci.CodecError{
+				err = arkabci.CodecError{
 					Err: err,
 				}
 
@@ -175,8 +175,8 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		wrappedPrepareProposalLatency = time.Since(wrappedPrepareProposalStartTime)
 		if err != nil {
 			h.logger.Error("failed to prepare proposal", "err", err)
-			err = noahabci.WrappedHandlerError{
-				Handler: noahmetrics.PrepareProposal,
+			err = arkabci.WrappedHandlerError{
+				Handler: arkmetrics.PrepareProposal,
 				Err:     err,
 			}
 
@@ -241,14 +241,14 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// Defer a function to record the total time it took to process the proposal.
 		defer func() {
 			totalLatency := time.Since(start)
-			noahmetrics.RecordLatencyAndStatus(totalLatency-wrappedProcessProposalLatency, err, noahmetrics.ProcessProposal)
+			arkmetrics.RecordLatencyAndStatus(totalLatency-wrappedProcessProposalLatency, err, arkmetrics.ProcessProposal)
 		}()
 
 		// this should never happen, but just in case
 		if req == nil {
 			h.logger.Error("ProcessProposalHandler received a nil request")
-			err = noahabci.NilRequestError{
-				Handler: noahmetrics.ProcessProposal,
+			err = arkabci.NilRequestError{
+				Handler: arkmetrics.ProcessProposal,
 			}
 			return nil, err
 		}
@@ -268,21 +268,21 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 
 		if voteExtensionsEnabled {
 			// Ensure that the commit info was correctly injected into the proposal.
-			if len(req.Txs) < noahabci.NumInjectedTxs {
+			if len(req.Txs) < arkabci.NumInjectedTxs {
 				h.logger.Error("failed to process proposal: missing commit info", "num_txs", len(req.Txs))
-				err = noahabci.MissingCommitInfoError{}
+				err = arkabci.MissingCommitInfoError{}
 				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
 					err
 			}
 
-			extCommitBz := req.Txs[noahabci.OracleInfoIndex]
+			extCommitBz := req.Txs[arkabci.OracleInfoIndex]
 
 			// Validate the vote extensions included in the proposal.
 			var extInfo cometabci.ExtendedCommitInfo
 			extInfo, err = h.extendedCommitCodec.Decode(extCommitBz)
 			if err != nil {
 				h.logger.Error("failed to unmarshal commit info", "err", err)
-				err = noahabci.CodecError{
+				err = arkabci.CodecError{
 					Err: err,
 				}
 				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
@@ -305,12 +305,12 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			}
 
 			// Observe the size of the extended commit info.
-			noahmetrics.ObserveMessageSize(noahmetrics.ExtendedCommit, len(extCommitBz))
+			arkmetrics.ObserveMessageSize(arkmetrics.ExtendedCommit, len(extCommitBz))
 
 			// Remove the extended commit info from the proposal if required.
 			if !h.retainOracleDataInWrappedHandler {
-				injectedTx = req.Txs[noahabci.OracleInfoIndex]
-				req.Txs = req.Txs[noahabci.NumInjectedTxs:]
+				injectedTx = req.Txs[arkabci.OracleInfoIndex]
+				req.Txs = req.Txs[arkabci.NumInjectedTxs:]
 			}
 		}
 
@@ -319,8 +319,8 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		resp, err = h.processProposalHandler(ctx, req)
 		wrappedProcessProposalLatency = time.Since(wrappedProcessProposalStartTime)
 		if err != nil {
-			err = noahabci.WrappedHandlerError{
-				Handler: noahmetrics.ProcessProposal,
+			err = arkabci.WrappedHandlerError{
+				Handler: arkmetrics.ProcessProposal,
 				Err:     err,
 			}
 		}

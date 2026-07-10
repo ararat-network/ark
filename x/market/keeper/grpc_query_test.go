@@ -8,9 +8,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/market/types"
-	oracletypes "noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/market/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestQueryParams() {
@@ -163,7 +163,7 @@ func (s *KeeperTestSuite) TestQuerySwapOutcome() {
 	}
 }
 
-func (s *KeeperTestSuite) TestQueryNoahPoolDelta() {
+func (s *KeeperTestSuite) TestQueryArkPoolDelta() {
 	tests := []struct {
 		name  string
 		delta math.LegacyDec
@@ -184,13 +184,13 @@ func (s *KeeperTestSuite) TestQueryNoahPoolDelta() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			err := s.keeper.NoahPoolDelta.Set(s.ctx, tc.delta)
+			err := s.keeper.ArkPoolDelta.Set(s.ctx, tc.delta)
 			s.Require().NoError(err)
 
-			res, err := s.queryClient.NoahPoolDelta(s.ctx, &types.QueryNoahPoolDeltaRequest{})
+			res, err := s.queryClient.ArkPoolDelta(s.ctx, &types.QueryArkPoolDeltaRequest{})
 			s.Require().NoError(err)
 			s.Require().NotNil(res)
-			s.Require().True(tc.delta.Equal(res.NoahPoolDelta))
+			s.Require().True(tc.delta.Equal(res.ArkPoolDelta))
 		})
 	}
 }

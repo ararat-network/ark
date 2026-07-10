@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/oracle/types"
+	"ark/x/oracle/types"
 )
 
 // InitGenesis imports oracle genesis state.

@@ -10,9 +10,9 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	modulev1 "noah/api/noah/oracle/module/v1"
-	"noah/x/oracle/keeper"
-	"noah/x/oracle/types"
+	modulev1 "ark/api/ark/oracle/module/v1"
+	"ark/x/oracle/keeper"
+	"ark/x/oracle/types"
 )
 
 var _ depinject.OnePerModuleType = AppModule{}

@@ -5,7 +5,7 @@
 DOCKER := $(shell which docker)
 protoVer=0.18.0
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace -v noah-proto-cache:/root/.cache --workdir /workspace $(protoImageName)
+protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace -v ark-proto-cache:/root/.cache --workdir /workspace $(protoImageName)
 
 proto-all: proto-format proto-lint proto-gen
 

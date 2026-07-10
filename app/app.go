@@ -42,19 +42,19 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
-	"noah/app/params"
-	marketkeeper "noah/x/market/keeper"
-	oraclekeeper "noah/x/oracle/keeper"
-	treasurykeeper "noah/x/treasury/keeper"
+	"ark/app/params"
+	marketkeeper "ark/x/market/keeper"
+	oraclekeeper "ark/x/oracle/keeper"
+	treasurykeeper "ark/x/treasury/keeper"
 )
 
 const (
 	// Name is the binary, environment variable, and home directory prefix.
-	Name = "noah"
+	Name = "ark"
 	// AppName is the BaseApp runtime name.
-	AppName = "NoahApp"
+	AppName = "ArkApp"
 	// AccountAddressPrefix is the prefix for accounts addresses.
-	AccountAddressPrefix = "noah"
+	AccountAddressPrefix = "ark"
 	// ChainCoinType is the coin type of the chain.
 	ChainCoinType = params.CoinType
 )
@@ -63,14 +63,14 @@ const (
 var DefaultNodeHome string
 
 var (
-	_ runtime.AppI            = (*NoahApp)(nil)
-	_ servertypes.Application = (*NoahApp)(nil)
+	_ runtime.AppI            = (*ArkApp)(nil)
+	_ servertypes.Application = (*ArkApp)(nil)
 )
 
-// NoahApp extends an ABCI application, but with most of its parameters exported.
+// ArkApp extends an ABCI application, but with most of its parameters exported.
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
-type NoahApp struct {
+type ArkApp struct {
 	*runtime.App
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
@@ -110,16 +110,16 @@ func init() {
 	}
 }
 
-// NewNoahApp returns a reference to an initialised NoahApp.
-func NewNoahApp(
+// NewArkApp returns a reference to an initialised ArkApp.
+func NewArkApp(
 	logger log.Logger,
 	db dbm.DB,
 	loadLatest bool,
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
-) *NoahApp {
+) *ArkApp {
 	var (
-		app        = &NoahApp{}
+		app        = &ArkApp{}
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
@@ -253,7 +253,7 @@ func NewNoahApp(
 
 // setAnteHandler sets custom ante handlers.
 // "x/auth/tx" pre-defined ante handler have been disabled in app_config.
-func (app *NoahApp) setAnteHandler(txConfig client.TxConfig) {
+func (app *ArkApp) setAnteHandler(txConfig client.TxConfig) {
 	anteHandler, err := ante.NewAnteHandler(
 		ante.HandlerOptions{
 			AccountKeeper:   app.AccountKeeper,
@@ -271,36 +271,36 @@ func (app *NoahApp) setAnteHandler(txConfig client.TxConfig) {
 	app.SetAnteHandler(anteHandler)
 }
 
-// LegacyAmino returns NoahApp's amino codec.
+// LegacyAmino returns ArkApp's amino codec.
 //
 // NOTE: This is solely to be used for testing purposes as it may be desirable
 // for modules to register their own custom testing types.
-func (app *NoahApp) LegacyAmino() *codec.LegacyAmino {
+func (app *ArkApp) LegacyAmino() *codec.LegacyAmino {
 	return app.legacyAmino
 }
 
-// AppCodec returns NoahApp's app codec.
+// AppCodec returns ArkApp's app codec.
 //
 // NOTE: This is solely to be used for testing purposes as it may be desirable
 // for modules to register their own custom testing types.
-func (app *NoahApp) AppCodec() codec.Codec {
+func (app *ArkApp) AppCodec() codec.Codec {
 	return app.appCodec
 }
 
-// InterfaceRegistry returns NoahApp's InterfaceRegistry.
-func (app *NoahApp) InterfaceRegistry() codectypes.InterfaceRegistry {
+// InterfaceRegistry returns ArkApp's InterfaceRegistry.
+func (app *ArkApp) InterfaceRegistry() codectypes.InterfaceRegistry {
 	return app.interfaceRegistry
 }
 
-// TxConfig returns NoahApp's TxConfig
-func (app *NoahApp) TxConfig() client.TxConfig {
+// TxConfig returns ArkApp's TxConfig
+func (app *ArkApp) TxConfig() client.TxConfig {
 	return app.txConfig
 }
 
 // GetKey returns the KVStoreKey for the provided store key.
 //
 // NOTE: This is solely to be used for testing purposes.
-func (app *NoahApp) GetKey(storeKey string) *storetypes.KVStoreKey {
+func (app *ArkApp) GetKey(storeKey string) *storetypes.KVStoreKey {
 	sk := app.UnsafeFindStoreKey(storeKey)
 	kvStoreKey, ok := sk.(*storetypes.KVStoreKey)
 	if !ok {
@@ -309,7 +309,7 @@ func (app *NoahApp) GetKey(storeKey string) *storetypes.KVStoreKey {
 	return kvStoreKey
 }
 
-func (app *NoahApp) kvStoreKeys() map[string]*storetypes.KVStoreKey {
+func (app *ArkApp) kvStoreKeys() map[string]*storetypes.KVStoreKey {
 	keys := make(map[string]*storetypes.KVStoreKey)
 	for _, k := range app.GetStoreKeys() {
 		if kv, ok := k.(*storetypes.KVStoreKey); ok {
@@ -320,14 +320,14 @@ func (app *NoahApp) kvStoreKeys() map[string]*storetypes.KVStoreKey {
 	return keys
 }
 
-// SimulationManager implements the NoahApp interface
-func (app *NoahApp) SimulationManager() *module.SimulationManager {
+// SimulationManager implements the ArkApp interface
+func (app *ArkApp) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
-func (app *NoahApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
+func (app *ArkApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	app.App.RegisterAPIRoutes(apiSvr, apiConfig)
 	// register swagger API in app.go so that other applications can override easily
 	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {

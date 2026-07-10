@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestInitGenesis() {
@@ -26,7 +26,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			Epoch:             0,
 			TaxReward:         math.LegacyNewDec(100),
 			SeigniorageReward: math.LegacyNewDec(200),
-			TotalStakedArk:    math.NewInt(1000000),
+			TotalStakedNoah:   math.NewInt(1000000),
 		},
 	}
 
@@ -36,7 +36,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 		customRewardWeight,
 		customTaxCaps,
 		sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-		sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(500000))),
+		sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(500000))),
 		customEpochStates,
 	)
 
@@ -70,14 +70,14 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 	// Verify epoch initial issuance
 	issuance, err := s.keeper.EpochInitialIssuance.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(500000), issuance.Issuance.AmountOf(chain.MicroArkDenom))
+	s.Require().Equal(math.NewInt(500000), issuance.Issuance.AmountOf(chain.MicroNoahDenom))
 
 	// Verify epoch states
 	epochState, err := s.keeper.EpochStates.Get(s.ctx, 0)
 	s.Require().NoError(err)
 	s.Require().True(math.LegacyNewDec(100).Equal(epochState.TaxReward))
 	s.Require().True(math.LegacyNewDec(200).Equal(epochState.SeigniorageReward))
-	s.Require().Equal(math.NewInt(1000000), epochState.TotalStakedArk)
+	s.Require().Equal(math.NewInt(1000000), epochState.TotalStakedNoah)
 }
 
 func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
@@ -87,8 +87,8 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 
 	// When EpochInitialIssuance is empty, RecordEpochInitialIssuance is called
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(nil, nil)
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroArkDenom).
-		Return(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(1000000)))
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroNoahDenom).
+		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000)))
 
 	genesis := types.DefaultGenesisState()
 	err := s.keeper.InitGenesis(s.ctx, genesis)
@@ -112,7 +112,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			Epoch:             0,
 			TaxReward:         math.LegacyNewDec(100),
 			SeigniorageReward: math.LegacyNewDec(200),
-			TotalStakedArk:    math.NewInt(1000000),
+			TotalStakedNoah:   math.NewInt(1000000),
 		},
 	}
 
@@ -122,7 +122,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		customRewardWeight,
 		customTaxCaps,
 		sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-		sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, math.NewInt(500000))),
+		sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(500000))),
 		customEpochStates,
 	)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
@@ -152,11 +152,11 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 	// Verify epoch initial issuance
 	s.Require().NoError(err)
-	s.Require().Equal(genesis.EpochInitialIssuance.AmountOf(chain.MicroArkDenom), exported.EpochInitialIssuance.AmountOf(chain.MicroArkDenom))
+	s.Require().Equal(genesis.EpochInitialIssuance.AmountOf(chain.MicroNoahDenom), exported.EpochInitialIssuance.AmountOf(chain.MicroNoahDenom))
 
 	// Verify epoch states
 	s.Require().NoError(err)
 	s.Require().True(genesis.EpochStates[0].TaxReward.Equal(exported.EpochStates[0].TaxReward))
 	s.Require().True(genesis.EpochStates[0].SeigniorageReward.Equal(exported.EpochStates[0].SeigniorageReward))
-	s.Require().True(genesis.EpochStates[0].TotalStakedArk.Equal(exported.EpochStates[0].TotalStakedArk))
+	s.Require().True(genesis.EpochStates[0].TotalStakedNoah.Equal(exported.EpochStates[0].TotalStakedNoah))
 }

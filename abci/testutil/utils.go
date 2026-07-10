@@ -14,8 +14,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracleencoding "noah/abci/oracle/encoding"
-	vetypes "noah/abci/ve/types"
+	oracleencoding "ark/abci/oracle/encoding"
+	vetypes "ark/abci/ve/types"
 )
 
 // NewSDKContext returns a minimal SDK context for ABCI tests.

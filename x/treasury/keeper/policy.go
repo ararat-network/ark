@@ -173,10 +173,10 @@ func (k Keeper) rollingAverageIndicator(ctx context.Context, epochs uint64) (mat
 			return math.LegacyZeroDec(), fmt.Errorf("getting epoch state: %w", err)
 		}
 		counted++
-		if val.TaxReward.IsZero() || val.TotalStakedArk.IsZero() {
+		if val.TaxReward.IsZero() || val.TotalStakedNoah.IsZero() {
 			continue
 		}
-		sum = sum.Add(val.TaxReward.QuoInt(val.TotalStakedArk))
+		sum = sum.Add(val.TaxReward.QuoInt(val.TotalStakedNoah))
 	}
 
 	if counted == 0 {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/errors"
 
-	wasmexported "noah/x/wasm/exported"
+	wasmexported "ark/x/wasm/exported"
 )
 
 func TestMsgParserParseCustom(t *testing.T) {

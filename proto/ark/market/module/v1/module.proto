@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ark.market.module.v1;
+
+import "cosmos/app/v1alpha1/module.proto";
+
+// Module is the config object for the market module.
+message Module {
+  option (cosmos.app.v1alpha1.module) = {
+    go_import : "ark/x/market"
+  };
+
+  // authority defines the custom module authority. If not set, defaults to the
+  // governance module.
+  string authority = 1;
+}

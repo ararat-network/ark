@@ -1,0 +1,61 @@
+syntax = "proto3";
+package ark.oracle.v1;
+
+import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/oracle/types";
+
+// Params defines the parameters for the oracle module.
+message Params {
+  option (gogoproto.equal) = true;
+  option (amino.name) = "ark/x/oracle/Params";
+
+  string vote_threshold = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string reward_band = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 reward_window = 3;
+  uint64 reward_distribution_window = 4;
+  repeated TobinTax tobin_taxes = 5 [
+    (gogoproto.castrepeated) = "TobinTaxes",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string slash_fraction = 6 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 slash_window = 7;
+  string min_valid_per_window = 8 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 max_exchange_rate_age = 9;
+}
+
+// TobinTax - the object to hold configurations of each denom
+message TobinTax {
+  option (gogoproto.equal) = true;
+
+  string denom = 1;
+  string tobin_tax = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}

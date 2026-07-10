@@ -1,4 +1,4 @@
-project_name: noahd
+project_name: arkd
 
 release:
   disable: false
@@ -9,7 +9,7 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./noahd
+  - main: ./cmd/arkd
     goos:
       - linux
       - darwin
@@ -25,8 +25,8 @@ builds:
       - netgo
       - ledger
     ldflags:
-      - "-X github.com/cosmos/cosmos-sdk/version.Name=noah"
-      - "-X github.com/cosmos/cosmos-sdk/version.AppName=noahd"
+      - "-X github.com/cosmos/cosmos-sdk/version.Name=ark"
+      - "-X github.com/cosmos/cosmos-sdk/version.AppName=arkd"
       - "-X github.com/cosmos/cosmos-sdk/version.Version={{.Version}}"
       - "-X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}"
       - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger"'
@@ -34,10 +34,10 @@ builds:
       - "-s"
 
 archives:
-  - name_template: '{{ replace .Version "noahd/" "noahd-" }}-{{ .Os }}-{{ .Arch }}'
+  - name_template: '{{ replace .Version "arkd/" "arkd-" }}-{{ .Os }}-{{ .Arch }}'
 
 checksum:
-  name_template: 'SHA256SUMS-{{ replace .Version "noahd/" "noahd-" }}.txt'
+  name_template: 'SHA256SUMS-{{ replace .Version "arkd/" "arkd-" }}.txt'
   algorithm: sha256
 
 changelog:

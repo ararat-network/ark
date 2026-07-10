@@ -15,10 +15,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/proposals"
-	abcitestutil "noah/abci/testutil"
-	"noah/abci/ve"
-	vetypes "noah/abci/ve/types"
+	"ark/abci/proposals"
+	abcitestutil "ark/abci/testutil"
+	"ark/abci/ve"
+	vetypes "ark/abci/ve/types"
 )
 
 func TestValidateExtendedCommitInfo(t *testing.T) {

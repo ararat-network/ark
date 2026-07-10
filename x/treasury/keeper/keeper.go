@@ -12,8 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/types"
 )
 
 // Keeper of the treasury store
@@ -157,7 +157,7 @@ func (k Keeper) RecordEpochInitialIssuance(ctx context.Context) error {
 	}
 
 	totalSupply := make(sdk.Coins, len(tobinTaxes)+1)
-	totalSupply[0] = k.bankKeeper.GetSupply(ctx, chain.MicroArkDenom)
+	totalSupply[0] = k.bankKeeper.GetSupply(ctx, chain.MicroNoahDenom)
 
 	for i, denom := range tobinTaxes {
 		totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Denom)
@@ -174,12 +174,12 @@ func (k Keeper) RecordEpochInitialIssuance(ctx context.Context) error {
 
 // ComputeEpochSeigniorage returns epoch seigniorage
 func (k Keeper) ComputeEpochSeigniorage(ctx context.Context) (math.Int, error) {
-	epochIssuance := k.bankKeeper.GetSupply(ctx, chain.MicroArkDenom).Amount
+	epochIssuance := k.bankKeeper.GetSupply(ctx, chain.MicroNoahDenom).Amount
 	epochIntialIssuance, err := k.EpochInitialIssuance.Get(ctx)
 	if err != nil {
 		return math.ZeroInt(), fmt.Errorf("getting epoch initial issuance: %w", err)
 	}
-	preEpochIssuance := epochIntialIssuance.Issuance.AmountOf(chain.MicroArkDenom)
+	preEpochIssuance := epochIntialIssuance.Issuance.AmountOf(chain.MicroNoahDenom)
 	epochSeigniorage := preEpochIssuance.Sub(epochIssuance)
 
 	if epochSeigniorage.IsNegative() {

@@ -1,0 +1,204 @@
+syntax = "proto3";
+package ark.oracle.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/query/v1/query.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "ark/oracle/v1/oracle.proto";
+
+option go_package = "ark/x/oracle/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // ExchangeRate returns exchange rate of a denom
+  rpc ExchangeRate(QueryExchangeRateRequest)
+      returns (QueryExchangeRateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get =
+        "/ark/oracle/v1/denoms/{denom}/exchange_rate";
+  }
+
+  // ExchangeRates returns exchange rates of all denoms
+  rpc ExchangeRates(QueryExchangeRatesRequest)
+      returns (QueryExchangeRatesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/denoms/exchange_rates";
+  }
+
+  // TobinTax returns tobin tax of a denom
+  rpc TobinTax(QueryTobinTaxRequest) returns (QueryTobinTaxResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/denoms/{denom}/tobin_tax";
+  }
+
+  // TobinTaxes returns tobin taxes of all denoms
+  rpc TobinTaxes(QueryTobinTaxesRequest) returns (QueryTobinTaxesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/denoms/tobin_taxes";
+  }
+
+  // Actives returns all active denoms
+  rpc Actives(QueryActivesRequest) returns (QueryActivesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/denoms/actives";
+  }
+
+  // VoteTargets returns all vote target denoms
+  rpc VoteTargets(QueryVoteTargetsRequest) returns (QueryVoteTargetsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/denoms/vote_targets";
+  }
+
+  // ScoreWeight returns oracle miss count of a validator
+  rpc ScoreWeight(QueryScoreWeightRequest) returns (QueryScoreWeightResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get =
+        "/ark/oracle/v1/validators/{validator_addr}/score";
+  }
+
+  // MissCount returns oracle miss count of a validator
+  rpc MissCount(QueryMissCountRequest) returns (QueryMissCountResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get =
+        "/ark/oracle/v1/validators/{validator_addr}/miss";
+  }
+
+  // Params queries all parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/params";
+  }
+}
+
+// QueryExchangeRateRequest is the request type for the Query/ExchangeRate RPC
+// method.
+message QueryExchangeRateRequest {
+  // denom defines the denomination to query for.
+  string denom = 1;
+}
+
+// QueryExchangeRateResponse is response type for the
+// Query/ExchangeRate RPC method.
+message QueryExchangeRateResponse {
+  // exchange_rate defines the exchange rate of noah denominated in various ark
+  string exchange_rate = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryExchangeRatesRequest is the request type for the Query/ExchangeRates RPC
+// method.
+message QueryExchangeRatesRequest {}
+
+// QueryExchangeRatesResponse is response type for the
+// Query/ExchangeRates RPC method.
+message QueryExchangeRatesResponse {
+  // exchange_rates defines a list of the exchange rate for all whitelisted
+  // denoms.
+  repeated cosmos.base.v1beta1.DecCoin exchange_rates = 1 [
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryTobinTaxRequest is the request type for the Query/TobinTax RPC method.
+message QueryTobinTaxRequest {
+  // denom defines the denomination to query for.
+  string denom = 1;
+}
+
+// QueryTobinTaxResponse is response type for the
+// Query/TobinTax RPC method.
+message QueryTobinTaxResponse {
+  // tobin_tax defines the tobin tax of a denom
+  string tobin_tax = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryTobinTaxesRequest is the request type for the Query/TobinTaxes RPC
+// method.
+message QueryTobinTaxesRequest {}
+
+// QueryTobinTaxesResponse is response type for the
+// Query/TobinTaxes RPC method.
+message QueryTobinTaxesResponse {
+  // tobin_taxes defines a list of all the denoms and their respective tobin tax
+  repeated TobinTax tobin_taxes = 1 [
+    (gogoproto.castrepeated) = "TobinTaxes",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryActivesRequest is the request type for the Query/Actives RPC method.
+message QueryActivesRequest {}
+
+// QueryActivesResponse is response type for the
+// Query/Actives RPC method.
+message QueryActivesResponse {
+  // actives defines a list of the denomination which oracle prices agreed upon.
+  repeated string actives = 1;
+}
+
+// QueryVoteTargetsRequest is the request type for the Query/VoteTargets RPC
+// method.
+message QueryVoteTargetsRequest {}
+
+// QueryVoteTargetsResponse is response type for the
+// Query/VoteTargets RPC method.
+message QueryVoteTargetsResponse {
+  // vote_targets defines a list of the denomination in which everyone
+  // should vote in the current vote period.
+  repeated string vote_targets = 1;
+}
+
+// QueryScoreWeightRequest is the request type for the Query/ScoreWeight RPC
+// method.
+message QueryScoreWeightRequest {
+  // validator defines the validator address to query for.
+  string validator_addr = 1
+      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+}
+
+// QueryScoreWeightResponse is response type for the
+// Query/ScoreWeight RPC method.
+message QueryScoreWeightResponse {
+  // score_weight defines the oracle score weight of a validator
+  uint64 score_weight = 1;
+}
+
+// QueryMissCountRequest is the request type for the Query/MissCount RPC
+// method.
+message QueryMissCountRequest {
+  // validator defines the validator address to query for.
+  string validator_addr = 1
+      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+}
+
+// QueryMissCountResponse is response type for the
+// Query/MissCount RPC method.
+message QueryMissCountResponse {
+  // miss_count defines the oracle miss counter of a validator
+  uint64 miss_count = 1;
+}
+
+// QueryParamsRequest is the request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params defines the parameters of the module.
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}

@@ -5,13 +5,13 @@ import (
 
 	"cosmossdk.io/math"
 
-	noahencoding "noah/pkg/encoding"
+	arkencoding "ark/pkg/encoding"
 )
 
 const MaxRateBytes = 128
 
 func EncodeRate(rate math.LegacyDec) ([]byte, error) {
-	return noahencoding.EncodeLegacyDec(rate)
+	return arkencoding.EncodeLegacyDec(rate)
 }
 
 func DecodeRate(bz []byte) (math.LegacyDec, error) {
@@ -23,5 +23,5 @@ func DecodeRate(bz []byte) (math.LegacyDec, error) {
 		)
 	}
 
-	return noahencoding.DecodeLegacyDec(bz)
+	return arkencoding.DecodeLegacyDec(bz)
 }

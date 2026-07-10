@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/pkg/metrics")
+	meter = otel.Meter("ark/pkg/metrics")
 
 	moduleMethodLatency metric.Float64Histogram
 )
@@ -18,7 +18,7 @@ var (
 func init() {
 	var err error
 	moduleMethodLatency, err = meter.Float64Histogram(
-		"noah.module.method.duration",
+		"ark.module.method.duration",
 		metric.WithDescription("Duration of Cosmos SDK module lifecycle method execution"),
 		metric.WithUnit("ms"),
 	)

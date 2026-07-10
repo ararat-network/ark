@@ -11,7 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 // Simulation parameter constants

@@ -14,9 +14,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/proposals"
-	abcitestutil "noah/abci/testutil"
-	"noah/abci/ve"
+	"ark/abci/proposals"
+	abcitestutil "ark/abci/testutil"
+	"ark/abci/ve"
 )
 
 func TestPrepareProposalHandler(t *testing.T) {

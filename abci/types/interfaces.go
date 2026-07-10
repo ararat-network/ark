@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	transporttypes "noah/oracle/types"
-	oracletypes "noah/x/oracle/types"
+	transporttypes "ark/oracle/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 // OracleKeeper defines the interface that must be fulfilled by the oracle keeper. This

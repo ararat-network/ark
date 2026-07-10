@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"noah/pkg/encoding"
+	"ark/pkg/encoding"
 )
 
 func TestEncodeDecodeLegacyDec(t *testing.T) {

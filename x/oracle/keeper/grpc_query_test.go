@@ -8,9 +8,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	oraclekeeper "noah/x/oracle/keeper"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	oraclekeeper "ark/x/oracle/keeper"
+	"ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestQueryParams() {
@@ -35,8 +35,8 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			expectErr: true,
 		},
 		{
-			name:   "ark denom returns one",
-			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroArkDenom},
+			name:   "noah denom returns one",
+			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroNoahDenom},
 			expect: math.LegacyOneDec(),
 		},
 		{

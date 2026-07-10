@@ -16,9 +16,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"noah/abci/preblock"
-	abcitestutil "noah/abci/testutil"
-	oracletypes "noah/x/oracle/types"
+	"ark/abci/preblock"
+	abcitestutil "ark/abci/testutil"
+	oracletypes "ark/x/oracle/types"
 )
 
 func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {

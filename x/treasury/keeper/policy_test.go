@@ -12,9 +12,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	oracletypes "noah/x/oracle/types"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
+	"ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestUpdateTaxCap() {
@@ -162,8 +162,8 @@ func (s *KeeperTestSuite) TestUpdateTaxPolicy() {
 			name:        "zero revenue - rate increases by ChangeRateMax",
 			blockHeight: int64(chain.BlocksPerWeek),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
-				1: {Epoch: 1, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
+				0: {Epoch: 0, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
+				1: {Epoch: 1, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
 			},
 			expectedRate: types.DefaultTaxRate.Add(types.DefaultTaxPolicy.ChangeRateMax),
 		},
@@ -177,7 +177,7 @@ func (s *KeeperTestSuite) TestUpdateTaxPolicy() {
 						Epoch:             i,
 						TaxReward:         math.LegacyNewDec(1000),
 						SeigniorageReward: math.LegacyNewDec(500),
-						TotalStakedArk:    math.NewInt(100000),
+						TotalStakedNoah:   math.NewInt(100000),
 					}
 				}
 				return m
@@ -188,11 +188,11 @@ func (s *KeeperTestSuite) TestUpdateTaxPolicy() {
 			name:        "rolling averages use long and short windows",
 			blockHeight: int64(4 * chain.BlocksPerWeek),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyNewDec(18), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				1: {Epoch: 1, TaxReward: math.LegacyNewDec(20), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				2: {Epoch: 2, TaxReward: math.LegacyNewDec(27), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				3: {Epoch: 3, TaxReward: math.LegacyNewDec(30), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				4: {Epoch: 4, TaxReward: math.LegacyNewDec(30), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
+				0: {Epoch: 0, TaxReward: math.LegacyNewDec(18), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				1: {Epoch: 1, TaxReward: math.LegacyNewDec(20), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				2: {Epoch: 2, TaxReward: math.LegacyNewDec(27), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				3: {Epoch: 3, TaxReward: math.LegacyNewDec(30), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				4: {Epoch: 4, TaxReward: math.LegacyNewDec(30), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
 			},
 			expectedRate: types.DefaultTaxRate,
 		},
@@ -200,10 +200,10 @@ func (s *KeeperTestSuite) TestUpdateTaxPolicy() {
 			name:        "rolling averages skip missing epochs",
 			blockHeight: int64(4 * chain.BlocksPerWeek),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyNewDec(79), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				1: {Epoch: 1, TaxReward: math.LegacyNewDec(107), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				3: {Epoch: 3, TaxReward: math.LegacyNewDec(107), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
-				4: {Epoch: 4, TaxReward: math.LegacyNewDec(107), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.OneInt()},
+				0: {Epoch: 0, TaxReward: math.LegacyNewDec(79), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				1: {Epoch: 1, TaxReward: math.LegacyNewDec(107), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				3: {Epoch: 3, TaxReward: math.LegacyNewDec(107), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
+				4: {Epoch: 4, TaxReward: math.LegacyNewDec(107), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.OneInt()},
 			},
 			expectedRate: types.DefaultTaxRate,
 		},
@@ -212,8 +212,8 @@ func (s *KeeperTestSuite) TestUpdateTaxPolicy() {
 			blockHeight: int64(chain.BlocksPerWeek),
 			initialRate: func() *math.LegacyDec { r := types.DefaultTaxPolicy.RateMax; return &r }(),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
-				1: {Epoch: 1, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
+				0: {Epoch: 0, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
+				1: {Epoch: 1, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
 			},
 			expectedRate: types.DefaultTaxPolicy.RateMax,
 		},
@@ -263,8 +263,8 @@ func (s *KeeperTestSuite) TestUpdateRewardPolicy() {
 			name:        "zero revenue - weight increases by ChangeRateMax",
 			blockHeight: int64(chain.BlocksPerWeek),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
-				1: {Epoch: 1, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
+				0: {Epoch: 0, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
+				1: {Epoch: 1, TaxReward: math.LegacyZeroDec(), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
 			},
 			expectedWeight: types.DefaultRewardWeight.Add(types.DefaultRewardPolicy.ChangeRateMax),
 		},
@@ -273,8 +273,8 @@ func (s *KeeperTestSuite) TestUpdateRewardPolicy() {
 			blockHeight:   int64(chain.BlocksPerWeek),
 			initialWeight: func() *math.LegacyDec { w := math.LegacyNewDecWithPrec(40, 2); return &w }(), // 40%
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyNewDec(100), SeigniorageReward: math.LegacyNewDec(9900), TotalStakedArk: math.NewInt(1000)},
-				1: {Epoch: 1, TaxReward: math.LegacyNewDec(100), SeigniorageReward: math.LegacyNewDec(9900), TotalStakedArk: math.NewInt(1000)},
+				0: {Epoch: 0, TaxReward: math.LegacyNewDec(100), SeigniorageReward: math.LegacyNewDec(9900), TotalStakedNoah: math.NewInt(1000)},
+				1: {Epoch: 1, TaxReward: math.LegacyNewDec(100), SeigniorageReward: math.LegacyNewDec(9900), TotalStakedNoah: math.NewInt(1000)},
 			},
 			expectedWeight: math.LegacyNewDecWithPrec(375, 3),
 		},
@@ -282,8 +282,8 @@ func (s *KeeperTestSuite) TestUpdateRewardPolicy() {
 			name:        "balanced revenue - within bounds",
 			blockHeight: int64(chain.BlocksPerWeek),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyNewDec(500), SeigniorageReward: math.LegacyNewDec(500), TotalStakedArk: math.NewInt(1000)},
-				1: {Epoch: 1, TaxReward: math.LegacyNewDec(500), SeigniorageReward: math.LegacyNewDec(500), TotalStakedArk: math.NewInt(1000)},
+				0: {Epoch: 0, TaxReward: math.LegacyNewDec(500), SeigniorageReward: math.LegacyNewDec(500), TotalStakedNoah: math.NewInt(1000)},
+				1: {Epoch: 1, TaxReward: math.LegacyNewDec(500), SeigniorageReward: math.LegacyNewDec(500), TotalStakedNoah: math.NewInt(1000)},
 			},
 			expectedWeight: math.LegacyNewDecWithPrec(67, 3),
 		},
@@ -291,8 +291,8 @@ func (s *KeeperTestSuite) TestUpdateRewardPolicy() {
 			name:        "zero seigniorage, non-zero tax - hikes to RateMax",
 			blockHeight: int64(chain.BlocksPerWeek),
 			epochStates: map[uint64]types.EpochState{
-				0: {Epoch: 0, TaxReward: math.LegacyNewDec(1000), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
-				1: {Epoch: 1, TaxReward: math.LegacyNewDec(1000), SeigniorageReward: math.LegacyZeroDec(), TotalStakedArk: math.NewInt(1000)},
+				0: {Epoch: 0, TaxReward: math.LegacyNewDec(1000), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
+				1: {Epoch: 1, TaxReward: math.LegacyNewDec(1000), SeigniorageReward: math.LegacyZeroDec(), TotalStakedNoah: math.NewInt(1000)},
 			},
 			expectedWeight: types.DefaultRewardWeight.Add(types.DefaultRewardPolicy.ChangeRateMax),
 		},

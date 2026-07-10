@@ -14,10 +14,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/codec"
-	"noah/abci/oracle"
-	abcitestutil "noah/abci/testutil"
-	oracletypes "noah/x/oracle/types"
+	"ark/abci/codec"
+	"ark/abci/oracle"
+	abcitestutil "ark/abci/testutil"
+	oracletypes "ark/x/oracle/types"
 )
 
 func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {

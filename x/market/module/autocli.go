@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	marketv1 "noah/api/noah/market/v1"
+	marketv1 "ark/api/ark/market/v1"
 )
 
 // AutoCLIOptions returns the market module's AutoCLI configuration.
@@ -21,18 +21,18 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "swap [offer-coin] [ask-denom]",
 					Short:     "Query a swap quote",
 					Long:      "Simulate a swap and return the estimated output coin and swap fee. Quotes use current oracle and pool state and may change before execution.",
-					Example:   fmt.Sprintf("%s query market swap 5000000uark usdr", version.AppName),
+					Example:   fmt.Sprintf("%s query market swap 5000000unoah usdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "offer_coin"},
 						{ProtoField: "ask_denom"},
 					},
 				},
 				{
-					RpcMethod: "NoahPoolDelta",
-					Use:       "noah-pool-delta",
-					Short:     "Query the Noah pool delta",
-					Long:      "Query the current gap between the Noah pool and the base pool. A positive value means the pool is above target; a negative value means it is below target.",
-					Example:   fmt.Sprintf("%s query market noah-pool-delta", version.AppName),
+					RpcMethod: "ArkPoolDelta",
+					Use:       "ark-pool-delta",
+					Short:     "Query the Ark pool delta",
+					Long:      "Query the current gap between the Ark pool and the base pool. A positive value means the pool is above target; a negative value means it is below target.",
+					Example:   fmt.Sprintf("%s query market ark-pool-delta", version.AppName),
 				},
 				{
 					RpcMethod: "Params",

@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 // Keeper of the market store
@@ -24,9 +24,9 @@ type Keeper struct {
 	bankKeeper    types.BankKeeper
 	oracleKeeper  types.OracleKeeper
 
-	Schema        collections.Schema
-	Params        collections.Item[types.Params]
-	NoahPoolDelta collections.Item[math.LegacyDec]
+	Schema       collections.Schema
+	Params       collections.Item[types.Params]
+	ArkPoolDelta collections.Item[math.LegacyDec]
 }
 
 // NewKeeper creates a new market Keeper instance.
@@ -57,10 +57,10 @@ func NewKeeper(
 			"params",
 			codec.CollValue[types.Params](cdc),
 		),
-		NoahPoolDelta: collections.NewItem(
+		ArkPoolDelta: collections.NewItem(
 			sb,
-			types.NoahPoolDeltaKey,
-			"noah_pool_delta",
+			types.ArkPoolDeltaKey,
+			"ark_pool_delta",
 			sdk.LegacyDecValue,
 		),
 	}
@@ -85,9 +85,9 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", "x/"+types.ModuleName)
 }
 
-// ReplenishPools replenishes each pool(Noah,Ark) to BasePool
+// ReplenishPools replenishes each pool(Ark,Noah) to BasePool
 func (k Keeper) ReplenishPools(ctx context.Context) error {
-	poolDelta, err := k.NoahPoolDelta.Get(ctx)
+	poolDelta, err := k.ArkPoolDelta.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 	// regressionAmt cannot make delta zero
 	poolDelta = poolDelta.Sub(poolRegressionAmt)
 
-	if err := k.NoahPoolDelta.Set(ctx, poolDelta); err != nil {
+	if err := k.ArkPoolDelta.Set(ctx, poolDelta); err != nil {
 		return err
 	}
 	return nil

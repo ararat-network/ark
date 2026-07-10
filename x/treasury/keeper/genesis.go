@@ -8,8 +8,8 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	chain "noah/pkg/chain"
-	"noah/x/treasury/types"
+	chain "ark/pkg/chain"
+	"ark/x/treasury/types"
 )
 
 // InitGenesis initializes default parameters and the keeper's address to pubkey map

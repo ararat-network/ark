@@ -100,7 +100,7 @@ formatters:
         - prefix(github.com/cometbft/cometbft)
         - prefix(cosmossdk.io)
         - prefix(github.com/cosmos/cosmos-sdk)
-        - prefix(noah)
+        - prefix(ark)
       custom-order: true
   exclusions:
     generated: lax

@@ -11,8 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"noah/x/treasury/keeper"
-	"noah/x/treasury/types"
+	"ark/x/treasury/keeper"
+	"ark/x/treasury/types"
 )
 
 // var _ wasm.WasmQuerierInterface = Querier{}

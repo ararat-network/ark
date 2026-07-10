@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	chain "noah/pkg/chain"
+	chain "ark/pkg/chain"
 )
 
 // Default parameter values

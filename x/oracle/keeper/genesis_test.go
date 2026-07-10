@@ -11,8 +11,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestInitGenesis() {

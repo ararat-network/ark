@@ -11,6 +11,6 @@ const (
 
 // Keys for market store
 var (
-	ParamsKey        = collections.NewPrefix(0)
-	NoahPoolDeltaKey = collections.NewPrefix(1)
+	ParamsKey       = collections.NewPrefix(0)
+	ArkPoolDeltaKey = collections.NewPrefix(1)
 )

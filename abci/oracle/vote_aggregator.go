@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracleencoding "noah/abci/oracle/encoding"
-	oracletypes "noah/x/oracle/types"
+	oracleencoding "ark/abci/oracle/encoding"
+	oracletypes "ark/x/oracle/types"
 )
 
 func NewVoteAggregator(

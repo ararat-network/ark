@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/treasury/types"
+	"ark/x/treasury/types"
 )
 
 func TestValidateGenesis(t *testing.T) {
@@ -117,13 +117,13 @@ func TestValidateGenesis(t *testing.T) {
 						Epoch:             1,
 						TaxReward:         math.LegacyOneDec(),
 						SeigniorageReward: math.LegacyOneDec(),
-						TotalStakedArk:    math.OneInt(),
+						TotalStakedNoah:   math.OneInt(),
 					},
 					{
 						Epoch:             1,
 						TaxReward:         math.LegacyOneDec(),
 						SeigniorageReward: math.LegacyOneDec(),
-						TotalStakedArk:    math.OneInt(),
+						TotalStakedNoah:   math.OneInt(),
 					},
 				}
 			},
@@ -136,7 +136,7 @@ func TestValidateGenesis(t *testing.T) {
 					Epoch:             1,
 					TaxReward:         math.LegacyDec{},
 					SeigniorageReward: math.LegacyOneDec(),
-					TotalStakedArk:    math.OneInt(),
+					TotalStakedNoah:   math.OneInt(),
 				}}
 			},
 			expectErr: "epoch state 1 tax_reward must be set",
@@ -148,7 +148,7 @@ func TestValidateGenesis(t *testing.T) {
 					Epoch:             1,
 					TaxReward:         math.LegacyNewDec(-1),
 					SeigniorageReward: math.LegacyOneDec(),
-					TotalStakedArk:    math.OneInt(),
+					TotalStakedNoah:   math.OneInt(),
 				}}
 			},
 			expectErr: "epoch state 1 tax_reward must be zero or positive",
@@ -160,7 +160,7 @@ func TestValidateGenesis(t *testing.T) {
 					Epoch:             1,
 					TaxReward:         math.LegacyOneDec(),
 					SeigniorageReward: math.LegacyDec{},
-					TotalStakedArk:    math.OneInt(),
+					TotalStakedNoah:   math.OneInt(),
 				}}
 			},
 			expectErr: "epoch state 1 seigniorage_reward must be set",
@@ -172,34 +172,34 @@ func TestValidateGenesis(t *testing.T) {
 					Epoch:             1,
 					TaxReward:         math.LegacyOneDec(),
 					SeigniorageReward: math.LegacyNewDec(-1),
-					TotalStakedArk:    math.OneInt(),
+					TotalStakedNoah:   math.OneInt(),
 				}}
 			},
 			expectErr: "epoch state 1 seigniorage_reward must be zero or positive",
 		},
 		{
-			name: "epoch total staked ark is nil",
+			name: "epoch total staked noah is nil",
 			mutate: func(gs *types.GenesisState) {
 				gs.EpochStates = []types.EpochState{{
 					Epoch:             1,
 					TaxReward:         math.LegacyOneDec(),
 					SeigniorageReward: math.LegacyOneDec(),
-					TotalStakedArk:    math.Int{},
+					TotalStakedNoah:   math.Int{},
 				}}
 			},
-			expectErr: "epoch state 1 total_staked_ark must be set",
+			expectErr: "epoch state 1 total_staked_noah must be set",
 		},
 		{
-			name: "epoch total staked ark is negative",
+			name: "epoch total staked noah is negative",
 			mutate: func(gs *types.GenesisState) {
 				gs.EpochStates = []types.EpochState{{
 					Epoch:             1,
 					TaxReward:         math.LegacyOneDec(),
 					SeigniorageReward: math.LegacyOneDec(),
-					TotalStakedArk:    math.NewInt(-1),
+					TotalStakedNoah:   math.NewInt(-1),
 				}}
 			},
-			expectErr: "epoch state 1 total_staked_ark must be zero or positive",
+			expectErr: "epoch state 1 total_staked_noah must be zero or positive",
 		},
 		{
 			name: "custom valid genesis",
@@ -215,7 +215,7 @@ func TestValidateGenesis(t *testing.T) {
 						Epoch:             1,
 						TaxReward:         math.LegacyOneDec(),
 						SeigniorageReward: math.LegacyOneDec(),
-						TotalStakedArk:    math.OneInt(),
+						TotalStakedNoah:   math.OneInt(),
 					}},
 				)
 			},

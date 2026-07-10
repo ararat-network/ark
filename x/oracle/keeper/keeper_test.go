@@ -23,10 +23,10 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/keeper"
-	"noah/x/oracle/testutil"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/keeper"
+	"ark/x/oracle/testutil"
+	"ark/x/oracle/types"
 )
 
 type KeeperTestSuite struct {
@@ -108,8 +108,8 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 		expectErr bool
 	}{
 		{
-			name:     "ark denom returns one",
-			denom:    chain.MicroArkDenom,
+			name:     "noah denom returns one",
+			denom:    chain.MicroNoahDenom,
 			expected: math.LegacyOneDec(),
 		},
 		{

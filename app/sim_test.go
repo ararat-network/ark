@@ -38,7 +38,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-const AppChainID = "noah-simapp"
+const AppChainID = "ark-simapp"
 
 var FlagEnableStreamingValue bool
 
@@ -59,10 +59,10 @@ func interBlockCacheOpt() func(*baseapp.BaseApp) {
 }
 
 func TestFullAppSimulation(t *testing.T) {
-	sims.Run(t, NewNoahApp, setupStateFactory)
+	sims.Run(t, NewArkApp, setupStateFactory)
 }
 
-func setupStateFactory(app *NoahApp) sims.SimStateFactory {
+func setupStateFactory(app *ArkApp) sims.SimStateFactory {
 	return sims.SimStateFactory{
 		Codec:         app.AppCodec(),
 		AppStateFn:    simtestutil.AppStateFn(app.AppCodec(), app.SimulationManager(), app.DefaultGenesis()),
@@ -78,7 +78,7 @@ var (
 )
 
 func TestAppImportExport(t *testing.T) {
-	sims.Run(t, NewNoahApp, setupStateFactory, func(tb testing.TB, ti sims.TestInstance[*NoahApp], accs []simtypes.Account) {
+	sims.Run(t, NewArkApp, setupStateFactory, func(tb testing.TB, ti sims.TestInstance[*ArkApp], accs []simtypes.Account) {
 		tb.Helper()
 		app := ti.App
 		tb.Log("exporting genesis...\n")
@@ -86,7 +86,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(tb, err)
 
 		tb.Log("importing genesis...\n")
-		newTestInstance := sims.NewSimulationAppInstance(tb, ti.Cfg, NewNoahApp)
+		newTestInstance := sims.NewSimulationAppInstance(tb, ti.Cfg, NewArkApp)
 		newApp := newTestInstance.App
 		var genesisState GenesisState
 		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
@@ -123,7 +123,7 @@ func TestAppImportExport(t *testing.T) {
 //	set up a new node instance, Init chain from exported genesis
 //	run new instance for n blocks
 func TestAppSimulationAfterImport(t *testing.T) {
-	sims.Run(t, NewNoahApp, setupStateFactory, func(tb testing.TB, ti sims.TestInstance[*NoahApp], accs []simtypes.Account) {
+	sims.Run(t, NewArkApp, setupStateFactory, func(tb testing.TB, ti sims.TestInstance[*ArkApp], accs []simtypes.Account) {
 		tb.Helper()
 		app := ti.App
 		tb.Log("exporting genesis...\n")
@@ -131,7 +131,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(tb, err)
 
 		tb.Log("importing genesis...\n")
-		newTestInstance := sims.NewSimulationAppInstance(tb, ti.Cfg, NewNoahApp)
+		newTestInstance := sims.NewSimulationAppInstance(tb, ti.Cfg, NewArkApp)
 		newApp := newTestInstance.App
 		_, err = newApp.InitChain(&abci.RequestInitChain{
 			AppStateBytes: exported.AppState,
@@ -182,7 +182,7 @@ func TestAppStateDeterminism(t *testing.T) {
 		}
 	}
 	// overwrite default app config
-	interBlockCachingAppFactory := func(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp)) *NoahApp {
+	interBlockCachingAppFactory := func(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp)) *ArkApp {
 		if FlagEnableStreamingValue {
 			m := map[string]any{
 				"streaming.abci.keys":             []string{"*"},
@@ -197,12 +197,12 @@ func TestAppStateDeterminism(t *testing.T) {
 				return others.Get(k)
 			})
 		}
-		return NewNoahApp(logger, db, nil, true, appOpts, append(baseAppOptions, interBlockCacheOpt())...)
+		return NewArkApp(logger, db, nil, true, appOpts, append(baseAppOptions, interBlockCacheOpt())...)
 	}
 	var mx sync.Mutex
 	appHashResults := make(map[int64][][]byte)
 	appSimLogger := make(map[int64][]simulation.LogWriter)
-	captureAndCheckHash := func(tb testing.TB, ti sims.TestInstance[*NoahApp], _ []simtypes.Account) {
+	captureAndCheckHash := func(tb testing.TB, ti sims.TestInstance[*ArkApp], _ []simtypes.Account) {
 		tb.Helper()
 		seed, appHash := ti.Cfg.Seed, ti.App.LastCommitID().Hash
 		mx.Lock()
@@ -298,7 +298,7 @@ func FuzzFullAppSimulation(f *testing.F) {
 		}
 		sims.RunWithSeeds(
 			t,
-			NewNoahApp,
+			NewArkApp,
 			setupStateFactory,
 			[]int64{int64(binary.BigEndian.Uint64(rawSeed))},
 			rawSeed[8:],

@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"noah/x/oracle/types"
+	"ark/x/oracle/types"
 )
 
 func TestParamsValidate(t *testing.T) {
@@ -113,6 +113,20 @@ func TestParamsValidate(t *testing.T) {
 				p.TobinTaxes = types.TobinTaxes{{Denom: "", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
 			expectErr: "TobinTaxes denom must be a micro denom beginning with u",
+		},
+		{
+			name: "tobin tax denom must be canonical lowercase",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = types.TobinTaxes{{Denom: "uUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+			},
+			expectErr: "canonical lowercase micro denom",
+		},
+		{
+			name: "tobin tax denom cannot contain path separators",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = types.TobinTaxes{{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+			},
+			expectErr: "canonical lowercase micro denom",
 		},
 		{
 			name: "tobin tax negative",

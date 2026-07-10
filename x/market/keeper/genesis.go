@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 // InitGenesis initializes the market module genesis
@@ -12,8 +12,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
-	if err := k.NoahPoolDelta.Set(ctx, data.NoahPoolDelta); err != nil {
-		return fmt.Errorf("setting noah pool delta: %w", err)
+	if err := k.ArkPoolDelta.Set(ctx, data.ArkPoolDelta); err != nil {
+		return fmt.Errorf("setting ark pool delta: %w", err)
 	}
 
 	// check if the module account exists
@@ -31,10 +31,10 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
 	}
-	noahPoolDelta, err := k.NoahPoolDelta.Get(ctx)
+	arkPoolDelta, err := k.ArkPoolDelta.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting noah pool delta: %w", err)
+		return nil, fmt.Errorf("getting ark pool delta: %w", err)
 	}
 
-	return types.NewGenesisState(noahPoolDelta, params), nil
+	return types.NewGenesisState(arkPoolDelta, params), nil
 }

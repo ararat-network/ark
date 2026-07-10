@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	oraclev1 "noah/api/noah/oracle/v1"
+	oraclev1 "ark/api/ark/oracle/v1"
 )
 
 // AutoCLIOptions returns the oracle module's AutoCLI configuration.
@@ -47,7 +47,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "ScoreWeight",
 					Use:       "score [validator]",
 					Short:     "Query the oracle score weight for a validator",
-					Example:   fmt.Sprintf("%s query oracle score noahvaloper1...", version.AppName),
+					Example:   fmt.Sprintf("%s query oracle score arkvaloper1...", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "validator_addr"},
 					},
@@ -56,7 +56,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "MissCount",
 					Use:       "miss [validator]",
 					Short:     "Query the oracle miss count for a validator",
-					Example:   fmt.Sprintf("%s query oracle miss noahvaloper1...", version.AppName),
+					Example:   fmt.Sprintf("%s query oracle miss arkvaloper1...", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "validator_addr"},
 					},

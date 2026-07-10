@@ -3,7 +3,7 @@ package keeper_test
 import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
@@ -19,14 +19,14 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	s.Require().Equal(genesis.Params, params)
 
 	// Verify pool delta
-	delta, err := s.keeper.NoahPoolDelta.Get(s.ctx)
+	delta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(delta.Equal(genesis.NoahPoolDelta))
+	s.Require().True(delta.Equal(genesis.ArkPoolDelta))
 
 	// Export and verify round-trip
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(genesis.NoahPoolDelta.Equal(exported.NoahPoolDelta))
+	s.Require().True(genesis.ArkPoolDelta.Equal(exported.ArkPoolDelta))
 	s.Require().Equal(genesis.Params, exported.Params)
 }
 

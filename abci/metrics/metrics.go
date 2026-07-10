@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	meter = otel.Meter("noah/abci/metrics")
+	meter = otel.Meter("ark/abci/metrics")
 
 	methodLatency metric.Float64Histogram
 	requests      metric.Int64Counter
@@ -20,7 +20,7 @@ var (
 func init() {
 	var err error
 	methodLatency, err = meter.Float64Histogram(
-		"noah.abci.method.duration",
+		"ark.abci.method.duration",
 		metric.WithDescription("Duration of ABCI++ method execution"),
 		metric.WithUnit("ms"),
 	)
@@ -29,7 +29,7 @@ func init() {
 	}
 
 	requests, err = meter.Int64Counter(
-		"noah.abci.requests",
+		"ark.abci.requests",
 		metric.WithDescription("Number of ABCI++ requests"),
 	)
 	if err != nil {
@@ -37,7 +37,7 @@ func init() {
 	}
 
 	messageSize, err = meter.Int64Histogram(
-		"noah.abci.message.size",
+		"ark.abci.message.size",
 		metric.WithDescription("Size of oracle ABCI messages"),
 		metric.WithUnit("By"),
 	)

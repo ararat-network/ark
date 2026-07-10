@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/treasury/types"
+	"ark/x/treasury/types"
 )
 
 func TestParamsValidate(t *testing.T) {

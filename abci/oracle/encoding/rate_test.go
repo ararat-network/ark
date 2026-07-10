@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
-	oracleencoding "noah/abci/oracle/encoding"
+	oracleencoding "ark/abci/oracle/encoding"
 )
 
 func TestEncodeDecodeRate(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/codec"
-	"noah/abci/ve"
+	"ark/abci/codec"
+	"ark/abci/ve"
 )
 
 // ValidateExtendedCommitInfo validates the extended commit info for a block. It first

@@ -13,7 +13,7 @@ import (
 )
 
 type (
-	// VoteExtensionHandler defines a dummy vote extension handler for NoahApp.
+	// VoteExtensionHandler defines a dummy vote extension handler for ArkApp.
 	//
 	// NOTE: This implementation is solely used for testing purposes. DO NOT use
 	// in a production application!

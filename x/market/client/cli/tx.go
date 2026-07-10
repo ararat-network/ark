@@ -12,8 +12,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
-	// feeutils "noah/custom/auth/client/utils"
-	"noah/x/market/types"
+	// feeutils "ark/custom/auth/client/utils"
+	"ark/x/market/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -46,7 +46,7 @@ If to-address is provided, the swapped coins are sent to that address.
 `),
 		Example: strings.TrimSpace(fmt.Sprintf(`
 %s tx market swap "1000ukrw" "uusd"
-%s tx market swap "1000ukrw" "uusd" "noah1..."
+%s tx market swap "1000ukrw" "uusd" "ark1..."
 `, version.AppName, version.AppName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)

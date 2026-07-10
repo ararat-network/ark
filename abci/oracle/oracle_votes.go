@@ -5,9 +5,9 @@ import (
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
-	"noah/abci/codec"
-	noahabci "noah/abci/types"
-	vetypes "noah/abci/ve/types"
+	"ark/abci/codec"
+	arkabci "ark/abci/types"
+	vetypes "ark/abci/ve/types"
 )
 
 // Vote is the decoded oracle payload associated with one validator entry from
@@ -33,13 +33,13 @@ func GetOracleVotes(
 	veCodec codec.VoteExtensionCodec,
 	extCommitCodec codec.ExtendedCommitCodec,
 ) ([]Vote, error) {
-	if len(proposal) < noahabci.NumInjectedTxs {
-		return nil, noahabci.MissingCommitInfoError{}
+	if len(proposal) < arkabci.NumInjectedTxs {
+		return nil, arkabci.MissingCommitInfoError{}
 	}
 
-	extendedCommitInfo, err := extCommitCodec.Decode(proposal[noahabci.OracleInfoIndex])
+	extendedCommitInfo, err := extCommitCodec.Decode(proposal[arkabci.OracleInfoIndex])
 	if err != nil {
-		return nil, noahabci.CodecError{
+		return nil, arkabci.CodecError{
 			Err: fmt.Errorf("error decoding extended-commit-info: %w", err),
 		}
 	}
@@ -56,7 +56,7 @@ func GetOracleVotes(
 
 		voteExtension, err := veCodec.Decode(voteInfo.VoteExtension)
 		if err != nil {
-			return nil, noahabci.CodecError{
+			return nil, arkabci.CodecError{
 				Err: fmt.Errorf("error decoding vote-extension: %w", err),
 			}
 		}

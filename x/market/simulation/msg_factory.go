@@ -6,9 +6,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/market/keeper"
-	"noah/x/market/types"
+	chain "ark/pkg/chain"
+	"ark/x/market/keeper"
+	"ark/x/market/types"
 )
 
 // MsgSwapFactory generates random MsgSwap transactions by picking a denom pair and a funded sender.
@@ -109,7 +109,7 @@ func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.Simula
 
 	idx := r.Intn(len(activeDenoms) * 2)
 	if idx < len(activeDenoms) {
-		return chain.MicroArkDenom, activeDenoms[idx]
+		return chain.MicroNoahDenom, activeDenoms[idx]
 	}
-	return activeDenoms[idx-len(activeDenoms)], chain.MicroArkDenom
+	return activeDenoms[idx-len(activeDenoms)], chain.MicroNoahDenom
 }

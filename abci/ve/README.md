@@ -1,6 +1,6 @@
 # Oracle Vote Extensions
 
-The vote-extension package owns Noah's `ExtendVote` and `VerifyVoteExtension` handlers.
+The vote-extension package owns Ark's `ExtendVote` and `VerifyVoteExtension` handlers.
 
 Vote extensions carry oracle price reports from each validator into the next height. They are local to each validator
 until a proposer includes the previous extended commit info in a block proposal, so the proposal path is what makes one

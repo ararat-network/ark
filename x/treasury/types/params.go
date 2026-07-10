@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
+	chain "ark/pkg/chain"
 )
 
 // Default parameter values

@@ -8,8 +8,8 @@ import (
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
-	compression "noah/abci/codec"
-	vetypes "noah/abci/ve/types"
+	compression "ark/abci/codec"
+	vetypes "ark/abci/ve/types"
 )
 
 func TestDefaultVoteExtensionCodec(t *testing.T) {

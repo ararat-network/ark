@@ -9,10 +9,10 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	modulev1 "noah/api/noah/treasury/module/v1"
-	oracletypes "noah/x/oracle/types"
-	"noah/x/treasury/keeper"
-	"noah/x/treasury/types"
+	modulev1 "ark/api/ark/treasury/module/v1"
+	oracletypes "ark/x/oracle/types"
+	"ark/x/treasury/keeper"
+	"ark/x/treasury/types"
 )
 
 var _ depinject.OnePerModuleType = AppModule{}

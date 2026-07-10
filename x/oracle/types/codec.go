@@ -10,9 +10,9 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "noah/x/oracle/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/oracle/MsgUpdateParams")
 
-	cdc.RegisterConcrete(Params{}, "noah/x/oracle/Params", nil)
+	cdc.RegisterConcrete(Params{}, "ark/x/oracle/Params", nil)
 }
 
 // RegisterInterfaces registers the x/oracle interfaces types with the interface registry

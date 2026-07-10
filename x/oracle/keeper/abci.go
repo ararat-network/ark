@@ -6,14 +6,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "noah/pkg/chain"
-	noahmetrics "noah/pkg/metrics"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	arkmetrics "ark/pkg/metrics"
+	"ark/x/oracle/types"
 )
 
 // EndBlocker settles periodic oracle rewards and slashing.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer noahmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, noahmetrics.EndBlock)()
+	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
 
 	params, err := k.Params.Get(ctx)
 	if err != nil {

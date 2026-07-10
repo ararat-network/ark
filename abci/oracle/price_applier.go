@@ -8,9 +8,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/abci/codec"
-	noahabcitypes "noah/abci/types"
-	oracletypes "noah/x/oracle/types"
+	"ark/abci/codec"
+	arkabcitypes "ark/abci/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 // PriceApplier applies prices derived from vote extensions to state.
@@ -19,7 +19,7 @@ type PriceApplier struct {
 	va *VoteAggregator
 
 	// ok is the oracle keeper that is used to write prices to state.
-	ok noahabcitypes.OracleKeeper
+	ok arkabcitypes.OracleKeeper
 
 	// logger is used for price application diagnostics.
 	logger log.Logger
@@ -32,7 +32,7 @@ type PriceApplier struct {
 // NewPriceApplier returns a new PriceApplier.
 func NewPriceApplier(
 	va *VoteAggregator,
-	ok noahabcitypes.OracleKeeper,
+	ok arkabcitypes.OracleKeeper,
 	voteExtensionCodec codec.VoteExtensionCodec,
 	extendedCommitCodec codec.ExtendedCommitCodec,
 	logger log.Logger,

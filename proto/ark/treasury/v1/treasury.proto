@@ -1,0 +1,75 @@
+syntax = "proto3";
+package ark.treasury.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/treasury/types";
+
+// Params defines the parameters for the treasury module.
+message Params {
+  option (gogoproto.equal) = true;
+  option (amino.name) = "ark/x/treasury/Params";
+
+  PolicyConstraints tax_policy = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  PolicyConstraints reward_policy = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string seigniorage_burden_target = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string burn_weight = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string mining_increment = 5 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 window_short = 6 [ (amino.dont_omitempty) = true ];
+  uint64 window_long = 7 [ (amino.dont_omitempty) = true ];
+  uint64 window_probation = 8 [ (amino.dont_omitempty) = true ];
+}
+
+// PolicyConstraints - defines policy constraints can be applied in tax & reward
+// policies
+message PolicyConstraints {
+  option (gogoproto.equal) = true;
+
+  string rate_min = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string rate_max = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  cosmos.base.v1beta1.Coin cap = 3 [ (gogoproto.nullable) = false ];
+  string change_rate_max = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// TaxCap is the max tax amount can be charged for the given denom
+message TaxCap {
+  string denom = 1;
+  string tax_cap = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}

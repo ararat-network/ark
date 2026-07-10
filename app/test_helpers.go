@@ -31,28 +31,28 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
-// SetupOptions defines arguments that are passed into `NoahApp` constructor.
+// SetupOptions defines arguments that are passed into `ArkApp` constructor.
 type SetupOptions struct {
 	Logger  log.Logger
 	DB      *dbm.MemDB
 	AppOpts servertypes.AppOptions
 }
 
-func setup(withGenesis bool) (*NoahApp, GenesisState) {
+func setup(withGenesis bool) (*ArkApp, GenesisState) {
 	db := dbm.NewMemDB()
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = DefaultNodeHome
 
-	noahApp := NewNoahApp(log.NewNopLogger(), db, true, appOptions)
+	arkApp := NewArkApp(log.NewNopLogger(), db, true, appOptions)
 	if withGenesis {
-		return noahApp, noahApp.DefaultGenesis()
+		return arkApp, arkApp.DefaultGenesis()
 	}
-	return noahApp, GenesisState{}
+	return arkApp, GenesisState{}
 }
 
-// NewNoahappWithCustomOptions initialises a new NoahApp with custom options.
-func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOptions) *NoahApp {
+// NewArkappWithCustomOptions initialises a new ArkApp with custom options.
+func NewArkappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOptions) *ArkApp {
 	t.Helper()
 
 	privVal := mock.NewPV()
@@ -70,7 +70,7 @@ func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(100000000000000))),
 	}
 
-	app := NewNoahApp(options.Logger, options.DB, true, options.AppOpts)
+	app := NewArkApp(options.Logger, options.DB, true, options.AppOpts)
 	genesisState := app.DefaultGenesis()
 	genesisState, err = simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, []authtypes.GenesisAccount{acc}, balance)
 	require.NoError(t, err)
@@ -92,8 +92,8 @@ func NewNoahappWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 	return app
 }
 
-// Setup initialises a new NoahApp. A Nop logger is set in NoahApp.
-func Setup(t *testing.T, isCheckTx bool) *NoahApp {
+// Setup initialises a new ArkApp. A Nop logger is set in ArkApp.
+func Setup(t *testing.T, isCheckTx bool) *ArkApp {
 	t.Helper()
 
 	privVal := mock.NewPV()
@@ -117,11 +117,11 @@ func Setup(t *testing.T, isCheckTx bool) *NoahApp {
 	return app
 }
 
-// SetupWithGenesisValSet initialises a new NoahApp with a validator set and genesis accounts
+// SetupWithGenesisValSet initialises a new ArkApp with a validator set and genesis accounts
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
-// of one consensus engine unit in the default token of the NoahApp from first genesis
-// account. A Nop logger is set in NoahApp.
-func SetupWithGenesisValSet(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *NoahApp {
+// of one consensus engine unit in the default token of the ArkApp from first genesis
+// account. A Nop logger is set in ArkApp.
+func SetupWithGenesisValSet(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *ArkApp {
 	t.Helper()
 
 	app, genesisState := setup(true)
@@ -153,7 +153,7 @@ func SetupWithGenesisValSet(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs
 
 // GenesisStateWithSingleValidator initialises GenesisState with a single validator and genesis accounts
 // that also act as delegators.
-func GenesisStateWithSingleValidator(t *testing.T, app *NoahApp) GenesisState {
+func GenesisStateWithSingleValidator(t *testing.T, app *ArkApp) GenesisState {
 	t.Helper()
 
 	privVal := mock.NewPV()
@@ -183,11 +183,11 @@ func GenesisStateWithSingleValidator(t *testing.T, app *NoahApp) GenesisState {
 
 // AddTestAddrsIncremental constructs and returns accNum amount of accounts with an
 // initial balance of accAmt in random order
-func AddTestAddrsIncremental(app *NoahApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int) []sdk.AccAddress {
+func AddTestAddrsIncremental(app *ArkApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int) []sdk.AccAddress {
 	return addTestAddrs(app, ctx, accNum, accAmt, simtestutil.CreateIncrementalAccounts)
 }
 
-func addTestAddrs(app *NoahApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int, strategy simtestutil.GenerateAccountStrategy) []sdk.AccAddress {
+func addTestAddrs(app *ArkApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int, strategy simtestutil.GenerateAccountStrategy) []sdk.AccAddress {
 	testAddrs := strategy(accNum)
 	bondDenom, err := app.StakingKeeper.BondDenom(ctx)
 	if err != nil {
@@ -203,7 +203,7 @@ func addTestAddrs(app *NoahApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int,
 	return testAddrs
 }
 
-func initAccountWithCoins(app *NoahApp, ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coins) {
+func initAccountWithCoins(app *ArkApp, ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coins) {
 	err := app.BankKeeper.MintCoins(ctx, minttypes.ModuleName, coins)
 	if err != nil {
 		panic(err)
@@ -215,18 +215,18 @@ func initAccountWithCoins(app *NoahApp, ctx sdk.Context, addr sdk.AccAddress, co
 	}
 }
 
-// NewTestNetworkFixture returns a new NoahApp AppConstructor for network simulation tests
+// NewTestNetworkFixture returns a new ArkApp AppConstructor for network simulation tests
 func NewTestNetworkFixture() network.TestFixture {
-	dir, err := os.MkdirTemp("", "noahapp")
+	dir, err := os.MkdirTemp("", "arkapp")
 	if err != nil {
 		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
 	}
 	defer os.RemoveAll(dir)
 
-	noahApp := NewNoahApp(log.NewNopLogger(), dbm.NewMemDB(), true, simtestutil.NewAppOptionsWithFlagHome(dir))
+	arkApp := NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, simtestutil.NewAppOptionsWithFlagHome(dir))
 
 	appCtr := func(val network.ValidatorI) servertypes.Application {
-		return NewNoahApp(
+		return NewArkApp(
 			val.GetCtx().Logger, dbm.NewMemDB(), true,
 			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
 			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
@@ -237,12 +237,12 @@ func NewTestNetworkFixture() network.TestFixture {
 
 	return network.TestFixture{
 		AppConstructor: appCtr,
-		GenesisState:   noahApp.DefaultGenesis(),
+		GenesisState:   arkApp.DefaultGenesis(),
 		EncodingConfig: testutil.TestEncodingConfig{
-			InterfaceRegistry: noahApp.InterfaceRegistry(),
-			Codec:             noahApp.AppCodec(),
-			TxConfig:          noahApp.TxConfig(),
-			Amino:             noahApp.LegacyAmino(),
+			InterfaceRegistry: arkApp.InterfaceRegistry(),
+			Codec:             arkApp.AppCodec(),
+			TxConfig:          arkApp.TxConfig(),
+			Amino:             arkApp.LegacyAmino(),
 		},
 	}
 }

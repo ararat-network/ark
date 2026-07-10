@@ -15,8 +15,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"noah/x/oracle/simulation"
-	"noah/x/oracle/types"
+	"ark/x/oracle/simulation"
+	"ark/x/oracle/types"
 )
 
 func TestRandomisedGenState(t *testing.T) {

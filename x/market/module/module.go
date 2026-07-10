@@ -17,9 +17,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	marketcli "noah/x/market/client/cli"
-	"noah/x/market/keeper"
-	"noah/x/market/types"
+	marketcli "ark/x/market/client/cli"
+	"ark/x/market/keeper"
+	"ark/x/market/types"
 )
 
 const consensusVersion = 1

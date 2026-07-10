@@ -56,15 +56,15 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/x/upgrade" // import for side-effects
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	marketmodulev1 "noah/api/noah/market/module/v1"
-	oraclemodulev1 "noah/api/noah/oracle/module/v1"
-	treasurymodulev1 "noah/api/noah/treasury/module/v1"
-	_ "noah/x/market/module"
-	markettypes "noah/x/market/types"
-	_ "noah/x/oracle/module"
-	oracletypes "noah/x/oracle/types"
-	_ "noah/x/treasury/module"
-	treasurytypes "noah/x/treasury/types"
+	marketmodulev1 "ark/api/ark/market/module/v1"
+	oraclemodulev1 "ark/api/ark/oracle/module/v1"
+	treasurymodulev1 "ark/api/ark/treasury/module/v1"
+	_ "ark/x/market/module"
+	markettypes "ark/x/market/types"
+	_ "ark/x/oracle/module"
+	oracletypes "ark/x/oracle/types"
+	_ "ark/x/treasury/module"
+	treasurytypes "ark/x/treasury/types"
 )
 
 var (
@@ -187,11 +187,11 @@ var (
 		{
 			Name: authtypes.ModuleName,
 			Config: appconfig.WrapAny(&authmodulev1.Module{
-				Bech32Prefix:             "noah",
+				Bech32Prefix:             "ark",
 				ModuleAccountPermissions: moduleAccPerms,
 				// By default modules authority is the governance module. This is configurable with the following:
 				// Authority: "group", // A custom module authority can be set using a module name
-				// Authority: "noah1cwwv22j5ca08ggdv9c2uky355k908694z577tv", // or a specific address
+				// Authority: "ark1cwwv22j5ca08ggdv9c2uky355k908694z577tv", // or a specific address
 				EnableUnorderedTransactions: true,
 			}),
 		},
@@ -210,8 +210,8 @@ var (
 			Config: appconfig.WrapAny(&stakingmodulev1.Module{
 				// NOTE: specifying a prefix is only necessary when using bech32 addresses
 				// If not specified, the auth Bech32Prefix appended with "valoper" and "valcons" is used by default
-				Bech32PrefixValidator: "noahvaloper",
-				Bech32PrefixConsensus: "noahvalcons",
+				Bech32PrefixValidator: "arkvaloper",
+				Bech32PrefixConsensus: "arkvalcons",
 			}),
 		},
 		{

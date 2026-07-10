@@ -11,8 +11,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 // Simulation parameter constants

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"noah/pkg/metrics"
+	"ark/pkg/metrics"
 )
 
 func TestModuleMethodString(t *testing.T) {

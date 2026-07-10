@@ -45,7 +45,7 @@ func BenchmarkFullAppSimulation(b *testing.B) {
 	appOptions := viper.New()
 	appOptions.SetDefault(flags.FlagHome, DefaultNodeHome)
 
-	app := NewNoahApp(logger, db, nil, true, appOptions, interBlockCacheOpt(), baseapp.SetChainID(AppChainID))
+	app := NewArkApp(logger, db, nil, true, appOptions, interBlockCacheOpt(), baseapp.SetChainID(AppChainID))
 
 	// run randomized simulation
 	simParams, _, simErr := simulation.SimulateFromSeedX(

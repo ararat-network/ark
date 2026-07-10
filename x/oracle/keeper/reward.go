@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	chain "noah/pkg/chain"
-	"noah/x/oracle/types"
+	chain "ark/pkg/chain"
+	"ark/x/oracle/types"
 )
 
 // validatorScore caches score weights for reward distribution.
@@ -52,7 +52,7 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 	}
 
 	// periodRewards = oraclePool * rewardWindow / rewardDistributionWindow.
-	periodRewards := math.LegacyNewDecFromInt(rewardPool.AmountOf(chain.MicroArkDenom)).
+	periodRewards := math.LegacyNewDecFromInt(rewardPool.AmountOf(chain.MicroNoahDenom)).
 		MulInt64(int64(rewardWindow)).
 		QuoInt64(int64(rewardDistributionWindow))
 
@@ -61,7 +61,7 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 	rewardEvents := sdk.Events{}
 	for _, score := range validatorScores {
 		rewardAmt := periodRewards.QuoInt(votePowerSum).MulInt64(int64(score.weight)).TruncateInt()
-		rewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroArkDenom, rewardAmt))
+		rewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, rewardAmt))
 		if rewardCoins.IsZero() {
 			continue
 		}

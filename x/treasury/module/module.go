@@ -16,8 +16,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"noah/x/treasury/keeper"
-	"noah/x/treasury/types"
+	"ark/x/treasury/keeper"
+	"ark/x/treasury/types"
 )
 
 const consensusVersion = 1

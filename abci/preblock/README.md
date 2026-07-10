@@ -1,6 +1,6 @@
 # Oracle Preblock
 
-The preblock package owns the SDK preblock hook for Noah oracle vote-extension data.
+The preblock package owns the SDK preblock hook for Ark oracle vote-extension data.
 
 `Handler` runs before block transactions execute. It first calls the module manager's preblockers, then, when
 vote extensions are enabled, applies oracle prices from the extended commit info injected into the proposal.

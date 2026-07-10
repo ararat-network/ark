@@ -91,8 +91,8 @@ func (gs GenesisState) Validate() error {
 	// TobinTaxes: no duplicates, micro denoms, tax in [0, 1]
 	seenDenoms = make(map[string]bool)
 	for _, tt := range gs.TobinTaxes {
-		if len(tt.Denom) < 3 || tt.Denom[0] != 'u' {
-			return fmt.Errorf("tobin tax denom must be a micro denom beginning with u: %s", tt.Denom)
+		if err := validateVoteTargetDenom(tt.Denom); err != nil {
+			return fmt.Errorf("tobin tax %w", err)
 		}
 		if tt.TobinTax.IsNil() {
 			return fmt.Errorf("tobin tax for %s must be set", tt.Denom)

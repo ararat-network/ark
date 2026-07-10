@@ -12,7 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"noah/x/oracle/types"
+	"ark/x/oracle/types"
 )
 
 var _ types.QueryServer = queryServer{}

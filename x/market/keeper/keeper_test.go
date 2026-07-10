@@ -20,9 +20,9 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"noah/x/market/keeper"
-	"noah/x/market/testutil"
-	"noah/x/market/types"
+	"ark/x/market/keeper"
+	"ark/x/market/testutil"
+	"ark/x/market/types"
 )
 
 type KeeperTestSuite struct {
@@ -76,7 +76,7 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	// Set default state
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
-	s.Require().NoError(s.keeper.NoahPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
+	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
 	// Wire gRPC query client
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
@@ -132,7 +132,7 @@ func (s *KeeperTestSuite) TestReplenishPools() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			err := s.keeper.NoahPoolDelta.Set(s.ctx, tc.initialDelta)
+			err := s.keeper.ArkPoolDelta.Set(s.ctx, tc.initialDelta)
 			s.Require().NoError(err)
 
 			p := types.DefaultParams()
@@ -143,7 +143,7 @@ func (s *KeeperTestSuite) TestReplenishPools() {
 			err = s.keeper.ReplenishPools(s.ctx)
 			s.Require().NoError(err)
 
-			delta, err := s.keeper.NoahPoolDelta.Get(s.ctx)
+			delta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 			s.Require().NoError(err)
 			s.Require().True(tc.expectedDelta.Equal(delta), "expected %s, got %s", tc.expectedDelta, delta)
 		})

@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"noah/x/market/types"
+	"ark/x/market/types"
 )
 
 func TestValidateGenesisState(t *testing.T) {
@@ -17,11 +17,11 @@ func TestValidateGenesisState(t *testing.T) {
 		expectErr string
 	}{
 		{
-			name: "nil noah pool delta",
+			name: "nil ark pool delta",
 			mutate: func(gs *types.GenesisState) {
-				gs.NoahPoolDelta = math.LegacyDec{}
+				gs.ArkPoolDelta = math.LegacyDec{}
 			},
-			expectErr: "noah pool delta must not be nil",
+			expectErr: "ark pool delta must not be nil",
 		},
 		{
 			name:   "default genesis state",

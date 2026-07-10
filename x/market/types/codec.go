@@ -10,11 +10,11 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgSwap{}, "noah/x/market/MsgSwap")
-	legacy.RegisterAminoMsg(cdc, &MsgSwapSend{}, "noah/x/market/MsgSwapSend")
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "noah/x/market/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgSwap{}, "ark/x/market/MsgSwap")
+	legacy.RegisterAminoMsg(cdc, &MsgSwapSend{}, "ark/x/market/MsgSwapSend")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/market/MsgUpdateParams")
 
-	cdc.RegisterConcrete(Params{}, "noah/x/market/Params", nil)
+	cdc.RegisterConcrete(Params{}, "ark/x/market/Params", nil)
 }
 
 // RegisterInterfaces registers the interfaces types with the interface registry.
