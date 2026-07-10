@@ -39,7 +39,11 @@ func TestDefaultIsValid(t *testing.T) {
 	require.NotEmpty(t, cfg.FallbackDenoms)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.NotNil(t, cfg.Resolver.BootstrapPrices)
-	require.Empty(t, cfg.Resolver.BootstrapPrices)
+	require.Equal(t, []resolver.BootstrapPrice{{
+		Pair:       "NOAH/USD",
+		Price:      "0.25",
+		ValidUntil: "2027-10-29T00:00:00Z",
+	}}, cfg.Resolver.BootstrapPrices)
 }
 
 func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
