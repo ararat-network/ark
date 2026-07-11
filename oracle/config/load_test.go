@@ -41,7 +41,7 @@ func TestDefaultIsValid(t *testing.T) {
 	require.NotNil(t, cfg.Resolver.BootstrapPrices)
 	require.Equal(t, []resolver.BootstrapPrice{{
 		Pair:       "NOAH/USD",
-		Price:      "0.25",
+		Price:      "1",
 		ValidUntil: "2027-10-29T00:00:00Z",
 	}}, cfg.Resolver.BootstrapPrices)
 }
