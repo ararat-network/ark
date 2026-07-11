@@ -5,15 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	sidecartypes "ark/oracle/sidecar/types"
 	"ark/oracle/types"
+	"ark/pkg/chain"
 	"ark/pkg/encoding"
 	oracletypes "ark/x/oracle/types"
 )
@@ -54,13 +51,7 @@ func (v *Validator) loadActiveDenoms(ctx context.Context, timeout time.Duration)
 	activeDenoms := append([]string(nil), resp.VoteTargets...)
 	seenDenoms := make(map[string]struct{}, len(activeDenoms))
 	for _, denom := range activeDenoms {
-		if strings.TrimSpace(denom) == "" {
-			return nil, errors.New("active denoms cannot contain an empty denom")
-		}
-		if err := sdk.ValidateDenom(denom); err != nil {
-			return nil, fmt.Errorf("invalid active denom %q: %w", denom, err)
-		}
-		if _, err := sidecartypes.FromDenom(denom); err != nil {
+		if err := chain.ValidateMicroDenom(denom); err != nil {
 			return nil, fmt.Errorf("invalid active denom %q: %w", denom, err)
 		}
 		if _, ok := seenDenoms[denom]; ok {

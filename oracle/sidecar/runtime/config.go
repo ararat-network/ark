@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"ark/oracle/sidecar/chainstate"
 	"ark/oracle/sidecar/providers"
 	providertypes "ark/oracle/sidecar/providers/types"
 	"ark/oracle/sidecar/resolver"
-	oracletypes "ark/oracle/sidecar/types"
+	"ark/pkg/chain"
 )
 
 // Config defines the price runtime configuration. The runtime is configured
@@ -85,10 +83,7 @@ func (c *Config) Validate() error {
 	}
 	fallbackDenoms := make(map[string]struct{}, len(c.FallbackDenoms))
 	for _, denom := range c.FallbackDenoms {
-		if err := sdk.ValidateDenom(denom); err != nil {
-			return fmt.Errorf("invalid fallback denom %q: %w", denom, err)
-		}
-		if _, err := oracletypes.FromDenom(denom); err != nil {
+		if err := chain.ValidateMicroDenom(denom); err != nil {
 			return fmt.Errorf("invalid fallback denom %q: %w", denom, err)
 		}
 		if _, ok := fallbackDenoms[denom]; ok {

@@ -3,10 +3,8 @@ package types
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
 )
@@ -25,9 +23,13 @@ var (
 	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)  // 2% (-1, 1)
 	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4) // 0.25%
 	DefaultTobinTaxes    = TobinTaxes{
+		{Denom: chain.MicroUSDDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.MicroKRWDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.MicroSDRDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroUSDDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroCNYDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroJPYDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroEURDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MicroGBPDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.MicroMNTDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
 	}
 	DefaultSlashFraction     = math.LegacyNewDecWithPrec(1, 4) // 0.01%
@@ -72,13 +74,20 @@ func (p Params) Validate() error {
 	if p.MinValidPerWindow.GT(math.LegacyOneDec()) || p.MinValidPerWindow.IsNegative() {
 		return errors.New("oracle parameter MinValidPerWindow must be between [0, 1]")
 	}
+	if len(p.TobinTaxes) > MaxVoteTargets {
+		return fmt.Errorf(
+			"oracle parameter TobinTaxes count %d exceeds maximum vote targets %d",
+			len(p.TobinTaxes),
+			MaxVoteTargets,
+		)
+	}
 	seen := make(map[string]struct{}, len(p.TobinTaxes))
 	for _, tobinTax := range p.TobinTaxes {
 		if tobinTax.TobinTax.GT(math.LegacyOneDec()) || tobinTax.TobinTax.IsNegative() {
 			return errors.New("oracle parameter TobinTaxes must have TobinTax between [0, 1]")
 		}
 
-		if err := validateVoteTargetDenom(tobinTax.Denom); err != nil {
+		if err := chain.ValidateMicroDenom(tobinTax.Denom); err != nil {
 			return fmt.Errorf("oracle parameter TobinTaxes %w", err)
 		}
 
@@ -86,19 +95,6 @@ func (p Params) Validate() error {
 			return fmt.Errorf("oracle parameter TobinTaxes contains duplicate denom: %s", tobinTax.Denom)
 		}
 		seen[tobinTax.Denom] = struct{}{}
-	}
-
-	return nil
-}
-
-func validateVoteTargetDenom(denom string) error {
-	if len(denom) < 3 || denom[0] != 'u' {
-		return fmt.Errorf("denom must be a micro denom beginning with u: %s", denom)
-	}
-	if err := sdk.ValidateDenom(denom); err != nil ||
-		denom != strings.ToLower(denom) ||
-		strings.Contains(denom[1:], "/") {
-		return fmt.Errorf("denom must be a canonical lowercase micro denom without path separators: %s", denom)
 	}
 
 	return nil

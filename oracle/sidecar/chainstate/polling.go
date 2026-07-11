@@ -8,10 +8,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	chainstatemetrics "ark/oracle/sidecar/chainstate/metrics"
-	sidecartypes "ark/oracle/sidecar/types"
+	"ark/pkg/chain"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -111,10 +109,7 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 
 	seen := make(map[string]struct{}, len(targets))
 	for _, denom := range targets {
-		if err := sdk.ValidateDenom(denom); err != nil {
-			return nil, fmt.Errorf("invalid vote target denom %q: %w", denom, err)
-		}
-		if _, err := sidecartypes.FromDenom(denom); err != nil {
+		if err := chain.ValidateMicroDenom(denom); err != nil {
 			return nil, fmt.Errorf("invalid vote target denom %q: %w", denom, err)
 		}
 		if _, ok := seen[denom]; ok {

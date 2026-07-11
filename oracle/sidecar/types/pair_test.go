@@ -70,17 +70,17 @@ func TestFromDenom(t *testing.T) {
 		{
 			name:    "rejects uppercase vote target",
 			denom:   "uUSD",
-			wantErr: "not canonical",
+			wantErr: "canonical lowercase micro denom",
 		},
 		{
 			name:    "rejects path denom",
 			denom:   "ufoo/bar",
-			wantErr: "invalid pair",
+			wantErr: "without path separators",
 		},
 		{
 			name:    "rejects surrounding whitespace",
 			denom:   " uusd ",
-			wantErr: "contains whitespace",
+			wantErr: "micro denom beginning with u",
 		},
 	}
 

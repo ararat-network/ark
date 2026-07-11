@@ -123,7 +123,7 @@ func TestConfigValidateRejectsNonCanonicalDenomWithEmptyRoutes(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, "not canonical")
+	require.ErrorContains(t, err, "canonical lowercase micro denom")
 }
 
 func TestConfigValidateBootstrapPrices(t *testing.T) {

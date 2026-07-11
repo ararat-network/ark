@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"ark/pkg/chain"
 )
 
 // Pair identifies an oracle price pair in canonical BASE/QUOTE form.
@@ -25,25 +27,11 @@ func NewPair(base, quote string) (Pair, error) {
 // FromDenom converts a canonical u-prefixed vote-target denom into its
 // corresponding NOAH/QUOTE pair.
 func FromDenom(denom string) (Pair, error) {
-	if denom == "" {
-		return "", errors.New("denom is empty")
-	}
-	if strings.TrimSpace(denom) != denom {
-		return "", fmt.Errorf("denom contains whitespace: %q", denom)
-	}
-	if !strings.HasPrefix(denom, "u") || len(denom) == 1 {
-		return "", fmt.Errorf("invalid denom %q: expected u-prefixed denom", denom)
-	}
-
-	pair, err := NewPair("NOAH", denom[1:])
-	if err != nil {
+	if err := chain.ValidateMicroDenom(denom); err != nil {
 		return "", err
 	}
-	if pair.VoteTargetDenom() != denom {
-		return "", fmt.Errorf("vote-target denom %q is not canonical", denom)
-	}
 
-	return pair, nil
+	return NewPair("NOAH", strings.ToUpper(denom[1:]))
 }
 
 // ParsePair parses raw into a canonical BASE/QUOTE pair.

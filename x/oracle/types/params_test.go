@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -149,6 +150,19 @@ func TestParamsValidate(t *testing.T) {
 			},
 		},
 		{
+			name: "maximum vote targets is valid",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets)
+			},
+		},
+		{
+			name: "too many vote targets",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets + 1)
+			},
+			expectErr: "exceeds maximum vote targets",
+		},
+		{
 			name: "duplicate tobin tax denom",
 			mutate: func(p *types.Params) {
 				p.TobinTaxes = types.TobinTaxes{
@@ -173,4 +187,16 @@ func TestParamsValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func makeTestTobinTaxes(count int) types.TobinTaxes {
+	tobinTaxes := make(types.TobinTaxes, count)
+	for i := range count {
+		tobinTaxes[i] = types.TobinTax{
+			Denom:    fmt.Sprintf("u%03d", i),
+			TobinTax: math.LegacyNewDecWithPrec(25, 4),
+		}
+	}
+
+	return tobinTaxes
 }

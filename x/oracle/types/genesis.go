@@ -9,6 +9,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"ark/pkg/chain"
 )
 
 // NewGenesisState creates a new GenesisState object
@@ -89,9 +91,16 @@ func (gs GenesisState) Validate() error {
 	}
 
 	// TobinTaxes: no duplicates, micro denoms, tax in [0, 1]
+	if len(gs.TobinTaxes) > MaxVoteTargets {
+		return fmt.Errorf(
+			"tobin taxes count %d exceeds maximum vote targets %d",
+			len(gs.TobinTaxes),
+			MaxVoteTargets,
+		)
+	}
 	seenDenoms = make(map[string]bool)
 	for _, tt := range gs.TobinTaxes {
-		if err := validateVoteTargetDenom(tt.Denom); err != nil {
+		if err := chain.ValidateMicroDenom(tt.Denom); err != nil {
 			return fmt.Errorf("tobin tax %w", err)
 		}
 		if tt.TobinTax.IsNil() {

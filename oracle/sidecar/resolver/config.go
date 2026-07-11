@@ -5,9 +5,8 @@ import (
 	"strings"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"ark/oracle/sidecar/types"
+	"ark/pkg/chain"
 )
 
 // Config defines optional routes for resolving provider pair medians into
@@ -138,10 +137,7 @@ func (c Config) Validate() error {
 	}
 
 	for denom, routes := range c.Routes {
-		if err := sdk.ValidateDenom(denom); err != nil {
-			return fmt.Errorf("invalid denom %q: %w", denom, err)
-		}
-		if _, err := types.FromDenom(denom); err != nil {
+		if err := chain.ValidateMicroDenom(denom); err != nil {
 			return fmt.Errorf("invalid resolver denom %q: %w", denom, err)
 		}
 		if len(routes) == 0 {

@@ -192,7 +192,7 @@ func TestRunRejectsInvalidInitialActiveDenoms(t *testing.T) {
 		{
 			name:    "empty denom",
 			denoms:  []string{" "},
-			wantErr: "active denoms cannot contain an empty denom",
+			wantErr: `invalid active denom " "`,
 		},
 		{
 			name:    "duplicate denom",

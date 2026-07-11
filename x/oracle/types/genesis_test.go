@@ -167,6 +167,19 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "tobin tax for uusd must be set",
 		},
+		{
+			name: "maximum vote targets is valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets)
+			},
+		},
+		{
+			name: "too many vote targets",
+			mutate: func(gs *types.GenesisState) {
+				gs.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets + 1)
+			},
+			expectErr: "exceeds maximum vote targets",
+		},
 		// Valid custom genesis
 		{
 			name: "custom valid genesis",
