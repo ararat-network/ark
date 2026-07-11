@@ -21,7 +21,7 @@ func TestEncodeDecodeRate(t *testing.T) {
 }
 
 func TestDecodeRateRejectsOversizedBytes(t *testing.T) {
-	_, err := oracleencoding.DecodeRate(make([]byte, oracleencoding.MaxRateBytes+1))
+	_, err := oracleencoding.DecodeRate(make([]byte, oracleencoding.MaxEncodedRateBytes+1))
 	require.ErrorContains(t, err, "exceeds maximum")
 }
 

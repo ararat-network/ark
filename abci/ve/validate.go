@@ -21,17 +21,16 @@ import (
 
 	oracleencoding "ark/abci/oracle/encoding"
 	vetypes "ark/abci/ve/types"
+	oracletypes "ark/x/oracle/types"
 )
-
-const MaxVoteExtensionRates = 1024
 
 // ValidateOracleVoteExtension validates the vote extension provided by a validator.
 func ValidateOracleVoteExtension(
 	ctx sdk.Context,
 	ve vetypes.OracleVoteExtension,
 ) error {
-	if len(ve.Rates) > MaxVoteExtensionRates {
-		return fmt.Errorf("number of oracle vote extension rates %d exceeds maximum %d", len(ve.Rates), MaxVoteExtensionRates)
+	if len(ve.Rates) > oracletypes.MaxVoteTargets {
+		return fmt.Errorf("number of oracle vote extension rates %d exceeds maximum %d", len(ve.Rates), oracletypes.MaxVoteTargets)
 	}
 
 	for denom, rawRate := range ve.Rates {

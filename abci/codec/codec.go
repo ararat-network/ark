@@ -3,6 +3,7 @@ package codec
 import (
 	"bytes"
 	"compress/zlib"
+	"fmt"
 	"io"
 
 	"github.com/klauspost/compress/zstd"
@@ -12,10 +13,7 @@ import (
 	vetypes "ark/abci/ve/types"
 )
 
-var (
-	enc, _ = zstd.NewWriter(nil)
-	dec, _ = zstd.NewReader(nil)
-)
+var enc, _ = zstd.NewWriter(nil)
 
 // VoteExtensionCodec is the interface for encoding and decoding vote extensions.
 type VoteExtensionCodec interface {
@@ -46,10 +44,22 @@ func NewDefaultVoteExtensionCodec() *DefaultVoteExtensionCodec {
 type DefaultVoteExtensionCodec struct{}
 
 func (codec *DefaultVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtension) ([]byte, error) {
-	return ve.Marshal()
+	bz, err := ve.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }
 
 func (codec *DefaultVoteExtensionCodec) Decode(bz []byte) (vetypes.OracleVoteExtension, error) {
+	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
+		return vetypes.OracleVoteExtension{}, err
+	}
+
 	var ve vetypes.OracleVoteExtension
 	return ve, ve.Unmarshal(bz)
 }
@@ -59,25 +69,26 @@ type Compressor interface {
 	Decompress([]byte) ([]byte, error)
 }
 
-// ZLibCompressor is a Compressor that uses zlib to compress and decompress byte arrays.
-// This object is not thread-safe.
-type ZLibCompressor struct{}
+// ZLibCompressor uses zlib and bounds decompressed output to protect callers
+// from compressed payloads that expand beyond their resource envelope.
+type ZLibCompressor struct {
+	maxOutputBytes int64
+}
 
 // NewZLibCompressor returns a new ZLibCompressor.
-func NewZLibCompressor() *ZLibCompressor {
-	return &ZLibCompressor{}
+func NewZLibCompressor(maxOutputBytes int64) *ZLibCompressor {
+	return &ZLibCompressor{maxOutputBytes: maxOutputBytes}
 }
 
 // Compress compresses the given byte array using zlib. It returns an error if the compression fails.
-// This function is not thread-safe.
 func (c *ZLibCompressor) Compress(bz []byte) ([]byte, error) {
 	var b bytes.Buffer
 
 	w := zlib.NewWriter(&b)
-	defer w.Close()
 
 	// write and flush the buffer
 	if _, err := w.Write(bz); err != nil {
+		_ = w.Close()
 		return nil, err
 	}
 	if err := w.Close(); err != nil {
@@ -92,21 +103,26 @@ func (c *ZLibCompressor) Decompress(bz []byte) ([]byte, error) {
 	if len(bz) == 0 {
 		return nil, nil
 	}
+	if err := validateMaxOutputBytes(c.maxOutputBytes); err != nil {
+		return nil, err
+	}
 	r, err := zlib.NewReader(bytes.NewReader(bz))
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	return io.ReadAll(r)
+	return readLimited(r, c.maxOutputBytes)
 }
 
-// ZStdCompressor is a Compressor that uses zstd to compress and decompress byte arrays.
-// This object is thread-safe.
-type ZStdCompressor struct{}
+// ZStdCompressor uses zstd and bounds both the decoder window and decompressed
+// output. Separate instances should be used for payloads with different limits.
+type ZStdCompressor struct {
+	maxOutputBytes int64
+}
 
-func NewZStdCompressor() *ZStdCompressor {
-	return &ZStdCompressor{}
+func NewZStdCompressor(maxOutputBytes int64) *ZStdCompressor {
+	return &ZStdCompressor{maxOutputBytes: maxOutputBytes}
 }
 
 func (c *ZStdCompressor) Compress(bz []byte) ([]byte, error) {
@@ -114,7 +130,26 @@ func (c *ZStdCompressor) Compress(bz []byte) ([]byte, error) {
 }
 
 func (c *ZStdCompressor) Decompress(bz []byte) ([]byte, error) {
-	return dec.DecodeAll(bz, nil)
+	if len(bz) == 0 {
+		return nil, nil
+	}
+	if err := validateMaxOutputBytes(c.maxOutputBytes); err != nil {
+		return nil, err
+	}
+
+	r, err := zstd.NewReader(
+		bytes.NewReader(bz),
+		zstd.WithDecoderConcurrency(1),
+		zstd.WithDecoderLowmem(true),
+		zstd.WithDecoderMaxMemory(uint64(c.maxOutputBytes)),
+		zstd.WithDecoderMaxWindow(uint64(c.maxOutputBytes)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	return readLimited(r, c.maxOutputBytes)
 }
 
 // CompressionVoteExtensionCodec compresses encoded vote extensions and
@@ -139,16 +174,34 @@ func (codec *CompressionVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtensio
 	if err != nil {
 		return nil, err
 	}
+	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
+		return nil, err
+	}
 
-	return codec.compressor.Compress(bz)
+	bz, err = codec.compressor.Compress(bz)
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePayloadSize("compressed vote extension", len(bz), MaxVoteExtensionWireBytes); err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }
 
 // Decode decompresses the vote extension and then decodes the result using the
 // underlying codec.
 func (codec *CompressionVoteExtensionCodec) Decode(bz []byte) (vetypes.OracleVoteExtension, error) {
+	if err := validatePayloadSize("compressed vote extension", len(bz), MaxVoteExtensionWireBytes); err != nil {
+		return vetypes.OracleVoteExtension{}, err
+	}
+
 	// Decompress first.
 	bz, err := codec.compressor.Decompress(bz)
 	if err != nil {
+		return vetypes.OracleVoteExtension{}, err
+	}
+	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
 		return vetypes.OracleVoteExtension{}, err
 	}
 
@@ -165,12 +218,23 @@ func NewDefaultExtendedCommitCodec() *DefaultExtendedCommitCodec {
 }
 
 func (codec *DefaultExtendedCommitCodec) Encode(extendedCommitInfo cometabci.ExtendedCommitInfo) ([]byte, error) {
-	return extendedCommitInfo.Marshal()
+	bz, err := extendedCommitInfo.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }
 
 func (codec *DefaultExtendedCommitCodec) Decode(bz []byte) (cometabci.ExtendedCommitInfo, error) {
 	if len(bz) == 0 {
 		return cometabci.ExtendedCommitInfo{}, nil
+	}
+	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
+		return cometabci.ExtendedCommitInfo{}, err
 	}
 
 	var extendedCommitInfo cometabci.ExtendedCommitInfo
@@ -199,18 +263,65 @@ func (codec *CompressionExtendedCommitCodec) Encode(extendedCommitInfo cometabci
 	if err != nil {
 		return nil, err
 	}
+	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
+		return nil, err
+	}
 
-	return codec.compressor.Compress(bz)
+	bz, err = codec.compressor.Compress(bz)
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePayloadSize("compressed extended commit", len(bz), MaxExtendedCommitWireBytes); err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }
 
 // Decode decompresses the extended commit info and then decodes the result using
 // the underlying codec.
 func (codec *CompressionExtendedCommitCodec) Decode(bz []byte) (cometabci.ExtendedCommitInfo, error) {
+	if err := validatePayloadSize("compressed extended commit", len(bz), MaxExtendedCommitWireBytes); err != nil {
+		return cometabci.ExtendedCommitInfo{}, err
+	}
+
 	// Decompress first.
 	bz, err := codec.compressor.Decompress(bz)
 	if err != nil {
 		return cometabci.ExtendedCommitInfo{}, err
 	}
+	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
+		return cometabci.ExtendedCommitInfo{}, err
+	}
 
 	return codec.codec.Decode(bz)
+}
+
+func validatePayloadSize(name string, size, maximum int) error {
+	if size > maximum {
+		return fmt.Errorf("%s size %d exceeds maximum %d", name, size, maximum)
+	}
+
+	return nil
+}
+
+func validateMaxOutputBytes(maxOutputBytes int64) error {
+	if maxOutputBytes <= 0 {
+		return fmt.Errorf("maximum decompressed output must be positive, got %d", maxOutputBytes)
+	}
+
+	return nil
+}
+
+func readLimited(r io.Reader, maxOutputBytes int64) ([]byte, error) {
+	limited := &io.LimitedReader{R: r, N: maxOutputBytes + 1}
+	bz, err := io.ReadAll(limited)
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(bz)) > maxOutputBytes {
+		return nil, fmt.Errorf("decompressed output size %d exceeds maximum %d", len(bz), maxOutputBytes)
+	}
+
+	return bz, nil
 }

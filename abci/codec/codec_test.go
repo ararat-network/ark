@@ -1,6 +1,7 @@
 package codec_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -57,7 +58,10 @@ func TestCompressionVoteExtensionCodec(t *testing.T) {
 
 		// create a codec
 		defaultCodec := compression.NewDefaultVoteExtensionCodec()
-		codec := compression.NewCompressionVoteExtensionCodec(defaultCodec, compression.NewZLibCompressor())
+		codec := compression.NewCompressionVoteExtensionCodec(
+			defaultCodec,
+			compression.NewZLibCompressor(compression.MaxVoteExtensionDecodedBytes),
+		)
 
 		// encode it
 		bz, err := codec.Encode(ve)
@@ -78,7 +82,10 @@ func TestCompressionVoteExtensionCodec(t *testing.T) {
 	})
 
 	t.Run("test decoding empty byte array", func(t *testing.T) {
-		codec := compression.NewCompressionVoteExtensionCodec(compression.NewDefaultVoteExtensionCodec(), compression.NewZLibCompressor())
+		codec := compression.NewCompressionVoteExtensionCodec(
+			compression.NewDefaultVoteExtensionCodec(),
+			compression.NewZLibCompressor(compression.MaxVoteExtensionDecodedBytes),
+		)
 		_, err := codec.Decode([]byte{})
 		require.Nil(t, err)
 	})
@@ -140,7 +147,10 @@ func TestCompressionExtendedCommitCodec(t *testing.T) {
 
 		// create a codec
 		defaultCodec := compression.NewDefaultExtendedCommitCodec()
-		codec := compression.NewCompressionExtendedCommitCodec(defaultCodec, compression.NewZStdCompressor())
+		codec := compression.NewCompressionExtendedCommitCodec(
+			defaultCodec,
+			compression.NewZStdCompressor(compression.MaxExtendedCommitDecodedBytes),
+		)
 
 		// encode it
 		bz, err := codec.Encode(eci)
@@ -155,8 +165,123 @@ func TestCompressionExtendedCommitCodec(t *testing.T) {
 	})
 
 	t.Run("test decoding empty byte array", func(t *testing.T) {
-		codec := compression.NewCompressionExtendedCommitCodec(compression.NewDefaultExtendedCommitCodec(), compression.NewZStdCompressor())
+		codec := compression.NewCompressionExtendedCommitCodec(
+			compression.NewDefaultExtendedCommitCodec(),
+			compression.NewZStdCompressor(compression.MaxExtendedCommitDecodedBytes),
+		)
 		_, err := codec.Decode([]byte{})
 		require.NoError(t, err)
 	})
+}
+
+func TestZLibCompressorBoundsDecompressedOutput(t *testing.T) {
+	const maxOutputBytes = int64(1024)
+	compressor := compression.NewZLibCompressor(maxOutputBytes)
+
+	t.Run("accepts exact limit", func(t *testing.T) {
+		want := bytes.Repeat([]byte("a"), int(maxOutputBytes))
+		compressed, err := compressor.Compress(want)
+		require.NoError(t, err)
+
+		got, err := compressor.Decompress(compressed)
+		require.NoError(t, err)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("rejects output above limit", func(t *testing.T) {
+		compressed, err := compressor.Compress(bytes.Repeat([]byte("a"), int(maxOutputBytes)+1))
+		require.NoError(t, err)
+
+		_, err = compressor.Decompress(compressed)
+		require.ErrorContains(t, err, "exceeds maximum")
+	})
+
+	t.Run("rejects malformed input", func(t *testing.T) {
+		_, err := compressor.Decompress([]byte("not-zlib"))
+		require.Error(t, err)
+	})
+}
+
+func TestZStdCompressorBoundsDecompressedOutput(t *testing.T) {
+	const maxOutputBytes = int64(64 << 10)
+	compressor := compression.NewZStdCompressor(maxOutputBytes)
+
+	t.Run("accepts exact limit", func(t *testing.T) {
+		want := bytes.Repeat([]byte("a"), int(maxOutputBytes))
+		compressed, err := compressor.Compress(want)
+		require.NoError(t, err)
+
+		got, err := compressor.Decompress(compressed)
+		require.NoError(t, err)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("rejects output above limit", func(t *testing.T) {
+		compressed, err := compressor.Compress(bytes.Repeat([]byte("a"), int(maxOutputBytes)+1))
+		require.NoError(t, err)
+
+		_, err = compressor.Decompress(compressed)
+		require.Error(t, err)
+	})
+
+	t.Run("rejects malformed input", func(t *testing.T) {
+		_, err := compressor.Decompress([]byte("not-zstd"))
+		require.Error(t, err)
+	})
+}
+
+func TestCompressionCodecsRejectOversizedWirePayloads(t *testing.T) {
+	t.Run("vote extension", func(t *testing.T) {
+		codec := compression.NewCompressionVoteExtensionCodec(
+			compression.NewDefaultVoteExtensionCodec(),
+			compression.NewZLibCompressor(compression.MaxVoteExtensionDecodedBytes),
+		)
+
+		_, err := codec.Decode(make([]byte, compression.MaxVoteExtensionWireBytes+1))
+		require.ErrorContains(t, err, "compressed vote extension")
+	})
+
+	t.Run("extended commit", func(t *testing.T) {
+		codec := compression.NewCompressionExtendedCommitCodec(
+			compression.NewDefaultExtendedCommitCodec(),
+			compression.NewZStdCompressor(compression.MaxExtendedCommitDecodedBytes),
+		)
+
+		_, err := codec.Decode(make([]byte, compression.MaxExtendedCommitWireBytes+1))
+		require.ErrorContains(t, err, "compressed extended commit")
+	})
+}
+
+func TestCompressionCodecsRejectOversizedEncodedPayloads(t *testing.T) {
+	t.Run("vote extension", func(t *testing.T) {
+		codec := compression.NewCompressionVoteExtensionCodec(
+			compression.NewDefaultVoteExtensionCodec(),
+			stubCompressor{compressed: make([]byte, compression.MaxVoteExtensionWireBytes+1)},
+		)
+
+		_, err := codec.Encode(vetypes.OracleVoteExtension{})
+		require.ErrorContains(t, err, "compressed vote extension")
+	})
+
+	t.Run("extended commit", func(t *testing.T) {
+		codec := compression.NewCompressionExtendedCommitCodec(
+			compression.NewDefaultExtendedCommitCodec(),
+			stubCompressor{compressed: make([]byte, compression.MaxExtendedCommitWireBytes+1)},
+		)
+
+		_, err := codec.Encode(cmtabci.ExtendedCommitInfo{})
+		require.ErrorContains(t, err, "compressed extended commit")
+	})
+}
+
+type stubCompressor struct {
+	compressed []byte
+}
+
+func (s stubCompressor) Compress([]byte) ([]byte, error) {
+	return s.compressed, nil
+}
+
+func (stubCompressor) Decompress([]byte) ([]byte, error) {
+	return nil, nil
 }

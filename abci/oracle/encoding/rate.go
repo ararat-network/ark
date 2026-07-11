@@ -8,18 +8,19 @@ import (
 	arkencoding "ark/pkg/encoding"
 )
 
-const MaxRateBytes = 128
+// MaxEncodedRateBytes bounds one encoded exchange rate in a vote extension.
+const MaxEncodedRateBytes = 128
 
 func EncodeRate(rate math.LegacyDec) ([]byte, error) {
 	return arkencoding.EncodeLegacyDec(rate)
 }
 
 func DecodeRate(bz []byte) (math.LegacyDec, error) {
-	if len(bz) > MaxRateBytes {
+	if len(bz) > MaxEncodedRateBytes {
 		return math.LegacyDec{}, fmt.Errorf(
 			"oracle rate bytes length %d exceeds maximum %d",
 			len(bz),
-			MaxRateBytes,
+			MaxEncodedRateBytes,
 		)
 	}
 

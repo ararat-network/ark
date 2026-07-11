@@ -28,6 +28,7 @@ import (
 	abcitestutil "ark/abci/testutil"
 	"ark/abci/ve"
 	vetypes "ark/abci/ve/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 const testChainID = "test-chain"
@@ -95,7 +96,7 @@ func TestValidateOracleVoteExtension(t *testing.T) {
 		{
 			name: "oversized rate bytes reject",
 			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": make([]byte, oracleencoding.MaxRateBytes+1),
+				"uusd": make([]byte, oracleencoding.MaxEncodedRateBytes+1),
 			}},
 			expectErr: true,
 		},
@@ -109,7 +110,7 @@ func TestValidateOracleVoteExtension(t *testing.T) {
 		{
 			name: "too many rates reject",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates: makeRateMap(t, ve.MaxVoteExtensionRates+1),
+				Rates: makeRateMap(t, oracletypes.MaxVoteTargets+1),
 			},
 			expectErr: true,
 		},
