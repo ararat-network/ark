@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Response is the expected response returned by the Frankfurter single-pair rate endpoint.
+// Response is one rate returned by the Frankfurter latest-rates endpoint.
 type Response struct {
 	Date  string      `json:"date"`
 	Base  string      `json:"base"`
@@ -13,9 +13,9 @@ type Response struct {
 	Rate  json.Number `json:"rate"`
 }
 
-// Decode decodes the given HTTP response into a Frankfurter response.
-func Decode(resp *http.Response) (Response, error) {
-	var result Response
+// Decode decodes the given HTTP response into Frankfurter rate responses.
+func Decode(resp *http.Response) ([]Response, error) {
+	var result []Response
 	decoder := json.NewDecoder(resp.Body)
 	decoder.UseNumber()
 

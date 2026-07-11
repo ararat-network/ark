@@ -112,7 +112,7 @@ func validOracleConfigJSON() string {
 					"name": "frankfurter_api",
 					"timeout": "3s",
 					"interval": "1m",
-					"endpoints": [{"url": "https://api.frankfurter.dev/v2/rate/%s/%s"}],
+					"endpoints": [{"url": "https://api.frankfurter.dev/v2/rates"}],
 					"batchSize": 1
 				}
 			}

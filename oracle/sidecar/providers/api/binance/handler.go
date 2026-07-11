@@ -24,6 +24,12 @@ func NewHandler() api.DataHandler {
 	return &Handler{}
 }
 
+// BatchTickers applies the configured maximum request size. A zero batchSize
+// keeps all tickers in one request.
+func (h *Handler) BatchTickers(tickers []types.Ticker, batchSize int) ([][]types.Ticker, error) {
+	return api.BatchTickers(tickers, batchSize), nil
+}
+
 // CreateURL returns the URL that is used to fetch data from the Binance API for the
 // given tickers.
 func (h *Handler) CreateURL(

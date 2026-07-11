@@ -28,8 +28,8 @@ type Config struct {
 	// Endpoints is a list of endpoints that the provider can query.
 	Endpoints []types.Endpoint `json:"endpoints"`
 
-	// BatchSize is the maximum number of tickers to query in a single request.
-	// If zero, all tickers are queried in one request.
+	// BatchSize is the maximum number of tickers in each provider-defined request
+	// group. If zero, each complete provider-defined group is queried in one request.
 	BatchSize int `json:"batchSize"`
 
 	// MaxBlockHeightAge is the maximum time an on-chain data source may report the

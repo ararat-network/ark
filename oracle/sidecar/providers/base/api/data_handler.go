@@ -10,6 +10,9 @@ import (
 // It builds request URLs for ticker batches and parses successful HTTP
 // responses into provider responses.
 type DataHandler interface {
+	// BatchTickers groups provider tickers into independently fetched requests.
+	BatchTickers(tickers []types.Ticker, batchSize int) ([][]types.Ticker, error)
+
 	// CreateURL builds the request URL for a batch of provider tickers.
 	CreateURL(endpoint types.Endpoint, tickers []types.Ticker) (string, error)
 

@@ -4,6 +4,7 @@ import (
 	. "ark/oracle/sidecar/providers/api/frankfurter"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -12,42 +13,123 @@ import (
 	"ark/oracle/sidecar/providers/types"
 )
 
-func TestCreateURL(t *testing.T) {
+func TestBatchTickers(t *testing.T) {
 	handler := NewHandler()
-	endpoint := types.Endpoint{URL: URL}
 
 	tests := []struct {
 		name        string
+		tickers     []types.Ticker
+		batchSize   int
+		want        [][]types.Ticker
+		errContains string
+	}{
+		{
+			name:      "zero batch size groups all tickers by base",
+			tickers:   []types.Ticker{"USD/KRW", "EUR/GBP", "USD/JPY", "EUR/CHF"},
+			batchSize: 0,
+			want: [][]types.Ticker{
+				{"USD/KRW", "USD/JPY"},
+				{"EUR/GBP", "EUR/CHF"},
+			},
+		},
+		{
+			name:      "batch size one keeps mixed bases as single pairs",
+			tickers:   []types.Ticker{"USD/KRW", "EUR/GBP", "USD/JPY"},
+			batchSize: 1,
+			want: [][]types.Ticker{
+				{"USD/KRW"},
+				{"USD/JPY"},
+				{"EUR/GBP"},
+			},
+		},
+		{
+			name:      "positive batch size chunks within each base",
+			tickers:   []types.Ticker{"USD/KRW", "EUR/GBP", "USD/JPY", "USD/CNY", "EUR/CHF"},
+			batchSize: 2,
+			want: [][]types.Ticker{
+				{"USD/KRW", "USD/JPY"},
+				{"USD/CNY"},
+				{"EUR/GBP", "EUR/CHF"},
+			},
+		},
+		{
+			name: "empty tickers",
+		},
+		{
+			name:        "malformed ticker",
+			tickers:     []types.Ticker{"USD/KRW", "EURGBP"},
+			errContains: `expected ticker in "BASE/QUOTE" format`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := handler.BatchTickers(tt.tickers, tt.batchSize)
+			if tt.errContains != "" {
+				require.ErrorContains(t, err, tt.errContains)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestCreateURL(t *testing.T) {
+	handler := NewHandler()
+
+	tests := []struct {
+		name        string
+		endpoint    types.Endpoint
 		tickers     []types.Ticker
 		wantURL     string
 		errContains string
 	}{
 		{
-			name:    "single currency pair",
-			tickers: []types.Ticker{"EUR/USD"},
-			wantURL: "https://api.frankfurter.dev/v2/rate/EUR/USD",
+			name:     "single currency pair",
+			endpoint: types.Endpoint{URL: URL},
+			tickers:  []types.Ticker{"EUR/USD"},
+			wantURL:  "https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD",
+		},
+		{
+			name:     "same base batch",
+			endpoint: types.Endpoint{URL: URL},
+			tickers:  []types.Ticker{"EUR/USD", "eur/gbp"},
+			wantURL:  "https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD%2CGBP",
+		},
+		{
+			name:     "preserves endpoint query parameters",
+			endpoint: types.Endpoint{URL: URL + "?providers=ECB"},
+			tickers:  []types.Ticker{"EUR/USD"},
+			wantURL:  "https://api.frankfurter.dev/v2/rates?base=EUR&providers=ECB&quotes=USD",
 		},
 		{
 			name:        "empty tickers",
-			errContains: "expected exactly one ticker",
+			endpoint:    types.Endpoint{URL: URL},
+			errContains: "tickers cannot be empty",
 		},
 		{
-			name:        "multiple tickers",
-			tickers:     []types.Ticker{"EUR/USD", "EUR/GBP"},
-			errContains: "expected exactly one ticker",
+			name:        "mixed base batch",
+			endpoint:    types.Endpoint{URL: URL},
+			tickers:     []types.Ticker{"EUR/USD", "USD/GBP"},
+			errContains: `ticker base "USD" does not match batch base "EUR"`,
 		},
 		{
 			name:        "malformed ticker",
+			endpoint:    types.Endpoint{URL: URL},
 			tickers:     []types.Ticker{"EURUSD"},
 			errContains: `expected ticker in "BASE/QUOTE" format`,
 		},
 		{
 			name:        "empty base",
+			endpoint:    types.Endpoint{URL: URL},
 			tickers:     []types.Ticker{"/USD"},
 			errContains: `expected ticker in "BASE/QUOTE" format`,
 		},
 		{
 			name:        "empty quote",
+			endpoint:    types.Endpoint{URL: URL},
 			tickers:     []types.Ticker{"EUR/"},
 			errContains: `expected ticker in "BASE/QUOTE" format`,
 		},
@@ -55,7 +137,7 @@ func TestCreateURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotURL, err := handler.CreateURL(endpoint, tt.tickers)
+			gotURL, err := handler.CreateURL(tt.endpoint, tt.tickers)
 			if tt.errContains != "" {
 				require.ErrorContains(t, err, tt.errContains)
 				return
@@ -67,79 +149,116 @@ func TestCreateURL(t *testing.T) {
 	}
 }
 
-func TestDefaultMarketSymbolsCreateURLs(t *testing.T) {
+func TestDefaultMarketsCreateOneUSDRequest(t *testing.T) {
 	handler := NewHandler()
-	endpoint := types.Endpoint{URL: URL}
-
+	tickers := make([]types.Ticker, 0, len(DefaultMarkets))
 	for _, market := range DefaultMarkets {
-		t.Run(market.Pair.String(), func(t *testing.T) {
-			gotURL, err := handler.CreateURL(endpoint, []types.Ticker{market.Symbol})
-			require.NoError(t, err)
-			require.Contains(t, gotURL, string(market.Symbol))
-		})
+		tickers = append(tickers, market.Symbol)
 	}
+
+	batches, err := handler.BatchTickers(tickers, DefaultAPIConfig.BatchSize)
+	require.NoError(t, err)
+	require.Equal(t, [][]types.Ticker{tickers}, batches)
+
+	gotURL, err := handler.CreateURL(types.Endpoint{URL: URL}, batches[0])
+	require.NoError(t, err)
+	parsed, err := url.Parse(gotURL)
+	require.NoError(t, err)
+	require.Equal(t, "USD", parsed.Query().Get("base"))
+	require.Equal(t, "KRW,XDR,CNY,JPY,EUR,GBP,MNT", parsed.Query().Get("quotes"))
 }
 
 func TestParseResponse(t *testing.T) {
 	handler := NewHandler()
 
 	tests := []struct {
-		name       string
-		tickers    []types.Ticker
-		body       string
-		wantTicker types.Ticker
-		wantPrice  string
-		wantErr    types.ErrorCode
+		name         string
+		tickers      []types.Ticker
+		body         string
+		wantResolved map[types.Ticker]string
+		wantErrors   map[types.Ticker]types.ErrorCode
 	}{
 		{
-			name:       "resolves matching rate",
-			tickers:    []types.Ticker{"EUR/USD"},
-			body:       `{"date":"2026-03-25","base":"EUR","quote":"USD","rate":1.1568}`,
-			wantTicker: "EUR/USD",
-			wantPrice:  "1.1568",
+			name:    "resolves single rate array",
+			tickers: []types.Ticker{"EUR/USD"},
+			body:    `[{"date":"2026-03-25","base":"EUR","quote":"USD","rate":1.1568}]`,
+			wantResolved: map[types.Ticker]string{
+				"EUR/USD": "1.1568",
+			},
 		},
 		{
-			name:       "matches pair case insensitively",
-			tickers:    []types.Ticker{"eur/usd"},
-			body:       `{"date":"2026-03-25","base":"EUR","quote":"USD","rate":1.1568}`,
-			wantTicker: "eur/usd",
-			wantPrice:  "1.1568",
+			name:    "resolves batch out of order and case insensitively",
+			tickers: []types.Ticker{"eur/usd", "eur/gbp"},
+			body: `[
+				{"date":"2026-03-25","base":"EUR","quote":"GBP","rate":0.8623},
+				{"date":"2026-03-25","base":"EUR","quote":"JPY","rate":165.1},
+				{"date":"2026-03-25","base":"EUR","quote":"USD","rate":1.1568}
+			]`,
+			wantResolved: map[types.Ticker]string{
+				"eur/usd": "1.1568",
+				"eur/gbp": "0.8623",
+			},
+		},
+		{
+			name:    "marks missing batch member as no response",
+			tickers: []types.Ticker{"EUR/USD", "EUR/GBP"},
+			body:    `[{"date":"2026-03-25","base":"EUR","quote":"USD","rate":1.1568}]`,
+			wantResolved: map[types.Ticker]string{
+				"EUR/USD": "1.1568",
+			},
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"EUR/GBP": types.ErrorNoResponse,
+			},
+		},
+		{
+			name:    "isolates malformed rate within batch",
+			tickers: []types.Ticker{"EUR/USD", "EUR/GBP"},
+			body: `[
+				{"date":"2026-03-25","base":"EUR","quote":"USD"},
+				{"date":"2026-03-25","base":"EUR","quote":"GBP","rate":0.8623}
+			]`,
+			wantResolved: map[types.Ticker]string{
+				"EUR/GBP": "0.8623",
+			},
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"EUR/USD": types.ErrorFailedToParsePrice,
+			},
 		},
 		{
 			name:    "marks malformed json as decode failure",
-			tickers: []types.Ticker{"EUR/USD"},
+			tickers: []types.Ticker{"EUR/USD", "EUR/GBP"},
 			body:    `{`,
-			wantErr: types.ErrorFailedToDecode,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"EUR/USD": types.ErrorFailedToDecode,
+				"EUR/GBP": types.ErrorFailedToDecode,
+			},
 		},
 		{
-			name:    "marks malformed rate as parse failure",
+			name:    "marks unexpected pairs as no response",
 			tickers: []types.Ticker{"EUR/USD"},
-			body:    `{"date":"2026-03-25","base":"EUR","quote":"USD"}`,
-			wantErr: types.ErrorFailedToParsePrice,
-		},
-		{
-			name:    "marks unexpected pair as no response",
-			tickers: []types.Ticker{"EUR/USD"},
-			body:    `{"date":"2026-03-25","base":"EUR","quote":"GBP","rate":0.8623}`,
-			wantErr: types.ErrorNoResponse,
+			body:    `[{"date":"2026-03-25","base":"EUR","quote":"GBP","rate":0.8623}]`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"EUR/USD": types.ErrorNoResponse,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			response := handler.ParseResponse(tt.tickers, httpResponse(tt.body))
-			if tt.wantErr != types.OK {
-				require.Empty(t, response.Resolved)
-				require.Equal(t, tt.wantErr, response.Unresolved[tt.tickers[0]].Code())
-				return
-			}
+			require.Len(t, response.Resolved, len(tt.wantResolved))
+			require.Len(t, response.Unresolved, len(tt.wantErrors))
 
-			require.Empty(t, response.Unresolved)
-			result, ok := response.Resolved[tt.wantTicker]
-			require.True(t, ok)
-			require.NotNil(t, result.Price)
-			require.Equal(t, tt.wantPrice, result.Price.Text('f', -1))
-			require.False(t, result.Timestamp.IsZero())
+			for ticker, wantPrice := range tt.wantResolved {
+				result, ok := response.Resolved[ticker]
+				require.True(t, ok)
+				require.NotNil(t, result.Price)
+				require.Equal(t, wantPrice, result.Price.Text('f', -1))
+				require.False(t, result.Timestamp.IsZero())
+			}
+			for ticker, wantCode := range tt.wantErrors {
+				require.Equal(t, wantCode, response.Unresolved[ticker].Code())
+			}
 		})
 	}
 }

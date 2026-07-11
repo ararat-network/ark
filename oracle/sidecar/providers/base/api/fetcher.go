@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -90,23 +89,25 @@ func (f *Fetcher) Run(ctx context.Context, tickers []types.Ticker, responseCh ch
 		return nil
 	}
 
-	batchSize := f.config.BatchSize
-	if batchSize == 0 {
-		batchSize = len(tickers)
+	batches, err := f.dataHandler.BatchTickers(tickers, f.config.BatchSize)
+	if err != nil {
+		return fmt.Errorf("batching API tickers: %w", err)
 	}
-	batches := (len(tickers) + batchSize - 1) / batchSize
+	if len(batches) == 0 {
+		return errors.New("ticker batcher returned no batches")
+	}
 
 	f.logger.Debug(
 		"starting API fetcher",
 		"tickers", len(tickers),
-		"batches", batches,
-		"batch_size", batchSize,
+		"batches", len(batches),
+		"batch_size", f.config.BatchSize,
 		"interval", f.config.Interval,
 		"requests_per_second", f.config.RequestsPerSecond,
 	)
 
 	group, groupCtx := errgroup.WithContext(ctx)
-	for subTickers := range slices.Chunk(tickers, batchSize) {
+	for _, subTickers := range batches {
 		group.Go(func() error {
 			return sidecarinternal.RunRecovering("api batch loop", func() error {
 				return f.runBatchLoop(groupCtx, subTickers, responseCh)
@@ -133,12 +134,12 @@ func (f *Fetcher) ResponseBufferSize(tickers []types.Ticker) int {
 		return 1
 	}
 
-	batchSize := f.config.BatchSize
-	if batchSize <= 0 {
+	batches, err := f.dataHandler.BatchTickers(tickers, f.config.BatchSize)
+	if err != nil || len(batches) == 0 {
 		return 1
 	}
 
-	return (len(tickers) + batchSize - 1) / batchSize
+	return len(batches)
 }
 
 // runBatchLoop repeatedly queries one ticker batch until ctx is cancelled or a fatal query error occurs.

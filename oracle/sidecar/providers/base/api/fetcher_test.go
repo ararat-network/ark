@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -98,6 +99,23 @@ func TestRunReturnsErrorWhenEndpointSelectionFails(t *testing.T) {
 	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
 	require.ErrorIs(t, err, ErrSelectEndpoint)
 	require.ErrorContains(t, err, "no endpoint available")
+}
+
+func TestRunReturnsTickerBatcherError(t *testing.T) {
+	handler := apitestutil.NewMockDataHandler(gomock.NewController(t))
+	handler.EXPECT().
+		BatchTickers([]types.Ticker{"ATOMUSD"}, apiConfig().BatchSize).
+		Return(nil, errors.New("unsupported ticker group"))
+
+	fetcher, err := NewFetcher(
+		apiConfig(),
+		&http.Client{},
+		handler,
+	)
+	require.NoError(t, err)
+
+	err = fetcher.Run(context.Background(), []types.Ticker{"ATOMUSD"}, make(chan types.Response, 1))
+	require.EqualError(t, err, "batching API tickers: unsupported ticker group")
 }
 
 func TestRunReturnsErrorWhenCreateURLFails(t *testing.T) {
@@ -437,6 +455,65 @@ func TestRunUsesConfiguredBatchSize(t *testing.T) {
 	}, got)
 }
 
+func TestRunUsesDataHandlerBatching(t *testing.T) {
+	tickers := []types.Ticker{"USD/KRW", "EUR/GBP", "USD/JPY"}
+	cfg := apiConfig()
+	cfg.BatchSize = 0
+	cfg.Interval = time.Hour
+
+	batches := make(chan []types.Ticker, 2)
+	handler := apitestutil.NewMockDataHandler(gomock.NewController(t))
+	handler.EXPECT().
+		BatchTickers(tickers, cfg.BatchSize).
+		Return([][]types.Ticker{
+			{"USD/KRW", "USD/JPY"},
+			{"EUR/GBP"},
+		}, nil).
+		Times(2)
+	handler.EXPECT().
+		CreateURL(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ types.Endpoint, gotTickers []types.Ticker) (string, error) {
+			batches <- append([]types.Ticker(nil), gotTickers...)
+			return testURL, nil
+		}).
+		Times(2)
+	handler.EXPECT().
+		ParseResponse(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(gotTickers []types.Ticker, _ *http.Response) types.Response {
+			return types.NewResponse(map[types.Ticker]types.Result{
+				gotTickers[0]: types.NewResult(big.NewFloat(1), time.Now()),
+			}, nil)
+		}).
+		Times(2)
+
+	fetcher, err := NewFetcher(
+		cfg,
+		&http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			return httpResponse(http.StatusOK, `{}`), nil
+		})},
+		handler,
+	)
+	require.NoError(t, err)
+	require.Equal(t, 2, fetcher.ResponseBufferSize(tickers))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	responseCh := make(chan types.Response, 2)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- fetcher.Run(ctx, tickers, responseCh)
+	}()
+
+	<-responseCh
+	<-responseCh
+	got := []([]types.Ticker){<-batches, <-batches}
+	cancel()
+	require.ErrorIs(t, <-errCh, context.Canceled)
+	require.ElementsMatch(t, [][]types.Ticker{
+		{"USD/KRW", "USD/JPY"},
+		{"EUR/GBP"},
+	}, got)
+}
+
 func TestResponseBufferSizeReturnsBatchCount(t *testing.T) {
 	cfg := apiConfig()
 	cfg.BatchSize = 2
@@ -523,7 +600,25 @@ func httpResponse(status int, body string) *http.Response {
 func newMockDataHandler(t *testing.T) *apitestutil.MockDataHandler {
 	t.Helper()
 
-	return apitestutil.NewMockDataHandler(gomock.NewController(t))
+	handler := apitestutil.NewMockDataHandler(gomock.NewController(t))
+	handler.EXPECT().
+		BatchTickers(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(tickers []types.Ticker, batchSize int) ([][]types.Ticker, error) {
+			if len(tickers) == 0 {
+				return nil, nil
+			}
+			if batchSize <= 0 {
+				batchSize = len(tickers)
+			}
+
+			batches := make([][]types.Ticker, 0, (len(tickers)+batchSize-1)/batchSize)
+			for batch := range slices.Chunk(tickers, batchSize) {
+				batches = append(batches, batch)
+			}
+			return batches, nil
+		}).
+		AnyTimes()
+	return handler
 }
 
 func apiConfig() Config {

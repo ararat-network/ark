@@ -41,6 +41,21 @@ func (m *MockDataHandler) EXPECT() *MockDataHandlerMockRecorder {
 	return m.recorder
 }
 
+// BatchTickers mocks base method.
+func (m *MockDataHandler) BatchTickers(tickers []types.Ticker, batchSize int) ([][]types.Ticker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchTickers", tickers, batchSize)
+	ret0, _ := ret[0].([][]types.Ticker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchTickers indicates an expected call of BatchTickers.
+func (mr *MockDataHandlerMockRecorder) BatchTickers(tickers, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchTickers", reflect.TypeOf((*MockDataHandler)(nil).BatchTickers), tickers, batchSize)
+}
+
 // CreateURL mocks base method.
 func (m *MockDataHandler) CreateURL(endpoint types.Endpoint, tickers []types.Ticker) (string, error) {
 	m.ctrl.T.Helper()

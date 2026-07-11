@@ -11,8 +11,8 @@ const (
 	// Name is the name of the Frankfurter provider.
 	Name = "frankfurter_api"
 
-	// URL is the Frankfurter single-pair rate endpoint.
-	URL = "https://api.frankfurter.dev/v2/rate/%s/%s"
+	// URL is the Frankfurter latest-rates endpoint.
+	URL = "https://api.frankfurter.dev/v2/rates"
 
 	// DefaultMaxPriceAge is the default freshness window for Frankfurter prices.
 	DefaultMaxPriceAge = 90 * time.Second
@@ -25,7 +25,7 @@ var DefaultAPIConfig = api.Config{
 	Interval:          time.Minute,
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
-	BatchSize:         1,
+	BatchSize:         0,
 	MaxBlockHeightAge: 0,
 }
 
