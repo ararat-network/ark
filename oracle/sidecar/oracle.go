@@ -113,7 +113,8 @@ func runOracle(
 	eg.Go(func() error {
 		return sidecarinternal.RunRecovering("oracle runtime", func() error {
 			err := runtimeRun(groupCtx)
-			if groupCtx.Err() != nil && errors.Is(err, context.Canceled) {
+			if groupCtx.Err() == context.Canceled &&
+				errors.Is(err, context.Cause(groupCtx)) {
 				return nil
 			}
 			return err

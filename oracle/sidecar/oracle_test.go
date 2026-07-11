@@ -2,6 +2,7 @@ package sidecar
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -56,6 +57,34 @@ func TestRunStopsOnContextCancellation(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("oracle did not stop after context cancellation")
 	}
+}
+
+func TestRunStopsOnContextCancellationCause(t *testing.T) {
+	runtimeStarted := make(chan struct{})
+	transportStarted := make(chan struct{})
+	ctx, cancel := context.WithCancelCause(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- runOracle(
+			ctx,
+			func(ctx context.Context) error {
+				close(runtimeStarted)
+				<-ctx.Done()
+				return context.Cause(ctx)
+			},
+			func(ctx context.Context) error {
+				close(transportStarted)
+				<-ctx.Done()
+				return nil
+			},
+			nil,
+		)
+	}()
+	requireSignal(t, runtimeStarted, "runtime did not start")
+	requireSignal(t, transportStarted, "transport did not start")
+
+	cancel(errors.New("terminated signal received"))
+	requireOracleStopped(t, errCh)
 }
 
 func TestRunReturnsRuntimePanic(t *testing.T) {
