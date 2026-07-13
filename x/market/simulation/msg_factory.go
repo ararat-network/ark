@@ -32,9 +32,10 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 		}
 
 		return []simsx.SimAccount{sender}, &types.MsgSwap{
-			Trader:    sender.AddressBech32,
-			OfferCoin: sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
-			AskDenom:  askDenom,
+			Trader:         sender.AddressBech32,
+			OfferCoin:      sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
+			AskDenom:       askDenom,
+			MinimumReceive: sdk.NewInt64Coin(askDenom, 1),
 		}
 	}
 }
@@ -70,10 +71,11 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 		}
 
 		return []simsx.SimAccount{sender}, &types.MsgSwapSend{
-			FromAddress: sender.AddressBech32,
-			ToAddress:   receiver.AddressBech32,
-			OfferCoin:   sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
-			AskDenom:    askDenom,
+			FromAddress:    sender.AddressBech32,
+			ToAddress:      receiver.AddressBech32,
+			OfferCoin:      sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
+			AskDenom:       askDenom,
+			MinimumReceive: sdk.NewInt64Coin(askDenom, 1),
 		}
 	}
 }

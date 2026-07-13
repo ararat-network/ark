@@ -31,7 +31,15 @@ func (gs GenesisState) Validate() error {
 		return errors.New("ark pool delta must not be nil")
 	}
 
-	return gs.Params.Validate()
+	if err := gs.Params.Validate(); err != nil {
+		return err
+	}
+
+	if _, err := NewEffectivePools(gs.Params.BasePool, gs.ArkPoolDelta); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetGenesisStateFromAppState returns x/market GenesisState given raw application

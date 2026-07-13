@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -34,19 +35,30 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 	if err := validateInputs(msg.OfferCoin, msg.AskDenom); err != nil {
 		return nil, err
 	}
+	if err := validateMinimumReceive(msg.MinimumReceive, msg.AskDenom); err != nil {
+		return nil, err
+	}
 
 	// Compute exchange rates between the ask and offer
-	swapDecCoin, spread, err := m.k.ComputeSwap(ctx, msg.OfferCoin, msg.AskDenom)
+	quote, err := m.k.quoteSwap(ctx, msg.OfferCoin, msg.AskDenom)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "computing swap from %s to %s", msg.OfferCoin, msg.AskDenom)
 	}
 
-	outcome, err := buildSwapOutcome(swapDecCoin, spread)
+	outcome, err := buildSwapOutcome(quote.swapDecCoin, quote.spread)
 	if err != nil {
 		return nil, err
 	}
+	if outcome.swapCoin.Amount.LT(msg.MinimumReceive.Amount) {
+		return nil, sdkerrors.Wrapf(
+			types.ErrMinimumReceiveNotMet,
+			"minimum %s, received %s",
+			msg.MinimumReceive,
+			outcome.swapCoin,
+		)
+	}
 
-	if err := m.settleSwap(ctx, addr, addr, msg.OfferCoin, outcome); err != nil {
+	if err := m.settleSwap(ctx, addr, addr, msg.OfferCoin, outcome, quote); err != nil {
 		return nil, err
 	}
 
@@ -70,19 +82,30 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 	if err := validateInputs(msg.OfferCoin, msg.AskDenom); err != nil {
 		return nil, err
 	}
+	if err := validateMinimumReceive(msg.MinimumReceive, msg.AskDenom); err != nil {
+		return nil, err
+	}
 
 	// Compute exchange rates between the ask and offer
-	swapDecCoin, spread, err := m.k.ComputeSwap(ctx, msg.OfferCoin, msg.AskDenom)
+	quote, err := m.k.quoteSwap(ctx, msg.OfferCoin, msg.AskDenom)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "computing swap from %s to %s", msg.OfferCoin, msg.AskDenom)
 	}
 
-	outcome, err := buildSwapOutcome(swapDecCoin, spread)
+	outcome, err := buildSwapOutcome(quote.swapDecCoin, quote.spread)
 	if err != nil {
 		return nil, err
 	}
+	if outcome.swapCoin.Amount.LT(msg.MinimumReceive.Amount) {
+		return nil, sdkerrors.Wrapf(
+			types.ErrMinimumReceiveNotMet,
+			"minimum %s, received %s",
+			msg.MinimumReceive,
+			outcome.swapCoin,
+		)
+	}
 
-	if err := m.settleSwap(ctx, fromAddr, toAddr, msg.OfferCoin, outcome); err != nil {
+	if err := m.settleSwap(ctx, fromAddr, toAddr, msg.OfferCoin, outcome, quote); err != nil {
 		return nil, err
 	}
 	return &types.MsgSwapSendResponse{
@@ -102,6 +125,18 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, err
 	}
 
+	arkPoolDelta, err := m.k.ArkPoolDelta.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting ark pool delta: %w", err)
+	}
+	if _, err := types.NewEffectivePools(msg.Params.BasePool, arkPoolDelta); err != nil {
+		return nil, sdkerrors.Wrapf(
+			errortypes.ErrInvalidRequest,
+			"invalid effective pools: %v",
+			err,
+		)
+	}
+
 	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
 		return nil, err
 	}
@@ -117,12 +152,31 @@ func validateInputs(offerCoin sdk.Coin, askDenom string) error {
 	if err := sdk.ValidateDenom(askDenom); err != nil {
 		return sdkerrors.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
 	}
-	if offerCoin.Amount.LTE(math.ZeroInt()) || offerCoin.Amount.BigInt().BitLen() > 100 {
+	if offerCoin.Amount.LTE(math.ZeroInt()) {
 		return sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
 	}
 
 	if offerCoin.Denom == askDenom {
 		return sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
+	}
+
+	return nil
+}
+
+func validateMinimumReceive(minimumReceive sdk.Coin, askDenom string) error {
+	if err := minimumReceive.Validate(); err != nil {
+		return sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid minimum receive: %v", err)
+	}
+	if !minimumReceive.IsPositive() {
+		return sdkerrors.Wrap(errortypes.ErrInvalidCoins, minimumReceive.String())
+	}
+	if minimumReceive.Denom != askDenom {
+		return sdkerrors.Wrapf(
+			errortypes.ErrInvalidRequest,
+			"minimum receive denom %q does not match ask denom %q",
+			minimumReceive.Denom,
+			askDenom,
+		)
 	}
 
 	return nil
@@ -165,8 +219,9 @@ func (m msgServer) settleSwap(
 	receiver sdk.AccAddress,
 	offerCoin sdk.Coin,
 	outcome *swapOutcome,
+	quote *swapQuote,
 ) error {
-	if err := m.k.ApplySwapToPool(ctx, offerCoin, outcome.swapDecCoin); err != nil {
+	if err := m.k.applySwapToPool(ctx, offerCoin, outcome.swapDecCoin, quote); err != nil {
 		return sdkerrors.Wrapf(err, "applying swap to pool for offer %s and receive %s", offerCoin, outcome.swapDecCoin)
 	}
 

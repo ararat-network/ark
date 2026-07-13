@@ -149,3 +149,10 @@ func (s *KeeperTestSuite) TestReplenishPools() {
 		})
 	}
 }
+
+func (s *KeeperTestSuite) TestReplenishPoolsZeroDeltaSkipsParams() {
+	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
+	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
+
+	s.Require().NoError(s.keeper.ReplenishPools(s.ctx))
+}

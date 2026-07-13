@@ -11,6 +11,7 @@ import (
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"ark/x/market/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 var _ types.QueryServer = queryServer{}
@@ -48,19 +49,21 @@ func (q queryServer) Swap(ctx context.Context, req *types.QuerySwapRequest) (*ty
 		return nil, status.Errorf(codes.InvalidArgument, "validating swap from %s to %s: %v", offerCoin, req.AskDenom, err)
 	}
 
-	swapDecCoin, spread, err := q.k.ComputeSwap(ctx, offerCoin, req.AskDenom)
+	quote, err := q.k.quoteSwap(ctx, offerCoin, req.AskDenom)
 	if err != nil {
 		switch {
-		case errors.Is(err, types.ErrNoEffectivePrice):
+		case errors.Is(err, types.ErrNoEffectivePrice), errors.Is(err, oracletypes.ErrStaleExchangeRate):
 			return nil, status.Errorf(codes.FailedPrecondition, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
 		case errors.Is(err, errortypes.ErrInvalidCoins), errors.Is(err, types.ErrRecursiveSwap):
 			return nil, status.Errorf(codes.InvalidArgument, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
+		case errors.Is(err, types.ErrArithmeticOutOfRange), errors.Is(err, oracletypes.ErrConversionOutOfRange):
+			return nil, status.Errorf(codes.OutOfRange, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
 		default:
 			return nil, status.Errorf(codes.Internal, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
 		}
 	}
 
-	outcome, err := buildSwapOutcome(swapDecCoin, spread)
+	outcome, err := buildSwapOutcome(quote.swapDecCoin, quote.spread)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "building swap outcome for %s to %s: %v", offerCoin, req.AskDenom, err)
 	}

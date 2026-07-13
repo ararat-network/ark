@@ -10,21 +10,23 @@ var (
 	_ sdk.Msg = &MsgUpdateParams{}
 )
 
-// NewMsgSwap creates a MsgSwap instance
-func NewMsgSwap(traderAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom string) *MsgSwap {
+// NewMsgSwap creates a MsgSwap instance.
+func NewMsgSwap(traderAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom string, minimumReceive sdk.Coin) *MsgSwap {
 	return &MsgSwap{
-		Trader:    traderAddress.String(),
-		OfferCoin: offerCoin,
-		AskDenom:  askDenom,
+		Trader:         traderAddress.String(),
+		OfferCoin:      offerCoin,
+		AskDenom:       askDenom,
+		MinimumReceive: minimumReceive,
 	}
 }
 
-// NewMsgSwapSend creates a MsgSwapSend instance
-func NewMsgSwapSend(fromAddress, toAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom string) *MsgSwapSend {
+// NewMsgSwapSend creates a MsgSwapSend instance.
+func NewMsgSwapSend(fromAddress, toAddress sdk.AccAddress, offerCoin sdk.Coin, askDenom string, minimumReceive sdk.Coin) *MsgSwapSend {
 	return &MsgSwapSend{
-		FromAddress: fromAddress.String(),
-		ToAddress:   toAddress.String(),
-		OfferCoin:   offerCoin,
-		AskDenom:    askDenom,
+		FromAddress:    fromAddress.String(),
+		ToAddress:      toAddress.String(),
+		OfferCoin:      offerCoin,
+		AskDenom:       askDenom,
+		MinimumReceive: minimumReceive,
 	}
 }

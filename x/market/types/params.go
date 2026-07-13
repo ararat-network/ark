@@ -1,11 +1,13 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
 
 	chain "ark/pkg/chain"
+	"ark/pkg/decimal"
 )
 
 // Default parameter values
@@ -30,11 +32,20 @@ func DefaultParams() Params {
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	if p.BasePool.IsNegative() {
-		return fmt.Errorf("base pool must be positive or zero, is %s", p.BasePool)
+	if p.BasePool.IsNil() {
+		return errors.New("base pool must be set")
+	}
+	if !p.BasePool.IsPositive() {
+		return fmt.Errorf("base pool must be positive, is %s", p.BasePool)
+	}
+	if _, err := decimal.Mul(p.BasePool, p.BasePool); err != nil {
+		return fmt.Errorf("base pool square must be representable: %w", err)
 	}
 	if p.PoolRecoveryPeriod == 0 {
 		return fmt.Errorf("pool recovery period must be positive, is %d", p.PoolRecoveryPeriod)
+	}
+	if p.MinStabilitySpread.IsNil() {
+		return errors.New("min stability spread must be set")
 	}
 	if p.MinStabilitySpread.IsNegative() || p.MinStabilitySpread.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("min stability spread must be in [0, 1], is %s", p.MinStabilitySpread)

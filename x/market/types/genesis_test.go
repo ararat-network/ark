@@ -27,6 +27,20 @@ func TestValidateGenesisState(t *testing.T) {
 			name:   "default genesis state",
 			mutate: func(gs *types.GenesisState) {},
 		},
+		{
+			name: "non-positive effective ark pool",
+			mutate: func(gs *types.GenesisState) {
+				gs.ArkPoolDelta = gs.Params.BasePool.Neg()
+			},
+			expectErr: "effective ark pool must be positive",
+		},
+		{
+			name: "effective ark pool addition is out of range",
+			mutate: func(gs *types.GenesisState) {
+				gs.ArkPoolDelta = maxLegacyDec()
+			},
+			expectErr: "effective ark pool",
+		},
 	}
 
 	for _, tc := range tests {

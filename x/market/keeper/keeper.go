@@ -91,12 +91,19 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if poolDelta.IsZero() {
+		return nil
+	}
+
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return err
 	}
 	poolRecoveryPeriod := math.NewIntFromUint64(params.PoolRecoveryPeriod)
 	poolRegressionAmt := poolDelta.QuoInt(poolRecoveryPeriod)
+	if poolRegressionAmt.IsZero() {
+		return nil
+	}
 
 	// Replenish pools towards each base pool
 	// regressionAmt cannot make delta zero

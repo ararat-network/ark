@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"math/big"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -62,21 +64,28 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "missing oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
-					Return(math.LegacyNewDec(1), nil)
-				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
-					Return(math.LegacyNewDec(1), nil)
-				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
-					Return(math.LegacyNewDec(1), nil)
-				s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "unknown").
-					Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
+				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "unknown").
+					Return(nil, oracletypes.ErrUnknownDenom)
 			},
 			req: &types.QuerySwapRequest{
 				OfferCoin: "1000000uusd",
 				AskDenom:  "unknown",
 			},
 			code:      codes.FailedPrecondition,
-			expectErr: "no oracle price for denom unknown",
+			expectErr: "no price registered with oracle",
+		},
+		{
+			name: "stale oracle price returns failed precondition",
+			setup: func() {
+				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+					Return(nil, oracletypes.ErrStaleExchangeRate)
+			},
+			req: &types.QuerySwapRequest{
+				OfferCoin: "1000000uusd",
+				AskDenom:  "ukrw",
+			},
+			code:      codes.FailedPrecondition,
+			expectErr: "stale exchange rate",
 		},
 	}
 
@@ -92,6 +101,47 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 			s.Require().ErrorContains(err, tc.expectErr)
 		})
 	}
+}
+
+func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
+	largeAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 200))
+	offerCoin := sdk.NewCoin("uusd", largeAmount)
+
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+		Return(oracletypes.RateSnapshot{
+			"uusd":              math.LegacyOneDec(),
+			chain.MicroSDRDenom: math.LegacyOneDec(),
+			"ukrw":              math.LegacyOneDec(),
+		}, nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").Return(math.LegacyZeroDec(), nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").Return(math.LegacyZeroDec(), nil)
+
+	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+		OfferCoin: offerCoin.String(),
+		AskDenom:  "ukrw",
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewCoin("ukrw", largeAmount), res.SwapCoin)
+}
+
+func (s *KeeperTestSuite) TestQuerySwapReturnsOutOfRangeForUnrepresentableConversion() {
+	offerAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
+	offerCoin := sdk.NewCoin("uusd", offerAmount)
+
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+		Return(oracletypes.RateSnapshot{
+			"uusd":              math.LegacyOneDec(),
+			chain.MicroSDRDenom: math.LegacyNewDec(2),
+			"ukrw":              math.LegacyOneDec(),
+		}, nil)
+
+	_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+		OfferCoin: offerCoin.String(),
+		AskDenom:  "ukrw",
+	})
+	s.Require().Error(err)
+	s.Require().Equal(codes.OutOfRange, status.Code(err))
+	s.Require().ErrorContains(err, "conversion result is out of range")
 }
 
 func (s *KeeperTestSuite) TestQuerySwapOutcome() {
@@ -196,12 +246,12 @@ func (s *KeeperTestSuite) TestQueryArkPoolDelta() {
 }
 
 func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
-	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "uusd").
-		Return(offerRate, nil)
-	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, chain.MicroSDRDenom).
-		Return(math.LegacyOneDec(), nil).Times(2)
-	s.oracleKeeper.EXPECT().GetExchangeRate(s.ctx, "ukrw").
-		Return(askRate, nil)
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+		Return(oracletypes.RateSnapshot{
+			"uusd":              offerRate,
+			chain.MicroSDRDenom: math.LegacyOneDec(),
+			"ukrw":              askRate,
+		}, nil)
 	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
 		Return(tobinTax, nil)
 	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").

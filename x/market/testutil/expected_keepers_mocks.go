@@ -10,11 +10,12 @@
 package testutil
 
 import (
+	types "ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
 	math "cosmossdk.io/math"
-	types "github.com/cosmos/cosmos-sdk/types"
+	types0 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -43,10 +44,10 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // GetModuleAccount mocks base method.
-func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types.ModuleAccountI {
+func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types0.ModuleAccountI {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAccount", ctx, moduleName)
-	ret0, _ := ret[0].(types.ModuleAccountI)
+	ret0, _ := ret[0].(types0.ModuleAccountI)
 	return ret0
 }
 
@@ -57,10 +58,10 @@ func (mr *MockAccountKeeperMockRecorder) GetModuleAccount(ctx, moduleName any) *
 }
 
 // GetModuleAddress mocks base method.
-func (m *MockAccountKeeper) GetModuleAddress(name string) types.AccAddress {
+func (m *MockAccountKeeper) GetModuleAddress(name string) types0.AccAddress {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAddress", name)
-	ret0, _ := ret[0].(types.AccAddress)
+	ret0, _ := ret[0].(types0.AccAddress)
 	return ret0
 }
 
@@ -95,7 +96,7 @@ func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 }
 
 // BurnCoins mocks base method.
-func (m *MockBankKeeper) BurnCoins(ctx context.Context, name string, amt types.Coins) error {
+func (m *MockBankKeeper) BurnCoins(ctx context.Context, name string, amt types0.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BurnCoins", ctx, name, amt)
 	ret0, _ := ret[0].(error)
@@ -109,7 +110,7 @@ func (mr *MockBankKeeperMockRecorder) BurnCoins(ctx, name, amt any) *gomock.Call
 }
 
 // MintCoins mocks base method.
-func (m *MockBankKeeper) MintCoins(ctx context.Context, name string, amt types.Coins) error {
+func (m *MockBankKeeper) MintCoins(ctx context.Context, name string, amt types0.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MintCoins", ctx, name, amt)
 	ret0, _ := ret[0].(error)
@@ -123,7 +124,7 @@ func (mr *MockBankKeeperMockRecorder) MintCoins(ctx, name, amt any) *gomock.Call
 }
 
 // SendCoinsFromAccountToModule mocks base method.
-func (m *MockBankKeeper) SendCoinsFromAccountToModule(ctx context.Context, senderAddr types.AccAddress, recipientModule string, amt types.Coins) error {
+func (m *MockBankKeeper) SendCoinsFromAccountToModule(ctx context.Context, senderAddr types0.AccAddress, recipientModule string, amt types0.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCoinsFromAccountToModule", ctx, senderAddr, recipientModule, amt)
 	ret0, _ := ret[0].(error)
@@ -137,7 +138,7 @@ func (mr *MockBankKeeperMockRecorder) SendCoinsFromAccountToModule(ctx, senderAd
 }
 
 // SendCoinsFromModuleToAccount mocks base method.
-func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types.AccAddress, amt types.Coins) error {
+func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types0.AccAddress, amt types0.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCoinsFromModuleToAccount", ctx, senderModule, recipientAddr, amt)
 	ret0, _ := ret[0].(error)
@@ -189,19 +190,24 @@ func (mr *MockOracleKeeperMockRecorder) GetActives(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActives", reflect.TypeOf((*MockOracleKeeper)(nil).GetActives), ctx)
 }
 
-// GetExchangeRate mocks base method.
-func (m *MockOracleKeeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
+// GetRateSnapshot mocks base method.
+func (m *MockOracleKeeper) GetRateSnapshot(ctx context.Context, denoms ...string) (types.RateSnapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetExchangeRate", ctx, denom)
-	ret0, _ := ret[0].(math.LegacyDec)
+	varargs := []any{ctx}
+	for _, a := range denoms {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRateSnapshot", varargs...)
+	ret0, _ := ret[0].(types.RateSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetExchangeRate indicates an expected call of GetExchangeRate.
-func (mr *MockOracleKeeperMockRecorder) GetExchangeRate(ctx, denom any) *gomock.Call {
+// GetRateSnapshot indicates an expected call of GetRateSnapshot.
+func (mr *MockOracleKeeperMockRecorder) GetRateSnapshot(ctx any, denoms ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRate", reflect.TypeOf((*MockOracleKeeper)(nil).GetExchangeRate), ctx, denom)
+	varargs := append([]any{ctx}, denoms...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSnapshot", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSnapshot), varargs...)
 }
 
 // GetTobinTax mocks base method.

@@ -21,11 +21,32 @@ func TestValidateParams(t *testing.T) {
 			mutate: func(p *types.Params) {},
 		},
 		{
+			name: "nil base pool",
+			mutate: func(p *types.Params) {
+				p.BasePool = math.LegacyDec{}
+			},
+			expectErr: "base pool must be set",
+		},
+		{
+			name: "zero base pool",
+			mutate: func(p *types.Params) {
+				p.BasePool = math.LegacyZeroDec()
+			},
+			expectErr: "base pool must be positive",
+		},
+		{
 			name: "negative base pool",
 			mutate: func(p *types.Params) {
 				p.BasePool = math.LegacyNewDec(-1)
 			},
-			expectErr: "base pool must be positive or zero",
+			expectErr: "base pool must be positive",
+		},
+		{
+			name: "base pool square is out of range",
+			mutate: func(p *types.Params) {
+				p.BasePool = maxLegacyDec()
+			},
+			expectErr: "base pool square must be representable",
 		},
 		{
 			name: "zero pool recovery period",
@@ -33,6 +54,13 @@ func TestValidateParams(t *testing.T) {
 				p.PoolRecoveryPeriod = 0
 			},
 			expectErr: "pool recovery period must be positive",
+		},
+		{
+			name: "nil min stability spread",
+			mutate: func(p *types.Params) {
+				p.MinStabilitySpread = math.LegacyDec{}
+			},
+			expectErr: "min stability spread must be set",
 		},
 		{
 			name: "negative min stability spread",

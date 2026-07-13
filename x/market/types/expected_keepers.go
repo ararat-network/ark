@@ -6,6 +6,8 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	oracletypes "ark/x/oracle/types"
 )
 
 // AccountKeeper is expected keeper for auth module
@@ -25,7 +27,7 @@ type BankKeeper interface {
 
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
-	GetExchangeRate(ctx context.Context, denom string) (price math.LegacyDec, err error)
+	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
 	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
 
 	// only used for simulation

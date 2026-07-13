@@ -36,6 +36,10 @@ message MsgSwap {
   cosmos.base.v1beta1.Coin offer_coin = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   string ask_denom = 3;
+  // minimum_receive is the minimum ask-denom coin the trader accepts. The
+  // swap fails if the final output is lower.
+  cosmos.base.v1beta1.Coin minimum_receive = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // MsgSwapResponse defines the Msg/Swap response type.
@@ -55,6 +59,10 @@ message MsgSwapSend {
   cosmos.base.v1beta1.Coin offer_coin = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   string ask_denom = 4;
+  // minimum_receive is the minimum ask-denom coin the sender accepts. The
+  // swap fails if the final output is lower.
+  cosmos.base.v1beta1.Coin minimum_receive = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // MsgSwapSendResponse defines the Msg/SwapSend response type.
