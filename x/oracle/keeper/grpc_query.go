@@ -15,9 +15,10 @@ import (
 	"ark/x/oracle/types"
 )
 
-var _ types.QueryServer = queryServer{}
+var _ types.QueryServer = (*queryServer)(nil)
 
 type queryServer struct {
+	types.UnimplementedQueryServer
 	k *Keeper
 }
 
@@ -68,15 +69,17 @@ func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchange
 	}
 
 	var exchangeRateDecCoins sdk.DecCoins
-	currentHeight := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-	if err := q.k.ExchangeRate.Walk(ctx, nil, func(_ string, exchangeRate types.ExchangeRate) (bool, error) {
-		if currentHeight > exchangeRate.BlockHeight &&
-			currentHeight-exchangeRate.BlockHeight > params.MaxExchangeRateAge {
-			return false, nil
+	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
+		if err := validateExchangeRate(denom, exchangeRate, currentTime, params.MaxExchangeRateAge); err != nil {
+			if errors.Is(err, types.ErrStaleExchangeRate) {
+				return false, nil
+			}
+			return true, err
 		}
 		exchangeRateDecCoins = append(
 			exchangeRateDecCoins,
-			sdk.NewDecCoinFromDec(exchangeRate.Denom, exchangeRate.Rate),
+			sdk.NewDecCoinFromDec(denom, exchangeRate.Rate),
 		)
 		return false, nil
 	}); err != nil {
@@ -95,9 +98,9 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
-	tobinTax, err := q.k.TobinTax.Get(ctx, req.Denom)
+	tobinTax, err := q.k.GetTobinTax(ctx, req.Denom)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
+		if errors.Is(err, types.ErrUnknownDenom) {
 			return nil, status.Errorf(codes.NotFound, "tobin tax not found for denom %s", req.Denom)
 		}
 		return nil, status.Errorf(codes.Internal, "getting tobin tax for denom %s: %v", req.Denom, err)
@@ -108,15 +111,9 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 
 // TobinTaxes queries all active Tobin taxes.
 func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesRequest) (*types.QueryTobinTaxesResponse, error) {
-	var tobinTaxes types.TobinTaxes
-	if err := q.k.TobinTax.Walk(ctx, nil, func(denom string, rate math.LegacyDec) (bool, error) {
-		tobinTaxes = append(tobinTaxes, types.TobinTax{
-			Denom:    denom,
-			TobinTax: rate,
-		})
-		return false, nil
-	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "listing oracle tobin taxes: %v", err)
+	tobinTaxes, err := q.k.GetTobinTaxes(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting oracle tobin taxes: %v", err)
 	}
 
 	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
@@ -134,12 +131,9 @@ func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest
 
 // VoteTargets queries active vote target denoms.
 func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTargetsRequest) (*types.QueryVoteTargetsResponse, error) {
-	var voteTargets []string
-	if err := q.k.TobinTax.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
-		voteTargets = append(voteTargets, denom)
-		return false, nil
-	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "listing oracle vote targets: %v", err)
+	voteTargets, err := q.k.GetVoteTargets(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting oracle vote targets: %v", err)
 	}
 
 	return &types.QueryVoteTargetsResponse{VoteTargets: voteTargets}, nil
@@ -156,8 +150,11 @@ func (q queryServer) ScoreWeight(ctx context.Context, req *types.QueryScoreWeigh
 		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
 	score, err := q.k.ScoreWeight.Get(ctx, valAddr)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return nil, status.Errorf(codes.Internal, "getting score weight for validator %s: %v", valAddr, err)
+	if err != nil {
+		if !errors.Is(err, collections.ErrNotFound) {
+			return nil, status.Errorf(codes.Internal, "getting score weight for validator %s: %v", valAddr, err)
+		}
+		score = math.ZeroInt()
 	}
 
 	return &types.QueryScoreWeightResponse{ScoreWeight: score}, nil

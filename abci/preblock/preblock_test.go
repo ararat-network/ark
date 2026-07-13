@@ -62,16 +62,14 @@ func TestWrappedPreBlockerCallsModuleManagerWhenVoteExtensionsDisabled(t *testin
 	require.Equal(t, 1, fake.called)
 }
 
-func TestWrappedPreBlockerAppliesPricesAndSyncsTobinTaxWhenVoteExtensionsEnabled(t *testing.T) {
+func TestWrappedPreBlockerAppliesPricesAndSyncsVoteTargetsWhenVoteExtensionsEnabled(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	veCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
 	extCommitCodec := abcitestutil.NewMockExtendedCommitCodec(ctrl)
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"uusd": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"uusd"}
 	handler := preblock.NewHandler(
 		log.NewTestLogger(t),
 		keeper,
@@ -104,9 +102,9 @@ func TestWrappedPreBlockerAppliesPricesAndSyncsTobinTaxWhenVoteExtensionsEnabled
 			require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 			return nil
 		})
-	keeper.EXPECT().AddScoreWeight(gomock.Any(), val1, uint64(1)).Return(nil)
-	keeper.EXPECT().AddScoreWeight(gomock.Any(), val2, uint64(1)).Return(nil)
-	keeper.EXPECT().SyncTobinTax(gomock.Any(), voteTargets).Return(nil)
+	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), false).Return(nil)
+	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), false).Return(nil)
+	keeper.EXPECT().SyncVoteTargets(gomock.Any(), voteTargets).Return(nil)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(
 		abcitestutil.NewSDKContext(3, 2, sdk.ExecModeFinalize),

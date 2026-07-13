@@ -2,9 +2,10 @@ package oracle
 
 import (
 	"fmt"
-	"maps"
+	"slices"
 
-	"cosmossdk.io/log/v2"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,104 +14,151 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-func NewVoteAggregator(
-	logger log.Logger,
-) *VoteAggregator {
-	return &VoteAggregator{
-		logger: logger,
-	}
+// AggregationResult contains all consensus and telemetry output from one
+// complete oracle aggregation.
+type AggregationResult struct {
+	Prices           map[string]math.LegacyDec
+	VoteTargets      []string
+	ValidatorReports []ValidatorReport
+
+	scores []validatorScore
 }
 
-// VoteAggregator computes oracle exchange rates and validator scores from
-// decoded vote-extension reports.
-type VoteAggregator struct {
-	logger log.Logger
-
-	// latestValidatorRates stores the rates reported in the latest aggregation
-	// by validator consensus address.
-	latestValidatorRates map[string]map[string]math.LegacyDec
+// ValidatorReport contains one validator's decoded report for telemetry.
+type ValidatorReport struct {
+	Validator   sdk.ConsAddress
+	BlockIDFlag cmtproto.BlockIDFlag
+	Rates       map[string]math.LegacyDec
 }
 
-// aggregateOracleVotes groups submitted oracle rates by denom, selects a
-// reference denom from the denoms that meet the vote threshold, computes
-// weighted-median exchange rates, and returns validator scores for reward/miss
-// accounting.
-func (va *VoteAggregator) aggregateOracleVotes(
-	_ sdk.Context,
+// validatorScore directs oracle rewards and miss accounting to a validator.
+type validatorScore struct {
+	recipient sdk.ConsAddress
+	weight    math.Int
+	missed    bool
+}
+
+// aggregateOracleVotes groups submitted oracle rates by supported denom,
+// selects a reference denom from the denoms that meet raw and overlap quorum,
+// computes weighted-median exchange rates, and returns validator accounting.
+func aggregateOracleVotes(
 	votes []Vote,
 	params oracletypes.Params,
-	voteTargets map[string]math.LegacyDec,
-) (map[string]math.LegacyDec, map[string]validatorScore, error) {
-	// Build validator scores, group submitted rates by denom, and
-	// track total extended-commit voting power and per-validator reported rates.
-	voteMap := make(map[string]denomVotes)
-	scoreMap := make(map[string]validatorScore)
-	validatorRates := make(map[string]map[string]math.LegacyDec)
-	totalPower := math.ZeroInt()
+	voteTargets []string,
+) (AggregationResult, error) {
+	targetDenoms := slices.Clone(voteTargets)
+	slices.Sort(targetDenoms)
+	result := AggregationResult{
+		Prices:           map[string]math.LegacyDec{},
+		VoteTargets:      targetDenoms,
+		ValidatorReports: make([]ValidatorReport, len(votes)),
+		scores:           make([]validatorScore, len(votes)),
+	}
 
-	for _, vote := range votes {
-		totalPower = totalPower.AddRaw(vote.Validator.Power)
+	targetIndexes := make(map[string]int, len(targetDenoms))
+	for i, denom := range targetDenoms {
+		targetIndexes[denom] = i
+	}
+
+	ballots := make([]ballot, len(targetDenoms))
+	allRates := make([]math.LegacyDec, len(targetDenoms)*len(votes))
+	for targetIndex := range ballots {
+		start := targetIndex * len(votes)
+		ballots[targetIndex].rates = allRates[start : start+len(votes)]
+	}
+	var totalPower int64
+
+	for validatorIndex, vote := range votes {
+		// Proposal validation matched this voting power against DecidedLastCommit.
+		totalPower += vote.Validator.Power
+
 		consAddr := sdk.ConsAddress(vote.Validator.Address)
-		consAddrStr := consAddr.String()
-
-		scoreMap[consAddrStr] = newValidatorScore(
-			0,
-			0,
-			consAddr,
-		)
-		validatorRates[consAddrStr] = make(map[string]math.LegacyDec, len(vote.OracleVoteExtension.Rates))
+		result.scores[validatorIndex] = validatorScore{
+			recipient: consAddr,
+			weight:    math.ZeroInt(),
+		}
+		result.ValidatorReports[validatorIndex] = ValidatorReport{
+			Validator:   consAddr,
+			BlockIDFlag: vote.BlockIDFlag,
+			Rates:       make(map[string]math.LegacyDec, len(vote.OracleVoteExtension.Rates)),
+		}
+		submitted := 0
 
 		for denom, rawRate := range vote.OracleVoteExtension.Rates {
 			rate, err := oracleencoding.DecodeRate(rawRate)
 			if err != nil {
-				return nil, nil, fmt.Errorf("decode oracle rate for validator %s denom %q: %w", consAddrStr, denom, err)
+				return AggregationResult{}, fmt.Errorf(
+					"decode oracle rate for validator %s denom %q: %w",
+					consAddr.String(),
+					denom,
+					err,
+				)
 			}
-			dv := newDenomVote(
-				rate,
-				denom,
-				consAddr,
-				uint64(vote.Validator.Power),
-			)
-			if !dv.ExchangeRate.IsPositive() {
-				dv.power = 0
+			result.ValidatorReports[validatorIndex].Rates[denom] = rate
+
+			targetIndex, supported := targetIndexes[denom]
+			if !supported {
+				continue
 			}
 
-			voteMap[denom] = append(voteMap[denom], dv)
-			validatorRates[consAddrStr][denom] = rate
-
-			if _, exists := voteTargets[denom]; exists {
-				// Any submitted target denom counts as participation first. Non-positive
-				// rates are explicit abstentions/outage signals: they do not add quorum
-				// power, but still protect the validator from miss accounting. Positive
-				// out-of-band votes on denoms that pass quorum are handled later.
-				score := scoreMap[consAddrStr]
-				score.WinCount++
-				scoreMap[consAddrStr] = score
+			// Submission protects the validator from participation misses even when
+			// the rate is an explicit non-positive abstention.
+			submitted++
+			if !rate.IsPositive() {
+				continue
 			}
+
+			ballots[targetIndex].add(tallyVote{
+				validator: validatorIndex,
+				rate:      rate,
+				power:     vote.Validator.Power,
+			})
+		}
+
+		result.scores[validatorIndex].missed = submitted != len(targetDenoms)
+	}
+
+	if totalPower <= 0 {
+		return result, nil
+	}
+
+	thresholdPower := params.VoteThreshold.
+		MulInt64(totalPower).
+		Ceil().
+		TruncateInt64()
+
+	passing := make([]int, 0, len(ballots))
+	for targetIndex := range ballots {
+		if ballots[targetIndex].power > 0 && ballots[targetIndex].power >= thresholdPower {
+			passing = append(passing, targetIndex)
 		}
 	}
-	va.latestValidatorRates = validatorRates
 
-	thresholdVotes := params.VoteThreshold.MulInt(totalPower).RoundInt()
-	referenceDenom := pickReferenceDenom(voteMap, voteTargets, thresholdVotes)
-	if referenceDenom == "" {
-		return map[string]math.LegacyDec{}, scoreMap, nil
+	selection := selectReference(passing, targetDenoms, ballots, thresholdPower)
+	if selection.score.index < 0 {
+		return result, nil
 	}
 
-	prices := computePricesAndScores(referenceDenom, voteMap, params.RewardBand, thresholdVotes, scoreMap)
+	result.Prices = computePricesAndScores(
+		selection,
+		targetDenoms,
+		params.RewardBand,
+		result.scores,
+	)
 
-	return prices, scoreMap, nil
+	return result, nil
 }
 
 type referenceDenomScore struct {
+	index        int
 	denom        string
 	priceable    int
 	overlapPower math.Int
-	rawPower     math.Int
+	rawPower     int64
 }
 
 func (s referenceDenomScore) betterThan(other referenceDenomScore) bool {
-	if other.denom == "" {
+	if other.index < 0 {
 		return true
 	}
 	if s.priceable != other.priceable {
@@ -119,145 +167,240 @@ func (s referenceDenomScore) betterThan(other referenceDenomScore) bool {
 	if !s.overlapPower.Equal(other.overlapPower) {
 		return s.overlapPower.GT(other.overlapPower)
 	}
-	if !s.rawPower.Equal(other.rawPower) {
-		return s.rawPower.GT(other.rawPower)
+	if s.rawPower != other.rawPower {
+		return s.rawPower > other.rawPower
 	}
 
 	return s.denom < other.denom
 }
 
-// pickReferenceDenom selects the supported denom that can price the most other
-// passing denoms through validator overlap. It mutates voteMap by removing
-// unsupported or failed-quorum denoms.
-func pickReferenceDenom(
-	voteMap map[string]denomVotes,
-	voteTargets map[string]math.LegacyDec,
-	thresholdVotes math.Int,
-) string {
-	rawPowers := make(map[string]math.Int, len(voteMap))
-	referenceRates := make(map[string]map[string]math.LegacyDec, len(voteMap))
+type pricedTally struct {
+	targetIndex int
+	votes       []tallyVote
+	median      math.LegacyDec
+	price       math.LegacyDec
+}
 
-	for denom := range voteMap {
-		if _, exists := voteTargets[denom]; !exists {
-			delete(voteMap, denom)
+type referenceUpperBound struct {
+	score     referenceDenomScore
+	qualified []bool
+}
+
+type referenceSelection struct {
+	score   referenceDenomScore
+	tallies []pricedTally
+}
+
+// referenceWorkspace owns the cross-rate votes and tally descriptors for one
+// reference candidate. Two workspaces are swapped during selection so the
+// current winner is retained while the other buffer is reused.
+type referenceWorkspace struct {
+	votes   []tallyVote
+	tallies []pricedTally
+}
+
+func (w *referenceWorkspace) reset(voteCapacity, tallyCapacity int) {
+	if cap(w.votes) < voteCapacity {
+		w.votes = make([]tallyVote, 0, voteCapacity)
+	} else {
+		w.votes = w.votes[:0]
+	}
+	if cap(w.tallies) < tallyCapacity {
+		w.tallies = make([]pricedTally, 0, tallyCapacity)
+	} else {
+		w.tallies = w.tallies[:0]
+	}
+}
+
+func (w *referenceWorkspace) crossRate(target, reference ballot) ballot {
+	start := len(w.votes)
+	var power int64
+	w.votes, power = target.appendCrossRates(reference, w.votes)
+
+	return ballot{votes: w.votes[start:], power: power}
+}
+
+// selectReference returns the passing denom that can actually price the most
+// other passing denoms. Directional usable overlap gives an upper bound for
+// each candidate; candidates that could still beat the best result are then
+// evaluated through final median conversion. The winning tallies are retained
+// for scoring so cross ballots are not built twice.
+func selectReference(passing []int, targetDenoms []string, ballots []ballot, thresholdPower int64) referenceSelection {
+	if len(passing) == 0 {
+		return referenceSelection{score: referenceDenomScore{index: -1}}
+	}
+
+	upperBounds := make([]referenceUpperBound, len(passing))
+	qualifiedTargets := make([]bool, len(passing)*len(passing))
+	for i, targetIndex := range passing {
+		start := i * len(passing)
+		upperBounds[i] = referenceUpperBound{
+			score: referenceDenomScore{
+				index:        targetIndex,
+				denom:        targetDenoms[targetIndex],
+				priceable:    1,
+				overlapPower: math.ZeroInt(),
+				rawPower:     ballots[targetIndex].power,
+			},
+			qualified: qualifiedTargets[start : start+len(passing)],
+		}
+		upperBounds[i].qualified[i] = true
+	}
+
+	for i := range passing {
+		for j := i + 1; j < len(passing); j++ {
+			leftPower, rightPower := ballots[passing[i]].crossRatePowers(ballots[passing[j]])
+			if leftPower >= thresholdPower {
+				upperBounds[i].score.priceable++
+				upperBounds[i].score.overlapPower = upperBounds[i].score.overlapPower.AddRaw(leftPower)
+				upperBounds[i].qualified[j] = true
+			}
+			if rightPower >= thresholdPower {
+				upperBounds[j].score.priceable++
+				upperBounds[j].score.overlapPower = upperBounds[j].score.overlapPower.AddRaw(rightPower)
+				upperBounds[j].qualified[i] = true
+			}
 		}
 	}
 
-	for denom, votes := range voteMap {
-		votesPower := math.NewInt(int64(votes.power()))
+	slices.SortFunc(upperBounds, func(left, right referenceUpperBound) int {
+		switch {
+		case left.score.betterThan(right.score):
+			return -1
+		case right.score.betterThan(left.score):
+			return 1
+		default:
+			return 0
+		}
+	})
 
-		// Remove denoms that did not meet quorum to prevent pricing those denoms.
-		if votesPower.IsZero() || votesPower.LT(thresholdVotes) {
-			delete(voteMap, denom)
+	workspaceVoteCapacity := 0
+	for _, targetIndex := range passing {
+		workspaceVoteCapacity += len(ballots[targetIndex].votes)
+	}
+
+	best := referenceSelection{score: referenceDenomScore{index: -1}}
+	var bestWorkspace, candidateWorkspace referenceWorkspace
+	for _, upperBound := range upperBounds {
+		// Actual conversion can only reduce priceable count and qualifying
+		// overlap from this upper bound. Sorted later candidates cannot recover.
+		if !upperBound.score.betterThan(best.score) {
+			break
+		}
+
+		candidate := evaluateReferenceCandidate(
+			upperBound,
+			passing,
+			ballots,
+			thresholdPower,
+			&candidateWorkspace,
+			workspaceVoteCapacity,
+		)
+		if candidate.score.betterThan(best.score) {
+			best = candidate
+			bestWorkspace, candidateWorkspace = candidateWorkspace, bestWorkspace
+		}
+	}
+
+	return best
+}
+
+func evaluateReferenceCandidate(
+	upperBound referenceUpperBound,
+	passing []int,
+	ballots []ballot,
+	thresholdPower int64,
+	workspace *referenceWorkspace,
+	workspaceVoteCapacity int,
+) referenceSelection {
+	workspace.reset(workspaceVoteCapacity, len(passing))
+	upperScore := upperBound.score
+	referenceBallot := ballots[upperScore.index]
+	referenceMedian := referenceBallot.weightedMedian()
+	selection := referenceSelection{
+		score: referenceDenomScore{
+			index:        upperScore.index,
+			denom:        upperScore.denom,
+			priceable:    1,
+			overlapPower: math.ZeroInt(),
+			rawPower:     upperScore.rawPower,
+		},
+		tallies: workspace.tallies,
+	}
+
+	for passingIndex, targetIndex := range passing {
+		if !upperBound.qualified[passingIndex] {
+			continue
+		}
+		if targetIndex == upperScore.index {
+			selection.tallies = append(selection.tallies, pricedTally{
+				targetIndex: targetIndex,
+				votes:       referenceBallot.votes,
+				median:      referenceMedian,
+				price:       referenceMedian,
+			})
 			continue
 		}
 
-		rawPowers[denom] = votesPower
-		referenceRates[denom] = votes.validatorMap()
+		tallyBallot := workspace.crossRate(ballots[targetIndex], referenceBallot)
+		if tallyBallot.power < thresholdPower {
+			continue
+		}
+
+		median := tallyBallot.weightedMedian()
+		price, ok := safePositiveQuotient(referenceMedian, median)
+		if !ok {
+			continue
+		}
+
+		selection.score.priceable++
+		selection.score.overlapPower = selection.score.overlapPower.AddRaw(tallyBallot.power)
+		selection.tallies = append(selection.tallies, pricedTally{
+			targetIndex: targetIndex,
+			votes:       tallyBallot.votes,
+			median:      median,
+			price:       price,
+		})
 	}
+	workspace.tallies = selection.tallies
 
-	best := referenceDenomScore{}
-	for denom := range voteMap {
-		score := referenceDenomScore{
-			denom:        denom,
-			priceable:    1,
-			overlapPower: math.ZeroInt(),
-			rawPower:     rawPowers[denom],
-		}
-
-		for otherDenom, otherVotes := range voteMap {
-			if otherDenom == denom {
-				continue
-			}
-
-			overlapPower := math.NewInt(int64(otherVotes.overlapPower(referenceRates[denom])))
-			if overlapPower.GTE(thresholdVotes) {
-				score.priceable++
-				score.overlapPower = score.overlapPower.Add(overlapPower)
-			}
-		}
-
-		if score.betterThan(best) {
-			best = score
-		}
-	}
-
-	return best.denom
+	return selection
 }
 
-// computePricesAndScores computes final exchange rates from passing denom
-// votes and updates validator reward weights.
+// withinSpread reports whether rate is within the inclusive distance from the
+// median without constructing overflow-prone median +/- spread endpoints.
+func withinSpread(rate, median, spread math.LegacyDec) bool {
+	if rate.GTE(median) {
+		return rate.Sub(median).LTE(spread)
+	}
+
+	return median.Sub(rate).LTE(spread)
+}
+
+// computePricesAndScores applies fixed-band reward and miss accounting to the
+// already evaluated winning reference tallies.
 func computePricesAndScores(
-	referenceDenom string,
-	voteMap map[string]denomVotes,
+	selection referenceSelection,
+	targetDenoms []string,
 	rewardBand math.LegacyDec,
-	thresholdVotes math.Int,
-	scoreMap map[string]validatorScore,
+	scores []validatorScore,
 ) map[string]math.LegacyDec {
-	referenceVotes := voteMap[referenceDenom]
-	referenceRates := referenceVotes.validatorMap()
-	referenceMedian := referenceVotes.weightedMedian()
+	halfRewardBand := rewardBand.QuoInt64(2)
+	prices := make(map[string]math.LegacyDec, len(selection.tallies))
 
-	// Calculate exchange rates using the reference median.
-	prices := make(map[string]math.LegacyDec)
-	for denom, votes := range voteMap {
-		// Convert non-reference denom votes to cross exchange rates.
-		if denom != referenceDenom {
-			votes = votes.crossRate(referenceRates)
-			if math.NewInt(int64(votes.power())).LT(thresholdVotes) {
-				continue
+	for _, tally := range selection.tallies {
+		spread := tally.median.Mul(halfRewardBand)
+		for _, vote := range tally.votes {
+			score := &scores[vote.validator]
+			if withinSpread(vote.rate, tally.median, spread) {
+				score.weight = score.weight.AddRaw(vote.power)
+			} else {
+				score.missed = true
 			}
 		}
 
-		// Get the weighted median of the current exchange rates.
-		exchangeRate := votes.weightedMedian()
-		standardDeviation := votes.standardDeviation(exchangeRate)
-		rewardSpread := exchangeRate.Mul(rewardBand.QuoInt64(2))
-
-		if standardDeviation.GT(rewardSpread) {
-			rewardSpread = standardDeviation
-		}
-
-		for _, vote := range votes {
-			// Non-positive votes are abstains after original vote parsing or cross-rate
-			// conversion. They should not earn weight, but they still count as submitted.
-			if !vote.ExchangeRate.IsPositive() {
-				continue
-			}
-			voter := vote.Voter.String()
-			score := scoreMap[voter]
-			// Reward validators whose vote was within the reward band.
-			if vote.ExchangeRate.GTE(exchangeRate.Sub(rewardSpread)) &&
-				vote.ExchangeRate.LTE(exchangeRate.Add(rewardSpread)) {
-				score.Weight += vote.power
-			} else if score.WinCount > 0 {
-				// This denom passed quorum, so an out-of-band positive vote should not
-				// protect the validator from miss counts for this target.
-				score.WinCount--
-			}
-			scoreMap[voter] = score
-		}
-
-		// Convert the cross rate back to the denom's exchange rate.
-		if denom != referenceDenom {
-			exchangeRate = referenceMedian.Quo(exchangeRate)
-		}
-		prices[denom] = exchangeRate
+		prices[targetDenoms[tally.targetIndex]] = tally.price
 	}
 
 	return prices
-}
-
-// GetPriceForValidator gets the rates reported by a validator in the latest
-// aggregation.
-func (va *VoteAggregator) GetPriceForValidator(validator sdk.ConsAddress) map[string]math.LegacyDec {
-	rates, ok := va.latestValidatorRates[validator.String()]
-	if !ok {
-		return nil
-	}
-
-	reportedRates := make(map[string]math.LegacyDec, len(rates))
-	maps.Copy(reportedRates, rates)
-
-	return reportedRates
 }

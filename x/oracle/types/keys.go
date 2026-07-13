@@ -15,5 +15,6 @@ var (
 	ExchangeRateKey = collections.NewPrefix(1)
 	ScoreWeightKey  = collections.NewPrefix(2)
 	MissCountKey    = collections.NewPrefix(3)
-	TobinTaxKey     = collections.NewPrefix(4)
+	VoteTargetsKey  = collections.NewPrefix(4)
+	AccountingKey   = collections.NewPrefix(5)
 )

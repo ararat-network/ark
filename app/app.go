@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
@@ -99,6 +100,11 @@ type ArkApp struct {
 
 	// simulation manager
 	sm *module.SimulationManager
+
+	// app-owned oracle ABCI and client lifecycle.
+	oracleRuntime *oracleRuntime
+	closeOnce     sync.Once
+	closeErr      error
 }
 
 func init() {
@@ -184,14 +190,14 @@ func NewArkApp(
 	// }
 	// baseAppOptions = append(baseAppOptions, prepareOpt)
 
-	// create and set dummy vote extension handler
-	voteExtOp := func(bApp *baseapp.BaseApp) {
-		voteExtHandler := NewVoteExtensionHandler()
-		voteExtHandler.SetHandlers(bApp)
-	}
-	baseAppOptions = append(baseAppOptions, voteExtOp, baseapp.SetOptimisticExecution())
+	baseAppOptions = append(baseAppOptions, baseapp.SetOptimisticExecution())
 
 	app.App = appBuilder.Build(db, baseAppOptions...)
+	oracleRuntime, err := newOracleRuntime(app, appOpts, logger)
+	if err != nil {
+		panic(err)
+	}
+	app.oracleRuntime = oracleRuntime
 
 	// register streaming services
 	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {
@@ -247,6 +253,8 @@ func NewArkApp(
 		// want to panic here instead of logging a warning.
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
+
+	app.oracleRuntime.start()
 
 	return app
 }

@@ -1,10 +1,11 @@
 package oracle
 
 import (
+	"slices"
+
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -15,9 +16,6 @@ import (
 
 // PriceApplier applies prices derived from vote extensions to state.
 type PriceApplier struct {
-	// va is a VoteAggregator that is used to aggregate votes into prices.
-	va *VoteAggregator
-
 	// ok is the oracle keeper that is used to write prices to state.
 	ok arkabcitypes.OracleKeeper
 
@@ -31,14 +29,12 @@ type PriceApplier struct {
 
 // NewPriceApplier returns a new PriceApplier.
 func NewPriceApplier(
-	va *VoteAggregator,
 	ok arkabcitypes.OracleKeeper,
 	voteExtensionCodec codec.VoteExtensionCodec,
 	extendedCommitCodec codec.ExtendedCommitCodec,
 	logger log.Logger,
 ) *PriceApplier {
 	return &PriceApplier{
-		va:                  va,
 		ok:                  ok,
 		logger:              logger,
 		voteExtensionCodec:  voteExtensionCodec,
@@ -46,11 +42,10 @@ func NewPriceApplier(
 	}
 }
 
-// ApplyPricesFromVoteExtensions derives aggregate prices from vote extensions
-// using the VoteAggregator. If a price exists for an asset, it is written to
-// state. Aggregated prices and vote targets are returned on success; otherwise
-// an error is returned with nil maps.
-func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (map[string]math.LegacyDec, map[string]math.LegacyDec, error) {
+// ApplyPricesFromVoteExtensions derives aggregate prices from vote extensions.
+// If a price exists for an asset, it is written to state. The complete
+// aggregation result is returned for state synchronization and telemetry.
+func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (AggregationResult, error) {
 	// If vote extensions have been enabled, the extended commit info - which
 	// contains the vote extensions - must be included in the request.
 	votes, err := GetOracleVotes(req.Txs, pa.voteExtensionCodec, pa.extendedCommitCodec)
@@ -62,7 +57,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, OracleKeeperError{Err: err}
+		return AggregationResult{}, OracleKeeperError{Err: err}
 	}
 
 	pa.logger.Debug(
@@ -79,7 +74,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, err
+		return AggregationResult{}, err
 	}
 	voteTargets, err := pa.ok.GetVoteTargets(ctx)
 	if err != nil {
@@ -89,11 +84,11 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, err
+		return AggregationResult{}, err
 	}
 
 	// Aggregate all oracle vote extensions into a single set of prices.
-	prices, scoreMap, err := pa.va.aggregateOracleVotes(ctx, votes, params, voteTargets)
+	result, err := aggregateOracleVotes(votes, params, voteTargets)
 	if err != nil {
 		pa.logger.Error(
 			"failed to aggregate oracle votes",
@@ -101,10 +96,17 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 			"err", err,
 		)
 
-		return nil, nil, PriceAggregationError{Err: err}
+		return AggregationResult{}, PriceAggregationError{Err: err}
 	}
 
-	for denom, price := range prices {
+	priceDenoms := make([]string, 0, len(result.Prices))
+	for denom := range result.Prices {
+		priceDenoms = append(priceDenoms, denom)
+	}
+	slices.Sort(priceDenoms)
+
+	for _, denom := range priceDenoms {
+		price := result.Prices[denom]
 		exchangeRate := oracletypes.NewExchangeRate(
 			denom,
 			price,
@@ -119,7 +121,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 				"err", err,
 			)
 
-			return nil, nil, OracleKeeperError{Err: err}
+			return AggregationResult{}, OracleKeeperError{Err: err}
 		}
 
 		pa.logger.Debug(
@@ -130,37 +132,18 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 	}
 
 	// Update scores in oracle.
-	for validator, score := range scoreMap {
-		if err := pa.ok.AddScoreWeight(ctx, score.Recipient, score.Weight); err != nil {
+	for _, score := range result.scores {
+		if err := pa.ok.RecordVoteAccounting(ctx, score.recipient, score.weight, score.missed); err != nil {
 			pa.logger.Error(
-				"failed to set score",
+				"failed to record vote accounting",
 				"height", req.Height,
-				"validator", validator,
+				"validator", score.recipient.String(),
 				"err", err,
 			)
 
-			return nil, nil, OracleKeeperError{Err: err}
-		}
-
-		if int(score.WinCount) != len(voteTargets) {
-			if err := pa.ok.IncrementMissCount(ctx, score.Recipient); err != nil {
-				pa.logger.Error(
-					"failed to increment miss count",
-					"height", req.Height,
-					"validator", validator,
-					"err", err,
-				)
-
-				return nil, nil, OracleKeeperError{Err: err}
-			}
+			return AggregationResult{}, OracleKeeperError{Err: err}
 		}
 	}
 
-	return prices, voteTargets, nil
-}
-
-// GetPricesForValidator gets the rates reported by a validator in the latest
-// aggregation.
-func (pa *PriceApplier) GetPricesForValidator(validator sdk.ConsAddress) map[string]math.LegacyDec {
-	return pa.va.GetPriceForValidator(validator)
+	return result, nil
 }

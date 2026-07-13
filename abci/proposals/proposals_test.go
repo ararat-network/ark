@@ -2,6 +2,7 @@ package proposals_test
 
 import (
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,7 +11,6 @@ import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -22,6 +22,7 @@ import (
 func TestPrepareProposalHandler(t *testing.T) {
 	appTx1 := []byte("tx1")
 	appTx2 := []byte("tx2")
+	largeAppTx := make([]byte, 92)
 	commitBz := []byte("commit")
 	validVote := abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, []byte("ve1"))
 
@@ -29,9 +30,8 @@ func TestPrepareProposalHandler(t *testing.T) {
 		name                 string
 		ctx                  sdk.Context
 		req                  *cometabci.RequestPrepareProposal
-		setup                func(*testing.T, *abcitestutil.MockVoteExtensionCodec, *abcitestutil.MockExtendedCommitCodec)
+		setup                func(*testing.T, *abcitestutil.MockExtendedCommitCodec)
 		prepare              sdk.PrepareProposalHandler
-		opts                 []proposals.Option
 		expectErr            bool
 		expectNilResponse    bool
 		expectedTxs          [][]byte
@@ -79,10 +79,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 				Txs:        [][]byte{appTx1, appTx2},
 				MaxTxBytes: 100,
 			},
-			setup: func(_ *testing.T, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
-				veCodec.EXPECT().Decode(validVote.VoteExtension).Return(abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
-				}), nil)
+			setup: func(_ *testing.T, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
 				extCommitCodec.EXPECT().Encode(cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{validVote},
 				}).Return(commitBz, nil)
@@ -92,35 +89,31 @@ func TestPrepareProposalHandler(t *testing.T) {
 			},
 			expectedTxs:          [][]byte{commitBz, appTx1, appTx2},
 			expectedPrepareTxs:   [][]byte{appTx1, appTx2},
-			expectedMaxTxBytes:   94,
+			expectedMaxTxBytes:   92,
 			expectedWrappedCalls: 1,
 		},
 		{
-			name: "retain option passes injected commit info to wrapped handler",
+			name: "protobuf overhead excludes transaction that raw size would admit",
 			ctx:  abcitestutil.NewSDKContext(3, 2),
 			req: &cometabci.RequestPrepareProposal{
 				Height: 3,
 				LocalLastCommit: cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{validVote},
 				},
-				Txs:        [][]byte{appTx1},
+				Txs:        [][]byte{largeAppTx},
 				MaxTxBytes: 100,
 			},
-			setup: func(_ *testing.T, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
-				veCodec.EXPECT().Decode(validVote.VoteExtension).Return(abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
-				}), nil)
+			setup: func(_ *testing.T, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
 				extCommitCodec.EXPECT().Encode(cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{validVote},
 				}).Return(commitBz, nil)
 			},
 			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-				return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+				return &cometabci.ResponsePrepareProposal{}, nil
 			},
-			opts:                 []proposals.Option{proposals.RetainOracleDataInWrappedProposalHandler()},
-			expectedTxs:          [][]byte{commitBz, appTx1},
-			expectedPrepareTxs:   [][]byte{commitBz, appTx1},
-			expectedMaxTxBytes:   94,
+			expectedTxs:          [][]byte{commitBz},
+			expectedPrepareTxs:   [][]byte{largeAppTx},
+			expectedMaxTxBytes:   92,
 			expectedWrappedCalls: 1,
 		},
 		{
@@ -132,12 +125,9 @@ func TestPrepareProposalHandler(t *testing.T) {
 					Votes: []cometabci.ExtendedVoteInfo{validVote},
 				},
 				Txs:        [][]byte{appTx1},
-				MaxTxBytes: 5,
+				MaxTxBytes: 7,
 			},
-			setup: func(_ *testing.T, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
-				veCodec.EXPECT().Decode(validVote.VoteExtension).Return(abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
-				}), nil)
+			setup: func(_ *testing.T, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
 				extCommitCodec.EXPECT().Encode(cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{validVote},
 				}).Return(commitBz, nil)
@@ -153,11 +143,16 @@ func TestPrepareProposalHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			var originalMaxTxBytes int64
+			var originalTxs [][]byte
+			if tc.req != nil {
+				originalMaxTxBytes = tc.req.MaxTxBytes
+				originalTxs = slices.Clone(tc.req.Txs)
+			}
 			ctrl := gomock.NewController(t)
-			veCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
 			extCommitCodec := abcitestutil.NewMockExtendedCommitCodec(ctrl)
 			if tc.setup != nil {
-				tc.setup(t, veCodec, extCommitCodec)
+				tc.setup(t, extCommitCodec)
 			}
 
 			wrappedCalls := 0
@@ -177,9 +172,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 				prepare,
 				acceptProcessProposal,
 				ve.NoOpValidateVoteExtensions,
-				veCodec,
 				extCommitCodec,
-				tc.opts...,
 			)
 
 			resp, err := handler.PrepareProposalHandler()(tc.ctx, tc.req)
@@ -195,6 +188,10 @@ func TestPrepareProposalHandler(t *testing.T) {
 				require.Equal(t, tc.expectedTxs, resp.Txs)
 			}
 			require.Equal(t, tc.expectedWrappedCalls, wrappedCalls)
+			if tc.req != nil {
+				require.Equal(t, originalMaxTxBytes, tc.req.MaxTxBytes)
+				require.Equal(t, originalTxs, tc.req.Txs)
+			}
 		})
 	}
 }
@@ -212,10 +209,9 @@ func TestProcessProposalHandler(t *testing.T) {
 		name                 string
 		ctx                  sdk.Context
 		req                  *cometabci.RequestProcessProposal
-		setup                func(*testing.T, *abcitestutil.MockVoteExtensionCodec, *abcitestutil.MockExtendedCommitCodec)
+		setup                func(*testing.T, *abcitestutil.MockExtendedCommitCodec)
 		process              sdk.ProcessProposalHandler
 		validate             ve.ValidateVoteExtensionsFn
-		opts                 []proposals.Option
 		expectErr            bool
 		expectNilResponse    bool
 		expectedStatus       cometabci.ResponseProcessProposal_ProposalStatus
@@ -267,11 +263,8 @@ func TestProcessProposalHandler(t *testing.T) {
 				Height: 3,
 				Txs:    [][]byte{commitBz, appTx},
 			},
-			setup: func(_ *testing.T, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
+			setup: func(_ *testing.T, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
 				extCommitCodec.EXPECT().Decode(commitBz).Return(commitInfo, nil)
-				veCodec.EXPECT().Decode([]byte("ve1")).Return(abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
-				}), nil)
 			},
 			process: func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
 				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
@@ -283,36 +276,13 @@ func TestProcessProposalHandler(t *testing.T) {
 			expectedWrappedCalls: 1,
 		},
 		{
-			name: "retain option keeps injected commit info visible to wrapped handler",
-			ctx:  abcitestutil.NewSDKContext(3, 2),
-			req: &cometabci.RequestProcessProposal{
-				Height: 3,
-				Txs:    [][]byte{commitBz, appTx},
-			},
-			setup: func(_ *testing.T, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
-				extCommitCodec.EXPECT().Decode(commitBz).Return(commitInfo, nil)
-				veCodec.EXPECT().Decode([]byte("ve1")).Return(abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
-				}), nil)
-			},
-			process: func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
-			},
-			validate:             ve.NoOpValidateVoteExtensions,
-			opts:                 []proposals.Option{proposals.RetainOracleDataInWrappedProposalHandler()},
-			expectedStatus:       cometabci.ResponseProcessProposal_ACCEPT,
-			expectedProcessTxs:   [][]byte{commitBz, appTx},
-			expectedFinalTxs:     [][]byte{commitBz, appTx},
-			expectedWrappedCalls: 1,
-		},
-		{
 			name: "validation failure rejects proposal before wrapped handler",
 			ctx:  abcitestutil.NewSDKContext(3, 2),
 			req: &cometabci.RequestProcessProposal{
 				Height: 3,
 				Txs:    [][]byte{commitBz, appTx},
 			},
-			setup: func(_ *testing.T, _ *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
+			setup: func(_ *testing.T, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
 				extCommitCodec.EXPECT().Decode(commitBz).Return(commitInfo, nil)
 			},
 			process: rejectUnexpectedProcessProposal(t),
@@ -331,10 +301,9 @@ func TestProcessProposalHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			veCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
 			extCommitCodec := abcitestutil.NewMockExtendedCommitCodec(ctrl)
 			if tc.setup != nil {
-				tc.setup(t, veCodec, extCommitCodec)
+				tc.setup(t, extCommitCodec)
 			}
 
 			wrappedCalls := 0
@@ -350,9 +319,7 @@ func TestProcessProposalHandler(t *testing.T) {
 				passThroughPrepareProposal,
 				process,
 				tc.validate,
-				veCodec,
 				extCommitCodec,
-				tc.opts...,
 			)
 
 			resp, err := handler.ProcessProposalHandler()(tc.ctx, tc.req)

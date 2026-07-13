@@ -1,11 +1,11 @@
 package proposals
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/log/v2"
 
@@ -20,14 +20,12 @@ import (
 // Handler is responsible primarily for:
 //  1. Filling a proposal with transactions.
 //  2. Injecting vote extensions into the proposal (if vote extensions are enabled).
-//  3. Verifying that the vote extensions injected are valid.
+//  3. Verifying that the injected extended commit is complete and authenticated.
 //
-// To verify the validity of the vote extensions, the proposal handler will
-// call the validateVoteExtensionsFn. This function is responsible for verifying
-// that the vote extensions included in the proposal are valid and compose a
-// super-majority of signatures and vote extensions for the current block.
-// The given VoteExtensionCodec must be the same used by the vote extension handler,
-// the extended commit is decoded in accordance with the given ExtendedCommitCodec.
+// The proposal handler calls validateVoteExtensionsFn to verify that the
+// injected commit matches consensus and contains a super-majority of valid
+// vote-extension signatures for the current block.
+// The extended commit is decoded in accordance with the given ExtendedCommitCodec.
 type Handler struct {
 	logger log.Logger
 
@@ -40,16 +38,8 @@ type Handler struct {
 	// validateVoteExtensionsFn validates the vote extensions included in a proposal.
 	validateVoteExtensionsFn ve.ValidateVoteExtensionsFn
 
-	// voteExtensionCodec is used to decode vote extensions.
-	voteExtensionCodec codec.VoteExtensionCodec
-
 	// extendedCommitCodec is used to decode extended commit info.
 	extendedCommitCodec codec.ExtendedCommitCodec
-
-	// retainOracleDataInWrappedHandler is a flag that determines whether the
-	// proposal handler should pass the injected extended commit info to the
-	// wrapped proposal handler.
-	retainOracleDataInWrappedHandler bool
 }
 
 // NewHandler returns a new Handler.
@@ -58,25 +48,15 @@ func NewHandler(
 	prepareProposalHandler sdk.PrepareProposalHandler,
 	processProposalHandler sdk.ProcessProposalHandler,
 	validateVoteExtensionsFn ve.ValidateVoteExtensionsFn,
-	voteExtensionCodec codec.VoteExtensionCodec,
 	extendedCommitInfoCodec codec.ExtendedCommitCodec,
-	opts ...Option,
 ) *Handler {
-	handler := &Handler{
+	return &Handler{
 		logger:                   logger,
 		prepareProposalHandler:   prepareProposalHandler,
 		processProposalHandler:   processProposalHandler,
 		validateVoteExtensionsFn: validateVoteExtensionsFn,
-		voteExtensionCodec:       voteExtensionCodec,
 		extendedCommitCodec:      extendedCommitInfoCodec,
 	}
-
-	// apply options
-	for _, opt := range opts {
-		opt(handler)
-	}
-
-	return handler
 }
 
 // PrepareProposalHandler returns a PrepareProposalHandler that will be called
@@ -106,6 +86,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			}
 			return nil, err
 		}
+		wrappedReq := req
 
 		// If vote extensions are enabled, the proposer must inject the previous
 		// block's extended commit info into the proposal.
@@ -117,11 +98,13 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				"vote_extensions_enabled", voteExtensionsEnabled,
 			)
 
-			// Get pruned ExtendedCommitInfo from LocalLastCommit.
-			extInfo, err := h.PruneAndValidateExtendedCommitInfo(ctx, req.LocalLastCommit)
-			if err != nil {
+			// Preserve and validate the consensus-provided extended commit. Payload
+			// classification happens later in preblock; the proposer must not erase
+			// or rewrite authenticated reports.
+			extInfo := req.LocalLastCommit
+			if err := h.ValidateExtendedCommitInfo(ctx, req.Height, extInfo); err != nil {
 				h.logger.Error(
-					"failed to prune extended commit info",
+					"failed to validate extended commit info",
 					"height", req.Height,
 					"local_last_commit", req.LocalLastCommit,
 					"err", err,
@@ -149,13 +132,10 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
-			// Adjust req.MaxTxBytes so the wrapped proposal handler does not
-			// reap too many txs from the mempool.
-			extInfoBzSize := int64(len(extInfoBz))
-			if extInfoBzSize <= req.MaxTxBytes {
-				// Reserve bytes for the vote-extension transaction.
-				req.MaxTxBytes -= extInfoBzSize
-			} else {
+			// Give the wrapped handler only the remaining protobuf transaction
+			// budget. Use a request copy so this wrapper does not mutate its input.
+			extInfoBzSize := cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{extInfoBz})
+			if extInfoBzSize > req.MaxTxBytes {
 				h.logger.Error("VE size consumes greater than entire block",
 					"extInfoBzSize", extInfoBzSize,
 					"MaxTxBytes", req.MaxTxBytes)
@@ -163,15 +143,14 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
-			// Determine whether the wrapped prepare proposal handler should retain the extended commit info.
-			if h.retainOracleDataInWrappedHandler {
-				req.Txs = append([][]byte{extInfoBz}, req.Txs...) // prepend the VE Tx
-			}
+			wrappedReqCopy := *req
+			wrappedReqCopy.MaxTxBytes -= extInfoBzSize
+			wrappedReq = &wrappedReqCopy
 		}
 
 		// Build the proposal. Get the duration that the wrapped prepare proposal handler executed for.
 		wrappedPrepareProposalStartTime := time.Now()
-		resp, err = h.prepareProposalHandler(ctx, req)
+		resp, err = h.prepareProposalHandler(ctx, wrappedReq)
 		wrappedPrepareProposalLatency = time.Since(wrappedPrepareProposalStartTime)
 		if err != nil {
 			h.logger.Error("failed to prepare proposal", "err", err)
@@ -184,8 +163,11 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		}
 		h.logger.Debug("wrapped prepareProposalHandler produced response ", "txs", len(resp.Txs))
 
-		// Inject the vote-extension transaction, if present, and resize the response txs to respect req.MaxTxBytes.
-		resp.Txs = h.injectAndResize(resp.Txs, extInfoBz, req.MaxTxBytes+int64(len(extInfoBz)))
+		// The wrapped handler was budgeted without the extended commit, so prepend
+		// it exactly once after the handler returns.
+		if voteExtensionsEnabled {
+			resp.Txs = append([][]byte{extInfoBz}, resp.Txs...)
+		}
 
 		h.logger.Debug(
 			"prepared proposal",
@@ -195,38 +177,6 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 
 		return resp, nil
 	}
-}
-
-// injectAndResize returns a tx array containing the injectTx at the beginning followed by appTxs.
-// The returned transaction array is bounded by maxSizeBytes, and the function is idempotent meaning the
-// injectTx will only appear once regardless of how many times you attempt to inject it.
-// If injectTx is large enough, all originalTxs may end up being excluded from the returned tx array.
-func (h *Handler) injectAndResize(appTxs [][]byte, injectTx []byte, maxSizeBytes int64) [][]byte {
-	var (
-		returnedTxs   [][]byte
-		consumedBytes int64
-	)
-
-	// If vote extensions are enabled and the injected tx is not already first, inject it here.
-	if len(injectTx) != 0 && (len(appTxs) < 1 || !bytes.Equal(appTxs[0], injectTx)) {
-		injectBytes := int64(len(injectTx))
-		// Ensure the injected tx is in the response if there is room. The vote
-		// extension payload should be relatively stable, so MaxTxBytes should be
-		// configured with enough headroom.
-		if injectBytes <= maxSizeBytes {
-			consumedBytes += injectBytes
-			returnedTxs = append(returnedTxs, injectTx)
-		}
-	}
-	// Add as many app txs as possible within maxSizeBytes.
-	for _, tx := range appTxs {
-		consumedBytes += int64(len(tx))
-		if consumedBytes > maxSizeBytes {
-			return returnedTxs
-		}
-		returnedTxs = append(returnedTxs, tx)
-	}
-	return returnedTxs
 }
 
 // ProcessProposalHandler returns a ProcessProposalHandler that will be called
@@ -262,9 +212,7 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			"vote_extensions_enabled", voteExtensionsEnabled,
 		)
 
-		// Save the injected tx so it can be restored if it is removed before the
-		// wrapped proposal handler runs.
-		var injectedTx []byte
+		wrappedReq := req
 
 		if voteExtensionsEnabled {
 			// Ensure that the commit info was correctly injected into the proposal.
@@ -307,27 +255,22 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			// Observe the size of the extended commit info.
 			arkmetrics.ObserveMessageSize(arkmetrics.ExtendedCommit, len(extCommitBz))
 
-			// Remove the extended commit info from the proposal if required.
-			if !h.retainOracleDataInWrappedHandler {
-				injectedTx = req.Txs[arkabci.OracleInfoIndex]
-				req.Txs = req.Txs[arkabci.NumInjectedTxs:]
-			}
+			// The injected commit is protocol metadata, not an SDK transaction.
+			// Remove it from a request copy before invoking the wrapped handler.
+			wrappedReqCopy := *req
+			wrappedReqCopy.Txs = req.Txs[arkabci.NumInjectedTxs:]
+			wrappedReq = &wrappedReqCopy
 		}
 
 		// Call the wrapped process proposal handler.
 		wrappedProcessProposalStartTime := time.Now()
-		resp, err = h.processProposalHandler(ctx, req)
+		resp, err = h.processProposalHandler(ctx, wrappedReq)
 		wrappedProcessProposalLatency = time.Since(wrappedProcessProposalStartTime)
 		if err != nil {
 			err = arkabci.WrappedHandlerError{
 				Handler: arkmetrics.ProcessProposal,
 				Err:     err,
 			}
-		}
-
-		if !h.retainOracleDataInWrappedHandler && injectedTx != nil {
-			// Re-inject the extended commit info if it was removed before calling the wrapped handler.
-			req.Txs = append([][]byte{injectedTx}, req.Txs...)
 		}
 
 		return resp, err

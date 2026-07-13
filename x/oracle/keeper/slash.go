@@ -14,7 +14,7 @@ import (
 )
 
 // SettleSlash slashes validators below the minimum valid vote rate.
-func (k Keeper) SettleSlash(ctx context.Context) error {
+func (k Keeper) SettleSlash(ctx context.Context, slashWindowBlocks uint64) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := sdkCtx.BlockHeight()
 	distributionHeight := height - sdk.ValidatorUpdateDelay - 1
@@ -25,16 +25,16 @@ func (k Keeper) SettleSlash(ctx context.Context) error {
 	}
 
 	powerReduction := k.stakingKeeper.PowerReduction(ctx)
-	slashWindow := math.LegacyNewDec(int64(params.SlashWindow))
+	slashWindow := math.LegacyNewDecFromInt(math.NewIntFromUint64(slashWindowBlocks))
 	if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, missCount uint64) (bool, error) {
 		// Cap missed votes at the slash window.
-		if missCount > params.SlashWindow {
-			missCount = params.SlashWindow
+		if missCount > slashWindowBlocks {
+			missCount = slashWindowBlocks
 		}
 
 		// validVoteRate = (slashWindow - missCount) / slashWindow.
 		validVoteRate := slashWindow.
-			Sub(math.LegacyNewDec(int64(missCount))).
+			Sub(math.LegacyNewDecFromInt(math.NewIntFromUint64(missCount))).
 			Quo(slashWindow)
 
 		// Slash and jail validators below the minimum valid vote rate.
@@ -47,18 +47,21 @@ func (k Keeper) SettleSlash(ctx context.Context) error {
 			if err != nil {
 				return true, fmt.Errorf("getting validator %s: %w", valAddr, err)
 			}
-			if validator == nil || !validator.IsBonded() || validator.IsJailed() {
+			if validator == nil || validator.IsUnbonded() {
 				return false, nil
 			}
 			consAddr, err := validator.GetConsAddr()
 			if err != nil {
 				return true, fmt.Errorf("getting consensus address for validator %s: %w", valAddr, err)
 			}
-			slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, validator.GetConsensusPower(powerReduction), params.SlashFraction)
+			consensusPower := sdk.TokensToConsensusPower(validator.GetTokens(), powerReduction)
+			slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, consensusPower, params.SlashFraction)
 			if err != nil {
 				return true, fmt.Errorf("failed to slash validator %s: %w", valAddr, err)
-			} else if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
-				return true, fmt.Errorf("slashed validator %s, but failed to jail: %w", valAddr, err)
+			} else if !validator.IsJailed() {
+				if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
+					return true, fmt.Errorf("slashed validator %s, but failed to jail: %w", valAddr, err)
+				}
 			}
 
 			sdkCtx.EventManager().EmitEvent(

@@ -22,9 +22,24 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated MissCount miss_counts = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated TobinTax tobin_taxes = 5
+  VoteTargetState vote_targets = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  AccountingState accounting = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
+
+// AccountingState defines the active reward and slashing periods. Params may
+// contain newly approved windows while accounting finishes the current period.
+message AccountingState {
+  uint64 reward_window = 1;
+  uint64 reward_distribution_window = 2;
+  uint64 reward_window_start_height = 3;
+  uint64 slash_window = 4;
+  uint64 slash_window_start_height = 5;
+}
+
+// VoteTargetState defines the staged denoms validators should report.
+message VoteTargetState { repeated string denoms = 1; }
 
 // ExchangeRate - struct to store interpreted exchange rates data to store
 message ExchangeRate {
@@ -35,7 +50,7 @@ message ExchangeRate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // BlockTimestamp tracks the block height associated with this price update.
+  // BlockTimestamp tracks the block time associated with this price update.
   // We include block timestamp alongside the price to ensure that smart
   // contracts and applications are not utilizing stale oracle prices
   google.protobuf.Timestamp block_timestamp = 3
@@ -50,7 +65,12 @@ message ExchangeRate {
 message ScoreWeight {
   string validator_address = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  uint64 score_weight = 2;
+  string score_weight = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MissCount defines a miss count and validator address pair used in

@@ -19,10 +19,9 @@ import (
 type OracleKeeper interface {
 	GetParams(ctx context.Context) (oracletypes.Params, error)
 	SetExchangeRateWithEvent(ctx context.Context, exchangeRate oracletypes.ExchangeRate) error
-	AddScoreWeight(ctx context.Context, validator sdk.ConsAddress, scoreWeight uint64) error
-	IncrementMissCount(ctx context.Context, validator sdk.ConsAddress) error
-	GetVoteTargets(ctx context.Context) (map[string]math.LegacyDec, error)
-	SyncTobinTax(ctx context.Context, oldTobinTaxes map[string]math.LegacyDec) error
+	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, scoreWeight math.Int, missed bool) error
+	GetVoteTargets(ctx context.Context) ([]string, error)
+	SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error
 }
 
 // OracleClient defines the interface that must be fulfilled by the connect client.

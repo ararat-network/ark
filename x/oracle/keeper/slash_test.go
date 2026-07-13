@@ -18,6 +18,7 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 		missingValidator bool
 		missingErr       bool
 		expectSlash      bool
+		expectJail       bool
 	}{
 		{
 			name:        "slashes bonded validator below min valid rate",
@@ -25,6 +26,7 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			minValid:    math.LegacyNewDecWithPrec(90, 2),
 			status:      stakingtypes.Bonded,
 			expectSlash: true,
+			expectJail:  true,
 		},
 		{
 			name:      "keeps bonded validator above min valid rate",
@@ -43,11 +45,28 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			status:    stakingtypes.Unbonded,
 		},
 		{
-			name:      "jailed validator is not slashed",
-			missCount: 20,
-			minValid:  math.LegacyNewDecWithPrec(90, 2),
-			status:    stakingtypes.Bonded,
-			jailed:    true,
+			name:        "slashes unbonding validator below min valid rate",
+			missCount:   20,
+			minValid:    math.LegacyNewDecWithPrec(90, 2),
+			status:      stakingtypes.Unbonding,
+			expectSlash: true,
+			expectJail:  true,
+		},
+		{
+			name:        "already jailed validator is slashed without jailing again",
+			missCount:   20,
+			minValid:    math.LegacyNewDecWithPrec(90, 2),
+			status:      stakingtypes.Bonded,
+			jailed:      true,
+			expectSlash: true,
+		},
+		{
+			name:        "already jailed unbonding validator is slashed without jailing again",
+			missCount:   20,
+			minValid:    math.LegacyNewDecWithPrec(90, 2),
+			status:      stakingtypes.Unbonding,
+			jailed:      true,
+			expectSlash: true,
 		},
 		{
 			name:             "missing validator is not slashed",
@@ -105,11 +124,13 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 						int64(10),
 						params.SlashFraction,
 					).Return(math.NewInt(1), nil)
-					s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr)
+					if tc.expectJail {
+						s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr)
+					}
 				}
 			}
 
-			err = s.keeper.SettleSlash(s.ctx)
+			err = s.keeper.SettleSlash(s.ctx, 20)
 			s.Require().NoError(err)
 
 			missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)

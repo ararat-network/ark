@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"cosmossdk.io/math"
+	"slices"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,37 +15,76 @@ import (
 // NewGenesisState creates a new GenesisState object
 func NewGenesisState(
 	params Params,
+	accounting AccountingState,
 	exchangeRates []ExchangeRate,
 	scoreWeights []ScoreWeight,
 	missCounts []MissCount,
-	tobinTaxes []TobinTax,
+	voteTargets VoteTargetState,
 ) *GenesisState {
+	voteTargets.Denoms = slices.Clone(voteTargets.Denoms)
+	slices.Sort(voteTargets.Denoms)
+
 	return &GenesisState{
 		Params:        params,
+		Accounting:    accounting,
 		ExchangeRates: exchangeRates,
 		ScoreWeights:  scoreWeights,
 		MissCounts:    missCounts,
-		TobinTaxes:    tobinTaxes,
+		VoteTargets:   voteTargets,
+	}
+}
+
+// NewVoteTargetState returns a canonical vote-target snapshot derived from params.
+func NewVoteTargetState(params Params) VoteTargetState {
+	denoms := make([]string, len(params.TobinTaxes))
+	for i, tobinTax := range params.TobinTaxes {
+		denoms[i] = tobinTax.Denom
+	}
+	slices.Sort(denoms)
+
+	return VoteTargetState{Denoms: denoms}
+}
+
+// NewAccountingState starts reward and slash accounting from genesis using
+// the supplied active parameter windows.
+func NewAccountingState(params Params) AccountingState {
+	return AccountingState{
+		RewardWindow:             params.RewardWindow,
+		RewardDistributionWindow: params.RewardDistributionWindow,
+		SlashWindow:              params.SlashWindow,
 	}
 }
 
 // DefaultGenesisState - default GenesisState
 func DefaultGenesisState() *GenesisState {
-	return NewGenesisState(DefaultParams(),
+	params := DefaultParams()
+	return NewGenesisState(
+		params,
+		NewAccountingState(params),
 		[]ExchangeRate{},
 		[]ScoreWeight{},
 		[]MissCount{},
-		[]TobinTax{},
+		NewVoteTargetState(params),
 	)
 }
 
 // Validate validates the oracle genesis state
 func (gs GenesisState) Validate() error {
-	// ExchangeRates: no duplicates, non-empty denom, positive rate
+	if gs.Accounting.RewardWindow == 0 {
+		return errors.New("accounting reward window must be greater than zero")
+	}
+	if gs.Accounting.RewardDistributionWindow < gs.Accounting.RewardWindow {
+		return errors.New("accounting reward distribution window must be greater than or equal to reward window")
+	}
+	if gs.Accounting.SlashWindow == 0 {
+		return errors.New("accounting slash window must be greater than zero")
+	}
+
+	// ExchangeRates: no duplicates, micro denoms, positive rate
 	seenDenoms := make(map[string]bool)
 	for _, er := range gs.ExchangeRates {
-		if len(er.Denom) == 0 {
-			return errors.New("exchange rate denom must not be empty")
+		if err := chain.ValidateMicroDenom(er.Denom); err != nil {
+			return fmt.Errorf("exchange rate %w", err)
 		}
 		if er.Rate.IsNil() {
 			return fmt.Errorf("exchange rate for %s must be set", er.Denom)
@@ -63,6 +101,12 @@ func (gs GenesisState) Validate() error {
 	// ScoreWeights: no duplicate validators
 	seenValidators := make(map[string]bool)
 	for _, mc := range gs.ScoreWeights {
+		if mc.ScoreWeight.IsNil() {
+			return errors.New("score weight must be set")
+		}
+		if mc.ScoreWeight.IsNegative() {
+			return fmt.Errorf("score weight must not be negative for validator %s", mc.ValidatorAddress)
+		}
 		if len(mc.ValidatorAddress) == 0 {
 			return errors.New("score weight validator address must not be empty")
 		}
@@ -90,29 +134,23 @@ func (gs GenesisState) Validate() error {
 		seenValidators[mc.ValidatorAddress] = true
 	}
 
-	// TobinTaxes: no duplicates, micro denoms, tax in [0, 1]
-	if len(gs.TobinTaxes) > MaxVoteTargets {
+	// VoteTargets: no duplicates and canonical micro denoms.
+	if len(gs.VoteTargets.Denoms) > MaxVoteTargets {
 		return fmt.Errorf(
-			"tobin taxes count %d exceeds maximum vote targets %d",
-			len(gs.TobinTaxes),
+			"vote targets count %d exceeds maximum vote targets %d",
+			len(gs.VoteTargets.Denoms),
 			MaxVoteTargets,
 		)
 	}
 	seenDenoms = make(map[string]bool)
-	for _, tt := range gs.TobinTaxes {
-		if err := chain.ValidateMicroDenom(tt.Denom); err != nil {
-			return fmt.Errorf("tobin tax %w", err)
+	for _, denom := range gs.VoteTargets.Denoms {
+		if err := chain.ValidateMicroDenom(denom); err != nil {
+			return fmt.Errorf("vote target %w", err)
 		}
-		if tt.TobinTax.IsNil() {
-			return fmt.Errorf("tobin tax for %s must be set", tt.Denom)
+		if seenDenoms[denom] {
+			return fmt.Errorf("duplicate vote target denom %s", denom)
 		}
-		if tt.TobinTax.IsNegative() || tt.TobinTax.GT(math.LegacyOneDec()) {
-			return fmt.Errorf("tobin tax for %s must be between [0, 1]: %s", tt.Denom, tt.TobinTax)
-		}
-		if seenDenoms[tt.Denom] {
-			return fmt.Errorf("duplicate tobin tax for denom %s", tt.Denom)
-		}
-		seenDenoms[tt.Denom] = true
+		seenDenoms[denom] = true
 	}
 
 	return gs.Params.Validate()

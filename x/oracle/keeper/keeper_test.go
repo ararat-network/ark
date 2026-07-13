@@ -3,11 +3,15 @@ package keeper_test
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
+
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,7 +23,6 @@ import (
 	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -46,6 +49,34 @@ func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }
 
+func TestNewKeeperRequiresDistributionModuleAccount(t *testing.T) {
+	interfaceRegistry := codectestutil.CodecOptions{}.NewInterfaceRegistry()
+	std.RegisterInterfaces(interfaceRegistry)
+	types.RegisterInterfaces(interfaceRegistry)
+	cdc := codec.NewProtoCodec(interfaceRegistry)
+	storeService := runtime.NewKVStoreService(storetypes.NewKVStoreKey(types.StoreKey))
+
+	ctrl := gomock.NewController(t)
+	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
+	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
+	accountKeeper.EXPECT().GetModuleAddress("distribution").Return(nil)
+
+	requirePanic := func() {
+		keeper.NewKeeper(
+			cdc,
+			storeService,
+			authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			"distribution",
+			accountKeeper,
+			nil,
+			nil,
+			nil,
+		)
+	}
+
+	require.PanicsWithValue(t, "distribution module account has not been set", requirePanic)
+}
+
 func (s *KeeperTestSuite) SetupTest() {
 	interfaceRegistry := codectestutil.CodecOptions{}.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
@@ -55,7 +86,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	storeService := runtime.NewKVStoreService(key)
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
-	s.ctx = testCtx.Ctx
+	s.ctx = sdk.UnwrapSDKContext(testCtx.Ctx).WithBlockTime(oracleTestBlockTime)
 
 	ctrl := gomock.NewController(s.T())
 
@@ -65,6 +96,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.stakingKeeper = testutil.NewMockStakingKeeper(ctrl)
 
 	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
+	s.accountKeeper.EXPECT().GetModuleAddress("distribution").Return(sdk.AccAddress{2})
 
 	s.keeper = keeper.NewKeeper(
 		cdc,
@@ -77,9 +109,11 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.stakingKeeper,
 	)
 
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
+	params := types.DefaultParams()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccountingState(params)))
 
-	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
+	queryHelper := baseapp.NewQueryServerTestHelper(sdk.UnwrapSDKContext(s.ctx), interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
 	s.queryClient = types.NewQueryClient(queryHelper)
 
@@ -91,12 +125,13 @@ func (s *KeeperTestSuite) SetupSubTest() {
 }
 
 var (
-	valAddr1 = sdk.ValAddress([]byte("validator1___________"))
-	valAddr2 = sdk.ValAddress([]byte("validator2___________"))
+	valAddr1            = sdk.ValAddress([]byte("validator1___________"))
+	valAddr2            = sdk.ValAddress([]byte("validator2___________"))
+	oracleTestBlockTime = time.Date(2026, 7, 12, 12, 0, 0, 0, time.UTC)
 )
 
 func newStoredExchangeRate(denom string, rate math.LegacyDec) types.ExchangeRate {
-	return types.ExchangeRate{Denom: denom, Rate: rate}
+	return types.ExchangeRate{Denom: denom, Rate: rate, BlockTimestamp: oracleTestBlockTime}
 }
 
 func (s *KeeperTestSuite) TestGetExchangeRate() {
@@ -146,6 +181,99 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 	}
 }
 
+func (s *KeeperTestSuite) TestGetRateSnapshot() {
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:          chain.MicroUSDDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+	}))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroSDRDenom, types.ExchangeRate{
+		Denom:          chain.MicroSDRDenom,
+		Rate:           math.LegacyMustNewDecFromStr("1.7"),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+	}))
+
+	rates, err := s.keeper.GetRateSnapshot(
+		s.ctx,
+		chain.MicroUSDDenom,
+		chain.MicroSDRDenom,
+		chain.MicroNoahDenom,
+		chain.MicroUSDDenom,
+	)
+	s.Require().NoError(err)
+	s.Require().Len(rates, 3)
+	s.Require().True(rates[chain.MicroUSDDenom].Equal(math.LegacyOneDec()))
+	s.Require().True(rates[chain.MicroSDRDenom].Equal(math.LegacyMustNewDecFromStr("1.7")))
+	s.Require().True(rates[chain.MicroNoahDenom].Equal(math.LegacyOneDec()))
+}
+
+func (s *KeeperTestSuite) TestGetRateSnapshotRejectsElapsedTimeStaleness() {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MaxExchangeRateAge = time.Minute
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:          chain.MicroUSDDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
+	}))
+
+	_, err = s.keeper.GetRateSnapshot(s.ctx, chain.MicroUSDDenom)
+	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
+}
+
+func (s *KeeperTestSuite) TestGetExchangeRateRejectsFutureTimestamp() {
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:          chain.MicroUSDDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(time.Second),
+	}))
+
+	_, err := s.keeper.GetExchangeRate(s.ctx, chain.MicroUSDDenom)
+	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
+}
+
+func (s *KeeperTestSuite) TestGetExchangeRateRejectsInvalidStoredValue() {
+	tests := []struct {
+		name         string
+		exchangeRate types.ExchangeRate
+	}{
+		{
+			name: "stored denom does not match key",
+			exchangeRate: types.ExchangeRate{
+				Denom:          chain.MicroKRWDenom,
+				Rate:           math.LegacyOneDec(),
+				BlockTimestamp: oracleTestBlockTime,
+			},
+		},
+		{
+			name: "rate is unset",
+			exchangeRate: types.ExchangeRate{
+				Denom:          chain.MicroUSDDenom,
+				Rate:           math.LegacyDec{},
+				BlockTimestamp: oracleTestBlockTime,
+			},
+		},
+		{
+			name: "rate is not positive",
+			exchangeRate: types.ExchangeRate{
+				Denom:          chain.MicroUSDDenom,
+				Rate:           math.LegacyZeroDec(),
+				BlockTimestamp: oracleTestBlockTime,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, tc.exchangeRate))
+
+			_, err := s.keeper.GetExchangeRate(s.ctx, chain.MicroUSDDenom)
+			s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
+		})
+	}
+}
+
 func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 	rate := math.LegacyNewDecWithPrec(123, 2)
 
@@ -162,27 +290,47 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 	s.Require().Equal(types.EventTypeExchangeRateUpdate, events[0].Type)
 }
 
+func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidDenom() {
+	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate("uUSD", math.LegacyOneDec()))
+	s.Require().ErrorContains(err, "invalid exchange rate denom")
+
+	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, "uUSD")
+	s.Require().NoError(getErr)
+	s.Require().False(has)
+	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
+}
+
 func (s *KeeperTestSuite) TestGetActives() {
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:       chain.MicroUSDDenom,
-		Rate:        math.LegacyOneDec(),
-		BlockHeight: 10,
+		Denom:          chain.MicroUSDDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, types.ExchangeRate{
-		Denom:       chain.MicroKRWDenom,
-		Rate:        math.LegacyOneDec(),
-		BlockHeight: 1,
+		Denom:          chain.MicroKRWDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Minute),
 	}))
 
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = 5
+	params.MaxExchangeRateAge = time.Minute
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 
 	actives, err := s.keeper.GetActives(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal([]string{chain.MicroUSDDenom}, actives)
+}
+
+func (s *KeeperTestSuite) TestGetActivesRejectsInvalidExchangeRate() {
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:          chain.MicroKRWDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime,
+	}))
+
+	_, err := s.keeper.GetActives(s.ctx)
+	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
 }
 
 func (s *KeeperTestSuite) TestGetTobinTaxes() {
@@ -190,9 +338,10 @@ func (s *KeeperTestSuite) TestGetTobinTaxes() {
 		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
 		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
-	for _, tt := range expected {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
-	}
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.TobinTaxes = expected
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	tobinTaxes, err := s.keeper.GetTobinTaxes(s.ctx)
 	s.Require().NoError(err)
@@ -201,7 +350,10 @@ func (s *KeeperTestSuite) TestGetTobinTaxes() {
 
 func (s *KeeperTestSuite) TestGetTobinTax() {
 	expected := math.LegacyNewDecWithPrec(25, 4)
-	s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, chain.MicroUSDDenom, expected))
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.TobinTaxes = types.TobinTaxes{{Denom: chain.MicroUSDDenom, TobinTax: expected}}
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	tobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
@@ -213,29 +365,18 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 }
 
 func (s *KeeperTestSuite) TestGetVoteTargets() {
-	expected := map[string]math.LegacyDec{
-		chain.MicroKRWDenom: math.LegacyNewDecWithPrec(50, 4),
-		chain.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
-	}
-	for denom, tobinTax := range expected {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
-	}
+	expected := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: expected}))
 
 	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Len(voteTargets, len(expected))
-	for denom, expectedTobinTax := range expected {
-		s.Require().True(expectedTobinTax.Equal(voteTargets[denom]))
-	}
+	s.Require().Equal(expected, voteTargets)
 }
 
-func (s *KeeperTestSuite) TestSyncTobinTax() {
-	oldTobinTaxes := map[string]math.LegacyDec{
-		chain.MicroKRWDenom: math.LegacyNewDecWithPrec(25, 4),
-		chain.MicroUSDDenom: math.LegacyNewDecWithPrec(25, 4),
-	}
-	for denom, tobinTax := range oldTobinTaxes {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, denom, tobinTax))
+func (s *KeeperTestSuite) TestSyncVoteTargets() {
+	oldVoteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: oldVoteTargets}))
+	for _, denom := range oldVoteTargets {
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, newStoredExchangeRate(denom, math.LegacyOneDec())))
 	}
 
@@ -247,21 +388,13 @@ func (s *KeeperTestSuite) TestSyncTobinTax() {
 	}
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
-	s.bankKeeper.EXPECT().
-		GetDenomMetaData(s.ctx, chain.MicroSDRDenom).
-		Return(banktypes.Metadata{}, false)
-	s.bankKeeper.EXPECT().
-		SetDenomMetaData(s.ctx, gomock.Any()).
-		Do(func(_ context.Context, metadata banktypes.Metadata) {
-			s.Require().Equal(chain.MicroSDRDenom, metadata.Base)
-			s.Require().Equal("sdr", metadata.Display)
-		})
+	s.Require().NoError(s.keeper.SyncVoteTargets(s.ctx, oldVoteTargets))
 
-	s.Require().NoError(s.keeper.SyncTobinTax(s.ctx, oldTobinTaxes))
-
-	// SyncTobinTax copies the caller's old target map before diffing.
-	s.Require().Len(oldTobinTaxes, 2)
-	s.Require().True(oldTobinTaxes[chain.MicroKRWDenom].Equal(math.LegacyNewDecWithPrec(25, 4)))
+	// SyncVoteTargets does not mutate the caller's old target slice.
+	s.Require().Equal([]string{chain.MicroKRWDenom, chain.MicroUSDDenom}, oldVoteTargets)
+	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal([]string{chain.MicroSDRDenom, chain.MicroUSDDenom}, voteTargets)
 
 	updatedTobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
 	s.Require().NoError(err)
@@ -291,19 +424,97 @@ func (s *KeeperTestSuite) TestAccountingCounters() {
 	consAddr, err := validator.GetConsAddr()
 	s.Require().NoError(err)
 
-	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil).Times(4)
+	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil).Times(2)
 
-	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, consAddr))
-	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, consAddr))
+	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(3), true))
+	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(4), true))
 	missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(2), missCount)
 
-	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, consAddr, 3))
-	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, consAddr, 4))
 	scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
 	s.Require().NoError(err)
-	s.Require().Equal(uint64(7), scoreWeight)
+	s.Require().True(math.NewInt(7).Equal(scoreWeight))
+}
+
+func (s *KeeperTestSuite) TestRecordVoteAccountingEmptyUpdateSkipsValidatorLookup() {
+	consAddr := sdk.ConsAddress([]byte("missing_validator___"))
+
+	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.ZeroInt(), false))
+
+	entries := 0
+	err := s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
+		entries++
+		return false, nil
+	})
+	s.Require().NoError(err)
+	s.Require().Zero(entries)
+}
+
+func (s *KeeperTestSuite) TestRecordVoteAccountingAccumulatesLegalPowerBeyondUint64() {
+	pubKey := ed25519.GenPrivKey().PubKey()
+	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
+	s.Require().NoError(err)
+	consAddr, err := validator.GetConsAddr()
+	s.Require().NoError(err)
+
+	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil).Times(3)
+
+	blockScore := math.NewInt(cmttypes.MaxTotalVotingPower).MulRaw(8)
+	for range 3 {
+		s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, blockScore, false))
+	}
+
+	stored, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
+	s.Require().NoError(err)
+	s.Require().True(blockScore.MulRaw(3).Equal(stored))
+}
+
+func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsInvalidScoreWeight() {
+	consAddr := sdk.ConsAddress([]byte("validator___________"))
+
+	testCases := []struct {
+		name        string
+		scoreWeight math.Int
+		expectErr   string
+	}{
+		{
+			name:        "nil score weight",
+			scoreWeight: math.Int{},
+			expectErr:   "score weight must be set",
+		},
+		{
+			name:        "negative score weight",
+			scoreWeight: math.NewInt(-1),
+			expectErr:   "score weight must not be negative",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			err := s.keeper.RecordVoteAccounting(s.ctx, consAddr, tc.scoreWeight, false)
+			s.Require().ErrorContains(err, tc.expectErr)
+		})
+	}
+}
+
+func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsMissOverflowWithoutChangingScore() {
+	pubKey := ed25519.GenPrivKey().PubKey()
+	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
+	s.Require().NoError(err)
+	consAddr, err := validator.GetConsAddr()
+	s.Require().NoError(err)
+	s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(5)))
+	s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, ^uint64(0)))
+
+	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil)
+
+	err = s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(1), true)
+	s.Require().ErrorContains(err, "miss count overflow")
+
+	scoreWeight, getErr := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
+	s.Require().NoError(getErr)
+	s.Require().True(math.NewInt(5).Equal(scoreWeight))
 }
 
 func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress() {
@@ -311,10 +522,9 @@ func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress()
 	s.stakingKeeper.EXPECT().
 		ValidatorByConsAddr(s.ctx, consAddr).
 		Return(nil, stakingtypes.ErrNoValidatorFound).
-		Times(2)
+		Times(1)
 
-	s.Require().NoError(s.keeper.IncrementMissCount(s.ctx, consAddr))
-	s.Require().NoError(s.keeper.AddScoreWeight(s.ctx, consAddr, 3))
+	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(3), true))
 
 	missCountEntries := 0
 	err := s.keeper.MissCount.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
@@ -325,7 +535,7 @@ func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress()
 	s.Require().Zero(missCountEntries)
 
 	scoreWeightEntries := 0
-	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
+	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
 		scoreWeightEntries++
 		return false, nil
 	})

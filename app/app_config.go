@@ -155,8 +155,8 @@ var (
 					vestingtypes.ModuleName,
 					protocolpooltypes.ModuleName,
 					markettypes.ModuleName,
-					treasurytypes.ModuleName,
 					oracletypes.ModuleName,
+					treasurytypes.ModuleName,
 				},
 				// When ExportGenesis is not specified, the export genesis module order
 				// is equal to the init genesis order

@@ -7,8 +7,6 @@ import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
-	"cosmossdk.io/math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
@@ -41,11 +39,7 @@ func NewHandler(
 	veCodec codec.VoteExtensionCodec,
 	ecCodec codec.ExtendedCommitCodec,
 ) *Handler {
-	va := abcioracle.NewVoteAggregator(
-		logger,
-	)
 	pa := abcioracle.NewPriceApplier(
-		va,
 		oracleKeeper,
 		veCodec,
 		ecCodec,
@@ -81,8 +75,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		}
 
 		start := time.Now()
-		var prices map[string]math.LegacyDec
-		var voteTargets map[string]math.LegacyDec
+		var result abcioracle.AggregationResult
 		defer func() {
 			// only measure latency in Finalise
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
@@ -95,12 +88,12 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 				arkmetrics.RecordLatencyAndStatus(latency, err, arkmetrics.PreBlock)
 
 				// Record price and validator-report metrics only if prices were written successfully.
-				if err == nil && prices != nil {
+				if err == nil && result.Prices != nil {
 					// record price metrics
-					h.recordPrices(prices)
+					h.recordPrices(result.Prices)
 
 					// record validator report metrics
-					h.recordValidatorReports(req.DecidedLastCommit, voteTargets)
+					h.recordValidatorReports(result.ValidatorReports, result.VoteTargets)
 				}
 			}
 		}()
@@ -121,7 +114,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		)
 
 		// decode vote-extensions + apply prices to state
-		prices, voteTargets, err = h.pa.ApplyPricesFromVoteExtensions(ctx, req)
+		result, err = h.pa.ApplyPricesFromVoteExtensions(ctx, req)
 		if err != nil {
 			h.logger.Error(
 				"failed to apply prices from vote extensions",
@@ -132,10 +125,10 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			return response, err
 		}
 
-		err = h.ok.SyncTobinTax(ctx, voteTargets)
+		err = h.ok.SyncVoteTargets(ctx, result.VoteTargets)
 		if err != nil {
 			h.logger.Error(
-				"failed to sync tobin taxes",
+				"failed to sync vote targets",
 				"height", req.Height,
 				"error", err,
 			)

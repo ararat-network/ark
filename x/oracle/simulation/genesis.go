@@ -105,26 +105,29 @@ func RandomisedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { minValidPerWindow = GenMinValidPerWindow(r) },
 	)
 
-	oracleGenesis := types.NewGenesisState(
-		types.Params{
-			VoteThreshold:            voteThreshold,
-			RewardBand:               rewardBand,
-			RewardWindow:             rewardWindow,
-			RewardDistributionWindow: rewardDistributionWindow,
-			TobinTaxes: types.TobinTaxes{
-				{Denom: chain.MicroKRWDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: chain.MicroSDRDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: chain.MicroMNTDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
-			},
-			SlashFraction:     slashFraction,
-			SlashWindow:       slashWindow,
-			MinValidPerWindow: minValidPerWindow,
+	params := types.Params{
+		VoteThreshold:            voteThreshold,
+		RewardBand:               rewardBand,
+		RewardWindow:             rewardWindow,
+		RewardDistributionWindow: rewardDistributionWindow,
+		TobinTaxes: types.TobinTaxes{
+			{Denom: chain.MicroKRWDenom, TobinTax: types.DefaultTobinTax},
+			{Denom: chain.MicroSDRDenom, TobinTax: types.DefaultTobinTax},
+			{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
+			{Denom: chain.MicroMNTDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
 		},
+		SlashFraction:      slashFraction,
+		SlashWindow:        slashWindow,
+		MinValidPerWindow:  minValidPerWindow,
+		MaxExchangeRateAge: types.DefaultMaxExchangeRateAge,
+	}
+	oracleGenesis := types.NewGenesisState(
+		params,
+		types.NewAccountingState(params),
 		[]types.ExchangeRate{},
 		[]types.ScoreWeight{},
 		[]types.MissCount{},
-		[]types.TobinTax{},
+		types.NewVoteTargetState(params),
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

@@ -19,30 +19,51 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
+	accounting, err := k.Accounting.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting accounting state: %w", err)
+	}
+	accountingChanged := false
 
-	if chain.IsPeriodLastBlock(ctx, params.RewardWindow) {
-		if err := k.SettleRewards(ctx, params.RewardWindow, params.RewardDistributionWindow); err != nil {
+	if chain.IsPeriodLastBlockFrom(ctx, accounting.RewardWindowStartHeight, accounting.RewardWindow) {
+		if err := k.SettleRewards(ctx, accounting.RewardWindow, accounting.RewardDistributionWindow); err != nil {
 			return err
 		}
 
 		// Clear score weights after reward settlement.
-		if err := k.ScoreWeight.Walk(ctx, nil, func(valAddr sdk.ValAddress, _ uint64) (bool, error) {
-			return false, k.ScoreWeight.Remove(ctx, valAddr)
-		}); err != nil {
+		if err := k.ScoreWeight.Clear(ctx, nil); err != nil {
 			return fmt.Errorf("clearing score weights: %w", err)
+		}
+
+		if accounting.RewardWindow != params.RewardWindow ||
+			accounting.RewardDistributionWindow != params.RewardDistributionWindow {
+			accounting.RewardWindow = params.RewardWindow
+			accounting.RewardDistributionWindow = params.RewardDistributionWindow
+			accounting.RewardWindowStartHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()) + 1
+			accountingChanged = true
 		}
 	}
 
-	if chain.IsPeriodLastBlock(ctx, params.SlashWindow) {
-		if err := k.SettleSlash(ctx); err != nil {
+	if chain.IsPeriodLastBlockFrom(ctx, accounting.SlashWindowStartHeight, accounting.SlashWindow) {
+		if err := k.SettleSlash(ctx, accounting.SlashWindow); err != nil {
 			return err
 		}
 
 		// Clear miss counts after slash settlement.
-		if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, _ uint64) (bool, error) {
-			return false, k.MissCount.Remove(ctx, valAddr)
-		}); err != nil {
+		if err := k.MissCount.Clear(ctx, nil); err != nil {
 			return fmt.Errorf("clearing miss counts: %w", err)
+		}
+
+		if accounting.SlashWindow != params.SlashWindow {
+			accounting.SlashWindow = params.SlashWindow
+			accounting.SlashWindowStartHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()) + 1
+			accountingChanged = true
+		}
+	}
+
+	if accountingChanged {
+		if err := k.Accounting.Set(ctx, accounting); err != nil {
+			return fmt.Errorf("setting accounting state: %w", err)
 		}
 	}
 

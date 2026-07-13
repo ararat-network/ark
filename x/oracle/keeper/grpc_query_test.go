@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"time"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -43,11 +45,10 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			name: "stored denom returned",
 			setup: func() {
 				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-					Denom:       chain.MicroUSDDenom,
-					Rate:        math.LegacyNewDec(7),
-					BlockHeight: 10,
+					Denom:          chain.MicroUSDDenom,
+					Rate:           math.LegacyNewDec(7),
+					BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 				}))
-				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 			},
 			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroUSDDenom},
 			expect: math.LegacyNewDec(7),
@@ -57,14 +58,13 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			setup: func() {
 				params, err := s.keeper.Params.Get(s.ctx)
 				s.Require().NoError(err)
-				params.MaxExchangeRateAge = 5
+				params.MaxExchangeRateAge = time.Minute
 				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-					Denom:       chain.MicroUSDDenom,
-					Rate:        math.LegacyNewDec(7),
-					BlockHeight: 1,
+					Denom:          chain.MicroUSDDenom,
+					Rate:           math.LegacyNewDec(7),
+					BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
 				}))
-				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 			},
 			req:       &types.QueryExchangeRateRequest{Denom: chain.MicroUSDDenom},
 			code:      codes.FailedPrecondition,
@@ -100,24 +100,36 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroUSDDenom, math.LegacyOneDec())}
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:       chain.MicroUSDDenom,
-		Rate:        math.LegacyOneDec(),
-		BlockHeight: 10,
+		Denom:          chain.MicroUSDDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, types.ExchangeRate{
-		Denom:       chain.MicroKRWDenom,
-		Rate:        math.LegacyNewDec(1000),
-		BlockHeight: 1,
+		Denom:          chain.MicroKRWDenom,
+		Rate:           math.LegacyNewDec(1000),
+		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Minute),
 	}))
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = 5
+	params.MaxExchangeRateAge = time.Minute
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(12)
 
 	resp, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
 	s.Require().NoError(err)
 	s.Require().ElementsMatch(expected, resp.ExchangeRates)
+}
+
+func (s *KeeperTestSuite) TestQueryExchangeRatesRejectsInvalidStoredDenom() {
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
+		Denom:          "uUSD",
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime,
+	}))
+
+	_, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
+	s.Require().Error(err)
+	s.Require().Equal(codes.Internal, status.Code(err))
+	s.Require().ErrorContains(err, "stored denom")
 }
 
 func (s *KeeperTestSuite) TestQueryTobinTax() {
@@ -138,7 +150,12 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 		{
 			name: "configured tobin tax returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, chain.MicroUSDDenom, math.LegacyNewDecWithPrec(25, 4)))
+				params, err := s.keeper.Params.Get(s.ctx)
+				s.Require().NoError(err)
+				params.TobinTaxes = types.TobinTaxes{
+					{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+				}
+				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			},
 			req:    &types.QueryTobinTaxRequest{Denom: chain.MicroUSDDenom},
 			expect: math.LegacyNewDecWithPrec(25, 4),
@@ -175,9 +192,10 @@ func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
-	for _, tt := range expected {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
-	}
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.TobinTaxes = expected
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	resp, err := s.queryClient.TobinTaxes(s.ctx, &types.QueryTobinTaxesRequest{})
 	s.Require().NoError(err)
@@ -194,17 +212,12 @@ func (s *KeeperTestSuite) TestQueryActives() {
 }
 
 func (s *KeeperTestSuite) TestQueryVoteTargets() {
-	tobinTaxes := types.TobinTaxes{
-		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
-	}
-	for _, tt := range tobinTaxes {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, tt.Denom, tt.TobinTax))
-	}
+	voteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: voteTargets}))
 
 	resp, err := s.queryClient.VoteTargets(s.ctx, &types.QueryVoteTargetsRequest{})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch([]string{chain.MicroKRWDenom, chain.MicroUSDDenom}, resp.VoteTargets)
+	s.Require().Equal(voteTargets, resp.VoteTargets)
 }
 
 func (s *KeeperTestSuite) TestQueryScoreWeight() {
@@ -213,7 +226,7 @@ func (s *KeeperTestSuite) TestQueryScoreWeight() {
 		setup     func()
 		req       *types.QueryScoreWeightRequest
 		code      codes.Code
-		expect    uint64
+		expect    math.Int
 		expectErr bool
 	}{
 		{
@@ -225,15 +238,15 @@ func (s *KeeperTestSuite) TestQueryScoreWeight() {
 		{
 			name: "stored score returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 9))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(9)))
 			},
 			req:    &types.QueryScoreWeightRequest{ValidatorAddr: valAddr1.String()},
-			expect: 9,
+			expect: math.NewInt(9),
 		},
 		{
 			name:   "missing score returns zero",
 			req:    &types.QueryScoreWeightRequest{ValidatorAddr: valAddr2.String()},
-			expect: 0,
+			expect: math.ZeroInt(),
 		},
 	}
 
@@ -251,7 +264,7 @@ func (s *KeeperTestSuite) TestQueryScoreWeight() {
 			}
 
 			s.Require().NoError(err)
-			s.Require().Equal(tc.expect, resp.ScoreWeight)
+			s.Require().True(tc.expect.Equal(resp.ScoreWeight))
 		})
 	}
 }

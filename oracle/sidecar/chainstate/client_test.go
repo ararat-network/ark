@@ -28,7 +28,7 @@ import (
 
 const bufSize = 1024 * 1024
 
-func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
+func TestRunPollsImmediatelyAndCachesCanonicalVoteTargets(t *testing.T) {
 	source := []string{"uusd", "ukrw"}
 	query := newFakeQueryServer(queryResult{targets: source})
 	client := newTestClient(t, query, Config{
@@ -41,17 +41,17 @@ func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd", "ukrw"})
+	requireEventuallyTargets(t, client, []string{"ukrw", "uusd"})
 
 	source[0] = "umutated"
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"uusd", "ukrw"}, got)
+	require.Equal(t, []string{"ukrw", "uusd"}, got)
 
 	got[0] = "umodified"
 	got, err = client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"uusd", "ukrw"}, got)
+	require.Equal(t, []string{"ukrw", "uusd"}, got)
 }
 
 func TestRunBlocksUntilContextCancellation(t *testing.T) {
@@ -105,7 +105,7 @@ func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 
 	cancel := startClient(t, client)
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd", "ukrw"})
+	requireEventuallyTargets(t, client, []string{"ukrw", "uusd"})
 	stopClient(cancel, client)
 
 	output := logs.String()
@@ -198,7 +198,7 @@ func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"uusd", "ukrw"}, got)
+	require.Equal(t, []string{"ukrw", "uusd"}, got)
 }
 
 func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
@@ -225,7 +225,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	cancel := startClient(t, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd", "ukrw"})
+	requireEventuallyTargets(t, client, []string{"ukrw", "uusd"})
 	query.waitForCalls(t, 2)
 	stopClient(cancel, client)
 

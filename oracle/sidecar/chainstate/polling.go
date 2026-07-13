@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"google.golang.org/grpc"
@@ -117,6 +118,7 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 		}
 		seen[denom] = struct{}{}
 	}
+	slices.Sort(targets)
 	return targets, nil
 }
 

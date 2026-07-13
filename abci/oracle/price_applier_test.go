@@ -2,6 +2,7 @@ package oracle_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,7 @@ import (
 
 	"ark/abci/oracle"
 	abcitestutil "ark/abci/testutil"
+	vetypes "ark/abci/ve/types"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -30,7 +32,7 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 		setup             func(*testing.T, *abcitestutil.MockOracleKeeper, *abcitestutil.MockVoteExtensionCodec, *abcitestutil.MockExtendedCommitCodec)
 		expectErr         bool
 		expectedPrices    map[string]math.LegacyDec
-		expectedTargets   map[string]math.LegacyDec
+		expectedTargets   []string
 		expectedErrorType any
 	}{
 		{
@@ -49,9 +51,7 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 				Txs:    [][]byte{commitBz},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
-				voteTargets := map[string]math.LegacyDec{
-					"uusd": math.LegacyZeroDec(),
-				}
+				voteTargets := []string{"uusd"}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 				ve1Bz := []byte("ve1")
@@ -78,15 +78,13 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
-				keeper.EXPECT().AddScoreWeight(gomock.Any(), val1, uint64(1)).Return(nil)
-				keeper.EXPECT().AddScoreWeight(gomock.Any(), val2, uint64(1)).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), false).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), false).Return(nil)
 			},
 			expectedPrices: map[string]math.LegacyDec{
 				"uusd": math.LegacyNewDec(100),
 			},
-			expectedTargets: map[string]math.LegacyDec{
-				"uusd": math.LegacyZeroDec(),
-			},
+			expectedTargets: []string{"uusd"},
 		},
 		{
 			name: "failed quorum target remains accountable for missed votes",
@@ -95,10 +93,7 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 				Txs:    [][]byte{commitBz},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
-				voteTargets := map[string]math.LegacyDec{
-					"uusd": math.LegacyZeroDec(),
-					"ukrw": math.LegacyZeroDec(),
-				}
+				voteTargets := []string{"ukrw", "uusd"}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(75, 2)
 				ve1Bz := []byte("ve1")
@@ -126,17 +121,53 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
-				keeper.EXPECT().AddScoreWeight(gomock.Any(), val1, uint64(10)).Return(nil)
-				keeper.EXPECT().AddScoreWeight(gomock.Any(), val2, uint64(10)).Return(nil)
-				keeper.EXPECT().IncrementMissCount(gomock.Any(), val2).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(10), false).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(10), true).Return(nil)
 			},
 			expectedPrices: map[string]math.LegacyDec{
 				"uusd": math.LegacyNewDec(100),
 			},
-			expectedTargets: map[string]math.LegacyDec{
-				"uusd": math.LegacyZeroDec(),
-				"ukrw": math.LegacyZeroDec(),
+			expectedTargets: []string{"ukrw", "uusd"},
+		},
+		{
+			name: "invalid payload is classified as a missed report",
+			req: &cometabci.RequestFinalizeBlock{
+				Height: 3,
+				Txs:    [][]byte{commitBz},
 			},
+			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper, veCodec *abcitestutil.MockVoteExtensionCodec, extCommitCodec *abcitestutil.MockExtendedCommitCodec) {
+				voteTargets := []string{"uusd"}
+				params := oracletypes.DefaultParams()
+				params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+				validBz := []byte("valid")
+				invalidBz := []byte("invalid")
+
+				extCommitCodec.EXPECT().Decode(commitBz).Return(cometabci.ExtendedCommitInfo{
+					Votes: []cometabci.ExtendedVoteInfo{
+						abcitestutil.NewCommitExtendedVoteInfo(val1, 67, validBz),
+						abcitestutil.NewCommitExtendedVoteInfo(val2, 33, invalidBz),
+					},
+				}, nil)
+				veCodec.EXPECT().Decode(validBz).Return(abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
+					"uusd": math.LegacyNewDec(100),
+				}), nil)
+				veCodec.EXPECT().Decode(invalidBz).Return(vetypes.OracleVoteExtension{}, errors.New("decode failed"))
+				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
+				keeper.EXPECT().GetVoteTargets(gomock.Any()).Return(voteTargets, nil)
+				keeper.EXPECT().
+					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
+						require.Equal(t, "uusd", exchangeRate.Denom)
+						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
+						return nil
+					})
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(67), false).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), true).Return(nil)
+			},
+			expectedPrices: map[string]math.LegacyDec{
+				"uusd": math.LegacyNewDec(100),
+			},
+			expectedTargets: []string{"uusd"},
 		},
 	}
 
@@ -150,14 +181,13 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 				tc.setup(t, keeper, veCodec, extCommitCodec)
 			}
 			priceApplier := oracle.NewPriceApplier(
-				oracle.NewVoteAggregator(log.NewTestLogger(t)),
 				keeper,
 				veCodec,
 				extCommitCodec,
 				log.NewTestLogger(t),
 			)
 
-			prices, voteTargets, err := priceApplier.ApplyPricesFromVoteExtensions(abcitestutil.NewSDKContext(3, 0), tc.req)
+			result, err := priceApplier.ApplyPricesFromVoteExtensions(abcitestutil.NewSDKContext(3, 0), tc.req)
 			if tc.expectErr {
 				require.Error(t, err)
 				if tc.expectedErrorType != nil {
@@ -167,8 +197,8 @@ func TestApplyPricesFromVoteExtensions(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedPrices, prices)
-			require.Equal(t, tc.expectedTargets, voteTargets)
+			require.Equal(t, tc.expectedPrices, result.Prices)
+			require.Equal(t, tc.expectedTargets, result.VoteTargets)
 		})
 	}
 }

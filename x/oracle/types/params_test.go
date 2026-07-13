@@ -3,6 +3,7 @@ package types_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -16,12 +17,22 @@ func TestParamsValidate(t *testing.T) {
 		name      string
 		mutate    func(*types.Params)
 		expectErr string
+		check     func(*testing.T, types.Params)
 	}{
 		{
 			name:   "default is valid",
 			mutate: func(p *types.Params) {},
+			check: func(t *testing.T, p types.Params) {
+				require.Equal(t, math.LegacyNewDecWithPrec(667, 3), p.VoteThreshold)
+				require.Equal(t, time.Minute, p.MaxExchangeRateAge)
+			},
 		},
 		// VoteThreshold
+		{
+			name:      "vote threshold missing",
+			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyDec{} },
+			expectErr: "VoteThreshold must be set",
+		},
 		{
 			name:      "vote threshold at 33%",
 			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(33, 2) },
@@ -36,7 +47,21 @@ func TestParamsValidate(t *testing.T) {
 			name:   "vote threshold above 33%",
 			mutate: func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(34, 2) },
 		},
+		{
+			name:   "vote threshold at 100%",
+			mutate: func(p *types.Params) { p.VoteThreshold = math.LegacyOneDec() },
+		},
+		{
+			name:      "vote threshold above 100%",
+			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(1001, 3) },
+			expectErr: "VoteThreshold must not exceed 100 percent",
+		},
 		// RewardBand
+		{
+			name:      "reward band missing",
+			mutate:    func(p *types.Params) { p.RewardBand = math.LegacyDec{} },
+			expectErr: "RewardBand must be set",
+		},
 		{
 			name:      "reward band negative",
 			mutate:    func(p *types.Params) { p.RewardBand = math.LegacyNewDecWithPrec(-1, 2) },
@@ -73,6 +98,11 @@ func TestParamsValidate(t *testing.T) {
 		},
 		// SlashFraction
 		{
+			name:      "slash fraction missing",
+			mutate:    func(p *types.Params) { p.SlashFraction = math.LegacyDec{} },
+			expectErr: "SlashFraction must be set",
+		},
+		{
 			name:      "slash fraction negative",
 			mutate:    func(p *types.Params) { p.SlashFraction = math.LegacyNewDec(-1) },
 			expectErr: "SlashFraction must be between [0, 1]",
@@ -94,6 +124,11 @@ func TestParamsValidate(t *testing.T) {
 		},
 		// MinValidPerWindow
 		{
+			name:      "min valid per window missing",
+			mutate:    func(p *types.Params) { p.MinValidPerWindow = math.LegacyDec{} },
+			expectErr: "MinValidPerWindow must be set",
+		},
+		{
 			name:      "min valid per window negative",
 			mutate:    func(p *types.Params) { p.MinValidPerWindow = math.LegacyNewDec(-1) },
 			expectErr: "MinValidPerWindow must be between [0, 1]",
@@ -107,7 +142,25 @@ func TestParamsValidate(t *testing.T) {
 			name:   "min valid per window at zero",
 			mutate: func(p *types.Params) { p.MinValidPerWindow = math.LegacyZeroDec() },
 		},
+		// MaxExchangeRateAge
+		{
+			name:      "max exchange rate age zero",
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = 0 },
+			expectErr: "MaxExchangeRateAge must be greater than zero",
+		},
+		{
+			name:      "max exchange rate age negative",
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = -time.Second },
+			expectErr: "MaxExchangeRateAge must be greater than zero",
+		},
 		// TobinTaxes
+		{
+			name: "tobin tax missing",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = types.TobinTaxes{{Denom: "uusd", TobinTax: math.LegacyDec{}}}
+			},
+			expectErr: "TobinTaxes must have TobinTax set",
+		},
 		{
 			name: "tobin tax empty denom",
 			mutate: func(p *types.Params) {
@@ -185,8 +238,20 @@ func TestParamsValidate(t *testing.T) {
 				require.Error(t, err)
 				require.ErrorContains(t, err, tc.expectErr)
 			}
+			if tc.check != nil {
+				tc.check(t, p)
+			}
 		})
 	}
+}
+
+func TestDefaultParamsClonesTobinTaxes(t *testing.T) {
+	params := types.DefaultParams()
+	params.TobinTaxes[0].Denom = "umutated"
+
+	fresh := types.DefaultParams()
+	require.Equal(t, types.DefaultTobinTaxes, fresh.TobinTaxes)
+	require.NotEqual(t, params.TobinTaxes[0].Denom, fresh.TobinTaxes[0].Denom)
 }
 
 func makeTestTobinTaxes(count int) types.TobinTaxes {

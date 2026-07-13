@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"cosmossdk.io/math"
 
@@ -13,6 +14,10 @@ import (
 
 // InitGenesis imports oracle genesis state.
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
+	if err := k.Accounting.Set(ctx, data.Accounting); err != nil {
+		return fmt.Errorf("setting accounting state: %w", err)
+	}
+
 	for _, er := range data.ExchangeRates {
 		if err := k.ExchangeRate.Set(ctx, er.Denom, er); err != nil {
 			return fmt.Errorf("setting genesis exchange rate for denom %s: %w", er.Denom, err)
@@ -41,14 +46,11 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	tobinTaxes := data.TobinTaxes
-	if len(tobinTaxes) == 0 {
-		tobinTaxes = data.Params.TobinTaxes
-	}
-	for _, tt := range tobinTaxes {
-		if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
-			return fmt.Errorf("setting genesis tobin tax for denom %s: %w", tt.Denom, err)
-		}
+	voteTargets := data.VoteTargets
+	voteTargets.Denoms = slices.Clone(voteTargets.Denoms)
+	slices.Sort(voteTargets.Denoms)
+	if err := k.VoteTargets.Set(ctx, voteTargets); err != nil {
+		return fmt.Errorf("setting vote targets: %w", err)
 	}
 
 	if err := k.Params.Set(ctx, data.Params); err != nil {
@@ -61,7 +63,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("%s module account has not been set", types.ModuleName)
 	}
 
-	for _, tt := range tobinTaxes {
+	for _, tt := range data.Params.TobinTaxes {
 		k.registerTobinTaxMetadata(ctx, tt.Denom)
 	}
 
@@ -73,6 +75,10 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
+	}
+	accounting, err := k.Accounting.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting accounting state: %w", err)
 	}
 
 	exchangeRates := []types.ExchangeRate{}
@@ -89,7 +95,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	scoreWeights := []types.ScoreWeight{}
-	if err := k.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, score uint64) (bool, error) {
+	if err := k.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, score math.Int) (bool, error) {
 		scoreWeights = append(scoreWeights, types.ScoreWeight{
 			ValidatorAddress: operator.String(),
 			ScoreWeight:      score,
@@ -110,19 +116,17 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("iterating miss counts: %w", err)
 	}
 
-	tobinTaxes := []types.TobinTax{}
-	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
-		tobinTaxes = append(tobinTaxes, types.TobinTax{Denom: denom, TobinTax: tobinTax})
-		return false, nil
-	}); err != nil {
-		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+	voteTargets, err := k.VoteTargets.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vote targets: %w", err)
 	}
 
 	return types.NewGenesisState(
 		params,
+		accounting,
 		exchangeRates,
 		scoreWeights,
 		missCounts,
-		tobinTaxes,
+		voteTargets,
 	), nil
 }

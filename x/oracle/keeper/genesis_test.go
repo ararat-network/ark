@@ -28,24 +28,30 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 		{
 			name: "full genesis stores all collections",
 			genesis: func() *types.GenesisState {
+				params := types.DefaultParams()
+				params.TobinTaxes = types.TobinTaxes{
+					{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+				}
 				return &types.GenesisState{
-					Params: types.DefaultParams(),
+					Params:     params,
+					Accounting: types.NewAccountingState(params),
 					ExchangeRates: []types.ExchangeRate{
 						{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
 						{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 					},
 					ScoreWeights: []types.ScoreWeight{
-						{ValidatorAddress: valAddr1.String(), ScoreWeight: 5},
-						{ValidatorAddress: valAddr2.String(), ScoreWeight: 0},
+						{ValidatorAddress: valAddr1.String(), ScoreWeight: math.NewInt(5)},
+						{ValidatorAddress: valAddr2.String(), ScoreWeight: math.ZeroInt()},
 					},
 					MissCounts: []types.MissCount{
 						{ValidatorAddress: valAddr1.String(), MissCount: 5},
 						{ValidatorAddress: valAddr2.String(), MissCount: 0},
 					},
-					TobinTaxes: []types.TobinTax{
-						{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-						{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
-					},
+					VoteTargets: types.VoteTargetState{Denoms: []string{
+						chain.MicroKRWDenom,
+						chain.MicroUSDDenom,
+					}},
 				}
 			},
 			setup: func() {
@@ -63,7 +69,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
 				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "invalid", ScoreWeight: 5},
+					{ValidatorAddress: "invalid", ScoreWeight: math.NewInt(5)},
 				}
 				return gs
 			},
@@ -135,6 +141,9 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().Equal(item.Denom, params.TobinTaxes[i].Denom)
 		s.Require().True(item.TobinTax.Equal(params.TobinTaxes[i].TobinTax))
 	}
+	accounting, err := s.keeper.Accounting.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(expected.Accounting, accounting)
 
 	// Exchange rates are keyed by denom.
 	exchangeRateCount := 0
@@ -156,7 +165,7 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 
 	// Score weights are keyed by validator address.
 	scoreWeightCount := 0
-	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
+	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
 		scoreWeightCount++
 		return false, nil
 	})
@@ -169,7 +178,7 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 
 		scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr)
 		s.Require().NoError(err)
-		s.Require().Equal(item.ScoreWeight, scoreWeight)
+		s.Require().True(item.ScoreWeight.Equal(scoreWeight))
 	}
 
 	// Miss counts are keyed by validator address.
@@ -190,48 +199,51 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().Equal(item.MissCount, missCount)
 	}
 
-	// Tobin taxes are keyed by denom.
-	tobinTaxCount := 0
-	err = s.keeper.TobinTax.Walk(s.ctx, nil, func(_ string, _ math.LegacyDec) (bool, error) {
-		tobinTaxCount++
-		return false, nil
-	})
+	// Tobin taxes are read directly from params.
+	tobinTaxes, err := s.keeper.GetTobinTaxes(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Len(expected.TobinTaxes, tobinTaxCount)
+	s.Require().Equal(expected.Params.TobinTaxes, tobinTaxes)
 
-	for _, item := range expected.TobinTaxes {
-		tobinTax, err := s.keeper.TobinTax.Get(s.ctx, item.Denom)
-		s.Require().NoError(err)
-		s.Require().True(item.TobinTax.Equal(tobinTax))
-	}
+	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(expected.VoteTargets.Denoms, voteTargets)
 }
 
 func (s *KeeperTestSuite) TestExportGenesis() {
 	blockTime := time.Unix(1_700_000_000, 0).UTC()
 
+	params := types.DefaultParams()
 	expected := &types.GenesisState{
-		Params: types.DefaultParams(),
+		Params: params,
+		Accounting: types.AccountingState{
+			RewardWindow:             10,
+			RewardDistributionWindow: 100,
+			RewardWindowStartHeight:  7,
+			SlashWindow:              20,
+			SlashWindowStartHeight:   11,
+		},
 		ExchangeRates: []types.ExchangeRate{
 			{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
 			{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 		},
 		ScoreWeights: []types.ScoreWeight{
-			{ValidatorAddress: valAddr1.String(), ScoreWeight: 5},
-			{ValidatorAddress: valAddr2.String(), ScoreWeight: 0},
+			{ValidatorAddress: valAddr1.String(), ScoreWeight: math.NewInt(5)},
+			{ValidatorAddress: valAddr2.String(), ScoreWeight: math.ZeroInt()},
 		},
 		MissCounts: []types.MissCount{
 			{ValidatorAddress: valAddr1.String(), MissCount: 5},
 			{ValidatorAddress: valAddr2.String(), MissCount: 0},
 		},
-		TobinTaxes: []types.TobinTax{
-			{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-			{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
-		},
+		VoteTargets: types.VoteTargetState{Denoms: []string{
+			chain.MicroKRWDenom,
+			chain.MicroUSDDenom,
+		}},
 	}
 	expected.Params.RewardWindow = 10
 	expected.Params.VoteThreshold = math.LegacyNewDecWithPrec(6, 1)
 
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, expected.Params))
+	s.Require().NoError(s.keeper.Accounting.Set(s.ctx, expected.Accounting))
 	for _, item := range expected.ExchangeRates {
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, item.Denom, item))
 	}
@@ -247,9 +259,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr, item.MissCount))
 	}
-	for _, item := range expected.TobinTaxes {
-		s.Require().NoError(s.keeper.TobinTax.Set(s.ctx, item.Denom, item.TobinTax))
-	}
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, expected.VoteTargets))
 
 	gs, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
@@ -265,7 +275,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	s.Require().True(expected.Params.MinValidPerWindow.Equal(gs.Params.MinValidPerWindow))
 	s.Require().Equal(expected.Params.MaxExchangeRateAge, gs.Params.MaxExchangeRateAge)
 	s.Require().Equal(expected.Params.TobinTaxes, gs.Params.TobinTaxes)
-	s.Require().Equal(expected.TobinTaxes, gs.TobinTaxes)
+	s.Require().Equal(expected.VoteTargets, gs.VoteTargets)
+	s.Require().Equal(expected.Accounting, gs.Accounting)
 
 	// Exchange rates are exported by denom.
 	s.Require().Len(gs.ExchangeRates, len(expected.ExchangeRates))
@@ -282,12 +293,12 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 	// Score weights are exported by validator address.
 	s.Require().Len(gs.ScoreWeights, len(expected.ScoreWeights))
-	scoreWeights := make(map[string]uint64)
+	scoreWeights := make(map[string]math.Int)
 	for _, item := range gs.ScoreWeights {
 		scoreWeights[item.ValidatorAddress] = item.ScoreWeight
 	}
 	for _, item := range expected.ScoreWeights {
-		s.Require().Equal(item.ScoreWeight, scoreWeights[item.ValidatorAddress])
+		s.Require().True(item.ScoreWeight.Equal(scoreWeights[item.ValidatorAddress]))
 	}
 
 	// Miss counts are exported by validator address.

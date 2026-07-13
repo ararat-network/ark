@@ -35,9 +35,6 @@ type Handler struct {
 
 	// voteExtensionCodec encodes and decodes oracle vote-extension payloads.
 	voteExtensionCodec compression.VoteExtensionCodec
-
-	// priceApplier decodes vote extensions, aggregates price reports, and writes prices to state.
-	priceApplier abcioracle.PriceApplier
 }
 
 // NewHandler returns a new Handler.
@@ -46,14 +43,12 @@ func NewHandler(
 	oracleClient arkabci.OracleClient,
 	timeout time.Duration,
 	codec compression.VoteExtensionCodec,
-	priceApplier abcioracle.PriceApplier,
 ) *Handler {
 	return &Handler{
 		logger:             logger,
 		oracleClient:       oracleClient,
 		timeout:            timeout,
 		voteExtensionCodec: codec,
-		priceApplier:       priceApplier,
 	}
 }
 
@@ -135,7 +130,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		}
 
 		voteExt := types.OracleVoteExtension{Rates: oracleResp.Prices}
-		if err := ValidateOracleVoteExtension(ctx, voteExt); err != nil {
+		if err := abcioracle.ValidateVoteExtension(voteExt); err != nil {
 			h.logger.Error(
 				"oracle returned invalid prices for vote extension; returning empty vote extension",
 				"height", req.Height,
@@ -224,7 +219,7 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 
-		if err := ValidateOracleVoteExtension(ctx, voteExtension); err != nil {
+		if err := abcioracle.ValidateVoteExtension(voteExtension); err != nil {
 			h.logger.Error(
 				"failed to validate vote extension",
 				"height", req.Height,

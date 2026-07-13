@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
+	"math/bits"
+	"slices"
 	"strings"
+	"time"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
@@ -28,6 +30,7 @@ type Keeper struct {
 	storeService     store.KVStoreService
 	authority        string
 	distributionName string
+	moduleAddress    sdk.AccAddress
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
@@ -36,10 +39,11 @@ type Keeper struct {
 
 	Schema       collections.Schema
 	Params       collections.Item[types.Params]
+	Accounting   collections.Item[types.AccountingState]
 	ExchangeRate collections.Map[string, types.ExchangeRate]
-	ScoreWeight  collections.Map[sdk.ValAddress, uint64]
+	ScoreWeight  collections.Map[sdk.ValAddress, math.Int]
 	MissCount    collections.Map[sdk.ValAddress, uint64]
-	TobinTax     collections.Map[string, math.LegacyDec]
+	VoteTargets  collections.Item[types.VoteTargetState]
 }
 
 // NewKeeper constructs an oracle keeper.
@@ -54,8 +58,12 @@ func NewKeeper(
 	stakingKeeper types.StakingKeeper,
 ) *Keeper {
 	// Ensure the oracle module account is configured.
-	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
+	moduleAddress := accountKeeper.GetModuleAddress(types.ModuleName)
+	if moduleAddress == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
+	}
+	if addr := accountKeeper.GetModuleAddress(distributionName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", distributionName))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
@@ -64,6 +72,7 @@ func NewKeeper(
 		storeService:     storeService,
 		authority:        authority,
 		distributionName: distributionName,
+		moduleAddress:    moduleAddress,
 		accountKeeper:    accountKeeper,
 		bankKeeper:       bankKeeper,
 		distrKeeper:      distrKeeper,
@@ -73,6 +82,12 @@ func NewKeeper(
 			types.ParamsKey,
 			"params",
 			codec.CollValue[types.Params](cdc),
+		),
+		Accounting: collections.NewItem(
+			sb,
+			types.AccountingKey,
+			"accounting",
+			codec.CollValue[types.AccountingState](cdc),
 		),
 		ExchangeRate: collections.NewMap(
 			sb,
@@ -86,7 +101,7 @@ func NewKeeper(
 			types.ScoreWeightKey,
 			"socre_weight",
 			sdk.ValAddressKey,
-			collections.Uint64Value,
+			sdk.IntValue,
 		),
 		MissCount: collections.NewMap(
 			sb,
@@ -95,12 +110,11 @@ func NewKeeper(
 			sdk.ValAddressKey,
 			collections.Uint64Value,
 		),
-		TobinTax: collections.NewMap(
+		VoteTargets: collections.NewItem(
 			sb,
-			types.TobinTaxKey,
-			"pending_tobin_taxes",
-			collections.StringKey,
-			sdk.LegacyDecValue,
+			types.VoteTargetsKey,
+			"vote_targets",
+			codec.CollValue[types.VoteTargetState](cdc),
 		),
 	}
 
@@ -140,6 +154,11 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		return math.LegacyZeroDec(), fmt.Errorf("getting params: %w", err)
 	}
 
+	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	return k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
+}
+
+func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime time.Time, maxAge time.Duration) (math.LegacyDec, error) {
 	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
@@ -147,25 +166,74 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		}
 		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := uint64(sdkCtx.BlockHeight())
-	if currentHeight > exchangeRate.BlockHeight &&
-		currentHeight-exchangeRate.BlockHeight > params.MaxExchangeRateAge {
-		return math.LegacyZeroDec(), sdkerrors.Wrapf(
-			types.ErrStaleExchangeRate,
-			"%s rate height %d, current height %d",
-			denom,
-			exchangeRate.BlockHeight,
-			currentHeight,
-		)
+	if err := validateExchangeRate(denom, exchangeRate, currentTime, maxAge); err != nil {
+		return math.LegacyZeroDec(), err
 	}
 
 	return exchangeRate.Rate, nil
 }
 
+func validateExchangeRate(
+	denom string,
+	exchangeRate types.ExchangeRate,
+	currentTime time.Time,
+	maxAge time.Duration,
+) error {
+	if err := chain.ValidateMicroDenom(denom); err != nil {
+		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "invalid stored denom %q: %v", denom, err)
+	}
+	if exchangeRate.Denom != denom {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidExchangeRate,
+			"stored denom %q does not match collection key %q",
+			exchangeRate.Denom,
+			denom,
+		)
+	}
+	if exchangeRate.Rate.IsNil() {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidExchangeRate,
+			"%s rate is unset",
+			denom,
+		)
+	}
+	if !exchangeRate.Rate.IsPositive() {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidExchangeRate,
+			"%s rate %s",
+			denom,
+			exchangeRate.Rate,
+		)
+	}
+	if exchangeRate.BlockTimestamp.After(currentTime) {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidExchangeRate,
+			"%s rate timestamp %s is after current block time %s",
+			denom,
+			exchangeRate.BlockTimestamp,
+			currentTime,
+		)
+	}
+	if age := currentTime.Sub(exchangeRate.BlockTimestamp); age > maxAge {
+		return sdkerrors.Wrapf(
+			types.ErrStaleExchangeRate,
+			"%s rate age %s exceeds maximum %s (updated %s, current %s)",
+			denom,
+			age,
+			maxAge,
+			exchangeRate.BlockTimestamp,
+			currentTime,
+		)
+	}
+
+	return nil
+}
+
 // SetExchangeRateWithEvent stores an exchange rate and emits an update event.
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
+	if err := chain.ValidateMicroDenom(exchangeRate.Denom); err != nil {
+		return fmt.Errorf("invalid exchange rate denom: %w", err)
+	}
 	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
 		return fmt.Errorf("setting exchange rate with event for denom %s: %w", exchangeRate.Denom, err)
 	}
@@ -189,12 +257,13 @@ func (k Keeper) GetActives(ctx context.Context) ([]string, error) {
 	}
 
 	var actives []string
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := uint64(sdkCtx.BlockHeight())
+	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		if currentHeight > exchangeRate.BlockHeight &&
-			currentHeight-exchangeRate.BlockHeight > params.MaxExchangeRateAge {
-			return false, nil
+		if err := validateExchangeRate(denom, exchangeRate, currentTime, params.MaxExchangeRateAge); err != nil {
+			if errors.Is(err, types.ErrStaleExchangeRate) {
+				return false, nil
+			}
+			return true, err
 		}
 		actives = append(actives, denom)
 		return false, nil
@@ -205,84 +274,75 @@ func (k Keeper) GetActives(ctx context.Context) ([]string, error) {
 	return actives, nil
 }
 
-// GetTobinTax returns the active Tobin tax for a denom.
+// GetTobinTax returns the configured Tobin tax for a denom.
 func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
-	tobinTax, err := k.TobinTax.Get(ctx, denom)
+	params, err := k.Params.Get(ctx)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+		return math.LegacyZeroDec(), fmt.Errorf("getting params: %w", err)
+	}
+
+	for _, tobinTax := range params.TobinTaxes {
+		if tobinTax.Denom == denom {
+			return tobinTax.TobinTax, nil
 		}
-		return math.LegacyZeroDec(), fmt.Errorf("getting tobin tax for denom %s: %w", denom, err)
 	}
 
-	return tobinTax, nil
+	return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
 }
 
-// GetTobinTaxes returns active Tobin taxes.
+// GetTobinTaxes returns configured Tobin taxes.
 func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
-	tobinTaxes := types.TobinTaxes{}
-	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
-		tobinTaxes = append(tobinTaxes, types.TobinTax{Denom: denom, TobinTax: tobinTax})
-		return false, nil
-	}); err != nil {
-		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting params: %w", err)
 	}
 
-	return tobinTaxes, nil
+	return slices.Clone(params.TobinTaxes), nil
 }
 
-// GetVoteTargets returns active vote targets keyed by denom.
-func (k Keeper) GetVoteTargets(ctx context.Context) (map[string]math.LegacyDec, error) {
-	voteTargets := make(map[string]math.LegacyDec)
-	if err := k.TobinTax.Walk(ctx, nil, func(denom string, tobinTax math.LegacyDec) (bool, error) {
-		voteTargets[denom] = tobinTax
-		return false, nil
-	}); err != nil {
-		return nil, fmt.Errorf("iterating tobin taxes: %w", err)
+// GetVoteTargets returns the staged vote-target denoms.
+func (k Keeper) GetVoteTargets(ctx context.Context) ([]string, error) {
+	voteTargets, err := k.VoteTargets.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vote targets: %w", err)
 	}
 
-	return voteTargets, nil
+	return slices.Clone(voteTargets.Denoms), nil
 }
 
-// SyncTobinTax applies params Tobin taxes to the active set and prunes removed denoms.
-func (k Keeper) SyncTobinTax(ctx context.Context, oldTobinTaxes map[string]math.LegacyDec) error {
+// SyncVoteTargets applies the configured denoms to the staged vote-target set
+// and prunes exchange rates for removed targets.
+func (k Keeper) SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
 
-	added := []types.TobinTax{}
-	modified := []types.TobinTax{}
-	removed := maps.Clone(oldTobinTaxes)
-	for _, tt := range params.TobinTaxes {
-		if tax, ok := removed[tt.Denom]; !ok {
-			added = append(added, tt)
-		} else if !tt.TobinTax.Equal(tax) {
-			modified = append(modified, tt)
-		}
-		delete(removed, tt.Denom)
+	denoms := make([]string, len(params.TobinTaxes))
+	for i, tobinTax := range params.TobinTaxes {
+		denoms[i] = tobinTax.Denom
+	}
+	slices.Sort(denoms)
+	if slices.Equal(oldVoteTargets, denoms) {
+		return nil
 	}
 
-	for _, tt := range added {
-		if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
-			return fmt.Errorf("setting tobin tax: %w", err)
-		}
-		k.registerTobinTaxMetadata(ctx, tt.Denom)
+	configured := make(map[string]struct{}, len(denoms))
+	for _, denom := range denoms {
+		configured[denom] = struct{}{}
 	}
 
-	for _, tt := range modified {
-		if err := k.TobinTax.Set(ctx, tt.Denom, tt.TobinTax); err != nil {
-			return fmt.Errorf("setting tobin tax: %w", err)
+	for _, denom := range oldVoteTargets {
+		if _, ok := configured[denom]; ok {
+			continue
 		}
-	}
-
-	for denom := range removed {
 		if err := k.ExchangeRate.Remove(ctx, denom); err != nil {
-			return fmt.Errorf("removing exchange rate: %w", err)
+			return fmt.Errorf("removing exchange rate for vote target %s: %w", denom, err)
 		}
-		if err := k.TobinTax.Remove(ctx, denom); err != nil {
-			return fmt.Errorf("removing tobin tax: %w", err)
-		}
+	}
+
+	if err := k.VoteTargets.Set(ctx, types.VoteTargetState{Denoms: denoms}); err != nil {
+		return fmt.Errorf("setting vote targets: %w", err)
 	}
 
 	return nil
@@ -308,9 +368,25 @@ func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
 	})
 }
 
-// IncrementMissCount increments the miss count for the validator resolved from a consensus address.
-// If the consensus address no longer resolves to a staking validator, accounting is skipped.
-func (k Keeper) IncrementMissCount(ctx context.Context, consAddr sdk.ConsAddress) error {
+// RecordVoteAccounting records score weight and miss status for the validator
+// resolved from a consensus address. If the validator no longer resolves,
+// accounting is skipped.
+func (k Keeper) RecordVoteAccounting(
+	ctx context.Context,
+	consAddr sdk.ConsAddress,
+	scoreWeight math.Int,
+	missed bool,
+) error {
+	if scoreWeight.IsNil() {
+		return errors.New("score weight must be set")
+	}
+	if scoreWeight.IsNegative() {
+		return fmt.Errorf("score weight must not be negative: %s", scoreWeight)
+	}
+	if scoreWeight.IsZero() && !missed {
+		return nil
+	}
+
 	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
 	if err != nil {
 		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
@@ -326,41 +402,41 @@ func (k Keeper) IncrementMissCount(ctx context.Context, consAddr sdk.ConsAddress
 	if err != nil {
 		return fmt.Errorf("parsing validator operator address %q: %w", validator.GetOperator(), err)
 	}
-	missCount, err := k.MissCount.Get(ctx, valAddr)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return fmt.Errorf("getting miss count: %w", err)
-	}
-	if err := k.MissCount.Set(ctx, valAddr, missCount+1); err != nil {
-		return fmt.Errorf("setting miss count: %w", err)
-	}
 
-	return nil
-}
-
-// AddScoreWeight adds score weight for the validator resolved from a consensus address.
-// If the consensus address no longer resolves to a staking validator, accounting is skipped.
-func (k Keeper) AddScoreWeight(ctx context.Context, consAddr sdk.ConsAddress, scoreWeight uint64) error {
-	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
-	if err != nil {
-		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
-			return nil
+	updatedScoreWeight := math.ZeroInt()
+	if scoreWeight.IsPositive() {
+		currentScoreWeight, err := k.ScoreWeight.Get(ctx, valAddr)
+		if err != nil {
+			if !errors.Is(err, collections.ErrNotFound) {
+				return fmt.Errorf("getting score weight: %w", err)
+			}
+			currentScoreWeight = math.ZeroInt()
 		}
-		return fmt.Errorf("getting validator by consensus address %s: %w", consAddr, err)
-	}
-	if validator == nil {
-		return nil
+		updatedScoreWeight = currentScoreWeight.Add(scoreWeight)
 	}
 
-	valAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
-	if err != nil {
-		return fmt.Errorf("parsing validator operator address %q: %w", validator.GetOperator(), err)
+	var updatedMissCount uint64
+	if missed {
+		currentMissCount, err := k.MissCount.Get(ctx, valAddr)
+		if err != nil && !errors.Is(err, collections.ErrNotFound) {
+			return fmt.Errorf("getting miss count: %w", err)
+		}
+		var carry uint64
+		updatedMissCount, carry = bits.Add64(currentMissCount, 1, 0)
+		if carry != 0 {
+			return fmt.Errorf("miss count overflow for validator %s", valAddr)
+		}
 	}
-	currentScoreWeight, err := k.ScoreWeight.Get(ctx, valAddr)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return fmt.Errorf("getting score weight: %w", err)
+
+	if scoreWeight.IsPositive() {
+		if err := k.ScoreWeight.Set(ctx, valAddr, updatedScoreWeight); err != nil {
+			return fmt.Errorf("setting score weight for validator %s: %w", validator, err)
+		}
 	}
-	if err := k.ScoreWeight.Set(ctx, valAddr, currentScoreWeight+scoreWeight); err != nil {
-		return fmt.Errorf("setting score weight for validator %s: %w", validator, err)
+	if missed {
+		if err := k.MissCount.Set(ctx, valAddr, updatedMissCount); err != nil {
+			return fmt.Errorf("setting miss count for validator %s: %w", validator, err)
+		}
 	}
 
 	return nil

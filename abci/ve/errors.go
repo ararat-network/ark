@@ -4,19 +4,6 @@ import (
 	"fmt"
 )
 
-// PreBlockError is an error that is returned when the pre-block simulation fails.
-type PreBlockError struct {
-	Err error
-}
-
-func (e PreBlockError) Error() string {
-	return fmt.Sprintf("finalise block error: %s", e.Err.Error())
-}
-
-func (e PreBlockError) Label() string {
-	return "PreBlockError"
-}
-
 // ErrPanic is an error that is returned when a panic occurs in the ABCI handler.
 type ErrPanic struct {
 	Err error

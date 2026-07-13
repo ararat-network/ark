@@ -175,7 +175,12 @@ message QueryScoreWeightRequest {
 // Query/ScoreWeight RPC method.
 message QueryScoreWeightResponse {
   // score_weight defines the oracle score weight of a validator
-  uint64 score_weight = 1;
+  string score_weight = 1 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryMissCountRequest is the request type for the Query/MissCount RPC

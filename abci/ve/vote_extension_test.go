@@ -16,7 +16,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	abcioracle "ark/abci/oracle"
 	abcitestutil "ark/abci/testutil"
 	"ark/abci/ve"
 	vetypes "ark/abci/ve/types"
@@ -135,7 +134,6 @@ func TestExtendVoteHandler(t *testing.T) {
 				oracleClient,
 				time.Second,
 				voteExtensionCodec,
-				abcioracle.PriceApplier{},
 			).ExtendVoteHandler()
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)
@@ -244,7 +242,6 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				nil,
 				time.Second,
 				voteExtensionCodec,
-				abcioracle.PriceApplier{},
 			).VerifyVoteExtensionHandler()
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)

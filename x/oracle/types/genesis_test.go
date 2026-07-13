@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -25,6 +26,27 @@ func TestValidateGenesis(t *testing.T) {
 			name:   "default is valid",
 			mutate: func(gs *types.GenesisState) {},
 		},
+		{
+			name: "accounting reward window must be positive",
+			mutate: func(gs *types.GenesisState) {
+				gs.Accounting.RewardWindow = 0
+			},
+			expectErr: "accounting reward window must be greater than zero",
+		},
+		{
+			name: "accounting reward distribution window cannot be shorter than reward window",
+			mutate: func(gs *types.GenesisState) {
+				gs.Accounting.RewardDistributionWindow = gs.Accounting.RewardWindow - 1
+			},
+			expectErr: "accounting reward distribution window must be greater than or equal to reward window",
+		},
+		{
+			name: "accounting slash window must be positive",
+			mutate: func(gs *types.GenesisState) {
+				gs.Accounting.SlashWindow = 0
+			},
+			expectErr: "accounting slash window must be greater than zero",
+		},
 		// ExchangeRates
 		{
 			name: "exchange rate empty denom",
@@ -33,7 +55,16 @@ func TestValidateGenesis(t *testing.T) {
 					{Denom: "", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "exchange rate denom must not be empty",
+			expectErr: "exchange rate denom must be a micro denom beginning with u",
+		},
+		{
+			name: "exchange rate denom must be canonical lowercase",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = types.ExchangeRates{
+					{Denom: "uUSD", Rate: math.LegacyOneDec()},
+				}
+			},
+			expectErr: "canonical lowercase micro denom",
 		},
 		{
 			name: "exchange rate not positive",
@@ -65,10 +96,28 @@ func TestValidateGenesis(t *testing.T) {
 		},
 		// ScoreWeights
 		{
+			name: "score weight must be set",
+			mutate: func(gs *types.GenesisState) {
+				gs.ScoreWeights = []types.ScoreWeight{
+					{ValidatorAddress: validatorAddress, ScoreWeight: math.Int{}},
+				}
+			},
+			expectErr: "score weight must be set",
+		},
+		{
+			name: "score weight must not be negative",
+			mutate: func(gs *types.GenesisState) {
+				gs.ScoreWeights = []types.ScoreWeight{
+					{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(-1)},
+				}
+			},
+			expectErr: "score weight must not be negative",
+		},
+		{
 			name: "score weight empty validator address",
 			mutate: func(gs *types.GenesisState) {
 				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "", ScoreWeight: 1},
+					{ValidatorAddress: "", ScoreWeight: math.NewInt(1)},
 				}
 			},
 			expectErr: "score weight validator address must not be empty",
@@ -77,8 +126,8 @@ func TestValidateGenesis(t *testing.T) {
 			name: "duplicate score weight",
 			mutate: func(gs *types.GenesisState) {
 				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: validatorAddress, ScoreWeight: 1},
-					{ValidatorAddress: validatorAddress, ScoreWeight: 2},
+					{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(1)},
+					{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(2)},
 				}
 			},
 			expectErr: "duplicate score weight for validator " + validatorAddress,
@@ -87,7 +136,7 @@ func TestValidateGenesis(t *testing.T) {
 			name: "score weight invalid validator address",
 			mutate: func(gs *types.GenesisState) {
 				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "not-a-validator-address", ScoreWeight: 1},
+					{ValidatorAddress: "not-a-validator-address", ScoreWeight: math.NewInt(1)},
 				}
 			},
 			expectErr: "score weight validator address is invalid",
@@ -121,62 +170,45 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "miss count validator address is invalid",
 		},
-		// TobinTaxes
+		// VoteTargets
 		{
-			name: "tobin tax denom must be micro denom",
+			name: "vote target denom must be micro denom",
 			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = []types.TobinTax{
-					{Denom: "u", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-				}
+				gs.VoteTargets.Denoms = []string{"u"}
 			},
-			expectErr: "tobin tax denom must be a micro denom beginning with u: u",
+			expectErr: "vote target denom must be a micro denom beginning with u: u",
 		},
 		{
-			name: "tobin tax denom must be canonical lowercase",
+			name: "vote target denom must be canonical lowercase",
 			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = []types.TobinTax{
-					{Denom: "uUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-				}
+				gs.VoteTargets.Denoms = []string{"uUSD"}
 			},
 			expectErr: "canonical lowercase micro denom",
 		},
 		{
-			name: "tobin tax denom cannot contain path separators",
+			name: "vote target denom cannot contain path separators",
 			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = []types.TobinTax{
-					{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-				}
+				gs.VoteTargets.Denoms = []string{"ufoo/bar"}
 			},
 			expectErr: "canonical lowercase micro denom",
 		},
 		{
-			name: "tobin tax outside valid range",
+			name: "duplicate vote target",
 			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = []types.TobinTax{
-					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(101, 2)},
-				}
+				gs.VoteTargets.Denoms = []string{"uusd", "uusd"}
 			},
-			expectErr: "tobin tax for uusd must be between [0, 1]",
-		},
-		{
-			name: "tobin tax is nil",
-			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = []types.TobinTax{
-					{Denom: "uusd", TobinTax: math.LegacyDec{}},
-				}
-			},
-			expectErr: "tobin tax for uusd must be set",
+			expectErr: "duplicate vote target denom uusd",
 		},
 		{
 			name: "maximum vote targets is valid",
 			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets)
+				gs.VoteTargets.Denoms = makeTestVoteTargets(types.MaxVoteTargets)
 			},
 		},
 		{
 			name: "too many vote targets",
 			mutate: func(gs *types.GenesisState) {
-				gs.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets + 1)
+				gs.VoteTargets.Denoms = makeTestVoteTargets(types.MaxVoteTargets + 1)
 			},
 			expectErr: "exceeds maximum vote targets",
 		},
@@ -184,20 +216,20 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "custom valid genesis",
 			mutate: func(gs *types.GenesisState) {
+				params := types.DefaultParams()
 				*gs = *types.NewGenesisState(
-					types.DefaultParams(),
+					params,
+					types.NewAccountingState(params),
 					types.ExchangeRates{
 						{Denom: "uusd", Rate: math.LegacyOneDec()},
 					},
 					[]types.ScoreWeight{
-						{ValidatorAddress: validatorAddress, ScoreWeight: 1},
+						{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(1)},
 					},
 					[]types.MissCount{
 						{ValidatorAddress: otherValidatorAddress, MissCount: 0},
 					},
-					[]types.TobinTax{
-						{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					},
+					types.VoteTargetState{Denoms: []string{"uusd"}},
 				)
 			},
 		},
@@ -216,4 +248,12 @@ func TestValidateGenesis(t *testing.T) {
 			}
 		})
 	}
+}
+
+func makeTestVoteTargets(count int) []string {
+	denoms := make([]string, count)
+	for i := range count {
+		denoms[i] = fmt.Sprintf("u%03d", i)
+	}
+	return denoms
 }

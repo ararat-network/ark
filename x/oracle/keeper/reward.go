@@ -17,7 +17,7 @@ import (
 // validatorScore caches score weights for reward distribution.
 type validatorScore struct {
 	addr   sdk.ValAddress
-	weight uint64
+	weight math.Int
 }
 
 // SettleRewards distributes oracle rewards by score weight.
@@ -25,8 +25,8 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 	// Sum validator score weights.
 	votePowerSum := math.ZeroInt()
 	validatorScores := []validatorScore{}
-	if err := k.ScoreWeight.Walk(ctx, nil, func(validator sdk.ValAddress, scoreWeight uint64) (bool, error) {
-		votePowerSum = votePowerSum.Add(math.NewIntFromUint64(scoreWeight))
+	if err := k.ScoreWeight.Walk(ctx, nil, func(validator sdk.ValAddress, scoreWeight math.Int) (bool, error) {
+		votePowerSum = votePowerSum.Add(scoreWeight)
 		validatorScores = append(validatorScores, validatorScore{
 			addr:   validator,
 			weight: scoreWeight,
@@ -42,25 +42,25 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		return nil
 	}
 
-	rewardAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
-	rewardPool := k.bankKeeper.GetAllBalances(ctx, rewardAcc.GetAddress())
+	rewardBalance := k.bankKeeper.GetBalance(ctx, k.moduleAddress, chain.MicroNoahDenom)
 
 	// Skip distribution when the reward pool is empty.
-	if rewardPool.IsZero() {
+	if rewardBalance.IsZero() {
 		k.Logger(ctx).Debug("no rewards for this period", "rewardWindow", rewardWindow)
 		return nil
 	}
 
 	// periodRewards = oraclePool * rewardWindow / rewardDistributionWindow.
-	periodRewards := math.LegacyNewDecFromInt(rewardPool.AmountOf(chain.MicroNoahDenom)).
-		MulInt64(int64(rewardWindow)).
-		QuoInt64(int64(rewardDistributionWindow))
+	periodRewards := math.LegacyNewDecFromInt(rewardBalance.Amount).
+		MulInt(math.NewIntFromUint64(rewardWindow)).
+		QuoInt(math.NewIntFromUint64(rewardDistributionWindow))
+	rewardPerWeight := periodRewards.QuoInt(votePowerSum)
 
 	// Distribute rewards by score weight.
 	var distributedReward sdk.Coins
 	rewardEvents := sdk.Events{}
 	for _, score := range validatorScores {
-		rewardAmt := periodRewards.QuoInt(votePowerSum).MulInt64(int64(score.weight)).TruncateInt()
+		rewardAmt := rewardPerWeight.MulInt(score.weight).TruncateInt()
 		rewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, rewardAmt))
 		if rewardCoins.IsZero() {
 			continue
@@ -81,7 +81,7 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 
 		if err := k.distrKeeper.AllocateTokensToValidator(ctx, validator, sdk.NewDecCoinsFromCoins(rewardCoins...)); err != nil {
 			return fmt.Errorf(
-				"allocating oracle rewards to %s with reward %s and weight %d: %w",
+				"allocating oracle rewards to %s with reward %s and weight %s: %w",
 				score.addr,
 				rewardCoins.String(),
 				score.weight,

@@ -20,6 +20,7 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 			SlashFraction:            GenSlashFraction(r.Rand),
 			SlashWindow:              GenSlashWindow(r.Rand),
 			MinValidPerWindow:        GenMinValidPerWindow(r.Rand),
+			MaxExchangeRateAge:       types.DefaultMaxExchangeRateAge,
 		}
 
 		return nil, &types.MsgUpdateParams{

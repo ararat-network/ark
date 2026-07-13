@@ -13,288 +13,154 @@ import (
 	vetypes "ark/abci/ve/types"
 )
 
-var enc, _ = zstd.NewWriter(nil)
+var zstdEncoder = func() *zstd.Encoder {
+	encoder, err := zstd.NewWriter(nil)
+	if err != nil {
+		panic(fmt.Errorf("create zstd encoder: %w", err))
+	}
+	return encoder
+}()
 
-// VoteExtensionCodec is the interface for encoding and decoding vote extensions.
+// VoteExtensionCodec encodes and decodes Ark oracle vote extensions.
 type VoteExtensionCodec interface {
-	// Encode encodes the vote extension into a byte array.
-	Encode(ve vetypes.OracleVoteExtension) ([]byte, error)
-
-	// Decode decodes the vote extension from a byte array.
+	Encode(vetypes.OracleVoteExtension) ([]byte, error)
 	Decode([]byte) (vetypes.OracleVoteExtension, error)
 }
 
-// ExtendedCommitCodec is the interface for encoding and decoding extended commit info.
+// ExtendedCommitCodec encodes and decodes CometBFT extended commit info.
 type ExtendedCommitCodec interface {
-	// Encode encodes the extended commit info into a byte array.
 	Encode(cometabci.ExtendedCommitInfo) ([]byte, error)
-
-	// Decode decodes the extended commit info from a byte array.
 	Decode([]byte) (cometabci.ExtendedCommitInfo, error)
 }
 
-// NewDefaultVoteExtensionCodec returns a new DefaultVoteExtensionCodec.
-
-func NewDefaultVoteExtensionCodec() *DefaultVoteExtensionCodec {
-	return &DefaultVoteExtensionCodec{}
+// NewVoteExtensionCodec returns Ark's bounded protobuf-plus-zlib vote-extension codec.
+func NewVoteExtensionCodec() VoteExtensionCodec {
+	return voteExtensionCodec{}
 }
 
-// DefaultVoteExtensionCodec is the default implementation of VoteExtensionCodec.
-// It uses the generated Marshal and Unmarshal methods.
-type DefaultVoteExtensionCodec struct{}
+// NewExtendedCommitCodec returns Ark's bounded protobuf-plus-zstd extended-commit codec.
+func NewExtendedCommitCodec() ExtendedCommitCodec {
+	return extendedCommitCodec{}
+}
 
-func (codec *DefaultVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtension) ([]byte, error) {
-	bz, err := ve.Marshal()
+type voteExtensionCodec struct{}
+
+func (voteExtensionCodec) Encode(voteExtension vetypes.OracleVoteExtension) ([]byte, error) {
+	decoded, err := voteExtension.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
+	if err := validatePayloadSize("decoded vote extension", len(decoded), maxVoteExtensionDecodedBytes); err != nil {
 		return nil, err
 	}
 
-	return bz, nil
+	encoded, err := compressZlib(decoded)
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePayloadSize("compressed vote extension", len(encoded), maxVoteExtensionWireBytes); err != nil {
+		return nil, err
+	}
+
+	return encoded, nil
 }
 
-func (codec *DefaultVoteExtensionCodec) Decode(bz []byte) (vetypes.OracleVoteExtension, error) {
-	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
+func (voteExtensionCodec) Decode(encoded []byte) (vetypes.OracleVoteExtension, error) {
+	if err := validatePayloadSize("compressed vote extension", len(encoded), maxVoteExtensionWireBytes); err != nil {
 		return vetypes.OracleVoteExtension{}, err
 	}
 
-	var ve vetypes.OracleVoteExtension
-	return ve, ve.Unmarshal(bz)
-}
-
-type Compressor interface {
-	Compress([]byte) ([]byte, error)
-	Decompress([]byte) ([]byte, error)
-}
-
-// ZLibCompressor uses zlib and bounds decompressed output to protect callers
-// from compressed payloads that expand beyond their resource envelope.
-type ZLibCompressor struct {
-	maxOutputBytes int64
-}
-
-// NewZLibCompressor returns a new ZLibCompressor.
-func NewZLibCompressor(maxOutputBytes int64) *ZLibCompressor {
-	return &ZLibCompressor{maxOutputBytes: maxOutputBytes}
-}
-
-// Compress compresses the given byte array using zlib. It returns an error if the compression fails.
-func (c *ZLibCompressor) Compress(bz []byte) ([]byte, error) {
-	var b bytes.Buffer
-
-	w := zlib.NewWriter(&b)
-
-	// write and flush the buffer
-	if _, err := w.Write(bz); err != nil {
-		_ = w.Close()
-		return nil, err
-	}
-	if err := w.Close(); err != nil {
-		return nil, err
+	decoded, err := decompressZlib(encoded, maxVoteExtensionDecodedBytes)
+	if err != nil {
+		return vetypes.OracleVoteExtension{}, err
 	}
 
-	return b.Bytes(), nil
+	var voteExtension vetypes.OracleVoteExtension
+	return voteExtension, voteExtension.Unmarshal(decoded)
 }
 
-// Decompress decompresses the given byte array using zlib. It returns an error if the decompression fails.
-func (c *ZLibCompressor) Decompress(bz []byte) ([]byte, error) {
-	if len(bz) == 0 {
-		return nil, nil
-	}
-	if err := validateMaxOutputBytes(c.maxOutputBytes); err != nil {
-		return nil, err
-	}
-	r, err := zlib.NewReader(bytes.NewReader(bz))
+type extendedCommitCodec struct{}
+
+func (extendedCommitCodec) Encode(extendedCommit cometabci.ExtendedCommitInfo) ([]byte, error) {
+	decoded, err := extendedCommit.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
-
-	return readLimited(r, c.maxOutputBytes)
-}
-
-// ZStdCompressor uses zstd and bounds both the decoder window and decompressed
-// output. Separate instances should be used for payloads with different limits.
-type ZStdCompressor struct {
-	maxOutputBytes int64
-}
-
-func NewZStdCompressor(maxOutputBytes int64) *ZStdCompressor {
-	return &ZStdCompressor{maxOutputBytes: maxOutputBytes}
-}
-
-func (c *ZStdCompressor) Compress(bz []byte) ([]byte, error) {
-	return enc.EncodeAll(bz, nil), nil
-}
-
-func (c *ZStdCompressor) Decompress(bz []byte) ([]byte, error) {
-	if len(bz) == 0 {
-		return nil, nil
-	}
-	if err := validateMaxOutputBytes(c.maxOutputBytes); err != nil {
+	if err := validatePayloadSize("decoded extended commit", len(decoded), maxExtendedCommitDecodedBytes); err != nil {
 		return nil, err
 	}
 
-	r, err := zstd.NewReader(
-		bytes.NewReader(bz),
+	encoded := zstdEncoder.EncodeAll(decoded, nil)
+	if err := validatePayloadSize("compressed extended commit", len(encoded), maxExtendedCommitWireBytes); err != nil {
+		return nil, err
+	}
+
+	return encoded, nil
+}
+
+func (extendedCommitCodec) Decode(encoded []byte) (cometabci.ExtendedCommitInfo, error) {
+	if err := validatePayloadSize("compressed extended commit", len(encoded), maxExtendedCommitWireBytes); err != nil {
+		return cometabci.ExtendedCommitInfo{}, err
+	}
+
+	decoded, err := decompressZstd(encoded, maxExtendedCommitDecodedBytes)
+	if err != nil {
+		return cometabci.ExtendedCommitInfo{}, err
+	}
+	if len(decoded) == 0 {
+		return cometabci.ExtendedCommitInfo{}, nil
+	}
+
+	var extendedCommit cometabci.ExtendedCommitInfo
+	return extendedCommit, extendedCommit.Unmarshal(decoded)
+}
+
+func compressZlib(decoded []byte) ([]byte, error) {
+	var encoded bytes.Buffer
+	writer := zlib.NewWriter(&encoded)
+	if _, err := writer.Write(decoded); err != nil {
+		_ = writer.Close()
+		return nil, err
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+
+	return encoded.Bytes(), nil
+}
+
+func decompressZlib(encoded []byte, maxOutputBytes int64) ([]byte, error) {
+	if len(encoded) == 0 {
+		return nil, nil
+	}
+
+	reader, err := zlib.NewReader(bytes.NewReader(encoded))
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	return readLimited(reader, maxOutputBytes)
+}
+
+func decompressZstd(encoded []byte, maxOutputBytes int64) ([]byte, error) {
+	if len(encoded) == 0 {
+		return nil, nil
+	}
+
+	reader, err := zstd.NewReader(
+		bytes.NewReader(encoded),
 		zstd.WithDecoderConcurrency(1),
 		zstd.WithDecoderLowmem(true),
-		zstd.WithDecoderMaxMemory(uint64(c.maxOutputBytes)),
-		zstd.WithDecoderMaxWindow(uint64(c.maxOutputBytes)),
+		zstd.WithDecoderMaxMemory(uint64(maxOutputBytes)),
+		zstd.WithDecoderMaxWindow(uint64(maxOutputBytes)),
 	)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
+	defer reader.Close()
 
-	return readLimited(r, c.maxOutputBytes)
-}
-
-// CompressionVoteExtensionCodec compresses encoded vote extensions and
-// decompresses them before decoding.
-type CompressionVoteExtensionCodec struct {
-	codec      VoteExtensionCodec
-	compressor Compressor
-}
-
-// NewCompressionVoteExtensionCodec returns a new CompressionVoteExtensionCodec given an underlying codec.
-func NewCompressionVoteExtensionCodec(codec VoteExtensionCodec, compressor Compressor) *CompressionVoteExtensionCodec {
-	return &CompressionVoteExtensionCodec{
-		codec:      codec,
-		compressor: compressor,
-	}
-}
-
-// Encode returns the encoded vote extension using the underlying codec and then
-// compresses the result.
-func (codec *CompressionVoteExtensionCodec) Encode(ve vetypes.OracleVoteExtension) ([]byte, error) {
-	bz, err := codec.codec.Encode(ve)
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
-		return nil, err
-	}
-
-	bz, err = codec.compressor.Compress(bz)
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("compressed vote extension", len(bz), MaxVoteExtensionWireBytes); err != nil {
-		return nil, err
-	}
-
-	return bz, nil
-}
-
-// Decode decompresses the vote extension and then decodes the result using the
-// underlying codec.
-func (codec *CompressionVoteExtensionCodec) Decode(bz []byte) (vetypes.OracleVoteExtension, error) {
-	if err := validatePayloadSize("compressed vote extension", len(bz), MaxVoteExtensionWireBytes); err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
-
-	// Decompress first.
-	bz, err := codec.compressor.Decompress(bz)
-	if err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
-	if err := validatePayloadSize("decoded vote extension", len(bz), MaxVoteExtensionDecodedBytes); err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
-
-	return codec.codec.Decode(bz)
-}
-
-// DefaultExtendedCommitCodec is the default implementation of ExtendedCommitCodec.
-// It uses the generated Marshal and Unmarshal methods.
-type DefaultExtendedCommitCodec struct{}
-
-// NewDefaultExtendedCommitCodec returns a new DefaultExtendedCommitCodec.
-func NewDefaultExtendedCommitCodec() *DefaultExtendedCommitCodec {
-	return &DefaultExtendedCommitCodec{}
-}
-
-func (codec *DefaultExtendedCommitCodec) Encode(extendedCommitInfo cometabci.ExtendedCommitInfo) ([]byte, error) {
-	bz, err := extendedCommitInfo.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
-		return nil, err
-	}
-
-	return bz, nil
-}
-
-func (codec *DefaultExtendedCommitCodec) Decode(bz []byte) (cometabci.ExtendedCommitInfo, error) {
-	if len(bz) == 0 {
-		return cometabci.ExtendedCommitInfo{}, nil
-	}
-	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-
-	var extendedCommitInfo cometabci.ExtendedCommitInfo
-	return extendedCommitInfo, extendedCommitInfo.Unmarshal(bz)
-}
-
-// CompressionExtendedCommitCodec compresses encoded extended commit info and
-// decompresses it before decoding.
-type CompressionExtendedCommitCodec struct {
-	codec      ExtendedCommitCodec
-	compressor Compressor
-}
-
-// NewCompressionExtendedCommitCodec returns a new CompressionExtendedCommitCodec given an underlying codec.
-func NewCompressionExtendedCommitCodec(codec ExtendedCommitCodec, compressor Compressor) *CompressionExtendedCommitCodec {
-	return &CompressionExtendedCommitCodec{
-		codec:      codec,
-		compressor: compressor,
-	}
-}
-
-// Encode returns the encoded extended commit info using the underlying codec and
-// then compresses the result.
-func (codec *CompressionExtendedCommitCodec) Encode(extendedCommitInfo cometabci.ExtendedCommitInfo) ([]byte, error) {
-	bz, err := codec.codec.Encode(extendedCommitInfo)
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
-		return nil, err
-	}
-
-	bz, err = codec.compressor.Compress(bz)
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("compressed extended commit", len(bz), MaxExtendedCommitWireBytes); err != nil {
-		return nil, err
-	}
-
-	return bz, nil
-}
-
-// Decode decompresses the extended commit info and then decodes the result using
-// the underlying codec.
-func (codec *CompressionExtendedCommitCodec) Decode(bz []byte) (cometabci.ExtendedCommitInfo, error) {
-	if err := validatePayloadSize("compressed extended commit", len(bz), MaxExtendedCommitWireBytes); err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-
-	// Decompress first.
-	bz, err := codec.compressor.Decompress(bz)
-	if err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-	if err := validatePayloadSize("decoded extended commit", len(bz), MaxExtendedCommitDecodedBytes); err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-
-	return codec.codec.Decode(bz)
+	return readLimited(reader, maxOutputBytes)
 }
 
 func validatePayloadSize(name string, size, maximum int) error {
@@ -305,23 +171,15 @@ func validatePayloadSize(name string, size, maximum int) error {
 	return nil
 }
 
-func validateMaxOutputBytes(maxOutputBytes int64) error {
-	if maxOutputBytes <= 0 {
-		return fmt.Errorf("maximum decompressed output must be positive, got %d", maxOutputBytes)
-	}
-
-	return nil
-}
-
-func readLimited(r io.Reader, maxOutputBytes int64) ([]byte, error) {
-	limited := &io.LimitedReader{R: r, N: maxOutputBytes + 1}
-	bz, err := io.ReadAll(limited)
+func readLimited(reader io.Reader, maxOutputBytes int64) ([]byte, error) {
+	limited := &io.LimitedReader{R: reader, N: maxOutputBytes + 1}
+	decoded, err := io.ReadAll(limited)
 	if err != nil {
 		return nil, err
 	}
-	if int64(len(bz)) > maxOutputBytes {
-		return nil, fmt.Errorf("decompressed output size %d exceeds maximum %d", len(bz), maxOutputBytes)
+	if int64(len(decoded)) > maxOutputBytes {
+		return nil, fmt.Errorf("decompressed output size %d exceeds maximum %d", len(decoded), maxOutputBytes)
 	}
 
-	return bz, nil
+	return decoded, nil
 }

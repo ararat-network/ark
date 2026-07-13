@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
+	"math"
 	"sort"
 	"testing"
 
@@ -19,16 +19,11 @@ import (
 
 	"cosmossdk.io/core/comet"
 	"cosmossdk.io/core/header"
-	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracleencoding "ark/abci/oracle/encoding"
-	abcitestutil "ark/abci/testutil"
 	"ark/abci/ve"
-	vetypes "ark/abci/ve/types"
-	oracletypes "ark/x/oracle/types"
 )
 
 const testChainID = "test-chain"
@@ -42,90 +37,6 @@ type testValidator struct {
 type fakeValidatorStore struct {
 	pubKeys map[string]cmtprotocrypto.PublicKey
 	errs    map[string]error
-}
-
-func TestValidateOracleVoteExtension(t *testing.T) {
-	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
-	zeroRate := abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())
-	negativeRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(-1))
-
-	testCases := []struct {
-		name      string
-		voteExt   vetypes.OracleVoteExtension
-		expectErr bool
-	}{
-		{
-			name: "valid canonical rate",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": validRate,
-			}},
-		},
-		{
-			name: "zero rate is valid explicit abstention",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": zeroRate,
-			}},
-		},
-		{
-			name: "negative rate is valid explicit abstention",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": negativeRate,
-			}},
-		},
-		{
-			name: "nil rate bytes reject",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": nil,
-			}},
-			expectErr: true,
-		},
-		{
-			name: "empty rate bytes reject",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": {},
-			}},
-			expectErr: true,
-		},
-		{
-			name: "malformed rate bytes reject",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": []byte("not-a-rate"),
-			}},
-			expectErr: true,
-		},
-		{
-			name: "oversized rate bytes reject",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"uusd": make([]byte, oracleencoding.MaxEncodedRateBytes+1),
-			}},
-			expectErr: true,
-		},
-		{
-			name: "invalid denom rejects",
-			voteExt: vetypes.OracleVoteExtension{Rates: map[string][]byte{
-				"bad denom": validRate,
-			}},
-			expectErr: true,
-		},
-		{
-			name: "too many rates reject",
-			voteExt: vetypes.OracleVoteExtension{
-				Rates: makeRateMap(t, oracletypes.MaxVoteTargets+1),
-			},
-			expectErr: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := ve.ValidateOracleVoteExtension(sdk.Context{}, tc.voteExt)
-			if tc.expectErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
 }
 
 func TestVoteExtensionsEnabled(t *testing.T) {
@@ -277,9 +188,10 @@ func TestValidateExtendedCommitAgainstLastCommit(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name:      "pruned absent vote may clear extension and signature",
+			name:      "committed vote cannot be rewritten as absent",
 			extCommit: prunedCommit,
 			last:      validLastCommit,
+			expectErr: true,
 		},
 	}
 
@@ -295,6 +207,25 @@ func TestValidateExtendedCommitAgainstLastCommit(t *testing.T) {
 	}
 }
 
+func TestValidateExtendedCommitAgainstLastCommitExtremePowerOrdering(t *testing.T) {
+	vals := []testValidator{newTestValidator(), newTestValidator()}
+	validCommit := sortExtendedCommit(cometabci.ExtendedCommitInfo{
+		Round: 1,
+		Votes: []cometabci.ExtendedVoteInfo{
+			newExtendedVote(vals[0], 20, cmtproto.BlockIDFlagCommit, []byte("ve"), []byte("sig")),
+			newExtendedVote(vals[1], 10, cmtproto.BlockIDFlagCommit, []byte("ve"), []byte("sig")),
+		},
+	})
+	lastCommit := lastCommitFromExtendedCommit(validCommit)
+	extremeCommit := cloneExtendedCommit(validCommit)
+	extremeCommit.Votes[0].Validator.Power = math.MaxInt64
+	extremeCommit.Votes[1].Validator.Power = math.MinInt64
+
+	err := ve.ValidateExtendedCommitAgainstLastCommit(extremeCommit, lastCommit)
+	require.ErrorContains(t, err, "does not match last commit vote power")
+	require.NotContains(t, err.Error(), "not sorted")
+}
+
 func TestValidateVoteExtensions(t *testing.T) {
 	vals := []testValidator{newTestValidator(), newTestValidator(), newTestValidator()}
 	ext := []byte("vote-extension")
@@ -304,6 +235,14 @@ func TestValidateVoteExtensions(t *testing.T) {
 	validCommit, validInfo := extendedCommitToBlockInfo(validCommit)
 	enabledCtx = enabledCtx.WithCometInfo(validInfo)
 	validStore := fakeValidatorStoreFrom(vals)
+	censorableCtx := newVoteExtensionContext(3, 1)
+	censorableCommit := signedExtendedCommit(t, censorableCtx, vals, []int64{34, 33, 33}, ext)
+	censorableCommit, censorableInfo := extendedCommitToBlockInfo(censorableCommit)
+	censorableCtx = censorableCtx.WithCometInfo(censorableInfo)
+	censoredCommit := cloneExtendedCommit(censorableCommit)
+	censoredCommit.Votes[1].BlockIdFlag = cmtproto.BlockIDFlagAbsent
+	censoredCommit.Votes[1].VoteExtension = nil
+	censoredCommit.Votes[1].ExtensionSignature = nil
 
 	testCases := []struct {
 		name      string
@@ -317,6 +256,13 @@ func TestValidateVoteExtensions(t *testing.T) {
 			ctx:    enabledCtx,
 			store:  validStore,
 			commit: validCommit,
+		},
+		{
+			name:      "proposer cannot erase committed report while retaining quorum",
+			ctx:       censorableCtx,
+			store:     validStore,
+			commit:    censoredCommit,
+			expectErr: true,
 		},
 		{
 			name:  "disabled vote extensions reject present extension",
@@ -368,7 +314,7 @@ func TestValidateVoteExtensions(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "missing validator pubkey is skipped but voting power still counts",
+			name: "missing validator pubkey rejects fabricated extension",
 			ctx:  enabledCtx,
 			store: func() fakeValidatorStore {
 				store := fakeValidatorStoreFrom(vals)
@@ -376,7 +322,13 @@ func TestValidateVoteExtensions(t *testing.T) {
 				store.errs[string(vals[1].consAddr)] = errors.New("validator not found")
 				return store
 			}(),
-			commit: validCommit,
+			commit: func() cometabci.ExtendedCommitInfo {
+				commit := cloneExtendedCommit(validCommit)
+				commit.Votes[1].VoteExtension = []byte("fabricated-vote-extension")
+				commit.Votes[1].ExtensionSignature = []byte("bogus-signature")
+				return commit
+			}(),
+			expectErr: true,
 		},
 	}
 
@@ -546,17 +498,6 @@ func cloneExtendedCommit(commit cometabci.ExtendedCommitInfo) cometabci.Extended
 func lastCommitFromExtendedCommit(commit cometabci.ExtendedCommitInfo) comet.CommitInfo {
 	_, blockInfo := extendedCommitToBlockInfo(commit)
 	return blockInfo.GetLastCommit()
-}
-
-func makeRateMap(t *testing.T, count int) map[string][]byte {
-	t.Helper()
-
-	rates := make(map[string][]byte, count)
-	for i := range count {
-		rates[fmt.Sprintf("u%03d", i)] = abcitestutil.MustEncodeRate(t, math.LegacyNewDec(int64(i+1)))
-	}
-
-	return rates
 }
 
 func marshalDelimited(msg proto.Message) ([]byte, error) {

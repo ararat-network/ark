@@ -1,13 +1,11 @@
 package preblock
 
 import (
-	cometabci "github.com/cometbft/cometbft/abci/types"
 	cometproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	abcioracle "ark/abci/oracle"
 	oraclemetrics "ark/abci/oracle/metrics"
 )
 
@@ -21,18 +19,12 @@ func (h *Handler) recordPrices(prices map[string]math.LegacyDec) {
 
 // recordValidatorReports records whether each validator in the decided commit
 // reported a price for each vote target denom and, if so, the price reported.
-func (h *Handler) recordValidatorReports(decidedCommit cometabci.CommitInfo, voteTargets map[string]math.LegacyDec) {
-	// Iterate over each validator in the commit.
-	for _, vote := range decidedCommit.Votes {
-		var nilVote bool
-		validator := sdk.ConsAddress(vote.Validator.Address)
-		// If the validator voted nil, record that status.
-		if vote.BlockIdFlag != cometproto.BlockIDFlagCommit {
-			nilVote = true
-		}
+func (h *Handler) recordValidatorReports(reports []abcioracle.ValidatorReport, voteTargets []string) {
+	for _, report := range reports {
+		validator := report.Validator
+		nilVote := report.BlockIDFlag != cometproto.BlockIDFlagCommit
 		// Iterate over each vote target denom and record whether the validator reported a price for it.
-		validatorPrices := h.pa.GetPricesForValidator(validator)
-		for denom := range voteTargets {
+		for _, denom := range voteTargets {
 			// If the validator reported a nil vote, record that and skip.
 			if nilVote {
 				oraclemetrics.AddValidatorReportForTicker(validator.String(), denom, oraclemetrics.Absent)
@@ -40,7 +32,7 @@ func (h *Handler) recordValidatorReports(decidedCommit cometabci.CommitInfo, vot
 			}
 
 			// Otherwise, check if the validator reported a price for the denom.
-			price, ok := validatorPrices[denom]
+			price, ok := report.Rates[denom]
 			if !ok {
 				oraclemetrics.AddValidatorReportForTicker(validator.String(), denom, oraclemetrics.MissingPrice)
 				continue

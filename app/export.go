@@ -261,8 +261,8 @@ func (app *ArkApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []
 		panic(fmt.Errorf("error while clearing exchange rates: %w", err))
 	}
 
-	if err := app.OracleKeeper.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, _ uint64) (bool, error) {
-		if err := app.OracleKeeper.ScoreWeight.Set(ctx, operator, 0); err != nil {
+	if err := app.OracleKeeper.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, _ math.Int) (bool, error) {
+		if err := app.OracleKeeper.ScoreWeight.Set(ctx, operator, math.ZeroInt()); err != nil {
 			return false, err
 		}
 		return false, nil

@@ -38,6 +38,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"ark/app"
+	oracleclient "ark/oracle/client"
 )
 
 var (
@@ -390,9 +391,12 @@ func initTestnetFiles(
 			return err
 		}
 
-		srvconfig.SetConfigTemplate(srvconfig.DefaultConfigTemplate)
+		srvconfig.SetConfigTemplate(srvconfig.DefaultConfigTemplate + oracleclient.DefaultConfigTemplate)
 
-		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config", "app.toml"), appConfig)
+		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config", "app.toml"), arkAppConfig{
+			Config: *appConfig,
+			Oracle: oracleclient.NewDefaultConfig(),
+		})
 	}
 
 	if err := initGenFiles(clientCtx, mm, args.chainID, genAccounts, genBalances, genFiles, args.numValidators); err != nil {

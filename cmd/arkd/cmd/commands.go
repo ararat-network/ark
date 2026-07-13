@@ -29,7 +29,13 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
 	"ark/app"
+	oracleclient "ark/oracle/client"
 )
+
+type arkAppConfig struct {
+	serverconfig.Config
+	Oracle oracleclient.Config
+}
 
 // initCometBFTConfig helps to override default CometBFT Config values.
 // return cmtcfg.DefaultConfig if no custom configuration is required for the application.
@@ -50,7 +56,10 @@ func initAppConfig() (string, any) {
 	srvCfg.MinGasPrices = "0unoah"
 	// TODO: look into other default configs I might want
 
-	return serverconfig.DefaultConfigTemplate, srvCfg
+	return serverconfig.DefaultConfigTemplate + oracleclient.DefaultConfigTemplate, arkAppConfig{
+		Config: *srvCfg,
+		Oracle: oracleclient.NewDefaultConfig(),
+	}
 }
 
 func initRootCmd(
@@ -180,11 +189,12 @@ func appExport(
 		arkApp = app.NewArkApp(logger, db, false, appOpts)
 
 		if err := arkApp.LoadHeight(height); err != nil {
-			return servertypes.ExportedApp{}, err
+			return servertypes.ExportedApp{}, errors.Join(err, arkApp.Close())
 		}
 	} else {
 		arkApp = app.NewArkApp(logger, db, true, appOpts)
 	}
 
-	return arkApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+	exported, exportErr := arkApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+	return exported, errors.Join(exportErr, arkApp.Close())
 }

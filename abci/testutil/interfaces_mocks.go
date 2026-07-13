@@ -10,13 +10,13 @@
 package testutil
 
 import (
-	types0 "ark/oracle/types"
-	types1 "ark/x/oracle/types"
+	types "ark/oracle/types"
+	types0 "ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
 	math "cosmossdk.io/math"
-	types "github.com/cosmos/cosmos-sdk/types"
+	types1 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )
@@ -45,25 +45,11 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// AddScoreWeight mocks base method.
-func (m *MockOracleKeeper) AddScoreWeight(ctx context.Context, validator types.ConsAddress, scoreWeight uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddScoreWeight", ctx, validator, scoreWeight)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddScoreWeight indicates an expected call of AddScoreWeight.
-func (mr *MockOracleKeeperMockRecorder) AddScoreWeight(ctx, validator, scoreWeight any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddScoreWeight", reflect.TypeOf((*MockOracleKeeper)(nil).AddScoreWeight), ctx, validator, scoreWeight)
-}
-
 // GetParams mocks base method.
-func (m *MockOracleKeeper) GetParams(ctx context.Context) (types1.Params, error) {
+func (m *MockOracleKeeper) GetParams(ctx context.Context) (types0.Params, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetParams", ctx)
-	ret0, _ := ret[0].(types1.Params)
+	ret0, _ := ret[0].(types0.Params)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -75,10 +61,10 @@ func (mr *MockOracleKeeperMockRecorder) GetParams(ctx any) *gomock.Call {
 }
 
 // GetVoteTargets mocks base method.
-func (m *MockOracleKeeper) GetVoteTargets(ctx context.Context) (map[string]math.LegacyDec, error) {
+func (m *MockOracleKeeper) GetVoteTargets(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVoteTargets", ctx)
-	ret0, _ := ret[0].(map[string]math.LegacyDec)
+	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,22 +75,22 @@ func (mr *MockOracleKeeperMockRecorder) GetVoteTargets(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).GetVoteTargets), ctx)
 }
 
-// IncrementMissCount mocks base method.
-func (m *MockOracleKeeper) IncrementMissCount(ctx context.Context, validator types.ConsAddress) error {
+// RecordVoteAccounting mocks base method.
+func (m *MockOracleKeeper) RecordVoteAccounting(ctx context.Context, validator types1.ConsAddress, scoreWeight math.Int, missed bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementMissCount", ctx, validator)
+	ret := m.ctrl.Call(m, "RecordVoteAccounting", ctx, validator, scoreWeight, missed)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// IncrementMissCount indicates an expected call of IncrementMissCount.
-func (mr *MockOracleKeeperMockRecorder) IncrementMissCount(ctx, validator any) *gomock.Call {
+// RecordVoteAccounting indicates an expected call of RecordVoteAccounting.
+func (mr *MockOracleKeeperMockRecorder) RecordVoteAccounting(ctx, validator, scoreWeight, missed any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementMissCount", reflect.TypeOf((*MockOracleKeeper)(nil).IncrementMissCount), ctx, validator)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVoteAccounting", reflect.TypeOf((*MockOracleKeeper)(nil).RecordVoteAccounting), ctx, validator, scoreWeight, missed)
 }
 
 // SetExchangeRateWithEvent mocks base method.
-func (m *MockOracleKeeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types1.ExchangeRate) error {
+func (m *MockOracleKeeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types0.ExchangeRate) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetExchangeRateWithEvent", ctx, exchangeRate)
 	ret0, _ := ret[0].(error)
@@ -117,18 +103,18 @@ func (mr *MockOracleKeeperMockRecorder) SetExchangeRateWithEvent(ctx, exchangeRa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRateWithEvent", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRateWithEvent), ctx, exchangeRate)
 }
 
-// SyncTobinTax mocks base method.
-func (m *MockOracleKeeper) SyncTobinTax(ctx context.Context, oldTobinTaxes map[string]math.LegacyDec) error {
+// SyncVoteTargets mocks base method.
+func (m *MockOracleKeeper) SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SyncTobinTax", ctx, oldTobinTaxes)
+	ret := m.ctrl.Call(m, "SyncVoteTargets", ctx, oldVoteTargets)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SyncTobinTax indicates an expected call of SyncTobinTax.
-func (mr *MockOracleKeeperMockRecorder) SyncTobinTax(ctx, oldTobinTaxes any) *gomock.Call {
+// SyncVoteTargets indicates an expected call of SyncVoteTargets.
+func (mr *MockOracleKeeperMockRecorder) SyncVoteTargets(ctx, oldVoteTargets any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).SyncTobinTax), ctx, oldTobinTaxes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).SyncVoteTargets), ctx, oldVoteTargets)
 }
 
 // MockOracleClient is a mock of OracleClient interface.
@@ -156,14 +142,14 @@ func (m *MockOracleClient) EXPECT() *MockOracleClientMockRecorder {
 }
 
 // Prices mocks base method.
-func (m *MockOracleClient) Prices(ctx context.Context, in *types0.OraclePricesRequest, opts ...grpc.CallOption) (*types0.OraclePricesResponse, error) {
+func (m *MockOracleClient) Prices(ctx context.Context, in *types.OraclePricesRequest, opts ...grpc.CallOption) (*types.OraclePricesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Prices", varargs...)
-	ret0, _ := ret[0].(*types0.OraclePricesResponse)
+	ret0, _ := ret[0].(*types.OraclePricesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -1,9 +1,9 @@
 package codec
 
 const (
-	MaxVoteExtensionWireBytes    = 32 << 10
-	MaxVoteExtensionDecodedBytes = 64 << 10
+	maxVoteExtensionWireBytes    = 64 << 10
+	maxVoteExtensionDecodedBytes = 128 << 10
 
-	MaxExtendedCommitWireBytes    = 4 << 20
-	MaxExtendedCommitDecodedBytes = 8 << 20
+	maxExtendedCommitWireBytes    = 8 << 20
+	maxExtendedCommitDecodedBytes = 16 << 20
 )

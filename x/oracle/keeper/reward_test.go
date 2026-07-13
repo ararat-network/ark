@@ -8,7 +8,6 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	chain "ark/pkg/chain"
@@ -16,6 +15,8 @@ import (
 )
 
 func (s *KeeperTestSuite) TestSettleRewards() {
+	maxUint64 := ^uint64(0)
+	largeScore := math.NewIntFromUint64(maxUint64).AddRaw(1)
 	validator1 := stakingtypes.Validator{
 		OperatorAddress: valAddr1.String(),
 		Status:          stakingtypes.Bonded,
@@ -28,9 +29,11 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 	}
 
 	tests := []struct {
-		name      string
-		setup     func()
-		expectErr string
+		name                     string
+		setup                    func()
+		rewardWindow             uint64
+		rewardDistributionWindow uint64
+		expectErr                string
 	}{
 		{
 			name: "empty scores return without distributing",
@@ -38,24 +41,22 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 		{
 			name: "zero reward pool returns without distributing",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(sdk.NewCoins())
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.Coin{Denom: chain.MicroNoahDenom, Amount: math.ZeroInt()})
 			},
 		},
 		{
 			name: "distributes proportional rewards",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, 30))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, math.NewInt(30)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400))),
-				)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400)))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
@@ -77,15 +78,42 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 			},
 		},
 		{
+			name: "supports score above maximum uint64 and maximum distribution window",
+			setup: func() {
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, largeScore))
+
+				rewardCoin := sdk.NewCoin(
+					chain.MicroNoahDenom,
+					largeScore,
+				)
+				expectedRewards := sdk.NewCoins(rewardCoin)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(rewardCoin)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
+				s.distrKeeper.EXPECT().AllocateTokensToValidator(
+					s.ctx,
+					validator1,
+					sdk.NewDecCoinsFromCoins(expectedRewards...),
+				).Return(nil)
+				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+					s.ctx,
+					types.ModuleName,
+					"distribution",
+					expectedRewards,
+				).Return(nil)
+			},
+			rewardWindow:             maxUint64,
+			rewardDistributionWindow: maxUint64,
+		},
+		{
 			name: "send failure is returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
-				)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().
 					AllocateTokensToValidator(s.ctx, validator1, gomock.Any()).
@@ -99,40 +127,34 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 		{
 			name: "missing validator is skipped",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
-				)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
 		},
 		{
 			name: "missing validator error is skipped",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
-				)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
 			},
 		},
 		{
 			name: "only transfers distributed rewards",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, 30))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, math.NewInt(30)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400))),
-				)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400)))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
@@ -151,13 +173,11 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 		{
 			name: "allocation failure returns error",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, 10))
+				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
-				rewardAcc := authtypes.NewEmptyModuleAccount(types.ModuleName)
-				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(rewardAcc)
-				s.bankKeeper.EXPECT().GetAllBalances(s.ctx, rewardAcc.GetAddress()).Return(
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))),
-				)
+				s.bankKeeper.EXPECT().
+					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
+					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().
 					AllocateTokensToValidator(s.ctx, validator1, gomock.Any()).
@@ -173,7 +193,15 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				tc.setup()
 			}
 
-			err := s.keeper.SettleRewards(s.ctx, 10, 100)
+			rewardWindow := tc.rewardWindow
+			if rewardWindow == 0 {
+				rewardWindow = 10
+			}
+			rewardDistributionWindow := tc.rewardDistributionWindow
+			if rewardDistributionWindow == 0 {
+				rewardDistributionWindow = 100
+			}
+			err := s.keeper.SettleRewards(s.ctx, rewardWindow, rewardDistributionWindow)
 			if tc.expectErr != "" {
 				s.Require().ErrorContains(err, tc.expectErr)
 				return

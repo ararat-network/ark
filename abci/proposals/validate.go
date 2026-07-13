@@ -2,18 +2,13 @@ package proposals
 
 import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
-	cometproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"ark/abci/codec"
-	"ark/abci/ve"
 )
 
-// ValidateExtendedCommitInfo validates the extended commit info for a block. It first
-// ensures that the vote extensions compose a super-majority of the signatures and
-// voting power for the block. Then, it ensures that oracle vote extensions are correctly
-// marshalled and contain valid prices.
+// ValidateExtendedCommitInfo validates that the extended commit matches the
+// consensus last commit and contains a super-majority of authenticated vote
+// extensions. Oracle payload interpretation happens later in preblock.
 func (h *Handler) ValidateExtendedCommitInfo(
 	ctx sdk.Context,
 	height int64,
@@ -26,80 +21,6 @@ func (h *Handler) ValidateExtendedCommitInfo(
 			"err", err,
 		)
 
-		return err
-	}
-
-	// Validate all oracle vote extensions.
-	for _, vote := range extendedCommitInfo.Votes {
-		address := sdk.ConsAddress(vote.Validator.Address)
-		// The vote extensions are from the previous block.
-		if err := validateVoteExtension(ctx, vote, h.voteExtensionCodec); err != nil {
-			h.logger.Error(
-				"failed to validate oracle vote extension",
-				"height", height,
-				"validator", address.String(),
-				"err", err,
-			)
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-// PruneAndValidateExtendedCommitInfo validates each vote-extension in the extended commit, and removes
-// any vote-extensions that are invalid. Removal will effectively treat the validator's
-// vote as absent.  This function performs all validation that ValidateExtendedCommitInfo performs.
-func (h *Handler) PruneAndValidateExtendedCommitInfo(ctx sdk.Context, extendedCommitInfo cometabci.ExtendedCommitInfo) (cometabci.ExtendedCommitInfo, error) {
-	// Validate all oracle vote extensions.
-	for i, vote := range extendedCommitInfo.Votes {
-		// validate the vote-extension
-		if err := validateVoteExtension(ctx, vote, h.voteExtensionCodec); err != nil {
-			h.logger.Info(
-				"failed to validate vote extension - pruning vote",
-				"err", err,
-				"validator", vote.Validator.Address,
-			)
-
-			// failed to validate this vote-extension, mark it as absent in the original commit
-			vote.BlockIdFlag = cometproto.BlockIDFlagAbsent
-			vote.ExtensionSignature = nil
-			vote.VoteExtension = nil
-			extendedCommitInfo.Votes[i] = vote
-		}
-	}
-
-	// validate after pruning
-	if err := h.validateVoteExtensionsFn(ctx, extendedCommitInfo); err != nil {
-		h.logger.Error(
-			"failed to validate vote extensions; vote extensions may not comprise a super-majority",
-			"err", err,
-		)
-
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-
-	return extendedCommitInfo, nil
-}
-
-func validateVoteExtension(
-	ctx sdk.Context,
-	vote cometabci.ExtendedVoteInfo,
-	voteExtensionCodec codec.VoteExtensionCodec,
-) error {
-	// vote is not voted for if VE is nil
-	if len(vote.VoteExtension) == 0 {
-		return nil
-	}
-
-	voteExt, err := voteExtensionCodec.Decode(vote.VoteExtension)
-	if err != nil {
-		return err
-	}
-
-	// The vote extensions are from the previous block.
-	if err := ve.ValidateOracleVoteExtension(ctx, voteExt); err != nil {
 		return err
 	}
 
