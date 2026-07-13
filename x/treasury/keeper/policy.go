@@ -9,20 +9,21 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	oracletypes "ark/x/oracle/types"
 )
 
-// UpdateTaxCap updates all denom's tax cap
-func (k Keeper) UpdateTaxCap(ctx context.Context) (sdk.Coins, error) {
+// ComputeTaxCaps converts the canonical tax cap into each taxable denom.
+func (k Keeper) ComputeTaxCaps(
+	ctx context.Context,
+	tobinTaxes oracletypes.TobinTaxes,
+	rates oracletypes.RateSnapshot,
+) (sdk.Coins, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
 	}
 	taxPolicyCap := sdk.NewDecCoinFromCoin(params.TaxPolicy.Cap)
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var newCaps sdk.Coins
 	for _, denom := range tobinTaxes {
 		// keep sdr tax cap
@@ -30,26 +31,26 @@ func (k Keeper) UpdateTaxCap(ctx context.Context) (sdk.Coins, error) {
 			continue
 		}
 
-		newDecCap, err := k.marketKeeper.ComputeOracleRate(ctx, taxPolicyCap, denom.Denom)
+		newDecCap, err := rates.Convert(taxPolicyCap, denom.Denom)
 		if err != nil {
-			k.Logger(ctx).Warn(
-				"skipping tax cap update",
-				"denom", denom.Denom,
-				"cap_denom", taxPolicyCap.Denom,
-				"cap_amount", taxPolicyCap.Amount.String(),
-				"err", err,
-			)
-			continue
+			return nil, fmt.Errorf("converting tax cap from %s to %s: %w", taxPolicyCap.Denom, denom.Denom, err)
 		}
 
 		newCap, _ := newDecCap.TruncateDecimal()
 		newCaps = append(newCaps, newCap)
-		if err := k.TaxCaps.Set(ctx, newCap.Denom, newCap.Amount); err != nil {
-			return nil, fmt.Errorf("setting tax cap: %w", err)
-		}
 	}
 
 	return newCaps, nil
+}
+
+// SetTaxCaps stores a fully computed set of tax caps.
+func (k Keeper) SetTaxCaps(ctx context.Context, taxCaps sdk.Coins) error {
+	for _, taxCap := range taxCaps {
+		if err := k.TaxCaps.Set(ctx, taxCap.Denom, taxCap.Amount); err != nil {
+			return fmt.Errorf("setting tax cap for denom %s: %w", taxCap.Denom, err)
+		}
+	}
+	return nil
 }
 
 // UpdateTaxPolicy updates tax-rate with t(t+1) = t(t) * (TRA_year(t) + INC) / TRA_month(t)

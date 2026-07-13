@@ -2,12 +2,15 @@ package keeper_test
 
 import (
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/types"
 )
@@ -232,4 +235,20 @@ func (s *KeeperTestSuite) TestQueryIndicators() {
 			s.Require().True(res.TRAMonth.Equal(tc.expectedMonth), "expected TRAMonth %s, got %s", tc.expectedMonth, res.TRAMonth)
 		})
 	}
+}
+
+func (s *KeeperTestSuite) TestQueryIndicatorsStaleRate() {
+	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
+		TaxProceeds: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 500)),
+	}))
+	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(),
+		chain.MicroUSDDenom,
+		chain.MicroSDRDenom,
+	).Return(nil, oracletypes.ErrStaleExchangeRate)
+
+	_, err := keeper.NewQueryServerImpl(s.keeper).Indicators(s.ctx, &types.QueryIndicatorsRequest{})
+	s.Require().Error(err)
+	s.Require().Equal(codes.FailedPrecondition, status.Code(err))
 }

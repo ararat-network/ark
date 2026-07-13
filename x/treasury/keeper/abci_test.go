@@ -32,10 +32,12 @@ func (s *KeeperTestSuite) TestEndBlocker_DuringProbation() {
 	// No seigniorage (supply unchanged)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroNoahDenom).
 		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))).AnyTimes()
-	// alignCoins for seigniorage reward (0 unoah → usdr)
-	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), chain.MicroSDRDenom).
-		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
+	s.oracleKeeper.EXPECT().
+		GetRateSnapshot(gomock.Any(), chain.MicroNoahDenom, chain.MicroSDRDenom).
+		Return(oracletypes.RateSnapshot{
+			chain.MicroNoahDenom: math.LegacyOneDec(),
+			chain.MicroSDRDenom:  math.LegacyOneDec(),
+		}, nil)
 
 	// Deferred RecordEpochInitialIssuance mocks
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{}, nil)
@@ -86,23 +88,26 @@ func (s *KeeperTestSuite) TestEndBlocker_PolicyUpdate() {
 		DoAndReturn(func(_ context.Context, denom string) sdk.Coin {
 			return sdk.NewCoin(denom, math.NewInt(1000000000000))
 		}).AnyTimes()
-	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
-			if offerCoin.Denom == params.TaxPolicy.Cap.Denom && askDenom == chain.MicroUSDDenom {
-				return sdk.NewDecCoin(chain.MicroUSDDenom, expectedTaxCap), nil
-			}
-			return sdk.NewDecCoinFromDec(askDenom, math.LegacyZeroDec()), nil
-		}).AnyTimes()
-
 	// SettleSeigniorage: no seigniorage (supply unchanged) → early return
 
-	// UpdateTaxCap + RecordEpochInitialIssuance both call Whitelist
+	// Tax-cap computation and RecordEpochInitialIssuance both read Tobin taxes.
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
 		Return(oracletypes.TobinTaxes{
 			{Denom: chain.MicroSDRDenom},
 			{Denom: chain.MicroUSDDenom},
 		}, nil).AnyTimes()
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(),
+		chain.MicroNoahDenom,
+		chain.MicroSDRDenom,
+		params.TaxPolicy.Cap.Denom,
+		chain.MicroSDRDenom,
+		chain.MicroUSDDenom,
+	).Return(oracletypes.RateSnapshot{
+		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.MicroSDRDenom:  math.LegacyOneDec(),
+		chain.MicroUSDDenom:  math.LegacyNewDec(2),
+	}, nil)
 
 	err := s.keeper.EndBlocker(s.ctx)
 	s.Require().NoError(err)
@@ -170,15 +175,20 @@ func (s *KeeperTestSuite) TestEndBlocker_SparseEpochData() {
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
 		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))).AnyTimes()
-	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
-
 	// SettleSeigniorage: no seigniorage → early return
 
-	// UpdateTaxCap + RecordEpochInitialIssuance
+	// Tax-cap computation and RecordEpochInitialIssuance.
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
 		Return(oracletypes.TobinTaxes{}, nil).AnyTimes()
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(),
+		chain.MicroNoahDenom,
+		chain.MicroSDRDenom,
+		params.TaxPolicy.Cap.Denom,
+	).Return(oracletypes.RateSnapshot{
+		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.MicroSDRDenom:  math.LegacyOneDec(),
+	}, nil)
 
 	err := s.keeper.EndBlocker(s.ctx)
 	s.Require().NoError(err)
@@ -203,11 +213,17 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil).AnyTimes()
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), gomock.Any()).
 		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))).AnyTimes()
-	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(sdk.NewDecCoinFromDec(chain.MicroSDRDenom, math.LegacyZeroDec()), nil).AnyTimes()
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
 		Return(oracletypes.TobinTaxes{}, nil).AnyTimes()
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(),
+		chain.MicroNoahDenom,
+		chain.MicroSDRDenom,
+		params.TaxPolicy.Cap.Denom,
+	).Return(oracletypes.RateSnapshot{
+		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.MicroSDRDenom:  math.LegacyOneDec(),
+	}, nil).AnyTimes()
 	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1}).AnyTimes()
@@ -227,4 +243,39 @@ func (s *KeeperTestSuite) TestEndBlocker_MultipleEpochs() {
 	expectedIncrease := params.TaxPolicy.ChangeRateMax.MulInt64(3)
 	s.Require().True(finalTaxRate.Equal(initialTaxRate.Add(expectedIncrease)),
 		"expected tax rate %s, got %s", initialTaxRate.Add(expectedIncrease), finalTaxRate)
+}
+
+func (s *KeeperTestSuite) TestEndBlocker_StaleRatesPreservePolicyAndProceeds() {
+	s.setBlockHeight(int64(chain.BlocksPerWeek) - 1)
+	taxProceeds := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 300))
+	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
+		TaxProceeds: taxProceeds,
+	}))
+	oldTaxRate, err := s.keeper.TaxRate.Get(s.ctx)
+	s.Require().NoError(err)
+
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(),
+		chain.MicroNoahDenom,
+		chain.MicroSDRDenom,
+		chain.MicroUSDDenom,
+	).Return(nil, oracletypes.ErrStaleExchangeRate)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{}, nil)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroNoahDenom).
+		Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 1000))
+
+	s.Require().NoError(s.keeper.EndBlocker(s.ctx))
+
+	proceeds, err := s.keeper.EpochTaxProceeds.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(taxProceeds, proceeds.TaxProceeds)
+	newTaxRate, err := s.keeper.TaxRate.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().True(oldTaxRate.Equal(newTaxRate))
+	hasEpochState, err := s.keeper.EpochStates.Has(s.ctx, 0)
+	s.Require().NoError(err)
+	s.Require().False(hasEpochState)
+	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
+		s.Require().NotEqual(types.EventTypePolicyUpdate, event.Type)
+	}
 }

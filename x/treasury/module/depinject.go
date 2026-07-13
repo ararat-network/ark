@@ -36,7 +36,6 @@ type ModuleInputs struct {
 
 	AccountKeeper      types.AccountKeeper
 	BankKeeper         types.BankKeeper
-	MarketKeeper       types.MarketKeeper
 	StakingKeeper      types.StakingKeeper
 	DistributionKeeper types.ProtocolpoolKeeper
 	OracleKeeper       types.OracleKeeper
@@ -68,7 +67,6 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.DistributionKeeper,
-		in.MarketKeeper,
 		in.OracleKeeper,
 		in.StakingKeeper,
 	)

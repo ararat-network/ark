@@ -9,6 +9,7 @@ import (
 
 	chain "ark/pkg/chain"
 	arkmetrics "ark/pkg/metrics"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
 
@@ -30,18 +31,62 @@ func (k Keeper) EndBlocker(ctx context.Context) (err error) {
 		}
 	}()
 
-	// Compute & Update internal indicators for the current epoch
-	if err := k.UpdateIndicators(ctx); err != nil {
-		return fmt.Errorf("updating indicators: %w", err)
-	}
-
-	// Check probation period
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if sdkCtx.BlockHeight() < int64(chain.BlocksPerWeek*params.WindowProbation) {
+	pastProbation := sdkCtx.BlockHeight() >= int64(chain.BlocksPerWeek*params.WindowProbation)
+
+	epochTaxProceeds, err := k.EpochTaxProceeds.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting epoch tax proceeds: %w", err)
+	}
+	rateDenoms := make([]string, 0, len(epochTaxProceeds.TaxProceeds)+2)
+	rateDenoms = append(rateDenoms, chain.MicroNoahDenom, chain.MicroSDRDenom)
+	for _, coin := range epochTaxProceeds.TaxProceeds {
+		rateDenoms = append(rateDenoms, coin.Denom)
+	}
+
+	var tobinTaxes oracletypes.TobinTaxes
+	if pastProbation {
+		tobinTaxes, err = k.oracleKeeper.GetTobinTaxes(ctx)
+		if err != nil {
+			return fmt.Errorf("getting tobin taxes: %w", err)
+		}
+		rateDenoms = append(rateDenoms, params.TaxPolicy.Cap.Denom)
+		for _, tobinTax := range tobinTaxes {
+			rateDenoms = append(rateDenoms, tobinTax.Denom)
+		}
+	}
+
+	rates, err := k.oracleKeeper.GetRateSnapshot(ctx, rateDenoms...)
+	if err != nil {
+		if errors.Is(err, oracletypes.ErrStaleExchangeRate) || errors.Is(err, oracletypes.ErrUnknownDenom) {
+			k.Logger(ctx).Warn(
+				"skipping treasury epoch policy update because oracle rates are unavailable",
+				"epoch", k.GetEpoch(ctx),
+				"error", err,
+			)
+			return nil
+		}
+		return fmt.Errorf("getting treasury rate snapshot: %w", err)
+	}
+
+	var taxCaps sdk.Coins
+	if pastProbation {
+		taxCaps, err = k.ComputeTaxCaps(ctx, tobinTaxes, rates)
+		if err != nil {
+			return fmt.Errorf("computing tax caps: %w", err)
+		}
+	}
+
+	// Compute & Update internal indicators for the current epoch.
+	if err := k.UpdateIndicators(ctx, rates); err != nil {
+		return fmt.Errorf("updating indicators: %w", err)
+	}
+
+	if !pastProbation {
 		return nil
 	}
 
@@ -59,16 +104,15 @@ func (k Keeper) EndBlocker(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("updating reward policy: %w", err)
 	}
-	taxCap, err := k.UpdateTaxCap(ctx)
-	if err != nil {
-		return fmt.Errorf("updating tax cap: %w", err)
+	if err := k.SetTaxCaps(ctx, taxCaps); err != nil {
+		return fmt.Errorf("setting tax caps: %w", err)
 	}
 
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypePolicyUpdate,
 			sdk.NewAttribute(types.AttributeKeyTaxRate, taxRate.String()),
 			sdk.NewAttribute(types.AttributeKeyRewardWeight, rewardWeight.String()),
-			sdk.NewAttribute(types.AttributeKeyTaxCap, taxCap.String()),
+			sdk.NewAttribute(types.AttributeKeyTaxCap, taxCaps.String()),
 		),
 	)
 	return nil

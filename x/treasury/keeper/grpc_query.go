@@ -13,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
 
@@ -126,7 +127,26 @@ func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsR
 		return nil, status.Errorf(codes.Internal, "getting treasury tax proceeds: %v", err)
 	}
 	taxProceeds := sdk.NewDecCoinsFromCoins(epochTaxProceeds.TaxProceeds...)
-	taxRewards := q.k.alignCoins(ctx, taxProceeds, chain.MicroSDRDenom)
+	rates := oracletypes.RateSnapshot{}
+	var rateDenoms []string
+	for _, coin := range taxProceeds {
+		if !coin.Amount.IsZero() && coin.Denom != chain.MicroSDRDenom {
+			rateDenoms = append(rateDenoms, coin.Denom, chain.MicroSDRDenom)
+		}
+	}
+	if len(rateDenoms) > 0 {
+		rates, err = q.k.oracleKeeper.GetRateSnapshot(ctx, rateDenoms...)
+		if err != nil {
+			if errors.Is(err, oracletypes.ErrStaleExchangeRate) || errors.Is(err, oracletypes.ErrUnknownDenom) {
+				return nil, status.Errorf(codes.FailedPrecondition, "treasury indicator rates unavailable: %v", err)
+			}
+			return nil, status.Errorf(codes.Internal, "getting treasury indicator rates: %v", err)
+		}
+	}
+	taxRewards, err := alignCoins(taxProceeds, chain.MicroSDRDenom, rates)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "aligning treasury tax proceeds: %v", err)
+	}
 
 	epoch := q.k.GetEpoch(ctx)
 	var res types.QueryIndicatorsResponse

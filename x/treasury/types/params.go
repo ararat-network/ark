@@ -52,32 +52,32 @@ func DefaultParams() Params {
 
 // Validate performs basic validation on treasury parameters.
 func (p Params) Validate() error {
-	if err := validateLegacyDecSet("TaxPolicy.RateMax", p.TaxPolicy.RateMax); err != nil {
-		return err
+	if p.TaxPolicy.RateMax.IsNil() {
+		return errors.New("treasury parameter TaxPolicy.RateMax must be set")
 	}
-	if err := validateLegacyDecSet("TaxPolicy.RateMin", p.TaxPolicy.RateMin); err != nil {
-		return err
+	if p.TaxPolicy.RateMin.IsNil() {
+		return errors.New("treasury parameter TaxPolicy.RateMin must be set")
 	}
-	if err := validateLegacyDecSet("TaxPolicy.ChangeRateMax", p.TaxPolicy.ChangeRateMax); err != nil {
-		return err
+	if p.TaxPolicy.ChangeRateMax.IsNil() {
+		return errors.New("treasury parameter TaxPolicy.ChangeRateMax must be set")
 	}
-	if err := validateLegacyDecSet("RewardPolicy.RateMax", p.RewardPolicy.RateMax); err != nil {
-		return err
+	if p.RewardPolicy.RateMax.IsNil() {
+		return errors.New("treasury parameter RewardPolicy.RateMax must be set")
 	}
-	if err := validateLegacyDecSet("RewardPolicy.RateMin", p.RewardPolicy.RateMin); err != nil {
-		return err
+	if p.RewardPolicy.RateMin.IsNil() {
+		return errors.New("treasury parameter RewardPolicy.RateMin must be set")
 	}
-	if err := validateLegacyDecSet("RewardPolicy.ChangeRateMax", p.RewardPolicy.ChangeRateMax); err != nil {
-		return err
+	if p.RewardPolicy.ChangeRateMax.IsNil() {
+		return errors.New("treasury parameter RewardPolicy.ChangeRateMax must be set")
 	}
-	if err := validateLegacyDecSet("SeigniorageBurdenTarget", p.SeigniorageBurdenTarget); err != nil {
-		return err
+	if p.SeigniorageBurdenTarget.IsNil() {
+		return errors.New("treasury parameter SeigniorageBurdenTarget must be set")
 	}
-	if err := validateLegacyDecSet("BurnWeight", p.BurnWeight); err != nil {
-		return err
+	if p.BurnWeight.IsNil() {
+		return errors.New("treasury parameter BurnWeight must be set")
 	}
-	if err := validateLegacyDecSet("MiningIncrement", p.MiningIncrement); err != nil {
-		return err
+	if p.MiningIncrement.IsNil() {
+		return errors.New("treasury parameter MiningIncrement must be set")
 	}
 
 	if p.TaxPolicy.RateMax.LT(p.TaxPolicy.RateMin) {
@@ -114,7 +114,15 @@ func (p Params) Validate() error {
 		return fmt.Errorf("treasury parameter SeigniorageBurdenTarget must be zero or positive: %s", p.SeigniorageBurdenTarget)
 	}
 
-	if p.BurnWeight.Add(p.RewardPolicy.RateMax).GT(math.LegacyOneDec()) || p.BurnWeight.IsNegative() {
+	if p.BurnWeight.IsNegative() {
+		return fmt.Errorf("treasury parameter BurnWeight must be between zero and 1 - RewardPolicy.RateMax: %s", p.BurnWeight)
+	}
+
+	if p.RewardPolicy.RateMax.GT(math.LegacyOneDec()) {
+		return fmt.Errorf("treasury parameter RewardPolicy.RateMax must not exceed one: %s", p.RewardPolicy.RateMax)
+	}
+
+	if p.BurnWeight.GT(math.LegacyOneDec().Sub(p.RewardPolicy.RateMax)) {
 		return fmt.Errorf("treasury parameter BurnWeight must be between zero and 1 - RewardPolicy.RateMax: %s", p.BurnWeight)
 	}
 
@@ -132,14 +140,6 @@ func (p Params) Validate() error {
 
 	if p.WindowLong <= p.WindowShort {
 		return fmt.Errorf("treasury parameter WindowLong must be greater than WindowShort: (%d, %d)", p.WindowLong, p.WindowShort)
-	}
-
-	return nil
-}
-
-func validateLegacyDecSet(name string, dec math.LegacyDec) error {
-	if dec.IsNil() {
-		return fmt.Errorf("treasury parameter %s must be set", name)
 	}
 
 	return nil

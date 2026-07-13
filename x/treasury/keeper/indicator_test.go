@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	"context"
-
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -10,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
 
@@ -35,12 +34,11 @@ func (s *KeeperTestSuite) TestGetEpoch() {
 }
 
 func (s *KeeperTestSuite) TestUpdateIndicators() {
-	s.marketKeeper.EXPECT().
-		ComputeOracleRate(gomock.Any(), gomock.Any(), chain.MicroSDRDenom).
-		DoAndReturn(func(_ context.Context, coin sdk.DecCoin, denom string) (sdk.DecCoin, error) {
-			return sdk.NewDecCoinFromDec(denom, coin.Amount), nil
-		}).
-		AnyTimes()
+	rates := oracletypes.RateSnapshot{
+		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.MicroSDRDenom:  math.LegacyOneDec(),
+		chain.MicroUSDDenom:  math.LegacyOneDec(),
+	}
 
 	tests := []struct {
 		name                      string
@@ -113,7 +111,7 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroNoahDenom).
 				Return(sdk.NewCoin(chain.MicroNoahDenom, tc.currentNoahSupply))
 
-			err := s.keeper.UpdateIndicators(s.ctx)
+			err := s.keeper.UpdateIndicators(s.ctx, rates)
 			s.Require().NoError(err)
 
 			epochState, err := s.keeper.EpochStates.Get(s.ctx, 0)
@@ -130,4 +128,25 @@ func (s *KeeperTestSuite) TestUpdateIndicators() {
 			s.Require().True(proceeds.TaxProceeds.IsZero())
 		})
 	}
+}
+
+func (s *KeeperTestSuite) TestUpdateIndicatorsConversionFailurePreservesProceeds() {
+	taxProceeds := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 300))
+	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
+		TaxProceeds: taxProceeds,
+	}))
+	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
+
+	err := s.keeper.UpdateIndicators(s.ctx, oracletypes.RateSnapshot{
+		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.MicroSDRDenom:  math.LegacyOneDec(),
+	})
+	s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
+
+	proceeds, getErr := s.keeper.EpochTaxProceeds.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().Equal(taxProceeds, proceeds.TaxProceeds)
+	hasEpochState, hasErr := s.keeper.EpochStates.Has(s.ctx, 0)
+	s.Require().NoError(hasErr)
+	s.Require().False(hasEpochState)
 }

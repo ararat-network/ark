@@ -26,7 +26,6 @@ type Keeper struct {
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
 	ppoolKeeper   types.ProtocolpoolKeeper
-	marketKeeper  types.MarketKeeper
 	oracleKeeper  types.OracleKeeper
 	stakingKeeper types.StakingKeeper
 
@@ -49,7 +48,6 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	ppoolKeeper types.ProtocolpoolKeeper,
-	marketKeeper types.MarketKeeper,
 	oracleKeeper types.OracleKeeper,
 	stakingKeeper types.StakingKeeper,
 ) *Keeper {
@@ -67,7 +65,6 @@ func NewKeeper(
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
 		ppoolKeeper:         ppoolKeeper,
-		marketKeeper:        marketKeeper,
 		oracleKeeper:        oracleKeeper,
 		stakingKeeper:       stakingKeeper,
 		Params: collections.NewItem(

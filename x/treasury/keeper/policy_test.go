@@ -1,13 +1,6 @@
 package keeper_test
 
 import (
-	"bytes"
-	"context"
-	stderrors "errors"
-
-	"go.uber.org/mock/gomock"
-
-	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,29 +10,24 @@ import (
 	"ark/x/treasury/types"
 )
 
-func (s *KeeperTestSuite) TestUpdateTaxCap() {
-	type oracleResponse struct {
-		amount math.LegacyDec
-		err    error
-	}
-
+func (s *KeeperTestSuite) TestComputeAndSetTaxCaps() {
 	tests := []struct {
-		name            string
-		whitelist       oracletypes.TobinTaxes
-		oracleResponses map[string]oracleResponse
-		expectedCaps    sdk.Coins
-		absentDenoms    []string
-		expectLog       bool
+		name         string
+		tobinTaxes   oracletypes.TobinTaxes
+		rates        oracletypes.RateSnapshot
+		expectedCaps sdk.Coins
+		expectErr    bool
 	}{
 		{
 			name: "updates whitelisted denoms",
-			whitelist: oracletypes.TobinTaxes{
+			tobinTaxes: oracletypes.TobinTaxes{
 				{Denom: "uusd"},
 				{Denom: "ukrw"},
 			},
-			oracleResponses: map[string]oracleResponse{
-				"uusd": {amount: math.LegacyNewDec(1500000)},
-				"ukrw": {amount: math.LegacyNewDec(1300000000)},
+			rates: oracletypes.RateSnapshot{
+				chain.MicroSDRDenom: math.LegacyOneDec(),
+				"uusd":              math.LegacyMustNewDecFromStr("1.5"),
+				"ukrw":              math.LegacyNewDec(1300),
 			},
 			expectedCaps: sdk.NewCoins(
 				sdk.NewCoin("uusd", math.NewInt(1500000)),
@@ -48,50 +36,38 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 		},
 		{
 			name: "skips cap denom",
-			whitelist: oracletypes.TobinTaxes{
+			tobinTaxes: oracletypes.TobinTaxes{
 				{Denom: chain.MicroSDRDenom},
 				{Denom: "uusd"},
 			},
-			oracleResponses: map[string]oracleResponse{
-				"uusd": {amount: math.LegacyNewDec(1500000)},
+			rates: oracletypes.RateSnapshot{
+				chain.MicroSDRDenom: math.LegacyOneDec(),
+				"uusd":              math.LegacyMustNewDecFromStr("1.5"),
 			},
 			expectedCaps: sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1500000))),
-			absentDenoms: []string{
-				chain.MicroSDRDenom,
-			},
 		},
 		{
-			name:            "empty whitelist",
-			whitelist:       oracletypes.TobinTaxes{},
-			oracleResponses: map[string]oracleResponse{},
-			expectedCaps:    sdk.Coins{},
+			name:         "empty whitelist",
+			tobinTaxes:   oracletypes.TobinTaxes{},
+			rates:        oracletypes.RateSnapshot{},
+			expectedCaps: sdk.Coins{},
 		},
 		{
-			name: "skips denom when oracle conversion fails",
-			whitelist: oracletypes.TobinTaxes{
+			name: "conversion failure prevents partial update",
+			tobinTaxes: oracletypes.TobinTaxes{
 				{Denom: "uusd"},
 				{Denom: "ukrw"},
 			},
-			oracleResponses: map[string]oracleResponse{
-				"uusd": {amount: math.LegacyNewDec(1500000)},
-				"ukrw": {err: stderrors.New("missing oracle rate")},
+			rates: oracletypes.RateSnapshot{
+				chain.MicroSDRDenom: math.LegacyOneDec(),
+				"uusd":              math.LegacyMustNewDecFromStr("1.5"),
 			},
-			expectedCaps: sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1500000))),
-			absentDenoms: []string{
-				"ukrw",
-			},
-			expectLog: true,
+			expectErr: true,
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			var logBuf bytes.Buffer
-			if tc.expectLog {
-				sdkCtx := sdk.UnwrapSDKContext(s.ctx)
-				s.ctx = sdkCtx.WithLogger(log.NewLogger(&logBuf, log.OutputJSONOption()))
-			}
-
 			var storedDenoms []string
 			err := s.keeper.TaxCaps.Walk(s.ctx, nil, func(denom string, _ math.Int) (bool, error) {
 				storedDenoms = append(storedDenoms, denom)
@@ -102,32 +78,17 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 				s.Require().NoError(s.keeper.TaxCaps.Remove(s.ctx, denom))
 			}
 
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).
-				Return(tc.whitelist, nil)
-
-			expectedOracleCalls := 0
-			for _, denom := range tc.whitelist {
-				if denom.Denom != chain.MicroSDRDenom {
-					expectedOracleCalls++
-				}
+			newCaps, err := s.keeper.ComputeTaxCaps(s.ctx, tc.tobinTaxes, tc.rates)
+			if tc.expectErr {
+				s.Require().Error(err)
+				hasUSDCap, hasErr := s.keeper.TaxCaps.Has(s.ctx, "uusd")
+				s.Require().NoError(hasErr)
+				s.Require().False(hasUSDCap)
+				return
 			}
-			if expectedOracleCalls > 0 {
-				s.marketKeeper.EXPECT().
-					ComputeOracleRate(gomock.Any(), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ context.Context, _ sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
-						res, ok := tc.oracleResponses[askDenom]
-						s.Require().True(ok, "unexpected oracle conversion for denom %s", askDenom)
-						if res.err != nil {
-							return sdk.DecCoin{}, res.err
-						}
-						return sdk.NewDecCoinFromDec(askDenom, res.amount), nil
-					}).
-					Times(expectedOracleCalls)
-			}
-
-			newCaps, err := s.keeper.UpdateTaxCap(s.ctx)
 			s.Require().NoError(err)
 			s.Require().True(tc.expectedCaps.Equal(newCaps), "expected caps %s, got %s", tc.expectedCaps, newCaps)
+			s.Require().NoError(s.keeper.SetTaxCaps(s.ctx, newCaps))
 
 			for _, expectedCap := range tc.expectedCaps {
 				storedCap, err := s.keeper.TaxCaps.Get(s.ctx, expectedCap.Denom)
@@ -135,17 +96,6 @@ func (s *KeeperTestSuite) TestUpdateTaxCap() {
 				s.Require().Equal(expectedCap.Amount, storedCap)
 			}
 
-			for _, denom := range tc.absentDenoms {
-				hasCap, err := s.keeper.TaxCaps.Has(s.ctx, denom)
-				s.Require().NoError(err)
-				s.Require().False(hasCap)
-			}
-
-			if tc.expectLog {
-				logOutput := logBuf.String()
-				s.Require().Contains(logOutput, "skipping tax cap update")
-				s.Require().Contains(logOutput, "ukrw")
-			}
 		})
 	}
 }

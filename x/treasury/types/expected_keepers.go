@@ -23,11 +23,6 @@ type BankKeeper interface {
 	GetSupply(ctx context.Context, denom string) sdk.Coin
 }
 
-// MarketKeeper expected market keeper
-type MarketKeeper interface {
-	ComputeOracleRate(ctx context.Context, offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error)
-}
-
 // StakingKeeper expected keeper for staking module
 type StakingKeeper interface {
 	TotalValidatorPower(context.Context) (math.Int, error) // total bonded tokens within the validator set
@@ -40,5 +35,6 @@ type ProtocolpoolKeeper interface {
 
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
+	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
 	GetTobinTaxes(ctx context.Context) (res oracletypes.TobinTaxes, err error)
 }

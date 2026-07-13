@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,9 @@ import (
 )
 
 func TestParamsValidate(t *testing.T) {
+	maxWhole := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1))
+	nearMaxDec := math.LegacyNewDecFromBigInt(maxWhole).Add(math.LegacyNewDecWithPrec(9, 1))
+
 	tests := []struct {
 		name      string
 		mutate    func(*types.Params)
@@ -102,6 +106,13 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardPolicy.RateMax must be set",
 		},
 		{
+			name: "reward policy rate max above one does not overflow",
+			mutate: func(p *types.Params) {
+				p.RewardPolicy.RateMax = nearMaxDec
+			},
+			expectErr: "RewardPolicy.RateMax must not exceed one",
+		},
+		{
 			name: "reward policy rate min nil",
 			mutate: func(p *types.Params) {
 				p.RewardPolicy.RateMin = math.LegacyDec{}
@@ -182,6 +193,13 @@ func TestParamsValidate(t *testing.T) {
 			name: "burn weight plus reward max greater than one",
 			mutate: func(p *types.Params) {
 				p.BurnWeight = math.LegacyNewDecWithPrec(60, 2)
+			},
+			expectErr: "BurnWeight must be between zero and 1 - RewardPolicy.RateMax",
+		},
+		{
+			name: "burn weight above max does not overflow",
+			mutate: func(p *types.Params) {
+				p.BurnWeight = nearMaxDec
 			},
 			expectErr: "BurnWeight must be between zero and 1 - RewardPolicy.RateMax",
 		},

@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
 
@@ -22,7 +23,7 @@ func (k Keeper) GetEpoch(ctx context.Context) uint64 {
 // Mining Rewards = Fees + Seigniorage for a given epoch
 
 // UpdateIndicators updates internal indicators
-func (k Keeper) UpdateIndicators(ctx context.Context) error {
+func (k Keeper) UpdateIndicators(ctx context.Context, rates oracletypes.RateSnapshot) error {
 	epoch := k.GetEpoch(ctx)
 	totalStakedNoah, err := k.stakingKeeper.TotalValidatorPower(ctx)
 	if err != nil {
@@ -33,11 +34,9 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 		return fmt.Errorf("getting tax proceeds: %w", err)
 	}
 	taxProceeds := sdk.NewDecCoinsFromCoins(epochTaxProceeds.TaxProceeds...)
-	taxRewards := k.alignCoins(ctx, taxProceeds, chain.MicroSDRDenom)
-
-	// Reset tax proceeds after computing TotalStakedNoah for the next epoch
-	if err := k.EpochTaxProceeds.Set(ctx, types.EpochTaxProceeds{}); err != nil {
-		return fmt.Errorf("resetting tax proceeds: %w", err)
+	taxRewards, err := alignCoins(taxProceeds, chain.MicroSDRDenom, rates)
+	if err != nil {
+		return fmt.Errorf("aligning tax proceeds: %w", err)
 	}
 
 	// Compute Seigniorage Rewards
@@ -51,7 +50,10 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 	}
 	seigniorageRewardsAmt := rewardWeight.MulInt(seigniorage)
 	seigniorageRewards := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroNoahDenom, seigniorageRewardsAmt)}
-	seigniorageReward := k.alignCoins(ctx, seigniorageRewards, chain.MicroSDRDenom)
+	seigniorageReward, err := alignCoins(seigniorageRewards, chain.MicroSDRDenom, rates)
+	if err != nil {
+		return fmt.Errorf("aligning seigniorage rewards: %w", err)
+	}
 
 	epochState := types.EpochState{
 		Epoch:             epoch,
@@ -62,26 +64,24 @@ func (k Keeper) UpdateIndicators(ctx context.Context) error {
 	if err := k.EpochStates.Set(ctx, epoch, epochState); err != nil {
 		return fmt.Errorf("setting epoch state: %w", err)
 	}
+	if err := k.EpochTaxProceeds.Set(ctx, types.EpochTaxProceeds{}); err != nil {
+		return fmt.Errorf("resetting tax proceeds: %w", err)
+	}
 
 	return nil
 }
 
-// alignCoins aligns the coins to the given denom through the market swap.
-// Failed conversions are logged and skipped so indicator updates remain best-effort.
-func (k Keeper) alignCoins(ctx context.Context, coins sdk.DecCoins, denom string) (alignedAmt math.LegacyDec) {
-	alignedAmt = math.LegacyZeroDec()
+// alignCoins aligns coins to the given denom using oracle exchange rates.
+func alignCoins(coins sdk.DecCoins, denom string, rates oracletypes.RateSnapshot) (math.LegacyDec, error) {
+	alignedAmt := math.LegacyZeroDec()
 	for _, coinReward := range coins {
+		if coinReward.Amount.IsZero() {
+			continue
+		}
 		if coinReward.Denom != denom {
-			swappedReward, err := k.marketKeeper.ComputeOracleRate(ctx, coinReward, denom)
+			swappedReward, err := rates.Convert(coinReward, denom)
 			if err != nil {
-				k.Logger(ctx).Warn(
-					"skipping treasury indicator coin alignment",
-					"source_denom", coinReward.Denom,
-					"source_amount", coinReward.Amount.String(),
-					"target_denom", denom,
-					"error", err,
-				)
-				continue
+				return math.LegacyZeroDec(), fmt.Errorf("converting %s to %s: %w", coinReward, denom, err)
 			}
 			alignedAmt = alignedAmt.Add(swappedReward.Amount)
 		} else {
@@ -89,5 +89,5 @@ func (k Keeper) alignCoins(ctx context.Context, coins sdk.DecCoins, denom string
 		}
 	}
 
-	return alignedAmt
+	return alignedAmt, nil
 }
