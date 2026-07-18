@@ -11,11 +11,12 @@ package testutil
 
 import (
 	types "ark/x/oracle/types"
+	types0 "ark/x/treasury/types"
 	context "context"
 	reflect "reflect"
 
 	math "cosmossdk.io/math"
-	types0 "github.com/cosmos/cosmos-sdk/types"
+	types1 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -44,10 +45,10 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // GetModuleAccount mocks base method.
-func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types0.ModuleAccountI {
+func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types1.ModuleAccountI {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAccount", ctx, moduleName)
-	ret0, _ := ret[0].(types0.ModuleAccountI)
+	ret0, _ := ret[0].(types1.ModuleAccountI)
 	return ret0
 }
 
@@ -58,10 +59,10 @@ func (mr *MockAccountKeeperMockRecorder) GetModuleAccount(ctx, moduleName any) *
 }
 
 // GetModuleAddress mocks base method.
-func (m *MockAccountKeeper) GetModuleAddress(name string) types0.AccAddress {
+func (m *MockAccountKeeper) GetModuleAddress(name string) types1.AccAddress {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAddress", name)
-	ret0, _ := ret[0].(types0.AccAddress)
+	ret0, _ := ret[0].(types1.AccAddress)
 	return ret0
 }
 
@@ -96,7 +97,7 @@ func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 }
 
 // BurnCoins mocks base method.
-func (m *MockBankKeeper) BurnCoins(ctx context.Context, name string, amt types0.Coins) error {
+func (m *MockBankKeeper) BurnCoins(ctx context.Context, name string, amt types1.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BurnCoins", ctx, name, amt)
 	ret0, _ := ret[0].(error)
@@ -110,7 +111,7 @@ func (mr *MockBankKeeperMockRecorder) BurnCoins(ctx, name, amt any) *gomock.Call
 }
 
 // MintCoins mocks base method.
-func (m *MockBankKeeper) MintCoins(ctx context.Context, name string, amt types0.Coins) error {
+func (m *MockBankKeeper) MintCoins(ctx context.Context, name string, amt types1.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MintCoins", ctx, name, amt)
 	ret0, _ := ret[0].(error)
@@ -124,7 +125,7 @@ func (mr *MockBankKeeperMockRecorder) MintCoins(ctx, name, amt any) *gomock.Call
 }
 
 // SendCoinsFromAccountToModule mocks base method.
-func (m *MockBankKeeper) SendCoinsFromAccountToModule(ctx context.Context, senderAddr types0.AccAddress, recipientModule string, amt types0.Coins) error {
+func (m *MockBankKeeper) SendCoinsFromAccountToModule(ctx context.Context, senderAddr types1.AccAddress, recipientModule string, amt types1.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCoinsFromAccountToModule", ctx, senderAddr, recipientModule, amt)
 	ret0, _ := ret[0].(error)
@@ -138,7 +139,7 @@ func (mr *MockBankKeeperMockRecorder) SendCoinsFromAccountToModule(ctx, senderAd
 }
 
 // SendCoinsFromModuleToAccount mocks base method.
-func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types0.AccAddress, amt types0.Coins) error {
+func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types1.AccAddress, amt types1.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCoinsFromModuleToAccount", ctx, senderModule, recipientAddr, amt)
 	ret0, _ := ret[0].(error)
@@ -223,4 +224,72 @@ func (m *MockOracleKeeper) GetTobinTax(ctx context.Context, denom string) (math.
 func (mr *MockOracleKeeperMockRecorder) GetTobinTax(ctx, denom any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTax), ctx, denom)
+}
+
+// MockTreasuryKeeper is a mock of TreasuryKeeper interface.
+type MockTreasuryKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTreasuryKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockTreasuryKeeperMockRecorder is the mock recorder for MockTreasuryKeeper.
+type MockTreasuryKeeperMockRecorder struct {
+	mock *MockTreasuryKeeper
+}
+
+// NewMockTreasuryKeeper creates a new mock instance.
+func NewMockTreasuryKeeper(ctrl *gomock.Controller) *MockTreasuryKeeper {
+	mock := &MockTreasuryKeeper{ctrl: ctrl}
+	mock.recorder = &MockTreasuryKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTreasuryKeeper) EXPECT() *MockTreasuryKeeperMockRecorder {
+	return m.recorder
+}
+
+// DrawRedemptionBuffer mocks base method.
+func (m *MockTreasuryKeeper) DrawRedemptionBuffer(ctx context.Context, redeemedStable types1.Coin, noahOutput math.Int, quoteRates types.RateSnapshot) (types0.BufferDraw, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DrawRedemptionBuffer", ctx, redeemedStable, noahOutput, quoteRates)
+	ret0, _ := ret[0].(types0.BufferDraw)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DrawRedemptionBuffer indicates an expected call of DrawRedemptionBuffer.
+func (mr *MockTreasuryKeeperMockRecorder) DrawRedemptionBuffer(ctx, redeemedStable, noahOutput, quoteRates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrawRedemptionBuffer", reflect.TypeOf((*MockTreasuryKeeper)(nil).DrawRedemptionBuffer), ctx, redeemedStable, noahOutput, quoteRates)
+}
+
+// RecordSupplyChange mocks base method.
+func (m *MockTreasuryKeeper) RecordSupplyChange(ctx context.Context, burned, minted types1.Coin, quoteRates types.RateSnapshot) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordSupplyChange", ctx, burned, minted, quoteRates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordSupplyChange indicates an expected call of RecordSupplyChange.
+func (mr *MockTreasuryKeeperMockRecorder) RecordSupplyChange(ctx, burned, minted, quoteRates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSupplyChange", reflect.TypeOf((*MockTreasuryKeeper)(nil).RecordSupplyChange), ctx, burned, minted, quoteRates)
+}
+
+// RouteExpansion mocks base method.
+func (m *MockTreasuryKeeper) RouteExpansion(ctx context.Context, grossOffer, stableOutput types1.Coin, quoteRates types.RateSnapshot) (types0.ExpansionAllocation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RouteExpansion", ctx, grossOffer, stableOutput, quoteRates)
+	ret0, _ := ret[0].(types0.ExpansionAllocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RouteExpansion indicates an expected call of RouteExpansion.
+func (mr *MockTreasuryKeeperMockRecorder) RouteExpansion(ctx, grossOffer, stableOutput, quoteRates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RouteExpansion", reflect.TypeOf((*MockTreasuryKeeper)(nil).RouteExpansion), ctx, grossOffer, stableOutput, quoteRates)
 }

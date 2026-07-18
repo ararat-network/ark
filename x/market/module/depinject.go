@@ -33,9 +33,10 @@ type ModuleInputs struct {
 	Cdc          codec.Codec
 	StoreService store.KVStoreService
 
-	AccountKeeper types.AccountKeeper
-	BankKeeper    types.BankKeeper
-	OracleKeeper  types.OracleKeeper
+	AccountKeeper  types.AccountKeeper
+	BankKeeper     types.BankKeeper
+	OracleKeeper   types.OracleKeeper
+	TreasuryKeeper types.TreasuryKeeper
 }
 
 type ModuleOutputs struct {
@@ -58,6 +59,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.OracleKeeper,
+		in.TreasuryKeeper,
 	)
 
 	m := NewAppModule(k)

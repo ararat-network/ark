@@ -10,7 +10,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	chain "ark/pkg/chain"
 	"ark/x/market/types"
+	treasurytypes "ark/x/treasury/types"
 )
 
 var _ types.MsgServer = msgServer{}
@@ -230,15 +232,61 @@ func (m msgServer) settleSwap(
 		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
 	}
 
-	if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
-		return sdkerrors.Wrapf(err, "burning offer coins %s from module", offerCoins)
+	var burned, minted sdk.Coin
+	switch {
+	case offerCoin.Denom == chain.MicroNoahDenom:
+		allocation, err := m.k.treasuryKeeper.RouteExpansion(ctx, offerCoin, outcome.swapCoin, quote.rates)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "routing expansion for offer %s and output %s", offerCoin, outcome.swapCoin)
+		}
+		totalBurn := allocation.TotalBurn()
+		burned = sdk.NewCoin(chain.MicroNoahDenom, totalBurn)
+		if burned.IsPositive() {
+			if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(burned)); err != nil {
+				return sdkerrors.Wrapf(err, "burning expansion coins %s from module", burned)
+			}
+		}
+		minted = outcome.swapCoin
+		if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
+			return sdkerrors.Wrapf(err, "minting expansion output %s in module", minted)
+		}
+
+	case outcome.swapCoin.Denom == chain.MicroNoahDenom:
+		draw, err := m.k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, outcome.swapCoin.Amount, quote.rates)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, outcome.swapCoin)
+		}
+		if err := validateBufferDraw(draw, outcome.swapCoin.Amount); err != nil {
+			return sdkerrors.Wrapf(err, "validating redemption buffer draw for offer %s", offerCoin)
+		}
+		residualMint := outcome.swapCoin.Amount.Sub(draw.BufferPaid)
+		burned = offerCoin
+		if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
+			return sdkerrors.Wrapf(err, "burning redemption offer %s from module", offerCoin)
+		}
+		minted = sdk.NewCoin(chain.MicroNoahDenom, residualMint)
+		if minted.IsPositive() {
+			if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
+				return sdkerrors.Wrapf(err, "minting residual redemption output %s in module", minted)
+			}
+		}
+
+	default:
+		burned = offerCoin
+		if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
+			return sdkerrors.Wrapf(err, "burning offer coins %s from module", offerCoins)
+		}
+		minted = outcome.swapCoin
+		if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
+			return sdkerrors.Wrapf(err, "minting swap coins %s in module", minted)
+		}
+	}
+
+	if err := m.k.treasuryKeeper.RecordSupplyChange(ctx, burned, minted, quote.rates); err != nil {
+		return sdkerrors.Wrapf(err, "recording supply change from %s to %s", burned, minted)
 	}
 
 	swapCoins := sdk.NewCoins(outcome.swapCoin)
-	if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, swapCoins); err != nil {
-		return sdkerrors.Wrapf(err, "minting swap coins %s in module", swapCoins)
-	}
-
 	if err := m.k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins); err != nil {
 		return sdkerrors.Wrapf(err, "sending swap coins %s from module to receiver %s", swapCoins, receiver)
 	}
@@ -258,5 +306,18 @@ func (m msgServer) settleSwap(
 		),
 	})
 
+	return nil
+}
+
+func validateBufferDraw(draw treasurytypes.BufferDraw, noahOutput math.Int) error {
+	if draw.BufferPaid.IsNil() {
+		return fmt.Errorf("buffer payment must be set")
+	}
+	if draw.BufferPaid.IsNegative() {
+		return fmt.Errorf("buffer payment must be zero or positive: %s", draw.BufferPaid)
+	}
+	if draw.BufferPaid.GT(noahOutput) {
+		return fmt.Errorf("buffer payment %s exceeds NOAH output %s", draw.BufferPaid, noahOutput)
+	}
 	return nil
 }

@@ -28,13 +28,14 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx           context.Context
-	keeper        *keeper.Keeper
-	msgServer     types.MsgServer
-	queryClient   types.QueryClient
-	accountKeeper *testutil.MockAccountKeeper
-	bankKeeper    *testutil.MockBankKeeper
-	oracleKeeper  *testutil.MockOracleKeeper
+	ctx            context.Context
+	keeper         *keeper.Keeper
+	msgServer      types.MsgServer
+	queryClient    types.QueryClient
+	accountKeeper  *testutil.MockAccountKeeper
+	bankKeeper     *testutil.MockBankKeeper
+	oracleKeeper   *testutil.MockOracleKeeper
+	treasuryKeeper *testutil.MockTreasuryKeeper
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -57,6 +58,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
 	bankKeeper := testutil.NewMockBankKeeper(ctrl)
 	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
+	treasuryKeeper := testutil.NewMockTreasuryKeeper(ctrl)
 
 	// Required by NewKeeper's panic guard
 	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
@@ -68,11 +70,13 @@ func (s *KeeperTestSuite) SetupTest() {
 		accountKeeper,
 		bankKeeper,
 		oracleKeeper,
+		treasuryKeeper,
 	)
 
 	s.accountKeeper = accountKeeper
 	s.bankKeeper = bankKeeper
 	s.oracleKeeper = oracleKeeper
+	s.treasuryKeeper = treasuryKeeper
 
 	// Set default state
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))

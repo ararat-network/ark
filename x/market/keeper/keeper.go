@@ -17,12 +17,13 @@ import (
 
 // Keeper of the market store
 type Keeper struct {
-	cdc           codec.BinaryCodec
-	storeService  store.KVStoreService
-	authority     string
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
-	oracleKeeper  types.OracleKeeper
+	cdc            codec.BinaryCodec
+	storeService   store.KVStoreService
+	authority      string
+	accountKeeper  types.AccountKeeper
+	bankKeeper     types.BankKeeper
+	oracleKeeper   types.OracleKeeper
+	treasuryKeeper types.TreasuryKeeper
 
 	Schema       collections.Schema
 	Params       collections.Item[types.Params]
@@ -37,6 +38,7 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
+	treasuryKeeper types.TreasuryKeeper,
 ) *Keeper {
 	// ensure market module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
@@ -45,12 +47,13 @@ func NewKeeper(
 
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:           cdc,
-		storeService:  storeService,
-		authority:     authority,
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
-		oracleKeeper:  oracleKeeper,
+		cdc:            cdc,
+		storeService:   storeService,
+		authority:      authority,
+		accountKeeper:  accountKeeper,
+		bankKeeper:     bankKeeper,
+		oracleKeeper:   oracleKeeper,
+		treasuryKeeper: treasuryKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,

@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	oracletypes "ark/x/oracle/types"
+	treasurytypes "ark/x/treasury/types"
 )
 
 // AccountKeeper is expected keeper for auth module
@@ -32,4 +33,27 @@ type OracleKeeper interface {
 
 	// only used for simulation
 	GetActives(ctx context.Context) ([]string, error)
+}
+
+// TreasuryKeeper defines the allocation and liability accounting required by
+// Market settlement.
+type TreasuryKeeper interface {
+	RouteExpansion(
+		ctx context.Context,
+		grossOffer sdk.Coin,
+		stableOutput sdk.Coin,
+		quoteRates oracletypes.RateSnapshot,
+	) (treasurytypes.ExpansionAllocation, error)
+	DrawRedemptionBuffer(
+		ctx context.Context,
+		redeemedStable sdk.Coin,
+		noahOutput math.Int,
+		quoteRates oracletypes.RateSnapshot,
+	) (treasurytypes.BufferDraw, error)
+	RecordSupplyChange(
+		ctx context.Context,
+		burned sdk.Coin,
+		minted sdk.Coin,
+		quoteRates oracletypes.RateSnapshot,
+	) error
 }
