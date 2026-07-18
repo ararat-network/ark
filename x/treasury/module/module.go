@@ -27,8 +27,8 @@ var (
 	_ module.AppModuleSimulation = AppModule{}
 	_ module.HasGenesis          = AppModule{}
 
-	_ appmodule.AppModule     = AppModule{}
-	_ appmodule.HasEndBlocker = AppModule{}
+	_ appmodule.AppModule       = AppModule{}
+	_ appmodule.HasBeginBlocker = AppModule{}
 )
 
 // AppModule implements an application module for the treasury module.
@@ -111,7 +111,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return consensusVersion }
 
-// EndBlock returns the end blocker for the market module.
-func (am AppModule) EndBlock(ctx context.Context) error {
-	return am.k.EndBlocker(ctx)
+// BeginBlock runs Treasury's tax-cap refresh and reward-funding accounting.
+func (am AppModule) BeginBlock(ctx context.Context) error {
+	return am.k.BeginBlocker(ctx)
 }

@@ -9,165 +9,73 @@ import (
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	chain "ark/pkg/chain"
 	"ark/x/treasury/types"
 )
 
-// Simulation parameter constants
 const (
-	taxPolicyKey               = "tax_policy"
-	rewardPolicyKey            = "reward_policy"
-	seigniorageBurdenTargetKey = "seigniorage_burden_target"
-	burnWeightKey              = "burn_weight"
-	miningIncrementKey         = "mining_increment"
-	windowShortKey             = "window_short"
-	windowLongKey              = "window_long"
-	windowProbationKey         = "window_probation"
+	treasuryParamsKey         = "treasury_params"
+	treasuryMonetaryPolicyKey = "treasury_monetary_policy"
+	maxSimulatedRewardTarget  = int64(1_000_000)
 )
 
-// GenTaxPolicy randomised TaxPolicy
-func GenTaxPolicy(r *rand.Rand) types.PolicyConstraints {
-	return types.PolicyConstraints{
-		RateMin:       math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3),
-		RateMax:       math.LegacyNewDecWithPrec(6, 3).Add(math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3)),
-		Cap:           sdk.NewInt64Coin(chain.MicroSDRDenom, 1000000),
-		ChangeRateMax: math.LegacyNewDecWithPrec(25, 5).Add(math.LegacyNewDecWithPrec(int64(r.Intn(75)), 5)),
-	}
+// GenUnitIntervalDec returns a representable decimal in [0, 1].
+func GenUnitIntervalDec(r *rand.Rand) math.LegacyDec {
+	return math.LegacyNewDecWithPrec(int64(r.Intn(10_001)), 4)
 }
 
-// GenRewardPolicy randomised RewardPolicy
-func GenRewardPolicy(r *rand.Rand) types.PolicyConstraints {
-	return types.PolicyConstraints{
-		RateMin:       math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3),
-		RateMax:       math.LegacyNewDecWithPrec(6, 3).Add(math.LegacyNewDecWithPrec(int64(r.Intn(5)+1), 3)),
-		Cap:           sdk.NewCoin("unused", math.ZeroInt()),
-		ChangeRateMax: math.LegacyNewDecWithPrec(25, 5).Add(math.LegacyNewDecWithPrec(int64(r.Intn(75)), 5)),
-	}
+// GenRewardTarget returns a nonnegative micro-NOAH block reward target.
+func GenRewardTarget(r *rand.Rand) math.Int {
+	return math.NewInt(r.Int63n(maxSimulatedRewardTarget + 1))
 }
 
-// GenSeigniorageBurdenTarget randomised SeigniorageBurdenTarget
-func GenSeigniorageBurdenTarget(r *rand.Rand) math.LegacyDec {
-	return math.LegacyNewDecWithPrec(int64(r.Intn(100)), 2)
+// RandomisedParams returns valid governance-owned launch parameters.
+func RandomisedParams(r *rand.Rand) types.Params {
+	params := types.DefaultParams()
+	params.RewardFundingWindow = uint64(r.Int63n(int64(types.DefaultRewardFundingWindow)) + 1)
+	return params
 }
 
-// GenBurnWeight randomised BurnWeight
-func GenBurnWeight(r *rand.Rand) math.LegacyDec {
-	return math.LegacyNewDecWithPrec(int64(r.Intn(50)), 2)
+// RandomisedMonetaryPolicy returns valid launch policy. Stability tax remains
+// disabled so a standalone Treasury simulation does not invent cross-module
+// Oracle rates or a partially derived TaxCaps map.
+func RandomisedMonetaryPolicy(r *rand.Rand) types.MonetaryPolicy {
+	policy := types.DefaultMonetaryPolicy()
+	policy.ValidatorBlockRewardTarget = GenRewardTarget(r)
+	policy.OracleBlockRewardTarget = GenRewardTarget(r)
+	policy.RedemptionBufferTargetRatio = GenUnitIntervalDec(r)
+	policy.StrategicReserveTargetRatio = GenUnitIntervalDec(r)
+	policy.InsuranceTargetRatio = GenUnitIntervalDec(r)
+	return policy
 }
 
-// GenMiningIncrement randomised MiningIncrement
-func GenMiningIncrement(r *rand.Rand) math.LegacyDec {
-	return math.LegacyNewDecWithPrec(int64(100+r.Intn(30)), 2)
-}
-
-// GenWindowShort randomised WindowShort
-func GenWindowShort(r *rand.Rand) uint64 {
-	return uint64(1 + r.Intn(12))
-}
-
-// GenWindowLong randomised WindowLong
-func GenWindowLong(r *rand.Rand) uint64 {
-	return uint64(12 + r.Intn(24))
-}
-
-// GenWindowProbation randomised WindowProbation
-func GenWindowProbation(r *rand.Rand) uint64 {
-	return uint64(1 + r.Intn(6))
-}
-
-// RandomisedGenState generates a random GenesisState for gov
+// RandomisedGenState generates a valid, launch-only Treasury genesis state.
 func RandomisedGenState(simState *module.SimulationState) {
-	var taxPolicy types.PolicyConstraints
+	var params types.Params
 	simState.AppParams.GetOrGenerate(
-		taxPolicyKey,
-		&taxPolicy,
+		treasuryParamsKey,
+		&params,
 		simState.Rand,
-		func(r *rand.Rand) { taxPolicy = GenTaxPolicy(r) },
+		func(r *rand.Rand) { params = RandomisedParams(r) },
 	)
-
-	var rewardPolicy types.PolicyConstraints
+	var policy types.MonetaryPolicy
 	simState.AppParams.GetOrGenerate(
-		rewardPolicyKey,
-		&rewardPolicy,
+		treasuryMonetaryPolicyKey,
+		&policy,
 		simState.Rand,
-		func(r *rand.Rand) { rewardPolicy = GenRewardPolicy(r) },
+		func(r *rand.Rand) { policy = RandomisedMonetaryPolicy(r) },
 	)
 
-	var seigniorageBurdenTarget math.LegacyDec
-	simState.AppParams.GetOrGenerate(
-		seigniorageBurdenTargetKey,
-		&seigniorageBurdenTarget,
-		simState.Rand,
-		func(r *rand.Rand) { seigniorageBurdenTarget = GenSeigniorageBurdenTarget(r) },
-	)
+	treasuryGenesis := types.DefaultGenesisState()
+	treasuryGenesis.Params = params
+	treasuryGenesis.MonetaryPolicy = policy
 
-	var burnWeight math.LegacyDec
-	simState.AppParams.GetOrGenerate(
-		burnWeightKey,
-		&burnWeight,
-		simState.Rand,
-		func(r *rand.Rand) { burnWeight = GenBurnWeight(r) },
-	)
-
-	var miningIncrement math.LegacyDec
-	simState.AppParams.GetOrGenerate(
-		miningIncrementKey,
-		&miningIncrement,
-		simState.Rand,
-		func(r *rand.Rand) { miningIncrement = GenMiningIncrement(r) },
-	)
-
-	var windowShort uint64
-	simState.AppParams.GetOrGenerate(
-		windowShortKey,
-		&windowShort,
-		simState.Rand,
-		func(r *rand.Rand) { windowShort = GenWindowShort(r) },
-	)
-
-	var windowLong uint64
-	simState.AppParams.GetOrGenerate(
-		windowLongKey,
-		&windowLong,
-		simState.Rand,
-		func(r *rand.Rand) { windowLong = GenWindowLong(r) },
-	)
-
-	var windowProbation uint64
-	simState.AppParams.GetOrGenerate(
-		windowProbationKey,
-		&windowProbation,
-		simState.Rand,
-		func(r *rand.Rand) { windowProbation = GenWindowProbation(r) },
-	)
-
-	treasuryGenesis := types.NewGenesisState(
-		types.Params{
-			TaxPolicy:               taxPolicy,
-			RewardPolicy:            rewardPolicy,
-			SeigniorageBurdenTarget: seigniorageBurdenTarget,
-			BurnWeight:              burnWeight,
-			MiningIncrement:         miningIncrement,
-			WindowShort:             windowShort,
-			WindowLong:              windowLong,
-			WindowProbation:         windowProbation,
-		},
-		taxPolicy.RateMin,
-		rewardPolicy.RateMin,
-		[]types.TaxCap{},
-		sdk.Coins{},
-		sdk.Coins{},
-		[]types.EpochState{},
-	)
-
-	bz, err := json.MarshalIndent(&treasuryGenesis.Params, "", " ")
+	bz, err := json.MarshalIndent(treasuryGenesis, "", " ")
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Selected randomly generated treasury parameters:\n%s\n", bz)
+	fmt.Printf("Selected randomly generated Treasury genesis:\n%s\n", bz)
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(treasuryGenesis)
 }

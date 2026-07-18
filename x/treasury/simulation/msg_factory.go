@@ -8,23 +8,17 @@ import (
 	"ark/x/treasury/types"
 )
 
-// MsgUpdateParamsFactory creates a gov proposal for param updates
+// MsgUpdateParamsFactory creates a governance proposal for a valid parameter
+// update without activating cross-module tax-cap derivation.
 func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
-	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
-		r := testData.Rand()
-		params := types.Params{
-			TaxPolicy:               GenTaxPolicy(r.Rand),
-			RewardPolicy:            GenRewardPolicy(r.Rand),
-			SeigniorageBurdenTarget: GenSeigniorageBurdenTarget(r.Rand),
-			MiningIncrement:         GenMiningIncrement(r.Rand),
-			WindowShort:             GenWindowShort(r.Rand),
-			WindowLong:              GenWindowLong(r.Rand),
-			WindowProbation:         GenWindowProbation(r.Rand),
-		}
-
+	return func(
+		_ context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		return nil, &types.MsgUpdateParams{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
-			Params:    params,
+			Params:    RandomisedParams(testData.Rand().Rand),
 		}
 	}
 }

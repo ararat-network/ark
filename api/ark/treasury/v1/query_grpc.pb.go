@@ -19,38 +19,49 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_TaxRate_FullMethodName             = "/ark.treasury.v1.Query/TaxRate"
-	Query_TaxCap_FullMethodName              = "/ark.treasury.v1.Query/TaxCap"
-	Query_TaxCaps_FullMethodName             = "/ark.treasury.v1.Query/TaxCaps"
-	Query_RewardWeight_FullMethodName        = "/ark.treasury.v1.Query/RewardWeight"
-	Query_SeigniorageProceeds_FullMethodName = "/ark.treasury.v1.Query/SeigniorageProceeds"
-	Query_TaxProceeds_FullMethodName         = "/ark.treasury.v1.Query/TaxProceeds"
-	Query_Indicators_FullMethodName          = "/ark.treasury.v1.Query/Indicators"
-	Query_Params_FullMethodName              = "/ark.treasury.v1.Query/Params"
+	Query_Params_FullMethodName          = "/ark.treasury.v1.Query/Params"
+	Query_MonetaryPolicy_FullMethodName  = "/ark.treasury.v1.Query/MonetaryPolicy"
+	Query_MonetaryMandate_FullMethodName = "/ark.treasury.v1.Query/MonetaryMandate"
+	Query_TaxCap_FullMethodName          = "/ark.treasury.v1.Query/TaxCap"
+	Query_TaxCaps_FullMethodName         = "/ark.treasury.v1.Query/TaxCaps"
+	Query_ComputeTax_FullMethodName      = "/ark.treasury.v1.Query/ComputeTax"
+	Query_FundStatus_FullMethodName      = "/ark.treasury.v1.Query/FundStatus"
+	Query_RewardFunding_FullMethodName   = "/ark.treasury.v1.Query/RewardFunding"
+	Query_ClaimsMandate_FullMethodName   = "/ark.treasury.v1.Query/ClaimsMandate"
+	Query_Claim_FullMethodName           = "/ark.treasury.v1.Query/Claim"
+	Query_Claims_FullMethodName          = "/ark.treasury.v1.Query/Claims"
 )
 
 // QueryClient is the client API for Query service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Query defines the gRPC querier service.
+// Query defines the treasury module's gRPC query service.
 type QueryClient interface {
-	// TaxRate return the current tax rate
-	TaxRate(ctx context.Context, in *QueryTaxRateRequest, opts ...grpc.CallOption) (*QueryTaxRateResponse, error)
-	// TaxCap returns the tax cap of a denom
-	TaxCap(ctx context.Context, in *QueryTaxCapRequest, opts ...grpc.CallOption) (*QueryTaxCapResponse, error)
-	// TaxCaps returns the all tax caps
-	TaxCaps(ctx context.Context, in *QueryTaxCapsRequest, opts ...grpc.CallOption) (*QueryTaxCapsResponse, error)
-	// RewardWeight return the current reward weight
-	RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error)
-	// SeigniorageProceeds return the current seigniorage proceeds
-	SeigniorageProceeds(ctx context.Context, in *QuerySeigniorageProceedsRequest, opts ...grpc.CallOption) (*QuerySeigniorageProceedsResponse, error)
-	// TaxProceeds return the current tax proceeds
-	TaxProceeds(ctx context.Context, in *QueryTaxProceedsRequest, opts ...grpc.CallOption) (*QueryTaxProceedsResponse, error)
-	// Indicators return the current tra informations
-	Indicators(ctx context.Context, in *QueryIndicatorsRequest, opts ...grpc.CallOption) (*QueryIndicatorsResponse, error)
-	// Params queries all parameters.
+	// Params queries the treasury parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// MonetaryPolicy queries the current reversible Treasury policy.
+	MonetaryPolicy(ctx context.Context, in *QueryMonetaryPolicyRequest, opts ...grpc.CallOption) (*QueryMonetaryPolicyResponse, error)
+	// MonetaryMandate queries the governed committee appointment and its
+	// current effective status.
+	MonetaryMandate(ctx context.Context, in *QueryMonetaryMandateRequest, opts ...grpc.CallOption) (*QueryMonetaryMandateResponse, error)
+	// TaxCap queries the derived tax cap for one denomination.
+	TaxCap(ctx context.Context, in *QueryTaxCapRequest, opts ...grpc.CallOption) (*QueryTaxCapResponse, error)
+	// TaxCaps queries all derived denomination tax caps.
+	TaxCaps(ctx context.Context, in *QueryTaxCapsRequest, opts ...grpc.CallOption) (*QueryTaxCapsResponse, error)
+	// ComputeTax computes the ante-visible stability tax for SDK messages.
+	ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error)
+	// FundStatus queries Treasury fund balances, liabilities, and targets.
+	FundStatus(ctx context.Context, in *QueryFundStatusRequest, opts ...grpc.CallOption) (*QueryFundStatusResponse, error)
+	// RewardFunding queries the active reward-funding accounting.
+	RewardFunding(ctx context.Context, in *QueryRewardFundingRequest, opts ...grpc.CallOption) (*QueryRewardFundingResponse, error)
+	// ClaimsMandate queries the committee mandate, allowance usage, and
+	// Insurance reservation.
+	ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error)
+	// Claim queries one claim by its permanent identifier.
+	Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error)
+	// Claims queries the paginated claim audit record.
+	Claims(ctx context.Context, in *QueryClaimsRequest, opts ...grpc.CallOption) (*QueryClaimsResponse, error)
 }
 
 type queryClient struct {
@@ -61,10 +72,30 @@ func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
 	return &queryClient{cc}
 }
 
-func (c *queryClient) TaxRate(ctx context.Context, in *QueryTaxRateRequest, opts ...grpc.CallOption) (*QueryTaxRateResponse, error) {
+func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryTaxRateResponse)
-	err := c.cc.Invoke(ctx, Query_TaxRate_FullMethodName, in, out, cOpts...)
+	out := new(QueryParamsResponse)
+	err := c.cc.Invoke(ctx, Query_Params_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) MonetaryPolicy(ctx context.Context, in *QueryMonetaryPolicyRequest, opts ...grpc.CallOption) (*QueryMonetaryPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryMonetaryPolicyResponse)
+	err := c.cc.Invoke(ctx, Query_MonetaryPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) MonetaryMandate(ctx context.Context, in *QueryMonetaryMandateRequest, opts ...grpc.CallOption) (*QueryMonetaryMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryMonetaryMandateResponse)
+	err := c.cc.Invoke(ctx, Query_MonetaryMandate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,50 +122,60 @@ func (c *queryClient) TaxCaps(ctx context.Context, in *QueryTaxCapsRequest, opts
 	return out, nil
 }
 
-func (c *queryClient) RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error) {
+func (c *queryClient) ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryRewardWeightResponse)
-	err := c.cc.Invoke(ctx, Query_RewardWeight_FullMethodName, in, out, cOpts...)
+	out := new(QueryComputeTaxResponse)
+	err := c.cc.Invoke(ctx, Query_ComputeTax_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) SeigniorageProceeds(ctx context.Context, in *QuerySeigniorageProceedsRequest, opts ...grpc.CallOption) (*QuerySeigniorageProceedsResponse, error) {
+func (c *queryClient) FundStatus(ctx context.Context, in *QueryFundStatusRequest, opts ...grpc.CallOption) (*QueryFundStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QuerySeigniorageProceedsResponse)
-	err := c.cc.Invoke(ctx, Query_SeigniorageProceeds_FullMethodName, in, out, cOpts...)
+	out := new(QueryFundStatusResponse)
+	err := c.cc.Invoke(ctx, Query_FundStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) TaxProceeds(ctx context.Context, in *QueryTaxProceedsRequest, opts ...grpc.CallOption) (*QueryTaxProceedsResponse, error) {
+func (c *queryClient) RewardFunding(ctx context.Context, in *QueryRewardFundingRequest, opts ...grpc.CallOption) (*QueryRewardFundingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryTaxProceedsResponse)
-	err := c.cc.Invoke(ctx, Query_TaxProceeds_FullMethodName, in, out, cOpts...)
+	out := new(QueryRewardFundingResponse)
+	err := c.cc.Invoke(ctx, Query_RewardFunding_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) Indicators(ctx context.Context, in *QueryIndicatorsRequest, opts ...grpc.CallOption) (*QueryIndicatorsResponse, error) {
+func (c *queryClient) ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryIndicatorsResponse)
-	err := c.cc.Invoke(ctx, Query_Indicators_FullMethodName, in, out, cOpts...)
+	out := new(QueryClaimsMandateResponse)
+	err := c.cc.Invoke(ctx, Query_ClaimsMandate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error) {
+func (c *queryClient) Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryParamsResponse)
-	err := c.cc.Invoke(ctx, Query_Params_FullMethodName, in, out, cOpts...)
+	out := new(QueryClaimResponse)
+	err := c.cc.Invoke(ctx, Query_Claim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Claims(ctx context.Context, in *QueryClaimsRequest, opts ...grpc.CallOption) (*QueryClaimsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryClaimsResponse)
+	err := c.cc.Invoke(ctx, Query_Claims_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,24 +186,32 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
 //
-// Query defines the gRPC querier service.
+// Query defines the treasury module's gRPC query service.
 type QueryServer interface {
-	// TaxRate return the current tax rate
-	TaxRate(context.Context, *QueryTaxRateRequest) (*QueryTaxRateResponse, error)
-	// TaxCap returns the tax cap of a denom
-	TaxCap(context.Context, *QueryTaxCapRequest) (*QueryTaxCapResponse, error)
-	// TaxCaps returns the all tax caps
-	TaxCaps(context.Context, *QueryTaxCapsRequest) (*QueryTaxCapsResponse, error)
-	// RewardWeight return the current reward weight
-	RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error)
-	// SeigniorageProceeds return the current seigniorage proceeds
-	SeigniorageProceeds(context.Context, *QuerySeigniorageProceedsRequest) (*QuerySeigniorageProceedsResponse, error)
-	// TaxProceeds return the current tax proceeds
-	TaxProceeds(context.Context, *QueryTaxProceedsRequest) (*QueryTaxProceedsResponse, error)
-	// Indicators return the current tra informations
-	Indicators(context.Context, *QueryIndicatorsRequest) (*QueryIndicatorsResponse, error)
-	// Params queries all parameters.
+	// Params queries the treasury parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// MonetaryPolicy queries the current reversible Treasury policy.
+	MonetaryPolicy(context.Context, *QueryMonetaryPolicyRequest) (*QueryMonetaryPolicyResponse, error)
+	// MonetaryMandate queries the governed committee appointment and its
+	// current effective status.
+	MonetaryMandate(context.Context, *QueryMonetaryMandateRequest) (*QueryMonetaryMandateResponse, error)
+	// TaxCap queries the derived tax cap for one denomination.
+	TaxCap(context.Context, *QueryTaxCapRequest) (*QueryTaxCapResponse, error)
+	// TaxCaps queries all derived denomination tax caps.
+	TaxCaps(context.Context, *QueryTaxCapsRequest) (*QueryTaxCapsResponse, error)
+	// ComputeTax computes the ante-visible stability tax for SDK messages.
+	ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error)
+	// FundStatus queries Treasury fund balances, liabilities, and targets.
+	FundStatus(context.Context, *QueryFundStatusRequest) (*QueryFundStatusResponse, error)
+	// RewardFunding queries the active reward-funding accounting.
+	RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error)
+	// ClaimsMandate queries the committee mandate, allowance usage, and
+	// Insurance reservation.
+	ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error)
+	// Claim queries one claim by its permanent identifier.
+	Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error)
+	// Claims queries the paginated claim audit record.
+	Claims(context.Context, *QueryClaimsRequest) (*QueryClaimsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -173,8 +222,14 @@ type QueryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedQueryServer struct{}
 
-func (UnimplementedQueryServer) TaxRate(context.Context, *QueryTaxRateRequest) (*QueryTaxRateResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method TaxRate not implemented")
+func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
+}
+func (UnimplementedQueryServer) MonetaryPolicy(context.Context, *QueryMonetaryPolicyRequest) (*QueryMonetaryPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MonetaryPolicy not implemented")
+}
+func (UnimplementedQueryServer) MonetaryMandate(context.Context, *QueryMonetaryMandateRequest) (*QueryMonetaryMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MonetaryMandate not implemented")
 }
 func (UnimplementedQueryServer) TaxCap(context.Context, *QueryTaxCapRequest) (*QueryTaxCapResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TaxCap not implemented")
@@ -182,20 +237,23 @@ func (UnimplementedQueryServer) TaxCap(context.Context, *QueryTaxCapRequest) (*Q
 func (UnimplementedQueryServer) TaxCaps(context.Context, *QueryTaxCapsRequest) (*QueryTaxCapsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TaxCaps not implemented")
 }
-func (UnimplementedQueryServer) RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RewardWeight not implemented")
+func (UnimplementedQueryServer) ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ComputeTax not implemented")
 }
-func (UnimplementedQueryServer) SeigniorageProceeds(context.Context, *QuerySeigniorageProceedsRequest) (*QuerySeigniorageProceedsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SeigniorageProceeds not implemented")
+func (UnimplementedQueryServer) FundStatus(context.Context, *QueryFundStatusRequest) (*QueryFundStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FundStatus not implemented")
 }
-func (UnimplementedQueryServer) TaxProceeds(context.Context, *QueryTaxProceedsRequest) (*QueryTaxProceedsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method TaxProceeds not implemented")
+func (UnimplementedQueryServer) RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RewardFunding not implemented")
 }
-func (UnimplementedQueryServer) Indicators(context.Context, *QueryIndicatorsRequest) (*QueryIndicatorsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Indicators not implemented")
+func (UnimplementedQueryServer) ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClaimsMandate not implemented")
 }
-func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
+func (UnimplementedQueryServer) Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Claim not implemented")
+}
+func (UnimplementedQueryServer) Claims(context.Context, *QueryClaimsRequest) (*QueryClaimsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Claims not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -218,20 +276,56 @@ func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
 	s.RegisterService(&Query_ServiceDesc, srv)
 }
 
-func _Query_TaxRate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTaxRateRequest)
+func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryParamsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TaxRate(ctx, in)
+		return srv.(QueryServer).Params(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_TaxRate_FullMethodName,
+		FullMethod: Query_Params_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TaxRate(ctx, req.(*QueryTaxRateRequest))
+		return srv.(QueryServer).Params(ctx, req.(*QueryParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_MonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMonetaryPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MonetaryPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_MonetaryPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MonetaryPolicy(ctx, req.(*QueryMonetaryPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_MonetaryMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMonetaryMandateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MonetaryMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_MonetaryMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MonetaryMandate(ctx, req.(*QueryMonetaryMandateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -272,92 +366,110 @@ func _Query_TaxCaps_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_RewardWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryRewardWeightRequest)
+func _Query_ComputeTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryComputeTaxRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).RewardWeight(ctx, in)
+		return srv.(QueryServer).ComputeTax(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_RewardWeight_FullMethodName,
+		FullMethod: Query_ComputeTax_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).RewardWeight(ctx, req.(*QueryRewardWeightRequest))
+		return srv.(QueryServer).ComputeTax(ctx, req.(*QueryComputeTaxRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_SeigniorageProceeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QuerySeigniorageProceedsRequest)
+func _Query_FundStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryFundStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).SeigniorageProceeds(ctx, in)
+		return srv.(QueryServer).FundStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_SeigniorageProceeds_FullMethodName,
+		FullMethod: Query_FundStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).SeigniorageProceeds(ctx, req.(*QuerySeigniorageProceedsRequest))
+		return srv.(QueryServer).FundStatus(ctx, req.(*QueryFundStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TaxProceeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTaxProceedsRequest)
+func _Query_RewardFunding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRewardFundingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TaxProceeds(ctx, in)
+		return srv.(QueryServer).RewardFunding(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_TaxProceeds_FullMethodName,
+		FullMethod: Query_RewardFunding_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TaxProceeds(ctx, req.(*QueryTaxProceedsRequest))
+		return srv.(QueryServer).RewardFunding(ctx, req.(*QueryRewardFundingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Indicators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryIndicatorsRequest)
+func _Query_ClaimsMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClaimsMandateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).Indicators(ctx, in)
+		return srv.(QueryServer).ClaimsMandate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_Indicators_FullMethodName,
+		FullMethod: Query_ClaimsMandate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Indicators(ctx, req.(*QueryIndicatorsRequest))
+		return srv.(QueryServer).ClaimsMandate(ctx, req.(*QueryClaimsMandateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryParamsRequest)
+func _Query_Claim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClaimRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).Params(ctx, in)
+		return srv.(QueryServer).Claim(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_Params_FullMethodName,
+		FullMethod: Query_Claim_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Params(ctx, req.(*QueryParamsRequest))
+		return srv.(QueryServer).Claim(ctx, req.(*QueryClaimRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Claims_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClaimsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Claims(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Claims_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Claims(ctx, req.(*QueryClaimsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -370,8 +482,16 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "TaxRate",
-			Handler:    _Query_TaxRate_Handler,
+			MethodName: "Params",
+			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "MonetaryPolicy",
+			Handler:    _Query_MonetaryPolicy_Handler,
+		},
+		{
+			MethodName: "MonetaryMandate",
+			Handler:    _Query_MonetaryMandate_Handler,
 		},
 		{
 			MethodName: "TaxCap",
@@ -382,24 +502,28 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_TaxCaps_Handler,
 		},
 		{
-			MethodName: "RewardWeight",
-			Handler:    _Query_RewardWeight_Handler,
+			MethodName: "ComputeTax",
+			Handler:    _Query_ComputeTax_Handler,
 		},
 		{
-			MethodName: "SeigniorageProceeds",
-			Handler:    _Query_SeigniorageProceeds_Handler,
+			MethodName: "FundStatus",
+			Handler:    _Query_FundStatus_Handler,
 		},
 		{
-			MethodName: "TaxProceeds",
-			Handler:    _Query_TaxProceeds_Handler,
+			MethodName: "RewardFunding",
+			Handler:    _Query_RewardFunding_Handler,
 		},
 		{
-			MethodName: "Indicators",
-			Handler:    _Query_Indicators_Handler,
+			MethodName: "ClaimsMandate",
+			Handler:    _Query_ClaimsMandate_Handler,
 		},
 		{
-			MethodName: "Params",
-			Handler:    _Query_Params_Handler,
+			MethodName: "Claim",
+			Handler:    _Query_Claim_Handler,
+		},
+		{
+			MethodName: "Claims",
+			Handler:    _Query_Claims_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

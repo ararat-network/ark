@@ -1,162 +1,168 @@
 package keeper_test
 
 import (
+	"github.com/cosmos/gogoproto/proto"
+	"go.uber.org/mock/gomock"
+
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
 
-func (s *KeeperTestSuite) TestInitGenesis() {
-	s.accountKeeper.EXPECT().
-		GetModuleAccount(s.ctx, types.ModuleName).
-		Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-
-	customTaxRate := math.LegacyNewDecWithPrec(5, 3)       // 0.5%
-	customRewardWeight := math.LegacyNewDecWithPrec(10, 2) // 10%
-	customTaxCaps := []types.TaxCap{
-		{Denom: "ukrw", TaxCap: math.NewInt(1300000000)},
-		{Denom: "uusd", TaxCap: math.NewInt(1000000)},
+func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coins) {
+	for _, moduleName := range types.FundAccountNames() {
+		account := authtypes.NewEmptyModuleAccount(moduleName)
+		s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, moduleName).Return(account)
+		s.bankKeeper.EXPECT().GetAllBalances(s.ctx, account.GetAddress()).Return(balances[moduleName])
 	}
-	customEpochStates := []types.EpochState{
-		{
-			Epoch:             0,
-			TaxReward:         math.LegacyNewDec(100),
-			SeigniorageReward: math.LegacyNewDec(200),
-			TotalStakedNoah:   math.NewInt(1000000),
-		},
-	}
-
-	genesis := types.NewGenesisState(
-		types.DefaultParams(),
-		customTaxRate,
-		customRewardWeight,
-		customTaxCaps,
-		sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-		sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(500000))),
-		customEpochStates,
-	)
-
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().NoError(err)
-
-	// Verify tax rate
-	taxRate, err := s.keeper.TaxRate.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().True(customTaxRate.Equal(taxRate))
-
-	// Verify reward weight
-	rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().True(customRewardWeight.Equal(rewardWeight))
-
-	// Verify tax caps
-	cap, err := s.keeper.TaxCaps.Get(s.ctx, "uusd")
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1000000), cap)
-
-	cap, err = s.keeper.TaxCaps.Get(s.ctx, "ukrw")
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1300000000), cap)
-
-	// Verify epoch tax proceeds
-	proceeds, err := s.keeper.EpochTaxProceeds.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(5000), proceeds.TaxProceeds.AmountOf("uusd"))
-
-	// Verify epoch initial issuance
-	issuance, err := s.keeper.EpochInitialIssuance.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(500000), issuance.Issuance.AmountOf(chain.MicroNoahDenom))
-
-	// Verify epoch states
-	epochState, err := s.keeper.EpochStates.Get(s.ctx, 0)
-	s.Require().NoError(err)
-	s.Require().True(math.LegacyNewDec(100).Equal(epochState.TaxReward))
-	s.Require().True(math.LegacyNewDec(200).Equal(epochState.SeigniorageReward))
-	s.Require().Equal(math.NewInt(1000000), epochState.TotalStakedNoah)
 }
 
-func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
-	s.accountKeeper.EXPECT().
-		GetModuleAccount(s.ctx, types.ModuleName).
-		Return(nil)
-
-	// When EpochInitialIssuance is empty, RecordEpochInitialIssuance is called
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(nil, nil)
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroNoahDenom).
-		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000)))
-
+func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis := types.DefaultGenesisState()
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().Error(err)
-	s.Require().ErrorContains(err, "module account has not been set")
-}
-
-func (s *KeeperTestSuite) TestExportGenesis() {
-	s.accountKeeper.EXPECT().
-		GetModuleAccount(s.ctx, types.ModuleName).
-		Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-
-	customTaxRate := math.LegacyNewDecWithPrec(5, 3)       // 0.5%
-	customRewardWeight := math.LegacyNewDecWithPrec(10, 2) // 10%
-	customTaxCaps := []types.TaxCap{
-		{Denom: "ukrw", TaxCap: math.NewInt(1300000000)},
-		{Denom: "uusd", TaxCap: math.NewInt(1000000)},
+	genesis.NextClaimId = 7
+	genesis.TaxCaps = []types.TaxCap{
+		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
 	}
-	customEpochStates := []types.EpochState{
-		{
-			Epoch:             0,
-			TaxReward:         math.LegacyNewDec(100),
-			SeigniorageReward: math.LegacyNewDec(200),
-			TotalStakedNoah:   math.NewInt(1000000),
-		},
-	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+	}, nil)
+	s.expectGenesisFundBalances(map[string]sdk.Coins{
+		types.SubsidyPoolName:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 3)),
+		types.RedemptionBufferName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 5)),
+		types.StrategicReserveName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 7)),
+		types.InsuranceName:        sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 11)),
+	})
 
-	genesis := types.NewGenesisState(
-		types.DefaultParams(),
-		customTaxRate,
-		customRewardWeight,
-		customTaxCaps,
-		sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-		sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(500000))),
-		customEpochStates,
-	)
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().NoError(err)
-
-	// Export at the last block of epoch 0 so the current epoch state is included.
-	s.setBlockHeight(int64(chain.BlocksPerWeek) - 1)
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
-	s.Require().NotNil(exported)
-
-	// Verify round-trip of scalar values
-	s.Require().True(genesis.TaxRate.Equal(exported.TaxRate))
-	s.Require().True(genesis.RewardWeight.Equal(exported.RewardWeight))
 	s.Require().Equal(genesis.Params, exported.Params)
+	s.Require().True(genesis.MonetaryPolicy.Equal(exported.MonetaryPolicy))
+	s.Require().Equal(genesis.TaxCaps, exported.TaxCaps)
+	s.Require().True(proto.Equal(&genesis.ClaimsMandate, &exported.ClaimsMandate))
+	s.Require().Equal(genesis.ClaimsAllowanceUsed, exported.ClaimsAllowanceUsed)
+	s.Require().Equal(genesis.InsuranceReserved, exported.InsuranceReserved)
+	s.Require().Equal(genesis.NextClaimId, exported.NextClaimId)
+	s.Require().Empty(exported.Claims)
+	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
+	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
+}
 
-	// Verify tax caps round-trip
-	s.Require().Len(exported.TaxCaps, 2)
-	s.Require().Equal(genesis.TaxCaps[0].Denom, exported.TaxCaps[0].Denom)
-	s.Require().Equal(genesis.TaxCaps[0].TaxCap, exported.TaxCaps[0].TaxCap)
-	s.Require().Equal(genesis.TaxCaps[1].Denom, exported.TaxCaps[1].Denom)
-	s.Require().Equal(genesis.TaxCaps[1].TaxCap, exported.TaxCaps[1].TaxCap)
+func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
+	genesis := types.DefaultGenesisState()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+	}, nil)
+	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.SubsidyPoolName).
+		Return(authtypes.NewEmptyModuleAccount(types.SubsidyPoolName))
+	s.bankKeeper.EXPECT().GetAllBalances(s.ctx, gomock.Any()).Return(
+		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 1)),
+	)
 
-	// Verify epoch tax proceeds
+	err := s.keeper.InitGenesis(s.ctx, genesis)
+	s.Require().ErrorContains(err, "unsupported genesis denom")
+}
+
+func (s *KeeperTestSuite) TestInitGenesisRejectsReservationAboveInsuranceBalance() {
+	genesis := types.DefaultGenesisState()
+	genesis.ClaimsMandate = types.ClaimsMandate{
+		Term:                     1,
+		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
+		ActivationHeight:         1,
+		ExpiryHeight:             100,
+		CancellationPeriodBlocks: 1,
+		CommitteeClaimLimit:      math.NewInt(10),
+	}
+	genesis.ClaimsAllowanceUsed = math.NewInt(2)
+	genesis.InsuranceReserved = math.NewInt(2)
+	// The matching pending claim makes the pure genesis state internally
+	// consistent; the keeper then rejects the insufficient Bank balance.
+	genesis.Claims = []types.Claim{pendingClaimForGenesis(2)}
+	genesis.NextClaimId = 2
+	recipient, err := sdk.AccAddressFromBech32(genesis.Claims[0].Recipient)
 	s.Require().NoError(err)
-	s.Require().Equal(genesis.EpochTaxProceeds.AmountOf("uusd"), exported.EpochTaxProceeds.AmountOf("uusd"))
+	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(false)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+	}, nil)
+	s.expectGenesisFundBalances(map[string]sdk.Coins{
+		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+	})
 
-	// Verify epoch initial issuance
-	s.Require().NoError(err)
-	s.Require().Equal(genesis.EpochInitialIssuance.AmountOf(chain.MicroNoahDenom), exported.EpochInitialIssuance.AmountOf(chain.MicroNoahDenom))
+	err = s.keeper.InitGenesis(s.ctx, genesis)
+	s.Require().ErrorContains(err, "exceeds Insurance balance")
+}
 
-	// Verify epoch states
+func (s *KeeperTestSuite) TestInitGenesisRejectsBlockedPendingClaimRecipient() {
+	genesis := types.DefaultGenesisState()
+	genesis.ClaimsMandate = types.ClaimsMandate{
+		Term:                     1,
+		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
+		ActivationHeight:         1,
+		ExpiryHeight:             100,
+		CancellationPeriodBlocks: 1,
+		CommitteeClaimLimit:      math.NewInt(2),
+	}
+	genesis.ClaimsAllowanceUsed = math.NewInt(2)
+	genesis.InsuranceReserved = math.NewInt(2)
+	genesis.Claims = []types.Claim{pendingClaimForGenesis(2)}
+	genesis.NextClaimId = 2
+	recipient, err := sdk.AccAddressFromBech32(genesis.Claims[0].Recipient)
 	s.Require().NoError(err)
-	s.Require().True(genesis.EpochStates[0].TaxReward.Equal(exported.EpochStates[0].TaxReward))
-	s.Require().True(genesis.EpochStates[0].SeigniorageReward.Equal(exported.EpochStates[0].SeigniorageReward))
-	s.Require().True(genesis.EpochStates[0].TotalStakedNoah.Equal(exported.EpochStates[0].TotalStakedNoah))
+	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(true)
+
+	err = s.keeper.InitGenesis(s.ctx, genesis)
+	s.Require().ErrorContains(err, "invalid pending claim")
+	s.Require().ErrorContains(err, "blocked from receiving funds")
+}
+
+func (s *KeeperTestSuite) TestInitGenesisAllowsBlockedFinalizedClaimAuditRecord() {
+	genesis := types.DefaultGenesisState()
+	genesis.ClaimsMandate = types.ClaimsMandate{
+		Term:                     1,
+		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
+		ActivationHeight:         1,
+		ExpiryHeight:             100,
+		CancellationPeriodBlocks: 1,
+		CommitteeClaimLimit:      math.NewInt(2),
+	}
+	claim := pendingClaimForGenesis(2)
+	claim.Origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
+	claim.Status = types.ClaimStatus_CLAIM_STATUS_PAID
+	claim.FinalizedHeight = claim.ExecutableHeight
+	claim.FinalizedBy = authtypes.NewModuleAddress("claim-executor").String()
+	genesis.Claims = []types.Claim{claim}
+	genesis.NextClaimId = 2
+	recipient, err := sdk.AccAddressFromBech32(claim.Recipient)
+	s.Require().NoError(err)
+	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(true).Times(0)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+	}, nil)
+	s.expectGenesisFundBalances(map[string]sdk.Coins{
+		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 2)),
+	})
+
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
+}
+
+func pendingClaimForGenesis(amount int64) types.Claim {
+	return types.Claim{
+		ClaimId:           1,
+		Submitter:         authtypes.NewModuleAddress("claims-committee").String(),
+		Origin:            types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE,
+		MandateTerm:       1,
+		IncidentReference: "incident",
+		Recipient:         authtypes.NewModuleAddress("claim-recipient").String(),
+		Amount:            sdk.NewInt64Coin(chain.MicroNoahDenom, amount),
+		EvidenceReference: "evidence",
+		Status:            types.ClaimStatus_CLAIM_STATUS_PENDING,
+		SubmittedHeight:   1,
+		ExecutableHeight:  2,
+	}
 }

@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"cosmossdk.io/core/store"
+	"cosmossdk.io/math"
+
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-
-	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -20,8 +21,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/testutil"
 	"ark/x/treasury/types"
@@ -30,15 +29,17 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx           context.Context
-	keeper        *keeper.Keeper
-	msgServer     types.MsgServer
-	queryClient   types.QueryClient
-	accountKeeper *testutil.MockAccountKeeper
-	bankKeeper    *testutil.MockBankKeeper
-	ppoolKeeper   *testutil.MockProtocolpoolKeeper
-	oracleKeeper  *testutil.MockOracleKeeper
-	stakingKeeper *testutil.MockStakingKeeper
+	ctx                   context.Context
+	cdc                   codec.Codec
+	keeper                *keeper.Keeper
+	msgServer             types.MsgServer
+	queryClient           types.QueryClient
+	authority             string
+	accountKeeper         *testutil.MockAccountKeeper
+	bankKeeper            *testutil.MockBankKeeper
+	oracleKeeper          *testutil.MockOracleKeeper
+	transientStoreService store.TransientStoreService
+	commitMultiStore      storetypes.CommitMultiStore
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -49,251 +50,89 @@ func (s *KeeperTestSuite) SetupTest() {
 	interfaceRegistry := codectestutil.CodecOptions{}.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
 	types.RegisterInterfaces(interfaceRegistry)
-	cdc := codec.NewProtoCodec(interfaceRegistry)
+	s.cdc = codec.NewProtoCodec(interfaceRegistry)
 
 	key := storetypes.NewKVStoreKey(types.StoreKey)
+	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	storeService := runtime.NewKVStoreService(key)
-	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
+	transientStoreService := runtime.NewTransientStoreService(transientKey)
+	testCtx := sdktestutil.DefaultContextWithDB(
+		s.T(),
+		key,
+		transientKey,
+	)
 	s.ctx = testCtx.Ctx
+	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())
-
 	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
-	s.ppoolKeeper = testutil.NewMockProtocolpoolKeeper(ctrl)
 	s.oracleKeeper = testutil.NewMockOracleKeeper(ctrl)
-	s.stakingKeeper = testutil.NewMockStakingKeeper(ctrl)
-
-	// Required by NewKeeper's panic guard
-	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
+	s.transientStoreService = transientStoreService
+	s.commitMultiStore = testCtx.CMS
+	for _, moduleName := range types.FundAccountNames() {
+		s.accountKeeper.EXPECT().
+			GetModuleAddress(moduleName).
+			Return(authtypes.NewModuleAddress(moduleName)).
+			AnyTimes()
+	}
+	s.accountKeeper.EXPECT().
+		GetModuleAddress(types.StabilityTaxCollectorName).
+		Return(authtypes.NewModuleAddress(types.StabilityTaxCollectorName)).
+		AnyTimes()
 
 	s.keeper = keeper.NewKeeper(
-		cdc,
+		s.cdc,
 		storeService,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		"oracle",
+		transientStoreService,
+		s.authority,
 		s.accountKeeper,
 		s.bankKeeper,
-		s.ppoolKeeper,
 		s.oracleKeeper,
-		s.stakingKeeper,
 	)
-
-	// Set default state
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
-	s.Require().NoError(s.keeper.TaxRate.Set(s.ctx, types.DefaultTaxRate))
-	s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, types.DefaultRewardWeight))
-	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{}))
-	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-		Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000000000000))),
-	}))
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, types.DefaultMonetaryPolicy()))
+	s.Require().NoError(s.keeper.ClaimsMandate.Set(
+		s.ctx,
+		types.DefaultClaimsMandate(),
+	))
+	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(
+		s.ctx,
+		math.ZeroInt(),
+	))
+	s.Require().NoError(s.keeper.InsuranceReserved.Set(
+		s.ctx,
+		math.ZeroInt(),
+	))
+	s.Require().NoError(s.keeper.RewardFunding.Set(
+		s.ctx,
+		types.DefaultRewardFundingState(),
+	))
+	s.Require().NoError(s.keeper.MonetaryMandate.Set(
+		s.ctx,
+		types.DefaultMonetaryMandate(),
+	))
 
-	// Wire gRPC query client
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
 	s.queryClient = types.NewQueryClient(queryHelper)
-
-	// Create message server
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
 
-// setBlockHeight is a helper to set the block height on the context.
-func (s *KeeperTestSuite) setBlockHeight(h int64) {
-	sdkCtx := sdk.UnwrapSDKContext(s.ctx)
-	s.ctx = sdkCtx.WithBlockHeight(h)
+func (s *KeeperTestSuite) setBlockHeight(height int64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-func (s *KeeperTestSuite) TestRecordEpochTaxProceeds() {
-	tests := []struct {
-		name     string
-		deltas   []sdk.Coins // applied sequentially
-		expected sdk.Coins
-	}{
-		{
-			name:     "single denom",
-			deltas:   []sdk.Coins{sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1000)))},
-			expected: sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1000))),
-		},
-		{
-			name:     "empty delta is no-op",
-			deltas:   []sdk.Coins{{}},
-			expected: sdk.Coins{},
-		},
-		{
-			name:     "nil delta is no-op",
-			deltas:   []sdk.Coins{nil},
-			expected: sdk.Coins{},
-		},
-		{
-			name: "multi-denom",
-			deltas: []sdk.Coins{sdk.NewCoins(
-				sdk.NewCoin("uusd", math.NewInt(1000)),
-				sdk.NewCoin("ukrw", math.NewInt(2000)),
-			)},
-			expected: sdk.NewCoins(
-				sdk.NewCoin("uusd", math.NewInt(1000)),
-				sdk.NewCoin("ukrw", math.NewInt(2000)),
-			),
-		},
-		{
-			name: "accumulates across calls",
-			deltas: []sdk.Coins{
-				sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1000))),
-				sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(500))),
-			},
-			expected: sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1500))),
-		},
-		{
-			name: "accumulates across calls multi-denom",
-			deltas: []sdk.Coins{
-				sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(1000))),
-				sdk.NewCoins(sdk.NewCoin("ukrw", math.NewInt(2000))),
-			},
-			expected: sdk.NewCoins(
-				sdk.NewCoin("uusd", math.NewInt(1000)),
-				sdk.NewCoin("ukrw", math.NewInt(2000)),
-			),
-		},
+func (s *KeeperTestSuite) clearTransientStore() {
+	transientStore := s.transientStoreService.OpenTransientStore(s.ctx)
+	iterator, err := transientStore.Iterator(nil, nil)
+	s.Require().NoError(err)
+	var keys [][]byte
+	for ; iterator.Valid(); iterator.Next() {
+		keys = append(keys, append([]byte(nil), iterator.Key()...))
 	}
-
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			// Reset proceeds for each sub-test
-			s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{}))
-
-			for _, delta := range tc.deltas {
-				err := s.keeper.RecordEpochTaxProceeds(s.ctx, delta)
-				s.Require().NoError(err)
-			}
-
-			proceeds, err := s.keeper.EpochTaxProceeds.Get(s.ctx)
-			s.Require().NoError(err)
-			if len(tc.expected) == 0 {
-				s.Require().True(proceeds.TaxProceeds.IsZero())
-			} else {
-				s.Require().True(tc.expected.Equal(proceeds.TaxProceeds))
-			}
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestComputeEpochSeigniorage() {
-	tests := []struct {
-		name           string
-		initialSupply  math.Int
-		currentSupply  math.Int
-		expectedResult math.Int
-	}{
-		{
-			name:           "positive seigniorage (supply burned)",
-			initialSupply:  math.NewInt(1000),
-			currentSupply:  math.NewInt(800),
-			expectedResult: math.NewInt(200),
-		},
-		{
-			name:           "supply increased — clamps to zero",
-			initialSupply:  math.NewInt(1000),
-			currentSupply:  math.NewInt(1200),
-			expectedResult: math.ZeroInt(),
-		},
-		{
-			name:           "no change — zero seigniorage",
-			initialSupply:  math.NewInt(1000),
-			currentSupply:  math.NewInt(1000),
-			expectedResult: math.ZeroInt(),
-		},
-		{
-			name:           "large values",
-			initialSupply:  math.NewInt(1_000_000_000_000),
-			currentSupply:  math.NewInt(999_999_000_000),
-			expectedResult: math.NewInt(1_000_000),
-		},
-		{
-			name:           "all supply burned",
-			initialSupply:  math.NewInt(1000),
-			currentSupply:  math.ZeroInt(),
-			expectedResult: math.NewInt(1000),
-		},
-	}
-
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-				Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, tc.initialSupply)),
-			}))
-
-			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroNoahDenom).
-				Return(sdk.NewCoin(chain.MicroNoahDenom, tc.currentSupply))
-
-			seigniorage, err := s.keeper.ComputeEpochSeigniorage(s.ctx)
-			s.Require().NoError(err)
-			s.Require().True(tc.expectedResult.Equal(seigniorage), "expected %s, got %s", tc.expectedResult, seigniorage)
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestRecordEpochInitialIssuance() {
-	tests := []struct {
-		name      string
-		whitelist oracletypes.TobinTaxes
-		supplies  map[string]math.Int
-		expected  sdk.Coins
-	}{
-		{
-			name:      "no whitelist denoms — only noah",
-			whitelist: nil,
-			supplies: map[string]math.Int{
-				chain.MicroNoahDenom: math.NewInt(1_000_000),
-			},
-			expected: sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1_000_000))),
-		},
-		{
-			name: "with whitelist denoms",
-			whitelist: oracletypes.TobinTaxes{
-				{Denom: "uusd"},
-				{Denom: "ukrw"},
-			},
-			supplies: map[string]math.Int{
-				chain.MicroNoahDenom: math.NewInt(1_000_000),
-				"uusd":               math.NewInt(500_000),
-				"ukrw":               math.NewInt(2_000_000),
-			},
-			expected: sdk.NewCoins(
-				sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1_000_000)),
-				sdk.NewCoin("uusd", math.NewInt(500_000)),
-				sdk.NewCoin("ukrw", math.NewInt(2_000_000)),
-			),
-		},
-		{
-			name: "single whitelist denom",
-			whitelist: oracletypes.TobinTaxes{
-				{Denom: "uusd"},
-			},
-			supplies: map[string]math.Int{
-				chain.MicroNoahDenom: math.NewInt(5_000_000),
-				"uusd":               math.NewInt(100),
-			},
-			expected: sdk.NewCoins(
-				sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(5_000_000)),
-				sdk.NewCoin("uusd", math.NewInt(100)),
-			),
-		},
-	}
-
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(tc.whitelist, nil)
-			for denom, amount := range tc.supplies {
-				s.bankKeeper.EXPECT().GetSupply(s.ctx, denom).
-					Return(sdk.NewCoin(denom, amount))
-			}
-
-			err := s.keeper.RecordEpochInitialIssuance(s.ctx)
-			s.Require().NoError(err)
-
-			issuance, err := s.keeper.EpochInitialIssuance.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().True(tc.expected.Equal(issuance.Issuance))
-		})
+	s.Require().NoError(iterator.Close())
+	for _, key := range keys {
+		s.Require().NoError(transientStore.Delete(key))
 	}
 }

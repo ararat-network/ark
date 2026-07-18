@@ -11,63 +11,80 @@ import (
 )
 
 // AutoCLIOptions returns the treasury module's AutoCLI configuration.
-func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
+func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
 			Service: treasuryv1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
-					RpcMethod: "TaxRate",
-					Use:       "tax-rate",
-					Short:     "Query the stability tax rate of the current epoch",
-					Example:   fmt.Sprintf("%s query treasury tax-rate", version.AppName),
+					RpcMethod: "Params",
+					Use:       "params",
+					Short:     "Query the Treasury parameters",
+					Example:   fmt.Sprintf("%s query treasury params", version.AppName),
+				},
+				{
+					RpcMethod: "MonetaryPolicy",
+					Use:       "monetary-policy",
+					Short:     "Query the current Treasury monetary policy",
+					Example:   fmt.Sprintf("%s query treasury monetary-policy", version.AppName),
 				},
 				{
 					RpcMethod: "TaxCap",
 					Use:       "tax-cap [denom]",
-					Short:     "Query the current stability tax cap for a denom",
-					Long:      "Query the current stability tax cap for a denom. The stability tax levied on a tx is capped regardless of transaction size.",
-					Example:   fmt.Sprintf("%s query treasury tax-cap ukrw", version.AppName),
+					Short:     "Query the derived stability-tax cap for a denomination",
+					Example:   fmt.Sprintf("%s query treasury tax-cap usdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},
 					},
 				},
 				{
+					RpcMethod: "MonetaryMandate",
+					Use:       "monetary-mandate",
+					Short:     "Query the governed monetary-policy committee mandate",
+					Example:   fmt.Sprintf("%s query treasury monetary-mandate", version.AppName),
+				},
+				{
 					RpcMethod: "TaxCaps",
 					Use:       "tax-caps",
-					Short:     "Query the current stability tax caps for all denoms",
-					Long:      "Query the current stability tax caps for all denoms. The stability tax levied on a tx is capped regardless of transaction size.",
+					Short:     "Query every derived stability-tax cap",
 					Example:   fmt.Sprintf("%s query treasury tax-caps", version.AppName),
 				},
 				{
-					RpcMethod: "RewardWeight",
-					Use:       "reward-weight",
-					Short:     "Query the current reward weight of the current epoch",
-					Example:   fmt.Sprintf("%s query treasury reward-weight", version.AppName),
+					RpcMethod: "ComputeTax",
+					Skip:      true,
 				},
 				{
-					RpcMethod: "SeigniorageProceeds",
-					Use:       "seigniorage-proceeds",
-					Short:     "Query the seigniorage proceeds for the current epoch",
-					Example:   fmt.Sprintf("%s query treasury seigniorage-proceeds", version.AppName),
+					RpcMethod: "FundStatus",
+					Use:       "fund-status",
+					Short:     "Query Treasury fund balances, liabilities, and targets",
+					Example:   fmt.Sprintf("%s query treasury fund-status", version.AppName),
 				},
 				{
-					RpcMethod: "TaxProceeds",
-					Use:       "tax-proceeds",
-					Short:     "Query the tax proceeds for the current epoch",
-					Example:   fmt.Sprintf("%s query treasury tax-proceeds", version.AppName),
+					RpcMethod: "RewardFunding",
+					Use:       "reward-funding",
+					Short:     "Query active Treasury reward-funding accounting",
+					Example:   fmt.Sprintf("%s query treasury reward-funding", version.AppName),
 				},
 				{
-					RpcMethod: "Indicators",
-					Use:       "indicators",
-					Short:     "Query the current treasury indicators",
-					Example:   fmt.Sprintf("%s query treasury indicators", version.AppName),
+					RpcMethod: "ClaimsMandate",
+					Use:       "claims-mandate",
+					Short:     "Query the Claims mandate, allowance, and Insurance reservation",
+					Example:   fmt.Sprintf("%s query treasury claims-mandate", version.AppName),
 				},
 				{
-					RpcMethod: "Params",
-					Use:       "params",
-					Short:     "Query the current treasury parameters",
-					Example:   fmt.Sprintf("%s query treasury params", version.AppName),
+					RpcMethod: "Claim",
+					Use:       "claim [claim-id]",
+					Short:     "Query one claim",
+					Example:   fmt.Sprintf("%s query treasury claim 1", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "claim_id"},
+					},
+				},
+				{
+					RpcMethod: "Claims",
+					Use:       "claims",
+					Short:     "Query the paginated claim audit record",
+					Example:   fmt.Sprintf("%s query treasury claims", version.AppName),
 				},
 			},
 		},
@@ -77,12 +94,55 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod:   "UpdateParams",
 					Use:         "update-params-proposal [params]",
-					Short:       "Submit a proposal to update treasury parameters",
-					Example:     fmt.Sprintf(`%s tx treasury update-params-proposal '{"tax_policy":{...},"reward_policy":{...}}'`, version.AppName),
+					Short:       "Submit a governance proposal to update Treasury parameters",
 					GovProposal: true,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "params"},
 					},
+				},
+				{
+					RpcMethod:   "SetMonetaryMandate",
+					Use:         "set-monetary-mandate-proposal",
+					Short:       "Submit a governance proposal to appoint, replace, or disable the monetary-policy committee",
+					GovProposal: true,
+				},
+				{
+					RpcMethod: "UpdateMonetaryPolicy",
+					Use:       "update-monetary-policy",
+					Short:     "Update reversible Treasury policy as the committee or governance authority",
+				},
+				{
+					RpcMethod:   "SetClaimsMandate",
+					Use:         "set-claims-mandate-proposal",
+					Short:       "Submit a governance proposal to set the Claims committee mandate",
+					GovProposal: true,
+				},
+				{
+					RpcMethod: "SubmitClaim",
+					Use:       "submit-claim",
+					Short:     "Submit a claim as the configured claims committee or governance authority",
+				},
+				{
+					RpcMethod: "CancelClaim",
+					Use:       "cancel-claim [claim-id]",
+					Short:     "Cancel a pending claim as the claims committee or governance authority",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "claim_id"},
+					},
+				},
+				{
+					RpcMethod: "ExecuteClaim",
+					Use:       "execute-claim [claim-id]",
+					Short:     "Execute a claim after its cancellation period",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "claim_id"},
+					},
+				},
+				{
+					RpcMethod:   "TransferReserveToBuffer",
+					Use:         "transfer-reserve-to-redemption-buffer-proposal",
+					Short:       "Submit a governance proposal to commit Reserve NOAH to the Redemption Buffer",
+					GovProposal: true,
 				},
 			},
 		},

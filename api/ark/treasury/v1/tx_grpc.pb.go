@@ -19,18 +19,43 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_UpdateParams_FullMethodName = "/ark.treasury.v1.Msg/UpdateParams"
+	Msg_UpdateParams_FullMethodName            = "/ark.treasury.v1.Msg/UpdateParams"
+	Msg_SetMonetaryMandate_FullMethodName      = "/ark.treasury.v1.Msg/SetMonetaryMandate"
+	Msg_UpdateMonetaryPolicy_FullMethodName    = "/ark.treasury.v1.Msg/UpdateMonetaryPolicy"
+	Msg_SetClaimsMandate_FullMethodName        = "/ark.treasury.v1.Msg/SetClaimsMandate"
+	Msg_SubmitClaim_FullMethodName             = "/ark.treasury.v1.Msg/SubmitClaim"
+	Msg_CancelClaim_FullMethodName             = "/ark.treasury.v1.Msg/CancelClaim"
+	Msg_ExecuteClaim_FullMethodName            = "/ark.treasury.v1.Msg/ExecuteClaim"
+	Msg_TransferReserveToBuffer_FullMethodName = "/ark.treasury.v1.Msg/TransferReserveToBuffer"
 )
 
 // MsgClient is the client API for Msg service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Msg defines the market Msg service.
+// Msg defines the treasury module's message service.
 type MsgClient interface {
-	// UpdateParams defines an operation for updating the x/treasury module
-	// parameters.
+	// UpdateParams updates governance-owned structural Treasury parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// SetMonetaryMandate appoints, replaces, or disables the bounded
+	// monetary-policy committee.
+	SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMandate, opts ...grpc.CallOption) (*MsgSetMonetaryMandateResponse, error)
+	// UpdateMonetaryPolicy applies one complete reversible policy candidate.
+	// The configured committee or governance authority may sign.
+	UpdateMonetaryPolicy(ctx context.Context, in *MsgUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgUpdateMonetaryPolicyResponse, error)
+	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
+	// committee and shared cancellation period.
+	SetClaimsMandate(ctx context.Context, in *MsgSetClaimsMandate, opts ...grpc.CallOption) (*MsgSetClaimsMandateResponse, error)
+	// SubmitClaim records a committee- or governance-submitted pending claim.
+	SubmitClaim(ctx context.Context, in *MsgSubmitClaim, opts ...grpc.CallOption) (*MsgSubmitClaimResponse, error)
+	// CancelClaim cancels one pending claim during its cancellation period.
+	// Governance may cancel any claim; the committee may cancel only a claim not
+	// submitted by governance.
+	CancelClaim(ctx context.Context, in *MsgCancelClaim, opts ...grpc.CallOption) (*MsgCancelClaimResponse, error)
+	// ExecuteClaim pays a pending claim after its cancellation period.
+	ExecuteClaim(ctx context.Context, in *MsgExecuteClaim, opts ...grpc.CallOption) (*MsgExecuteClaimResponse, error)
+	// TransferReserveToBuffer commits strategic Reserve NOAH to the Buffer.
+	TransferReserveToBuffer(ctx context.Context, in *MsgTransferReserveToBuffer, opts ...grpc.CallOption) (*MsgTransferReserveToBufferResponse, error)
 }
 
 type msgClient struct {
@@ -51,15 +76,103 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
+func (c *msgClient) SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMandate, opts ...grpc.CallOption) (*MsgSetMonetaryMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSetMonetaryMandateResponse)
+	err := c.cc.Invoke(ctx, Msg_SetMonetaryMandate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdateMonetaryPolicy(ctx context.Context, in *MsgUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgUpdateMonetaryPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgUpdateMonetaryPolicyResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdateMonetaryPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetClaimsMandate(ctx context.Context, in *MsgSetClaimsMandate, opts ...grpc.CallOption) (*MsgSetClaimsMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSetClaimsMandateResponse)
+	err := c.cc.Invoke(ctx, Msg_SetClaimsMandate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SubmitClaim(ctx context.Context, in *MsgSubmitClaim, opts ...grpc.CallOption) (*MsgSubmitClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSubmitClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_SubmitClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CancelClaim(ctx context.Context, in *MsgCancelClaim, opts ...grpc.CallOption) (*MsgCancelClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCancelClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_CancelClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) ExecuteClaim(ctx context.Context, in *MsgExecuteClaim, opts ...grpc.CallOption) (*MsgExecuteClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgExecuteClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_ExecuteClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) TransferReserveToBuffer(ctx context.Context, in *MsgTransferReserveToBuffer, opts ...grpc.CallOption) (*MsgTransferReserveToBufferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgTransferReserveToBufferResponse)
+	err := c.cc.Invoke(ctx, Msg_TransferReserveToBuffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
 //
-// Msg defines the market Msg service.
+// Msg defines the treasury module's message service.
 type MsgServer interface {
-	// UpdateParams defines an operation for updating the x/treasury module
-	// parameters.
+	// UpdateParams updates governance-owned structural Treasury parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// SetMonetaryMandate appoints, replaces, or disables the bounded
+	// monetary-policy committee.
+	SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error)
+	// UpdateMonetaryPolicy applies one complete reversible policy candidate.
+	// The configured committee or governance authority may sign.
+	UpdateMonetaryPolicy(context.Context, *MsgUpdateMonetaryPolicy) (*MsgUpdateMonetaryPolicyResponse, error)
+	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
+	// committee and shared cancellation period.
+	SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error)
+	// SubmitClaim records a committee- or governance-submitted pending claim.
+	SubmitClaim(context.Context, *MsgSubmitClaim) (*MsgSubmitClaimResponse, error)
+	// CancelClaim cancels one pending claim during its cancellation period.
+	// Governance may cancel any claim; the committee may cancel only a claim not
+	// submitted by governance.
+	CancelClaim(context.Context, *MsgCancelClaim) (*MsgCancelClaimResponse, error)
+	// ExecuteClaim pays a pending claim after its cancellation period.
+	ExecuteClaim(context.Context, *MsgExecuteClaim) (*MsgExecuteClaimResponse, error)
+	// TransferReserveToBuffer commits strategic Reserve NOAH to the Buffer.
+	TransferReserveToBuffer(context.Context, *MsgTransferReserveToBuffer) (*MsgTransferReserveToBufferResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -72,6 +185,27 @@ type UnimplementedMsgServer struct{}
 
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (UnimplementedMsgServer) SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetMonetaryMandate not implemented")
+}
+func (UnimplementedMsgServer) UpdateMonetaryPolicy(context.Context, *MsgUpdateMonetaryPolicy) (*MsgUpdateMonetaryPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateMonetaryPolicy not implemented")
+}
+func (UnimplementedMsgServer) SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetClaimsMandate not implemented")
+}
+func (UnimplementedMsgServer) SubmitClaim(context.Context, *MsgSubmitClaim) (*MsgSubmitClaimResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitClaim not implemented")
+}
+func (UnimplementedMsgServer) CancelClaim(context.Context, *MsgCancelClaim) (*MsgCancelClaimResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelClaim not implemented")
+}
+func (UnimplementedMsgServer) ExecuteClaim(context.Context, *MsgExecuteClaim) (*MsgExecuteClaimResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExecuteClaim not implemented")
+}
+func (UnimplementedMsgServer) TransferReserveToBuffer(context.Context, *MsgTransferReserveToBuffer) (*MsgTransferReserveToBufferResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TransferReserveToBuffer not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -112,6 +246,132 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_SetMonetaryMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetMonetaryMandate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetMonetaryMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetMonetaryMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetMonetaryMandate(ctx, req.(*MsgSetMonetaryMandate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdateMonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateMonetaryPolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateMonetaryPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdateMonetaryPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateMonetaryPolicy(ctx, req.(*MsgUpdateMonetaryPolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetClaimsMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetClaimsMandate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetClaimsMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetClaimsMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetClaimsMandate(ctx, req.(*MsgSetClaimsMandate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SubmitClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSubmitClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SubmitClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SubmitClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SubmitClaim(ctx, req.(*MsgSubmitClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CancelClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCancelClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CancelClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CancelClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CancelClaim(ctx, req.(*MsgCancelClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_ExecuteClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgExecuteClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ExecuteClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ExecuteClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ExecuteClaim(ctx, req.(*MsgExecuteClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_TransferReserveToBuffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgTransferReserveToBuffer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).TransferReserveToBuffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_TransferReserveToBuffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).TransferReserveToBuffer(ctx, req.(*MsgTransferReserveToBuffer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -122,6 +382,34 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "SetMonetaryMandate",
+			Handler:    _Msg_SetMonetaryMandate_Handler,
+		},
+		{
+			MethodName: "UpdateMonetaryPolicy",
+			Handler:    _Msg_UpdateMonetaryPolicy_Handler,
+		},
+		{
+			MethodName: "SetClaimsMandate",
+			Handler:    _Msg_SetClaimsMandate_Handler,
+		},
+		{
+			MethodName: "SubmitClaim",
+			Handler:    _Msg_SubmitClaim_Handler,
+		},
+		{
+			MethodName: "CancelClaim",
+			Handler:    _Msg_CancelClaim_Handler,
+		},
+		{
+			MethodName: "ExecuteClaim",
+			Handler:    _Msg_ExecuteClaim_Handler,
+		},
+		{
+			MethodName: "TransferReserveToBuffer",
+			Handler:    _Msg_TransferReserveToBuffer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

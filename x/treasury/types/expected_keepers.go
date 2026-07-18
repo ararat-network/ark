@@ -3,38 +3,31 @@ package types
 import (
 	"context"
 
-	"cosmossdk.io/math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	oracletypes "ark/x/oracle/types"
 )
 
-// AccountKeeper expected account keeper
+// AccountKeeper defines the auth functionality required by Treasury.
 type AccountKeeper interface {
 	GetModuleAddress(name string) sdk.AccAddress
 	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 }
 
-// BankKeeper expected bank keeper
+// BankKeeper defines the custody, supply, and transfer functionality required
+// by Treasury. Treasury deliberately has no mint or burn dependency.
 type BankKeeper interface {
-	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	BlockedAddr(addr sdk.AccAddress) bool
 	GetSupply(ctx context.Context, denom string) sdk.Coin
+	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
+	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
+	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
 
-// StakingKeeper expected keeper for staking module
-type StakingKeeper interface {
-	TotalValidatorPower(context.Context) (math.Int, error) // total bonded tokens within the validator set
-}
-
-// ProtocolpoolKeeper expected keeper for distribution module
-type ProtocolpoolKeeper interface {
-	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
-}
-
-// OracleKeeper defines expected oracle keeper
+// OracleKeeper defines the immutable pricing and native-stable registry
+// functionality required by Treasury.
 type OracleKeeper interface {
 	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
-	GetTobinTaxes(ctx context.Context) (res oracletypes.TobinTaxes, err error)
+	GetTobinTaxes(ctx context.Context) (oracletypes.TobinTaxes, error)
 }

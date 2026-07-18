@@ -2,90 +2,129 @@ syntax = "proto3";
 package ark.treasury.v1;
 
 import "amino/amino.proto";
+import "ark/treasury/v1/treasury.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "ark/treasury/v1/treasury.proto";
+import "google/protobuf/any.proto";
 
 option go_package = "ark/x/treasury/types";
 
-// Query defines the gRPC querier service.
+// Query defines the treasury module's gRPC query service.
 service Query {
-  // TaxRate return the current tax rate
-  rpc TaxRate(QueryTaxRateRequest) returns (QueryTaxRateResponse) {
+  // Params queries the treasury parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/tax_rate";
+    option (google.api.http).get = "/ark/treasury/v1/params";
   }
 
-  // TaxCap returns the tax cap of a denom
+  // MonetaryPolicy queries the current reversible Treasury policy.
+  rpc MonetaryPolicy(QueryMonetaryPolicyRequest)
+      returns (QueryMonetaryPolicyResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/monetary_policy";
+  }
+
+  // MonetaryMandate queries the governed committee appointment and its
+  // current effective status.
+  rpc MonetaryMandate(QueryMonetaryMandateRequest)
+      returns (QueryMonetaryMandateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/monetary_mandate";
+  }
+
+  // TaxCap queries the derived tax cap for one denomination.
   rpc TaxCap(QueryTaxCapRequest) returns (QueryTaxCapResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/tax_caps/{denom}";
   }
 
-  // TaxCaps returns the all tax caps
+  // TaxCaps queries all derived denomination tax caps.
   rpc TaxCaps(QueryTaxCapsRequest) returns (QueryTaxCapsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/tax_caps";
   }
 
-  // RewardWeight return the current reward weight
-  rpc RewardWeight(QueryRewardWeightRequest)
-      returns (QueryRewardWeightResponse) {
+  // ComputeTax computes the ante-visible stability tax for SDK messages.
+  rpc ComputeTax(QueryComputeTaxRequest) returns (QueryComputeTaxResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/reward_weight";
+    option (google.api.http) = {
+      post : "/ark/treasury/v1/compute_tax"
+      body : "*"
+    };
   }
 
-  // SeigniorageProceeds return the current seigniorage proceeds
-  rpc SeigniorageProceeds(QuerySeigniorageProceedsRequest)
-      returns (QuerySeigniorageProceedsResponse) {
+  // FundStatus queries Treasury fund balances, liabilities, and targets.
+  rpc FundStatus(QueryFundStatusRequest) returns (QueryFundStatusResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/seigniorage_proceeds";
+    option (google.api.http).get = "/ark/treasury/v1/fund_status";
   }
 
-  // TaxProceeds return the current tax proceeds
-  rpc TaxProceeds(QueryTaxProceedsRequest) returns (QueryTaxProceedsResponse) {
+  // RewardFunding queries the active reward-funding accounting.
+  rpc RewardFunding(QueryRewardFundingRequest)
+      returns (QueryRewardFundingResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/tax_proceeds";
+    option (google.api.http).get = "/ark/treasury/v1/reward_funding";
   }
 
-  // Indicators return the current tra informations
-  rpc Indicators(QueryIndicatorsRequest) returns (QueryIndicatorsResponse) {
+  // ClaimsMandate queries the committee mandate, allowance usage, and
+  // Insurance reservation.
+  rpc ClaimsMandate(QueryClaimsMandateRequest)
+      returns (QueryClaimsMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/indicators";
+    option (google.api.http).get = "/ark/treasury/v1/claims/mandate";
   }
 
-  // Params queries all parameters.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+  // Claim queries one claim by its permanent identifier.
+  rpc Claim(QueryClaimRequest) returns (QueryClaimResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/params";
+    option (google.api.http).get = "/ark/treasury/v1/claims/{claim_id}";
+  }
+
+  // Claims queries the paginated claim audit record.
+  rpc Claims(QueryClaimsRequest) returns (QueryClaimsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/claims";
   }
 }
 
-// QueryTaxRateRequest is the request type for the Query/TaxRate RPC method.
-message QueryTaxRateRequest {}
+// QueryParamsRequest is the request type for Query/Params.
+message QueryParamsRequest {}
 
-// QueryTaxRateResponse is response type for the
-// Query/TaxRate RPC method.
-message QueryTaxRateResponse {
-  string tax_rate = 1 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+// QueryParamsResponse is the response type for Query/Params.
+message QueryParamsResponse {
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryTaxCapRequest is the request type for the Query/TaxCap RPC method.
-message QueryTaxCapRequest {
-  // denom defines the denomination to query for.
-  string denom = 1;
+// QueryMonetaryPolicyRequest is the request for the current monetary policy.
+message QueryMonetaryPolicyRequest {}
+
+// QueryMonetaryPolicyResponse returns the current reversible Treasury policy.
+message QueryMonetaryPolicyResponse {
+  MonetaryPolicy policy = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryTaxCapResponse is response type for the
-// Query/TaxCap RPC method.
+// QueryMonetaryMandateRequest is the request for the governed
+// monetary-policy committee appointment.
+message QueryMonetaryMandateRequest {}
+
+// QueryMonetaryMandateResponse returns the stored mandate and whether it
+// is usable at the current height.
+message QueryMonetaryMandateResponse {
+  MonetaryMandate mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  bool active = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// QueryTaxCapRequest is the request type for Query/TaxCap.
+message QueryTaxCapRequest { string denom = 1; }
+
+// QueryTaxCapResponse is the response type for Query/TaxCap.
 message QueryTaxCapResponse {
   string tax_cap = 1 [
     (cosmos_proto.scalar) = "cosmos.Int",
@@ -95,54 +134,88 @@ message QueryTaxCapResponse {
   ];
 }
 
-// QueryTaxCapsRequest is the request type for the Query/TaxCaps RPC method.
+// QueryTaxCapsRequest is the request type for Query/TaxCaps.
 message QueryTaxCapsRequest {}
 
-// QueryTaxCapsResponse is response type for the
-// Query/TaxCaps RPC method.
+// QueryTaxCapsResponse is the response type for Query/TaxCaps.
 message QueryTaxCapsResponse {
   repeated TaxCap tax_caps = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC
-// method.
-message QueryRewardWeightRequest {}
-
-// QueryRewardWeightResponse is response type for the
-// Query/RewardWeight RPC method.
-message QueryRewardWeightResponse {
-  string reward_weight = 1 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+// QueryComputeTaxRequest is the request type for Query/ComputeTax.
+message QueryComputeTaxRequest {
+  repeated google.protobuf.Any messages = 1
+      [ (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg" ];
 }
 
-// QueryTaxProceedsRequest is the request type for the Query/TaxProceeds RPC
-// method.
-message QueryTaxProceedsRequest {}
-
-// QueryTaxProceedsResponse is response type for the
-// Query/TaxProceeds RPC method.
-message QueryTaxProceedsResponse {
-  repeated cosmos.base.v1beta1.Coin tax_proceeds = 1 [
-    (gogoproto.nullable) = false,
+// QueryComputeTaxResponse is the response type for Query/ComputeTax.
+message QueryComputeTaxResponse {
+  repeated cosmos.base.v1beta1.Coin tax = 1 [
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
     (amino.encoding) = "legacy_coins"
   ];
 }
 
-// QuerySeigniorageProceedsRequest is the request type for the
-// Query/SeigniorageProceeds RPC method.
-message QuerySeigniorageProceedsRequest {}
+// QueryFundStatusRequest is the request type for Query/FundStatus.
+message QueryFundStatusRequest {}
 
-// QuerySeigniorageProceedsResponse is response type for the
-// Query/SeigniorageProceeds RPC method.
-message QuerySeigniorageProceedsResponse {
-  string seigniorage_proceeds = 1 [
+// QueryFundStatusResponse is the response type for Query/FundStatus.
+message QueryFundStatusResponse {
+  cosmos.base.v1beta1.DecCoin nominal_liability_noah_equivalent = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin subsidy_pool_balance = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin redemption_buffer_balance = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin redemption_buffer_target = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin strategic_reserve_balance = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin strategic_reserve_target = 6
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_balance = 7
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_reserved = 8
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_unencumbered_balance = 9
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_target = 10
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryRewardFundingRequest is the request type for Query/RewardFunding.
+message QueryRewardFundingRequest {}
+
+// QueryRewardFundingResponse is the response type for Query/RewardFunding.
+message QueryRewardFundingResponse {
+  RewardFundingState reward_funding = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryClaimsMandateRequest is the request type for Query/ClaimsMandate.
+message QueryClaimsMandateRequest {}
+
+// QueryClaimsMandateResponse is the response type for Query/ClaimsMandate.
+message QueryClaimsMandateResponse {
+  ClaimsMandate mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string insurance_reserved = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  bool active = 3 [ (amino.dont_omitempty) = true ];
+  string allowance_used = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string allowance_remaining = 5 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -150,35 +223,25 @@ message QuerySeigniorageProceedsResponse {
   ];
 }
 
-// QueryIndicatorsRequest is the request type for the Query/Indicators RPC
-// method.
-message QueryIndicatorsRequest {}
-
-// QueryIndicatorsResponse is response type for the
-// Query/Indicators RPC method.
-message QueryIndicatorsResponse {
-  string tra_year = 1 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (gogoproto.customname) = "TRAYear",
-    (amino.dont_omitempty) = true
-  ];
-  string tra_month = 2 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (gogoproto.customname) = "TRAMonth",
-    (amino.dont_omitempty) = true
-  ];
+// QueryClaimRequest is the request type for Query/Claim.
+message QueryClaimRequest {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
 }
 
-// QueryParamsRequest is the request type for the Query/Params RPC method.
-message QueryParamsRequest {}
-
-// QueryParamsResponse is the response type for the Query/Params RPC method.
-message QueryParamsResponse {
-  // params defines the parameters of the module.
-  Params params = 1
+// QueryClaimResponse is the response type for Query/Claim.
+message QueryClaimResponse {
+  Claim claim = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryClaimsRequest is the request type for Query/Claims.
+message QueryClaimsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryClaimsResponse is the response type for Query/Claims.
+message QueryClaimsResponse {
+  repeated Claim claims = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

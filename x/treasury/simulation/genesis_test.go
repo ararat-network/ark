@@ -21,10 +21,9 @@ import (
 
 func TestRandomisedGenState(t *testing.T) {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	types.RegisterInterfaces(interfaceRegistry)
 	cdc := codec.NewProtoCodec(interfaceRegistry)
-
-	s := rand.NewSource(1)
-	r := rand.New(s)
+	r := rand.New(rand.NewSource(1))
 
 	simState := module.SimulationState{
 		AppParams:    make(simtypes.AppParams),
@@ -42,54 +41,37 @@ func TestRandomisedGenState(t *testing.T) {
 	var treasuryGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &treasuryGenesis)
 
-	// Params
-	require.True(t, treasuryGenesis.Params.TaxPolicy.RateMin.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.TaxPolicy.RateMax.GT(treasuryGenesis.Params.TaxPolicy.RateMin))
-	require.True(t, treasuryGenesis.Params.TaxPolicy.ChangeRateMax.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.RewardPolicy.RateMin.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.RewardPolicy.RateMax.GT(treasuryGenesis.Params.RewardPolicy.RateMin))
-	require.True(t, treasuryGenesis.Params.RewardPolicy.ChangeRateMax.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.SeigniorageBurdenTarget.GTE(math.LegacyZeroDec()))
-	require.False(t, treasuryGenesis.Params.BurnWeight.IsNil())
-	require.True(t, treasuryGenesis.Params.BurnWeight.GTE(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.BurnWeight.Add(treasuryGenesis.Params.RewardPolicy.RateMax).LTE(math.LegacyOneDec()))
-	require.True(t, treasuryGenesis.Params.MiningIncrement.GT(math.LegacyZeroDec()))
-	require.True(t, treasuryGenesis.Params.WindowShort > 0)
-	require.True(t, treasuryGenesis.Params.WindowLong > 0)
-	require.True(t, treasuryGenesis.Params.WindowProbation > 0)
+	require.NoError(t, treasuryGenesis.Validate())
+	require.True(t, treasuryGenesis.MonetaryPolicy.StabilityTaxRate.IsZero())
+	require.True(t, treasuryGenesis.Params.ReferenceTaxCap.IsPositive())
+	require.False(t, treasuryGenesis.MonetaryPolicy.ValidatorBlockRewardTarget.IsNegative())
+	require.False(t, treasuryGenesis.MonetaryPolicy.OracleBlockRewardTarget.IsNegative())
+	require.False(t, treasuryGenesis.MonetaryPolicy.RedemptionBufferTargetRatio.IsNegative())
+	require.False(t, treasuryGenesis.MonetaryPolicy.RedemptionBufferTargetRatio.GT(math.LegacyOneDec()))
+	require.False(t, treasuryGenesis.MonetaryPolicy.StrategicReserveTargetRatio.IsNegative())
+	require.False(t, treasuryGenesis.MonetaryPolicy.StrategicReserveTargetRatio.GT(math.LegacyOneDec()))
+	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.IsNegative())
+	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.GT(math.LegacyOneDec()))
 
-	// Initial rates match policy minimums
-	require.True(t, treasuryGenesis.TaxRate.Equal(treasuryGenesis.Params.TaxPolicy.RateMin))
-	require.True(t, treasuryGenesis.RewardWeight.Equal(treasuryGenesis.Params.RewardPolicy.RateMin))
-
-	// Empty initial state
 	require.Empty(t, treasuryGenesis.TaxCaps)
-	require.Empty(t, treasuryGenesis.EpochTaxProceeds)
-	require.Empty(t, treasuryGenesis.EpochStates)
+	require.Equal(t, types.DefaultClaimsMandate(), treasuryGenesis.ClaimsMandate)
+	require.True(t, treasuryGenesis.ClaimsAllowanceUsed.IsZero())
+	require.True(t, treasuryGenesis.InsuranceReserved.IsZero())
+	require.Empty(t, treasuryGenesis.Claims)
 }
 
-func TestRandomisedGenState_InvalidSimState(t *testing.T) {
-	interfaceRegistry := codectypes.NewInterfaceRegistry()
-	cdc := codec.NewProtoCodec(interfaceRegistry)
+func TestRandomisedMonetaryPolicyDeterministic(t *testing.T) {
+	first := simulation.RandomisedMonetaryPolicy(rand.New(rand.NewSource(1)))
+	second := simulation.RandomisedMonetaryPolicy(rand.New(rand.NewSource(1)))
 
-	s := rand.NewSource(1)
-	r := rand.New(s)
+	require.True(t, first.Equal(second))
+	require.NoError(t, first.Validate())
+}
 
-	tests := []struct {
-		simState module.SimulationState
-		panicMsg string
-	}{
-		{module.SimulationState{}, "invalid memory address or nil pointer dereference"},
-		{
-			module.SimulationState{
-				AppParams: make(simtypes.AppParams),
-				Cdc:       cdc,
-				Rand:      r,
-			}, "assignment to entry in nil map",
-		},
-	}
+func TestRandomisedParamsDeterministic(t *testing.T) {
+	first := simulation.RandomisedParams(rand.New(rand.NewSource(1)))
+	second := simulation.RandomisedParams(rand.New(rand.NewSource(1)))
 
-	for _, tt := range tests {
-		require.Panicsf(t, func() { simulation.RandomisedGenState(&tt.simState) }, tt.panicMsg)
-	}
+	require.Equal(t, first, second)
+	require.NoError(t, first.Validate())
 }

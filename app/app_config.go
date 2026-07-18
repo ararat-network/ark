@@ -79,7 +79,11 @@ var (
 		{Account: protocolpooltypes.ModuleName},
 		{Account: protocolpooltypes.ProtocolPoolEscrowAccount},
 		{Account: markettypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
-		{Account: treasurytypes.ModuleName, Permissions: []string{authtypes.Minter}},
+		{Account: treasurytypes.SubsidyPoolName},
+		{Account: treasurytypes.RedemptionBufferName},
+		{Account: treasurytypes.StrategicReserveName},
+		{Account: treasurytypes.InsuranceName},
+		{Account: treasurytypes.StabilityTaxCollectorName},
 		{Account: oracletypes.ModuleName},
 	}
 
@@ -90,8 +94,17 @@ var (
 		minttypes.ModuleName,
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
+		protocolpooltypes.ModuleName,
+		protocolpooltypes.ProtocolPoolEscrowAccount,
+		markettypes.ModuleName,
+		treasurytypes.StabilityTaxCollectorName,
+		oracletypes.ModuleName,
 		// We allow the following module accounts to receive funds:
-		// govtypes.ModuleName
+		// govtypes.ModuleName,
+		// treasurytypes.SubsidyPoolName,
+		// treasurytypes.RedemptionBufferName,
+		// treasurytypes.StrategicReserveName,
+		// treasurytypes.InsuranceName,
 	}
 
 	ModuleConfig = []*appv1alpha1.ModuleConfig{
@@ -110,6 +123,7 @@ var (
 				// NOTE: staking module is required if HistoricalEntries param > 0
 				BeginBlockers: []string{
 					minttypes.ModuleName,
+					treasurytypes.ModuleName,
 					distrtypes.ModuleName,
 					protocolpooltypes.ModuleName,
 					slashingtypes.ModuleName,
@@ -124,7 +138,6 @@ var (
 					feegrant.ModuleName,
 					protocolpooltypes.ModuleName,
 					markettypes.ModuleName,
-					treasurytypes.ModuleName,
 					oracletypes.ModuleName,
 				},
 				OverrideStoreKeys: []*runtimev1alpha1.StoreKeyConfig{
@@ -203,6 +216,7 @@ var (
 			Name: banktypes.ModuleName,
 			Config: appconfig.WrapAny(&bankmodulev1.Module{
 				BlockedModuleAccountsOverride: blockAccAddrs,
+				RestrictionsOrder:             []string{treasurytypes.ModuleName},
 			}),
 		},
 		{

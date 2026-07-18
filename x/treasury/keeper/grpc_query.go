@@ -11,24 +11,31 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
-	chain "ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
+	"ark/pkg/chain"
 	"ark/x/treasury/types"
 )
 
-var _ types.QueryServer = queryServer{}
+var _ types.QueryServer = (*queryServer)(nil)
 
 type queryServer struct {
+	types.UnimplementedQueryServer
+
 	k *Keeper
 }
 
+// NewQueryServerImpl returns the Treasury query server.
 func NewQueryServerImpl(k *Keeper) types.QueryServer {
 	return &queryServer{k: k}
 }
 
-// Params queries params of distribution module
+// Params queries the current Treasury parameters.
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
@@ -36,25 +43,39 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 
-// TaxRate return the current tax rate
-func (q queryServer) TaxRate(ctx context.Context, req *types.QueryTaxRateRequest) (*types.QueryTaxRateResponse, error) {
-	taxRate, err := q.k.TaxRate.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting treasury tax rate: %v", err)
+// MonetaryPolicy queries the current reversible Treasury policy.
+func (q queryServer) MonetaryPolicy(ctx context.Context, req *types.QueryMonetaryPolicyRequest) (*types.QueryMonetaryPolicyResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	return &types.QueryTaxRateResponse{TaxRate: taxRate}, nil
+	policy, err := q.k.MonetaryPolicy.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting monetary policy: %v", err)
+	}
+	return &types.QueryMonetaryPolicyResponse{Policy: policy}, nil
 }
 
-// TaxCap returns the tax cap of a denom
+// MonetaryMandate queries the governed committee appointment and its
+// current effective status.
+func (q queryServer) MonetaryMandate(ctx context.Context, req *types.QueryMonetaryMandateRequest) (*types.QueryMonetaryMandateResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	mandate, err := q.k.MonetaryMandate.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting monetary mandate: %v", err)
+	}
+	return &types.QueryMonetaryMandateResponse{
+		Mandate: mandate,
+		Active:  mandate.IsActive(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+	}, nil
+}
+
+// TaxCap queries the derived tax cap for one denomination.
 func (q queryServer) TaxCap(ctx context.Context, req *types.QueryTaxCapRequest) (*types.QueryTaxCapResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-
-	if err := sdk.ValidateDenom(req.Denom); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
-	}
-
 	taxCap, err := q.k.TaxCaps.Get(ctx, req.Denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
@@ -65,123 +86,180 @@ func (q queryServer) TaxCap(ctx context.Context, req *types.QueryTaxCapRequest) 
 	return &types.QueryTaxCapResponse{TaxCap: taxCap}, nil
 }
 
-// TaxCaps returns the all tax caps
+// TaxCaps queries the complete derived tax-cap map in denomination order.
 func (q queryServer) TaxCaps(ctx context.Context, req *types.QueryTaxCapsRequest) (*types.QueryTaxCapsResponse, error) {
-	var taxCaps []types.TaxCap
-	err := q.k.TaxCaps.Walk(ctx, nil, func(denom string, taxCap math.Int) (bool, error) {
-		taxCaps = append(taxCaps, types.TaxCap{
-			Denom:  denom,
-			TaxCap: taxCap,
-		})
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	taxCaps := make([]types.TaxCap, 0)
+	if err := q.k.TaxCaps.Walk(ctx, nil, func(denom string, taxCap math.Int) (bool, error) {
+		taxCaps = append(taxCaps, types.TaxCap{Denom: denom, TaxCap: taxCap})
 		return false, nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, status.Errorf(codes.Internal, "listing treasury tax caps: %v", err)
 	}
 
 	return &types.QueryTaxCapsResponse{TaxCaps: taxCaps}, nil
 }
 
-// RewardWeight return the current reward weight
-func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWeightRequest) (*types.QueryRewardWeightResponse, error) {
-	rewardWeight, err := q.k.RewardWeight.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting treasury reward weight: %v", err)
+// ComputeTax computes the current stability tax for the supplied SDK messages.
+func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxRequest) (*types.QueryComputeTaxResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	return &types.QueryRewardWeightResponse{RewardWeight: rewardWeight}, nil
+
+	msgs := make([]sdk.Msg, len(req.Messages))
+	for i, anyMsg := range req.Messages {
+		if anyMsg == nil {
+			return nil, status.Errorf(codes.InvalidArgument, "message %d is nil", i)
+		}
+		if err := q.k.cdc.UnpackAny(anyMsg, &msgs[i]); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "unpacking message %d: %v", i, err)
+		}
+	}
+
+	tax, err := q.k.ComputeTax(ctx, msgs)
+	if err != nil {
+		code := codes.Internal
+		switch {
+		case errors.Is(err, types.ErrInvalidTaxMessage):
+			code = codes.InvalidArgument
+		case errors.Is(err, types.ErrTaxCapUnavailable):
+			code = codes.FailedPrecondition
+		case errors.Is(err, types.ErrTaxOutOfRange):
+			code = codes.OutOfRange
+		}
+		return nil, status.Errorf(code, "computing treasury tax: %v", err)
+	}
+	return &types.QueryComputeTaxResponse{Tax: tax}, nil
 }
 
-// SeigniorageProceeds return the current seigniorage proceeds
-func (q queryServer) SeigniorageProceeds(ctx context.Context, req *types.QuerySeigniorageProceedsRequest) (*types.QuerySeigniorageProceedsResponse, error) {
-	epochSeiniorage, err := q.k.ComputeEpochSeigniorage(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "computing treasury seigniorage proceeds: %v", err)
+// FundStatus queries live Treasury balances, liabilities, and targets.
+func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusRequest) (*types.QueryFundStatusResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	return &types.QuerySeigniorageProceedsResponse{SeigniorageProceeds: epochSeiniorage}, nil
+
+	tobinTaxes, err := q.k.oracleKeeper.GetTobinTaxes(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: getting Tobin taxes: %v", err)
+	}
+	liabilityNoah, complete, err := q.k.nominalLiabilityValue(ctx, tobinTaxes, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	if !complete {
+		return nil, status.Error(codes.Internal, "getting treasury fund status: complete Treasury liability valuation is unavailable")
+	}
+	fundStatus, err := q.k.calculateFundStatus(ctx, liabilityNoah)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	return &types.QueryFundStatusResponse{
+		NominalLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.MicroNoahDenom, liabilityNoah),
+		SubsidyPoolBalance:             sdk.NewCoin(chain.MicroNoahDenom, q.k.balance(ctx, types.SubsidyPoolName)),
+		RedemptionBufferBalance:        sdk.NewCoin(chain.MicroNoahDenom, fundStatus.bufferBalance),
+		RedemptionBufferTarget:         sdk.NewCoin(chain.MicroNoahDenom, fundStatus.bufferTarget),
+		StrategicReserveBalance:        sdk.NewCoin(chain.MicroNoahDenom, fundStatus.reserveBalance),
+		StrategicReserveTarget:         sdk.NewCoin(chain.MicroNoahDenom, fundStatus.reserveTarget),
+		InsuranceBalance:               sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceBalance),
+		InsuranceReserved:              sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceReserved),
+		InsuranceUnencumberedBalance:   sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceUnencumbered),
+		InsuranceTarget:                sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceTarget),
+	}, nil
 }
 
-// TaxProceeds return the current tax proceeds
-func (q queryServer) TaxProceeds(ctx context.Context, req *types.QueryTaxProceedsRequest) (*types.QueryTaxProceedsResponse, error) {
-	epochTaxProceeds, err := q.k.EpochTaxProceeds.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting treasury tax proceeds: %v", err)
+// RewardFunding queries the active reward-funding accounting.
+func (q queryServer) RewardFunding(ctx context.Context, req *types.QueryRewardFundingRequest) (*types.QueryRewardFundingResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	return &types.QueryTaxProceedsResponse{TaxProceeds: epochTaxProceeds.TaxProceeds}, nil
+
+	funding, err := q.k.RewardFunding.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting reward funding: %v", err)
+	}
+	return &types.QueryRewardFundingResponse{RewardFunding: funding}, nil
 }
 
-// Indicators returns year and month rolling averages of tax rewards per staked Noah.
-// The query blends finalised epoch indicators with the current in-progress epoch.
-func (q queryServer) Indicators(ctx context.Context, req *types.QueryIndicatorsRequest) (*types.QueryIndicatorsResponse, error) {
-	totalStakedNoah, err := q.k.stakingKeeper.TotalValidatorPower(ctx)
+// ClaimsMandate queries the stored committee mandate, allowance usage, and
+// Insurance reservation.
+func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMandateRequest) (*types.QueryClaimsMandateResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	mandate, err := q.k.ClaimsMandate.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting total staked noah: %v", err)
-	} else if totalStakedNoah.IsZero() {
-		return &types.QueryIndicatorsResponse{
-			TRAYear:  math.LegacyZeroDec(),
-			TRAMonth: math.LegacyZeroDec(),
-		}, nil
+		return nil, status.Errorf(codes.Internal, "getting Claims mandate: %v", err)
 	}
-
-	epochTaxProceeds, err := q.k.EpochTaxProceeds.Get(ctx)
+	insuranceReserved, err := q.k.InsuranceReserved.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting treasury tax proceeds: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting Insurance reservation: %v", err)
 	}
-	taxProceeds := sdk.NewDecCoinsFromCoins(epochTaxProceeds.TaxProceeds...)
-	rates := oracletypes.RateSnapshot{}
-	var rateDenoms []string
-	for _, coin := range taxProceeds {
-		if !coin.Amount.IsZero() && coin.Denom != chain.MicroSDRDenom {
-			rateDenoms = append(rateDenoms, coin.Denom, chain.MicroSDRDenom)
-		}
-	}
-	if len(rateDenoms) > 0 {
-		rates, err = q.k.oracleKeeper.GetRateSnapshot(ctx, rateDenoms...)
-		if err != nil {
-			if errors.Is(err, oracletypes.ErrStaleExchangeRate) || errors.Is(err, oracletypes.ErrUnknownDenom) {
-				return nil, status.Errorf(codes.FailedPrecondition, "treasury indicator rates unavailable: %v", err)
-			}
-			return nil, status.Errorf(codes.Internal, "getting treasury indicator rates: %v", err)
-		}
-	}
-	taxRewards, err := alignCoins(taxProceeds, chain.MicroSDRDenom, rates)
+	allowanceUsed, err := q.k.ClaimsAllowanceUsed.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "aligning treasury tax proceeds: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting Claims allowance usage: %v", err)
+	}
+	allowanceRemaining, err := mandate.CommitteeClaimLimit.SafeSub(allowanceUsed)
+	if err != nil || allowanceRemaining.IsNegative() {
+		return nil, status.Errorf(
+			codes.Internal,
+			"Claims allowance usage %s exceeds mandate limit %s",
+			allowanceUsed,
+			mandate.CommitteeClaimLimit,
+		)
 	}
 
-	epoch := q.k.GetEpoch(ctx)
-	var res types.QueryIndicatorsResponse
-	if epoch == 0 {
-		res = types.QueryIndicatorsResponse{
-			TRAYear:  taxRewards.QuoInt(totalStakedNoah),
-			TRAMonth: taxRewards.QuoInt(totalStakedNoah),
-		}
-	} else {
-		params, err := q.k.Params.Get(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
-		}
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		previousEpochCtx := sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() - int64(chain.BlocksPerWeek))
-		traYear, err := q.k.rollingAverageIndicator(previousEpochCtx, params.WindowLong-1)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "computing yearly treasury indicator average: %v", err)
-		}
-		traMonth, err := q.k.rollingAverageIndicator(previousEpochCtx, params.WindowShort-1)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "computing monthly treasury indicator average: %v", err)
-		}
+	return &types.QueryClaimsMandateResponse{
+		Mandate:            mandate,
+		InsuranceReserved:  insuranceReserved,
+		Active:             mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		AllowanceUsed:      allowanceUsed,
+		AllowanceRemaining: allowanceRemaining,
+	}, nil
+}
 
-		computedEpochForYear := int64(math.Min(float64(params.WindowLong-1), float64(epoch)))
-		computedEpochForMonth := int64(math.Min(float64(params.WindowShort-1), float64(epoch)))
-
-		traYear = traYear.MulInt64(computedEpochForYear).Add(taxRewards.QuoInt(totalStakedNoah)).QuoInt64(computedEpochForYear + 1)
-		traMonth = traMonth.MulInt64(computedEpochForMonth).Add(taxRewards.QuoInt(totalStakedNoah)).QuoInt64(computedEpochForMonth + 1)
-
-		res = types.QueryIndicatorsResponse{
-			TRAYear:  traYear,
-			TRAMonth: traMonth,
-		}
+// Claim queries one permanent claim record.
+func (q queryServer) Claim(ctx context.Context, req *types.QueryClaimRequest) (*types.QueryClaimResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	if req.ClaimId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "claim ID must be positive")
 	}
 
-	return &res, nil
+	claim, err := q.k.Claims.Get(ctx, req.ClaimId)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "claim %d not found", req.ClaimId)
+		}
+		return nil, status.Errorf(codes.Internal, "getting claim %d: %v", req.ClaimId, err)
+	}
+	return &types.QueryClaimResponse{Claim: claim}, nil
+}
+
+// Claims queries the paginated permanent claim record.
+func (q queryServer) Claims(ctx context.Context, req *types.QueryClaimsRequest) (*types.QueryClaimsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	claims, pageResponse, err := sdkquery.CollectionPaginate(
+		ctx,
+		q.k.Claims,
+		req.Pagination,
+		func(_ uint64, claim types.Claim) (types.Claim, error) {
+			return claim, nil
+		},
+	)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "listing claims: %v", err)
+	}
+
+	return &types.QueryClaimsResponse{
+		Claims:     claims,
+		Pagination: pageResponse,
+	}, nil
 }

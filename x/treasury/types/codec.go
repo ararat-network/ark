@@ -8,18 +8,34 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
-// RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
+// RegisterLegacyAminoCodec registers all Treasury messages used by direct or
+// governance transactions.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/treasury/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgSetMonetaryMandate{}, "ark/x/treasury/MsgSetMonetaryMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateMonetaryPolicy{}, "ark/x/treasury/MsgUpdateMonetaryPolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgSetClaimsMandate{}, "ark/x/treasury/MsgSetClaimsMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgSubmitClaim{}, "ark/x/treasury/MsgSubmitClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgCancelClaim{}, "ark/x/treasury/MsgCancelClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgExecuteClaim{}, "ark/x/treasury/MsgExecuteClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgTransferReserveToBuffer{}, "ark/x/treasury/MsgTransferToBuffer")
 
-	cdc.RegisterConcrete(Params{}, "ark/x/treasury/Params", nil)
+	cdec := cdc
+	cdec.RegisterConcrete(Params{}, "ark/x/treasury/Params", nil)
 }
 
-// RegisterInterfaces registers the interfaces types with the interface registry.
+// RegisterInterfaces registers Treasury messages as sdk.Msg implementations.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
+		&MsgSetMonetaryMandate{},
+		&MsgUpdateMonetaryPolicy{},
+		&MsgSetClaimsMandate{},
+		&MsgSubmitClaim{},
+		&MsgCancelClaim{},
+		&MsgExecuteClaim{},
+		&MsgTransferReserveToBuffer{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

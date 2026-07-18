@@ -1,254 +1,427 @@
 package keeper_test
 
 import (
-	"go.uber.org/mock/gomock"
+	"math/big"
+
+	"github.com/cosmos/gogoproto/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/math"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	querytypes "github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	chain "ark/pkg/chain"
+	"ark/pkg/chain"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
-	"ark/x/treasury/types"
+	treasurytypes "ark/x/treasury/types"
 )
 
-func (s *KeeperTestSuite) TestQueryParams() {
-	res, err := s.queryClient.Params(s.ctx, &types.QueryParamsRequest{})
-	s.Require().NoError(err)
-	s.Require().NotNil(res)
-
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(params, res.Params)
-}
-
-func (s *KeeperTestSuite) TestQueryTaxRate() {
-	res, err := s.queryClient.TaxRate(s.ctx, &types.QueryTaxRateRequest{})
-	s.Require().NoError(err)
-	s.Require().NotNil(res)
-
-	taxRate, err := s.keeper.TaxRate.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().True(taxRate.Equal(res.TaxRate))
-}
-
-func (s *KeeperTestSuite) TestQueryTaxCap() {
-	// Pre-set a cap for the "found" case
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, "uusd", math.NewInt(1000000)))
-
+func (s *KeeperTestSuite) TestQueryNilRequests() {
+	server := keeper.NewQueryServerImpl(s.keeper)
 	tests := []struct {
-		name      string
-		req       *types.QueryTaxCapRequest
-		expectErr string
-		validate  func(*types.QueryTaxCapResponse)
+		name string
+		call func() error
 	}{
 		{
-			name: "found",
-			req:  &types.QueryTaxCapRequest{Denom: "uusd"},
-			validate: func(res *types.QueryTaxCapResponse) {
-				s.Require().Equal(math.NewInt(1000000), res.TaxCap)
+			name: "params",
+			call: func() error {
+				_, err := server.Params(s.ctx, nil)
+				return err
 			},
 		},
 		{
-			name:      "not found",
-			req:       &types.QueryTaxCapRequest{Denom: "ukrw"},
-			expectErr: "tax cap not found",
+			name: "monetary policy",
+			call: func() error {
+				_, err := server.MonetaryPolicy(s.ctx, nil)
+				return err
+			},
 		},
 		{
-			name:      "invalid denom",
-			req:       &types.QueryTaxCapRequest{Denom: ""},
-			expectErr: "invalid denom",
+			name: "tax cap",
+			call: func() error {
+				_, err := server.TaxCap(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "monetary mandate",
+			call: func() error {
+				_, err := server.MonetaryMandate(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "tax caps",
+			call: func() error {
+				_, err := server.TaxCaps(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "compute tax",
+			call: func() error {
+				_, err := server.ComputeTax(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "fund status",
+			call: func() error {
+				_, err := server.FundStatus(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "reward funding",
+			call: func() error {
+				_, err := server.RewardFunding(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "claims mandate",
+			call: func() error {
+				_, err := server.ClaimsMandate(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "claim",
+			call: func() error {
+				_, err := server.Claim(s.ctx, nil)
+				return err
+			},
+		},
+		{
+			name: "claims",
+			call: func() error {
+				_, err := server.Claims(s.ctx, nil)
+				return err
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			res, err := s.queryClient.TaxCap(s.ctx, tc.req)
-			if tc.expectErr != "" {
+			err := tc.call()
+			s.Require().Error(err)
+			s.Require().Equal(codes.InvalidArgument, status.Code(err))
+		})
+	}
+}
+
+func (s *KeeperTestSuite) TestQueryParams() {
+	response, err := keeper.NewQueryServerImpl(s.keeper).Params(
+		s.ctx,
+		&treasurytypes.QueryParamsRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(treasurytypes.DefaultParams(), response.Params)
+}
+
+func (s *KeeperTestSuite) TestQueryMonetaryPolicy() {
+	response, err := keeper.NewQueryServerImpl(s.keeper).MonetaryPolicy(
+		s.ctx,
+		&treasurytypes.QueryMonetaryPolicyRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().True(treasurytypes.DefaultMonetaryPolicy().Equal(response.Policy))
+}
+
+func (s *KeeperTestSuite) TestQueryMonetaryMandate() {
+	server := keeper.NewQueryServerImpl(s.keeper)
+	response, err := server.MonetaryMandate(
+		s.ctx,
+		&treasurytypes.QueryMonetaryMandateRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(treasurytypes.DefaultMonetaryMandate(), response.Mandate)
+	s.False(response.Active)
+}
+
+func (s *KeeperTestSuite) TestQueryTaxCap() {
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(100)))
+	server := keeper.NewQueryServerImpl(s.keeper)
+	tests := []struct {
+		name     string
+		request  *treasurytypes.QueryTaxCapRequest
+		wantCode codes.Code
+		wantCap  math.Int
+	}{
+		{
+			name:    "found",
+			request: &treasurytypes.QueryTaxCapRequest{Denom: chain.MicroUSDDenom},
+			wantCap: math.NewInt(100),
+		},
+		{
+			name:     "not found",
+			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.MicroKRWDenom},
+			wantCode: codes.NotFound,
+		},
+		{
+			name:     "empty denom",
+			request:  &treasurytypes.QueryTaxCapRequest{},
+			wantCode: codes.NotFound,
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			response, err := server.TaxCap(s.ctx, tc.request)
+			if tc.wantCode != codes.OK {
 				s.Require().Error(err)
-				s.Require().ErrorContains(err, tc.expectErr)
-			} else {
-				s.Require().NoError(err)
-				s.Require().NotNil(res)
-				tc.validate(res)
+				s.Require().Equal(tc.wantCode, status.Code(err))
+				return
 			}
+			s.Require().NoError(err)
+			s.Require().True(tc.wantCap.Equal(response.TaxCap))
 		})
 	}
 }
 
 func (s *KeeperTestSuite) TestQueryTaxCaps() {
-	tests := []struct {
-		name string
-		caps []types.TaxCap
-	}{
-		{
-			name: "with tax caps",
-			caps: []types.TaxCap{
-				{Denom: "ukrw", TaxCap: math.NewInt(1300000000)},
-				{Denom: "uusd", TaxCap: math.NewInt(1000000)},
-			},
-		},
-		{
-			name: "empty",
-		},
-	}
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(100)))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroKRWDenom, math.NewInt(200)))
 
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			var denoms []string
-			err := s.keeper.TaxCaps.Walk(s.ctx, nil, func(denom string, _ math.Int) (bool, error) {
-				denoms = append(denoms, denom)
-				return false, nil
-			})
-			s.Require().NoError(err)
-
-			for _, denom := range denoms {
-				s.Require().NoError(s.keeper.TaxCaps.Remove(s.ctx, denom))
-			}
-
-			expected := make(map[string]math.Int, len(tc.caps))
-			for _, cap := range tc.caps {
-				s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, cap.Denom, cap.TaxCap))
-				expected[cap.Denom] = cap.TaxCap
-			}
-
-			res, err := s.queryClient.TaxCaps(s.ctx, &types.QueryTaxCapsRequest{})
-			s.Require().NoError(err)
-			s.Require().NotNil(res)
-			s.Require().Len(res.TaxCaps, len(tc.caps))
-
-			for _, cap := range res.TaxCaps {
-				expectedCap, ok := expected[cap.Denom]
-				s.Require().True(ok, "unexpected tax cap denom %s", cap.Denom)
-				s.Require().Equal(expectedCap, cap.TaxCap)
-			}
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestQueryRewardWeight() {
-	res, err := s.queryClient.RewardWeight(s.ctx, &types.QueryRewardWeightRequest{})
+	response, err := keeper.NewQueryServerImpl(s.keeper).TaxCaps(
+		s.ctx,
+		&treasurytypes.QueryTaxCapsRequest{},
+	)
 	s.Require().NoError(err)
-	s.Require().NotNil(res)
+	s.Require().Equal([]treasurytypes.TaxCap{
+		{Denom: chain.MicroKRWDenom, TaxCap: math.NewInt(200)},
+		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(100)},
+	}, response.TaxCaps)
+}
 
-	rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx)
+func (s *KeeperTestSuite) TestQueryComputeTax() {
+	from := sdk.AccAddress{1}
+	to := sdk.AccAddress{2}
+	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
+		FromAddress: from.String(),
+		ToAddress:   to.String(),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)),
+	})
 	s.Require().NoError(err)
-	s.Require().True(rewardWeight.Equal(res.RewardWeight))
-}
 
-func (s *KeeperTestSuite) TestQuerySeigniorageProceeds() {
-	s.Require().NoError(s.keeper.EpochInitialIssuance.Set(s.ctx, types.EpochInitialIssuance{
-		Issuance: sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1000))),
-	}))
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroNoahDenom).
-		Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(800)))
-
-	res, err := s.queryClient.SeigniorageProceeds(s.ctx, &types.QuerySeigniorageProceedsRequest{})
+	response, err := keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
+	)
 	s.Require().NoError(err)
-	s.Require().NotNil(res)
-	s.Require().Equal(math.NewInt(200), res.SeigniorageProceeds)
+	s.Require().True(response.Tax.IsZero())
 }
 
-func (s *KeeperTestSuite) TestQueryTaxProceeds() {
-	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
-		TaxProceeds: sdk.NewCoins(sdk.NewCoin("uusd", math.NewInt(5000))),
-	}))
-
-	res, err := s.queryClient.TaxProceeds(s.ctx, &types.QueryTaxProceedsRequest{})
-	s.Require().NoError(err)
-	s.Require().NotNil(res)
-	s.Require().Equal(math.NewInt(5000), res.TaxProceeds.AmountOf("uusd"))
-}
-
-func (s *KeeperTestSuite) TestQueryIndicators() {
-	tests := []struct {
-		name          string
-		blockHeight   int64
-		totalStaked   math.Int
-		taxProceeds   sdk.Coins
-		epochStates   []types.EpochState
-		expectedYear  math.LegacyDec
-		expectedMonth math.LegacyDec
-	}{
-		{
-			name:          "epoch 0 zero stake",
-			totalStaked:   math.ZeroInt(),
-			expectedYear:  math.LegacyZeroDec(),
-			expectedMonth: math.LegacyZeroDec(),
-		},
-		{
-			name:          "epoch 0 with tax proceeds",
-			totalStaked:   math.NewInt(1000),
-			taxProceeds:   sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(500))),
-			expectedYear:  math.LegacyNewDecWithPrec(5, 1),
-			expectedMonth: math.LegacyNewDecWithPrec(5, 1),
-		},
-		{
-			name:        "epoch 1 blends previous epoch with current epoch",
-			blockHeight: int64(chain.BlocksPerWeek),
-			totalStaked: math.NewInt(1000),
-			taxProceeds: sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(200))),
-			epochStates: []types.EpochState{
-				{
-					Epoch:             0,
-					TaxReward:         math.LegacyNewDec(100),
-					SeigniorageReward: math.LegacyZeroDec(),
-					TotalStakedNoah:   math.NewInt(1000),
-				},
-			},
-			expectedYear:  math.LegacyNewDecWithPrec(15, 2),
-			expectedMonth: math.LegacyNewDecWithPrec(15, 2),
-		},
-	}
-
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			s.setBlockHeight(tc.blockHeight)
-			s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
-				TaxProceeds: tc.taxProceeds,
-			}))
-
-			var epochs []uint64
-			err := s.keeper.EpochStates.Walk(s.ctx, nil, func(epoch uint64, _ types.EpochState) (bool, error) {
-				epochs = append(epochs, epoch)
-				return false, nil
-			})
-			s.Require().NoError(err)
-
-			for _, epoch := range epochs {
-				s.Require().NoError(s.keeper.EpochStates.Remove(s.ctx, epoch))
-			}
-
-			for _, epochState := range tc.epochStates {
-				s.Require().NoError(s.keeper.EpochStates.Set(s.ctx, epochState.Epoch, epochState))
-			}
-
-			s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(tc.totalStaked, nil)
-
-			qs := keeper.NewQueryServerImpl(s.keeper)
-			res, err := qs.Indicators(s.ctx, &types.QueryIndicatorsRequest{})
-			s.Require().NoError(err)
-			s.Require().True(res.TRAYear.Equal(tc.expectedYear), "expected TRAYear %s, got %s", tc.expectedYear, res.TRAYear)
-			s.Require().True(res.TRAMonth.Equal(tc.expectedMonth), "expected TRAMonth %s, got %s", tc.expectedMonth, res.TRAMonth)
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestQueryIndicatorsStaleRate() {
-	s.Require().NoError(s.keeper.EpochTaxProceeds.Set(s.ctx, types.EpochTaxProceeds{
-		TaxProceeds: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 500)),
-	}))
-	s.stakingKeeper.EXPECT().TotalValidatorPower(gomock.Any()).Return(math.NewInt(1000), nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
-		gomock.Any(),
-		chain.MicroUSDDenom,
-		chain.MicroSDRDenom,
-	).Return(nil, oracletypes.ErrStaleExchangeRate)
-
-	_, err := keeper.NewQueryServerImpl(s.keeper).Indicators(s.ctx, &types.QueryIndicatorsRequest{})
+func (s *KeeperTestSuite) TestQueryComputeTaxRejectsNilMessage() {
+	_, err := keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{nil}},
+	)
 	s.Require().Error(err)
+	s.Require().Equal(codes.InvalidArgument, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesInvalidTaxMessage() {
+	policy := treasurytypes.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
+		Amount: sdk.Coins{{Denom: "", Amount: math.OneInt()}},
+	})
+	s.Require().NoError(err)
+
+	_, err = keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
+	)
+	s.Require().Equal(codes.InvalidArgument, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesMissingConfiguredCap() {
+	policy := treasurytypes.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
+		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)),
+	})
+	s.Require().NoError(err)
+
+	_, err = keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
+	)
 	s.Require().Equal(codes.FailedPrecondition, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
+	maxAmount := new(big.Int).Sub(
+		new(big.Int).Lsh(big.NewInt(1), math.MaxBitLen),
+		big.NewInt(1),
+	)
+	maxInt := math.NewIntFromBigInt(maxAmount)
+	policy := treasurytypes.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyOneDec()
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, maxInt))
+	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
+		Amount: sdk.NewCoins(sdk.NewCoin(chain.MicroUSDDenom, maxInt)),
+	})
+	s.Require().NoError(err)
+
+	_, err = keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message, message}},
+	)
+	s.Require().Equal(codes.OutOfRange, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
+	s.Require().NoError(s.keeper.MonetaryPolicy.Remove(s.ctx))
+	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
+		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)),
+	})
+	s.Require().NoError(err)
+
+	_, err = keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
+	)
+	s.Require().Equal(codes.Internal, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryFundStatus() {
+	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(7)))
+	balances := map[string]int64{
+		treasurytypes.SubsidyPoolName:      10,
+		treasurytypes.RedemptionBufferName: 20,
+		treasurytypes.StrategicReserveName: 30,
+		treasurytypes.InsuranceName:        40,
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{}, nil)
+	for moduleName, amount := range balances {
+		address := authtypes.NewModuleAddress(moduleName)
+		s.bankKeeper.EXPECT().GetBalance(s.ctx, address, chain.MicroNoahDenom).
+			Return(sdk.NewInt64Coin(chain.MicroNoahDenom, amount))
+	}
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
+		s.ctx,
+		&treasurytypes.QueryFundStatusRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 10), response.SubsidyPoolBalance)
+	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 20), response.RedemptionBufferBalance)
+	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 30), response.StrategicReserveBalance)
+	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 40), response.InsuranceBalance)
+	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 7), response.InsuranceReserved)
+	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 33), response.InsuranceUnencumberedBalance)
+}
+
+func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
+	funding := rewardFunding(4, 7, 3, 2, true)
+	s.setRewardFunding(funding)
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).RewardFunding(
+		s.ctx,
+		&treasurytypes.QueryRewardFundingRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(funding, response.RewardFunding)
+}
+
+func (s *KeeperTestSuite) TestQueryClaimsMandate() {
+	server := keeper.NewQueryServerImpl(s.keeper)
+	response, err := server.ClaimsMandate(
+		s.ctx,
+		&treasurytypes.QueryClaimsMandateRequest{},
+	)
+	s.Require().NoError(err)
+	expectedMandate := treasurytypes.DefaultClaimsMandate()
+	s.Require().True(proto.Equal(&response.Mandate, &expectedMandate))
+	s.Require().True(response.InsuranceReserved.IsZero())
+	s.Require().True(response.AllowanceUsed.IsZero())
+	s.Require().True(response.AllowanceRemaining.IsZero())
+	s.False(response.Active)
+
+	mandate := treasurytypes.ClaimsMandate{
+		Term:                     1,
+		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
+		ActivationHeight:         10,
+		ExpiryHeight:             20,
+		CancellationPeriodBlocks: 2,
+		CommitteeClaimLimit:      math.NewInt(100),
+	}
+	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, mandate))
+	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(40)))
+	s.setBlockHeight(10)
+	response, err = server.ClaimsMandate(s.ctx, &treasurytypes.QueryClaimsMandateRequest{})
+	s.Require().NoError(err)
+	s.Require().Equal(mandate, response.Mandate)
+	s.Require().Equal(math.NewInt(40), response.AllowanceUsed)
+	s.Require().Equal(math.NewInt(60), response.AllowanceRemaining)
+	s.True(response.Active)
+}
+
+func (s *KeeperTestSuite) TestQueryClaim() {
+	claim := treasurytypes.Claim{
+		ClaimId: 1,
+		Amount:  sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
+	}
+	s.Require().NoError(s.keeper.Claims.Set(s.ctx, claim.ClaimId, claim))
+	server := keeper.NewQueryServerImpl(s.keeper)
+
+	response, err := server.Claim(
+		s.ctx,
+		&treasurytypes.QueryClaimRequest{ClaimId: claim.ClaimId},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(claim, response.Claim)
+
+	_, err = server.Claim(
+		s.ctx,
+		&treasurytypes.QueryClaimRequest{ClaimId: 999},
+	)
+	s.Require().Error(err)
+	s.Require().Equal(codes.NotFound, status.Code(err))
+
+	_, err = server.Claim(s.ctx, &treasurytypes.QueryClaimRequest{})
+	s.Require().Error(err)
+	s.Require().Equal(codes.InvalidArgument, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryClaimsPagination() {
+	for _, claimID := range []uint64{1, 2, 3} {
+		claim := treasurytypes.Claim{ClaimId: claimID}
+		s.Require().NoError(s.keeper.Claims.Set(s.ctx, claimID, claim))
+	}
+	server := keeper.NewQueryServerImpl(s.keeper)
+
+	first, err := server.Claims(s.ctx, &treasurytypes.QueryClaimsRequest{
+		Pagination: &querytypes.PageRequest{Limit: 2, CountTotal: true},
+	})
+	s.Require().NoError(err)
+	s.Require().Equal([]uint64{1, 2}, claimIDs(first.Claims))
+	s.Require().Equal(uint64(3), first.Pagination.Total)
+	s.Require().NotEmpty(first.Pagination.NextKey)
+
+	second, err := server.Claims(s.ctx, &treasurytypes.QueryClaimsRequest{
+		Pagination: &querytypes.PageRequest{Key: first.Pagination.NextKey, Limit: 2},
+	})
+	s.Require().NoError(err)
+	s.Require().Equal([]uint64{3}, claimIDs(second.Claims))
+}
+
+func claimIDs(claims []treasurytypes.Claim) []uint64 {
+	ids := make([]uint64, len(claims))
+	for i, claim := range claims {
+		ids[i] = claim.ClaimId
+	}
+	return ids
 }

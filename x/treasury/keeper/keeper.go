@@ -12,78 +12,66 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
 	"ark/x/treasury/types"
 )
 
-// Keeper of the treasury store
+// Keeper owns Treasury policy and claims state. Fund custody remains in Bank.
 type Keeper struct {
-	cdc                 codec.BinaryCodec
-	storeService        store.KVStoreService
-	authority           string
-	rewardCollectorName string
+	cdc                   codec.BinaryCodec
+	storeService          store.KVStoreService
+	transientStoreService store.TransientStoreService
+	authority             string
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
-	ppoolKeeper   types.ProtocolpoolKeeper
 	oracleKeeper  types.OracleKeeper
-	stakingKeeper types.StakingKeeper
 
-	Schema               collections.Schema
-	Params               collections.Item[types.Params]
-	TaxRate              collections.Item[math.LegacyDec]
-	RewardWeight         collections.Item[math.LegacyDec]
-	TaxCaps              collections.Map[string, math.Int]
-	EpochTaxProceeds     collections.Item[types.EpochTaxProceeds]
-	EpochInitialIssuance collections.Item[types.EpochInitialIssuance]
-	EpochStates          collections.Map[uint64, types.EpochState]
+	Schema              collections.Schema
+	Params              collections.Item[types.Params]
+	TaxCaps             collections.Map[string, math.Int]
+	ClaimsMandate       collections.Item[types.ClaimsMandate]
+	ClaimsAllowanceUsed collections.Item[math.Int]
+	InsuranceReserved   collections.Item[math.Int]
+	NextClaimID         collections.Sequence
+	Claims              collections.Map[uint64, types.Claim]
+	RewardFunding       collections.Item[types.RewardFundingState]
+	MonetaryMandate     collections.Item[types.MonetaryMandate]
+	MonetaryPolicy      collections.Item[types.MonetaryPolicy]
 }
 
-// NewKeeper creates a new treasury Keeper instance
+// NewKeeper creates a Treasury keeper.
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
+	transientStoreService store.TransientStoreService,
 	authority string,
-	rewardCollectorName string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	ppoolKeeper types.ProtocolpoolKeeper,
 	oracleKeeper types.OracleKeeper,
-	stakingKeeper types.StakingKeeper,
 ) *Keeper {
-	// ensure treasury module account is set
-	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
-		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
+	for _, moduleName := range types.FundAccountNames() {
+		if addr := accountKeeper.GetModuleAddress(moduleName); addr == nil {
+			panic(fmt.Sprintf("%s module account has not been set", moduleName))
+		}
+	}
+	if addr := accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", types.StabilityTaxCollectorName))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:                 cdc,
-		storeService:        storeService,
-		authority:           authority,
-		rewardCollectorName: rewardCollectorName,
-		accountKeeper:       accountKeeper,
-		bankKeeper:          bankKeeper,
-		ppoolKeeper:         ppoolKeeper,
-		oracleKeeper:        oracleKeeper,
-		stakingKeeper:       stakingKeeper,
+		cdc:                   cdc,
+		storeService:          storeService,
+		transientStoreService: transientStoreService,
+		authority:             authority,
+		accountKeeper:         accountKeeper,
+		bankKeeper:            bankKeeper,
+		oracleKeeper:          oracleKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,
 			"params",
 			codec.CollValue[types.Params](cdc),
-		),
-		TaxRate: collections.NewItem(
-			sb,
-			types.TaxRateKey,
-			"tax_rate",
-			sdk.LegacyDecValue,
-		),
-		RewardWeight: collections.NewItem(
-			sb,
-			types.RewardWeightKey,
-			"reward_weight",
-			sdk.LegacyDecValue,
 		),
 		TaxCaps: collections.NewMap(
 			sb,
@@ -92,24 +80,53 @@ func NewKeeper(
 			collections.StringKey,
 			sdk.IntValue,
 		),
-		EpochTaxProceeds: collections.NewItem(
+		ClaimsMandate: collections.NewItem(
 			sb,
-			types.EpochTaxProceedsKey,
-			"epoch_tax_proceeds",
-			codec.CollValue[types.EpochTaxProceeds](cdc),
+			types.ClaimsMandateKey,
+			"claims_mandate",
+			codec.CollValue[types.ClaimsMandate](cdc),
 		),
-		EpochInitialIssuance: collections.NewItem(
+		ClaimsAllowanceUsed: collections.NewItem(
 			sb,
-			types.EpochInitialIssuanceKey,
-			"epoch_initial_issuance",
-			codec.CollValue[types.EpochInitialIssuance](cdc),
+			types.ClaimsAllowanceUsedKey,
+			"claims_allowance_used",
+			sdk.IntValue,
 		),
-		EpochStates: collections.NewMap(
+		InsuranceReserved: collections.NewItem(
 			sb,
-			types.EpochStatesKey,
-			"epoch_states",
+			types.InsuranceReservedKey,
+			"insurance_reserved",
+			sdk.IntValue,
+		),
+		NextClaimID: collections.NewSequence(
+			sb,
+			types.NextClaimIDKey,
+			"next_claim_id",
+		),
+		Claims: collections.NewMap(
+			sb,
+			types.ClaimsKey,
+			"claims",
 			collections.Uint64Key,
-			codec.CollValue[types.EpochState](cdc),
+			codec.CollValue[types.Claim](cdc),
+		),
+		RewardFunding: collections.NewItem(
+			sb,
+			types.RewardFundingKey,
+			"reward_funding",
+			codec.CollValue[types.RewardFundingState](cdc),
+		),
+		MonetaryMandate: collections.NewItem(
+			sb,
+			types.MonetaryMandateKey,
+			"monetary_mandate",
+			codec.CollValue[types.MonetaryMandate](cdc),
+		),
+		MonetaryPolicy: collections.NewItem(
+			sb,
+			types.MonetaryPolicyKey,
+			"monetary_policy",
+			codec.CollValue[types.MonetaryPolicy](cdc),
 		),
 	}
 
@@ -122,66 +139,11 @@ func NewKeeper(
 	return k
 }
 
+// Authority returns the configured governance authority.
+func (k Keeper) Authority() string { return k.authority }
+
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx context.Context) log.Logger {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// RecordEpochTaxProceeds adds tax proceeds that have been added this epoch
-func (k Keeper) RecordEpochTaxProceeds(ctx context.Context, delta sdk.Coins) error {
-	if delta.IsZero() {
-		return nil
-	}
-
-	proceeds, err := k.EpochTaxProceeds.Get(ctx)
-	if err != nil {
-		return fmt.Errorf("getting epoch tax proceeds: %w", err)
-	}
-	proceeds.TaxProceeds = proceeds.TaxProceeds.Add(delta...)
-
-	if err := k.EpochTaxProceeds.Set(ctx, proceeds); err != nil {
-		return fmt.Errorf("setting epoch tax proceeds: %w", err)
-	}
-	return nil
-}
-
-// RecordEpochInitialIssuance updates epoch initial issuance from supply keeper
-func (k Keeper) RecordEpochInitialIssuance(ctx context.Context) error {
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return err
-	}
-
-	totalSupply := make(sdk.Coins, len(tobinTaxes)+1)
-	totalSupply[0] = k.bankKeeper.GetSupply(ctx, chain.MicroNoahDenom)
-
-	for i, denom := range tobinTaxes {
-		totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Denom)
-	}
-
-	epochInitialIssuance := types.EpochInitialIssuance{
-		Issuance: totalSupply.Sort(),
-	}
-	if err := k.EpochInitialIssuance.Set(ctx, epochInitialIssuance); err != nil {
-		return fmt.Errorf("setting epoch initial issuance: %w", err)
-	}
-	return nil
-}
-
-// ComputeEpochSeigniorage returns epoch seigniorage
-func (k Keeper) ComputeEpochSeigniorage(ctx context.Context) (math.Int, error) {
-	epochIssuance := k.bankKeeper.GetSupply(ctx, chain.MicroNoahDenom).Amount
-	epochIntialIssuance, err := k.EpochInitialIssuance.Get(ctx)
-	if err != nil {
-		return math.ZeroInt(), fmt.Errorf("getting epoch initial issuance: %w", err)
-	}
-	preEpochIssuance := epochIntialIssuance.Issuance.AmountOf(chain.MicroNoahDenom)
-	epochSeigniorage := preEpochIssuance.Sub(epochIssuance)
-
-	if epochSeigniorage.IsNegative() {
-		return math.ZeroInt(), nil
-	}
-
-	return epochSeigniorage, nil
 }

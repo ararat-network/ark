@@ -3,7 +3,6 @@ package treasuryv1
 
 import (
 	_ "cosmossdk.io/api/amino"
-	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
@@ -16,163 +15,61 @@ import (
 	sync "sync"
 )
 
-var _ protoreflect.List = (*_GenesisState_4_list)(nil)
+var _ protoreflect.List = (*_GenesisState_2_list)(nil)
 
-type _GenesisState_4_list struct {
+type _GenesisState_2_list struct {
 	list *[]*TaxCap
 }
 
-func (x *_GenesisState_4_list) Len() int {
+func (x *_GenesisState_2_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_GenesisState_4_list) Get(i int) protoreflect.Value {
+func (x *_GenesisState_2_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_GenesisState_4_list) Set(i int, value protoreflect.Value) {
+func (x *_GenesisState_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*TaxCap)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_GenesisState_4_list) Append(value protoreflect.Value) {
+func (x *_GenesisState_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*TaxCap)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_GenesisState_4_list) AppendMutable() protoreflect.Value {
+func (x *_GenesisState_2_list) AppendMutable() protoreflect.Value {
 	v := new(TaxCap)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_GenesisState_4_list) Truncate(n int) {
+func (x *_GenesisState_2_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_GenesisState_4_list) NewElement() protoreflect.Value {
+func (x *_GenesisState_2_list) NewElement() protoreflect.Value {
 	v := new(TaxCap)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_GenesisState_4_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_GenesisState_5_list)(nil)
-
-type _GenesisState_5_list struct {
-	list *[]*v1beta1.Coin
-}
-
-func (x *_GenesisState_5_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_5_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_5_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_5_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_5_list) AppendMutable() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_5_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_5_list) NewElement() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_5_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_GenesisState_6_list)(nil)
-
-type _GenesisState_6_list struct {
-	list *[]*v1beta1.Coin
-}
-
-func (x *_GenesisState_6_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_6_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_6_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_6_list) AppendMutable() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_6_list) NewElement() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) IsValid() bool {
+func (x *_GenesisState_2_list) IsValid() bool {
 	return x.list != nil
 }
 
 var _ protoreflect.List = (*_GenesisState_7_list)(nil)
 
 type _GenesisState_7_list struct {
-	list *[]*EpochState
+	list *[]*Claim
 }
 
 func (x *_GenesisState_7_list) Len() int {
@@ -188,18 +85,18 @@ func (x *_GenesisState_7_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_7_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*EpochState)
+	concreteValue := valueUnwrapped.Interface().(*Claim)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_7_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*EpochState)
+	concreteValue := valueUnwrapped.Interface().(*Claim)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_7_list) AppendMutable() protoreflect.Value {
-	v := new(EpochState)
+	v := new(Claim)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -212,7 +109,7 @@ func (x *_GenesisState_7_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_7_list) NewElement() protoreflect.Value {
-	v := new(EpochState)
+	v := new(Claim)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -221,26 +118,32 @@ func (x *_GenesisState_7_list) IsValid() bool {
 }
 
 var (
-	md_GenesisState                        protoreflect.MessageDescriptor
-	fd_GenesisState_params                 protoreflect.FieldDescriptor
-	fd_GenesisState_tax_rate               protoreflect.FieldDescriptor
-	fd_GenesisState_reward_weight          protoreflect.FieldDescriptor
-	fd_GenesisState_tax_caps               protoreflect.FieldDescriptor
-	fd_GenesisState_epoch_tax_proceeds     protoreflect.FieldDescriptor
-	fd_GenesisState_epoch_initial_issuance protoreflect.FieldDescriptor
-	fd_GenesisState_epoch_states           protoreflect.FieldDescriptor
+	md_GenesisState                       protoreflect.MessageDescriptor
+	fd_GenesisState_params                protoreflect.FieldDescriptor
+	fd_GenesisState_tax_caps              protoreflect.FieldDescriptor
+	fd_GenesisState_claims_mandate        protoreflect.FieldDescriptor
+	fd_GenesisState_claims_allowance_used protoreflect.FieldDescriptor
+	fd_GenesisState_insurance_reserved    protoreflect.FieldDescriptor
+	fd_GenesisState_next_claim_id         protoreflect.FieldDescriptor
+	fd_GenesisState_claims                protoreflect.FieldDescriptor
+	fd_GenesisState_reward_funding        protoreflect.FieldDescriptor
+	fd_GenesisState_monetary_mandate      protoreflect.FieldDescriptor
+	fd_GenesisState_monetary_policy       protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_genesis_proto_init()
 	md_GenesisState = File_ark_treasury_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
-	fd_GenesisState_tax_rate = md_GenesisState.Fields().ByName("tax_rate")
-	fd_GenesisState_reward_weight = md_GenesisState.Fields().ByName("reward_weight")
 	fd_GenesisState_tax_caps = md_GenesisState.Fields().ByName("tax_caps")
-	fd_GenesisState_epoch_tax_proceeds = md_GenesisState.Fields().ByName("epoch_tax_proceeds")
-	fd_GenesisState_epoch_initial_issuance = md_GenesisState.Fields().ByName("epoch_initial_issuance")
-	fd_GenesisState_epoch_states = md_GenesisState.Fields().ByName("epoch_states")
+	fd_GenesisState_claims_mandate = md_GenesisState.Fields().ByName("claims_mandate")
+	fd_GenesisState_claims_allowance_used = md_GenesisState.Fields().ByName("claims_allowance_used")
+	fd_GenesisState_insurance_reserved = md_GenesisState.Fields().ByName("insurance_reserved")
+	fd_GenesisState_next_claim_id = md_GenesisState.Fields().ByName("next_claim_id")
+	fd_GenesisState_claims = md_GenesisState.Fields().ByName("claims")
+	fd_GenesisState_reward_funding = md_GenesisState.Fields().ByName("reward_funding")
+	fd_GenesisState_monetary_mandate = md_GenesisState.Fields().ByName("monetary_mandate")
+	fd_GenesisState_monetary_policy = md_GenesisState.Fields().ByName("monetary_policy")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -314,39 +217,57 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if x.TaxRate != "" {
-		value := protoreflect.ValueOfString(x.TaxRate)
-		if !f(fd_GenesisState_tax_rate, value) {
-			return
-		}
-	}
-	if x.RewardWeight != "" {
-		value := protoreflect.ValueOfString(x.RewardWeight)
-		if !f(fd_GenesisState_reward_weight, value) {
-			return
-		}
-	}
 	if len(x.TaxCaps) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.TaxCaps})
+		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.TaxCaps})
 		if !f(fd_GenesisState_tax_caps, value) {
 			return
 		}
 	}
-	if len(x.EpochTaxProceeds) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.EpochTaxProceeds})
-		if !f(fd_GenesisState_epoch_tax_proceeds, value) {
+	if x.ClaimsMandate != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimsMandate.ProtoReflect())
+		if !f(fd_GenesisState_claims_mandate, value) {
 			return
 		}
 	}
-	if len(x.EpochInitialIssuance) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.EpochInitialIssuance})
-		if !f(fd_GenesisState_epoch_initial_issuance, value) {
+	if x.ClaimsAllowanceUsed != "" {
+		value := protoreflect.ValueOfString(x.ClaimsAllowanceUsed)
+		if !f(fd_GenesisState_claims_allowance_used, value) {
 			return
 		}
 	}
-	if len(x.EpochStates) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_7_list{list: &x.EpochStates})
-		if !f(fd_GenesisState_epoch_states, value) {
+	if x.InsuranceReserved != "" {
+		value := protoreflect.ValueOfString(x.InsuranceReserved)
+		if !f(fd_GenesisState_insurance_reserved, value) {
+			return
+		}
+	}
+	if x.NextClaimId != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NextClaimId)
+		if !f(fd_GenesisState_next_claim_id, value) {
+			return
+		}
+	}
+	if len(x.Claims) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_7_list{list: &x.Claims})
+		if !f(fd_GenesisState_claims, value) {
+			return
+		}
+	}
+	if x.RewardFunding != nil {
+		value := protoreflect.ValueOfMessage(x.RewardFunding.ProtoReflect())
+		if !f(fd_GenesisState_reward_funding, value) {
+			return
+		}
+	}
+	if x.MonetaryMandate != nil {
+		value := protoreflect.ValueOfMessage(x.MonetaryMandate.ProtoReflect())
+		if !f(fd_GenesisState_monetary_mandate, value) {
+			return
+		}
+	}
+	if x.MonetaryPolicy != nil {
+		value := protoreflect.ValueOfMessage(x.MonetaryPolicy.ProtoReflect())
+		if !f(fd_GenesisState_monetary_policy, value) {
 			return
 		}
 	}
@@ -367,18 +288,24 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 	switch fd.FullName() {
 	case "ark.treasury.v1.GenesisState.params":
 		return x.Params != nil
-	case "ark.treasury.v1.GenesisState.tax_rate":
-		return x.TaxRate != ""
-	case "ark.treasury.v1.GenesisState.reward_weight":
-		return x.RewardWeight != ""
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		return len(x.TaxCaps) != 0
-	case "ark.treasury.v1.GenesisState.epoch_tax_proceeds":
-		return len(x.EpochTaxProceeds) != 0
-	case "ark.treasury.v1.GenesisState.epoch_initial_issuance":
-		return len(x.EpochInitialIssuance) != 0
-	case "ark.treasury.v1.GenesisState.epoch_states":
-		return len(x.EpochStates) != 0
+	case "ark.treasury.v1.GenesisState.claims_mandate":
+		return x.ClaimsMandate != nil
+	case "ark.treasury.v1.GenesisState.claims_allowance_used":
+		return x.ClaimsAllowanceUsed != ""
+	case "ark.treasury.v1.GenesisState.insurance_reserved":
+		return x.InsuranceReserved != ""
+	case "ark.treasury.v1.GenesisState.next_claim_id":
+		return x.NextClaimId != uint64(0)
+	case "ark.treasury.v1.GenesisState.claims":
+		return len(x.Claims) != 0
+	case "ark.treasury.v1.GenesisState.reward_funding":
+		return x.RewardFunding != nil
+	case "ark.treasury.v1.GenesisState.monetary_mandate":
+		return x.MonetaryMandate != nil
+	case "ark.treasury.v1.GenesisState.monetary_policy":
+		return x.MonetaryPolicy != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.GenesisState"))
@@ -397,18 +324,24 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "ark.treasury.v1.GenesisState.params":
 		x.Params = nil
-	case "ark.treasury.v1.GenesisState.tax_rate":
-		x.TaxRate = ""
-	case "ark.treasury.v1.GenesisState.reward_weight":
-		x.RewardWeight = ""
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		x.TaxCaps = nil
-	case "ark.treasury.v1.GenesisState.epoch_tax_proceeds":
-		x.EpochTaxProceeds = nil
-	case "ark.treasury.v1.GenesisState.epoch_initial_issuance":
-		x.EpochInitialIssuance = nil
-	case "ark.treasury.v1.GenesisState.epoch_states":
-		x.EpochStates = nil
+	case "ark.treasury.v1.GenesisState.claims_mandate":
+		x.ClaimsMandate = nil
+	case "ark.treasury.v1.GenesisState.claims_allowance_used":
+		x.ClaimsAllowanceUsed = ""
+	case "ark.treasury.v1.GenesisState.insurance_reserved":
+		x.InsuranceReserved = ""
+	case "ark.treasury.v1.GenesisState.next_claim_id":
+		x.NextClaimId = uint64(0)
+	case "ark.treasury.v1.GenesisState.claims":
+		x.Claims = nil
+	case "ark.treasury.v1.GenesisState.reward_funding":
+		x.RewardFunding = nil
+	case "ark.treasury.v1.GenesisState.monetary_mandate":
+		x.MonetaryMandate = nil
+	case "ark.treasury.v1.GenesisState.monetary_policy":
+		x.MonetaryPolicy = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.GenesisState"))
@@ -428,36 +361,39 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.treasury.v1.GenesisState.params":
 		value := x.Params
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_rate":
-		value := x.TaxRate
-		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.GenesisState.reward_weight":
-		value := x.RewardWeight
-		return protoreflect.ValueOfString(value)
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		if len(x.TaxCaps) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_4_list{})
+			return protoreflect.ValueOfList(&_GenesisState_2_list{})
 		}
-		listValue := &_GenesisState_4_list{list: &x.TaxCaps}
+		listValue := &_GenesisState_2_list{list: &x.TaxCaps}
 		return protoreflect.ValueOfList(listValue)
-	case "ark.treasury.v1.GenesisState.epoch_tax_proceeds":
-		if len(x.EpochTaxProceeds) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_5_list{})
-		}
-		listValue := &_GenesisState_5_list{list: &x.EpochTaxProceeds}
-		return protoreflect.ValueOfList(listValue)
-	case "ark.treasury.v1.GenesisState.epoch_initial_issuance":
-		if len(x.EpochInitialIssuance) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_6_list{})
-		}
-		listValue := &_GenesisState_6_list{list: &x.EpochInitialIssuance}
-		return protoreflect.ValueOfList(listValue)
-	case "ark.treasury.v1.GenesisState.epoch_states":
-		if len(x.EpochStates) == 0 {
+	case "ark.treasury.v1.GenesisState.claims_mandate":
+		value := x.ClaimsMandate
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.claims_allowance_used":
+		value := x.ClaimsAllowanceUsed
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.GenesisState.insurance_reserved":
+		value := x.InsuranceReserved
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.GenesisState.next_claim_id":
+		value := x.NextClaimId
+		return protoreflect.ValueOfUint64(value)
+	case "ark.treasury.v1.GenesisState.claims":
+		if len(x.Claims) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_7_list{})
 		}
-		listValue := &_GenesisState_7_list{list: &x.EpochStates}
+		listValue := &_GenesisState_7_list{list: &x.Claims}
 		return protoreflect.ValueOfList(listValue)
+	case "ark.treasury.v1.GenesisState.reward_funding":
+		value := x.RewardFunding
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.monetary_mandate":
+		value := x.MonetaryMandate
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.monetary_policy":
+		value := x.MonetaryPolicy
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.GenesisState"))
@@ -480,26 +416,28 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 	switch fd.FullName() {
 	case "ark.treasury.v1.GenesisState.params":
 		x.Params = value.Message().Interface().(*Params)
-	case "ark.treasury.v1.GenesisState.tax_rate":
-		x.TaxRate = value.Interface().(string)
-	case "ark.treasury.v1.GenesisState.reward_weight":
-		x.RewardWeight = value.Interface().(string)
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		lv := value.List()
-		clv := lv.(*_GenesisState_4_list)
+		clv := lv.(*_GenesisState_2_list)
 		x.TaxCaps = *clv.list
-	case "ark.treasury.v1.GenesisState.epoch_tax_proceeds":
-		lv := value.List()
-		clv := lv.(*_GenesisState_5_list)
-		x.EpochTaxProceeds = *clv.list
-	case "ark.treasury.v1.GenesisState.epoch_initial_issuance":
-		lv := value.List()
-		clv := lv.(*_GenesisState_6_list)
-		x.EpochInitialIssuance = *clv.list
-	case "ark.treasury.v1.GenesisState.epoch_states":
+	case "ark.treasury.v1.GenesisState.claims_mandate":
+		x.ClaimsMandate = value.Message().Interface().(*ClaimsMandate)
+	case "ark.treasury.v1.GenesisState.claims_allowance_used":
+		x.ClaimsAllowanceUsed = value.Interface().(string)
+	case "ark.treasury.v1.GenesisState.insurance_reserved":
+		x.InsuranceReserved = value.Interface().(string)
+	case "ark.treasury.v1.GenesisState.next_claim_id":
+		x.NextClaimId = value.Uint()
+	case "ark.treasury.v1.GenesisState.claims":
 		lv := value.List()
 		clv := lv.(*_GenesisState_7_list)
-		x.EpochStates = *clv.list
+		x.Claims = *clv.list
+	case "ark.treasury.v1.GenesisState.reward_funding":
+		x.RewardFunding = value.Message().Interface().(*RewardFundingState)
+	case "ark.treasury.v1.GenesisState.monetary_mandate":
+		x.MonetaryMandate = value.Message().Interface().(*MonetaryMandate)
+	case "ark.treasury.v1.GenesisState.monetary_policy":
+		x.MonetaryPolicy = value.Message().Interface().(*MonetaryPolicy)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.GenesisState"))
@@ -529,30 +467,40 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		if x.TaxCaps == nil {
 			x.TaxCaps = []*TaxCap{}
 		}
-		value := &_GenesisState_4_list{list: &x.TaxCaps}
+		value := &_GenesisState_2_list{list: &x.TaxCaps}
 		return protoreflect.ValueOfList(value)
-	case "ark.treasury.v1.GenesisState.epoch_tax_proceeds":
-		if x.EpochTaxProceeds == nil {
-			x.EpochTaxProceeds = []*v1beta1.Coin{}
+	case "ark.treasury.v1.GenesisState.claims_mandate":
+		if x.ClaimsMandate == nil {
+			x.ClaimsMandate = new(ClaimsMandate)
 		}
-		value := &_GenesisState_5_list{list: &x.EpochTaxProceeds}
-		return protoreflect.ValueOfList(value)
-	case "ark.treasury.v1.GenesisState.epoch_initial_issuance":
-		if x.EpochInitialIssuance == nil {
-			x.EpochInitialIssuance = []*v1beta1.Coin{}
+		return protoreflect.ValueOfMessage(x.ClaimsMandate.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.claims":
+		if x.Claims == nil {
+			x.Claims = []*Claim{}
 		}
-		value := &_GenesisState_6_list{list: &x.EpochInitialIssuance}
+		value := &_GenesisState_7_list{list: &x.Claims}
 		return protoreflect.ValueOfList(value)
-	case "ark.treasury.v1.GenesisState.epoch_states":
-		if x.EpochStates == nil {
-			x.EpochStates = []*EpochState{}
+	case "ark.treasury.v1.GenesisState.reward_funding":
+		if x.RewardFunding == nil {
+			x.RewardFunding = new(RewardFundingState)
 		}
-		value := &_GenesisState_7_list{list: &x.EpochStates}
-		return protoreflect.ValueOfList(value)
-	case "ark.treasury.v1.GenesisState.tax_rate":
-		panic(fmt.Errorf("field tax_rate of message ark.treasury.v1.GenesisState is not mutable"))
-	case "ark.treasury.v1.GenesisState.reward_weight":
-		panic(fmt.Errorf("field reward_weight of message ark.treasury.v1.GenesisState is not mutable"))
+		return protoreflect.ValueOfMessage(x.RewardFunding.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.monetary_mandate":
+		if x.MonetaryMandate == nil {
+			x.MonetaryMandate = new(MonetaryMandate)
+		}
+		return protoreflect.ValueOfMessage(x.MonetaryMandate.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.monetary_policy":
+		if x.MonetaryPolicy == nil {
+			x.MonetaryPolicy = new(MonetaryPolicy)
+		}
+		return protoreflect.ValueOfMessage(x.MonetaryPolicy.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.claims_allowance_used":
+		panic(fmt.Errorf("field claims_allowance_used of message ark.treasury.v1.GenesisState is not mutable"))
+	case "ark.treasury.v1.GenesisState.insurance_reserved":
+		panic(fmt.Errorf("field insurance_reserved of message ark.treasury.v1.GenesisState is not mutable"))
+	case "ark.treasury.v1.GenesisState.next_claim_id":
+		panic(fmt.Errorf("field next_claim_id of message ark.treasury.v1.GenesisState is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.GenesisState"))
@@ -569,22 +517,30 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.treasury.v1.GenesisState.params":
 		m := new(Params)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_rate":
-		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.GenesisState.reward_weight":
-		return protoreflect.ValueOfString("")
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		list := []*TaxCap{}
-		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
-	case "ark.treasury.v1.GenesisState.epoch_tax_proceeds":
-		list := []*v1beta1.Coin{}
-		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
-	case "ark.treasury.v1.GenesisState.epoch_initial_issuance":
-		list := []*v1beta1.Coin{}
-		return protoreflect.ValueOfList(&_GenesisState_6_list{list: &list})
-	case "ark.treasury.v1.GenesisState.epoch_states":
-		list := []*EpochState{}
+		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
+	case "ark.treasury.v1.GenesisState.claims_mandate":
+		m := new(ClaimsMandate)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.claims_allowance_used":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.GenesisState.insurance_reserved":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.GenesisState.next_claim_id":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.treasury.v1.GenesisState.claims":
+		list := []*Claim{}
 		return protoreflect.ValueOfList(&_GenesisState_7_list{list: &list})
+	case "ark.treasury.v1.GenesisState.reward_funding":
+		m := new(RewardFundingState)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.monetary_mandate":
+		m := new(MonetaryMandate)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.monetary_policy":
+		m := new(MonetaryPolicy)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.GenesisState"))
@@ -658,37 +614,44 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Params)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.TaxRate)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.RewardWeight)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		if len(x.TaxCaps) > 0 {
 			for _, e := range x.TaxCaps {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.EpochTaxProceeds) > 0 {
-			for _, e := range x.EpochTaxProceeds {
+		if x.ClaimsMandate != nil {
+			l = options.Size(x.ClaimsMandate)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ClaimsAllowanceUsed)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.InsuranceReserved)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.NextClaimId != 0 {
+			n += 1 + runtime.Sov(uint64(x.NextClaimId))
+		}
+		if len(x.Claims) > 0 {
+			for _, e := range x.Claims {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.EpochInitialIssuance) > 0 {
-			for _, e := range x.EpochInitialIssuance {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
+		if x.RewardFunding != nil {
+			l = options.Size(x.RewardFunding)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if len(x.EpochStates) > 0 {
-			for _, e := range x.EpochStates {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
+		if x.MonetaryMandate != nil {
+			l = options.Size(x.MonetaryMandate)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.MonetaryPolicy != nil {
+			l = options.Size(x.MonetaryPolicy)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -719,9 +682,51 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.EpochStates) > 0 {
-			for iNdEx := len(x.EpochStates) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.EpochStates[iNdEx])
+		if x.MonetaryPolicy != nil {
+			encoded, err := options.Marshal(x.MonetaryPolicy)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x52
+		}
+		if x.MonetaryMandate != nil {
+			encoded, err := options.Marshal(x.MonetaryMandate)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x4a
+		}
+		if x.RewardFunding != nil {
+			encoded, err := options.Marshal(x.RewardFunding)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x42
+		}
+		if len(x.Claims) > 0 {
+			for iNdEx := len(x.Claims) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Claims[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -735,37 +740,38 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x3a
 			}
 		}
-		if len(x.EpochInitialIssuance) > 0 {
-			for iNdEx := len(x.EpochInitialIssuance) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.EpochInitialIssuance[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x32
-			}
+		if x.NextClaimId != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NextClaimId))
+			i--
+			dAtA[i] = 0x30
 		}
-		if len(x.EpochTaxProceeds) > 0 {
-			for iNdEx := len(x.EpochTaxProceeds) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.EpochTaxProceeds[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x2a
+		if len(x.InsuranceReserved) > 0 {
+			i -= len(x.InsuranceReserved)
+			copy(dAtA[i:], x.InsuranceReserved)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.InsuranceReserved)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.ClaimsAllowanceUsed) > 0 {
+			i -= len(x.ClaimsAllowanceUsed)
+			copy(dAtA[i:], x.ClaimsAllowanceUsed)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ClaimsAllowanceUsed)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if x.ClaimsMandate != nil {
+			encoded, err := options.Marshal(x.ClaimsMandate)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
 			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
 		}
 		if len(x.TaxCaps) > 0 {
 			for iNdEx := len(x.TaxCaps) - 1; iNdEx >= 0; iNdEx-- {
@@ -780,22 +786,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], encoded)
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 				i--
-				dAtA[i] = 0x22
+				dAtA[i] = 0x12
 			}
-		}
-		if len(x.RewardWeight) > 0 {
-			i -= len(x.RewardWeight)
-			copy(dAtA[i:], x.RewardWeight)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RewardWeight)))
-			i--
-			dAtA[i] = 0x1a
-		}
-		if len(x.TaxRate) > 0 {
-			i -= len(x.TaxRate)
-			copy(dAtA[i:], x.TaxRate)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TaxRate)))
-			i--
-			dAtA[i] = 0x12
 		}
 		if x.Params != nil {
 			encoded, err := options.Marshal(x.Params)
@@ -898,70 +890,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxRate", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.TaxRate = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardWeight", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.RewardWeight = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 4:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxCaps", wireType)
 				}
 				var msglen int
@@ -994,645 +922,11 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 5:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EpochTaxProceeds", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.EpochTaxProceeds = append(x.EpochTaxProceeds, &v1beta1.Coin{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EpochTaxProceeds[len(x.EpochTaxProceeds)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 6:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EpochInitialIssuance", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.EpochInitialIssuance = append(x.EpochInitialIssuance, &v1beta1.Coin{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EpochInitialIssuance[len(x.EpochInitialIssuance)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 7:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EpochStates", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.EpochStates = append(x.EpochStates, &EpochState{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EpochStates[len(x.EpochStates)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_EpochState                    protoreflect.MessageDescriptor
-	fd_EpochState_epoch              protoreflect.FieldDescriptor
-	fd_EpochState_tax_reward         protoreflect.FieldDescriptor
-	fd_EpochState_seigniorage_reward protoreflect.FieldDescriptor
-	fd_EpochState_total_staked_noah  protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_treasury_v1_genesis_proto_init()
-	md_EpochState = File_ark_treasury_v1_genesis_proto.Messages().ByName("EpochState")
-	fd_EpochState_epoch = md_EpochState.Fields().ByName("epoch")
-	fd_EpochState_tax_reward = md_EpochState.Fields().ByName("tax_reward")
-	fd_EpochState_seigniorage_reward = md_EpochState.Fields().ByName("seigniorage_reward")
-	fd_EpochState_total_staked_noah = md_EpochState.Fields().ByName("total_staked_noah")
-}
-
-var _ protoreflect.Message = (*fastReflection_EpochState)(nil)
-
-type fastReflection_EpochState EpochState
-
-func (x *EpochState) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EpochState)(x)
-}
-
-func (x *EpochState) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_genesis_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EpochState_messageType fastReflection_EpochState_messageType
-var _ protoreflect.MessageType = fastReflection_EpochState_messageType{}
-
-type fastReflection_EpochState_messageType struct{}
-
-func (x fastReflection_EpochState_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EpochState)(nil)
-}
-func (x fastReflection_EpochState_messageType) New() protoreflect.Message {
-	return new(fastReflection_EpochState)
-}
-func (x fastReflection_EpochState_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochState
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EpochState) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochState
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EpochState) Type() protoreflect.MessageType {
-	return _fastReflection_EpochState_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EpochState) New() protoreflect.Message {
-	return new(fastReflection_EpochState)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EpochState) Interface() protoreflect.ProtoMessage {
-	return (*EpochState)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EpochState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Epoch != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.Epoch)
-		if !f(fd_EpochState_epoch, value) {
-			return
-		}
-	}
-	if x.TaxReward != "" {
-		value := protoreflect.ValueOfString(x.TaxReward)
-		if !f(fd_EpochState_tax_reward, value) {
-			return
-		}
-	}
-	if x.SeigniorageReward != "" {
-		value := protoreflect.ValueOfString(x.SeigniorageReward)
-		if !f(fd_EpochState_seigniorage_reward, value) {
-			return
-		}
-	}
-	if x.TotalStakedNoah != "" {
-		value := protoreflect.ValueOfString(x.TotalStakedNoah)
-		if !f(fd_EpochState_total_staked_noah, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EpochState) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochState.epoch":
-		return x.Epoch != uint64(0)
-	case "ark.treasury.v1.EpochState.tax_reward":
-		return x.TaxReward != ""
-	case "ark.treasury.v1.EpochState.seigniorage_reward":
-		return x.SeigniorageReward != ""
-	case "ark.treasury.v1.EpochState.total_staked_noah":
-		return x.TotalStakedNoah != ""
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochState"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochState does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochState) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochState.epoch":
-		x.Epoch = uint64(0)
-	case "ark.treasury.v1.EpochState.tax_reward":
-		x.TaxReward = ""
-	case "ark.treasury.v1.EpochState.seigniorage_reward":
-		x.SeigniorageReward = ""
-	case "ark.treasury.v1.EpochState.total_staked_noah":
-		x.TotalStakedNoah = ""
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochState"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochState does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EpochState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.treasury.v1.EpochState.epoch":
-		value := x.Epoch
-		return protoreflect.ValueOfUint64(value)
-	case "ark.treasury.v1.EpochState.tax_reward":
-		value := x.TaxReward
-		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.EpochState.seigniorage_reward":
-		value := x.SeigniorageReward
-		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.EpochState.total_staked_noah":
-		value := x.TotalStakedNoah
-		return protoreflect.ValueOfString(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochState"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochState does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochState.epoch":
-		x.Epoch = value.Uint()
-	case "ark.treasury.v1.EpochState.tax_reward":
-		x.TaxReward = value.Interface().(string)
-	case "ark.treasury.v1.EpochState.seigniorage_reward":
-		x.SeigniorageReward = value.Interface().(string)
-	case "ark.treasury.v1.EpochState.total_staked_noah":
-		x.TotalStakedNoah = value.Interface().(string)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochState"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochState does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochState.epoch":
-		panic(fmt.Errorf("field epoch of message ark.treasury.v1.EpochState is not mutable"))
-	case "ark.treasury.v1.EpochState.tax_reward":
-		panic(fmt.Errorf("field tax_reward of message ark.treasury.v1.EpochState is not mutable"))
-	case "ark.treasury.v1.EpochState.seigniorage_reward":
-		panic(fmt.Errorf("field seigniorage_reward of message ark.treasury.v1.EpochState is not mutable"))
-	case "ark.treasury.v1.EpochState.total_staked_noah":
-		panic(fmt.Errorf("field total_staked_noah of message ark.treasury.v1.EpochState is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochState"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochState does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EpochState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochState.epoch":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.treasury.v1.EpochState.tax_reward":
-		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.EpochState.seigniorage_reward":
-		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.EpochState.total_staked_noah":
-		return protoreflect.ValueOfString("")
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochState"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochState does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EpochState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.EpochState", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EpochState) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochState) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EpochState) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EpochState) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EpochState)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.Epoch != 0 {
-			n += 1 + runtime.Sov(uint64(x.Epoch))
-		}
-		l = len(x.TaxReward)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.SeigniorageReward)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.TotalStakedNoah)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EpochState)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.TotalStakedNoah) > 0 {
-			i -= len(x.TotalStakedNoah)
-			copy(dAtA[i:], x.TotalStakedNoah)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TotalStakedNoah)))
-			i--
-			dAtA[i] = 0x22
-		}
-		if len(x.SeigniorageReward) > 0 {
-			i -= len(x.SeigniorageReward)
-			copy(dAtA[i:], x.SeigniorageReward)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SeigniorageReward)))
-			i--
-			dAtA[i] = 0x1a
-		}
-		if len(x.TaxReward) > 0 {
-			i -= len(x.TaxReward)
-			copy(dAtA[i:], x.TaxReward)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TaxReward)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if x.Epoch != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Epoch))
-			i--
-			dAtA[i] = 0x8
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EpochState)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochState: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochState: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
-				}
-				x.Epoch = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Epoch |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxReward", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.TaxReward = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SeigniorageReward", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimsMandate", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1642,27 +936,31 @@ func (x *fastReflection_EpochState) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.SeigniorageReward = string(dAtA[iNdEx:postIndex])
+				if x.ClaimsMandate == nil {
+					x.ClaimsMandate = &ClaimsMandate{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimsMandate); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TotalStakedNoah", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimsAllowanceUsed", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1690,471 +988,62 @@ func (x *fastReflection_EpochState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TotalStakedNoah = string(dAtA[iNdEx:postIndex])
+				x.ClaimsAllowanceUsed = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field InsuranceReserved", wireType)
 				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				if (iNdEx + skippy) > l {
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				x.InsuranceReserved = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NextClaimId", wireType)
 				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var _ protoreflect.List = (*_EpochTaxProceeds_1_list)(nil)
-
-type _EpochTaxProceeds_1_list struct {
-	list *[]*v1beta1.Coin
-}
-
-func (x *_EpochTaxProceeds_1_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EpochTaxProceeds_1_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_EpochTaxProceeds_1_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EpochTaxProceeds_1_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EpochTaxProceeds_1_list) AppendMutable() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EpochTaxProceeds_1_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EpochTaxProceeds_1_list) NewElement() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EpochTaxProceeds_1_list) IsValid() bool {
-	return x.list != nil
-}
-
-var (
-	md_EpochTaxProceeds              protoreflect.MessageDescriptor
-	fd_EpochTaxProceeds_tax_proceeds protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_treasury_v1_genesis_proto_init()
-	md_EpochTaxProceeds = File_ark_treasury_v1_genesis_proto.Messages().ByName("EpochTaxProceeds")
-	fd_EpochTaxProceeds_tax_proceeds = md_EpochTaxProceeds.Fields().ByName("tax_proceeds")
-}
-
-var _ protoreflect.Message = (*fastReflection_EpochTaxProceeds)(nil)
-
-type fastReflection_EpochTaxProceeds EpochTaxProceeds
-
-func (x *EpochTaxProceeds) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EpochTaxProceeds)(x)
-}
-
-func (x *EpochTaxProceeds) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_genesis_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EpochTaxProceeds_messageType fastReflection_EpochTaxProceeds_messageType
-var _ protoreflect.MessageType = fastReflection_EpochTaxProceeds_messageType{}
-
-type fastReflection_EpochTaxProceeds_messageType struct{}
-
-func (x fastReflection_EpochTaxProceeds_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EpochTaxProceeds)(nil)
-}
-func (x fastReflection_EpochTaxProceeds_messageType) New() protoreflect.Message {
-	return new(fastReflection_EpochTaxProceeds)
-}
-func (x fastReflection_EpochTaxProceeds_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochTaxProceeds
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EpochTaxProceeds) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochTaxProceeds
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EpochTaxProceeds) Type() protoreflect.MessageType {
-	return _fastReflection_EpochTaxProceeds_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EpochTaxProceeds) New() protoreflect.Message {
-	return new(fastReflection_EpochTaxProceeds)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EpochTaxProceeds) Interface() protoreflect.ProtoMessage {
-	return (*EpochTaxProceeds)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EpochTaxProceeds) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.TaxProceeds) != 0 {
-		value := protoreflect.ValueOfList(&_EpochTaxProceeds_1_list{list: &x.TaxProceeds})
-		if !f(fd_EpochTaxProceeds_tax_proceeds, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EpochTaxProceeds) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochTaxProceeds.tax_proceeds":
-		return len(x.TaxProceeds) != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochTaxProceeds"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochTaxProceeds does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochTaxProceeds) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochTaxProceeds.tax_proceeds":
-		x.TaxProceeds = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochTaxProceeds"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochTaxProceeds does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EpochTaxProceeds) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.treasury.v1.EpochTaxProceeds.tax_proceeds":
-		if len(x.TaxProceeds) == 0 {
-			return protoreflect.ValueOfList(&_EpochTaxProceeds_1_list{})
-		}
-		listValue := &_EpochTaxProceeds_1_list{list: &x.TaxProceeds}
-		return protoreflect.ValueOfList(listValue)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochTaxProceeds"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochTaxProceeds does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochTaxProceeds) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochTaxProceeds.tax_proceeds":
-		lv := value.List()
-		clv := lv.(*_EpochTaxProceeds_1_list)
-		x.TaxProceeds = *clv.list
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochTaxProceeds"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochTaxProceeds does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochTaxProceeds) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochTaxProceeds.tax_proceeds":
-		if x.TaxProceeds == nil {
-			x.TaxProceeds = []*v1beta1.Coin{}
-		}
-		value := &_EpochTaxProceeds_1_list{list: &x.TaxProceeds}
-		return protoreflect.ValueOfList(value)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochTaxProceeds"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochTaxProceeds does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EpochTaxProceeds) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochTaxProceeds.tax_proceeds":
-		list := []*v1beta1.Coin{}
-		return protoreflect.ValueOfList(&_EpochTaxProceeds_1_list{list: &list})
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochTaxProceeds"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochTaxProceeds does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EpochTaxProceeds) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.EpochTaxProceeds", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EpochTaxProceeds) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochTaxProceeds) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EpochTaxProceeds) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EpochTaxProceeds) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EpochTaxProceeds)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if len(x.TaxProceeds) > 0 {
-			for _, e := range x.TaxProceeds {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EpochTaxProceeds)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.TaxProceeds) > 0 {
-			for iNdEx := len(x.TaxProceeds) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.TaxProceeds[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
+				x.NextClaimId = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.NextClaimId |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0xa
-			}
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EpochTaxProceeds)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochTaxProceeds: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochTaxProceeds: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
+			case 7:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxProceeds", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Claims", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -2181,474 +1070,14 @@ func (x *fastReflection_EpochTaxProceeds) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TaxProceeds = append(x.TaxProceeds, &v1beta1.Coin{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TaxProceeds[len(x.TaxProceeds)-1]); err != nil {
+				x.Claims = append(x.Claims, &Claim{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Claims[len(x.Claims)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var _ protoreflect.List = (*_EpochInitialIssuance_1_list)(nil)
-
-type _EpochInitialIssuance_1_list struct {
-	list *[]*v1beta1.Coin
-}
-
-func (x *_EpochInitialIssuance_1_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EpochInitialIssuance_1_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_EpochInitialIssuance_1_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EpochInitialIssuance_1_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EpochInitialIssuance_1_list) AppendMutable() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EpochInitialIssuance_1_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EpochInitialIssuance_1_list) NewElement() protoreflect.Value {
-	v := new(v1beta1.Coin)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EpochInitialIssuance_1_list) IsValid() bool {
-	return x.list != nil
-}
-
-var (
-	md_EpochInitialIssuance          protoreflect.MessageDescriptor
-	fd_EpochInitialIssuance_issuance protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_treasury_v1_genesis_proto_init()
-	md_EpochInitialIssuance = File_ark_treasury_v1_genesis_proto.Messages().ByName("EpochInitialIssuance")
-	fd_EpochInitialIssuance_issuance = md_EpochInitialIssuance.Fields().ByName("issuance")
-}
-
-var _ protoreflect.Message = (*fastReflection_EpochInitialIssuance)(nil)
-
-type fastReflection_EpochInitialIssuance EpochInitialIssuance
-
-func (x *EpochInitialIssuance) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EpochInitialIssuance)(x)
-}
-
-func (x *EpochInitialIssuance) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_genesis_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EpochInitialIssuance_messageType fastReflection_EpochInitialIssuance_messageType
-var _ protoreflect.MessageType = fastReflection_EpochInitialIssuance_messageType{}
-
-type fastReflection_EpochInitialIssuance_messageType struct{}
-
-func (x fastReflection_EpochInitialIssuance_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EpochInitialIssuance)(nil)
-}
-func (x fastReflection_EpochInitialIssuance_messageType) New() protoreflect.Message {
-	return new(fastReflection_EpochInitialIssuance)
-}
-func (x fastReflection_EpochInitialIssuance_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochInitialIssuance
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EpochInitialIssuance) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochInitialIssuance
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EpochInitialIssuance) Type() protoreflect.MessageType {
-	return _fastReflection_EpochInitialIssuance_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EpochInitialIssuance) New() protoreflect.Message {
-	return new(fastReflection_EpochInitialIssuance)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EpochInitialIssuance) Interface() protoreflect.ProtoMessage {
-	return (*EpochInitialIssuance)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EpochInitialIssuance) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Issuance) != 0 {
-		value := protoreflect.ValueOfList(&_EpochInitialIssuance_1_list{list: &x.Issuance})
-		if !f(fd_EpochInitialIssuance_issuance, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EpochInitialIssuance) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochInitialIssuance.issuance":
-		return len(x.Issuance) != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochInitialIssuance"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochInitialIssuance does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochInitialIssuance) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochInitialIssuance.issuance":
-		x.Issuance = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochInitialIssuance"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochInitialIssuance does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EpochInitialIssuance) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.treasury.v1.EpochInitialIssuance.issuance":
-		if len(x.Issuance) == 0 {
-			return protoreflect.ValueOfList(&_EpochInitialIssuance_1_list{})
-		}
-		listValue := &_EpochInitialIssuance_1_list{list: &x.Issuance}
-		return protoreflect.ValueOfList(listValue)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochInitialIssuance"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochInitialIssuance does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochInitialIssuance) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochInitialIssuance.issuance":
-		lv := value.List()
-		clv := lv.(*_EpochInitialIssuance_1_list)
-		x.Issuance = *clv.list
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochInitialIssuance"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochInitialIssuance does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochInitialIssuance) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochInitialIssuance.issuance":
-		if x.Issuance == nil {
-			x.Issuance = []*v1beta1.Coin{}
-		}
-		value := &_EpochInitialIssuance_1_list{list: &x.Issuance}
-		return protoreflect.ValueOfList(value)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochInitialIssuance"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochInitialIssuance does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EpochInitialIssuance) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.treasury.v1.EpochInitialIssuance.issuance":
-		list := []*v1beta1.Coin{}
-		return protoreflect.ValueOfList(&_EpochInitialIssuance_1_list{list: &list})
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EpochInitialIssuance"))
-		}
-		panic(fmt.Errorf("message ark.treasury.v1.EpochInitialIssuance does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EpochInitialIssuance) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.EpochInitialIssuance", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EpochInitialIssuance) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochInitialIssuance) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EpochInitialIssuance) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EpochInitialIssuance) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EpochInitialIssuance)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if len(x.Issuance) > 0 {
-			for _, e := range x.Issuance {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EpochInitialIssuance)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.Issuance) > 0 {
-			for iNdEx := len(x.Issuance) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Issuance[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0xa
-			}
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EpochInitialIssuance)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochInitialIssuance: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochInitialIssuance: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
+			case 8:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Issuance", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardFunding", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -2675,8 +1104,82 @@ func (x *fastReflection_EpochInitialIssuance) ProtoMethods() *protoiface.Methods
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Issuance = append(x.Issuance, &v1beta1.Coin{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Issuance[len(x.Issuance)-1]); err != nil {
+				if x.RewardFunding == nil {
+					x.RewardFunding = &RewardFundingState{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.RewardFunding); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 9:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonetaryMandate", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.MonetaryMandate == nil {
+					x.MonetaryMandate = &MonetaryMandate{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MonetaryMandate); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 10:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonetaryPolicy", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.MonetaryPolicy == nil {
+					x.MonetaryPolicy = &MonetaryPolicy{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MonetaryPolicy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -2734,13 +1237,17 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params               *Params         `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	TaxRate              string          `protobuf:"bytes,2,opt,name=tax_rate,json=taxRate,proto3" json:"tax_rate,omitempty"`
-	RewardWeight         string          `protobuf:"bytes,3,opt,name=reward_weight,json=rewardWeight,proto3" json:"reward_weight,omitempty"`
-	TaxCaps              []*TaxCap       `protobuf:"bytes,4,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
-	EpochTaxProceeds     []*v1beta1.Coin `protobuf:"bytes,5,rep,name=epoch_tax_proceeds,json=epochTaxProceeds,proto3" json:"epoch_tax_proceeds,omitempty"`
-	EpochInitialIssuance []*v1beta1.Coin `protobuf:"bytes,6,rep,name=epoch_initial_issuance,json=epochInitialIssuance,proto3" json:"epoch_initial_issuance,omitempty"`
-	EpochStates          []*EpochState   `protobuf:"bytes,7,rep,name=epoch_states,json=epochStates,proto3" json:"epoch_states,omitempty"`
+	Params              *Params        `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	TaxCaps             []*TaxCap      `protobuf:"bytes,2,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
+	ClaimsMandate       *ClaimsMandate `protobuf:"bytes,3,opt,name=claims_mandate,json=claimsMandate,proto3" json:"claims_mandate,omitempty"`
+	ClaimsAllowanceUsed string         `protobuf:"bytes,4,opt,name=claims_allowance_used,json=claimsAllowanceUsed,proto3" json:"claims_allowance_used,omitempty"`
+	InsuranceReserved   string         `protobuf:"bytes,5,opt,name=insurance_reserved,json=insuranceReserved,proto3" json:"insurance_reserved,omitempty"`
+	// next_claim_id is the next globally available Treasury claim identifier.
+	NextClaimId     uint64              `protobuf:"varint,6,opt,name=next_claim_id,json=nextClaimId,proto3" json:"next_claim_id,omitempty"`
+	Claims          []*Claim            `protobuf:"bytes,7,rep,name=claims,proto3" json:"claims,omitempty"`
+	RewardFunding   *RewardFundingState `protobuf:"bytes,8,opt,name=reward_funding,json=rewardFunding,proto3" json:"reward_funding,omitempty"`
+	MonetaryMandate *MonetaryMandate    `protobuf:"bytes,9,opt,name=monetary_mandate,json=monetaryMandate,proto3" json:"monetary_mandate,omitempty"`
+	MonetaryPolicy  *MonetaryPolicy     `protobuf:"bytes,10,opt,name=monetary_policy,json=monetaryPolicy,proto3" json:"monetary_policy,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -2770,20 +1277,6 @@ func (x *GenesisState) GetParams() *Params {
 	return nil
 }
 
-func (x *GenesisState) GetTaxRate() string {
-	if x != nil {
-		return x.TaxRate
-	}
-	return ""
-}
-
-func (x *GenesisState) GetRewardWeight() string {
-	if x != nil {
-		return x.RewardWeight
-	}
-	return ""
-}
-
 func (x *GenesisState) GetTaxCaps() []*TaxCap {
 	if x != nil {
 		return x.TaxCaps
@@ -2791,157 +1284,58 @@ func (x *GenesisState) GetTaxCaps() []*TaxCap {
 	return nil
 }
 
-func (x *GenesisState) GetEpochTaxProceeds() []*v1beta1.Coin {
+func (x *GenesisState) GetClaimsMandate() *ClaimsMandate {
 	if x != nil {
-		return x.EpochTaxProceeds
+		return x.ClaimsMandate
 	}
 	return nil
 }
 
-func (x *GenesisState) GetEpochInitialIssuance() []*v1beta1.Coin {
+func (x *GenesisState) GetClaimsAllowanceUsed() string {
 	if x != nil {
-		return x.EpochInitialIssuance
+		return x.ClaimsAllowanceUsed
 	}
-	return nil
+	return ""
 }
 
-func (x *GenesisState) GetEpochStates() []*EpochState {
+func (x *GenesisState) GetInsuranceReserved() string {
 	if x != nil {
-		return x.EpochStates
+		return x.InsuranceReserved
 	}
-	return nil
+	return ""
 }
 
-// EpochState is the record for each epoch state
-type EpochState struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Epoch             uint64 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	TaxReward         string `protobuf:"bytes,2,opt,name=tax_reward,json=taxReward,proto3" json:"tax_reward,omitempty"`
-	SeigniorageReward string `protobuf:"bytes,3,opt,name=seigniorage_reward,json=seigniorageReward,proto3" json:"seigniorage_reward,omitempty"`
-	TotalStakedNoah   string `protobuf:"bytes,4,opt,name=total_staked_noah,json=totalStakedNoah,proto3" json:"total_staked_noah,omitempty"`
-}
-
-func (x *EpochState) Reset() {
-	*x = EpochState{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_genesis_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EpochState) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EpochState) ProtoMessage() {}
-
-// Deprecated: Use EpochState.ProtoReflect.Descriptor instead.
-func (*EpochState) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_genesis_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *EpochState) GetEpoch() uint64 {
+func (x *GenesisState) GetNextClaimId() uint64 {
 	if x != nil {
-		return x.Epoch
+		return x.NextClaimId
 	}
 	return 0
 }
 
-func (x *EpochState) GetTaxReward() string {
+func (x *GenesisState) GetClaims() []*Claim {
 	if x != nil {
-		return x.TaxReward
-	}
-	return ""
-}
-
-func (x *EpochState) GetSeigniorageReward() string {
-	if x != nil {
-		return x.SeigniorageReward
-	}
-	return ""
-}
-
-func (x *EpochState) GetTotalStakedNoah() string {
-	if x != nil {
-		return x.TotalStakedNoah
-	}
-	return ""
-}
-
-// EpochTaxProceeds represents the tax amount
-// collected at the current epoch
-type EpochTaxProceeds struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TaxProceeds []*v1beta1.Coin `protobuf:"bytes,1,rep,name=tax_proceeds,json=taxProceeds,proto3" json:"tax_proceeds,omitempty"`
-}
-
-func (x *EpochTaxProceeds) Reset() {
-	*x = EpochTaxProceeds{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_genesis_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EpochTaxProceeds) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EpochTaxProceeds) ProtoMessage() {}
-
-// Deprecated: Use EpochTaxProceeds.ProtoReflect.Descriptor instead.
-func (*EpochTaxProceeds) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_genesis_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *EpochTaxProceeds) GetTaxProceeds() []*v1beta1.Coin {
-	if x != nil {
-		return x.TaxProceeds
+		return x.Claims
 	}
 	return nil
 }
 
-// EpochInitialIssuance represents initial issuance
-// of the currrent epoch
-type EpochInitialIssuance struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Issuance []*v1beta1.Coin `protobuf:"bytes,1,rep,name=issuance,proto3" json:"issuance,omitempty"`
-}
-
-func (x *EpochInitialIssuance) Reset() {
-	*x = EpochInitialIssuance{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_genesis_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EpochInitialIssuance) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EpochInitialIssuance) ProtoMessage() {}
-
-// Deprecated: Use EpochInitialIssuance.ProtoReflect.Descriptor instead.
-func (*EpochInitialIssuance) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_genesis_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *EpochInitialIssuance) GetIssuance() []*v1beta1.Coin {
+func (x *GenesisState) GetRewardFunding() *RewardFundingState {
 	if x != nil {
-		return x.Issuance
+		return x.RewardFunding
+	}
+	return nil
+}
+
+func (x *GenesisState) GetMonetaryMandate() *MonetaryMandate {
+	if x != nil {
+		return x.MonetaryMandate
+	}
+	return nil
+}
+
+func (x *GenesisState) GetMonetaryPolicy() *MonetaryPolicy {
+	if x != nil {
+		return x.MonetaryPolicy
 	}
 	return nil
 }
@@ -2953,109 +1347,72 @@ var file_ark_treasury_v1_genesis_proto_rawDesc = []byte{
 	0x31, 0x2f, 0x67, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
 	0x0f, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
 	0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65,
-	0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14,
 	0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb0, 0x05, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8c, 0x06, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
 	0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3a, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
 	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09,
 	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x12, 0x51, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c,
-	0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61, 0x78,
-	0x52, 0x61, 0x74, 0x65, 0x12, 0x5b, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f,
-	0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
-	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63,
-	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x12, 0x3d, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x18, 0x04, 0x20,
+	0x73, 0x12, 0x3d, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x18, 0x02, 0x20,
 	0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
 	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x42, 0x09, 0xc8, 0xde,
 	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73,
-	0x12, 0x8f, 0x01, 0x0a, 0x12, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x74, 0x61, 0x78, 0x5f, 0x70,
-	0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65,
-	0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x46, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf,
-	0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74,
-	0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c,
-	0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x10, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65,
-	0x64, 0x73, 0x12, 0x97, 0x01, 0x0a, 0x16, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x69, 0x6e, 0x69,
-	0x74, 0x69, 0x61, 0x6c, 0x5f, 0x69, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x06, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x46,
-	0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
-	0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73,
-	0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e,
-	0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x49, 0x6e, 0x69,
-	0x74, 0x69, 0x61, 0x6c, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x49, 0x0a, 0x0c,
-	0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x73, 0x18, 0x07, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
-	0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42,
-	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x65, 0x70, 0x6f, 0x63,
-	0x68, 0x53, 0x74, 0x61, 0x74, 0x65, 0x73, 0x22, 0xbe, 0x02, 0x0a, 0x0a, 0x45, 0x70, 0x6f, 0x63,
-	0x68, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x55, 0x0a, 0x0a,
-	0x74, 0x61, 0x78, 0x5f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61,
-	0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x74, 0x61, 0x78, 0x52, 0x65, 0x77,
-	0x61, 0x72, 0x64, 0x12, 0x65, 0x0a, 0x12, 0x73, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f, 0x72, 0x61,
-	0x67, 0x65, 0x5f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
-	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
-	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
-	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x73, 0x65, 0x69, 0x67, 0x6e, 0x69, 0x6f,
-	0x72, 0x61, 0x67, 0x65, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x12, 0x5c, 0x0a, 0x11, 0x74, 0x6f,
-	0x74, 0x61, 0x6c, 0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x5f, 0x6e, 0x6f, 0x61, 0x68, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
-	0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49,
-	0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x53, 0x74,
-	0x61, 0x6b, 0x65, 0x64, 0x4e, 0x6f, 0x61, 0x68, 0x22, 0xab, 0x01, 0x0a, 0x10, 0x45, 0x70, 0x6f,
-	0x63, 0x68, 0x54, 0x61, 0x78, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x12, 0x96, 0x01,
-	0x0a, 0x0c, 0x74, 0x61, 0x78, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42,
-	0x58, 0xc8, 0xde, 0x1f, 0x00, 0xf2, 0xde, 0x1f, 0x13, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x74,
-	0x61, 0x78, 0x5f, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x22, 0xaa, 0xdf, 0x1f, 0x28,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70,
-	0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67,
-	0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x73, 0x52, 0x0b, 0x74, 0x61, 0x78, 0x50, 0x72,
-	0x6f, 0x63, 0x65, 0x65, 0x64, 0x73, 0x22, 0xa4, 0x01, 0x0a, 0x14, 0x45, 0x70, 0x6f, 0x63, 0x68,
-	0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x12,
-	0x8b, 0x01, 0x0a, 0x08, 0x69, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x54, 0xc8,
-	0xde, 0x1f, 0x00, 0xf2, 0xde, 0x1f, 0x0f, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x69, 0x73, 0x73,
-	0x75, 0x61, 0x6e, 0x63, 0x65, 0x22, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69,
-	0x6e, 0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f,
-	0x69, 0x6e, 0x73, 0x52, 0x08, 0x69, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x42, 0xa5, 0x01,
-	0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61,
-	0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa,
-	0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56,
-	0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
-	0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x50, 0x0a, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61,
+	0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d,
+	0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61,
+	0x74, 0x65, 0x12, 0x64, 0x0a, 0x15, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x5f, 0x61, 0x6c, 0x6c,
+	0x6f, 0x77, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x75, 0x73, 0x65, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74,
+	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x13, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77,
+	0x61, 0x6e, 0x63, 0x65, 0x55, 0x73, 0x65, 0x64, 0x12, 0x5f, 0x0a, 0x12, 0x69, 0x6e, 0x73, 0x75,
+	0x72, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e,
+	0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e,
+	0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63,
+	0x65, 0x52, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x12, 0x29, 0x0a, 0x0d, 0x6e, 0x65, 0x78,
+	0x74, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x69, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04,
+	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x6e, 0x65, 0x78, 0x74, 0x43, 0x6c, 0x61,
+	0x69, 0x6d, 0x49, 0x64, 0x12, 0x39, 0x0a, 0x06, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x18, 0x07,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x12,
+	0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x66, 0x75, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64,
+	0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46,
+	0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
+	0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
+	0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61,
+	0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x6d,
+	0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x53,
+	0x0a, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63,
+	0x79, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
+	0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x42, 0xa5, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e,
+	0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x61, 0x72, 0x6b,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2,
+	0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c,
+	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3070,24 +1427,25 @@ func file_ark_treasury_v1_genesis_proto_rawDescGZIP() []byte {
 	return file_ark_treasury_v1_genesis_proto_rawDescData
 }
 
-var file_ark_treasury_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_ark_treasury_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_ark_treasury_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),         // 0: ark.treasury.v1.GenesisState
-	(*EpochState)(nil),           // 1: ark.treasury.v1.EpochState
-	(*EpochTaxProceeds)(nil),     // 2: ark.treasury.v1.EpochTaxProceeds
-	(*EpochInitialIssuance)(nil), // 3: ark.treasury.v1.EpochInitialIssuance
-	(*Params)(nil),               // 4: ark.treasury.v1.Params
-	(*TaxCap)(nil),               // 5: ark.treasury.v1.TaxCap
-	(*v1beta1.Coin)(nil),         // 6: cosmos.base.v1beta1.Coin
+	(*GenesisState)(nil),       // 0: ark.treasury.v1.GenesisState
+	(*Params)(nil),             // 1: ark.treasury.v1.Params
+	(*TaxCap)(nil),             // 2: ark.treasury.v1.TaxCap
+	(*ClaimsMandate)(nil),      // 3: ark.treasury.v1.ClaimsMandate
+	(*Claim)(nil),              // 4: ark.treasury.v1.Claim
+	(*RewardFundingState)(nil), // 5: ark.treasury.v1.RewardFundingState
+	(*MonetaryMandate)(nil),    // 6: ark.treasury.v1.MonetaryMandate
+	(*MonetaryPolicy)(nil),     // 7: ark.treasury.v1.MonetaryPolicy
 }
 var file_ark_treasury_v1_genesis_proto_depIdxs = []int32{
-	4, // 0: ark.treasury.v1.GenesisState.params:type_name -> ark.treasury.v1.Params
-	5, // 1: ark.treasury.v1.GenesisState.tax_caps:type_name -> ark.treasury.v1.TaxCap
-	6, // 2: ark.treasury.v1.GenesisState.epoch_tax_proceeds:type_name -> cosmos.base.v1beta1.Coin
-	6, // 3: ark.treasury.v1.GenesisState.epoch_initial_issuance:type_name -> cosmos.base.v1beta1.Coin
-	1, // 4: ark.treasury.v1.GenesisState.epoch_states:type_name -> ark.treasury.v1.EpochState
-	6, // 5: ark.treasury.v1.EpochTaxProceeds.tax_proceeds:type_name -> cosmos.base.v1beta1.Coin
-	6, // 6: ark.treasury.v1.EpochInitialIssuance.issuance:type_name -> cosmos.base.v1beta1.Coin
+	1, // 0: ark.treasury.v1.GenesisState.params:type_name -> ark.treasury.v1.Params
+	2, // 1: ark.treasury.v1.GenesisState.tax_caps:type_name -> ark.treasury.v1.TaxCap
+	3, // 2: ark.treasury.v1.GenesisState.claims_mandate:type_name -> ark.treasury.v1.ClaimsMandate
+	4, // 3: ark.treasury.v1.GenesisState.claims:type_name -> ark.treasury.v1.Claim
+	5, // 4: ark.treasury.v1.GenesisState.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
+	6, // 5: ark.treasury.v1.GenesisState.monetary_mandate:type_name -> ark.treasury.v1.MonetaryMandate
+	7, // 6: ark.treasury.v1.GenesisState.monetary_policy:type_name -> ark.treasury.v1.MonetaryPolicy
 	7, // [7:7] is the sub-list for method output_type
 	7, // [7:7] is the sub-list for method input_type
 	7, // [7:7] is the sub-list for extension type_name
@@ -3114,42 +1472,6 @@ func file_ark_treasury_v1_genesis_proto_init() {
 				return nil
 			}
 		}
-		file_ark_treasury_v1_genesis_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochState); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_treasury_v1_genesis_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochTaxProceeds); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_treasury_v1_genesis_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochInitialIssuance); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -3157,7 +1479,7 @@ func file_ark_treasury_v1_genesis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_treasury_v1_genesis_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -2,10 +2,9 @@ syntax = "proto3";
 package ark.treasury.v1;
 
 import "amino/amino.proto";
-import "cosmos/base/v1beta1/coin.proto";
+import "ark/treasury/v1/treasury.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "ark/treasury/v1/treasury.proto";
 
 option go_package = "ark/x/treasury/types";
 
@@ -13,77 +12,30 @@ option go_package = "ark/x/treasury/types";
 message GenesisState {
   Params params = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string tax_rate = 2 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string reward_weight = 3 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  repeated TaxCap tax_caps = 4
+  repeated TaxCap tax_caps = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated cosmos.base.v1beta1.Coin epoch_tax_proceeds = 5 [
-    (gogoproto.nullable) = false,
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
-    (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
-  ];
-  repeated cosmos.base.v1beta1.Coin epoch_initial_issuance = 6 [
-    (gogoproto.nullable) = false,
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
-    (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
-  ];
-  repeated EpochState epoch_states = 7
+  ClaimsMandate claims_mandate = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// EpochState is the record for each epoch state
-message EpochState {
-  uint64 epoch = 1;
-  string tax_reward = 2 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string seigniorage_reward = 3 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string total_staked_noah = 4 [
+  string claims_allowance_used = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-}
-
-// EpochTaxProceeds represents the tax amount
-// collected at the current epoch
-message EpochTaxProceeds {
-  repeated cosmos.base.v1beta1.Coin tax_proceeds = 1 [
-    (gogoproto.moretags) = "yaml:\"tax_proceeds\"",
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+  string insurance_reserved = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
-    (amino.encoding) = "legacy_coins"
+    (amino.dont_omitempty) = true
   ];
-}
-
-// EpochInitialIssuance represents initial issuance
-// of the currrent epoch
-message EpochInitialIssuance {
-  repeated cosmos.base.v1beta1.Coin issuance = 1 [
-    (gogoproto.moretags) = "yaml:\"issuance\"",
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
-    (gogoproto.nullable) = false,
-    (amino.encoding) = "legacy_coins"
-  ];
+  // next_claim_id is the next globally available Treasury claim identifier.
+  uint64 next_claim_id = 6 [ (amino.dont_omitempty) = true ];
+  repeated Claim claims = 7
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  RewardFundingState reward_funding = 8
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  MonetaryMandate monetary_mandate = 9
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  MonetaryPolicy monetary_policy = 10
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

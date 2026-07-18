@@ -7,10 +7,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	modulev1 "ark/api/ark/treasury/module/v1"
-	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/types"
 )
@@ -30,22 +30,22 @@ func init() {
 type ModuleInputs struct {
 	depinject.In
 
-	Config       *modulev1.Module
-	Cdc          codec.Codec
-	StoreService store.KVStoreService
+	Config                *modulev1.Module
+	Cdc                   codec.Codec
+	StoreService          store.KVStoreService
+	TransientStoreService store.TransientStoreService
 
-	AccountKeeper      types.AccountKeeper
-	BankKeeper         types.BankKeeper
-	StakingKeeper      types.StakingKeeper
-	DistributionKeeper types.ProtocolpoolKeeper
-	OracleKeeper       types.OracleKeeper
+	AccountKeeper types.AccountKeeper
+	BankKeeper    types.BankKeeper
+	OracleKeeper  types.OracleKeeper
 }
 
 type ModuleOutputs struct {
 	depinject.Out
 
-	TreasuryKeeper *keeper.Keeper
-	Module         appmodule.AppModule
+	TreasuryKeeper  *keeper.Keeper
+	Module          appmodule.AppModule
+	SendRestriction banktypes.SendRestrictionFn
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
@@ -54,24 +54,21 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
 
-	rewardCollectorName := in.Config.RewardCollectorName
-	if rewardCollectorName == "" {
-		rewardCollectorName = oracletypes.ModuleName
-	}
-
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
+		in.TransientStoreService,
 		authority.String(),
-		rewardCollectorName,
 		in.AccountKeeper,
 		in.BankKeeper,
-		in.DistributionKeeper,
 		in.OracleKeeper,
-		in.StakingKeeper,
 	)
 
 	m := NewAppModule(k)
 
-	return ModuleOutputs{TreasuryKeeper: k, Module: m}
+	return ModuleOutputs{
+		TreasuryKeeper:  k,
+		Module:          m,
+		SendRestriction: TreasurySendRestriction,
+	}
 }

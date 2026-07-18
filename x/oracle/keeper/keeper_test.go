@@ -197,7 +197,6 @@ func (s *KeeperTestSuite) TestGetRateSnapshot() {
 		s.ctx,
 		chain.MicroUSDDenom,
 		chain.MicroSDRDenom,
-		chain.MicroNoahDenom,
 		chain.MicroUSDDenom,
 	)
 	s.Require().NoError(err)
@@ -205,6 +204,14 @@ func (s *KeeperTestSuite) TestGetRateSnapshot() {
 	s.Require().True(rates[chain.MicroUSDDenom].Equal(math.LegacyOneDec()))
 	s.Require().True(rates[chain.MicroSDRDenom].Equal(math.LegacyMustNewDecFromStr("1.7")))
 	s.Require().True(rates[chain.MicroNoahDenom].Equal(math.LegacyOneDec()))
+}
+
+func (s *KeeperTestSuite) TestGetRateSnapshotReturnsNoahIdentityByDefault() {
+	rates, err := s.keeper.GetRateSnapshot(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(types.RateSnapshot{
+		chain.MicroNoahDenom: math.LegacyOneDec(),
+	}, rates)
 }
 
 func (s *KeeperTestSuite) TestGetRateSnapshotRejectsElapsedTimeStaleness() {
