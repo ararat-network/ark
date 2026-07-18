@@ -269,6 +269,7 @@ func (app *ArkApp) setAnteHandler(txConfig client.TxConfig) {
 			SignModeHandler: txConfig.SignModeHandler(),
 			FeegrantKeeper:  app.FeeGrantKeeper,
 			SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
+			TxFeeChecker:    app.treasuryFeeChecker,
 		},
 	)
 	if err != nil {
@@ -276,7 +277,7 @@ func (app *ArkApp) setAnteHandler(txConfig client.TxConfig) {
 	}
 
 	// Set the AnteHandler for the app
-	app.SetAnteHandler(anteHandler)
+	app.SetAnteHandler(app.routeStabilityTax(anteHandler))
 }
 
 // LegacyAmino returns ArkApp's amino codec.

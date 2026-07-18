@@ -44,8 +44,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.Coin{Denom: chain.MicroNoahDenom, Amount: math.ZeroInt()})
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins())
 			},
 		},
 		{
@@ -55,25 +55,37 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, math.NewInt(30)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400)))
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(
+						sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400)),
+						sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(200)),
+					))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					validator1,
-					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(10))),
+					sdk.NewDecCoinsFromCoins(
+						sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(10)),
+						sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(5)),
+					),
 				).Return(nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
 					validator2,
-					sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(30))),
+					sdk.NewDecCoinsFromCoins(
+						sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(30)),
+						sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(15)),
+					),
 				).Return(nil)
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					s.ctx,
 					types.ModuleName,
 					"distribution",
-					sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(40))),
+					sdk.NewCoins(
+						sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(40)),
+						sdk.NewCoin(chain.MicroSDRDenom, math.NewInt(20)),
+					),
 				).Return(nil)
 			},
 		},
@@ -88,8 +100,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				)
 				expectedRewards := sdk.NewCoins(rewardCoin)
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(rewardCoin)
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(rewardCoin))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
 					s.ctx,
@@ -112,8 +124,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().
 					AllocateTokensToValidator(s.ctx, validator1, gomock.Any()).
@@ -130,8 +142,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, nil)
 			},
 		},
@@ -141,8 +153,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
 			},
 		},
@@ -153,8 +165,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, math.NewInt(30)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400)))
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(400))))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(nil, stakingtypes.ErrNoValidatorFound)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
@@ -176,8 +188,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 
 				s.bankKeeper.EXPECT().
-					GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-					Return(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)))
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.distrKeeper.EXPECT().
 					AllocateTokensToValidator(s.ctx, validator1, gomock.Any()).

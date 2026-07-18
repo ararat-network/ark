@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	chain "ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
@@ -42,26 +41,34 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		return nil
 	}
 
-	rewardBalance := k.bankKeeper.GetBalance(ctx, k.moduleAddress, chain.MicroNoahDenom)
+	rewardBalances := k.bankKeeper.GetAllBalances(ctx, k.moduleAddress)
 
 	// Skip distribution when the reward pool is empty.
-	if rewardBalance.IsZero() {
+	if rewardBalances.IsZero() {
 		k.Logger(ctx).Debug("no rewards for this period", "rewardWindow", rewardWindow)
 		return nil
 	}
 
 	// periodRewards = oraclePool * rewardWindow / rewardDistributionWindow.
-	periodRewards := math.LegacyNewDecFromInt(rewardBalance.Amount).
-		MulInt(math.NewIntFromUint64(rewardWindow)).
-		QuoInt(math.NewIntFromUint64(rewardDistributionWindow))
-	rewardPerWeight := periodRewards.QuoInt(votePowerSum)
+	periodRewards := make(sdk.DecCoins, 0, len(rewardBalances))
+	for _, balance := range rewardBalances {
+		amount := math.LegacyNewDecFromInt(balance.Amount).
+			MulInt(math.NewIntFromUint64(rewardWindow)).
+			QuoInt(math.NewIntFromUint64(rewardDistributionWindow))
+		periodRewards = append(periodRewards, sdk.NewDecCoinFromDec(balance.Denom, amount))
+	}
 
 	// Distribute rewards by score weight.
 	var distributedReward sdk.Coins
 	rewardEvents := sdk.Events{}
 	for _, score := range validatorScores {
-		rewardAmt := rewardPerWeight.MulInt(score.weight).TruncateInt()
-		rewardCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, rewardAmt))
+		rewardCoins := sdk.NewCoins()
+		for _, periodReward := range periodRewards {
+			rewardAmt := periodReward.Amount.QuoInt(votePowerSum).MulInt(score.weight).TruncateInt()
+			if rewardAmt.IsPositive() {
+				rewardCoins = rewardCoins.Add(sdk.NewCoin(periodReward.Denom, rewardAmt))
+			}
+		}
 		if rewardCoins.IsZero() {
 			continue
 		}

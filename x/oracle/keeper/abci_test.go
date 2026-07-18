@@ -61,8 +61,8 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		}
 
 		s.bankKeeper.EXPECT().
-			GetBalance(s.ctx, sdk.AccAddress{1}, chain.MicroNoahDenom).
-			Return(rewardCoin)
+			GetAllBalances(s.ctx, sdk.AccAddress{1}).
+			Return(sdk.NewCoins(rewardCoin))
 		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
 		s.distrKeeper.EXPECT().
 			AllocateTokensToValidator(s.ctx, validator, sdk.NewDecCoinsFromCoins(distributedCoins...)).
