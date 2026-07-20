@@ -28,7 +28,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 // SetupOptions defines arguments that are passed into `ArkApp` constructor.
@@ -179,40 +178,6 @@ func GenesisStateWithSingleValidator(t *testing.T, app *ArkApp) GenesisState {
 	require.NoError(t, err)
 
 	return genesisState
-}
-
-// AddTestAddrsIncremental constructs and returns accNum amount of accounts with an
-// initial balance of accAmt in random order
-func AddTestAddrsIncremental(app *ArkApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int) []sdk.AccAddress {
-	return addTestAddrs(app, ctx, accNum, accAmt, simtestutil.CreateIncrementalAccounts)
-}
-
-func addTestAddrs(app *ArkApp, ctx sdk.Context, accNum int, accAmt sdkmath.Int, strategy simtestutil.GenerateAccountStrategy) []sdk.AccAddress {
-	testAddrs := strategy(accNum)
-	bondDenom, err := app.StakingKeeper.BondDenom(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	initCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, accAmt))
-
-	for _, addr := range testAddrs {
-		initAccountWithCoins(app, ctx, addr, initCoins)
-	}
-
-	return testAddrs
-}
-
-func initAccountWithCoins(app *ArkApp, ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coins) {
-	err := app.BankKeeper.MintCoins(ctx, minttypes.ModuleName, coins)
-	if err != nil {
-		panic(err)
-	}
-
-	err = app.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, coins)
-	if err != nil {
-		panic(err)
-	}
 }
 
 // NewTestNetworkFixture returns a new ArkApp AppConstructor for network simulation tests

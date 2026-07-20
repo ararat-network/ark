@@ -23,7 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltest "github.com/cosmos/cosmos-sdk/x/genutil/client/testutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
@@ -33,7 +32,6 @@ func Test_TestnetCmd(t *testing.T) {
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
 		bank.AppModuleBasic{},
 		staking.AppModuleBasic{},
-		mint.AppModuleBasic{},
 		distribution.AppModuleBasic{},
 		consensus.AppModuleBasic{},
 	)
@@ -64,6 +62,7 @@ func Test_TestnetCmd(t *testing.T) {
 	genFile := cfg.GenesisFile()
 	appState, _, err := genutiltypes.GenesisStateFromGenFile(genFile)
 	require.NoError(t, err)
+	require.NotContains(t, appState, "mint")
 
 	bankGenState := banktypes.GetGenesisStateFromAppState(encodingConfig.Codec, appState)
 	require.NotEmpty(t, bankGenState.Supply.String())

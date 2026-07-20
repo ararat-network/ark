@@ -45,8 +45,6 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/mint"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/protocolpool"
 	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
@@ -85,6 +83,14 @@ func TestAppConstructs(t *testing.T) {
 	require.NotNil(t, arkApp.MarketKeeper)
 	require.NotNil(t, arkApp.TreasuryKeeper)
 	require.NotNil(t, arkApp.OracleKeeper)
+	require.NotContains(t, arkApp.ModuleManager.Modules, "mint")
+	require.NotContains(t, arkApp.DefaultGenesis(), "mint")
+	requireOrderBefore(
+		t,
+		arkApp.ModuleManager.OrderInitGenesis,
+		oracletypes.ModuleName,
+		markettypes.ModuleName,
+	)
 }
 
 func TestAppInitChainWithDefaultGenesis(t *testing.T) {
@@ -270,7 +276,6 @@ func TestRunMigrations(t *testing.T) {
 					authtypes.ModuleName:         auth.AppModule{}.ConsensusVersion(),
 					authz.ModuleName:             authzmodule.AppModule{}.ConsensusVersion(),
 					stakingtypes.ModuleName:      staking.AppModule{}.ConsensusVersion(),
-					minttypes.ModuleName:         mint.AppModule{}.ConsensusVersion(),
 					distrtypes.ModuleName:        distribution.AppModule{}.ConsensusVersion(),
 					slashingtypes.ModuleName:     slashing.AppModule{}.ConsensusVersion(),
 					govtypes.ModuleName:          gov.AppModule{}.ConsensusVersion(),
@@ -301,6 +306,7 @@ func TestInitGenesisOnMigration(t *testing.T) {
 	db := dbm.NewMemDB()
 	app := NewArkApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
+	versionMap := app.ModuleManager.GetVersionMap()
 
 	// Create a mock module. This module will serve as the new module we're
 	// adding during a migration.
@@ -316,23 +322,7 @@ func TestInitGenesisOnMigration(t *testing.T) {
 
 	// Run migrations only for "mock" module. We exclude it from
 	// the VersionMap to simulate upgrading with a new module.
-	_, err := app.ModuleManager.RunMigrations(ctx, app.Configurator(),
-		module.VersionMap{
-			"bank":         bank.AppModule{}.ConsensusVersion(),
-			"auth":         auth.AppModule{}.ConsensusVersion(),
-			"authz":        authzmodule.AppModule{}.ConsensusVersion(),
-			"staking":      staking.AppModule{}.ConsensusVersion(),
-			"mint":         mint.AppModule{}.ConsensusVersion(),
-			"distribution": distribution.AppModule{}.ConsensusVersion(),
-			"slashing":     slashing.AppModule{}.ConsensusVersion(),
-			"gov":          gov.AppModule{}.ConsensusVersion(),
-			"upgrade":      upgrade.AppModule{}.ConsensusVersion(),
-			"vesting":      vesting.AppModule{}.ConsensusVersion(),
-			"feegrant":     feegrantmodule.AppModule{}.ConsensusVersion(),
-			"evidence":     evidence.AppModule{}.ConsensusVersion(),
-			"genutil":      genutil.AppModule{}.ConsensusVersion(),
-		},
-	)
+	_, err := app.ModuleManager.RunMigrations(ctx, app.Configurator(), versionMap)
 	require.NoError(t, err)
 }
 

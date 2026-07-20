@@ -24,7 +24,6 @@ import (
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -53,6 +52,19 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 	collectorPermissions, hasCollector := permissions[treasurytypes.StabilityTaxCollectorName]
 	require.True(t, hasCollector, "missing Oracle tax collector account")
 	require.Empty(t, collectorPermissions, "Oracle tax collector must have no permissions")
+	var minters []string
+	for moduleName, perms := range permissions {
+		if slices.Contains(perms, authtypes.Minter) {
+			minters = append(minters, moduleName)
+		}
+	}
+	require.ElementsMatch(t, []string{markettypes.ModuleName}, minters, "Market must be the only module minter")
+	require.ElementsMatch(
+		t,
+		[]string{authtypes.Minter, authtypes.Burner},
+		permissions[markettypes.ModuleName],
+		"Market must retain conversion mint and burn permissions",
+	)
 
 	blocked := BlockedAddresses()
 	for _, moduleName := range append([]string{govtypes.ModuleName}, treasurytypes.FundAccountNames()...) {
@@ -61,7 +73,6 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 	for _, moduleName := range []string{
 		authtypes.FeeCollectorName,
 		distrtypes.ModuleName,
-		minttypes.ModuleName,
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
 		protocolpooltypes.ModuleName,

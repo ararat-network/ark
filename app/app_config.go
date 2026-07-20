@@ -12,7 +12,6 @@ import (
 	feegrantmodulev1 "cosmossdk.io/api/cosmos/feegrant/module/v1"
 	genutilmodulev1 "cosmossdk.io/api/cosmos/genutil/module/v1"
 	govmodulev1 "cosmossdk.io/api/cosmos/gov/module/v1"
-	mintmodulev1 "cosmossdk.io/api/cosmos/mint/module/v1"
 	protocolpoolmodulev1 "cosmossdk.io/api/cosmos/protocolpool/module/v1"
 	slashingmodulev1 "cosmossdk.io/api/cosmos/slashing/module/v1"
 	stakingmodulev1 "cosmossdk.io/api/cosmos/staking/module/v1"
@@ -45,8 +44,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	_ "github.com/cosmos/cosmos-sdk/x/mint" // import for side-effects
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	_ "github.com/cosmos/cosmos-sdk/x/protocolpool" // import for side-effects
 	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	_ "github.com/cosmos/cosmos-sdk/x/slashing" // import for side-effects
@@ -72,7 +69,6 @@ var (
 	moduleAccPerms = []*authmodulev1.ModuleAccountPermission{
 		{Account: authtypes.FeeCollectorName},
 		{Account: distrtypes.ModuleName},
-		{Account: minttypes.ModuleName, Permissions: []string{authtypes.Minter}},
 		{Account: stakingtypes.BondedPoolName, Permissions: []string{authtypes.Burner, stakingtypes.ModuleName}},
 		{Account: stakingtypes.NotBondedPoolName, Permissions: []string{authtypes.Burner, stakingtypes.ModuleName}},
 		{Account: govtypes.ModuleName, Permissions: []string{authtypes.Burner}},
@@ -91,7 +87,6 @@ var (
 	blockAccAddrs = []string{
 		authtypes.FeeCollectorName,
 		distrtypes.ModuleName,
-		minttypes.ModuleName,
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
 		protocolpooltypes.ModuleName,
@@ -122,7 +117,6 @@ var (
 				// CanWithdrawInvariant invariant.
 				// NOTE: staking module is required if HistoricalEntries param > 0
 				BeginBlockers: []string{
-					minttypes.ModuleName,
 					treasurytypes.ModuleName,
 					distrtypes.ModuleName,
 					protocolpooltypes.ModuleName,
@@ -159,7 +153,6 @@ var (
 					stakingtypes.ModuleName,
 					slashingtypes.ModuleName,
 					govtypes.ModuleName,
-					minttypes.ModuleName,
 					genutiltypes.ModuleName,
 					evidencetypes.ModuleName,
 					authz.ModuleName,
@@ -167,8 +160,8 @@ var (
 					upgradetypes.ModuleName,
 					vestingtypes.ModuleName,
 					protocolpooltypes.ModuleName,
-					markettypes.ModuleName,
 					oracletypes.ModuleName,
+					markettypes.ModuleName,
 					treasurytypes.ModuleName,
 				},
 				// When ExportGenesis is not specified, the export genesis module order
@@ -182,7 +175,6 @@ var (
 					stakingtypes.ModuleName,
 					slashingtypes.ModuleName,
 					govtypes.ModuleName,
-					minttypes.ModuleName,
 					genutiltypes.ModuleName,
 					evidencetypes.ModuleName,
 					authz.ModuleName,
@@ -253,10 +245,6 @@ var (
 		{
 			Name:   distrtypes.ModuleName,
 			Config: appconfig.WrapAny(&distrmodulev1.Module{}),
-		},
-		{
-			Name:   minttypes.ModuleName,
-			Config: appconfig.WrapAny(&mintmodulev1.Module{}),
 		},
 		{
 			Name:   govtypes.ModuleName,
