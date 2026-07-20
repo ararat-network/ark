@@ -91,6 +91,7 @@ func (k Keeper) SettleRewardFunding(ctx context.Context, funding types.RewardFun
 		return k.sendStabilityTaxToOracle(
 			ctx,
 			stabilityTax,
+			types.EventSkipReason_EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE,
 			"validator fee valuation was incomplete during the funding window",
 		)
 	}
@@ -104,7 +105,7 @@ func (k Keeper) SettleRewardFunding(ctx context.Context, funding types.RewardFun
 	stabilityTaxValue, rates, err := k.valueRewardCoins(ctx, stabilityTax)
 	if err != nil {
 		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
-			return k.sendStabilityTaxToOracle(ctx, stabilityTax, err.Error())
+			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), err.Error())
 		}
 		return fmt.Errorf("valuing stability tax: %w", err)
 	}
@@ -121,20 +122,27 @@ func (k Keeper) SettleRewardFunding(ctx context.Context, funding types.RewardFun
 	validatorTaxValue, err := valueRewards(validatorTax, rates)
 	if err != nil {
 		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
-			return k.sendStabilityTaxToOracle(ctx, stabilityTax, fmt.Errorf("valuing validator stability tax: %w", err).Error())
+			detail := fmt.Errorf("valuing validator stability tax: %w", err).Error()
+			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), detail)
 		}
 		return fmt.Errorf("valuing validator stability tax: %w", err)
 	}
 	oracleOrganic, err := valueRewards(oracleTax, rates)
 	if err != nil {
 		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
-			return k.sendStabilityTaxToOracle(ctx, stabilityTax, fmt.Errorf("valuing Oracle stability tax: %w", err).Error())
+			detail := fmt.Errorf("valuing Oracle stability tax: %w", err).Error()
+			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), detail)
 		}
 		return fmt.Errorf("valuing Oracle stability tax: %w", err)
 	}
 	validatorOrganic, err := funding.ValidatorFeeValue.SafeAdd(validatorTaxValue)
 	if err != nil {
-		return k.sendStabilityTaxToOracle(ctx, stabilityTax, fmt.Errorf("adding validator organic rewards: %w", err).Error())
+		return k.sendStabilityTaxToOracle(
+			ctx,
+			stabilityTax,
+			types.EventSkipReason_EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE,
+			fmt.Errorf("adding validator organic rewards: %w", err).Error(),
+		)
 	}
 
 	validatorShortfall := shortfall(validatorTarget, validatorOrganic)
@@ -172,24 +180,30 @@ func (k Keeper) SettleRewardFunding(ctx context.Context, funding types.RewardFun
 			return fmt.Errorf("topping up Oracle rewards: %w", err)
 		}
 	}
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeBlockRewardsToppedUp,
-		sdk.NewAttribute(types.AttributeKeyTarget, formatRewardAmounts(validatorTarget, oracleTarget)),
-		sdk.NewAttribute(types.AttributeKeyOrganic, formatRewardAmounts(validatorOrganic, oracleOrganic)),
-		sdk.NewAttribute(types.AttributeKeyPaid, formatRewardAmounts(validatorSubsidy, oracleSubsidy)),
-	))
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventBlockRewardsToppedUp{
+		Denom:            chain.MicroNoahDenom,
+		ValidatorTarget:  validatorTarget,
+		OracleTarget:     oracleTarget,
+		ValidatorOrganic: validatorOrganic,
+		OracleOrganic:    oracleOrganic,
+		ValidatorPaid:    validatorSubsidy,
+		OraclePaid:       oracleSubsidy,
+	}); err != nil {
+		return fmt.Errorf("emitting Treasury reward top-up event: %w", err)
+	}
 	return nil
 }
 
-func (k Keeper) sendStabilityTaxToOracle(ctx context.Context, stabilityTax sdk.Coins, reason string) error {
+func (k Keeper) sendStabilityTaxToOracle(ctx context.Context, stabilityTax sdk.Coins, reason types.EventSkipReason, detail string) error {
 	if err := k.allocateStabilityTax(ctx, sdk.NewCoins(), stabilityTax); err != nil {
 		return err
 	}
-	k.Logger(ctx).Warn("skipping reward-funding settlement", "error", reason)
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeBlockRewardTopUpSkipped,
-		sdk.NewAttribute(types.AttributeKeySkipReason, reason),
-	))
+	k.Logger(ctx).Warn("skipping reward-funding settlement", "reason", reason.String(), "error", detail)
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventBlockRewardTopUpSkipped{
+		Reason: reason,
+	}); err != nil {
+		return fmt.Errorf("emitting Treasury reward top-up skip event: %w", err)
+	}
 	return nil
 }
 
@@ -297,17 +311,26 @@ func allocateValidatorTax(tax sdk.Coins, rates oracletypes.RateSnapshot, validat
 	return validatorTax
 }
 
-func formatRewardAmounts(validator, oracle math.Int) string {
-	return fmt.Sprintf(
-		"validator=%s,oracle=%s",
-		sdk.NewCoin(chain.MicroNoahDenom, validator),
-		sdk.NewCoin(chain.MicroNoahDenom, oracle),
-	)
-}
-
 func isValuationUnavailable(err error) bool {
 	return errors.Is(err, oracletypes.ErrUnknownDenom) ||
 		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||
 		errors.Is(err, oracletypes.ErrInvalidExchangeRate) ||
 		errors.Is(err, oracletypes.ErrConversionOutOfRange)
+}
+
+func eventSkipReason(err error) types.EventSkipReason {
+	switch {
+	case errors.Is(err, oracletypes.ErrUnknownDenom):
+		return types.EventSkipReason_EVENT_SKIP_REASON_UNKNOWN_DENOM
+	case errors.Is(err, oracletypes.ErrStaleExchangeRate):
+		return types.EventSkipReason_EVENT_SKIP_REASON_STALE_EXCHANGE_RATE
+	case errors.Is(err, oracletypes.ErrInvalidExchangeRate):
+		return types.EventSkipReason_EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE
+	case errors.Is(err, oracletypes.ErrConversionOutOfRange):
+		return types.EventSkipReason_EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE
+	case errors.Is(err, decimal.ErrOutOfRange):
+		return types.EventSkipReason_EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE
+	default:
+		return types.EventSkipReason_EVENT_SKIP_REASON_VALUATION_UNAVAILABLE
+	}
 }

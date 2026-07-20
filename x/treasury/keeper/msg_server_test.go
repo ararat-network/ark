@@ -95,16 +95,10 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), cap)
 	}
-	s.requireExactEvent(sdk.NewEvent(
-		types.EventTypeTaxCapsUpdated,
-		sdk.NewAttribute(
-			types.AttributeKeyTaxCaps,
-			sdk.NewCoins(
-				sdk.NewInt64Coin(chain.MicroSDRDenom, 100),
-				sdk.NewInt64Coin(chain.MicroUSDDenom, 100),
-			).String(),
-		),
-	))
+	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+		{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(100)},
+		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(100)},
+	}})
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsZeroReferenceCap() {
@@ -448,14 +442,24 @@ func (s *ClaimsKeeperTestSuite) setHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-func (s *ClaimsKeeperTestSuite) requireExactEvent(expected sdk.Event) {
-	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-		if event.Type == expected.Type {
-			s.Require().Equal(expected, event)
-			return
+func (s *ClaimsKeeperTestSuite) requireTypedEvent(expected proto.Message) {
+	expectedEvent, err := sdk.TypedEventToEvent(expected)
+	s.Require().NoError(err)
+	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
+	for i := len(events) - 1; i >= 0; i-- {
+		event := events[i]
+		if event.Type != expectedEvent.Type {
+			continue
 		}
+		s.Require().Equal(expectedEvent, event)
+		parsed, err := sdk.ParseTypedEvent(sdk.Events{event}.ToABCIEvents()[0])
+		s.Require().NoError(err)
+		roundTripEvent, err := sdk.TypedEventToEvent(parsed)
+		s.Require().NoError(err)
+		s.Require().Equal(expectedEvent, roundTripEvent)
+		return
 	}
-	s.Fail("event not found", expected.Type)
+	s.FailNow("typed event not found", expectedEvent.Type)
 }
 
 func (s *ClaimsKeeperTestSuite) mandateMessage() *types.MsgSetClaimsMandate {
@@ -621,10 +625,7 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimReservesFunds() {
 	allowanceUsed, err := s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(math.NewInt(80), allowanceUsed)
-	s.requireExactEvent(sdk.NewEvent(
-		types.EventTypeClaimSubmitted,
-		sdk.NewAttribute(types.AttributeKeyClaimID, "1"),
-	))
+	s.requireTypedEvent(&types.EventClaimSubmitted{ClaimId: 1})
 
 	second := s.submit(1)
 	s.Equal(uint64(2), second.ClaimId)
@@ -988,12 +989,12 @@ func (s *ClaimsKeeperTestSuite) TestExecuteClaimAtAndAfterBoundary() {
 	s.Equal(1, s.bank.sends)
 	s.Equal(math.NewInt(920), s.bank.balance)
 	s.Equal(s.recipient, s.bank.lastRecipient.String())
-	s.requireExactEvent(sdk.NewEvent(
-		types.EventTypeClaimPaid,
-		sdk.NewAttribute(types.AttributeKeyClaimID, "1"),
-		sdk.NewAttribute(types.AttributeKeyRecipient, s.recipient),
-		sdk.NewAttribute(types.AttributeKeyAmount, "80unoah"),
-	))
+	s.requireTypedEvent(&types.EventClaimPaid{
+		ClaimId:     1,
+		Recipient:   s.recipient,
+		AmountDenom: chain.MicroNoahDenom,
+		Amount:      math.NewInt(80),
+	})
 
 	insuranceReserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
 	s.Require().NoError(err)
@@ -1153,8 +1154,10 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 				s.Require().NoError(getErr)
 				s.Require().Equal(oldCap.TaxCap, storedCap)
 			}
+			taxCapsEvent, conversionErr := sdk.TypedEventToEvent(&types.EventTaxCapsUpdated{})
+			s.Require().NoError(conversionErr)
 			for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-				s.Require().NotEqual(types.EventTypeTaxCapsUpdated, event.Type)
+				s.Require().NotEqual(taxCapsEvent.Type, event.Type)
 			}
 		})
 	}

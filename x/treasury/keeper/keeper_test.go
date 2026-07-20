@@ -20,6 +20,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/testutil"
@@ -134,5 +135,39 @@ func (s *KeeperTestSuite) clearTransientStore() {
 	s.Require().NoError(iterator.Close())
 	for _, key := range keys {
 		s.Require().NoError(transientStore.Delete(key))
+	}
+}
+
+func (s *KeeperTestSuite) requireTypedEvent(expected proto.Message) {
+	expectedEvent, err := sdk.TypedEventToEvent(expected)
+	s.Require().NoError(err)
+	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
+	for i := len(events) - 1; i >= 0; i-- {
+		event := events[i]
+		if event.Type != expectedEvent.Type {
+			continue
+		}
+		s.Require().Equal(expectedEvent, event)
+		parsed, err := sdk.ParseTypedEvent(sdk.Events{event}.ToABCIEvents()[0])
+		s.Require().NoError(err)
+		roundTripEvent, err := sdk.TypedEventToEvent(parsed)
+		s.Require().NoError(err)
+		s.Require().Equal(expectedEvent, roundTripEvent)
+		return
+	}
+	s.FailNow("typed event not found", expectedEvent.Type)
+}
+
+func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {
+	s.Require().Len(actual, len(expected))
+	for i, expectedMessage := range expected {
+		expectedEvent, err := sdk.TypedEventToEvent(expectedMessage)
+		s.Require().NoError(err)
+		s.Require().Equal(expectedEvent, actual[i])
+		parsed, err := sdk.ParseTypedEvent(sdk.Events{actual[i]}.ToABCIEvents()[0])
+		s.Require().NoError(err)
+		roundTripEvent, err := sdk.TypedEventToEvent(parsed)
+		s.Require().NoError(err)
+		s.Require().Equal(expectedEvent, roundTripEvent)
 	}
 }

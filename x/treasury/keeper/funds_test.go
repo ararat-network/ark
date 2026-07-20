@@ -202,15 +202,15 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 	s.Require().Equal(math.NewInt(40), allocation.SpreadAndDustBurn)
 	s.Require().True(allocation.OverflowBurn.IsZero())
 	s.Require().True(allocation.TargetValuationComplete)
-	s.requireExactEvent(sdk.NewEvent(
-		types.EventTypeExpansionAllocated,
-		sdk.NewAttribute(types.AttributeKeyRedemptionBufferCredit, "50unoah"),
-		sdk.NewAttribute(types.AttributeKeyStrategicReserveCredit, "10unoah"),
-		sdk.NewAttribute(types.AttributeKeyInsuranceCredit, "0unoah"),
-		sdk.NewAttribute(types.AttributeKeySpreadAndDustBurn, "40unoah"),
-		sdk.NewAttribute(types.AttributeKeyOverflowBurn, "0unoah"),
-		sdk.NewAttribute(types.AttributeKeyTargetValuationComplete, "true"),
-	))
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                   chain.MicroNoahDenom,
+		RedemptionBufferCredit:  math.NewInt(50),
+		StrategicReserveCredit:  math.NewInt(10),
+		InsuranceCredit:         math.ZeroInt(),
+		SpreadAndDustBurn:       math.NewInt(40),
+		OverflowBurn:            math.ZeroInt(),
+		TargetValuationComplete: true,
+	})
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
@@ -391,7 +391,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 	}
 }
 
-func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysProportionalEntitlement() {
+func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
@@ -401,13 +401,13 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysProportionalEntitlement() 
 		Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 40))
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 10)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 8)),
 	).Return(nil)
 
 	draw, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
 		sdk.NewInt64Coin(chain.MicroUSDDenom, 25),
-		math.NewInt(20),
+		math.NewInt(10),
 		oracletypes.RateSnapshot{
 			chain.MicroNoahDenom: math.LegacyOneDec(),
 			chain.MicroUSDDenom:  math.LegacyNewDec(2),
@@ -417,20 +417,23 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysProportionalEntitlement() 
 	s.Require().True(draw.ValuationComplete)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("12.5"), draw.RedeemedLiabilityNoah)
 	s.Require().Equal(math.LegacyNewDec(50), draw.AggregateLiabilityNoah)
-	s.Require().Equal(math.NewInt(10), draw.BufferPaid)
+	s.Require().Equal(math.NewInt(8), draw.BufferPaid)
+	bufferBefore := math.LegacyNewDec(40)
+	bufferAfter := math.LegacyNewDec(32)
+	liabilityAfter := draw.AggregateLiabilityNoah.Sub(draw.RedeemedLiabilityNoah)
+	s.Require().True(
+		bufferAfter.Mul(draw.AggregateLiabilityNoah).GTE(bufferBefore.Mul(liabilityAfter)),
+		"post-redemption Buffer coverage must not decrease",
+	)
 
-	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
-	s.Require().NotEmpty(events)
-	event := events[len(events)-1]
-	s.Require().Equal(types.EventTypeRedemptionBufferDrawn, event.Type)
-	s.Require().Len(event.Attributes, 2)
-	s.Require().Equal(types.AttributeKeyRedemptionBufferPayment, event.Attributes[0].Key)
-	s.Require().Equal("10unoah", event.Attributes[0].Value)
-	s.Require().Equal(types.AttributeKeyAggregateValuationComplete, event.Attributes[1].Key)
-	s.Require().Equal("true", event.Attributes[1].Value)
+	s.requireTypedEvent(&types.EventRedemptionBufferDrawn{
+		Denom:                      chain.MicroNoahDenom,
+		Payment:                    math.NewInt(8),
+		AggregateValuationComplete: true,
+	})
 }
 
-func (s *KeeperTestSuite) TestDrawRedemptionBufferZeroFinalAndRatioIndependentCases() {
+func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetIndependence() {
 	tests := []struct {
 		name           string
 		supply         int64
@@ -459,31 +462,40 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferZeroFinalAndRatioIndependentCa
 			expectedBuffer: 20,
 		},
 		{
-			name:           "proportional draw with zero target ratio",
+			name:           "actual coverage with zero target ratio",
 			supply:         100,
 			redeemed:       25,
 			buffer:         40,
 			noahOutput:     20,
 			targetRatio:    "0",
-			expectedBuffer: 10,
+			expectedBuffer: 8,
 		},
 		{
-			name:           "proportional draw floors fractional entitlement",
+			name:           "overfunded coverage is capped at one",
 			supply:         3,
 			redeemed:       1,
 			buffer:         10,
-			noahOutput:     10,
+			noahOutput:     1,
 			targetRatio:    "0",
-			expectedBuffer: 3,
+			expectedBuffer: 1,
 		},
 		{
-			name:           "same proportional draw with full target ratio",
+			name:           "same actual coverage with full target ratio",
 			supply:         100,
 			redeemed:       25,
 			buffer:         40,
 			noahOutput:     20,
 			targetRatio:    "1",
-			expectedBuffer: 10,
+			expectedBuffer: 8,
+		},
+		{
+			name:           "fractional covered output is floored",
+			supply:         3,
+			redeemed:       2,
+			buffer:         1,
+			noahOutput:     2,
+			targetRatio:    "0",
+			expectedBuffer: 0,
 		},
 	}
 
@@ -523,9 +535,31 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferZeroFinalAndRatioIndependentCa
 			)
 			s.Require().NoError(err)
 			s.Require().True(draw.ValuationComplete)
-			s.Require().Equal(math.NewInt(test.expectedBuffer), draw.BufferPaid)
+			s.Require().True(
+				draw.BufferPaid.Equal(math.NewInt(test.expectedBuffer)),
+				"expected %d, got %s",
+				test.expectedBuffer,
+				draw.BufferPaid,
+			)
 		})
 	}
+}
+
+func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiabilityBeforeAggregateValuation() {
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroUSDDenom},
+	}, nil)
+
+	_, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
+		math.NewInt(11),
+		oracletypes.RateSnapshot{
+			chain.MicroNoahDenom: math.LegacyOneDec(),
+			chain.MicroUSDDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().ErrorContains(err, "NOAH output 11 exceeds redeemed liability 10")
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregateValuation() {

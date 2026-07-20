@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 
 	"cosmossdk.io/math"
 
@@ -138,21 +137,23 @@ func (k Keeper) RouteExpansion(
 		}
 	}
 
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeExpansionAllocated,
-		sdk.NewAttribute(types.AttributeKeyRedemptionBufferCredit, sdk.NewCoin(chain.MicroNoahDenom, allocation.RedemptionBufferCredit).String()),
-		sdk.NewAttribute(types.AttributeKeyStrategicReserveCredit, sdk.NewCoin(chain.MicroNoahDenom, allocation.StrategicReserveCredit).String()),
-		sdk.NewAttribute(types.AttributeKeyInsuranceCredit, sdk.NewCoin(chain.MicroNoahDenom, allocation.InsuranceCredit).String()),
-		sdk.NewAttribute(types.AttributeKeySpreadAndDustBurn, sdk.NewCoin(chain.MicroNoahDenom, allocation.SpreadAndDustBurn).String()),
-		sdk.NewAttribute(types.AttributeKeyOverflowBurn, sdk.NewCoin(chain.MicroNoahDenom, allocation.OverflowBurn).String()),
-		sdk.NewAttribute(types.AttributeKeyTargetValuationComplete, strconv.FormatBool(complete)),
-	))
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventExpansionAllocated{
+		Denom:                   chain.MicroNoahDenom,
+		RedemptionBufferCredit:  allocation.RedemptionBufferCredit,
+		StrategicReserveCredit:  allocation.StrategicReserveCredit,
+		InsuranceCredit:         allocation.InsuranceCredit,
+		SpreadAndDustBurn:       allocation.SpreadAndDustBurn,
+		OverflowBurn:            allocation.OverflowBurn,
+		TargetValuationComplete: complete,
+	}); err != nil {
+		return types.ExpansionAllocation{}, fmt.Errorf("emitting Treasury expansion allocation event: %w", err)
+	}
 
 	return allocation, nil
 }
 
-// DrawRedemptionBuffer pays the proportional Buffer entitlement using
-// pre-burn liability and Buffer state.
+// DrawRedemptionBuffer funds the current Buffer coverage share of the quoted
+// NOAH output using pre-burn liability and Buffer state.
 func (k Keeper) DrawRedemptionBuffer(
 	ctx context.Context,
 	redeemedStable sdk.Coin,
@@ -184,6 +185,14 @@ func (k Keeper) DrawRedemptionBuffer(
 		return types.BufferDraw{}, fmt.Errorf("valuing redeemed stable coin: %w", err)
 	}
 	redeemedNoah := convertedRedemption.Amount
+	noahOutputInt := math.LegacyNewDecFromInt(noahOutput)
+	if noahOutputInt.GT(redeemedNoah) {
+		return types.BufferDraw{}, fmt.Errorf(
+			"NOAH output %s exceeds redeemed liability %s",
+			noahOutput,
+			redeemedNoah,
+		)
+	}
 
 	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, tobinTaxes, quoteRates)
 	if err != nil {
@@ -201,8 +210,19 @@ func (k Keeper) DrawRedemptionBuffer(
 		}
 
 		bufferBalance := k.balance(ctx, types.RedemptionBufferName)
-		entitlement := redeemedNoah.MulInt(bufferBalance).Quo(liabilityNoah).TruncateInt()
-		draw.BufferPaid = math.MinInt(entitlement, noahOutput)
+		bufferNoah := math.LegacyNewDecFromInt(bufferBalance)
+		coverage := math.LegacyOneDec()
+		if bufferNoah.LT(liabilityNoah) {
+			coverage, err = decimal.Quo(bufferNoah, liabilityNoah)
+			if err != nil {
+				return types.BufferDraw{}, fmt.Errorf("calculating Buffer coverage: %w", err)
+			}
+		}
+		coveredOutput, err := decimal.Mul(noahOutputInt, coverage)
+		if err != nil {
+			return types.BufferDraw{}, fmt.Errorf("calculating Buffer-funded output: %w", err)
+		}
+		draw.BufferPaid = coveredOutput.TruncateInt()
 		if draw.BufferPaid.IsPositive() {
 			if err := k.bankKeeper.SendCoinsFromModuleToModule(
 				ctx,
@@ -215,11 +235,13 @@ func (k Keeper) DrawRedemptionBuffer(
 		}
 	}
 
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeRedemptionBufferDrawn,
-		sdk.NewAttribute(types.AttributeKeyRedemptionBufferPayment, sdk.NewCoin(chain.MicroNoahDenom, draw.BufferPaid).String()),
-		sdk.NewAttribute(types.AttributeKeyAggregateValuationComplete, strconv.FormatBool(draw.ValuationComplete)),
-	))
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventRedemptionBufferDrawn{
+		Denom:                      chain.MicroNoahDenom,
+		Payment:                    draw.BufferPaid,
+		AggregateValuationComplete: draw.ValuationComplete,
+	}); err != nil {
+		return types.BufferDraw{}, fmt.Errorf("emitting Treasury redemption buffer event: %w", err)
+	}
 	return draw, nil
 }
 

@@ -91,6 +91,9 @@ func (gs GenesisState) Validate() error {
 	if err := gs.MonetaryMandate.Validate(); err != nil {
 		return fmt.Errorf("invalid monetary mandate: %w", err)
 	}
+	if gs.MonetaryMandate.Committee != "" && gs.MonetaryMandate.Committee == gs.ClaimsMandate.Committee {
+		return fmt.Errorf("monetary-policy committee must be distinct from Claims committee")
+	}
 
 	return nil
 }

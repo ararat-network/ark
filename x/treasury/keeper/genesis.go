@@ -51,9 +51,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		if committee == k.authority || sdk.ValidateAuthority(sdkCtx, k.authority, committee) == nil {
 			return fmt.Errorf("monetary-policy committee must be distinct from Treasury authority")
 		}
-		if committee == data.ClaimsMandate.Committee {
-			return fmt.Errorf("monetary-policy committee must be distinct from Claims committee")
-		}
 	}
 
 	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)

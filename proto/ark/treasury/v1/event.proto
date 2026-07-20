@@ -1,0 +1,162 @@
+syntax = "proto3";
+package ark.treasury.v1;
+
+import "amino/amino.proto";
+import "ark/treasury/v1/treasury.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/treasury/types";
+
+// EventSkipReason identifies why a scheduled Treasury calculation was skipped.
+enum EventSkipReason {
+  // EVENT_SKIP_REASON_UNSPECIFIED is invalid for an emitted skip event.
+  EVENT_SKIP_REASON_UNSPECIFIED = 0;
+  // EVENT_SKIP_REASON_UNKNOWN_DENOM indicates that a required denomination had
+  // no Oracle market.
+  EVENT_SKIP_REASON_UNKNOWN_DENOM = 1;
+  // EVENT_SKIP_REASON_STALE_EXCHANGE_RATE indicates that a required Oracle rate
+  // was stale.
+  EVENT_SKIP_REASON_STALE_EXCHANGE_RATE = 2;
+  // EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE indicates that a required Oracle
+  // rate was invalid.
+  EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE = 3;
+  // EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE indicates that a valuation could
+  // not fit its target domain.
+  EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE = 4;
+  // EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE indicates that intermediate
+  // arithmetic exceeded its valid domain.
+  EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE = 5;
+  // EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE indicates that the completed
+  // funding window lacked complete valuations.
+  EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE = 6;
+  // EVENT_SKIP_REASON_VALUATION_UNAVAILABLE is the conservative fallback for
+  // unavailable valuations.
+  EVENT_SKIP_REASON_VALUATION_UNAVAILABLE = 7;
+}
+
+// EventTaxCapsUpdated is emitted after the complete derived tax-cap set
+// changes.
+message EventTaxCapsUpdated {
+  repeated TaxCap tax_caps = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// EventTaxCapsUpdateSkipped is emitted when a scheduled tax-cap refresh cannot
+// obtain a complete valuation.
+message EventTaxCapsUpdateSkipped {
+  EventSkipReason reason = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// EventBlockRewardsToppedUp is emitted after a reward-funding window settles.
+message EventBlockRewardsToppedUp {
+  string denom = 1;
+  string validator_target = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string oracle_target = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string validator_organic = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string oracle_organic = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string validator_paid = 6 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string oracle_paid = 7 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventBlockRewardTopUpSkipped is emitted when a reward-funding window cannot
+// obtain a complete valuation.
+message EventBlockRewardTopUpSkipped {
+  EventSkipReason reason = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// EventExpansionAllocated records the complete realised expansion allocation.
+message EventExpansionAllocated {
+  string denom = 1;
+  string redemption_buffer_credit = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string strategic_reserve_credit = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string insurance_credit = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string spread_and_dust_burn = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string overflow_burn = 6 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  bool target_valuation_complete = 7 [ (amino.dont_omitempty) = true ];
+}
+
+// EventRedemptionBufferDrawn records a successful redemption-buffer payment.
+message EventRedemptionBufferDrawn {
+  string denom = 1;
+  string payment = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  bool aggregate_valuation_complete = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// EventClaimSubmitted records the keeper-assigned identity of a new claim.
+message EventClaimSubmitted {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// EventClaimPaid records the successful settlement of a Treasury claim.
+message EventClaimPaid {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  string recipient = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string amount_denom = 3;
+  string amount = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}

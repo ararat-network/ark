@@ -165,6 +165,14 @@ func TestGenesisClaimsValidation(t *testing.T) {
 			expectErr: "recipient is invalid",
 		},
 		{
+			name: "same Claims and monetary-policy committee",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.MonetaryMandate = validMonetaryMandate()
+				genesis.MonetaryMandate.Committee = genesis.ClaimsMandate.Committee
+			},
+			expectErr: "monetary-policy committee must be distinct from Claims committee",
+		},
+		{
 			name:      "claim from future mandate term",
 			mutate:    func(genesis *types.GenesisState) { genesis.Claims[0].MandateTerm = genesis.ClaimsMandate.Term + 1 },
 			expectErr: "exceeds current Claims mandate term",

@@ -56,10 +56,11 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		if err := m.k.ReplaceTaxCaps(ctx, caps); err != nil {
 			return nil, err
 		}
-		sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-			types.EventTypeTaxCapsUpdated,
-			sdk.NewAttribute(types.AttributeKeyTaxCaps, formatTaxCaps(caps)),
-		))
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{
+			TaxCaps: caps,
+		}); err != nil {
+			return nil, fmt.Errorf("emitting Treasury tax-cap update event: %w", err)
+		}
 	}
 	return &types.MsgUpdateParamsResponse{}, nil
 }

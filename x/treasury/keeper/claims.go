@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"cosmossdk.io/math"
 
@@ -191,10 +190,11 @@ func (m msgServer) SubmitClaim(ctx context.Context, msg *types.MsgSubmitClaim) (
 	if err := m.k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
 		return nil, fmt.Errorf("setting claim %d: %w", claim.ClaimId, err)
 	}
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeClaimSubmitted,
-		sdk.NewAttribute(types.AttributeKeyClaimID, strconv.FormatUint(claim.ClaimId, 10)),
-	))
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventClaimSubmitted{
+		ClaimId: claim.ClaimId,
+	}); err != nil {
+		return nil, fmt.Errorf("emitting Treasury claim submission event: %w", err)
+	}
 	return &types.MsgSubmitClaimResponse{ClaimId: claim.ClaimId}, nil
 }
 
@@ -347,11 +347,13 @@ func (m msgServer) ExecuteClaim(ctx context.Context, msg *types.MsgExecuteClaim)
 	if err := m.k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
 		return nil, fmt.Errorf("finalising claim %d: %w", claim.ClaimId, err)
 	}
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeClaimPaid,
-		sdk.NewAttribute(types.AttributeKeyClaimID, strconv.FormatUint(claim.ClaimId, 10)),
-		sdk.NewAttribute(types.AttributeKeyRecipient, claim.Recipient),
-		sdk.NewAttribute(types.AttributeKeyAmount, claim.Amount.String()),
-	))
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventClaimPaid{
+		ClaimId:     claim.ClaimId,
+		Recipient:   claim.Recipient,
+		AmountDenom: claim.Amount.Denom,
+		Amount:      claim.Amount.Amount,
+	}); err != nil {
+		return nil, fmt.Errorf("emitting Treasury claim payment event: %w", err)
+	}
 	return &types.MsgExecuteClaimResponse{}, nil
 }

@@ -3,17 +3,19 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
+	arkmetrics "ark/pkg/metrics"
 	"ark/x/treasury/types"
 )
 
 // BeginBlocker refreshes derived tax caps when required and advances the
 // reward-funding window before Distribution consumes the previous block's fees.
 func (k Keeper) BeginBlocker(ctx context.Context) error {
+	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.BeginBlock)()
+
 	mismatch, err := k.TaxCapDenomsMismatch(ctx)
 	if err != nil {
 		return fmt.Errorf("checking tax cap denominations: %w", err)
@@ -26,11 +28,13 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 		caps, err := k.BuildTaxCaps(ctx, params)
 		if err != nil {
 			if isValuationUnavailable(err) {
-				k.Logger(ctx).Warn("skipping Treasury tax-cap refresh", "error", err)
-				sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-					types.EventTypeTaxCapsUpdateSkipped,
-					sdk.NewAttribute(types.AttributeKeySkipReason, err.Error()),
-				))
+				reason := eventSkipReason(err)
+				k.Logger(ctx).Warn("skipping Treasury tax-cap refresh", "reason", reason, "error", err)
+				if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsUpdateSkipped{
+					Reason: reason,
+				}); err != nil {
+					return fmt.Errorf("emitting Treasury tax-cap refresh skip event: %w", err)
+				}
 			} else {
 				return fmt.Errorf("building tax caps: %w", err)
 			}
@@ -38,10 +42,11 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 			if err := k.ReplaceTaxCaps(ctx, caps); err != nil {
 				return fmt.Errorf("replacing tax caps: %w", err)
 			}
-			sdk.UnwrapSDKContext(ctx).EventManager().EmitEvent(sdk.NewEvent(
-				types.EventTypeTaxCapsUpdated,
-				sdk.NewAttribute(types.AttributeKeyTaxCaps, formatTaxCaps(caps)),
-			))
+			if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{
+				TaxCaps: caps,
+			}); err != nil {
+				return fmt.Errorf("emitting Treasury tax-cap update event: %w", err)
+			}
 		}
 	}
 
@@ -62,12 +67,4 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func formatTaxCaps(caps []types.TaxCap) string {
-	parts := make([]string, 0, len(caps))
-	for _, cap := range caps {
-		parts = append(parts, sdk.NewCoin(cap.Denom, cap.TaxCap).String())
-	}
-	return strings.Join(parts, ",")
 }

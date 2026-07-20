@@ -19,8 +19,9 @@ func (a ExpansionAllocation) TotalBurn() math.Int {
 	return a.SpreadAndDustBurn.Add(a.OverflowBurn)
 }
 
-// BufferDraw is the execution-local result of one proportional redemption
-// buffer calculation. NOAH valuations remain decimal until the final payment.
+// BufferDraw is the execution-local result of funding one redemption from the
+// Buffer's current liability-coverage share. NOAH valuations remain decimal
+// until the final payment.
 type BufferDraw struct {
 	AggregateLiabilityNoah math.LegacyDec
 	RedeemedLiabilityNoah  math.LegacyDec

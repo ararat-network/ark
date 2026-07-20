@@ -102,8 +102,15 @@ func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 
 	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
 	s.requireDefaultRewardFunding()
-
-	s.requireEvent(types.EventTypeBlockRewardsToppedUp)
+	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
+		Denom:            chain.MicroNoahDenom,
+		ValidatorTarget:  math.NewInt(200),
+		OracleTarget:     math.ZeroInt(),
+		ValidatorOrganic: math.NewInt(200),
+		OracleOrganic:    math.ZeroInt(),
+		ValidatorPaid:    math.ZeroInt(),
+		OraclePaid:       math.ZeroInt(),
+	})
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingSendsAllTaxToOracleWhenFeesCoverTarget() {
@@ -115,12 +122,15 @@ func (s *KeeperTestSuite) TestSettleRewardFundingSendsAllTaxToOracleWhenFeesCove
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
 	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
-	s.requireExactEvent(sdk.NewEvent(
-		types.EventTypeBlockRewardsToppedUp,
-		sdk.NewAttribute(types.AttributeKeyTarget, "validator=7unoah,oracle=3unoah"),
-		sdk.NewAttribute(types.AttributeKeyOrganic, "validator=7unoah,oracle=5unoah"),
-		sdk.NewAttribute(types.AttributeKeyPaid, "validator=0unoah,oracle=0unoah"),
-	))
+	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
+		Denom:            chain.MicroNoahDenom,
+		ValidatorTarget:  math.NewInt(7),
+		OracleTarget:     math.NewInt(3),
+		ValidatorOrganic: math.NewInt(7),
+		OracleOrganic:    math.NewInt(5),
+		ValidatorPaid:    math.ZeroInt(),
+		OraclePaid:       math.ZeroInt(),
+	})
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingProtectsOracleThenFundsValidatorGap() {
@@ -308,13 +318,9 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenWindowVa
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
 	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
-	s.requireExactEvent(sdk.NewEvent(
-		types.EventTypeBlockRewardTopUpSkipped,
-		sdk.NewAttribute(
-			types.AttributeKeySkipReason,
-			"validator fee valuation was incomplete during the funding window",
-		),
-	))
+	s.requireTypedEvent(&types.EventBlockRewardTopUpSkipped{
+		Reason: types.EventSkipReason_EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE,
+	})
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValuationUnavailable() {
@@ -331,7 +337,9 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValua
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
 	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
-	s.requireEvent(types.EventTypeBlockRewardTopUpSkipped)
+	s.requireTypedEvent(&types.EventBlockRewardTopUpSkipped{
+		Reason: types.EventSkipReason_EVENT_SKIP_REASON_STALE_EXCHANGE_RATE,
+	})
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValueAggregateOverflows() {
@@ -346,7 +354,9 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValue
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
 	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
-	s.requireEvent(types.EventTypeBlockRewardTopUpSkipped)
+	s.requireTypedEvent(&types.EventBlockRewardTopUpSkipped{
+		Reason: types.EventSkipReason_EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE,
+	})
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingSendsTaxToOracleWhenTargetsAreDisabled() {
@@ -460,37 +470,4 @@ func (s *KeeperTestSuite) requireDefaultRewardFunding() {
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingState(), funding)
-}
-
-func (s *KeeperTestSuite) requireEvent(eventType string) {
-	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-		if event.Type == eventType {
-			return
-		}
-	}
-	s.Fail("event not found", eventType)
-}
-
-func (s *KeeperTestSuite) requireExactEvent(expected sdk.Event) {
-	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-		if event.Type == expected.Type {
-			s.Require().Equal(expected, event)
-			return
-		}
-	}
-	s.Fail("event not found", expected.Type)
-}
-
-func (s *KeeperTestSuite) requireEventAttribute(eventType, key, value string) {
-	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-		if event.Type != eventType {
-			continue
-		}
-		for _, attribute := range event.Attributes {
-			if attribute.Key == key && attribute.Value == value {
-				return
-			}
-		}
-	}
-	s.Fail("event attribute not found", "%s %s=%s", eventType, key, value)
 }

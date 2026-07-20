@@ -81,13 +81,9 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnavailableTaxCapRates() {
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
 
 	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
-	found := false
-	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-		if event.Type == types.EventTypeTaxCapsUpdateSkipped {
-			found = true
-		}
-	}
-	s.Require().True(found)
+	s.requireTypedEvent(&types.EventTaxCapsUpdateSkipped{
+		Reason: types.EventSkipReason_EVENT_SKIP_REASON_STALE_EXCHANGE_RATE,
+	})
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 100)),
@@ -118,6 +114,9 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnrepresentableTaxCapConversion()
 	).Return(nil, oracletypes.ErrConversionOutOfRange)
 
 	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.requireTypedEvent(&types.EventTaxCapsUpdateSkipped{
+		Reason: types.EventSkipReason_EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE,
+	})
 	_, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroUSDDenom)
 	s.Require().Error(err)
 }
