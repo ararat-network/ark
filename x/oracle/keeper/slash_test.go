@@ -6,6 +6,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestSettleSlash() {
@@ -94,6 +97,7 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			params.SlashFraction = math.LegacyNewDecWithPrec(1, 4)
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, tc.missCount))
+			eventsBefore := len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 
 			powerReduction := math.NewInt(1_000_000)
 			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
@@ -127,6 +131,7 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 					if tc.expectJail {
 						s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr)
 					}
+					s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
 				}
 			}
 
@@ -136,6 +141,19 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
 			s.Require().NoError(err)
 			s.Require().Equal(tc.missCount, missCount)
+
+			events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()[eventsBefore:]
+			if tc.expectSlash {
+				s.requireTypedEvents(events, &oracletypes.EventOracleSlash{
+					Validator:   valAddr1.String(),
+					AmountDenom: chain.MicroNoahDenom,
+					Amount:      math.NewInt(1),
+					MissCount:   20,
+					SlashWindow: 20,
+				})
+			} else {
+				s.Require().Empty(events)
+			}
 		})
 	}
 }

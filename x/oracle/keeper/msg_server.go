@@ -13,6 +13,7 @@ var _ types.MsgServer = (*msgServer)(nil)
 
 type msgServer struct {
 	types.UnimplementedMsgServer
+
 	k *Keeper
 }
 

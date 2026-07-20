@@ -16,6 +16,7 @@ type StakingKeeper interface {
 	Slash(context.Context, sdk.ConsAddress, int64, int64, math.LegacyDec) (math.Int, error) // slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
 	Jail(context.Context, sdk.ConsAddress) error                                            // jail a validator
 	PowerReduction(ctx context.Context) (res math.Int)
+	BondDenom(ctx context.Context) (string, error)
 	ValidatorByConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.ValidatorI, error)
 }
 

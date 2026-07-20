@@ -105,6 +105,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 
 		s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
+		s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
 		s.stakingKeeper.EXPECT().
 			Slash(
 				s.ctx,
@@ -154,6 +155,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 
 		s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
+		s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
 		s.stakingKeeper.EXPECT().Slash(
 			s.ctx,
 			consAddr,

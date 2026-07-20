@@ -54,6 +54,10 @@ func (k Keeper) SettleSlash(ctx context.Context, slashWindowBlocks uint64) error
 			if err != nil {
 				return true, fmt.Errorf("getting consensus address for validator %s: %w", valAddr, err)
 			}
+			bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+			if err != nil {
+				return true, fmt.Errorf("getting bond denom for oracle slash event: %w", err)
+			}
 			consensusPower := sdk.TokensToConsensusPower(validator.GetTokens(), powerReduction)
 			slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, consensusPower, params.SlashFraction)
 			if err != nil {
@@ -63,14 +67,15 @@ func (k Keeper) SettleSlash(ctx context.Context, slashWindowBlocks uint64) error
 					return true, fmt.Errorf("slashed validator %s, but failed to jail: %w", valAddr, err)
 				}
 			}
-
-			sdkCtx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					types.EventTypeOracleSlash,
-					sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
-					sdk.NewAttribute(sdk.AttributeKeyAmount, slashAmount.String()),
-				),
-			)
+			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventOracleSlash{
+				Validator:   valAddr.String(),
+				AmountDenom: bondDenom,
+				Amount:      slashAmount,
+				MissCount:   missCount,
+				SlashWindow: slashWindowBlocks,
+			}); err != nil {
+				return true, fmt.Errorf("emitting Oracle slash event for %s: %w", valAddr, err)
+			}
 		}
 
 		return false, nil

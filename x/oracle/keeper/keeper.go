@@ -239,12 +239,12 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeExchangeRateUpdate,
-			sdk.NewAttribute(types.AttributeKeyDenom, exchangeRate.Denom),
-			sdk.NewAttribute(types.AttributeKeyExchangeRate, exchangeRate.Rate.String()),
-		),
-	)
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventExchangeRateUpdate{
+		Denom:        exchangeRate.Denom,
+		ExchangeRate: exchangeRate.Rate,
+	}); err != nil {
+		return fmt.Errorf("emitting exchange rate update event for %s: %w", exchangeRate.Denom, err)
+	}
 
 	return nil
 }

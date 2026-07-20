@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	"ark/x/oracle/types"
 )
@@ -60,7 +61,7 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 
 	// Distribute rewards by score weight.
 	var distributedReward sdk.Coins
-	rewardEvents := sdk.Events{}
+	rewardEvents := []proto.Message{}
 	for _, score := range validatorScores {
 		rewardCoins := sdk.NewCoins()
 		for _, periodReward := range periodRewards {
@@ -96,11 +97,10 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 			)
 		}
 		distributedReward = distributedReward.Add(rewardCoins...)
-		rewardEvents = append(rewardEvents, sdk.NewEvent(
-			types.EventTypeOracleReward,
-			sdk.NewAttribute(types.AttributeKeyValidator, score.addr.String()),
-			sdk.NewAttribute(types.AttributeKeyRewardAmount, rewardCoins.String()),
-		))
+		rewardEvents = append(rewardEvents, &types.EventOracleReward{
+			Validator: score.addr.String(),
+			Rewards:   rewardCoins,
+		})
 	}
 
 	if distributedReward.IsZero() {
@@ -113,7 +113,9 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		return fmt.Errorf("sending coins to distribution module: %w", err)
 	}
 
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvents(rewardEvents)
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvents(rewardEvents...); err != nil {
+		return fmt.Errorf("emitting Oracle reward events: %w", err)
+	}
 
 	return nil
 }

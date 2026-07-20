@@ -25,6 +25,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	chain "ark/pkg/chain"
 	"ark/x/oracle/keeper"
@@ -293,8 +294,10 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 	s.Require().True(rate.Equal(stored.Rate))
 
 	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
-	s.Require().Len(events, 1)
-	s.Require().Equal(types.EventTypeExchangeRateUpdate, events[0].Type)
+	s.requireTypedEvents(events, &types.EventExchangeRateUpdate{
+		Denom:        chain.MicroUSDDenom,
+		ExchangeRate: rate,
+	})
 }
 
 func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidDenom() {
@@ -548,4 +551,18 @@ func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress()
 	})
 	s.Require().NoError(err)
 	s.Require().Zero(scoreWeightEntries)
+}
+
+func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {
+	s.Require().Len(actual, len(expected))
+	for i, expectedMessage := range expected {
+		expectedEvent, err := sdk.TypedEventToEvent(expectedMessage)
+		s.Require().NoError(err)
+		s.Require().Equal(expectedEvent, actual[i])
+		parsed, err := sdk.ParseTypedEvent(sdk.Events{actual[i]}.ToABCIEvents()[0])
+		s.Require().NoError(err)
+		roundTripEvent, err := sdk.TypedEventToEvent(parsed)
+		s.Require().NoError(err)
+		s.Require().Equal(expectedEvent, roundTripEvent)
+	}
 }

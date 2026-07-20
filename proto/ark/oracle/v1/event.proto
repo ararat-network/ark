@@ -1,0 +1,46 @@
+syntax = "proto3";
+package ark.oracle.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/oracle/types";
+
+// EventExchangeRateUpdate is emitted after an Oracle exchange rate is stored.
+message EventExchangeRateUpdate {
+  string denom = 1;
+  string exchange_rate = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventOracleSlash is emitted after a validator is slashed for Oracle misses.
+message EventOracleSlash {
+  string validator = 1
+      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  string amount_denom = 2;
+  string amount = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 miss_count = 4 [ (amino.dont_omitempty) = true ];
+  uint64 slash_window = 5 [ (amino.dont_omitempty) = true ];
+}
+
+// EventOracleReward is emitted after a validator's Oracle rewards are funded.
+message EventOracleReward {
+  string validator = 1
+      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  repeated cosmos.base.v1beta1.Coin rewards = 2 [
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
