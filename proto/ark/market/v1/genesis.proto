@@ -14,7 +14,8 @@ message GenesisState {
   Params params = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 
-  // the gap between the ArkPool and the BasePool
+  // ark_pool_delta is the signed gap between the ArkPool and BasePool measured
+  // in params.base_pool.denom.
   string ark_pool_delta = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

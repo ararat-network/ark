@@ -82,7 +82,10 @@ message MsgUpdateParams {
 
   // params defines the x/market parameters to update.
   //
-  // NOTE: All parameters must be supplied.
+  // NOTE: All parameters must be supplied. For a same-denomination BasePool
+  // update, BasePool.Amount is authoritative. For a denomination change,
+  // BasePool.Amount is a non-binding audit expectation; Market applies the
+  // amount derived from a fresh deterministic Oracle snapshot.
   Params params = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

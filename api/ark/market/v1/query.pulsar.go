@@ -1375,12 +1375,14 @@ func (x *fastReflection_QueryArkPoolDeltaRequest) ProtoMethods() *protoiface.Met
 var (
 	md_QueryArkPoolDeltaResponse                protoreflect.MessageDescriptor
 	fd_QueryArkPoolDeltaResponse_ark_pool_delta protoreflect.FieldDescriptor
+	fd_QueryArkPoolDeltaResponse_pool_denom     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_query_proto_init()
 	md_QueryArkPoolDeltaResponse = File_ark_market_v1_query_proto.Messages().ByName("QueryArkPoolDeltaResponse")
 	fd_QueryArkPoolDeltaResponse_ark_pool_delta = md_QueryArkPoolDeltaResponse.Fields().ByName("ark_pool_delta")
+	fd_QueryArkPoolDeltaResponse_pool_denom = md_QueryArkPoolDeltaResponse.Fields().ByName("pool_denom")
 }
 
 var _ protoreflect.Message = (*fastReflection_QueryArkPoolDeltaResponse)(nil)
@@ -1454,6 +1456,12 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Range(f func(protoreflect.Fie
 			return
 		}
 	}
+	if x.PoolDenom != "" {
+		value := protoreflect.ValueOfString(x.PoolDenom)
+		if !f(fd_QueryArkPoolDeltaResponse_pool_denom, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -1471,6 +1479,8 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Has(fd protoreflect.FieldDesc
 	switch fd.FullName() {
 	case "ark.market.v1.QueryArkPoolDeltaResponse.ark_pool_delta":
 		return x.ArkPoolDelta != ""
+	case "ark.market.v1.QueryArkPoolDeltaResponse.pool_denom":
+		return x.PoolDenom != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryArkPoolDeltaResponse"))
@@ -1489,6 +1499,8 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Clear(fd protoreflect.FieldDe
 	switch fd.FullName() {
 	case "ark.market.v1.QueryArkPoolDeltaResponse.ark_pool_delta":
 		x.ArkPoolDelta = ""
+	case "ark.market.v1.QueryArkPoolDeltaResponse.pool_denom":
+		x.PoolDenom = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryArkPoolDeltaResponse"))
@@ -1507,6 +1519,9 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Get(descriptor protoreflect.F
 	switch descriptor.FullName() {
 	case "ark.market.v1.QueryArkPoolDeltaResponse.ark_pool_delta":
 		value := x.ArkPoolDelta
+		return protoreflect.ValueOfString(value)
+	case "ark.market.v1.QueryArkPoolDeltaResponse.pool_denom":
+		value := x.PoolDenom
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
@@ -1530,6 +1545,8 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Set(fd protoreflect.FieldDesc
 	switch fd.FullName() {
 	case "ark.market.v1.QueryArkPoolDeltaResponse.ark_pool_delta":
 		x.ArkPoolDelta = value.Interface().(string)
+	case "ark.market.v1.QueryArkPoolDeltaResponse.pool_denom":
+		x.PoolDenom = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryArkPoolDeltaResponse"))
@@ -1552,6 +1569,8 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Mutable(fd protoreflect.Field
 	switch fd.FullName() {
 	case "ark.market.v1.QueryArkPoolDeltaResponse.ark_pool_delta":
 		panic(fmt.Errorf("field ark_pool_delta of message ark.market.v1.QueryArkPoolDeltaResponse is not mutable"))
+	case "ark.market.v1.QueryArkPoolDeltaResponse.pool_denom":
+		panic(fmt.Errorf("field pool_denom of message ark.market.v1.QueryArkPoolDeltaResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryArkPoolDeltaResponse"))
@@ -1566,6 +1585,8 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) Mutable(fd protoreflect.Field
 func (x *fastReflection_QueryArkPoolDeltaResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "ark.market.v1.QueryArkPoolDeltaResponse.ark_pool_delta":
+		return protoreflect.ValueOfString("")
+	case "ark.market.v1.QueryArkPoolDeltaResponse.pool_denom":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -1640,6 +1661,10 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) ProtoMethods() *protoiface.Me
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		l = len(x.PoolDenom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -1668,6 +1693,13 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) ProtoMethods() *protoiface.Me
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.PoolDenom) > 0 {
+			i -= len(x.PoolDenom)
+			copy(dAtA[i:], x.PoolDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.PoolDenom)))
+			i--
+			dAtA[i] = 0x12
 		}
 		if len(x.ArkPoolDelta) > 0 {
 			i -= len(x.ArkPoolDelta)
@@ -1756,6 +1788,38 @@ func (x *fastReflection_QueryArkPoolDeltaResponse) ProtoMethods() *protoiface.Me
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				x.ArkPoolDelta = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PoolDenom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.PoolDenom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -2723,8 +2787,11 @@ type QueryArkPoolDeltaResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ark_pool_delta defines the gap between the ArkPool and the ArkBasePool
+	// ark_pool_delta defines the signed gap between the ArkPool and BasePool in
+	// pool_denom units.
 	ArkPoolDelta string `protobuf:"bytes,1,opt,name=ark_pool_delta,json=arkPoolDelta,proto3" json:"ark_pool_delta,omitempty"`
+	// pool_denom defines the denomination of ark_pool_delta.
+	PoolDenom string `protobuf:"bytes,2,opt,name=pool_denom,json=poolDenom,proto3" json:"pool_denom,omitempty"`
 }
 
 func (x *QueryArkPoolDeltaResponse) Reset() {
@@ -2750,6 +2817,13 @@ func (*QueryArkPoolDeltaResponse) Descriptor() ([]byte, []int) {
 func (x *QueryArkPoolDeltaResponse) GetArkPoolDelta() string {
 	if x != nil {
 		return x.ArkPoolDelta
+	}
+	return ""
+}
+
+func (x *QueryArkPoolDeltaResponse) GetPoolDenom() string {
+	if x != nil {
+		return x.PoolDenom
 	}
 	return ""
 }
@@ -2851,14 +2925,16 @@ var file_ark_market_v1_query_proto_rawDesc = []byte{
 	0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52,
 	0x07, 0x73, 0x77, 0x61, 0x70, 0x46, 0x65, 0x65, 0x22, 0x1a, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72,
 	0x79, 0x41, 0x72, 0x6b, 0x50, 0x6f, 0x6f, 0x6c, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x22, 0x79, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x6b,
-	0x50, 0x6f, 0x6f, 0x6c, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x5c, 0x0a, 0x0e, 0x61, 0x72, 0x6b, 0x5f, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x64, 0x65,
-	0x6c, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda,
-	0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
-	0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4,
-	0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x0c, 0x61, 0x72, 0x6b, 0x50, 0x6f, 0x6f, 0x6c, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x22,
+	0x75, 0x65, 0x73, 0x74, 0x22, 0x98, 0x01, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72,
+	0x6b, 0x50, 0x6f, 0x6f, 0x6c, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0e, 0x61, 0x72, 0x6b, 0x5f, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x64,
+	0x65, 0x6c, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00,
+	0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2,
+	0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0c, 0x61, 0x72, 0x6b, 0x50, 0x6f, 0x6f, 0x6c, 0x44, 0x65, 0x6c, 0x74, 0x61,
+	0x12, 0x1d, 0x0a, 0x0a, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x70, 0x6f, 0x6f, 0x6c, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x22,
 	0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x4f, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61,
 	0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38, 0x0a, 0x06,

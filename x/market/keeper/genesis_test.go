@@ -1,15 +1,22 @@
 package keeper_test
 
 import (
+	"errors"
+
+	"cosmossdk.io/math"
+
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	"ark/pkg/chain"
 	"ark/x/market/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
 	genesis := types.DefaultGenesisState()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.MicroSDRDenom).Return(math.LegacyZeroDec(), nil)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
@@ -37,4 +44,42 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, "module account has not been set")
+}
+
+func (s *KeeperTestSuite) TestInitGenesis_UnknownBasePoolDenom() {
+	genesis := types.DefaultGenesisState()
+	genesis.Params.BasePool.Denom = "ufoo"
+	genesis.ArkPoolDelta = math.LegacyOneDec()
+
+	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ufoo").Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
+	s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
+	s.Require().ErrorContains(err, "base pool denom ufoo is not configured in oracle")
+
+	params, getErr := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().Equal(types.DefaultParams(), params)
+	delta, getErr := s.keeper.ArkPoolDelta.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().True(delta.IsZero())
+}
+
+func (s *KeeperTestSuite) TestInitGenesis_OracleLookupFailure() {
+	genesis := types.DefaultGenesisState()
+	genesis.ArkPoolDelta = math.LegacyOneDec()
+	oracleErr := errors.New("oracle params unavailable")
+
+	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.MicroSDRDenom).Return(math.LegacyZeroDec(), oracleErr)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
+	s.Require().ErrorIs(err, oracleErr)
+	s.Require().ErrorContains(err, "checking base pool denom usdr in oracle")
+
+	params, getErr := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().Equal(types.DefaultParams(), params)
+	delta, getErr := s.keeper.ArkPoolDelta.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().True(delta.IsZero())
 }

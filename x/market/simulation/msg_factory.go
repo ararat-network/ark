@@ -102,6 +102,7 @@ func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.Simula
 	activeDenoms, err := k.GetActiveDenoms(ctx)
 	if err != nil {
 		reporter.Skip(err.Error())
+		return "", ""
 	}
 
 	if len(activeDenoms) == 0 {

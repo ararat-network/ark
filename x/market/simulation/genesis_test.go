@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
+	chain "ark/pkg/chain"
 	"ark/x/market/simulation"
 	"ark/x/market/types"
 )
@@ -42,7 +43,8 @@ func TestRandomisedGenState(t *testing.T) {
 	var marketGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &marketGenesis)
 
-	require.True(t, marketGenesis.Params.BasePool.GT(math.LegacyZeroDec()))
+	require.Equal(t, chain.MicroSDRDenom, marketGenesis.Params.BasePool.Denom)
+	require.True(t, marketGenesis.Params.BasePool.Amount.GT(math.LegacyZeroDec()))
 	require.True(t, marketGenesis.Params.PoolRecoveryPeriod > 0)
 	require.True(t, marketGenesis.Params.MinStabilitySpread.GT(math.LegacyZeroDec()))
 	require.True(t, marketGenesis.ArkPoolDelta.IsZero())

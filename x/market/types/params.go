@@ -6,6 +6,8 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
 )
@@ -17,8 +19,11 @@ const (
 
 // Default parameter values
 var (
-	DefaultBasePool           = math.LegacyNewDec(1_000_000 * chain.MicroUnit) // 1,000,000sdr = 1,000,000,000,000usdr
-	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)                // 2%
+	DefaultBasePool = sdk.NewDecCoin(
+		chain.MicroSDRDenom,
+		math.NewInt(1_000_000*chain.MicroUnit),
+	) // 1,000,000sdr = 1,000,000,000,000usdr
+	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
 )
 
 // DefaultParams creates default market module parameters
@@ -32,13 +37,16 @@ func DefaultParams() Params {
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	if p.BasePool.IsNil() {
-		return errors.New("base pool must be set")
+	if p.BasePool.Amount.IsNil() {
+		return errors.New("base pool amount must be set")
+	}
+	if err := p.BasePool.Validate(); err != nil {
+		return fmt.Errorf("invalid base pool: %w", err)
 	}
 	if !p.BasePool.IsPositive() {
 		return fmt.Errorf("base pool must be positive, is %s", p.BasePool)
 	}
-	if _, err := decimal.Mul(p.BasePool, p.BasePool); err != nil {
+	if _, err := decimal.Mul(p.BasePool.Amount, p.BasePool.Amount); err != nil {
 		return fmt.Errorf("base pool square must be representable: %w", err)
 	}
 	if p.PoolRecoveryPeriod == 0 {

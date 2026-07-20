@@ -30,7 +30,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type GenesisState struct {
 	// params defines all the parameters of the module.
 	Params Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
-	// the gap between the ArkPool and the BasePool
+	// ark_pool_delta is the signed gap between the ArkPool and BasePool measured
+	// in params.base_pool.denom.
 	ArkPoolDelta cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=ark_pool_delta,json=arkPoolDelta,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"ark_pool_delta"`
 }
 

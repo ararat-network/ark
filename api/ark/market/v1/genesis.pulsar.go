@@ -535,7 +535,8 @@ type GenesisState struct {
 
 	// params defines all the parameters of the module.
 	Params *Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	// the gap between the ArkPool and the BasePool
+	// ark_pool_delta is the signed gap between the ArkPool and BasePool measured
+	// in params.base_pool.denom.
 	ArkPoolDelta string `protobuf:"bytes,2,opt,name=ark_pool_delta,json=arkPoolDelta,proto3" json:"ark_pool_delta,omitempty"`
 }
 

@@ -23,17 +23,11 @@ func NewEffectivePools(basePool, arkPoolDelta math.LegacyDec) (EffectivePools, e
 	if basePool.IsNil() {
 		return EffectivePools{}, errors.New("base pool must be set")
 	}
-	if !basePool.IsInValidRange() {
-		return EffectivePools{}, errors.New("base pool is out of range")
-	}
 	if !basePool.IsPositive() {
 		return EffectivePools{}, fmt.Errorf("base pool must be positive, is %s", basePool)
 	}
 	if arkPoolDelta.IsNil() {
 		return EffectivePools{}, errors.New("ark pool delta must be set")
-	}
-	if !arkPoolDelta.IsInValidRange() {
-		return EffectivePools{}, errors.New("ark pool delta is out of range")
 	}
 
 	constantProduct, err := decimal.Mul(basePool, basePool)

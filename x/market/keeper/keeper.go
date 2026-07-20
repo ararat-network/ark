@@ -118,12 +118,7 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 	return nil
 }
 
-// GetActiveDenoms returns all denoms that have active oracle exchange rates.
-// Used for simulation
+// GetActiveDenoms returns active oracle denoms for market simulation.
 func (k Keeper) GetActiveDenoms(ctx context.Context) ([]string, error) {
-	actives, err := k.oracleKeeper.GetActives(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return actives, nil
+	return k.oracleKeeper.GetActives(ctx)
 }

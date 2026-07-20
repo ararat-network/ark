@@ -7,6 +7,9 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	chain "ark/pkg/chain"
 	"ark/x/market/types"
 )
 
@@ -23,28 +26,38 @@ func TestValidateParams(t *testing.T) {
 		{
 			name: "nil base pool",
 			mutate: func(p *types.Params) {
-				p.BasePool = math.LegacyDec{}
+				p.BasePool = sdk.DecCoin{}
 			},
-			expectErr: "base pool must be set",
+			expectErr: "base pool amount must be set",
+		},
+		{
+			name: "nil base pool amount with valid denom",
+			mutate: func(p *types.Params) {
+				p.BasePool = sdk.DecCoin{Denom: chain.MicroSDRDenom}
+			},
+			expectErr: "base pool amount must be set",
 		},
 		{
 			name: "zero base pool",
 			mutate: func(p *types.Params) {
-				p.BasePool = math.LegacyZeroDec()
+				p.BasePool = sdk.NewDecCoin(chain.MicroSDRDenom, math.ZeroInt())
 			},
 			expectErr: "base pool must be positive",
 		},
 		{
 			name: "negative base pool",
 			mutate: func(p *types.Params) {
-				p.BasePool = math.LegacyNewDec(-1)
+				p.BasePool = sdk.DecCoin{
+					Denom:  chain.MicroSDRDenom,
+					Amount: math.LegacyNewDec(-1),
+				}
 			},
-			expectErr: "base pool must be positive",
+			expectErr: "invalid base pool",
 		},
 		{
 			name: "base pool square is out of range",
 			mutate: func(p *types.Params) {
-				p.BasePool = maxLegacyDec()
+				p.BasePool = sdk.NewDecCoinFromDec(chain.MicroSDRDenom, maxLegacyDec())
 			},
 			expectErr: "base pool square must be representable",
 		},

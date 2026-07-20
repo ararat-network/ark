@@ -38,22 +38,7 @@ type OracleKeeper interface {
 // TreasuryKeeper defines the allocation and liability accounting required by
 // Market settlement.
 type TreasuryKeeper interface {
-	RouteExpansion(
-		ctx context.Context,
-		grossOffer sdk.Coin,
-		stableOutput sdk.Coin,
-		quoteRates oracletypes.RateSnapshot,
-	) (treasurytypes.ExpansionAllocation, error)
-	DrawRedemptionBuffer(
-		ctx context.Context,
-		redeemedStable sdk.Coin,
-		noahOutput math.Int,
-		quoteRates oracletypes.RateSnapshot,
-	) (treasurytypes.BufferDraw, error)
-	RecordSupplyChange(
-		ctx context.Context,
-		burned sdk.Coin,
-		minted sdk.Coin,
-		quoteRates oracletypes.RateSnapshot,
-	) error
+	RouteExpansion(ctx context.Context, grossOffer sdk.Coin, stableOutput sdk.Coin, quoteRates oracletypes.RateSnapshot) (treasurytypes.ExpansionAllocation, error)
+	DrawRedemptionBuffer(ctx context.Context, redeemedStable sdk.Coin, noahOutput math.Int, quoteRates oracletypes.RateSnapshot) (treasurytypes.BufferDraw, error)
+	RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted sdk.Coin, quoteRates oracletypes.RateSnapshot) error
 }

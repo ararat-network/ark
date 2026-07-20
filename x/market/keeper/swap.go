@@ -9,6 +9,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
@@ -16,143 +17,209 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-// swapQuote captures every rate and pool value used to price and settle one swap.
+// swapQuote captures the outcome and every rate and pool value used to settle one swap.
 // It is execution-local and is never persisted.
 type swapQuote struct {
 	swapDecCoin      sdk.DecCoin
-	spread           math.LegacyDec
+	swapCoin         sdk.Coin
+	swapFee          sdk.DecCoin
 	baseOfferDecCoin sdk.DecCoin
 	arkPoolDelta     math.LegacyDec
-	basePool         math.LegacyDec
+	basePool         sdk.DecCoin
 	rates            oracletypes.RateSnapshot
 }
 
-// ComputeSwap returns the amount of asked coins and spread for a swap quote.
-func (k Keeper) ComputeSwap(ctx context.Context, offerCoin sdk.Coin, askDenom string) (sdk.DecCoin, math.LegacyDec, error) {
-	quote, err := k.quoteSwap(ctx, offerCoin, askDenom)
-	if err != nil {
-		return sdk.DecCoin{}, math.LegacyDec{}, err
+func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom string) (swapQuote, error) {
+	if err := offerCoin.Validate(); err != nil {
+		return swapQuote{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin: %v", err)
 	}
-	return quote.swapDecCoin, quote.spread, nil
-}
-
-func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom string) (*swapQuote, error) {
+	if err := sdk.ValidateDenom(askDenom); err != nil {
+		return swapQuote{}, sdkerrors.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
+	}
+	if offerCoin.Amount.LTE(math.ZeroInt()) {
+		return swapQuote{}, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
+	}
 	if offerCoin.Denom == askDenom {
-		return nil, sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
+		return swapQuote{}, sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
 	}
+	offerDecCoin := sdk.NewDecCoinFromCoin(offerCoin)
+	var quote swapQuote
+	var swapDecCoin sdk.DecCoin
+	var spread math.LegacyDec
 
-	rates, err := k.oracleKeeper.GetRateSnapshot(
-		ctx,
-		offerCoin.Denom,
-		chain.MicroSDRDenom,
-		askDenom,
-	)
-	if err != nil {
-		return nil, marketRateError(err)
-	}
-
-	baseOfferDecCoin, err := rates.Convert(sdk.NewDecCoinFromCoin(offerCoin), chain.MicroSDRDenom)
-	if err != nil {
-		return nil, marketRateError(err)
-	}
-	swapDecCoin, err := rates.Convert(baseOfferDecCoin, askDenom)
-	if err != nil {
-		return nil, marketRateError(err)
-	}
-
-	quote := &swapQuote{
-		swapDecCoin:      swapDecCoin,
-		baseOfferDecCoin: baseOfferDecCoin,
-		rates:            rates,
-	}
-
-	// Stablecoin-to-stablecoin swaps use only the larger Tobin tax.
 	if offerCoin.Denom != chain.MicroNoahDenom && askDenom != chain.MicroNoahDenom {
+		// Stablecoin-to-stablecoin swaps use only the larger Tobin tax.
+		rates, err := k.oracleKeeper.GetRateSnapshot(ctx, offerCoin.Denom, askDenom)
+		if err != nil {
+			return swapQuote{}, marketRateError(err)
+		}
+		swapDecCoin, err = rates.Convert(offerDecCoin, askDenom)
+		if err != nil {
+			return swapQuote{}, err
+		}
 		offerTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
 		if err != nil {
-			return nil, err
+			return swapQuote{}, err
 		}
 		askTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, askDenom)
 		if err != nil {
-			return nil, err
+			return swapQuote{}, err
 		}
-		if askTobinTax.GT(offerTobinTax) {
-			quote.spread = askTobinTax
-		} else {
-			quote.spread = offerTobinTax
-		}
-		return quote, nil
-	}
-
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting params: %w", err)
-	}
-	arkPoolDelta, err := k.ArkPoolDelta.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting ArkPoolDelta: %w", err)
-	}
-	quote.arkPoolDelta = arkPoolDelta
-	quote.basePool = params.BasePool
-
-	pools, err := types.NewEffectivePools(params.BasePool, arkPoolDelta)
-	if err != nil {
-		return nil, arithmeticError("constructing effective pools", err)
-	}
-
-	var offerPool math.LegacyDec
-	var askPool math.LegacyDec
-	if offerCoin.Denom != chain.MicroNoahDenom {
-		offerPool = pools.ArkPool
-		askPool = pools.NoahPool
+		spread = math.LegacyMaxDec(askTobinTax, offerTobinTax)
+		quote.rates = rates
 	} else {
-		offerPool = pools.NoahPool
-		askPool = pools.ArkPool
+		params, err := k.Params.Get(ctx)
+		if err != nil {
+			return swapQuote{}, fmt.Errorf("getting params: %w", err)
+		}
+		arkPoolDelta, err := k.ArkPoolDelta.Get(ctx)
+		if err != nil {
+			return swapQuote{}, fmt.Errorf("getting ArkPoolDelta: %w", err)
+		}
+		rates, err := k.oracleKeeper.GetRateSnapshot(
+			ctx,
+			offerCoin.Denom,
+			params.BasePool.Denom,
+			askDenom,
+		)
+		if err != nil {
+			return swapQuote{}, marketRateError(err)
+		}
+		baseOfferDecCoin, err := rates.Convert(offerDecCoin, params.BasePool.Denom)
+		if err != nil {
+			return swapQuote{}, err
+		}
+		swapDecCoin, err = rates.Convert(offerDecCoin, askDenom)
+		if err != nil {
+			return swapQuote{}, err
+		}
+		quote = swapQuote{
+			baseOfferDecCoin: baseOfferDecCoin,
+			arkPoolDelta:     arkPoolDelta,
+			basePool:         params.BasePool,
+			rates:            rates,
+		}
+
+		pools, err := types.NewEffectivePools(params.BasePool.Amount, arkPoolDelta)
+		if err != nil {
+			return swapQuote{}, arithmeticError("constructing effective pools", err)
+		}
+
+		var offerPool math.LegacyDec
+		var askPool math.LegacyDec
+		if offerCoin.Denom != chain.MicroNoahDenom {
+			offerPool = pools.ArkPool
+			askPool = pools.NoahPool
+		} else {
+			offerPool = pools.NoahPool
+			askPool = pools.ArkPool
+		}
+
+		// Express the offer in base-pool units before calculating the constant-product spread.
+		baseOfferAmount := baseOfferDecCoin.Amount
+		updatedOfferPool, err := decimal.Add(offerPool, baseOfferAmount)
+		if err != nil {
+			return swapQuote{}, arithmeticError("adding the offer amount to the effective pool", err)
+		}
+		remainingAskPool := pools.ConstantProduct.Quo(updatedOfferPool)
+		askBaseAmount := askPool.Sub(remainingAskPool)
+
+		spread = params.MinStabilitySpread
+		if askBaseAmount.LT(baseOfferAmount) {
+			rawSpread := baseOfferAmount.Sub(askBaseAmount).Quo(baseOfferAmount)
+			spread = math.LegacyMaxDec(params.MinStabilitySpread, rawSpread)
+		}
 	}
 
-	// Preserve the existing arithmetic order: offer -> SDR, then constant-product spread.
-	updatedOfferPool, err := decimal.Add(offerPool, baseOfferDecCoin.Amount)
-	if err != nil {
-		return nil, arithmeticError("adding the offer amount to the effective pool", err)
+	feeAmount := spread.Mul(swapDecCoin.Amount)
+	swapDecCoin.Amount = swapDecCoin.Amount.Sub(feeAmount)
+	swapCoin, dust := swapDecCoin.TruncateDecimal()
+	if !swapCoin.IsPositive() {
+		return swapQuote{}, types.ErrZeroSwapCoin
 	}
-	remainingAskPool, err := decimal.Quo(pools.ConstantProduct, updatedOfferPool)
-	if err != nil {
-		return nil, arithmeticError("computing the remaining ask pool", err)
-	}
-	askBaseAmount, err := decimal.Sub(askPool, remainingAskPool)
-	if err != nil {
-		return nil, arithmeticError("computing the ask amount", err)
-	}
-	if askBaseAmount.IsNegative() {
-		return nil, arithmeticError("computing the ask amount", errors.New("ask amount is negative"))
-	}
-	baseOfferAmount := baseOfferDecCoin.Amount
-	spreadAmount, err := decimal.Sub(baseOfferAmount, askBaseAmount)
-	if err != nil {
-		return nil, arithmeticError("computing the spread amount", err)
-	}
-	spread, err := decimal.Quo(spreadAmount, baseOfferAmount)
-	if err != nil {
-		return nil, arithmeticError("computing the spread", err)
-	}
-	if spread.IsNegative() || spread.GT(math.LegacyOneDec()) {
-		return nil, arithmeticError("computing the spread", fmt.Errorf("spread %s is outside [0, 1]", spread))
-	}
-	if spread.LT(params.MinStabilitySpread) {
-		spread = params.MinStabilitySpread
-	}
-	quote.spread = spread
+
+	quote.swapDecCoin = swapDecCoin
+	quote.swapCoin = swapCoin
+	quote.swapFee = sdk.NewDecCoinFromDec(swapDecCoin.Denom, feeAmount.Add(dust.Amount))
 
 	return quote, nil
+}
+
+// settleSwap applies pool changes, moves funds through the module account, and emits swap events.
+func (k Keeper) settleSwap(
+	ctx context.Context,
+	trader sdk.AccAddress,
+	receiver sdk.AccAddress,
+	offerCoin sdk.Coin,
+	quote swapQuote,
+) error {
+	if err := k.applySwapToPool(ctx, offerCoin, quote); err != nil {
+		return sdkerrors.Wrapf(err, "applying swap to pool for offer %s and receive %s", offerCoin, quote.swapDecCoin)
+	}
+
+	offerCoins := sdk.NewCoins(offerCoin)
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, trader, types.ModuleName, offerCoins); err != nil {
+		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
+	}
+
+	burned := offerCoin
+	minted := quote.swapCoin
+	if offerCoin.Denom == chain.MicroNoahDenom {
+		allocation, err := k.treasuryKeeper.RouteExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "routing expansion for offer %s and output %s", offerCoin, quote.swapCoin)
+		}
+		burned = sdk.NewCoin(chain.MicroNoahDenom, allocation.TotalBurn())
+	} else if quote.swapCoin.Denom == chain.MicroNoahDenom {
+		draw, err := k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, quote.swapCoin.Amount, quote.rates)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, quote.swapCoin)
+		}
+		minted = sdk.NewCoin(chain.MicroNoahDenom, quote.swapCoin.Amount.Sub(draw.BufferPaid))
+	}
+
+	if !burned.IsZero() {
+		if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(burned)); err != nil {
+			return sdkerrors.Wrapf(err, "burning settlement coins %s from module", burned)
+		}
+	}
+	if !minted.IsZero() {
+		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
+			return sdkerrors.Wrapf(err, "minting settlement coins %s in module", minted)
+		}
+	}
+
+	if err := k.treasuryKeeper.RecordSupplyChange(ctx, burned, minted, quote.rates); err != nil {
+		return sdkerrors.Wrapf(err, "recording supply change from %s to %s", burned, minted)
+	}
+
+	swapCoins := sdk.NewCoins(quote.swapCoin)
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins); err != nil {
+		return sdkerrors.Wrapf(err, "sending swap coins %s from module to receiver %s", swapCoins, receiver)
+	}
+
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventSwap{
+		Trader:      trader.String(),
+		Recipient:   receiver.String(),
+		OfferDenom:  offerCoin.Denom,
+		OfferAmount: offerCoin.Amount,
+		SwapDenom:   quote.swapCoin.Denom,
+		SwapAmount:  quote.swapCoin.Amount,
+		FeeDenom:    quote.swapFee.Denom,
+		FeeAmount:   quote.swapFee.Amount,
+	}); err != nil {
+		return fmt.Errorf("emitting Market swap event: %w", err)
+	}
+
+	return nil
 }
 
 func (k Keeper) applySwapToPool(
 	ctx context.Context,
 	offerCoin sdk.Coin,
-	askCoin sdk.DecCoin,
-	quote *swapQuote,
+	quote swapQuote,
 ) error {
-	if offerCoin.Denom != chain.MicroNoahDenom && askCoin.Denom != chain.MicroNoahDenom {
+	if offerCoin.Denom != chain.MicroNoahDenom && quote.swapDecCoin.Denom != chain.MicroNoahDenom {
 		return nil
 	}
 
@@ -164,9 +231,9 @@ func (k Keeper) applySwapToPool(
 			return arithmeticError("adding the offer amount to the ark pool delta", err)
 		}
 	} else {
-		askBaseCoin, err := quote.rates.Convert(askCoin, chain.MicroSDRDenom)
+		askBaseCoin, err := quote.rates.Convert(quote.swapDecCoin, quote.basePool.Denom)
 		if err != nil {
-			return marketRateError(err)
+			return err
 		}
 		arkPoolDelta, err = decimal.Sub(arkPoolDelta, askBaseCoin.Amount)
 		if err != nil {
@@ -174,7 +241,7 @@ func (k Keeper) applySwapToPool(
 		}
 	}
 
-	if _, err := types.NewEffectivePools(quote.basePool, arkPoolDelta); err != nil {
+	if _, err := types.NewEffectivePools(quote.basePool.Amount, arkPoolDelta); err != nil {
 		return arithmeticError("validating the updated effective pools", err)
 	}
 

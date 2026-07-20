@@ -64,7 +64,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "missing oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "unknown").
+				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "unknown").
 					Return(nil, oracletypes.ErrUnknownDenom)
 			},
 			req: &types.QuerySwapRequest{
@@ -77,7 +77,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "stale oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
 					Return(nil, oracletypes.ErrStaleExchangeRate)
 			},
 			req: &types.QuerySwapRequest{
@@ -107,7 +107,7 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	largeAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 200))
 	offerCoin := sdk.NewCoin("uusd", largeAmount)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
 		Return(oracletypes.RateSnapshot{
 			"uusd":              math.LegacyOneDec(),
 			chain.MicroSDRDenom: math.LegacyOneDec(),
@@ -124,24 +124,25 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	s.Require().Equal(sdk.NewCoin("ukrw", largeAmount), res.SwapCoin)
 }
 
-func (s *KeeperTestSuite) TestQuerySwapReturnsOutOfRangeForUnrepresentableConversion() {
+func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentablePoolUnitIntermediate() {
 	offerAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
 	offerCoin := sdk.NewCoin("uusd", offerAmount)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
 		Return(oracletypes.RateSnapshot{
 			"uusd":              math.LegacyOneDec(),
 			chain.MicroSDRDenom: math.LegacyNewDec(2),
 			"ukrw":              math.LegacyOneDec(),
 		}, nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").Return(math.LegacyZeroDec(), nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").Return(math.LegacyZeroDec(), nil)
 
-	_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  "ukrw",
 	})
-	s.Require().Error(err)
-	s.Require().Equal(codes.OutOfRange, status.Code(err))
-	s.Require().ErrorContains(err, "conversion result is out of range")
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewCoin("ukrw", offerAmount), res.SwapCoin)
 }
 
 func (s *KeeperTestSuite) TestQuerySwapOutcome() {
@@ -241,12 +242,13 @@ func (s *KeeperTestSuite) TestQueryArkPoolDelta() {
 			s.Require().NoError(err)
 			s.Require().NotNil(res)
 			s.Require().True(tc.delta.Equal(res.ArkPoolDelta))
+			s.Require().Equal(chain.MicroSDRDenom, res.PoolDenom)
 		})
 	}
 }
 
 func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", chain.MicroSDRDenom, "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
 		Return(oracletypes.RateSnapshot{
 			"uusd":              offerRate,
 			chain.MicroSDRDenom: math.LegacyOneDec(),

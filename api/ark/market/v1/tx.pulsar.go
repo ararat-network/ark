@@ -3493,7 +3493,10 @@ type MsgUpdateParams struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// params defines the x/market parameters to update.
 	//
-	// NOTE: All parameters must be supplied.
+	// NOTE: All parameters must be supplied. For a same-denomination BasePool
+	// update, BasePool.Amount is authoritative. For a denomination change,
+	// BasePool.Amount is a non-binding audit expectation; Market applies the
+	// amount derived from a fresh deterministic Oracle snapshot.
 	Params *Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
 }
 

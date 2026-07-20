@@ -9,8 +9,10 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	chain "ark/pkg/chain"
 	"ark/x/market/types"
 )
 
@@ -22,8 +24,9 @@ const (
 )
 
 // GenBasePool randomised BasePool
-func GenBasePool(r *rand.Rand) math.LegacyDec {
-	return math.LegacyNewDec(50000000000000).Add(math.LegacyNewDec(int64(r.Intn(10000000000))))
+func GenBasePool(r *rand.Rand) sdk.DecCoin {
+	amount := math.LegacyNewDec(50000000000000).Add(math.LegacyNewDec(int64(r.Intn(10000000000))))
+	return sdk.NewDecCoinFromDec(chain.MicroSDRDenom, amount)
 }
 
 // GenPoolRecoveryPeriod randomised PoolRecoveryPeriod
@@ -38,7 +41,7 @@ func GenMinSpread(r *rand.Rand) math.LegacyDec {
 
 // RandomisedGenState generates a random GenesisState for the market module
 func RandomisedGenState(simState *module.SimulationState) {
-	var basePool math.LegacyDec
+	var basePool sdk.DecCoin
 	simState.AppParams.GetOrGenerate(
 		basePoolKey,
 		&basePool,

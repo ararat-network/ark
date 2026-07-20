@@ -47,7 +47,15 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
 					RpcMethod: "Swap",
-					Skip:      true,
+					Use:       "swap [offer-coin] [ask-denom] [minimum-receive]",
+					Short:     "Atomically swap currencies at their target exchange rate",
+					Long:      "Swap the offer coin to the ask denomination at the oracle's effective exchange rate. The swap fails unless it returns at least minimum-receive.",
+					Example:   fmt.Sprintf(`%s tx market swap "1000ukrw" "uusd" "1uusd"`, version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "offer_coin"},
+						{ProtoField: "ask_denom"},
+						{ProtoField: "minimum_receive"},
+					},
 				},
 				{
 					RpcMethod: "SwapSend",

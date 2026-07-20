@@ -2,24 +2,44 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"ark/x/market/types"
+	oracletypes "ark/x/oracle/types"
 )
 
-// InitGenesis initializes the market module genesis
+// InitGenesis initialises the market module genesis
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
+	if data == nil {
+		return fmt.Errorf("market genesis state is nil")
+	}
+	if err := data.Validate(); err != nil {
+		return fmt.Errorf("invalid market genesis state: %w", err)
+	}
+
+	// Check that the module account exists before writing module state.
+	moduleAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
+	if moduleAcc == nil {
+		return fmt.Errorf("%s module account has not been set", types.ModuleName)
+	}
+
+	if _, err := k.oracleKeeper.GetTobinTax(ctx, data.Params.BasePool.Denom); err != nil {
+		if errors.Is(err, oracletypes.ErrUnknownDenom) {
+			return fmt.Errorf(
+				"base pool denom %s is not configured in oracle: %w",
+				data.Params.BasePool.Denom,
+				err,
+			)
+		}
+		return fmt.Errorf("checking base pool denom %s in oracle: %w", data.Params.BasePool.Denom, err)
+	}
+
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
 	if err := k.ArkPoolDelta.Set(ctx, data.ArkPoolDelta); err != nil {
 		return fmt.Errorf("setting ark pool delta: %w", err)
-	}
-
-	// check if the module account exists
-	moduleAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
-	if moduleAcc == nil {
-		return fmt.Errorf("%s module account has not been set", types.ModuleName)
 	}
 
 	return nil

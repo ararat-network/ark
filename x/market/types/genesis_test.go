@@ -30,7 +30,7 @@ func TestValidateGenesisState(t *testing.T) {
 		{
 			name: "non-positive effective ark pool",
 			mutate: func(gs *types.GenesisState) {
-				gs.ArkPoolDelta = gs.Params.BasePool.Neg()
+				gs.ArkPoolDelta = gs.Params.BasePool.Amount.Neg()
 			},
 			expectErr: "effective ark pool must be positive",
 		},

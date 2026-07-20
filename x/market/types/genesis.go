@@ -35,7 +35,7 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 
-	if _, err := NewEffectivePools(gs.Params.BasePool, gs.ArkPoolDelta); err != nil {
+	if _, err := NewEffectivePools(gs.Params.BasePool.Amount, gs.ArkPoolDelta); err != nil {
 		return err
 	}
 

@@ -56,13 +56,16 @@ message QueryArkPoolDeltaRequest {}
 // QueryArkPoolDeltaResponse is the response type for the Query/ArkPoolDelta
 // RPC method.
 message QueryArkPoolDeltaResponse {
-  // ark_pool_delta defines the gap between the ArkPool and the ArkBasePool
+  // ark_pool_delta defines the signed gap between the ArkPool and BasePool in
+  // pool_denom units.
   string ark_pool_delta = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // pool_denom defines the denomination of ark_pool_delta.
+  string pool_denom = 2;
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.

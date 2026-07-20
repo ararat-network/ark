@@ -2,22 +2,24 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	chain "ark/pkg/chain"
+	"ark/pkg/decimal"
 	"ark/x/market/types"
-	treasurytypes "ark/x/treasury/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 var _ types.MsgServer = msgServer{}
 
 type msgServer struct {
+	types.UnimplementedMsgServer
+
 	k *Keeper
 }
 
@@ -27,6 +29,92 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return msgServer{k: k}
 }
 
+// UpdateParams updates the params.
+func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
+		return nil, err
+	}
+
+	if err := msg.Params.Validate(); err != nil {
+		return nil, err
+	}
+
+	currentParams, err := m.k.Params.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting current market params: %w", err)
+	}
+	oldDelta, err := m.k.ArkPoolDelta.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting ark pool delta: %w", err)
+	}
+
+	appliedParams := msg.Params
+	if msg.Params.BasePool.Denom != currentParams.BasePool.Denom {
+		if _, err := m.k.oracleKeeper.GetTobinTax(ctx, msg.Params.BasePool.Denom); err != nil {
+			if errors.Is(err, oracletypes.ErrUnknownDenom) {
+				return nil, sdkerrors.Wrapf(
+					errortypes.ErrInvalidRequest,
+					"base pool denom %s is not configured in oracle: %v",
+					msg.Params.BasePool.Denom,
+					err,
+				)
+			}
+			return nil, fmt.Errorf("checking base pool denom %s in oracle: %w", msg.Params.BasePool.Denom, err)
+		}
+		rates, err := m.k.oracleKeeper.GetRateSnapshot(
+			ctx,
+			currentParams.BasePool.Denom,
+			msg.Params.BasePool.Denom,
+		)
+		if err != nil {
+			return nil, marketRateError(err)
+		}
+		appliedParams.BasePool, err = rates.Convert(currentParams.BasePool, msg.Params.BasePool.Denom)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	newDelta := oldDelta
+	if !appliedParams.BasePool.Amount.Equal(currentParams.BasePool.Amount) {
+		scaledDelta, err := decimal.Mul(oldDelta, appliedParams.BasePool.Amount)
+		if err != nil {
+			return nil, arithmeticError("rescaling ark pool delta", err)
+		}
+		newDelta, err = decimal.Quo(scaledDelta, currentParams.BasePool.Amount)
+		if err != nil {
+			return nil, arithmeticError("rescaling ark pool delta", err)
+		}
+	}
+	if _, err := types.NewEffectivePools(appliedParams.BasePool.Amount, newDelta); err != nil {
+		return nil, sdkerrors.Wrapf(
+			errortypes.ErrInvalidRequest,
+			"invalid effective pools: %v",
+			err,
+		)
+	}
+
+	if err := m.k.Params.Set(ctx, appliedParams); err != nil {
+		return nil, err
+	}
+	if err := m.k.ArkPoolDelta.Set(ctx, newDelta); err != nil {
+		return nil, err
+	}
+
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventPoolUpdated{
+		OldBasePoolDenom:  currentParams.BasePool.Denom,
+		OldBasePoolAmount: currentParams.BasePool.Amount,
+		NewBasePoolDenom:  appliedParams.BasePool.Denom,
+		NewBasePoolAmount: appliedParams.BasePool.Amount,
+		OldArkPoolDelta:   oldDelta,
+		NewArkPoolDelta:   newDelta,
+	}); err != nil {
+		return nil, fmt.Errorf("emitting Market pool update event: %w", err)
+	}
+	return &types.MsgUpdateParamsResponse{}, nil
+}
+
 // Swap validates the trader address and executes a swap back to the same account.
 func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
@@ -34,9 +122,6 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid trader address (%s)", err)
 	}
 
-	if err := validateInputs(msg.OfferCoin, msg.AskDenom); err != nil {
-		return nil, err
-	}
 	if err := validateMinimumReceive(msg.MinimumReceive, msg.AskDenom); err != nil {
 		return nil, err
 	}
@@ -47,26 +132,22 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 		return nil, sdkerrors.Wrapf(err, "computing swap from %s to %s", msg.OfferCoin, msg.AskDenom)
 	}
 
-	outcome, err := buildSwapOutcome(quote.swapDecCoin, quote.spread)
-	if err != nil {
-		return nil, err
-	}
-	if outcome.swapCoin.Amount.LT(msg.MinimumReceive.Amount) {
+	if quote.swapCoin.Amount.LT(msg.MinimumReceive.Amount) {
 		return nil, sdkerrors.Wrapf(
 			types.ErrMinimumReceiveNotMet,
 			"minimum %s, received %s",
 			msg.MinimumReceive,
-			outcome.swapCoin,
+			quote.swapCoin,
 		)
 	}
 
-	if err := m.settleSwap(ctx, addr, addr, msg.OfferCoin, outcome, quote); err != nil {
+	if err := m.k.settleSwap(ctx, addr, addr, msg.OfferCoin, quote); err != nil {
 		return nil, err
 	}
 
 	return &types.MsgSwapResponse{
-		SwapCoin: outcome.swapCoin,
-		SwapFee:  outcome.swapFee,
+		SwapCoin: quote.swapCoin,
+		SwapFee:  quote.swapFee,
 	}, nil
 }
 
@@ -81,9 +162,6 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "invalid to address (%s)", err)
 	}
 
-	if err := validateInputs(msg.OfferCoin, msg.AskDenom); err != nil {
-		return nil, err
-	}
 	if err := validateMinimumReceive(msg.MinimumReceive, msg.AskDenom); err != nil {
 		return nil, err
 	}
@@ -94,75 +172,22 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 		return nil, sdkerrors.Wrapf(err, "computing swap from %s to %s", msg.OfferCoin, msg.AskDenom)
 	}
 
-	outcome, err := buildSwapOutcome(quote.swapDecCoin, quote.spread)
-	if err != nil {
-		return nil, err
-	}
-	if outcome.swapCoin.Amount.LT(msg.MinimumReceive.Amount) {
+	if quote.swapCoin.Amount.LT(msg.MinimumReceive.Amount) {
 		return nil, sdkerrors.Wrapf(
 			types.ErrMinimumReceiveNotMet,
 			"minimum %s, received %s",
 			msg.MinimumReceive,
-			outcome.swapCoin,
+			quote.swapCoin,
 		)
 	}
 
-	if err := m.settleSwap(ctx, fromAddr, toAddr, msg.OfferCoin, outcome, quote); err != nil {
+	if err := m.k.settleSwap(ctx, fromAddr, toAddr, msg.OfferCoin, quote); err != nil {
 		return nil, err
 	}
 	return &types.MsgSwapSendResponse{
-		SwapCoin: outcome.swapCoin,
-		SwapFee:  outcome.swapFee,
+		SwapCoin: quote.swapCoin,
+		SwapFee:  quote.swapFee,
 	}, nil
-}
-
-// UpdateParams updates the params.
-func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
-		return nil, err
-	}
-
-	if err := msg.Params.Validate(); err != nil {
-		return nil, err
-	}
-
-	arkPoolDelta, err := m.k.ArkPoolDelta.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting ark pool delta: %w", err)
-	}
-	if _, err := types.NewEffectivePools(msg.Params.BasePool, arkPoolDelta); err != nil {
-		return nil, sdkerrors.Wrapf(
-			errortypes.ErrInvalidRequest,
-			"invalid effective pools: %v",
-			err,
-		)
-	}
-
-	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
-		return nil, err
-	}
-
-	return &types.MsgUpdateParamsResponse{}, nil
-}
-
-// validateInputs enforces the local swap input bounds before any pricing or state changes.
-func validateInputs(offerCoin sdk.Coin, askDenom string) error {
-	if err := offerCoin.Validate(); err != nil {
-		return sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin: %v", err)
-	}
-	if err := sdk.ValidateDenom(askDenom); err != nil {
-		return sdkerrors.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
-	}
-	if offerCoin.Amount.LTE(math.ZeroInt()) {
-		return sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
-	}
-
-	if offerCoin.Denom == askDenom {
-		return sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
-	}
-
-	return nil
 }
 
 func validateMinimumReceive(minimumReceive sdk.Coin, askDenom string) error {
@@ -181,143 +206,5 @@ func validateMinimumReceive(minimumReceive sdk.Coin, askDenom string) error {
 		)
 	}
 
-	return nil
-}
-
-type swapOutcome struct {
-	swapDecCoin sdk.DecCoin
-	swapCoin    sdk.Coin
-	swapFee     sdk.DecCoin
-}
-
-// buildSwapOutcome applies spread, truncates the swap result, and returns the final coin and fee.
-func buildSwapOutcome(swapDecCoin sdk.DecCoin, spread math.LegacyDec) (*swapOutcome, error) {
-	var swapFee sdk.DecCoin
-	if spread.IsPositive() {
-		swapFee = sdk.NewDecCoinFromDec(swapDecCoin.Denom, spread.Mul(swapDecCoin.Amount))
-	} else {
-		swapFee = sdk.NewDecCoin(swapDecCoin.Denom, math.ZeroInt())
-	}
-
-	swapDecCoin.Amount = swapDecCoin.Amount.Sub(swapFee.Amount)
-	swapCoin, decimalCoin := swapDecCoin.TruncateDecimal()
-	if !swapCoin.IsPositive() {
-		return nil, types.ErrZeroSwapCoin
-	}
-
-	swapFee = swapFee.Add(decimalCoin)
-
-	return &swapOutcome{
-		swapDecCoin: swapDecCoin,
-		swapCoin:    swapCoin,
-		swapFee:     swapFee,
-	}, nil
-}
-
-// settleSwap applies pool changes, moves funds through the module account, and emits swap events.
-func (m msgServer) settleSwap(
-	ctx context.Context,
-	trader sdk.AccAddress,
-	receiver sdk.AccAddress,
-	offerCoin sdk.Coin,
-	outcome *swapOutcome,
-	quote *swapQuote,
-) error {
-	if err := m.k.applySwapToPool(ctx, offerCoin, outcome.swapDecCoin, quote); err != nil {
-		return sdkerrors.Wrapf(err, "applying swap to pool for offer %s and receive %s", offerCoin, outcome.swapDecCoin)
-	}
-
-	offerCoins := sdk.NewCoins(offerCoin)
-	if err := m.k.bankKeeper.SendCoinsFromAccountToModule(ctx, trader, types.ModuleName, offerCoins); err != nil {
-		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
-	}
-
-	var burned, minted sdk.Coin
-	switch {
-	case offerCoin.Denom == chain.MicroNoahDenom:
-		allocation, err := m.k.treasuryKeeper.RouteExpansion(ctx, offerCoin, outcome.swapCoin, quote.rates)
-		if err != nil {
-			return sdkerrors.Wrapf(err, "routing expansion for offer %s and output %s", offerCoin, outcome.swapCoin)
-		}
-		totalBurn := allocation.TotalBurn()
-		burned = sdk.NewCoin(chain.MicroNoahDenom, totalBurn)
-		if burned.IsPositive() {
-			if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(burned)); err != nil {
-				return sdkerrors.Wrapf(err, "burning expansion coins %s from module", burned)
-			}
-		}
-		minted = outcome.swapCoin
-		if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
-			return sdkerrors.Wrapf(err, "minting expansion output %s in module", minted)
-		}
-
-	case outcome.swapCoin.Denom == chain.MicroNoahDenom:
-		draw, err := m.k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, outcome.swapCoin.Amount, quote.rates)
-		if err != nil {
-			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, outcome.swapCoin)
-		}
-		if err := validateBufferDraw(draw, outcome.swapCoin.Amount); err != nil {
-			return sdkerrors.Wrapf(err, "validating redemption buffer draw for offer %s", offerCoin)
-		}
-		residualMint := outcome.swapCoin.Amount.Sub(draw.BufferPaid)
-		burned = offerCoin
-		if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
-			return sdkerrors.Wrapf(err, "burning redemption offer %s from module", offerCoin)
-		}
-		minted = sdk.NewCoin(chain.MicroNoahDenom, residualMint)
-		if minted.IsPositive() {
-			if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
-				return sdkerrors.Wrapf(err, "minting residual redemption output %s in module", minted)
-			}
-		}
-
-	default:
-		burned = offerCoin
-		if err := m.k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
-			return sdkerrors.Wrapf(err, "burning offer coins %s from module", offerCoins)
-		}
-		minted = outcome.swapCoin
-		if err := m.k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
-			return sdkerrors.Wrapf(err, "minting swap coins %s in module", minted)
-		}
-	}
-
-	if err := m.k.treasuryKeeper.RecordSupplyChange(ctx, burned, minted, quote.rates); err != nil {
-		return sdkerrors.Wrapf(err, "recording supply change from %s to %s", burned, minted)
-	}
-
-	swapCoins := sdk.NewCoins(outcome.swapCoin)
-	if err := m.k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins); err != nil {
-		return sdkerrors.Wrapf(err, "sending swap coins %s from module to receiver %s", swapCoins, receiver)
-	}
-
-	sdk.UnwrapSDKContext(ctx).EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventSwap,
-			sdk.NewAttribute(types.AttributeKeyOffer, offerCoin.String()),
-			sdk.NewAttribute(types.AttributeKeyTrader, trader.String()),
-			sdk.NewAttribute(types.AttributeKeyRecipient, receiver.String()),
-			sdk.NewAttribute(types.AttributeKeySwapCoin, outcome.swapCoin.String()),
-			sdk.NewAttribute(types.AttributeKeySwapFee, outcome.swapFee.String()),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-		),
-	})
-
-	return nil
-}
-
-func validateBufferDraw(draw treasurytypes.BufferDraw, noahOutput math.Int) error {
-	if draw.BufferPaid.IsNil() {
-		return fmt.Errorf("buffer payment must be set")
-	}
-	if draw.BufferPaid.IsNegative() {
-		return fmt.Errorf("buffer payment must be zero or positive: %s", draw.BufferPaid)
-	}
-	if draw.BufferPaid.GT(noahOutput) {
-		return fmt.Errorf("buffer payment %s exceeds NOAH output %s", draw.BufferPaid, noahOutput)
-	}
 	return nil
 }
