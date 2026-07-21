@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/bits"
 	"slices"
 	"strings"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	chain "ark/pkg/chain"
 	"ark/x/oracle/types"
@@ -39,11 +37,11 @@ type Keeper struct {
 
 	Schema       collections.Schema
 	Params       collections.Item[types.Params]
-	Accounting   collections.Item[types.AccountingState]
+	Accounting   collections.Item[types.Accounting]
 	ExchangeRate collections.Map[string, types.ExchangeRate]
-	ScoreWeight  collections.Map[sdk.ValAddress, math.Int]
+	RewardWeight collections.Map[sdk.ValAddress, math.Int]
 	MissCount    collections.Map[sdk.ValAddress, uint64]
-	VoteTargets  collections.Item[types.VoteTargetState]
+	VoteTargets  collections.Item[types.VoteTargets]
 }
 
 // NewKeeper constructs an oracle keeper.
@@ -87,7 +85,7 @@ func NewKeeper(
 			sb,
 			types.AccountingKey,
 			"accounting",
-			codec.CollValue[types.AccountingState](cdc),
+			codec.CollValue[types.Accounting](cdc),
 		),
 		ExchangeRate: collections.NewMap(
 			sb,
@@ -96,10 +94,10 @@ func NewKeeper(
 			collections.StringKey,
 			codec.CollValue[types.ExchangeRate](cdc),
 		),
-		ScoreWeight: collections.NewMap(
+		RewardWeight: collections.NewMap(
 			sb,
-			types.ScoreWeightKey,
-			"socre_weight",
+			types.RewardWeightKey,
+			"reward_weight",
 			sdk.ValAddressKey,
 			sdk.IntValue,
 		),
@@ -114,7 +112,7 @@ func NewKeeper(
 			sb,
 			types.VoteTargetsKey,
 			"vote_targets",
-			codec.CollValue[types.VoteTargetState](cdc),
+			codec.CollValue[types.VoteTargets](cdc),
 		),
 	}
 
@@ -166,73 +164,62 @@ func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime t
 		}
 		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
-	if err := validateExchangeRate(denom, exchangeRate, currentTime, maxAge); err != nil {
-		return math.LegacyZeroDec(), err
+	if currentTime.Sub(exchangeRate.BlockTimestamp) > maxAge {
+		return math.LegacyZeroDec(), sdkerrors.Wrapf(
+			types.ErrStaleExchangeRate,
+			"%s rate age exceeds maximum (updated %s, current %s)",
+			denom,
+			exchangeRate.BlockTimestamp,
+			currentTime,
+		)
 	}
 
 	return exchangeRate.Rate, nil
 }
 
-func validateExchangeRate(
-	denom string,
-	exchangeRate types.ExchangeRate,
-	currentTime time.Time,
-	maxAge time.Duration,
-) error {
-	if err := chain.ValidateMicroDenom(denom); err != nil {
-		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "invalid stored denom %q: %v", denom, err)
-	}
-	if exchangeRate.Denom != denom {
-		return sdkerrors.Wrapf(
-			types.ErrInvalidExchangeRate,
-			"stored denom %q does not match collection key %q",
-			exchangeRate.Denom,
-			denom,
-		)
-	}
-	if exchangeRate.Rate.IsNil() {
-		return sdkerrors.Wrapf(
-			types.ErrInvalidExchangeRate,
-			"%s rate is unset",
-			denom,
-		)
-	}
-	if !exchangeRate.Rate.IsPositive() {
-		return sdkerrors.Wrapf(
-			types.ErrInvalidExchangeRate,
-			"%s rate %s",
-			denom,
-			exchangeRate.Rate,
-		)
-	}
-	if exchangeRate.BlockTimestamp.After(currentTime) {
-		return sdkerrors.Wrapf(
-			types.ErrInvalidExchangeRate,
-			"%s rate timestamp %s is after current block time %s",
-			denom,
-			exchangeRate.BlockTimestamp,
-			currentTime,
-		)
-	}
-	if age := currentTime.Sub(exchangeRate.BlockTimestamp); age > maxAge {
-		return sdkerrors.Wrapf(
-			types.ErrStaleExchangeRate,
-			"%s rate age %s exceeds maximum %s (updated %s, current %s)",
-			denom,
-			age,
-			maxAge,
-			exchangeRate.BlockTimestamp,
-			currentTime,
-		)
+// GetExchangeRates returns all non-stale stored exchange rates.
+func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting params: %w", err)
 	}
 
-	return nil
+	var exchangeRates sdk.DecCoins
+	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
+		if currentTime.Sub(exchangeRate.BlockTimestamp) > params.MaxExchangeRateAge {
+			return false, nil
+		}
+		exchangeRates = append(exchangeRates, sdk.NewDecCoinFromDec(denom, exchangeRate.Rate))
+		return false, nil
+	}); err != nil {
+		return nil, fmt.Errorf("iterating exchange rates: %w", err)
+	}
+
+	return exchangeRates, nil
 }
 
 // SetExchangeRateWithEvent stores an exchange rate and emits an update event.
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
 	if err := chain.ValidateMicroDenom(exchangeRate.Denom); err != nil {
 		return fmt.Errorf("invalid exchange rate denom: %w", err)
+	}
+	if exchangeRate.Rate.IsNil() {
+		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate is unset", exchangeRate.Denom)
+	}
+	if !exchangeRate.Rate.IsPositive() {
+		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate %s is not positive", exchangeRate.Denom, exchangeRate.Rate)
+	}
+
+	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	if exchangeRate.BlockTimestamp.After(currentTime) {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidExchangeRate,
+			"%s rate timestamp %s is after current block time %s",
+			exchangeRate.Denom,
+			exchangeRate.BlockTimestamp,
+			currentTime,
+		)
 	}
 	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
 		return fmt.Errorf("setting exchange rate with event for denom %s: %w", exchangeRate.Denom, err)
@@ -247,31 +234,6 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	}
 
 	return nil
-}
-
-// GetActives returns denoms with non-stale exchange rates.
-func (k Keeper) GetActives(ctx context.Context) ([]string, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting params: %w", err)
-	}
-
-	var actives []string
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
-	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		if err := validateExchangeRate(denom, exchangeRate, currentTime, params.MaxExchangeRateAge); err != nil {
-			if errors.Is(err, types.ErrStaleExchangeRate) {
-				return false, nil
-			}
-			return true, err
-		}
-		actives = append(actives, denom)
-		return false, nil
-	}); err != nil {
-		return nil, fmt.Errorf("iterating active oracle denoms: %w", err)
-	}
-
-	return actives, nil
 }
 
 // GetTobinTax returns the configured Tobin tax for a denom.
@@ -297,7 +259,7 @@ func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
 		return nil, fmt.Errorf("getting params: %w", err)
 	}
 
-	return slices.Clone(params.TobinTaxes), nil
+	return params.TobinTaxes, nil
 }
 
 // GetVoteTargets returns the staged vote-target denoms.
@@ -307,7 +269,7 @@ func (k Keeper) GetVoteTargets(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("getting vote targets: %w", err)
 	}
 
-	return slices.Clone(voteTargets.Denoms), nil
+	return voteTargets.Denoms, nil
 }
 
 // SyncVoteTargets applies the configured denoms to the staged vote-target set
@@ -341,7 +303,7 @@ func (k Keeper) SyncVoteTargets(ctx context.Context, oldVoteTargets []string) er
 		}
 	}
 
-	if err := k.VoteTargets.Set(ctx, types.VoteTargetState{Denoms: denoms}); err != nil {
+	if err := k.VoteTargets.Set(ctx, types.VoteTargets{Denoms: denoms}); err != nil {
 		return fmt.Errorf("setting vote targets: %w", err)
 	}
 
@@ -366,78 +328,4 @@ func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
 		Name:    fmt.Sprintf("%s ARK", strings.ToUpper(display)),
 		Symbol:  fmt.Sprintf("%sA", strings.ToUpper(display[:len(display)-1])),
 	})
-}
-
-// RecordVoteAccounting records score weight and miss status for the validator
-// resolved from a consensus address. If the validator no longer resolves,
-// accounting is skipped.
-func (k Keeper) RecordVoteAccounting(
-	ctx context.Context,
-	consAddr sdk.ConsAddress,
-	scoreWeight math.Int,
-	missed bool,
-) error {
-	if scoreWeight.IsNil() {
-		return errors.New("score weight must be set")
-	}
-	if scoreWeight.IsNegative() {
-		return fmt.Errorf("score weight must not be negative: %s", scoreWeight)
-	}
-	if scoreWeight.IsZero() && !missed {
-		return nil
-	}
-
-	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
-	if err != nil {
-		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
-			return nil
-		}
-		return fmt.Errorf("getting validator by consensus address %s: %w", consAddr, err)
-	}
-	if validator == nil {
-		return nil
-	}
-
-	valAddr, err := sdk.ValAddressFromBech32(validator.GetOperator())
-	if err != nil {
-		return fmt.Errorf("parsing validator operator address %q: %w", validator.GetOperator(), err)
-	}
-
-	updatedScoreWeight := math.ZeroInt()
-	if scoreWeight.IsPositive() {
-		currentScoreWeight, err := k.ScoreWeight.Get(ctx, valAddr)
-		if err != nil {
-			if !errors.Is(err, collections.ErrNotFound) {
-				return fmt.Errorf("getting score weight: %w", err)
-			}
-			currentScoreWeight = math.ZeroInt()
-		}
-		updatedScoreWeight = currentScoreWeight.Add(scoreWeight)
-	}
-
-	var updatedMissCount uint64
-	if missed {
-		currentMissCount, err := k.MissCount.Get(ctx, valAddr)
-		if err != nil && !errors.Is(err, collections.ErrNotFound) {
-			return fmt.Errorf("getting miss count: %w", err)
-		}
-		var carry uint64
-		updatedMissCount, carry = bits.Add64(currentMissCount, 1, 0)
-		if carry != 0 {
-			return fmt.Errorf("miss count overflow for validator %s", valAddr)
-		}
-	}
-
-	if scoreWeight.IsPositive() {
-		if err := k.ScoreWeight.Set(ctx, valAddr, updatedScoreWeight); err != nil {
-			return fmt.Errorf("setting score weight for validator %s: %w", validator, err)
-		}
-	}
-	if missed {
-		if err := k.MissCount.Set(ctx, valAddr, updatedMissCount); err != nil {
-			return fmt.Errorf("setting miss count for validator %s: %w", validator, err)
-		}
-	}
-
-	return nil
 }

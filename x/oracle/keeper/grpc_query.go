@@ -64,30 +64,12 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 
 // ExchangeRates queries all exchange rates.
 func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchangeRatesRequest) (*types.QueryExchangeRatesResponse, error) {
-	params, err := q.k.Params.Get(ctx)
+	exchangeRates, err := q.k.GetExchangeRates(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle params: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting oracle exchange rates: %v", err)
 	}
 
-	var exchangeRateDecCoins sdk.DecCoins
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
-	if err := q.k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		if err := validateExchangeRate(denom, exchangeRate, currentTime, params.MaxExchangeRateAge); err != nil {
-			if errors.Is(err, types.ErrStaleExchangeRate) {
-				return false, nil
-			}
-			return true, err
-		}
-		exchangeRateDecCoins = append(
-			exchangeRateDecCoins,
-			sdk.NewDecCoinFromDec(denom, exchangeRate.Rate),
-		)
-		return false, nil
-	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "listing oracle exchange rates: %v", err)
-	}
-
-	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRateDecCoins}, nil
+	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRates}, nil
 }
 
 // TobinTax queries the active Tobin tax for a denom.
@@ -120,16 +102,6 @@ func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesR
 	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
 }
 
-// Actives queries denoms with exchange rates.
-func (q queryServer) Actives(ctx context.Context, req *types.QueryActivesRequest) (*types.QueryActivesResponse, error) {
-	actives, err := q.k.GetActives(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting active oracle denoms: %v", err)
-	}
-
-	return &types.QueryActivesResponse{Actives: actives}, nil
-}
-
 // VoteTargets queries active vote target denoms.
 func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTargetsRequest) (*types.QueryVoteTargetsResponse, error) {
 	voteTargets, err := q.k.GetVoteTargets(ctx)
@@ -140,8 +112,8 @@ func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTarget
 	return &types.QueryVoteTargetsResponse{VoteTargets: voteTargets}, nil
 }
 
-// ScoreWeight queries a validator's oracle score weight.
-func (q queryServer) ScoreWeight(ctx context.Context, req *types.QueryScoreWeightRequest) (*types.QueryScoreWeightResponse, error) {
+// RewardWeight queries a validator's oracle reward weight.
+func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWeightRequest) (*types.QueryRewardWeightResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -150,15 +122,15 @@ func (q queryServer) ScoreWeight(ctx context.Context, req *types.QueryScoreWeigh
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
-	score, err := q.k.ScoreWeight.Get(ctx, valAddr)
+	rewardWeight, err := q.k.RewardWeight.Get(ctx, valAddr)
 	if err != nil {
 		if !errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Errorf(codes.Internal, "getting score weight for validator %s: %v", valAddr, err)
+			return nil, status.Errorf(codes.Internal, "getting reward weight for validator %s: %v", valAddr, err)
 		}
-		score = math.ZeroInt()
+		rewardWeight = math.ZeroInt()
 	}
 
-	return &types.QueryScoreWeightResponse{ScoreWeight: score}, nil
+	return &types.QueryRewardWeightResponse{RewardWeight: rewardWeight}, nil
 }
 
 // MissCount queries a validator's oracle miss count.

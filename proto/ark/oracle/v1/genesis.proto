@@ -2,10 +2,10 @@ syntax = "proto3";
 package ark.oracle.v1;
 
 import "amino/amino.proto";
+import "ark/oracle/v1/oracle.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
-import "ark/oracle/v1/oracle.proto";
 
 option go_package = "ark/x/oracle/types";
 
@@ -18,19 +18,19 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated ScoreWeight score_weights = 3
+  repeated RewardWeight reward_weights = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated MissCount miss_counts = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  VoteTargetState vote_targets = 5
+  VoteTargets vote_targets = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  AccountingState accounting = 6
+  Accounting accounting = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// AccountingState defines the active reward and slashing periods. Params may
+// Accounting defines the active reward and slashing periods. Params may
 // contain newly approved windows while accounting finishes the current period.
-message AccountingState {
+message Accounting {
   uint64 reward_window = 1;
   uint64 reward_distribution_window = 2;
   uint64 reward_window_start_height = 3;
@@ -38,8 +38,8 @@ message AccountingState {
   uint64 slash_window_start_height = 5;
 }
 
-// VoteTargetState defines the staged denoms validators should report.
-message VoteTargetState { repeated string denoms = 1; }
+// VoteTargets defines the staged denoms validators should report.
+message VoteTargets { repeated string denoms = 1; }
 
 // ExchangeRate - struct to store interpreted exchange rates data to store
 message ExchangeRate {
@@ -60,12 +60,12 @@ message ExchangeRate {
   uint64 block_height = 4;
 }
 
-// ScoreWeight defines a score weight and validator address pair used in
-// oracle module's genesis state
-message ScoreWeight {
+// RewardWeight defines a reward-distribution weight and validator address pair
+// used in oracle module's genesis state
+message RewardWeight {
   string validator_address = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  string score_weight = 2 [
+  string reward_weight = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,

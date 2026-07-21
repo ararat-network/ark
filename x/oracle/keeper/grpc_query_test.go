@@ -119,19 +119,6 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	s.Require().ElementsMatch(expected, resp.ExchangeRates)
 }
 
-func (s *KeeperTestSuite) TestQueryExchangeRatesRejectsInvalidStoredDenom() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          "uUSD",
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime,
-	}))
-
-	_, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
-	s.Require().Error(err)
-	s.Require().Equal(codes.Internal, status.Code(err))
-	s.Require().ErrorContains(err, "stored denom")
-}
-
 func (s *KeeperTestSuite) TestQueryTobinTax() {
 	tests := []struct {
 		name      string
@@ -202,50 +189,41 @@ func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 	s.Require().ElementsMatch(expected, resp.TobinTaxes)
 }
 
-func (s *KeeperTestSuite) TestQueryActives() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, newStoredExchangeRate(chain.MicroKRWDenom, math.LegacyOneDec())))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
-
-	resp, err := s.queryClient.Actives(s.ctx, &types.QueryActivesRequest{})
-	s.Require().NoError(err)
-	s.Require().ElementsMatch([]string{chain.MicroKRWDenom, chain.MicroUSDDenom}, resp.Actives)
-}
-
 func (s *KeeperTestSuite) TestQueryVoteTargets() {
 	voteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: voteTargets}))
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: voteTargets}))
 
 	resp, err := s.queryClient.VoteTargets(s.ctx, &types.QueryVoteTargetsRequest{})
 	s.Require().NoError(err)
 	s.Require().Equal(voteTargets, resp.VoteTargets)
 }
 
-func (s *KeeperTestSuite) TestQueryScoreWeight() {
+func (s *KeeperTestSuite) TestQueryRewardWeight() {
 	tests := []struct {
 		name      string
 		setup     func()
-		req       *types.QueryScoreWeightRequest
+		req       *types.QueryRewardWeightRequest
 		code      codes.Code
 		expect    math.Int
 		expectErr bool
 	}{
 		{
 			name:      "invalid validator rejected",
-			req:       &types.QueryScoreWeightRequest{ValidatorAddr: "invalid"},
+			req:       &types.QueryRewardWeightRequest{ValidatorAddr: "invalid"},
 			code:      codes.InvalidArgument,
 			expectErr: true,
 		},
 		{
-			name: "stored score returned",
+			name: "stored reward weight returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(9)))
+				s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(9)))
 			},
-			req:    &types.QueryScoreWeightRequest{ValidatorAddr: valAddr1.String()},
+			req:    &types.QueryRewardWeightRequest{ValidatorAddr: valAddr1.String()},
 			expect: math.NewInt(9),
 		},
 		{
-			name:   "missing score returns zero",
-			req:    &types.QueryScoreWeightRequest{ValidatorAddr: valAddr2.String()},
+			name:   "missing reward weight returns zero",
+			req:    &types.QueryRewardWeightRequest{ValidatorAddr: valAddr2.String()},
 			expect: math.ZeroInt(),
 		},
 	}
@@ -256,7 +234,7 @@ func (s *KeeperTestSuite) TestQueryScoreWeight() {
 				tc.setup()
 			}
 
-			resp, err := s.queryClient.ScoreWeight(s.ctx, tc.req)
+			resp, err := s.queryClient.RewardWeight(s.ctx, tc.req)
 			if tc.expectErr {
 				s.Require().Error(err)
 				s.Require().Equal(tc.code, status.Code(err))
@@ -264,7 +242,7 @@ func (s *KeeperTestSuite) TestQueryScoreWeight() {
 			}
 
 			s.Require().NoError(err)
-			s.Require().True(tc.expect.Equal(resp.ScoreWeight))
+			s.Require().True(tc.expect.Equal(resp.RewardWeight))
 		})
 	}
 }

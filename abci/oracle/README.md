@@ -32,7 +32,7 @@ Both raw and cross ballots must meet the same ceiling quorum. A derived ratio ne
 deliberately excluded, even if technically representable, instead of carrying exact edge-rounding complexity into the
 oracle protocol. The conservative range check makes the final division safe without panic recovery.
 
-Non-positive submitted rates are treated as abstain/outage signals. They do not add quorum power or earn reward weight,
+Non-positive submitted rates are treated as abstain/outage signals. They do not add quorum power or earn score weight,
 but they still count as submitted reports for miss-accounting purposes.
 
 For each priced ballot, validators earn their voting power when their tally rate is within the inclusive fixed band

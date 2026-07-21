@@ -123,11 +123,11 @@ func RandomisedGenState(simState *module.SimulationState) {
 	}
 	oracleGenesis := types.NewGenesisState(
 		params,
-		types.NewAccountingState(params),
+		types.NewAccounting(params),
 		[]types.ExchangeRate{},
-		[]types.ScoreWeight{},
+		[]types.RewardWeight{},
 		[]types.MissCount{},
-		types.NewVoteTargetState(params),
+		types.NewVoteTargets(params),
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

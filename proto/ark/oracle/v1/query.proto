@@ -40,23 +40,18 @@ service Query {
     option (google.api.http).get = "/ark/oracle/v1/denoms/tobin_taxes";
   }
 
-  // Actives returns all active denoms
-  rpc Actives(QueryActivesRequest) returns (QueryActivesResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/oracle/v1/denoms/actives";
-  }
-
   // VoteTargets returns all vote target denoms
   rpc VoteTargets(QueryVoteTargetsRequest) returns (QueryVoteTargetsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/oracle/v1/denoms/vote_targets";
   }
 
-  // ScoreWeight returns oracle miss count of a validator
-  rpc ScoreWeight(QueryScoreWeightRequest) returns (QueryScoreWeightResponse) {
+  // RewardWeight returns a validator's accumulated oracle reward weight.
+  rpc RewardWeight(QueryRewardWeightRequest)
+      returns (QueryRewardWeightResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get =
-        "/ark/oracle/v1/validators/{validator_addr}/score";
+        "/ark/oracle/v1/validators/{validator_addr}/reward_weight";
   }
 
   // MissCount returns oracle miss count of a validator
@@ -141,16 +136,6 @@ message QueryTobinTaxesResponse {
   ];
 }
 
-// QueryActivesRequest is the request type for the Query/Actives RPC method.
-message QueryActivesRequest {}
-
-// QueryActivesResponse is response type for the
-// Query/Actives RPC method.
-message QueryActivesResponse {
-  // actives defines a list of the denomination which oracle prices agreed upon.
-  repeated string actives = 1;
-}
-
 // QueryVoteTargetsRequest is the request type for the Query/VoteTargets RPC
 // method.
 message QueryVoteTargetsRequest {}
@@ -163,19 +148,19 @@ message QueryVoteTargetsResponse {
   repeated string vote_targets = 1;
 }
 
-// QueryScoreWeightRequest is the request type for the Query/ScoreWeight RPC
+// QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC
 // method.
-message QueryScoreWeightRequest {
+message QueryRewardWeightRequest {
   // validator defines the validator address to query for.
   string validator_addr = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
 }
 
-// QueryScoreWeightResponse is response type for the
-// Query/ScoreWeight RPC method.
-message QueryScoreWeightResponse {
-  // score_weight defines the oracle score weight of a validator
-  string score_weight = 1 [
+// QueryRewardWeightResponse is response type for the
+// Query/RewardWeight RPC method.
+message QueryRewardWeightResponse {
+  // reward_weight defines the validator's accumulated oracle reward weight.
+  string reward_weight = 1 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,

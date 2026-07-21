@@ -32,22 +32,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
-					RpcMethod: "Actives",
-					Use:       "actives",
-					Short:     "Query the active list of assets recognised by the oracle",
-					Example:   fmt.Sprintf("%s query oracle actives", version.AppName),
-				},
-				{
 					RpcMethod: "Params",
 					Use:       "params",
 					Short:     "Query the current oracle parameters",
 					Example:   fmt.Sprintf("%s query oracle params", version.AppName),
 				},
 				{
-					RpcMethod: "ScoreWeight",
-					Use:       "score [validator]",
-					Short:     "Query the oracle score weight for a validator",
-					Example:   fmt.Sprintf("%s query oracle score arkvaloper1...", version.AppName),
+					RpcMethod: "RewardWeight",
+					Use:       "reward-weight [validator]",
+					Short:     "Query the oracle reward weight for a validator",
+					Example:   fmt.Sprintf("%s query oracle reward-weight arkvaloper1...", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "validator_addr"},
 					},

@@ -32,7 +32,7 @@ type OracleKeeper interface {
 	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
 
 	// only used for simulation
-	GetActives(ctx context.Context) ([]string, error)
+	GetExchangeRates(ctx context.Context) (sdk.DecCoins, error)
 }
 
 // TreasuryKeeper defines the allocation and liability accounting required by

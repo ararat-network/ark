@@ -15,11 +15,11 @@ import (
 // NewGenesisState creates a new GenesisState object
 func NewGenesisState(
 	params Params,
-	accounting AccountingState,
+	accounting Accounting,
 	exchangeRates []ExchangeRate,
-	scoreWeights []ScoreWeight,
+	rewardWeights []RewardWeight,
 	missCounts []MissCount,
-	voteTargets VoteTargetState,
+	voteTargets VoteTargets,
 ) *GenesisState {
 	voteTargets.Denoms = slices.Clone(voteTargets.Denoms)
 	slices.Sort(voteTargets.Denoms)
@@ -28,27 +28,27 @@ func NewGenesisState(
 		Params:        params,
 		Accounting:    accounting,
 		ExchangeRates: exchangeRates,
-		ScoreWeights:  scoreWeights,
+		RewardWeights: rewardWeights,
 		MissCounts:    missCounts,
 		VoteTargets:   voteTargets,
 	}
 }
 
-// NewVoteTargetState returns a canonical vote-target snapshot derived from params.
-func NewVoteTargetState(params Params) VoteTargetState {
+// NewVoteTargets returns a canonical vote-target snapshot derived from params.
+func NewVoteTargets(params Params) VoteTargets {
 	denoms := make([]string, len(params.TobinTaxes))
 	for i, tobinTax := range params.TobinTaxes {
 		denoms[i] = tobinTax.Denom
 	}
 	slices.Sort(denoms)
 
-	return VoteTargetState{Denoms: denoms}
+	return VoteTargets{Denoms: denoms}
 }
 
-// NewAccountingState starts reward and slash accounting from genesis using
+// NewAccounting starts reward and slash accounting from genesis using
 // the supplied active parameter windows.
-func NewAccountingState(params Params) AccountingState {
-	return AccountingState{
+func NewAccounting(params Params) Accounting {
+	return Accounting{
 		RewardWindow:             params.RewardWindow,
 		RewardDistributionWindow: params.RewardDistributionWindow,
 		SlashWindow:              params.SlashWindow,
@@ -60,11 +60,11 @@ func DefaultGenesisState() *GenesisState {
 	params := DefaultParams()
 	return NewGenesisState(
 		params,
-		NewAccountingState(params),
+		NewAccounting(params),
 		[]ExchangeRate{},
-		[]ScoreWeight{},
+		[]RewardWeight{},
 		[]MissCount{},
-		NewVoteTargetState(params),
+		NewVoteTargets(params),
 	)
 }
 
@@ -98,23 +98,23 @@ func (gs GenesisState) Validate() error {
 		seenDenoms[er.Denom] = true
 	}
 
-	// ScoreWeights: no duplicate validators
+	// RewardWeights: no duplicate validators
 	seenValidators := make(map[string]bool)
-	for _, mc := range gs.ScoreWeights {
-		if mc.ScoreWeight.IsNil() {
-			return errors.New("score weight must be set")
+	for _, mc := range gs.RewardWeights {
+		if mc.RewardWeight.IsNil() {
+			return errors.New("reward weight must be set")
 		}
-		if mc.ScoreWeight.IsNegative() {
-			return fmt.Errorf("score weight must not be negative for validator %s", mc.ValidatorAddress)
+		if mc.RewardWeight.IsNegative() {
+			return fmt.Errorf("reward weight must not be negative for validator %s", mc.ValidatorAddress)
 		}
 		if len(mc.ValidatorAddress) == 0 {
-			return errors.New("score weight validator address must not be empty")
+			return errors.New("reward weight validator address must not be empty")
 		}
 		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
-			return fmt.Errorf("score weight validator address is invalid: %s", mc.ValidatorAddress)
+			return fmt.Errorf("reward weight validator address is invalid: %s", mc.ValidatorAddress)
 		}
 		if seenValidators[mc.ValidatorAddress] {
-			return fmt.Errorf("duplicate score weight for validator %s", mc.ValidatorAddress)
+			return fmt.Errorf("duplicate reward weight for validator %s", mc.ValidatorAddress)
 		}
 		seenValidators[mc.ValidatorAddress] = true
 	}
@@ -151,6 +151,11 @@ func (gs GenesisState) Validate() error {
 			return fmt.Errorf("duplicate vote target denom %s", denom)
 		}
 		seenDenoms[denom] = true
+	}
+	for _, er := range gs.ExchangeRates {
+		if !seenDenoms[er.Denom] {
+			return fmt.Errorf("exchange rate denom %s is not a vote target", er.Denom)
+		}
 	}
 
 	return gs.Params.Validate()

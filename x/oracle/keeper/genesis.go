@@ -14,6 +14,31 @@ import (
 
 // InitGenesis imports oracle genesis state.
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
+	if data == nil {
+		return fmt.Errorf("oracle genesis state is nil")
+	}
+	if err := data.Validate(); err != nil {
+		return fmt.Errorf("invalid oracle genesis state: %w", err)
+	}
+
+	genesisTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	for _, er := range data.ExchangeRates {
+		if er.BlockTimestamp.After(genesisTime) {
+			return fmt.Errorf(
+				"genesis exchange rate for denom %s has timestamp %s after genesis block time %s",
+				er.Denom,
+				er.BlockTimestamp,
+				genesisTime,
+			)
+		}
+	}
+
+	// Check that the module account exists before writing module state.
+	moduleAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
+	if moduleAcc == nil {
+		return fmt.Errorf("%s module account has not been set", types.ModuleName)
+	}
+
 	if err := k.Accounting.Set(ctx, data.Accounting); err != nil {
 		return fmt.Errorf("setting accounting state: %w", err)
 	}
@@ -24,14 +49,14 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	for _, sw := range data.ScoreWeights {
+	for _, sw := range data.RewardWeights {
 		operator, err := sdk.ValAddressFromBech32(sw.ValidatorAddress)
 		if err != nil {
-			return fmt.Errorf("parsing score weight validator address %q: %w", sw.ValidatorAddress, err)
+			return fmt.Errorf("parsing reward weight validator address %q: %w", sw.ValidatorAddress, err)
 		}
 
-		if err := k.ScoreWeight.Set(ctx, operator, sw.ScoreWeight); err != nil {
-			return fmt.Errorf("setting genesis score weight for validator %s: %w", operator, err)
+		if err := k.RewardWeight.Set(ctx, operator, sw.RewardWeight); err != nil {
+			return fmt.Errorf("setting genesis reward weight for validator %s: %w", operator, err)
 		}
 	}
 
@@ -55,12 +80,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
-	}
-
-	// Check that the module account exists before registering denom metadata.
-	moduleAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
-	if moduleAcc == nil {
-		return fmt.Errorf("%s module account has not been set", types.ModuleName)
 	}
 
 	for _, tt := range data.Params.TobinTaxes {
@@ -94,15 +113,15 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("iterating exchange rates: %w", err)
 	}
 
-	scoreWeights := []types.ScoreWeight{}
-	if err := k.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, score math.Int) (bool, error) {
-		scoreWeights = append(scoreWeights, types.ScoreWeight{
+	rewardWeights := []types.RewardWeight{}
+	if err := k.RewardWeight.Walk(ctx, nil, func(operator sdk.ValAddress, rewardWeight math.Int) (bool, error) {
+		rewardWeights = append(rewardWeights, types.RewardWeight{
 			ValidatorAddress: operator.String(),
-			ScoreWeight:      score,
+			RewardWeight:     rewardWeight,
 		})
 		return false, nil
 	}); err != nil {
-		return nil, fmt.Errorf("iterating score weights: %w", err)
+		return nil, fmt.Errorf("iterating reward weights: %w", err)
 	}
 
 	missCounts := []types.MissCount{}
@@ -125,7 +144,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		params,
 		accounting,
 		exchangeRates,
-		scoreWeights,
+		rewardWeights,
 		missCounts,
 		voteTargets,
 	), nil

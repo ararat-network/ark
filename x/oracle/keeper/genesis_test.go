@@ -19,11 +19,13 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 	blockTime := time.Unix(1_700_000_000, 0).UTC()
 
 	tests := []struct {
-		name      string
-		genesis   func() *types.GenesisState
-		expected  func() *types.GenesisState
-		setup     func()
-		expectErr string
+		name                string
+		genesis             func() *types.GenesisState
+		expected            func() *types.GenesisState
+		setup               func()
+		expectErr           string
+		expectNoRate        string
+		expectAccountingOld bool
 	}{
 		{
 			name: "full genesis stores all collections",
@@ -35,20 +37,20 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return &types.GenesisState{
 					Params:     params,
-					Accounting: types.NewAccountingState(params),
+					Accounting: types.NewAccounting(params),
 					ExchangeRates: []types.ExchangeRate{
 						{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
 						{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 					},
-					ScoreWeights: []types.ScoreWeight{
-						{ValidatorAddress: valAddr1.String(), ScoreWeight: math.NewInt(5)},
-						{ValidatorAddress: valAddr2.String(), ScoreWeight: math.ZeroInt()},
+					RewardWeights: []types.RewardWeight{
+						{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
+						{ValidatorAddress: valAddr2.String(), RewardWeight: math.ZeroInt()},
 					},
 					MissCounts: []types.MissCount{
 						{ValidatorAddress: valAddr1.String(), MissCount: 5},
 						{ValidatorAddress: valAddr2.String(), MissCount: 0},
 					},
-					VoteTargets: types.VoteTargetState{Denoms: []string{
+					VoteTargets: types.VoteTargets{Denoms: []string{
 						chain.MicroKRWDenom,
 						chain.MicroUSDDenom,
 					}},
@@ -65,15 +67,17 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			},
 		},
 		{
-			name: "invalid validator address in score weight",
+			name: "invalid validator address in reward weight",
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
-				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "invalid", ScoreWeight: math.NewInt(5)},
+				gs.Accounting.RewardWindow = 100
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: "invalid", RewardWeight: math.NewInt(5)},
 				}
 				return gs
 			},
-			expectErr: "parsing score weight validator address",
+			expectErr:           "invalid oracle genesis state: reward weight validator address is invalid",
+			expectAccountingOld: true,
 		},
 		{
 			name: "invalid validator address in miss count",
@@ -84,15 +88,47 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				}
 				return gs
 			},
-			expectErr: "parsing miss count validator address",
+			expectErr: "invalid oracle genesis state: miss count validator address is invalid",
 		},
 		{
-			name:    "nil module account returns error",
-			genesis: types.DefaultGenesisState,
+			name:      "nil genesis returns error",
+			genesis:   func() *types.GenesisState { return nil },
+			expectErr: "oracle genesis state is nil",
+		},
+		{
+			name: "future exchange rate timestamp returns error",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.ExchangeRates = types.ExchangeRates{
+					{
+						Denom:          chain.MicroUSDDenom,
+						Rate:           math.LegacyOneDec(),
+						BlockTimestamp: oracleTestBlockTime.Add(time.Second),
+					},
+				}
+				return gs
+			},
+			expectErr:    "timestamp 2026-07-12 12:00:01 +0000 UTC after genesis block time",
+			expectNoRate: chain.MicroUSDDenom,
+		},
+		{
+			name: "nil module account returns error",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.ExchangeRates = types.ExchangeRates{
+					{
+						Denom:          chain.MicroUSDDenom,
+						Rate:           math.LegacyOneDec(),
+						BlockTimestamp: oracleTestBlockTime,
+					},
+				}
+				return gs
+			},
 			setup: func() {
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(nil)
 			},
-			expectErr: "module account has not been set",
+			expectErr:    "module account has not been set",
+			expectNoRate: chain.MicroUSDDenom,
 		},
 	}
 
@@ -116,6 +152,16 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			if tc.expectErr != "" {
 				s.Require().Error(err)
 				s.Require().ErrorContains(err, tc.expectErr)
+				if tc.expectNoRate != "" {
+					hasRate, hasErr := s.keeper.ExchangeRate.Has(s.ctx, tc.expectNoRate)
+					s.Require().NoError(hasErr)
+					s.Require().False(hasRate)
+				}
+				if tc.expectAccountingOld {
+					accounting, getErr := s.keeper.Accounting.Get(s.ctx)
+					s.Require().NoError(getErr)
+					s.Require().Equal(types.NewAccounting(types.DefaultParams()), accounting)
+				}
 			} else {
 				s.Require().NoError(err)
 				s.requireGenesisState(expected)
@@ -163,22 +209,22 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().Equal(item.BlockHeight, exchangeRate.BlockHeight)
 	}
 
-	// Score weights are keyed by validator address.
-	scoreWeightCount := 0
-	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
-		scoreWeightCount++
+	// Reward weights are keyed by validator address.
+	rewardWeightCount := 0
+	err = s.keeper.RewardWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
+		rewardWeightCount++
 		return false, nil
 	})
 	s.Require().NoError(err)
-	s.Require().Len(expected.ScoreWeights, scoreWeightCount)
+	s.Require().Len(expected.RewardWeights, rewardWeightCount)
 
-	for _, item := range expected.ScoreWeights {
+	for _, item := range expected.RewardWeights {
 		valAddr, err := sdk.ValAddressFromBech32(item.ValidatorAddress)
 		s.Require().NoError(err)
 
-		scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr)
+		rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx, valAddr)
 		s.Require().NoError(err)
-		s.Require().True(item.ScoreWeight.Equal(scoreWeight))
+		s.Require().True(item.RewardWeight.Equal(rewardWeight))
 	}
 
 	// Miss counts are keyed by validator address.
@@ -215,7 +261,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	params := types.DefaultParams()
 	expected := &types.GenesisState{
 		Params: params,
-		Accounting: types.AccountingState{
+		Accounting: types.Accounting{
 			RewardWindow:             10,
 			RewardDistributionWindow: 100,
 			RewardWindowStartHeight:  7,
@@ -226,15 +272,15 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
 			{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 		},
-		ScoreWeights: []types.ScoreWeight{
-			{ValidatorAddress: valAddr1.String(), ScoreWeight: math.NewInt(5)},
-			{ValidatorAddress: valAddr2.String(), ScoreWeight: math.ZeroInt()},
+		RewardWeights: []types.RewardWeight{
+			{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
+			{ValidatorAddress: valAddr2.String(), RewardWeight: math.ZeroInt()},
 		},
 		MissCounts: []types.MissCount{
 			{ValidatorAddress: valAddr1.String(), MissCount: 5},
 			{ValidatorAddress: valAddr2.String(), MissCount: 0},
 		},
-		VoteTargets: types.VoteTargetState{Denoms: []string{
+		VoteTargets: types.VoteTargets{Denoms: []string{
 			chain.MicroKRWDenom,
 			chain.MicroUSDDenom,
 		}},
@@ -247,11 +293,11 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	for _, item := range expected.ExchangeRates {
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, item.Denom, item))
 	}
-	for _, item := range expected.ScoreWeights {
+	for _, item := range expected.RewardWeights {
 		valAddr, err := sdk.ValAddressFromBech32(item.ValidatorAddress)
 		s.Require().NoError(err)
 
-		s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr, item.ScoreWeight))
+		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr, item.RewardWeight))
 	}
 	for _, item := range expected.MissCounts {
 		valAddr, err := sdk.ValAddressFromBech32(item.ValidatorAddress)
@@ -291,14 +337,14 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		s.Require().Equal(item.BlockHeight, exchangeRate.BlockHeight)
 	}
 
-	// Score weights are exported by validator address.
-	s.Require().Len(gs.ScoreWeights, len(expected.ScoreWeights))
-	scoreWeights := make(map[string]math.Int)
-	for _, item := range gs.ScoreWeights {
-		scoreWeights[item.ValidatorAddress] = item.ScoreWeight
+	// Reward weights are exported by validator address.
+	s.Require().Len(gs.RewardWeights, len(expected.RewardWeights))
+	rewardWeights := make(map[string]math.Int)
+	for _, item := range gs.RewardWeights {
+		rewardWeights[item.ValidatorAddress] = item.RewardWeight
 	}
-	for _, item := range expected.ScoreWeights {
-		s.Require().True(item.ScoreWeight.Equal(scoreWeights[item.ValidatorAddress]))
+	for _, item := range expected.RewardWeights {
+		s.Require().True(item.RewardWeight.Equal(rewardWeights[item.ValidatorAddress]))
 	}
 
 	// Miss counts are exported by validator address.

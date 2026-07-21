@@ -23,23 +23,23 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		params.RewardWindow = 10
 		params.SlashWindow = 20
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccountingState(params)))
+		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 
-		s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(7)))
+		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(7)))
 		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, 3))
 
 		s.Require().NoError(s.keeper.EndBlocker(s.ctx))
 
-		scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
+		rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx, valAddr1)
 		s.Require().NoError(err)
-		s.Require().True(math.NewInt(7).Equal(scoreWeight))
+		s.Require().True(math.NewInt(7).Equal(rewardWeight))
 
 		missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(3), missCount)
 	})
 
-	s.Run("reward window settles rewards and clears score weights", func() {
+	s.Run("reward window settles rewards and clears reward weights", func() {
 		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(9)
 
 		params, err := s.keeper.Params.Get(s.ctx)
@@ -48,9 +48,9 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		params.RewardDistributionWindow = 100
 		params.SlashWindow = 20
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccountingState(params)))
-		s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
-		s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr2, math.ZeroInt()))
+		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
+		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
+		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr2, math.ZeroInt()))
 
 		rewardCoin := sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))
 		distributedCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(10)))
@@ -73,10 +73,10 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 
 		s.Require().NoError(s.keeper.EndBlocker(s.ctx))
 
-		_, err = s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
-		s.Require().True(errors.Is(err, collections.ErrNotFound), "expected score weight to be cleared, got %v", err)
-		_, err = s.keeper.ScoreWeight.Get(s.ctx, valAddr2)
-		s.Require().True(errors.Is(err, collections.ErrNotFound), "expected second score weight to be cleared, got %v", err)
+		_, err = s.keeper.RewardWeight.Get(s.ctx, valAddr1)
+		s.Require().True(errors.Is(err, collections.ErrNotFound), "expected reward weight to be cleared, got %v", err)
+		_, err = s.keeper.RewardWeight.Get(s.ctx, valAddr2)
+		s.Require().True(errors.Is(err, collections.ErrNotFound), "expected second reward weight to be cleared, got %v", err)
 	})
 
 	s.Run("slash window settles slash and clears miss counts", func() {
@@ -90,7 +90,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		params.MinValidPerWindow = math.LegacyNewDecWithPrec(90, 2)
 		params.SlashFraction = math.LegacyNewDecWithPrec(1, 4)
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccountingState(params)))
+		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, 20))
 		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr2, 0))
 
@@ -133,7 +133,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		activeParams.RewardWindow = 20
 		activeParams.RewardDistributionWindow = 200
 		activeParams.SlashWindow = 20
-		accounting := types.NewAccountingState(activeParams)
+		accounting := types.NewAccounting(activeParams)
 		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, accounting))
 
 		desiredParams := activeParams

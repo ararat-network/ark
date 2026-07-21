@@ -115,5 +115,15 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 
 // GetActiveDenoms returns active oracle denoms for market simulation.
 func (k Keeper) GetActiveDenoms(ctx context.Context) ([]string, error) {
-	return k.oracleKeeper.GetActives(ctx)
+	exchangeRates, err := k.oracleKeeper.GetExchangeRates(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	denoms := make([]string, len(exchangeRates))
+	for i, exchangeRate := range exchangeRates {
+		denoms[i] = exchangeRate.Denom
+	}
+
+	return denoms, nil
 }

@@ -94,52 +94,61 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "duplicate exchange rate for denom uusd",
 		},
-		// ScoreWeights
 		{
-			name: "score weight must be set",
+			name: "exchange rate denom must be a vote target",
 			mutate: func(gs *types.GenesisState) {
-				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: validatorAddress, ScoreWeight: math.Int{}},
+				gs.ExchangeRates = types.ExchangeRates{
+					{Denom: "ufoo", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "score weight must be set",
+			expectErr: "exchange rate denom ufoo is not a vote target",
+		},
+		// RewardWeights
+		{
+			name: "reward weight must be set",
+			mutate: func(gs *types.GenesisState) {
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: validatorAddress, RewardWeight: math.Int{}},
+				}
+			},
+			expectErr: "reward weight must be set",
 		},
 		{
-			name: "score weight must not be negative",
+			name: "reward weight must not be negative",
 			mutate: func(gs *types.GenesisState) {
-				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(-1)},
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(-1)},
 				}
 			},
-			expectErr: "score weight must not be negative",
+			expectErr: "reward weight must not be negative",
 		},
 		{
-			name: "score weight empty validator address",
+			name: "reward weight empty validator address",
 			mutate: func(gs *types.GenesisState) {
-				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "", ScoreWeight: math.NewInt(1)},
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: "", RewardWeight: math.NewInt(1)},
 				}
 			},
-			expectErr: "score weight validator address must not be empty",
+			expectErr: "reward weight validator address must not be empty",
 		},
 		{
-			name: "duplicate score weight",
+			name: "duplicate reward weight",
 			mutate: func(gs *types.GenesisState) {
-				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(1)},
-					{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(2)},
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(1)},
+					{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(2)},
 				}
 			},
-			expectErr: "duplicate score weight for validator " + validatorAddress,
+			expectErr: "duplicate reward weight for validator " + validatorAddress,
 		},
 		{
-			name: "score weight invalid validator address",
+			name: "reward weight invalid validator address",
 			mutate: func(gs *types.GenesisState) {
-				gs.ScoreWeights = []types.ScoreWeight{
-					{ValidatorAddress: "not-a-validator-address", ScoreWeight: math.NewInt(1)},
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: "not-a-validator-address", RewardWeight: math.NewInt(1)},
 				}
 			},
-			expectErr: "score weight validator address is invalid",
+			expectErr: "reward weight validator address is invalid",
 		},
 		// MissCounts
 		{
@@ -219,17 +228,17 @@ func TestValidateGenesis(t *testing.T) {
 				params := types.DefaultParams()
 				*gs = *types.NewGenesisState(
 					params,
-					types.NewAccountingState(params),
+					types.NewAccounting(params),
 					types.ExchangeRates{
 						{Denom: "uusd", Rate: math.LegacyOneDec()},
 					},
-					[]types.ScoreWeight{
-						{ValidatorAddress: validatorAddress, ScoreWeight: math.NewInt(1)},
+					[]types.RewardWeight{
+						{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(1)},
 					},
 					[]types.MissCount{
 						{ValidatorAddress: otherValidatorAddress, MissCount: 0},
 					},
-					types.VoteTargetState{Denoms: []string{"uusd"}},
+					types.VoteTargets{Denoms: []string{"uusd"}},
 				)
 			},
 		},

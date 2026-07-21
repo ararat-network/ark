@@ -133,7 +133,7 @@ func (pa *PriceApplier) ApplyPricesFromVoteExtensions(ctx sdk.Context, req *come
 
 	// Update scores in oracle.
 	for _, score := range result.scores {
-		if err := pa.ok.RecordVoteAccounting(ctx, score.recipient, score.weight, score.missed); err != nil {
+		if err := pa.ok.RecordVoteAccounting(ctx, score.recipient, score.rewardWeight, score.missed); err != nil {
 			pa.logger.Error(
 				"failed to record vote accounting",
 				"height", req.Height,

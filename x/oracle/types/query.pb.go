@@ -379,90 +379,6 @@ func (m *QueryTobinTaxesResponse) GetTobinTaxes() TobinTaxes {
 	return nil
 }
 
-// QueryActivesRequest is the request type for the Query/Actives RPC method.
-type QueryActivesRequest struct {
-}
-
-func (m *QueryActivesRequest) Reset()         { *m = QueryActivesRequest{} }
-func (m *QueryActivesRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryActivesRequest) ProtoMessage()    {}
-func (*QueryActivesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{8}
-}
-func (m *QueryActivesRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryActivesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryActivesRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryActivesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryActivesRequest.Merge(m, src)
-}
-func (m *QueryActivesRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryActivesRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryActivesRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryActivesRequest proto.InternalMessageInfo
-
-// QueryActivesResponse is response type for the
-// Query/Actives RPC method.
-type QueryActivesResponse struct {
-	// actives defines a list of the denomination which oracle prices agreed upon.
-	Actives []string `protobuf:"bytes,1,rep,name=actives,proto3" json:"actives,omitempty"`
-}
-
-func (m *QueryActivesResponse) Reset()         { *m = QueryActivesResponse{} }
-func (m *QueryActivesResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryActivesResponse) ProtoMessage()    {}
-func (*QueryActivesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{9}
-}
-func (m *QueryActivesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryActivesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryActivesResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryActivesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryActivesResponse.Merge(m, src)
-}
-func (m *QueryActivesResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryActivesResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryActivesResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryActivesResponse proto.InternalMessageInfo
-
-func (m *QueryActivesResponse) GetActives() []string {
-	if m != nil {
-		return m.Actives
-	}
-	return nil
-}
-
 // QueryVoteTargetsRequest is the request type for the Query/VoteTargets RPC
 // method.
 type QueryVoteTargetsRequest struct {
@@ -472,7 +388,7 @@ func (m *QueryVoteTargetsRequest) Reset()         { *m = QueryVoteTargetsRequest
 func (m *QueryVoteTargetsRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryVoteTargetsRequest) ProtoMessage()    {}
 func (*QueryVoteTargetsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{10}
+	return fileDescriptor_9874abfd50ccce0f, []int{8}
 }
 func (m *QueryVoteTargetsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -513,7 +429,7 @@ func (m *QueryVoteTargetsResponse) Reset()         { *m = QueryVoteTargetsRespon
 func (m *QueryVoteTargetsResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryVoteTargetsResponse) ProtoMessage()    {}
 func (*QueryVoteTargetsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{11}
+	return fileDescriptor_9874abfd50ccce0f, []int{9}
 }
 func (m *QueryVoteTargetsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -549,25 +465,25 @@ func (m *QueryVoteTargetsResponse) GetVoteTargets() []string {
 	return nil
 }
 
-// QueryScoreWeightRequest is the request type for the Query/ScoreWeight RPC
+// QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC
 // method.
-type QueryScoreWeightRequest struct {
+type QueryRewardWeightRequest struct {
 	// validator defines the validator address to query for.
 	ValidatorAddr string `protobuf:"bytes,1,opt,name=validator_addr,json=validatorAddr,proto3" json:"validator_addr,omitempty"`
 }
 
-func (m *QueryScoreWeightRequest) Reset()         { *m = QueryScoreWeightRequest{} }
-func (m *QueryScoreWeightRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryScoreWeightRequest) ProtoMessage()    {}
-func (*QueryScoreWeightRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{12}
+func (m *QueryRewardWeightRequest) Reset()         { *m = QueryRewardWeightRequest{} }
+func (m *QueryRewardWeightRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryRewardWeightRequest) ProtoMessage()    {}
+func (*QueryRewardWeightRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9874abfd50ccce0f, []int{10}
 }
-func (m *QueryScoreWeightRequest) XXX_Unmarshal(b []byte) error {
+func (m *QueryRewardWeightRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryScoreWeightRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryRewardWeightRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryScoreWeightRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryRewardWeightRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -577,44 +493,44 @@ func (m *QueryScoreWeightRequest) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *QueryScoreWeightRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryScoreWeightRequest.Merge(m, src)
+func (m *QueryRewardWeightRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryRewardWeightRequest.Merge(m, src)
 }
-func (m *QueryScoreWeightRequest) XXX_Size() int {
+func (m *QueryRewardWeightRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryScoreWeightRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryScoreWeightRequest.DiscardUnknown(m)
+func (m *QueryRewardWeightRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryRewardWeightRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryScoreWeightRequest proto.InternalMessageInfo
+var xxx_messageInfo_QueryRewardWeightRequest proto.InternalMessageInfo
 
-func (m *QueryScoreWeightRequest) GetValidatorAddr() string {
+func (m *QueryRewardWeightRequest) GetValidatorAddr() string {
 	if m != nil {
 		return m.ValidatorAddr
 	}
 	return ""
 }
 
-// QueryScoreWeightResponse is response type for the
-// Query/ScoreWeight RPC method.
-type QueryScoreWeightResponse struct {
-	// score_weight defines the oracle score weight of a validator
-	ScoreWeight cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=score_weight,json=scoreWeight,proto3,customtype=cosmossdk.io/math.Int" json:"score_weight"`
+// QueryRewardWeightResponse is response type for the
+// Query/RewardWeight RPC method.
+type QueryRewardWeightResponse struct {
+	// reward_weight defines the validator's accumulated oracle reward weight.
+	RewardWeight cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=reward_weight,json=rewardWeight,proto3,customtype=cosmossdk.io/math.Int" json:"reward_weight"`
 }
 
-func (m *QueryScoreWeightResponse) Reset()         { *m = QueryScoreWeightResponse{} }
-func (m *QueryScoreWeightResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryScoreWeightResponse) ProtoMessage()    {}
-func (*QueryScoreWeightResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{13}
+func (m *QueryRewardWeightResponse) Reset()         { *m = QueryRewardWeightResponse{} }
+func (m *QueryRewardWeightResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryRewardWeightResponse) ProtoMessage()    {}
+func (*QueryRewardWeightResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9874abfd50ccce0f, []int{11}
 }
-func (m *QueryScoreWeightResponse) XXX_Unmarshal(b []byte) error {
+func (m *QueryRewardWeightResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryScoreWeightResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryRewardWeightResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryScoreWeightResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryRewardWeightResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -624,17 +540,17 @@ func (m *QueryScoreWeightResponse) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-func (m *QueryScoreWeightResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryScoreWeightResponse.Merge(m, src)
+func (m *QueryRewardWeightResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryRewardWeightResponse.Merge(m, src)
 }
-func (m *QueryScoreWeightResponse) XXX_Size() int {
+func (m *QueryRewardWeightResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryScoreWeightResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryScoreWeightResponse.DiscardUnknown(m)
+func (m *QueryRewardWeightResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryRewardWeightResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryScoreWeightResponse proto.InternalMessageInfo
+var xxx_messageInfo_QueryRewardWeightResponse proto.InternalMessageInfo
 
 // QueryMissCountRequest is the request type for the Query/MissCount RPC
 // method.
@@ -647,7 +563,7 @@ func (m *QueryMissCountRequest) Reset()         { *m = QueryMissCountRequest{} }
 func (m *QueryMissCountRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryMissCountRequest) ProtoMessage()    {}
 func (*QueryMissCountRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{14}
+	return fileDescriptor_9874abfd50ccce0f, []int{12}
 }
 func (m *QueryMissCountRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -694,7 +610,7 @@ func (m *QueryMissCountResponse) Reset()         { *m = QueryMissCountResponse{}
 func (m *QueryMissCountResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryMissCountResponse) ProtoMessage()    {}
 func (*QueryMissCountResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{15}
+	return fileDescriptor_9874abfd50ccce0f, []int{13}
 }
 func (m *QueryMissCountResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -738,7 +654,7 @@ func (m *QueryParamsRequest) Reset()         { *m = QueryParamsRequest{} }
 func (m *QueryParamsRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryParamsRequest) ProtoMessage()    {}
 func (*QueryParamsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{16}
+	return fileDescriptor_9874abfd50ccce0f, []int{14}
 }
 func (m *QueryParamsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -777,7 +693,7 @@ func (m *QueryParamsResponse) Reset()         { *m = QueryParamsResponse{} }
 func (m *QueryParamsResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryParamsResponse) ProtoMessage()    {}
 func (*QueryParamsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9874abfd50ccce0f, []int{17}
+	return fileDescriptor_9874abfd50ccce0f, []int{15}
 }
 func (m *QueryParamsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -822,12 +738,10 @@ func init() {
 	proto.RegisterType((*QueryTobinTaxResponse)(nil), "ark.oracle.v1.QueryTobinTaxResponse")
 	proto.RegisterType((*QueryTobinTaxesRequest)(nil), "ark.oracle.v1.QueryTobinTaxesRequest")
 	proto.RegisterType((*QueryTobinTaxesResponse)(nil), "ark.oracle.v1.QueryTobinTaxesResponse")
-	proto.RegisterType((*QueryActivesRequest)(nil), "ark.oracle.v1.QueryActivesRequest")
-	proto.RegisterType((*QueryActivesResponse)(nil), "ark.oracle.v1.QueryActivesResponse")
 	proto.RegisterType((*QueryVoteTargetsRequest)(nil), "ark.oracle.v1.QueryVoteTargetsRequest")
 	proto.RegisterType((*QueryVoteTargetsResponse)(nil), "ark.oracle.v1.QueryVoteTargetsResponse")
-	proto.RegisterType((*QueryScoreWeightRequest)(nil), "ark.oracle.v1.QueryScoreWeightRequest")
-	proto.RegisterType((*QueryScoreWeightResponse)(nil), "ark.oracle.v1.QueryScoreWeightResponse")
+	proto.RegisterType((*QueryRewardWeightRequest)(nil), "ark.oracle.v1.QueryRewardWeightRequest")
+	proto.RegisterType((*QueryRewardWeightResponse)(nil), "ark.oracle.v1.QueryRewardWeightResponse")
 	proto.RegisterType((*QueryMissCountRequest)(nil), "ark.oracle.v1.QueryMissCountRequest")
 	proto.RegisterType((*QueryMissCountResponse)(nil), "ark.oracle.v1.QueryMissCountResponse")
 	proto.RegisterType((*QueryParamsRequest)(nil), "ark.oracle.v1.QueryParamsRequest")
@@ -837,71 +751,68 @@ func init() {
 func init() { proto.RegisterFile("ark/oracle/v1/query.proto", fileDescriptor_9874abfd50ccce0f) }
 
 var fileDescriptor_9874abfd50ccce0f = []byte{
-	// 1010 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x96, 0x4d, 0x6f, 0x1b, 0x45,
-	0x18, 0xc7, 0xb3, 0x40, 0xd3, 0x7a, 0x1c, 0x57, 0x62, 0x88, 0x89, 0xb3, 0x6d, 0x9c, 0x66, 0x92,
-	0x36, 0xe9, 0x4b, 0x76, 0xe2, 0x80, 0x20, 0x07, 0x7a, 0xa8, 0x5b, 0x24, 0x2a, 0x81, 0xa0, 0x4e,
-	0x54, 0x24, 0x38, 0x58, 0xe3, 0xf5, 0x68, 0xb3, 0x8a, 0xbd, 0xe3, 0xee, 0x4c, 0x8c, 0xa3, 0x2a,
-	0x1c, 0x38, 0x21, 0x71, 0x00, 0x09, 0x09, 0x0e, 0x11, 0x77, 0xc4, 0x89, 0x43, 0x3f, 0x44, 0x8f,
-	0x55, 0xb9, 0x20, 0x0e, 0x01, 0x25, 0x48, 0x7c, 0x0d, 0xb4, 0xb3, 0xcf, 0xbe, 0x66, 0xb1, 0x41,
-	0xa8, 0x97, 0x38, 0xf3, 0xbc, 0xfe, 0xe6, 0x99, 0xc7, 0x7f, 0x19, 0xcd, 0x33, 0x7f, 0x8f, 0x0a,
-	0x9f, 0xd9, 0x3d, 0x4e, 0x87, 0x0d, 0xfa, 0x68, 0x9f, 0xfb, 0x07, 0xd6, 0xc0, 0x17, 0x4a, 0xe0,
-	0x0a, 0xf3, 0xf7, 0xac, 0xd0, 0x65, 0x0d, 0x1b, 0xe6, 0xab, 0xac, 0xef, 0x7a, 0x82, 0xea, 0xbf,
-	0x61, 0x84, 0x59, 0xb7, 0x85, 0xec, 0x0b, 0x49, 0x3b, 0x4c, 0x06, 0xd9, 0x1d, 0xae, 0x58, 0x83,
-	0xda, 0xc2, 0xf5, 0xc0, 0x7f, 0x09, 0xfc, 0xba, 0x6a, 0xae, 0xbc, 0x39, 0x1f, 0x3a, 0xdb, 0xfa,
-	0x44, 0xc3, 0x03, 0xb8, 0x66, 0x1d, 0xe1, 0x88, 0xd0, 0x1e, 0xfc, 0x07, 0xd6, 0xcb, 0x8e, 0x10,
-	0x4e, 0x8f, 0x53, 0x36, 0x70, 0x29, 0xf3, 0x3c, 0xa1, 0x98, 0x72, 0x85, 0x17, 0xe5, 0x98, 0xd9,
-	0x8b, 0x00, 0xb7, 0xf6, 0x91, 0x0d, 0x54, 0x7b, 0x10, 0x74, 0x7e, 0x77, 0x64, 0xef, 0x32, 0xcf,
-	0xe1, 0x2d, 0xa6, 0x78, 0x8b, 0x3f, 0xda, 0xe7, 0x52, 0xe1, 0x59, 0x74, 0xae, 0xcb, 0x3d, 0xd1,
-	0xaf, 0x19, 0x57, 0x8c, 0xb5, 0x52, 0x2b, 0x3c, 0x90, 0x11, 0x9a, 0x2f, 0xc8, 0x90, 0x03, 0xe1,
-	0x49, 0x8e, 0x3f, 0x45, 0x15, 0x0e, 0xf6, 0xb6, 0xcf, 0x14, 0x0f, 0x53, 0x9b, 0x6f, 0x3d, 0x3d,
-	0x5e, 0x9c, 0xfa, 0xed, 0x78, 0x11, 0x6e, 0x2d, 0xbb, 0x7b, 0x96, 0x2b, 0x68, 0x9f, 0xa9, 0x5d,
-	0xeb, 0x7d, 0xee, 0x30, 0xfb, 0xe0, 0x1e, 0xb7, 0x9f, 0x3f, 0x59, 0x47, 0x70, 0xd5, 0x7b, 0xdc,
-	0xfe, 0xf1, 0xaf, 0x9f, 0x6f, 0x18, 0xad, 0x19, 0x9e, 0x6a, 0x42, 0x2e, 0x15, 0x74, 0x96, 0x00,
-	0x4b, 0x8e, 0x0c, 0x64, 0x16, 0x79, 0x01, 0xec, 0x10, 0x5d, 0xcc, 0x80, 0xc9, 0x9a, 0x71, 0xe5,
-	0xe5, 0xb5, 0xf2, 0xe6, 0x65, 0x0b, 0x7a, 0x06, 0x0f, 0x65, 0xc1, 0x43, 0x05, 0x00, 0x77, 0x85,
-	0xeb, 0x35, 0xb7, 0x02, 0xee, 0x9f, 0x7e, 0x5f, 0xbc, 0xe9, 0xb8, 0x6a, 0x77, 0xbf, 0x63, 0xd9,
-	0xa2, 0x0f, 0xcf, 0x01, 0x1f, 0xeb, 0xb2, 0xbb, 0x47, 0xd5, 0xc1, 0x80, 0xcb, 0x28, 0x47, 0x86,
-	0xe4, 0x95, 0x34, 0xb9, 0x24, 0xb7, 0xd0, 0xac, 0x86, 0xdb, 0x11, 0x1d, 0xd7, 0xdb, 0x61, 0xa3,
-	0xf1, 0x23, 0xee, 0xa1, 0x6a, 0x2e, 0x1a, 0x6e, 0xb1, 0x8d, 0x4a, 0x2a, 0xb0, 0xb5, 0x15, 0x1b,
-	0xfd, 0xcf, 0xd1, 0x5e, 0x50, 0x50, 0x9c, 0xd4, 0xd0, 0xeb, 0x99, 0x6e, 0xc9, 0x4c, 0x7b, 0x68,
-	0xee, 0x8c, 0x07, 0x48, 0x1e, 0xa0, 0x72, 0x4c, 0x12, 0x0f, 0x73, 0xce, 0xca, 0x7c, 0x2f, 0xac,
-	0x28, 0xaf, 0x39, 0x07, 0x73, 0x44, 0x49, 0xa5, 0x90, 0x02, 0xa9, 0xd8, 0x40, 0xaa, 0xe8, 0x35,
-	0xdd, 0xed, 0x8e, 0xad, 0xdc, 0x61, 0x02, 0xb1, 0x01, 0xa3, 0x8b, 0xcd, 0x40, 0x50, 0x43, 0xe7,
-	0x59, 0x68, 0xd2, 0xdd, 0x4b, 0xad, 0xe8, 0x48, 0xe6, 0x01, 0xfb, 0xa1, 0x50, 0x7c, 0x87, 0xf9,
-	0x0e, 0x57, 0x71, 0xb1, 0xdb, 0xb0, 0xee, 0x19, 0x17, 0x14, 0x5c, 0x42, 0x33, 0x43, 0xa1, 0x78,
-	0x5b, 0x85, 0x76, 0xa8, 0x5a, 0x1e, 0x26, 0xa1, 0xc4, 0x86, 0xca, 0xdb, 0xb6, 0xf0, 0xf9, 0xc7,
-	0xdc, 0x75, 0x76, 0x55, 0xf4, 0x92, 0xef, 0xa1, 0x8b, 0x43, 0xd6, 0x73, 0xbb, 0x4c, 0x09, 0xbf,
-	0xcd, 0xba, 0x5d, 0x1f, 0xde, 0x67, 0xe9, 0xf9, 0x93, 0xf5, 0x05, 0x18, 0xfe, 0xc3, 0x28, 0xe0,
-	0x4e, 0xb7, 0xeb, 0x73, 0x29, 0xb7, 0x95, 0xef, 0x7a, 0x4e, 0xab, 0x32, 0x4c, 0xdb, 0x89, 0x00,
-	0xc6, 0x4c, 0x93, 0x78, 0x01, 0x66, 0x64, 0x60, 0x6e, 0x7f, 0xa6, 0xed, 0xd0, 0x63, 0x03, 0x76,
-	0xa0, 0x7a, 0x76, 0x07, 0xee, 0x7b, 0x2a, 0xf5, 0xfa, 0xf7, 0x3d, 0x15, 0xce, 0xbd, 0x2c, 0x93,
-	0xe2, 0x84, 0xc1, 0xba, 0x7d, 0xe0, 0x4a, 0x79, 0x57, 0xec, 0x7b, 0x2f, 0xe0, 0x4e, 0x6f, 0xc3,
-	0x8e, 0xa5, 0x5a, 0xc0, 0x8d, 0x16, 0x10, 0xea, 0xbb, 0x52, 0xb6, 0xed, 0xc0, 0xaa, 0xeb, 0xbf,
-	0xd2, 0x2a, 0xf5, 0xa3, 0x30, 0x32, 0x8b, 0xb0, 0x4e, 0xfc, 0x88, 0xf9, 0xac, 0x1f, 0x3f, 0xe3,
-	0x87, 0xb0, 0x2a, 0x91, 0x15, 0x6a, 0x6d, 0xa1, 0xe9, 0x81, 0xb6, 0xe8, 0x3a, 0xe5, 0xcd, 0x6a,
-	0x6e, 0x1f, 0xc3, 0xf0, 0x66, 0x29, 0x18, 0x57, 0x38, 0x07, 0x88, 0xdf, 0x3c, 0x42, 0xe8, 0x9c,
-	0xae, 0x88, 0x8f, 0x0c, 0x34, 0x93, 0x96, 0x10, 0xbc, 0x9a, 0x2b, 0xf2, 0x4f, 0x72, 0x69, 0xae,
-	0x4d, 0x0e, 0x0c, 0x39, 0xc9, 0xd6, 0x97, 0x41, 0xf3, 0x2f, 0x7e, 0xf9, 0xf3, 0xdb, 0x97, 0xd6,
-	0xf1, 0x4d, 0x9a, 0x95, 0x67, 0x2d, 0x01, 0x92, 0x3e, 0xd6, 0x9f, 0x87, 0x34, 0xa3, 0x5a, 0xf8,
-	0x7b, 0x03, 0x55, 0x32, 0x02, 0x87, 0x27, 0x76, 0x8d, 0x86, 0x66, 0x5e, 0xff, 0x17, 0x91, 0x00,
-	0xd8, 0x48, 0x00, 0xaf, 0xe1, 0x95, 0x62, 0xc0, 0xac, 0x9c, 0xe2, 0xaf, 0x0c, 0x74, 0x21, 0xfa,
-	0x76, 0xe3, 0xe5, 0xa2, 0x56, 0x39, 0xed, 0x33, 0x57, 0xc6, 0x07, 0x01, 0xca, 0x9b, 0x09, 0xca,
-	0x75, 0xbc, 0x3a, 0x7e, 0x56, 0xb1, 0x22, 0x05, 0x34, 0x29, 0xad, 0xc1, 0x57, 0xc7, 0xb5, 0x4a,
-	0x26, 0x74, 0x6d, 0x52, 0x18, 0x30, 0x59, 0x09, 0xd3, 0x32, 0x5e, 0x2a, 0x66, 0x4a, 0xa9, 0x23,
-	0xfe, 0x1c, 0x9d, 0x07, 0xf5, 0xc2, 0xa4, 0xa8, 0x45, 0x56, 0xf1, 0xcc, 0xe5, 0xb1, 0x31, 0xc0,
-	0x70, 0x23, 0x61, 0x58, 0xc4, 0x0b, 0xc5, 0x0c, 0x20, 0x88, 0xf8, 0x6b, 0x03, 0x95, 0x53, 0x8a,
-	0x87, 0x0b, 0xef, 0x79, 0x56, 0x2d, 0xcd, 0xd5, 0x89, 0x71, 0x00, 0x43, 0x13, 0x98, 0x15, 0x4c,
-	0x8a, 0x61, 0xd2, 0xda, 0x8a, 0x7f, 0x30, 0x50, 0x39, 0xa5, 0x6f, 0xc5, 0x44, 0x67, 0x55, 0xb6,
-	0x98, 0xa8, 0x40, 0x28, 0xc9, 0xed, 0x84, 0x68, 0x13, 0x6f, 0xe4, 0x88, 0x62, 0x6d, 0x92, 0xf4,
-	0x71, 0x56, 0xe0, 0x0e, 0xa9, 0x16, 0x46, 0xfc, 0x9d, 0x81, 0x4a, 0xb1, 0x56, 0xe1, 0xc2, 0x4d,
-	0xcd, 0xab, 0xa5, 0x79, 0x75, 0x42, 0x14, 0x90, 0xbd, 0x93, 0x90, 0x35, 0x30, 0xfd, 0x0f, 0x64,
-	0x81, 0x28, 0x62, 0x89, 0xa6, 0x43, 0x15, 0xc3, 0x4b, 0x45, 0xed, 0x32, 0x32, 0x69, 0x92, 0x71,
-	0x21, 0x80, 0x43, 0x12, 0x9c, 0x39, 0x5c, 0xcd, 0xe1, 0x84, 0xea, 0xd8, 0xbc, 0xf5, 0xf4, 0xa4,
-	0x6e, 0x3c, 0x3b, 0xa9, 0x1b, 0x7f, 0x9c, 0xd4, 0x8d, 0x6f, 0x4e, 0xeb, 0x53, 0xcf, 0x4e, 0xeb,
-	0x53, 0xbf, 0x9e, 0xd6, 0xa7, 0x3e, 0xc1, 0x41, 0xfc, 0x28, 0xca, 0xd0, 0x3f, 0x84, 0x3a, 0xd3,
-	0xfa, 0x97, 0xe5, 0x1b, 0x7f, 0x07, 0x00, 0x00, 0xff, 0xff, 0x16, 0x5a, 0x42, 0x86, 0x40, 0x0b,
-	0x00, 0x00,
+	// 963 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x96, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xc7, 0xb3, 0x40, 0xa3, 0xfa, 0x39, 0xae, 0xc4, 0x90, 0x90, 0x64, 0xdb, 0x3a, 0xcd, 0x36,
+	0x6d, 0x52, 0xda, 0xec, 0xd4, 0x01, 0x41, 0x84, 0xe0, 0x80, 0xdb, 0x4a, 0x54, 0x02, 0x41, 0xdd,
+	0x50, 0x24, 0x38, 0x58, 0xe3, 0xdd, 0xd1, 0x66, 0x15, 0x7b, 0xc7, 0xdd, 0x19, 0xbb, 0x8e, 0xaa,
+	0x5c, 0x38, 0x21, 0x71, 0x00, 0x09, 0x09, 0x0e, 0xbd, 0xa3, 0x8a, 0x13, 0x87, 0xfe, 0x11, 0x3d,
+	0x56, 0xe5, 0x82, 0x38, 0x04, 0x94, 0x20, 0xf1, 0x6f, 0xa0, 0x9d, 0x7d, 0xeb, 0xfd, 0x91, 0xc5,
+	0x06, 0x21, 0x2e, 0x5e, 0xef, 0xfb, 0xf9, 0x99, 0x37, 0x33, 0x5f, 0x2d, 0x2c, 0xb3, 0x70, 0x8f,
+	0x8a, 0x90, 0x39, 0x5d, 0x4e, 0x87, 0x0d, 0x7a, 0x7f, 0xc0, 0xc3, 0x7d, 0xbb, 0x1f, 0x0a, 0x25,
+	0x48, 0x8d, 0x85, 0x7b, 0x76, 0xec, 0xb2, 0x87, 0x0d, 0xf3, 0x65, 0xd6, 0xf3, 0x03, 0x41, 0xf5,
+	0x6f, 0x1c, 0x61, 0xd6, 0x1d, 0x21, 0x7b, 0x42, 0xd2, 0x0e, 0x93, 0x51, 0x76, 0x87, 0x2b, 0xd6,
+	0xa0, 0x8e, 0xf0, 0x03, 0xf4, 0x9f, 0x45, 0xbf, 0xae, 0x5a, 0x28, 0x6f, 0x2e, 0xc7, 0xce, 0xb6,
+	0x7e, 0xa3, 0xf1, 0x0b, 0xba, 0xe6, 0x3d, 0xe1, 0x89, 0xd8, 0x1e, 0xfd, 0x43, 0xeb, 0x39, 0x4f,
+	0x08, 0xaf, 0xcb, 0x29, 0xeb, 0xfb, 0x94, 0x05, 0x81, 0x50, 0x4c, 0xf9, 0x22, 0x48, 0x72, 0xcc,
+	0xfc, 0x42, 0x90, 0x5b, 0xfb, 0xac, 0xeb, 0xb0, 0x74, 0x27, 0xea, 0x7c, 0x6b, 0xe4, 0xec, 0xb2,
+	0xc0, 0xe3, 0x2d, 0xa6, 0x78, 0x8b, 0xdf, 0x1f, 0x70, 0xa9, 0xc8, 0x3c, 0x9c, 0x72, 0x79, 0x20,
+	0x7a, 0x4b, 0xc6, 0x05, 0x63, 0xa3, 0xd2, 0x8a, 0x5f, 0xac, 0x11, 0x2c, 0x97, 0x64, 0xc8, 0xbe,
+	0x08, 0x24, 0x27, 0x9f, 0x43, 0x8d, 0xa3, 0xbd, 0x1d, 0x32, 0xc5, 0xe3, 0xd4, 0xe6, 0x9b, 0x4f,
+	0x0f, 0x57, 0x66, 0x7e, 0x3d, 0x5c, 0xc1, 0x55, 0x4b, 0x77, 0xcf, 0xf6, 0x05, 0xed, 0x31, 0xb5,
+	0x6b, 0x7f, 0xc0, 0x3d, 0xe6, 0xec, 0xdf, 0xe4, 0xce, 0xf3, 0x27, 0x9b, 0x80, 0x4b, 0xbd, 0xc9,
+	0x9d, 0xc7, 0x7f, 0xfe, 0xf4, 0x9a, 0xd1, 0x9a, 0xe3, 0x99, 0x26, 0xd6, 0xd9, 0x92, 0xce, 0x12,
+	0x61, 0xad, 0x47, 0x06, 0x98, 0x65, 0x5e, 0x04, 0x3b, 0x80, 0x33, 0x39, 0x30, 0xb9, 0x64, 0x5c,
+	0x78, 0x71, 0xa3, 0xba, 0x75, 0xce, 0xc6, 0x9e, 0xd1, 0x46, 0xd9, 0xb8, 0x51, 0x11, 0xc0, 0x0d,
+	0xe1, 0x07, 0xcd, 0xed, 0x88, 0xfb, 0xc7, 0xdf, 0x56, 0xae, 0x7a, 0xbe, 0xda, 0x1d, 0x74, 0x6c,
+	0x47, 0xf4, 0x70, 0x3b, 0xf0, 0xb1, 0x29, 0xdd, 0x3d, 0xaa, 0xf6, 0xfb, 0x5c, 0x26, 0x39, 0x32,
+	0x26, 0xaf, 0x65, 0xc9, 0xa5, 0x75, 0x0d, 0xe6, 0x35, 0xdc, 0x8e, 0xe8, 0xf8, 0xc1, 0x0e, 0x1b,
+	0x4d, 0x1e, 0x71, 0x17, 0x16, 0x0a, 0xd1, 0xb8, 0x8a, 0xbb, 0x50, 0x51, 0x91, 0xad, 0xad, 0xd8,
+	0xe8, 0x3f, 0x8e, 0xf6, 0xb4, 0xc2, 0xe2, 0xd6, 0x12, 0xbc, 0x9a, 0xeb, 0x96, 0xce, 0xb4, 0x0b,
+	0x8b, 0x27, 0x3c, 0x48, 0x72, 0x07, 0xaa, 0x63, 0x92, 0xf1, 0x30, 0x17, 0xed, 0xdc, 0xbd, 0xb0,
+	0x93, 0xbc, 0xe6, 0x22, 0xce, 0x11, 0xd2, 0x4a, 0x31, 0x05, 0xa8, 0xb1, 0xc1, 0x5a, 0xc6, 0x6e,
+	0xf7, 0x84, 0xe2, 0x3b, 0x2c, 0xf4, 0xb8, 0x1a, 0x83, 0xbc, 0x8b, 0xa7, 0x34, 0xe7, 0x42, 0x92,
+	0x55, 0x98, 0x1b, 0x0a, 0xc5, 0xdb, 0x2a, 0xb6, 0x6b, 0x94, 0x4a, 0xab, 0x3a, 0x4c, 0x43, 0x2d,
+	0x17, 0xd3, 0x5b, 0xfc, 0x01, 0x0b, 0xdd, 0x4f, 0xb9, 0xef, 0xed, 0xaa, 0x64, 0x07, 0xde, 0x87,
+	0x33, 0x43, 0xd6, 0xf5, 0x5d, 0xa6, 0x44, 0xd8, 0x66, 0xae, 0x1b, 0xe2, 0x5c, 0x57, 0x9f, 0x3f,
+	0xd9, 0x3c, 0x8f, 0x43, 0xbb, 0x97, 0x04, 0xbc, 0xe7, 0xba, 0x21, 0x97, 0xf2, 0xae, 0x0a, 0xfd,
+	0xc0, 0x6b, 0xd5, 0x86, 0x59, 0xbb, 0x15, 0xe2, 0xf1, 0xcc, 0x77, 0x41, 0xca, 0x4f, 0xa0, 0x16,
+	0x6a, 0x7b, 0xfb, 0x81, 0x76, 0x60, 0x97, 0xeb, 0xb8, 0x7b, 0x0b, 0x27, 0x77, 0xef, 0x76, 0xa0,
+	0x32, 0xfb, 0x76, 0x3b, 0x50, 0x78, 0x25, 0xc2, 0x4c, 0x79, 0x8b, 0xe1, 0x49, 0xf9, 0xd0, 0x97,
+	0xf2, 0x86, 0x18, 0x04, 0xff, 0xc3, 0xb2, 0xde, 0xc2, 0xe3, 0x91, 0x69, 0x81, 0x6b, 0x3a, 0x0f,
+	0xd0, 0xf3, 0xa5, 0x6c, 0x3b, 0x91, 0x55, 0xd7, 0x7f, 0xa9, 0x55, 0xe9, 0x25, 0x61, 0xd6, 0x3c,
+	0x10, 0x9d, 0xf8, 0x31, 0x0b, 0x59, 0x6f, 0xbc, 0x95, 0x1f, 0xc1, 0x2b, 0x39, 0x2b, 0xd6, 0xda,
+	0x86, 0xd9, 0xbe, 0xb6, 0xe8, 0x3a, 0xd5, 0xad, 0x85, 0xc2, 0x51, 0x8a, 0xc3, 0x9b, 0x95, 0x68,
+	0x5e, 0xf1, 0x20, 0x30, 0x7e, 0xeb, 0x87, 0x0a, 0x9c, 0xd2, 0x15, 0xc9, 0x23, 0x03, 0xe6, 0xb2,
+	0xb7, 0x9f, 0xac, 0x17, 0x8a, 0xfc, 0x9d, 0xd2, 0x99, 0x1b, 0xd3, 0x03, 0x63, 0x4e, 0x6b, 0xfb,
+	0xcb, 0xa8, 0xf9, 0x17, 0x3f, 0xff, 0xf1, 0xed, 0x0b, 0x9b, 0xe4, 0x2a, 0xcd, 0x2b, 0xab, 0xbe,
+	0xbd, 0x92, 0x3e, 0xd4, 0xcf, 0x03, 0x9a, 0x13, 0x1c, 0xf2, 0xbd, 0x01, 0xb5, 0x9c, 0x36, 0x91,
+	0xa9, 0x5d, 0x93, 0xa1, 0x99, 0x57, 0xfe, 0x41, 0x24, 0x02, 0x36, 0x52, 0xc0, 0xcb, 0x64, 0xad,
+	0x1c, 0x30, 0xaf, 0x84, 0xe4, 0x2b, 0x03, 0x4e, 0x27, 0x17, 0x93, 0x5c, 0x2c, 0x6b, 0x55, 0x90,
+	0x2d, 0x73, 0x6d, 0x72, 0x10, 0xa2, 0xbc, 0x91, 0xa2, 0x5c, 0x21, 0xeb, 0x93, 0x67, 0x35, 0x16,
+	0x93, 0x88, 0x26, 0x23, 0x13, 0xe4, 0xd2, 0xa4, 0x56, 0xe9, 0x84, 0x2e, 0x4f, 0x0b, 0x43, 0x26,
+	0x3b, 0x65, 0xba, 0x48, 0x56, 0xcb, 0x99, 0x32, 0xc2, 0x46, 0xbe, 0x36, 0xa0, 0x9a, 0x51, 0x1d,
+	0x52, 0xda, 0xe7, 0xa4, 0x62, 0x99, 0xeb, 0x53, 0xe3, 0x10, 0x88, 0xa6, 0x40, 0x6b, 0xc4, 0x2a,
+	0x07, 0xca, 0xea, 0x1b, 0x79, 0x6c, 0xc0, 0x5c, 0x56, 0x62, 0xca, 0x4f, 0x79, 0x89, 0xd4, 0x95,
+	0x9f, 0xf2, 0x32, 0xb5, 0xb2, 0x6e, 0xa5, 0x50, 0x6f, 0x93, 0xed, 0x02, 0xd4, 0x58, 0x1e, 0x24,
+	0x7d, 0x98, 0xd7, 0x98, 0x03, 0x9a, 0xd3, 0x38, 0xf2, 0x9d, 0x01, 0x95, 0xb1, 0x6c, 0x90, 0xd2,
+	0x43, 0x53, 0x14, 0x2e, 0xf3, 0xd2, 0x94, 0x28, 0x24, 0x7c, 0x27, 0x25, 0x6c, 0x10, 0xfa, 0x2f,
+	0x08, 0x23, 0x7d, 0x22, 0x12, 0x66, 0x63, 0x41, 0x21, 0xab, 0x65, 0xed, 0x72, 0x8a, 0x65, 0x5a,
+	0x93, 0x42, 0x10, 0xc7, 0x4a, 0x71, 0x16, 0xc9, 0x42, 0x01, 0x27, 0x16, 0xaa, 0xe6, 0xb5, 0xa7,
+	0x47, 0x75, 0xe3, 0xd9, 0x51, 0xdd, 0xf8, 0xfd, 0xa8, 0x6e, 0x7c, 0x73, 0x5c, 0x9f, 0x79, 0x76,
+	0x5c, 0x9f, 0xf9, 0xe5, 0xb8, 0x3e, 0xf3, 0x19, 0x89, 0xe2, 0x47, 0x49, 0x86, 0xfe, 0x9c, 0xe8,
+	0xcc, 0xea, 0xef, 0xb3, 0xd7, 0xff, 0x0a, 0x00, 0x00, 0xff, 0xff, 0x77, 0x09, 0x46, 0xd1, 0x86,
+	0x0a, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -924,12 +835,10 @@ type QueryClient interface {
 	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest, opts ...grpc.CallOption) (*QueryTobinTaxesResponse, error)
-	// Actives returns all active denoms
-	Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
-	// ScoreWeight returns oracle miss count of a validator
-	ScoreWeight(ctx context.Context, in *QueryScoreWeightRequest, opts ...grpc.CallOption) (*QueryScoreWeightResponse, error)
+	// RewardWeight returns a validator's accumulated oracle reward weight.
+	RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error)
 	// MissCount returns oracle miss count of a validator
 	MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error)
 	// Params queries all parameters.
@@ -980,15 +889,6 @@ func (c *queryClient) TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest
 	return out, nil
 }
 
-func (c *queryClient) Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error) {
-	out := new(QueryActivesResponse)
-	err := c.cc.Invoke(ctx, "/ark.oracle.v1.Query/Actives", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error) {
 	out := new(QueryVoteTargetsResponse)
 	err := c.cc.Invoke(ctx, "/ark.oracle.v1.Query/VoteTargets", in, out, opts...)
@@ -998,9 +898,9 @@ func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsReque
 	return out, nil
 }
 
-func (c *queryClient) ScoreWeight(ctx context.Context, in *QueryScoreWeightRequest, opts ...grpc.CallOption) (*QueryScoreWeightResponse, error) {
-	out := new(QueryScoreWeightResponse)
-	err := c.cc.Invoke(ctx, "/ark.oracle.v1.Query/ScoreWeight", in, out, opts...)
+func (c *queryClient) RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error) {
+	out := new(QueryRewardWeightResponse)
+	err := c.cc.Invoke(ctx, "/ark.oracle.v1.Query/RewardWeight", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1035,12 +935,10 @@ type QueryServer interface {
 	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error)
-	// Actives returns all active denoms
-	Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
-	// ScoreWeight returns oracle miss count of a validator
-	ScoreWeight(context.Context, *QueryScoreWeightRequest) (*QueryScoreWeightResponse, error)
+	// RewardWeight returns a validator's accumulated oracle reward weight.
+	RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error)
 	// MissCount returns oracle miss count of a validator
 	MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error)
 	// Params queries all parameters.
@@ -1063,14 +961,11 @@ func (*UnimplementedQueryServer) TobinTax(ctx context.Context, req *QueryTobinTa
 func (*UnimplementedQueryServer) TobinTaxes(ctx context.Context, req *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TobinTaxes not implemented")
 }
-func (*UnimplementedQueryServer) Actives(ctx context.Context, req *QueryActivesRequest) (*QueryActivesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Actives not implemented")
-}
 func (*UnimplementedQueryServer) VoteTargets(ctx context.Context, req *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VoteTargets not implemented")
 }
-func (*UnimplementedQueryServer) ScoreWeight(ctx context.Context, req *QueryScoreWeightRequest) (*QueryScoreWeightResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ScoreWeight not implemented")
+func (*UnimplementedQueryServer) RewardWeight(ctx context.Context, req *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RewardWeight not implemented")
 }
 func (*UnimplementedQueryServer) MissCount(ctx context.Context, req *QueryMissCountRequest) (*QueryMissCountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MissCount not implemented")
@@ -1155,24 +1050,6 @@ func _Query_TobinTaxes_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Actives_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryActivesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Actives(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.oracle.v1.Query/Actives",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Actives(ctx, req.(*QueryActivesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryVoteTargetsRequest)
 	if err := dec(in); err != nil {
@@ -1191,20 +1068,20 @@ func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_ScoreWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryScoreWeightRequest)
+func _Query_RewardWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRewardWeightRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).ScoreWeight(ctx, in)
+		return srv.(QueryServer).RewardWeight(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.oracle.v1.Query/ScoreWeight",
+		FullMethod: "/ark.oracle.v1.Query/RewardWeight",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ScoreWeight(ctx, req.(*QueryScoreWeightRequest))
+		return srv.(QueryServer).RewardWeight(ctx, req.(*QueryRewardWeightRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1267,16 +1144,12 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Query_TobinTaxes_Handler,
 		},
 		{
-			MethodName: "Actives",
-			Handler:    _Query_Actives_Handler,
-		},
-		{
 			MethodName: "VoteTargets",
 			Handler:    _Query_VoteTargets_Handler,
 		},
 		{
-			MethodName: "ScoreWeight",
-			Handler:    _Query_ScoreWeight_Handler,
+			MethodName: "RewardWeight",
+			Handler:    _Query_RewardWeight_Handler,
 		},
 		{
 			MethodName: "MissCount",
@@ -1537,61 +1410,6 @@ func (m *QueryTobinTaxesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryActivesRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryActivesRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryActivesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryActivesResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryActivesResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryActivesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Actives) > 0 {
-		for iNdEx := len(m.Actives) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Actives[iNdEx])
-			copy(dAtA[i:], m.Actives[iNdEx])
-			i = encodeVarintQuery(dAtA, i, uint64(len(m.Actives[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *QueryVoteTargetsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1647,7 +1465,7 @@ func (m *QueryVoteTargetsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryScoreWeightRequest) Marshal() (dAtA []byte, err error) {
+func (m *QueryRewardWeightRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1657,12 +1475,12 @@ func (m *QueryScoreWeightRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryScoreWeightRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryRewardWeightRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryScoreWeightRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryRewardWeightRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1677,7 +1495,7 @@ func (m *QueryScoreWeightRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryScoreWeightResponse) Marshal() (dAtA []byte, err error) {
+func (m *QueryRewardWeightResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1687,20 +1505,20 @@ func (m *QueryScoreWeightResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryScoreWeightResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryRewardWeightResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryScoreWeightResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryRewardWeightResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size := m.ScoreWeight.Size()
+		size := m.RewardWeight.Size()
 		i -= size
-		if _, err := m.ScoreWeight.MarshalTo(dAtA[i:]); err != nil {
+		if _, err := m.RewardWeight.MarshalTo(dAtA[i:]); err != nil {
 			return 0, err
 		}
 		i = encodeVarintQuery(dAtA, i, uint64(size))
@@ -1931,30 +1749,6 @@ func (m *QueryTobinTaxesResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryActivesRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *QueryActivesResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Actives) > 0 {
-		for _, s := range m.Actives {
-			l = len(s)
-			n += 1 + l + sovQuery(uint64(l))
-		}
-	}
-	return n
-}
-
 func (m *QueryVoteTargetsRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1979,7 +1773,7 @@ func (m *QueryVoteTargetsResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryScoreWeightRequest) Size() (n int) {
+func (m *QueryRewardWeightRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1992,13 +1786,13 @@ func (m *QueryScoreWeightRequest) Size() (n int) {
 	return n
 }
 
-func (m *QueryScoreWeightResponse) Size() (n int) {
+func (m *QueryRewardWeightResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.ScoreWeight.Size()
+	l = m.RewardWeight.Size()
 	n += 1 + l + sovQuery(uint64(l))
 	return n
 }
@@ -2654,138 +2448,6 @@ func (m *QueryTobinTaxesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryActivesRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryActivesRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryActivesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryActivesResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryActivesResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryActivesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Actives", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Actives = append(m.Actives, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *QueryVoteTargetsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2918,7 +2580,7 @@ func (m *QueryVoteTargetsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryScoreWeightRequest) Unmarshal(dAtA []byte) error {
+func (m *QueryRewardWeightRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2941,10 +2603,10 @@ func (m *QueryScoreWeightRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryScoreWeightRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryRewardWeightRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryScoreWeightRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryRewardWeightRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3000,7 +2662,7 @@ func (m *QueryScoreWeightRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryScoreWeightResponse) Unmarshal(dAtA []byte) error {
+func (m *QueryRewardWeightResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3023,15 +2685,15 @@ func (m *QueryScoreWeightResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryScoreWeightResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryRewardWeightResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryScoreWeightResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryRewardWeightResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScoreWeight", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RewardWeight", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3059,7 +2721,7 @@ func (m *QueryScoreWeightResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ScoreWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RewardWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -33,9 +33,9 @@ type ValidatorReport struct {
 
 // validatorScore directs oracle rewards and miss accounting to a validator.
 type validatorScore struct {
-	recipient sdk.ConsAddress
-	weight    math.Int
-	missed    bool
+	recipient    sdk.ConsAddress
+	rewardWeight math.Int
+	missed       bool
 }
 
 // aggregateOracleVotes groups submitted oracle rates by supported denom,
@@ -74,8 +74,8 @@ func aggregateOracleVotes(
 
 		consAddr := sdk.ConsAddress(vote.Validator.Address)
 		result.scores[validatorIndex] = validatorScore{
-			recipient: consAddr,
-			weight:    math.ZeroInt(),
+			recipient:    consAddr,
+			rewardWeight: math.ZeroInt(),
 		}
 		result.ValidatorReports[validatorIndex] = ValidatorReport{
 			Validator:   consAddr,
@@ -393,7 +393,7 @@ func computePricesAndScores(
 		for _, vote := range tally.votes {
 			score := &scores[vote.validator]
 			if withinSpread(vote.rate, tally.median, spread) {
-				score.weight = score.weight.AddRaw(vote.power)
+				score.rewardWeight = score.rewardWeight.AddRaw(vote.power)
 			} else {
 				score.missed = true
 			}

@@ -11,12 +11,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	cmttypes "github.com/cometbft/cometbft/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -24,7 +21,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
 	chain "ark/pkg/chain"
@@ -112,7 +108,7 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	params := types.DefaultParams()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccountingState(params)))
+	s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 
 	queryHelper := baseapp.NewQueryServerTestHelper(sdk.UnwrapSDKContext(s.ctx), interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
@@ -230,30 +226,11 @@ func (s *KeeperTestSuite) TestGetRateSnapshotRejectsElapsedTimeStaleness() {
 	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
 }
 
-func (s *KeeperTestSuite) TestGetExchangeRateRejectsFutureTimestamp() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          chain.MicroUSDDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(time.Second),
-	}))
-
-	_, err := s.keeper.GetExchangeRate(s.ctx, chain.MicroUSDDenom)
-	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
-}
-
-func (s *KeeperTestSuite) TestGetExchangeRateRejectsInvalidStoredValue() {
+func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 	tests := []struct {
 		name         string
 		exchangeRate types.ExchangeRate
 	}{
-		{
-			name: "stored denom does not match key",
-			exchangeRate: types.ExchangeRate{
-				Denom:          chain.MicroKRWDenom,
-				Rate:           math.LegacyOneDec(),
-				BlockTimestamp: oracleTestBlockTime,
-			},
-		},
 		{
 			name: "rate is unset",
 			exchangeRate: types.ExchangeRate{
@@ -274,12 +251,29 @@ func (s *KeeperTestSuite) TestGetExchangeRateRejectsInvalidStoredValue() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, tc.exchangeRate))
-
-			_, err := s.keeper.GetExchangeRate(s.ctx, chain.MicroUSDDenom)
+			err := s.keeper.SetExchangeRateWithEvent(s.ctx, tc.exchangeRate)
 			s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
+
+			has, getErr := s.keeper.ExchangeRate.Has(s.ctx, tc.exchangeRate.Denom)
+			s.Require().NoError(getErr)
+			s.Require().False(has)
+			s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 		})
 	}
+}
+
+func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsFutureTimestamp() {
+	err := s.keeper.SetExchangeRateWithEvent(s.ctx, types.ExchangeRate{
+		Denom:          chain.MicroUSDDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(time.Second),
+	})
+	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
+
+	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
+	s.Require().NoError(getErr)
+	s.Require().False(has)
+	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 }
 
 func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
@@ -310,7 +304,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidDenom() {
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 }
 
-func (s *KeeperTestSuite) TestGetActives() {
+func (s *KeeperTestSuite) TestGetExchangeRates() {
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
 		Denom:          chain.MicroUSDDenom,
 		Rate:           math.LegacyOneDec(),
@@ -327,20 +321,12 @@ func (s *KeeperTestSuite) TestGetActives() {
 	params.MaxExchangeRateAge = time.Minute
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
-	actives, err := s.keeper.GetActives(s.ctx)
+	exchangeRates, err := s.keeper.GetExchangeRates(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal([]string{chain.MicroUSDDenom}, actives)
-}
-
-func (s *KeeperTestSuite) TestGetActivesRejectsInvalidExchangeRate() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          chain.MicroKRWDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime,
-	}))
-
-	_, err := s.keeper.GetActives(s.ctx)
-	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
+	s.Require().Equal(
+		sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroUSDDenom, math.LegacyOneDec())},
+		exchangeRates,
+	)
 }
 
 func (s *KeeperTestSuite) TestGetTobinTaxes() {
@@ -376,7 +362,7 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 
 func (s *KeeperTestSuite) TestGetVoteTargets() {
 	expected := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: expected}))
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: expected}))
 
 	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
 	s.Require().NoError(err)
@@ -385,7 +371,7 @@ func (s *KeeperTestSuite) TestGetVoteTargets() {
 
 func (s *KeeperTestSuite) TestSyncVoteTargets() {
 	oldVoteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: oldVoteTargets}))
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: oldVoteTargets}))
 	for _, denom := range oldVoteTargets {
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, newStoredExchangeRate(denom, math.LegacyOneDec())))
 	}
@@ -425,132 +411,6 @@ func (s *KeeperTestSuite) TestSyncVoteTargets() {
 	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
 	s.Require().NoError(err)
 	s.Require().False(hasKRWExchangeRate)
-}
-
-func (s *KeeperTestSuite) TestAccountingCounters() {
-	pubKey := ed25519.GenPrivKey().PubKey()
-	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
-	s.Require().NoError(err)
-	consAddr, err := validator.GetConsAddr()
-	s.Require().NoError(err)
-
-	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil).Times(2)
-
-	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(3), true))
-	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(4), true))
-	missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
-	s.Require().NoError(err)
-	s.Require().Equal(uint64(2), missCount)
-
-	scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
-	s.Require().NoError(err)
-	s.Require().True(math.NewInt(7).Equal(scoreWeight))
-}
-
-func (s *KeeperTestSuite) TestRecordVoteAccountingEmptyUpdateSkipsValidatorLookup() {
-	consAddr := sdk.ConsAddress([]byte("missing_validator___"))
-
-	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.ZeroInt(), false))
-
-	entries := 0
-	err := s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
-		entries++
-		return false, nil
-	})
-	s.Require().NoError(err)
-	s.Require().Zero(entries)
-}
-
-func (s *KeeperTestSuite) TestRecordVoteAccountingAccumulatesLegalPowerBeyondUint64() {
-	pubKey := ed25519.GenPrivKey().PubKey()
-	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
-	s.Require().NoError(err)
-	consAddr, err := validator.GetConsAddr()
-	s.Require().NoError(err)
-
-	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil).Times(3)
-
-	blockScore := math.NewInt(cmttypes.MaxTotalVotingPower).MulRaw(8)
-	for range 3 {
-		s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, blockScore, false))
-	}
-
-	stored, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
-	s.Require().NoError(err)
-	s.Require().True(blockScore.MulRaw(3).Equal(stored))
-}
-
-func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsInvalidScoreWeight() {
-	consAddr := sdk.ConsAddress([]byte("validator___________"))
-
-	testCases := []struct {
-		name        string
-		scoreWeight math.Int
-		expectErr   string
-	}{
-		{
-			name:        "nil score weight",
-			scoreWeight: math.Int{},
-			expectErr:   "score weight must be set",
-		},
-		{
-			name:        "negative score weight",
-			scoreWeight: math.NewInt(-1),
-			expectErr:   "score weight must not be negative",
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			err := s.keeper.RecordVoteAccounting(s.ctx, consAddr, tc.scoreWeight, false)
-			s.Require().ErrorContains(err, tc.expectErr)
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsMissOverflowWithoutChangingScore() {
-	pubKey := ed25519.GenPrivKey().PubKey()
-	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
-	s.Require().NoError(err)
-	consAddr, err := validator.GetConsAddr()
-	s.Require().NoError(err)
-	s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(5)))
-	s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, ^uint64(0)))
-
-	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil)
-
-	err = s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(1), true)
-	s.Require().ErrorContains(err, "miss count overflow")
-
-	scoreWeight, getErr := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
-	s.Require().NoError(getErr)
-	s.Require().True(math.NewInt(5).Equal(scoreWeight))
-}
-
-func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress() {
-	consAddr := sdk.ConsAddress([]byte("missing_validator___"))
-	s.stakingKeeper.EXPECT().
-		ValidatorByConsAddr(s.ctx, consAddr).
-		Return(nil, stakingtypes.ErrNoValidatorFound).
-		Times(1)
-
-	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(3), true))
-
-	missCountEntries := 0
-	err := s.keeper.MissCount.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
-		missCountEntries++
-		return false, nil
-	})
-	s.Require().NoError(err)
-	s.Require().Zero(missCountEntries)
-
-	scoreWeightEntries := 0
-	err = s.keeper.ScoreWeight.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ math.Int) (bool, error) {
-		scoreWeightEntries++
-		return false, nil
-	})
-	s.Require().NoError(err)
-	s.Require().Zero(scoreWeightEntries)
 }
 
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {

@@ -261,13 +261,13 @@ func (app *ArkApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []
 		panic(fmt.Errorf("error while clearing exchange rates: %w", err))
 	}
 
-	if err := app.OracleKeeper.ScoreWeight.Walk(ctx, nil, func(operator sdk.ValAddress, _ math.Int) (bool, error) {
-		if err := app.OracleKeeper.ScoreWeight.Set(ctx, operator, math.ZeroInt()); err != nil {
+	if err := app.OracleKeeper.RewardWeight.Walk(ctx, nil, func(operator sdk.ValAddress, _ math.Int) (bool, error) {
+		if err := app.OracleKeeper.RewardWeight.Set(ctx, operator, math.ZeroInt()); err != nil {
 			return false, err
 		}
 		return false, nil
 	}); err != nil {
-		panic(fmt.Errorf("error while resetting score weights: %w", err))
+		panic(fmt.Errorf("error while resetting reward weights: %w", err))
 	}
 
 	if err := app.OracleKeeper.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, _ uint64) (bool, error) {

@@ -176,19 +176,19 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetActives mocks base method.
-func (m *MockOracleKeeper) GetActives(ctx context.Context) ([]string, error) {
+// GetExchangeRates mocks base method.
+func (m *MockOracleKeeper) GetExchangeRates(ctx context.Context) (types1.DecCoins, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActives", ctx)
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "GetExchangeRates", ctx)
+	ret0, _ := ret[0].(types1.DecCoins)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetActives indicates an expected call of GetActives.
-func (mr *MockOracleKeeperMockRecorder) GetActives(ctx any) *gomock.Call {
+// GetExchangeRates indicates an expected call of GetExchangeRates.
+func (mr *MockOracleKeeperMockRecorder) GetExchangeRates(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActives", reflect.TypeOf((*MockOracleKeeper)(nil).GetActives), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRates", reflect.TypeOf((*MockOracleKeeper)(nil).GetExchangeRates), ctx)
 }
 
 // GetRateSnapshot mocks base method.

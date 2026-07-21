@@ -19,7 +19,7 @@ import (
 type OracleKeeper interface {
 	GetParams(ctx context.Context) (oracletypes.Params, error)
 	SetExchangeRateWithEvent(ctx context.Context, exchangeRate oracletypes.ExchangeRate) error
-	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, scoreWeight math.Int, missed bool) error
+	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, rewardWeight math.Int, missed bool) error
 	GetVoteTargets(ctx context.Context) ([]string, error)
 	SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error
 }

@@ -24,7 +24,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		params.RewardWindow = 100
 		params.RewardDistributionWindow = 1_000
 		params.SlashWindow = 200
-		s.Require().NoError(s.keeper.ScoreWeight.Set(s.ctx, valAddr1, math.NewInt(7)))
+		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(7)))
 		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, 3))
 
 		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -43,9 +43,9 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().Equal(types.DefaultRewardDistributionWindow, accounting.RewardDistributionWindow)
 		s.Require().Equal(types.DefaultSlashWindow, accounting.SlashWindow)
 
-		scoreWeight, err := s.keeper.ScoreWeight.Get(s.ctx, valAddr1)
+		rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx, valAddr1)
 		s.Require().NoError(err)
-		s.Require().True(math.NewInt(7).Equal(scoreWeight))
+		s.Require().True(math.NewInt(7).Equal(rewardWeight))
 		missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(3), missCount)
@@ -72,7 +72,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 
 	s.Run("updates market taxes without syncing vote targets", func() {
 		oldVoteTargets := []string{chain.MicroKRWDenom}
-		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargetState{Denoms: oldVoteTargets}))
+		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: oldVoteTargets}))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, newStoredExchangeRate(chain.MicroKRWDenom, math.LegacyOneDec())))
 

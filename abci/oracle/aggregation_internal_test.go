@@ -507,7 +507,7 @@ func TestEvaluateReferenceCandidateSkipsUnsafeFinalPrice(t *testing.T) {
 func TestComputePricesAndScoresSupportsLegalMaximumPowerAcrossTargets(t *testing.T) {
 	const targetCount = oracletypes.MaxVoteTargets
 
-	scores := []validatorScore{{weight: math.ZeroInt()}}
+	scores := []validatorScore{{rewardWeight: math.ZeroInt()}}
 	selection := referenceSelection{tallies: make([]pricedTally, targetCount)}
 	targetDenoms := make([]string, targetCount)
 	for targetIndex := range targetCount {
@@ -531,7 +531,7 @@ func TestComputePricesAndScoresSupportsLegalMaximumPowerAcrossTargets(t *testing
 
 	require.NotNil(t, prices)
 	expectedWeight := math.NewInt(cmttypes.MaxTotalVotingPower).MulRaw(targetCount)
-	require.True(t, expectedWeight.Equal(scores[0].weight))
+	require.True(t, expectedWeight.Equal(scores[0].rewardWeight))
 }
 
 func TestAggregateOracleVotesReturnsValidatorReports(t *testing.T) {

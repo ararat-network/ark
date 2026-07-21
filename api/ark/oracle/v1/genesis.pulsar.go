@@ -70,7 +70,7 @@ func (x *_GenesisState_2_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_3_list)(nil)
 
 type _GenesisState_3_list struct {
-	list *[]*ScoreWeight
+	list *[]*RewardWeight
 }
 
 func (x *_GenesisState_3_list) Len() int {
@@ -86,18 +86,18 @@ func (x *_GenesisState_3_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ScoreWeight)
+	concreteValue := valueUnwrapped.Interface().(*RewardWeight)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ScoreWeight)
+	concreteValue := valueUnwrapped.Interface().(*RewardWeight)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_3_list) AppendMutable() protoreflect.Value {
-	v := new(ScoreWeight)
+	v := new(RewardWeight)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -110,7 +110,7 @@ func (x *_GenesisState_3_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_3_list) NewElement() protoreflect.Value {
-	v := new(ScoreWeight)
+	v := new(RewardWeight)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -173,7 +173,7 @@ var (
 	md_GenesisState                protoreflect.MessageDescriptor
 	fd_GenesisState_params         protoreflect.FieldDescriptor
 	fd_GenesisState_exchange_rates protoreflect.FieldDescriptor
-	fd_GenesisState_score_weights  protoreflect.FieldDescriptor
+	fd_GenesisState_reward_weights protoreflect.FieldDescriptor
 	fd_GenesisState_miss_counts    protoreflect.FieldDescriptor
 	fd_GenesisState_vote_targets   protoreflect.FieldDescriptor
 	fd_GenesisState_accounting     protoreflect.FieldDescriptor
@@ -184,7 +184,7 @@ func init() {
 	md_GenesisState = File_ark_oracle_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_exchange_rates = md_GenesisState.Fields().ByName("exchange_rates")
-	fd_GenesisState_score_weights = md_GenesisState.Fields().ByName("score_weights")
+	fd_GenesisState_reward_weights = md_GenesisState.Fields().ByName("reward_weights")
 	fd_GenesisState_miss_counts = md_GenesisState.Fields().ByName("miss_counts")
 	fd_GenesisState_vote_targets = md_GenesisState.Fields().ByName("vote_targets")
 	fd_GenesisState_accounting = md_GenesisState.Fields().ByName("accounting")
@@ -267,9 +267,9 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.ScoreWeights) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.ScoreWeights})
-		if !f(fd_GenesisState_score_weights, value) {
+	if len(x.RewardWeights) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.RewardWeights})
+		if !f(fd_GenesisState_reward_weights, value) {
 			return
 		}
 	}
@@ -310,8 +310,8 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.Params != nil
 	case "ark.oracle.v1.GenesisState.exchange_rates":
 		return len(x.ExchangeRates) != 0
-	case "ark.oracle.v1.GenesisState.score_weights":
-		return len(x.ScoreWeights) != 0
+	case "ark.oracle.v1.GenesisState.reward_weights":
+		return len(x.RewardWeights) != 0
 	case "ark.oracle.v1.GenesisState.miss_counts":
 		return len(x.MissCounts) != 0
 	case "ark.oracle.v1.GenesisState.vote_targets":
@@ -338,8 +338,8 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Params = nil
 	case "ark.oracle.v1.GenesisState.exchange_rates":
 		x.ExchangeRates = nil
-	case "ark.oracle.v1.GenesisState.score_weights":
-		x.ScoreWeights = nil
+	case "ark.oracle.v1.GenesisState.reward_weights":
+		x.RewardWeights = nil
 	case "ark.oracle.v1.GenesisState.miss_counts":
 		x.MissCounts = nil
 	case "ark.oracle.v1.GenesisState.vote_targets":
@@ -371,11 +371,11 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		}
 		listValue := &_GenesisState_2_list{list: &x.ExchangeRates}
 		return protoreflect.ValueOfList(listValue)
-	case "ark.oracle.v1.GenesisState.score_weights":
-		if len(x.ScoreWeights) == 0 {
+	case "ark.oracle.v1.GenesisState.reward_weights":
+		if len(x.RewardWeights) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_3_list{})
 		}
-		listValue := &_GenesisState_3_list{list: &x.ScoreWeights}
+		listValue := &_GenesisState_3_list{list: &x.RewardWeights}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.oracle.v1.GenesisState.miss_counts":
 		if len(x.MissCounts) == 0 {
@@ -415,18 +415,18 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		lv := value.List()
 		clv := lv.(*_GenesisState_2_list)
 		x.ExchangeRates = *clv.list
-	case "ark.oracle.v1.GenesisState.score_weights":
+	case "ark.oracle.v1.GenesisState.reward_weights":
 		lv := value.List()
 		clv := lv.(*_GenesisState_3_list)
-		x.ScoreWeights = *clv.list
+		x.RewardWeights = *clv.list
 	case "ark.oracle.v1.GenesisState.miss_counts":
 		lv := value.List()
 		clv := lv.(*_GenesisState_4_list)
 		x.MissCounts = *clv.list
 	case "ark.oracle.v1.GenesisState.vote_targets":
-		x.VoteTargets = value.Message().Interface().(*VoteTargetState)
+		x.VoteTargets = value.Message().Interface().(*VoteTargets)
 	case "ark.oracle.v1.GenesisState.accounting":
-		x.Accounting = value.Message().Interface().(*AccountingState)
+		x.Accounting = value.Message().Interface().(*Accounting)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -458,11 +458,11 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		}
 		value := &_GenesisState_2_list{list: &x.ExchangeRates}
 		return protoreflect.ValueOfList(value)
-	case "ark.oracle.v1.GenesisState.score_weights":
-		if x.ScoreWeights == nil {
-			x.ScoreWeights = []*ScoreWeight{}
+	case "ark.oracle.v1.GenesisState.reward_weights":
+		if x.RewardWeights == nil {
+			x.RewardWeights = []*RewardWeight{}
 		}
-		value := &_GenesisState_3_list{list: &x.ScoreWeights}
+		value := &_GenesisState_3_list{list: &x.RewardWeights}
 		return protoreflect.ValueOfList(value)
 	case "ark.oracle.v1.GenesisState.miss_counts":
 		if x.MissCounts == nil {
@@ -472,12 +472,12 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		return protoreflect.ValueOfList(value)
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		if x.VoteTargets == nil {
-			x.VoteTargets = new(VoteTargetState)
+			x.VoteTargets = new(VoteTargets)
 		}
 		return protoreflect.ValueOfMessage(x.VoteTargets.ProtoReflect())
 	case "ark.oracle.v1.GenesisState.accounting":
 		if x.Accounting == nil {
-			x.Accounting = new(AccountingState)
+			x.Accounting = new(Accounting)
 		}
 		return protoreflect.ValueOfMessage(x.Accounting.ProtoReflect())
 	default:
@@ -499,17 +499,17 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.oracle.v1.GenesisState.exchange_rates":
 		list := []*ExchangeRate{}
 		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
-	case "ark.oracle.v1.GenesisState.score_weights":
-		list := []*ScoreWeight{}
+	case "ark.oracle.v1.GenesisState.reward_weights":
+		list := []*RewardWeight{}
 		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
 	case "ark.oracle.v1.GenesisState.miss_counts":
 		list := []*MissCount{}
 		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
 	case "ark.oracle.v1.GenesisState.vote_targets":
-		m := new(VoteTargetState)
+		m := new(VoteTargets)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.oracle.v1.GenesisState.accounting":
-		m := new(AccountingState)
+		m := new(Accounting)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -590,8 +590,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.ScoreWeights) > 0 {
-			for _, e := range x.ScoreWeights {
+		if len(x.RewardWeights) > 0 {
+			for _, e := range x.RewardWeights {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -683,9 +683,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x22
 			}
 		}
-		if len(x.ScoreWeights) > 0 {
-			for iNdEx := len(x.ScoreWeights) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.ScoreWeights[iNdEx])
+		if len(x.RewardWeights) > 0 {
+			for iNdEx := len(x.RewardWeights) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.RewardWeights[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -850,7 +850,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ScoreWeights", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardWeights", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -877,8 +877,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ScoreWeights = append(x.ScoreWeights, &ScoreWeight{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ScoreWeights[len(x.ScoreWeights)-1]); err != nil {
+				x.RewardWeights = append(x.RewardWeights, &RewardWeight{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.RewardWeights[len(x.RewardWeights)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -946,7 +946,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.VoteTargets == nil {
-					x.VoteTargets = &VoteTargetState{}
+					x.VoteTargets = &VoteTargets{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.VoteTargets); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -982,7 +982,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Accounting == nil {
-					x.Accounting = &AccountingState{}
+					x.Accounting = &Accounting{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Accounting); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1024,33 +1024,33 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_AccountingState                            protoreflect.MessageDescriptor
-	fd_AccountingState_reward_window              protoreflect.FieldDescriptor
-	fd_AccountingState_reward_distribution_window protoreflect.FieldDescriptor
-	fd_AccountingState_reward_window_start_height protoreflect.FieldDescriptor
-	fd_AccountingState_slash_window               protoreflect.FieldDescriptor
-	fd_AccountingState_slash_window_start_height  protoreflect.FieldDescriptor
+	md_Accounting                            protoreflect.MessageDescriptor
+	fd_Accounting_reward_window              protoreflect.FieldDescriptor
+	fd_Accounting_reward_distribution_window protoreflect.FieldDescriptor
+	fd_Accounting_reward_window_start_height protoreflect.FieldDescriptor
+	fd_Accounting_slash_window               protoreflect.FieldDescriptor
+	fd_Accounting_slash_window_start_height  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_genesis_proto_init()
-	md_AccountingState = File_ark_oracle_v1_genesis_proto.Messages().ByName("AccountingState")
-	fd_AccountingState_reward_window = md_AccountingState.Fields().ByName("reward_window")
-	fd_AccountingState_reward_distribution_window = md_AccountingState.Fields().ByName("reward_distribution_window")
-	fd_AccountingState_reward_window_start_height = md_AccountingState.Fields().ByName("reward_window_start_height")
-	fd_AccountingState_slash_window = md_AccountingState.Fields().ByName("slash_window")
-	fd_AccountingState_slash_window_start_height = md_AccountingState.Fields().ByName("slash_window_start_height")
+	md_Accounting = File_ark_oracle_v1_genesis_proto.Messages().ByName("Accounting")
+	fd_Accounting_reward_window = md_Accounting.Fields().ByName("reward_window")
+	fd_Accounting_reward_distribution_window = md_Accounting.Fields().ByName("reward_distribution_window")
+	fd_Accounting_reward_window_start_height = md_Accounting.Fields().ByName("reward_window_start_height")
+	fd_Accounting_slash_window = md_Accounting.Fields().ByName("slash_window")
+	fd_Accounting_slash_window_start_height = md_Accounting.Fields().ByName("slash_window_start_height")
 }
 
-var _ protoreflect.Message = (*fastReflection_AccountingState)(nil)
+var _ protoreflect.Message = (*fastReflection_Accounting)(nil)
 
-type fastReflection_AccountingState AccountingState
+type fastReflection_Accounting Accounting
 
-func (x *AccountingState) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_AccountingState)(x)
+func (x *Accounting) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_Accounting)(x)
 }
 
-func (x *AccountingState) slowProtoReflect() protoreflect.Message {
+func (x *Accounting) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_genesis_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1062,43 +1062,43 @@ func (x *AccountingState) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_AccountingState_messageType fastReflection_AccountingState_messageType
-var _ protoreflect.MessageType = fastReflection_AccountingState_messageType{}
+var _fastReflection_Accounting_messageType fastReflection_Accounting_messageType
+var _ protoreflect.MessageType = fastReflection_Accounting_messageType{}
 
-type fastReflection_AccountingState_messageType struct{}
+type fastReflection_Accounting_messageType struct{}
 
-func (x fastReflection_AccountingState_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_AccountingState)(nil)
+func (x fastReflection_Accounting_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_Accounting)(nil)
 }
-func (x fastReflection_AccountingState_messageType) New() protoreflect.Message {
-	return new(fastReflection_AccountingState)
+func (x fastReflection_Accounting_messageType) New() protoreflect.Message {
+	return new(fastReflection_Accounting)
 }
-func (x fastReflection_AccountingState_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_AccountingState
+func (x fastReflection_Accounting_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_Accounting
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_AccountingState) Descriptor() protoreflect.MessageDescriptor {
-	return md_AccountingState
+func (x *fastReflection_Accounting) Descriptor() protoreflect.MessageDescriptor {
+	return md_Accounting
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_AccountingState) Type() protoreflect.MessageType {
-	return _fastReflection_AccountingState_messageType
+func (x *fastReflection_Accounting) Type() protoreflect.MessageType {
+	return _fastReflection_Accounting_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_AccountingState) New() protoreflect.Message {
-	return new(fastReflection_AccountingState)
+func (x *fastReflection_Accounting) New() protoreflect.Message {
+	return new(fastReflection_Accounting)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_AccountingState) Interface() protoreflect.ProtoMessage {
-	return (*AccountingState)(x)
+func (x *fastReflection_Accounting) Interface() protoreflect.ProtoMessage {
+	return (*Accounting)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1106,34 +1106,34 @@ func (x *fastReflection_AccountingState) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_AccountingState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_Accounting) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.RewardWindow != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.RewardWindow)
-		if !f(fd_AccountingState_reward_window, value) {
+		if !f(fd_Accounting_reward_window, value) {
 			return
 		}
 	}
 	if x.RewardDistributionWindow != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.RewardDistributionWindow)
-		if !f(fd_AccountingState_reward_distribution_window, value) {
+		if !f(fd_Accounting_reward_distribution_window, value) {
 			return
 		}
 	}
 	if x.RewardWindowStartHeight != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.RewardWindowStartHeight)
-		if !f(fd_AccountingState_reward_window_start_height, value) {
+		if !f(fd_Accounting_reward_window_start_height, value) {
 			return
 		}
 	}
 	if x.SlashWindow != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.SlashWindow)
-		if !f(fd_AccountingState_slash_window, value) {
+		if !f(fd_Accounting_slash_window, value) {
 			return
 		}
 	}
 	if x.SlashWindowStartHeight != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.SlashWindowStartHeight)
-		if !f(fd_AccountingState_slash_window_start_height, value) {
+		if !f(fd_Accounting_slash_window_start_height, value) {
 			return
 		}
 	}
@@ -1150,23 +1150,23 @@ func (x *fastReflection_AccountingState) Range(f func(protoreflect.FieldDescript
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_AccountingState) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_Accounting) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.AccountingState.reward_window":
+	case "ark.oracle.v1.Accounting.reward_window":
 		return x.RewardWindow != uint64(0)
-	case "ark.oracle.v1.AccountingState.reward_distribution_window":
+	case "ark.oracle.v1.Accounting.reward_distribution_window":
 		return x.RewardDistributionWindow != uint64(0)
-	case "ark.oracle.v1.AccountingState.reward_window_start_height":
+	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		return x.RewardWindowStartHeight != uint64(0)
-	case "ark.oracle.v1.AccountingState.slash_window":
+	case "ark.oracle.v1.Accounting.slash_window":
 		return x.SlashWindow != uint64(0)
-	case "ark.oracle.v1.AccountingState.slash_window_start_height":
+	case "ark.oracle.v1.Accounting.slash_window_start_height":
 		return x.SlashWindowStartHeight != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AccountingState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.AccountingState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.Accounting does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1176,23 +1176,23 @@ func (x *fastReflection_AccountingState) Has(fd protoreflect.FieldDescriptor) bo
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AccountingState) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_Accounting) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.AccountingState.reward_window":
+	case "ark.oracle.v1.Accounting.reward_window":
 		x.RewardWindow = uint64(0)
-	case "ark.oracle.v1.AccountingState.reward_distribution_window":
+	case "ark.oracle.v1.Accounting.reward_distribution_window":
 		x.RewardDistributionWindow = uint64(0)
-	case "ark.oracle.v1.AccountingState.reward_window_start_height":
+	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		x.RewardWindowStartHeight = uint64(0)
-	case "ark.oracle.v1.AccountingState.slash_window":
+	case "ark.oracle.v1.Accounting.slash_window":
 		x.SlashWindow = uint64(0)
-	case "ark.oracle.v1.AccountingState.slash_window_start_height":
+	case "ark.oracle.v1.Accounting.slash_window_start_height":
 		x.SlashWindowStartHeight = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AccountingState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.AccountingState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.Accounting does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1202,28 +1202,28 @@ func (x *fastReflection_AccountingState) Clear(fd protoreflect.FieldDescriptor) 
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_AccountingState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Accounting) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.AccountingState.reward_window":
+	case "ark.oracle.v1.Accounting.reward_window":
 		value := x.RewardWindow
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.AccountingState.reward_distribution_window":
+	case "ark.oracle.v1.Accounting.reward_distribution_window":
 		value := x.RewardDistributionWindow
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.AccountingState.reward_window_start_height":
+	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		value := x.RewardWindowStartHeight
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.AccountingState.slash_window":
+	case "ark.oracle.v1.Accounting.slash_window":
 		value := x.SlashWindow
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.AccountingState.slash_window_start_height":
+	case "ark.oracle.v1.Accounting.slash_window_start_height":
 		value := x.SlashWindowStartHeight
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AccountingState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.AccountingState does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.Accounting does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1237,23 +1237,23 @@ func (x *fastReflection_AccountingState) Get(descriptor protoreflect.FieldDescri
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AccountingState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_Accounting) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.AccountingState.reward_window":
+	case "ark.oracle.v1.Accounting.reward_window":
 		x.RewardWindow = value.Uint()
-	case "ark.oracle.v1.AccountingState.reward_distribution_window":
+	case "ark.oracle.v1.Accounting.reward_distribution_window":
 		x.RewardDistributionWindow = value.Uint()
-	case "ark.oracle.v1.AccountingState.reward_window_start_height":
+	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		x.RewardWindowStartHeight = value.Uint()
-	case "ark.oracle.v1.AccountingState.slash_window":
+	case "ark.oracle.v1.Accounting.slash_window":
 		x.SlashWindow = value.Uint()
-	case "ark.oracle.v1.AccountingState.slash_window_start_height":
+	case "ark.oracle.v1.Accounting.slash_window_start_height":
 		x.SlashWindowStartHeight = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AccountingState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.AccountingState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.Accounting does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1267,56 +1267,56 @@ func (x *fastReflection_AccountingState) Set(fd protoreflect.FieldDescriptor, va
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AccountingState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Accounting) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.AccountingState.reward_window":
-		panic(fmt.Errorf("field reward_window of message ark.oracle.v1.AccountingState is not mutable"))
-	case "ark.oracle.v1.AccountingState.reward_distribution_window":
-		panic(fmt.Errorf("field reward_distribution_window of message ark.oracle.v1.AccountingState is not mutable"))
-	case "ark.oracle.v1.AccountingState.reward_window_start_height":
-		panic(fmt.Errorf("field reward_window_start_height of message ark.oracle.v1.AccountingState is not mutable"))
-	case "ark.oracle.v1.AccountingState.slash_window":
-		panic(fmt.Errorf("field slash_window of message ark.oracle.v1.AccountingState is not mutable"))
-	case "ark.oracle.v1.AccountingState.slash_window_start_height":
-		panic(fmt.Errorf("field slash_window_start_height of message ark.oracle.v1.AccountingState is not mutable"))
+	case "ark.oracle.v1.Accounting.reward_window":
+		panic(fmt.Errorf("field reward_window of message ark.oracle.v1.Accounting is not mutable"))
+	case "ark.oracle.v1.Accounting.reward_distribution_window":
+		panic(fmt.Errorf("field reward_distribution_window of message ark.oracle.v1.Accounting is not mutable"))
+	case "ark.oracle.v1.Accounting.reward_window_start_height":
+		panic(fmt.Errorf("field reward_window_start_height of message ark.oracle.v1.Accounting is not mutable"))
+	case "ark.oracle.v1.Accounting.slash_window":
+		panic(fmt.Errorf("field slash_window of message ark.oracle.v1.Accounting is not mutable"))
+	case "ark.oracle.v1.Accounting.slash_window_start_height":
+		panic(fmt.Errorf("field slash_window_start_height of message ark.oracle.v1.Accounting is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AccountingState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.AccountingState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.Accounting does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_AccountingState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Accounting) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.AccountingState.reward_window":
+	case "ark.oracle.v1.Accounting.reward_window":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.AccountingState.reward_distribution_window":
+	case "ark.oracle.v1.Accounting.reward_distribution_window":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.AccountingState.reward_window_start_height":
+	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.AccountingState.slash_window":
+	case "ark.oracle.v1.Accounting.slash_window":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.AccountingState.slash_window_start_height":
+	case "ark.oracle.v1.Accounting.slash_window_start_height":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AccountingState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.AccountingState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.Accounting does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_AccountingState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_Accounting) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.AccountingState", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.Accounting", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1324,7 +1324,7 @@ func (x *fastReflection_AccountingState) WhichOneof(d protoreflect.OneofDescript
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_AccountingState) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_Accounting) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1335,7 +1335,7 @@ func (x *fastReflection_AccountingState) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_AccountingState) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_Accounting) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1347,7 +1347,7 @@ func (x *fastReflection_AccountingState) SetUnknown(fields protoreflect.RawField
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_AccountingState) IsValid() bool {
+func (x *fastReflection_Accounting) IsValid() bool {
 	return x != nil
 }
 
@@ -1357,9 +1357,9 @@ func (x *fastReflection_AccountingState) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_AccountingState) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_Accounting) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*AccountingState)
+		x := input.Message.Interface().(*Accounting)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1396,7 +1396,7 @@ func (x *fastReflection_AccountingState) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*AccountingState)
+		x := input.Message.Interface().(*Accounting)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1451,7 +1451,7 @@ func (x *fastReflection_AccountingState) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*AccountingState)
+		x := input.Message.Interface().(*Accounting)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1483,10 +1483,10 @@ func (x *fastReflection_AccountingState) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AccountingState: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Accounting: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AccountingState: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Accounting: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1619,72 +1619,72 @@ func (x *fastReflection_AccountingState) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_VoteTargetState_1_list)(nil)
+var _ protoreflect.List = (*_VoteTargets_1_list)(nil)
 
-type _VoteTargetState_1_list struct {
+type _VoteTargets_1_list struct {
 	list *[]string
 }
 
-func (x *_VoteTargetState_1_list) Len() int {
+func (x *_VoteTargets_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_VoteTargetState_1_list) Get(i int) protoreflect.Value {
+func (x *_VoteTargets_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfString((*x.list)[i])
 }
 
-func (x *_VoteTargetState_1_list) Set(i int, value protoreflect.Value) {
+func (x *_VoteTargets_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_VoteTargetState_1_list) Append(value protoreflect.Value) {
+func (x *_VoteTargets_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_VoteTargetState_1_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message VoteTargetState at list field Denoms as it is not of Message kind"))
+func (x *_VoteTargets_1_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message VoteTargets at list field Denoms as it is not of Message kind"))
 }
 
-func (x *_VoteTargetState_1_list) Truncate(n int) {
+func (x *_VoteTargets_1_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_VoteTargetState_1_list) NewElement() protoreflect.Value {
+func (x *_VoteTargets_1_list) NewElement() protoreflect.Value {
 	v := ""
 	return protoreflect.ValueOfString(v)
 }
 
-func (x *_VoteTargetState_1_list) IsValid() bool {
+func (x *_VoteTargets_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_VoteTargetState        protoreflect.MessageDescriptor
-	fd_VoteTargetState_denoms protoreflect.FieldDescriptor
+	md_VoteTargets        protoreflect.MessageDescriptor
+	fd_VoteTargets_denoms protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_genesis_proto_init()
-	md_VoteTargetState = File_ark_oracle_v1_genesis_proto.Messages().ByName("VoteTargetState")
-	fd_VoteTargetState_denoms = md_VoteTargetState.Fields().ByName("denoms")
+	md_VoteTargets = File_ark_oracle_v1_genesis_proto.Messages().ByName("VoteTargets")
+	fd_VoteTargets_denoms = md_VoteTargets.Fields().ByName("denoms")
 }
 
-var _ protoreflect.Message = (*fastReflection_VoteTargetState)(nil)
+var _ protoreflect.Message = (*fastReflection_VoteTargets)(nil)
 
-type fastReflection_VoteTargetState VoteTargetState
+type fastReflection_VoteTargets VoteTargets
 
-func (x *VoteTargetState) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_VoteTargetState)(x)
+func (x *VoteTargets) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_VoteTargets)(x)
 }
 
-func (x *VoteTargetState) slowProtoReflect() protoreflect.Message {
+func (x *VoteTargets) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_genesis_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1696,43 +1696,43 @@ func (x *VoteTargetState) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_VoteTargetState_messageType fastReflection_VoteTargetState_messageType
-var _ protoreflect.MessageType = fastReflection_VoteTargetState_messageType{}
+var _fastReflection_VoteTargets_messageType fastReflection_VoteTargets_messageType
+var _ protoreflect.MessageType = fastReflection_VoteTargets_messageType{}
 
-type fastReflection_VoteTargetState_messageType struct{}
+type fastReflection_VoteTargets_messageType struct{}
 
-func (x fastReflection_VoteTargetState_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_VoteTargetState)(nil)
+func (x fastReflection_VoteTargets_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_VoteTargets)(nil)
 }
-func (x fastReflection_VoteTargetState_messageType) New() protoreflect.Message {
-	return new(fastReflection_VoteTargetState)
+func (x fastReflection_VoteTargets_messageType) New() protoreflect.Message {
+	return new(fastReflection_VoteTargets)
 }
-func (x fastReflection_VoteTargetState_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_VoteTargetState
+func (x fastReflection_VoteTargets_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_VoteTargets
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_VoteTargetState) Descriptor() protoreflect.MessageDescriptor {
-	return md_VoteTargetState
+func (x *fastReflection_VoteTargets) Descriptor() protoreflect.MessageDescriptor {
+	return md_VoteTargets
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_VoteTargetState) Type() protoreflect.MessageType {
-	return _fastReflection_VoteTargetState_messageType
+func (x *fastReflection_VoteTargets) Type() protoreflect.MessageType {
+	return _fastReflection_VoteTargets_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_VoteTargetState) New() protoreflect.Message {
-	return new(fastReflection_VoteTargetState)
+func (x *fastReflection_VoteTargets) New() protoreflect.Message {
+	return new(fastReflection_VoteTargets)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_VoteTargetState) Interface() protoreflect.ProtoMessage {
-	return (*VoteTargetState)(x)
+func (x *fastReflection_VoteTargets) Interface() protoreflect.ProtoMessage {
+	return (*VoteTargets)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1740,10 +1740,10 @@ func (x *fastReflection_VoteTargetState) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_VoteTargetState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_VoteTargets) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if len(x.Denoms) != 0 {
-		value := protoreflect.ValueOfList(&_VoteTargetState_1_list{list: &x.Denoms})
-		if !f(fd_VoteTargetState_denoms, value) {
+		value := protoreflect.ValueOfList(&_VoteTargets_1_list{list: &x.Denoms})
+		if !f(fd_VoteTargets_denoms, value) {
 			return
 		}
 	}
@@ -1760,15 +1760,15 @@ func (x *fastReflection_VoteTargetState) Range(f func(protoreflect.FieldDescript
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_VoteTargetState) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_VoteTargets) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.VoteTargetState.denoms":
+	case "ark.oracle.v1.VoteTargets.denoms":
 		return len(x.Denoms) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargetState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargets"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.VoteTargetState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.VoteTargets does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1778,15 +1778,15 @@ func (x *fastReflection_VoteTargetState) Has(fd protoreflect.FieldDescriptor) bo
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_VoteTargetState) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_VoteTargets) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.VoteTargetState.denoms":
+	case "ark.oracle.v1.VoteTargets.denoms":
 		x.Denoms = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargetState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargets"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.VoteTargetState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.VoteTargets does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1796,19 +1796,19 @@ func (x *fastReflection_VoteTargetState) Clear(fd protoreflect.FieldDescriptor) 
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_VoteTargetState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_VoteTargets) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.VoteTargetState.denoms":
+	case "ark.oracle.v1.VoteTargets.denoms":
 		if len(x.Denoms) == 0 {
-			return protoreflect.ValueOfList(&_VoteTargetState_1_list{})
+			return protoreflect.ValueOfList(&_VoteTargets_1_list{})
 		}
-		listValue := &_VoteTargetState_1_list{list: &x.Denoms}
+		listValue := &_VoteTargets_1_list{list: &x.Denoms}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargetState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargets"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.VoteTargetState does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.VoteTargets does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1822,17 +1822,17 @@ func (x *fastReflection_VoteTargetState) Get(descriptor protoreflect.FieldDescri
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_VoteTargetState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_VoteTargets) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.VoteTargetState.denoms":
+	case "ark.oracle.v1.VoteTargets.denoms":
 		lv := value.List()
-		clv := lv.(*_VoteTargetState_1_list)
+		clv := lv.(*_VoteTargets_1_list)
 		x.Denoms = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargetState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargets"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.VoteTargetState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.VoteTargets does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1846,45 +1846,45 @@ func (x *fastReflection_VoteTargetState) Set(fd protoreflect.FieldDescriptor, va
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_VoteTargetState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_VoteTargets) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.VoteTargetState.denoms":
+	case "ark.oracle.v1.VoteTargets.denoms":
 		if x.Denoms == nil {
 			x.Denoms = []string{}
 		}
-		value := &_VoteTargetState_1_list{list: &x.Denoms}
+		value := &_VoteTargets_1_list{list: &x.Denoms}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargetState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargets"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.VoteTargetState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.VoteTargets does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_VoteTargetState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_VoteTargets) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.VoteTargetState.denoms":
+	case "ark.oracle.v1.VoteTargets.denoms":
 		list := []string{}
-		return protoreflect.ValueOfList(&_VoteTargetState_1_list{list: &list})
+		return protoreflect.ValueOfList(&_VoteTargets_1_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargetState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.VoteTargets"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.VoteTargetState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.VoteTargets does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_VoteTargetState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_VoteTargets) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.VoteTargetState", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.VoteTargets", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1892,7 +1892,7 @@ func (x *fastReflection_VoteTargetState) WhichOneof(d protoreflect.OneofDescript
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_VoteTargetState) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_VoteTargets) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1903,7 +1903,7 @@ func (x *fastReflection_VoteTargetState) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_VoteTargetState) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_VoteTargets) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1915,7 +1915,7 @@ func (x *fastReflection_VoteTargetState) SetUnknown(fields protoreflect.RawField
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_VoteTargetState) IsValid() bool {
+func (x *fastReflection_VoteTargets) IsValid() bool {
 	return x != nil
 }
 
@@ -1925,9 +1925,9 @@ func (x *fastReflection_VoteTargetState) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_VoteTargetState) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_VoteTargets) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*VoteTargetState)
+		x := input.Message.Interface().(*VoteTargets)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1955,7 +1955,7 @@ func (x *fastReflection_VoteTargetState) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*VoteTargetState)
+		x := input.Message.Interface().(*VoteTargets)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1994,7 +1994,7 @@ func (x *fastReflection_VoteTargetState) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*VoteTargetState)
+		x := input.Message.Interface().(*VoteTargets)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2026,10 +2026,10 @@ func (x *fastReflection_VoteTargetState) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: VoteTargetState: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: VoteTargets: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: VoteTargetState: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: VoteTargets: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2711,27 +2711,27 @@ func (x *fastReflection_ExchangeRate) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_ScoreWeight                   protoreflect.MessageDescriptor
-	fd_ScoreWeight_validator_address protoreflect.FieldDescriptor
-	fd_ScoreWeight_score_weight      protoreflect.FieldDescriptor
+	md_RewardWeight                   protoreflect.MessageDescriptor
+	fd_RewardWeight_validator_address protoreflect.FieldDescriptor
+	fd_RewardWeight_reward_weight     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_genesis_proto_init()
-	md_ScoreWeight = File_ark_oracle_v1_genesis_proto.Messages().ByName("ScoreWeight")
-	fd_ScoreWeight_validator_address = md_ScoreWeight.Fields().ByName("validator_address")
-	fd_ScoreWeight_score_weight = md_ScoreWeight.Fields().ByName("score_weight")
+	md_RewardWeight = File_ark_oracle_v1_genesis_proto.Messages().ByName("RewardWeight")
+	fd_RewardWeight_validator_address = md_RewardWeight.Fields().ByName("validator_address")
+	fd_RewardWeight_reward_weight = md_RewardWeight.Fields().ByName("reward_weight")
 }
 
-var _ protoreflect.Message = (*fastReflection_ScoreWeight)(nil)
+var _ protoreflect.Message = (*fastReflection_RewardWeight)(nil)
 
-type fastReflection_ScoreWeight ScoreWeight
+type fastReflection_RewardWeight RewardWeight
 
-func (x *ScoreWeight) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_ScoreWeight)(x)
+func (x *RewardWeight) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_RewardWeight)(x)
 }
 
-func (x *ScoreWeight) slowProtoReflect() protoreflect.Message {
+func (x *RewardWeight) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_genesis_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2743,43 +2743,43 @@ func (x *ScoreWeight) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_ScoreWeight_messageType fastReflection_ScoreWeight_messageType
-var _ protoreflect.MessageType = fastReflection_ScoreWeight_messageType{}
+var _fastReflection_RewardWeight_messageType fastReflection_RewardWeight_messageType
+var _ protoreflect.MessageType = fastReflection_RewardWeight_messageType{}
 
-type fastReflection_ScoreWeight_messageType struct{}
+type fastReflection_RewardWeight_messageType struct{}
 
-func (x fastReflection_ScoreWeight_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_ScoreWeight)(nil)
+func (x fastReflection_RewardWeight_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_RewardWeight)(nil)
 }
-func (x fastReflection_ScoreWeight_messageType) New() protoreflect.Message {
-	return new(fastReflection_ScoreWeight)
+func (x fastReflection_RewardWeight_messageType) New() protoreflect.Message {
+	return new(fastReflection_RewardWeight)
 }
-func (x fastReflection_ScoreWeight_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_ScoreWeight
+func (x fastReflection_RewardWeight_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_RewardWeight
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_ScoreWeight) Descriptor() protoreflect.MessageDescriptor {
-	return md_ScoreWeight
+func (x *fastReflection_RewardWeight) Descriptor() protoreflect.MessageDescriptor {
+	return md_RewardWeight
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_ScoreWeight) Type() protoreflect.MessageType {
-	return _fastReflection_ScoreWeight_messageType
+func (x *fastReflection_RewardWeight) Type() protoreflect.MessageType {
+	return _fastReflection_RewardWeight_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_ScoreWeight) New() protoreflect.Message {
-	return new(fastReflection_ScoreWeight)
+func (x *fastReflection_RewardWeight) New() protoreflect.Message {
+	return new(fastReflection_RewardWeight)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_ScoreWeight) Interface() protoreflect.ProtoMessage {
-	return (*ScoreWeight)(x)
+func (x *fastReflection_RewardWeight) Interface() protoreflect.ProtoMessage {
+	return (*RewardWeight)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2787,16 +2787,16 @@ func (x *fastReflection_ScoreWeight) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_ScoreWeight) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_RewardWeight) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.ValidatorAddress != "" {
 		value := protoreflect.ValueOfString(x.ValidatorAddress)
-		if !f(fd_ScoreWeight_validator_address, value) {
+		if !f(fd_RewardWeight_validator_address, value) {
 			return
 		}
 	}
-	if x.ScoreWeight != "" {
-		value := protoreflect.ValueOfString(x.ScoreWeight)
-		if !f(fd_ScoreWeight_score_weight, value) {
+	if x.RewardWeight != "" {
+		value := protoreflect.ValueOfString(x.RewardWeight)
+		if !f(fd_RewardWeight_reward_weight, value) {
 			return
 		}
 	}
@@ -2813,17 +2813,17 @@ func (x *fastReflection_ScoreWeight) Range(f func(protoreflect.FieldDescriptor, 
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_ScoreWeight) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_RewardWeight) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.ScoreWeight.validator_address":
+	case "ark.oracle.v1.RewardWeight.validator_address":
 		return x.ValidatorAddress != ""
-	case "ark.oracle.v1.ScoreWeight.score_weight":
-		return x.ScoreWeight != ""
+	case "ark.oracle.v1.RewardWeight.reward_weight":
+		return x.RewardWeight != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.ScoreWeight"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.RewardWeight"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.RewardWeight does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2833,17 +2833,17 @@ func (x *fastReflection_ScoreWeight) Has(fd protoreflect.FieldDescriptor) bool {
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ScoreWeight) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_RewardWeight) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.ScoreWeight.validator_address":
+	case "ark.oracle.v1.RewardWeight.validator_address":
 		x.ValidatorAddress = ""
-	case "ark.oracle.v1.ScoreWeight.score_weight":
-		x.ScoreWeight = ""
+	case "ark.oracle.v1.RewardWeight.reward_weight":
+		x.RewardWeight = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.ScoreWeight"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.RewardWeight"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.RewardWeight does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2853,19 +2853,19 @@ func (x *fastReflection_ScoreWeight) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_ScoreWeight) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_RewardWeight) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.ScoreWeight.validator_address":
+	case "ark.oracle.v1.RewardWeight.validator_address":
 		value := x.ValidatorAddress
 		return protoreflect.ValueOfString(value)
-	case "ark.oracle.v1.ScoreWeight.score_weight":
-		value := x.ScoreWeight
+	case "ark.oracle.v1.RewardWeight.reward_weight":
+		value := x.RewardWeight
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.ScoreWeight"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.RewardWeight"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.ScoreWeight does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.RewardWeight does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2879,17 +2879,17 @@ func (x *fastReflection_ScoreWeight) Get(descriptor protoreflect.FieldDescriptor
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ScoreWeight) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_RewardWeight) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.ScoreWeight.validator_address":
+	case "ark.oracle.v1.RewardWeight.validator_address":
 		x.ValidatorAddress = value.Interface().(string)
-	case "ark.oracle.v1.ScoreWeight.score_weight":
-		x.ScoreWeight = value.Interface().(string)
+	case "ark.oracle.v1.RewardWeight.reward_weight":
+		x.RewardWeight = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.ScoreWeight"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.RewardWeight"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.RewardWeight does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2903,44 +2903,44 @@ func (x *fastReflection_ScoreWeight) Set(fd protoreflect.FieldDescriptor, value 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ScoreWeight) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_RewardWeight) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.ScoreWeight.validator_address":
-		panic(fmt.Errorf("field validator_address of message ark.oracle.v1.ScoreWeight is not mutable"))
-	case "ark.oracle.v1.ScoreWeight.score_weight":
-		panic(fmt.Errorf("field score_weight of message ark.oracle.v1.ScoreWeight is not mutable"))
+	case "ark.oracle.v1.RewardWeight.validator_address":
+		panic(fmt.Errorf("field validator_address of message ark.oracle.v1.RewardWeight is not mutable"))
+	case "ark.oracle.v1.RewardWeight.reward_weight":
+		panic(fmt.Errorf("field reward_weight of message ark.oracle.v1.RewardWeight is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.ScoreWeight"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.RewardWeight"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.RewardWeight does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_ScoreWeight) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_RewardWeight) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.ScoreWeight.validator_address":
+	case "ark.oracle.v1.RewardWeight.validator_address":
 		return protoreflect.ValueOfString("")
-	case "ark.oracle.v1.ScoreWeight.score_weight":
+	case "ark.oracle.v1.RewardWeight.reward_weight":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.ScoreWeight"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.RewardWeight"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.ScoreWeight does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.RewardWeight does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_ScoreWeight) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_RewardWeight) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.ScoreWeight", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.RewardWeight", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2948,7 +2948,7 @@ func (x *fastReflection_ScoreWeight) WhichOneof(d protoreflect.OneofDescriptor) 
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_ScoreWeight) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_RewardWeight) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2959,7 +2959,7 @@ func (x *fastReflection_ScoreWeight) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ScoreWeight) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_RewardWeight) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2971,7 +2971,7 @@ func (x *fastReflection_ScoreWeight) SetUnknown(fields protoreflect.RawFields) {
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_ScoreWeight) IsValid() bool {
+func (x *fastReflection_RewardWeight) IsValid() bool {
 	return x != nil
 }
 
@@ -2981,9 +2981,9 @@ func (x *fastReflection_ScoreWeight) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_RewardWeight) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*ScoreWeight)
+		x := input.Message.Interface().(*RewardWeight)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2999,7 +2999,7 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ScoreWeight)
+		l = len(x.RewardWeight)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -3013,7 +3013,7 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*ScoreWeight)
+		x := input.Message.Interface().(*RewardWeight)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3032,10 +3032,10 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.ScoreWeight) > 0 {
-			i -= len(x.ScoreWeight)
-			copy(dAtA[i:], x.ScoreWeight)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ScoreWeight)))
+		if len(x.RewardWeight) > 0 {
+			i -= len(x.RewardWeight)
+			copy(dAtA[i:], x.RewardWeight)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RewardWeight)))
 			i--
 			dAtA[i] = 0x12
 		}
@@ -3057,7 +3057,7 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*ScoreWeight)
+		x := input.Message.Interface().(*RewardWeight)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3089,10 +3089,10 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ScoreWeight: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: RewardWeight: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ScoreWeight: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: RewardWeight: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -3129,7 +3129,7 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ScoreWeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardWeight", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -3157,7 +3157,7 @@ func (x *fastReflection_ScoreWeight) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ScoreWeight = string(dAtA[iNdEx:postIndex])
+				x.RewardWeight = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -3681,12 +3681,12 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params        *Params          `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	ExchangeRates []*ExchangeRate  `protobuf:"bytes,2,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
-	ScoreWeights  []*ScoreWeight   `protobuf:"bytes,3,rep,name=score_weights,json=scoreWeights,proto3" json:"score_weights,omitempty"`
-	MissCounts    []*MissCount     `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts,omitempty"`
-	VoteTargets   *VoteTargetState `protobuf:"bytes,5,opt,name=vote_targets,json=voteTargets,proto3" json:"vote_targets,omitempty"`
-	Accounting    *AccountingState `protobuf:"bytes,6,opt,name=accounting,proto3" json:"accounting,omitempty"`
+	Params        *Params         `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	ExchangeRates []*ExchangeRate `protobuf:"bytes,2,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
+	RewardWeights []*RewardWeight `protobuf:"bytes,3,rep,name=reward_weights,json=rewardWeights,proto3" json:"reward_weights,omitempty"`
+	MissCounts    []*MissCount    `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts,omitempty"`
+	VoteTargets   *VoteTargets    `protobuf:"bytes,5,opt,name=vote_targets,json=voteTargets,proto3" json:"vote_targets,omitempty"`
+	Accounting    *Accounting     `protobuf:"bytes,6,opt,name=accounting,proto3" json:"accounting,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -3723,9 +3723,9 @@ func (x *GenesisState) GetExchangeRates() []*ExchangeRate {
 	return nil
 }
 
-func (x *GenesisState) GetScoreWeights() []*ScoreWeight {
+func (x *GenesisState) GetRewardWeights() []*RewardWeight {
 	if x != nil {
-		return x.ScoreWeights
+		return x.RewardWeights
 	}
 	return nil
 }
@@ -3737,23 +3737,23 @@ func (x *GenesisState) GetMissCounts() []*MissCount {
 	return nil
 }
 
-func (x *GenesisState) GetVoteTargets() *VoteTargetState {
+func (x *GenesisState) GetVoteTargets() *VoteTargets {
 	if x != nil {
 		return x.VoteTargets
 	}
 	return nil
 }
 
-func (x *GenesisState) GetAccounting() *AccountingState {
+func (x *GenesisState) GetAccounting() *Accounting {
 	if x != nil {
 		return x.Accounting
 	}
 	return nil
 }
 
-// AccountingState defines the active reward and slashing periods. Params may
+// Accounting defines the active reward and slashing periods. Params may
 // contain newly approved windows while accounting finishes the current period.
-type AccountingState struct {
+type Accounting struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -3765,8 +3765,8 @@ type AccountingState struct {
 	SlashWindowStartHeight   uint64 `protobuf:"varint,5,opt,name=slash_window_start_height,json=slashWindowStartHeight,proto3" json:"slash_window_start_height,omitempty"`
 }
 
-func (x *AccountingState) Reset() {
-	*x = AccountingState{}
+func (x *Accounting) Reset() {
+	*x = Accounting{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_genesis_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3774,54 +3774,54 @@ func (x *AccountingState) Reset() {
 	}
 }
 
-func (x *AccountingState) String() string {
+func (x *Accounting) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AccountingState) ProtoMessage() {}
+func (*Accounting) ProtoMessage() {}
 
-// Deprecated: Use AccountingState.ProtoReflect.Descriptor instead.
-func (*AccountingState) Descriptor() ([]byte, []int) {
+// Deprecated: Use Accounting.ProtoReflect.Descriptor instead.
+func (*Accounting) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_genesis_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *AccountingState) GetRewardWindow() uint64 {
+func (x *Accounting) GetRewardWindow() uint64 {
 	if x != nil {
 		return x.RewardWindow
 	}
 	return 0
 }
 
-func (x *AccountingState) GetRewardDistributionWindow() uint64 {
+func (x *Accounting) GetRewardDistributionWindow() uint64 {
 	if x != nil {
 		return x.RewardDistributionWindow
 	}
 	return 0
 }
 
-func (x *AccountingState) GetRewardWindowStartHeight() uint64 {
+func (x *Accounting) GetRewardWindowStartHeight() uint64 {
 	if x != nil {
 		return x.RewardWindowStartHeight
 	}
 	return 0
 }
 
-func (x *AccountingState) GetSlashWindow() uint64 {
+func (x *Accounting) GetSlashWindow() uint64 {
 	if x != nil {
 		return x.SlashWindow
 	}
 	return 0
 }
 
-func (x *AccountingState) GetSlashWindowStartHeight() uint64 {
+func (x *Accounting) GetSlashWindowStartHeight() uint64 {
 	if x != nil {
 		return x.SlashWindowStartHeight
 	}
 	return 0
 }
 
-// VoteTargetState defines the staged denoms validators should report.
-type VoteTargetState struct {
+// VoteTargets defines the staged denoms validators should report.
+type VoteTargets struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -3829,8 +3829,8 @@ type VoteTargetState struct {
 	Denoms []string `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
 }
 
-func (x *VoteTargetState) Reset() {
-	*x = VoteTargetState{}
+func (x *VoteTargets) Reset() {
+	*x = VoteTargets{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_genesis_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3838,18 +3838,18 @@ func (x *VoteTargetState) Reset() {
 	}
 }
 
-func (x *VoteTargetState) String() string {
+func (x *VoteTargets) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VoteTargetState) ProtoMessage() {}
+func (*VoteTargets) ProtoMessage() {}
 
-// Deprecated: Use VoteTargetState.ProtoReflect.Descriptor instead.
-func (*VoteTargetState) Descriptor() ([]byte, []int) {
+// Deprecated: Use VoteTargets.ProtoReflect.Descriptor instead.
+func (*VoteTargets) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_genesis_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *VoteTargetState) GetDenoms() []string {
+func (x *VoteTargets) GetDenoms() []string {
 	if x != nil {
 		return x.Denoms
 	}
@@ -3920,19 +3920,19 @@ func (x *ExchangeRate) GetBlockHeight() uint64 {
 	return 0
 }
 
-// ScoreWeight defines a score weight and validator address pair used in
-// oracle module's genesis state
-type ScoreWeight struct {
+// RewardWeight defines a reward-distribution weight and validator address pair
+// used in oracle module's genesis state
+type RewardWeight struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	ValidatorAddress string `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
-	ScoreWeight      string `protobuf:"bytes,2,opt,name=score_weight,json=scoreWeight,proto3" json:"score_weight,omitempty"`
+	RewardWeight     string `protobuf:"bytes,2,opt,name=reward_weight,json=rewardWeight,proto3" json:"reward_weight,omitempty"`
 }
 
-func (x *ScoreWeight) Reset() {
-	*x = ScoreWeight{}
+func (x *RewardWeight) Reset() {
+	*x = RewardWeight{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_genesis_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3940,27 +3940,27 @@ func (x *ScoreWeight) Reset() {
 	}
 }
 
-func (x *ScoreWeight) String() string {
+func (x *RewardWeight) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ScoreWeight) ProtoMessage() {}
+func (*RewardWeight) ProtoMessage() {}
 
-// Deprecated: Use ScoreWeight.ProtoReflect.Descriptor instead.
-func (*ScoreWeight) Descriptor() ([]byte, []int) {
+// Deprecated: Use RewardWeight.ProtoReflect.Descriptor instead.
+func (*RewardWeight) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_genesis_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ScoreWeight) GetValidatorAddress() string {
+func (x *RewardWeight) GetValidatorAddress() string {
 	if x != nil {
 		return x.ValidatorAddress
 	}
 	return ""
 }
 
-func (x *ScoreWeight) GetScoreWeight() string {
+func (x *RewardWeight) GetRewardWeight() string {
 	if x != nil {
-		return x.ScoreWeight
+		return x.RewardWeight
 	}
 	return ""
 }
@@ -4017,13 +4017,13 @@ var file_ark_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x67, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0d, 0x61,
 	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x1a, 0x11, 0x61, 0x6d,
 	0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
-	0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x1a, 0x1a, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31,
-	0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xd3, 0x03,
+	0x1a, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x6f,
+	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xcd, 0x03,
 	0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x38,
 	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50,
@@ -4034,89 +4034,88 @@ var file_ark_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x2e, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x42, 0x1a, 0xc8,
 	0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x0d, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52,
 	0x61, 0x74, 0x65, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x65, 0x78, 0x63, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x12, 0x4a, 0x0a, 0x0d, 0x73, 0x63, 0x6f, 0x72,
-	0x65, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x53, 0x63, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f,
-	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x69,
-	0x67, 0x68, 0x74, 0x73, 0x12, 0x44, 0x0a, 0x0b, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75,
-	0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f,
-	0x75, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a,
-	0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x4c, 0x0a, 0x0c, 0x76, 0x6f,
-	0x74, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65,
-	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x76, 0x6f, 0x74,
-	0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x49, 0x0a, 0x0a, 0x61, 0x63, 0x63, 0x6f,
-	0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x63,
-	0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde,
-	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
-	0x69, 0x6e, 0x67, 0x22, 0x8f, 0x02, 0x0a, 0x0f, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69,
-	0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c,
-	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x3c, 0x0a, 0x1a,
-	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x18, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x3b, 0x0a, 0x1a, 0x72, 0x65,
-	0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x73, 0x74, 0x61, 0x72,
-	0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x17,
-	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x53, 0x74, 0x61, 0x72,
-	0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x73, 0x6c, 0x61, 0x73, 0x68,
-	0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x73,
-	0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x39, 0x0a, 0x19, 0x73, 0x6c,
-	0x61, 0x73, 0x68, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74,
-	0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x16, 0x73,
-	0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x53, 0x74, 0x61, 0x72, 0x74, 0x48,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x29, 0x0a, 0x0f, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72,
-	0x67, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x65, 0x6e, 0x6f,
-	0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73,
-	0x22, 0xe2, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74,
-	0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4a, 0x0a, 0x04, 0x72, 0x61, 0x74, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
-	0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x72,
-	0x61, 0x74, 0x65, 0x12, 0x4d, 0x0a, 0x0f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x74, 0x69, 0x6d,
-	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54,
-	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x42, 0x08, 0xc8, 0xde, 0x1f, 0x00, 0x90, 0xdf,
-	0x1f, 0x01, 0x52, 0x0e, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
-	0x6d, 0x70, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xb2, 0x01, 0x0a, 0x0b, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x57,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
-	0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c,
-	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x53, 0x0a, 0x0c, 0x73, 0x63, 0x6f, 0x72, 0x65, 0x5f, 0x77,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f,
-	0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
-	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x73,
-	0x63, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x7a, 0x0a, 0x09, 0x4d, 0x69,
-	0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64,
+	0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x12, 0x4d, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61,
+	0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64,
+	0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x12, 0x44, 0x0a, 0x0b, 0x6d, 0x69, 0x73, 0x73, 0x5f,
+	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x69, 0x73,
+	0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x48, 0x0a,
+	0x0c, 0x76, 0x6f, 0x74, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x42,
+	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x76, 0x6f, 0x74, 0x65,
+	0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x44, 0x0a, 0x0a, 0x61, 0x63, 0x63, 0x6f, 0x75,
+	0x6e, 0x74, 0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0a, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x22, 0x8a, 0x02,
+	0x0a, 0x0a, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x23, 0x0a, 0x0d,
+	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64, 0x6f,
+	0x77, 0x12, 0x3c, 0x0a, 0x1a, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x64, 0x69, 0x73, 0x74,
+	0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x18, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x44, 0x69, 0x73,
+	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12,
+	0x3b, 0x0a, 0x1a, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77,
+	0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x17, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64, 0x6f,
+	0x77, 0x53, 0x74, 0x61, 0x72, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x21, 0x0a, 0x0c,
+	0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x0b, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12,
+	0x39, 0x0a, 0x19, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f,
+	0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x16, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x53,
+	0x74, 0x61, 0x72, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x25, 0x0a, 0x0b, 0x56, 0x6f,
+	0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x65, 0x6e,
+	0x6f, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x73, 0x22, 0xe2, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61,
+	0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4a, 0x0a, 0x04, 0x72, 0x61, 0x74, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04,
+	0x72, 0x61, 0x74, 0x65, 0x12, 0x4d, 0x0a, 0x0f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x42, 0x08, 0xc8, 0xde, 0x1f, 0x00, 0x90,
+	0xdf, 0x1f, 0x01, 0x52, 0x0e, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xb5, 0x01, 0x0a, 0x0c, 0x52, 0x65, 0x77, 0x61, 0x72,
+	0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64,
 	0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56,
 	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
 	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x5f,
-	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x69, 0x73,
-	0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x97, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65,
-	0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72,
-	0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
-	0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41,
-	0x4f, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
-	0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c,
-	0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c,
-	0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x55, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72,
+	0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d,
+	0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x7a,
+	0x0a, 0x09, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6d,
+	0x69, 0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x09, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x97, 0x01, 0x0a, 0x11, 0x63,
+	0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31,
+	0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
+	0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72,
+	0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31,
+	0xa2, 0x02, 0x03, 0x41, 0x4f, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4134,10 +4133,10 @@ func file_ark_oracle_v1_genesis_proto_rawDescGZIP() []byte {
 var file_ark_oracle_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_ark_oracle_v1_genesis_proto_goTypes = []interface{}{
 	(*GenesisState)(nil),          // 0: ark.oracle.v1.GenesisState
-	(*AccountingState)(nil),       // 1: ark.oracle.v1.AccountingState
-	(*VoteTargetState)(nil),       // 2: ark.oracle.v1.VoteTargetState
+	(*Accounting)(nil),            // 1: ark.oracle.v1.Accounting
+	(*VoteTargets)(nil),           // 2: ark.oracle.v1.VoteTargets
 	(*ExchangeRate)(nil),          // 3: ark.oracle.v1.ExchangeRate
-	(*ScoreWeight)(nil),           // 4: ark.oracle.v1.ScoreWeight
+	(*RewardWeight)(nil),          // 4: ark.oracle.v1.RewardWeight
 	(*MissCount)(nil),             // 5: ark.oracle.v1.MissCount
 	(*Params)(nil),                // 6: ark.oracle.v1.Params
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
@@ -4145,10 +4144,10 @@ var file_ark_oracle_v1_genesis_proto_goTypes = []interface{}{
 var file_ark_oracle_v1_genesis_proto_depIdxs = []int32{
 	6, // 0: ark.oracle.v1.GenesisState.params:type_name -> ark.oracle.v1.Params
 	3, // 1: ark.oracle.v1.GenesisState.exchange_rates:type_name -> ark.oracle.v1.ExchangeRate
-	4, // 2: ark.oracle.v1.GenesisState.score_weights:type_name -> ark.oracle.v1.ScoreWeight
+	4, // 2: ark.oracle.v1.GenesisState.reward_weights:type_name -> ark.oracle.v1.RewardWeight
 	5, // 3: ark.oracle.v1.GenesisState.miss_counts:type_name -> ark.oracle.v1.MissCount
-	2, // 4: ark.oracle.v1.GenesisState.vote_targets:type_name -> ark.oracle.v1.VoteTargetState
-	1, // 5: ark.oracle.v1.GenesisState.accounting:type_name -> ark.oracle.v1.AccountingState
+	2, // 4: ark.oracle.v1.GenesisState.vote_targets:type_name -> ark.oracle.v1.VoteTargets
+	1, // 5: ark.oracle.v1.GenesisState.accounting:type_name -> ark.oracle.v1.Accounting
 	7, // 6: ark.oracle.v1.ExchangeRate.block_timestamp:type_name -> google.protobuf.Timestamp
 	7, // [7:7] is the sub-list for method output_type
 	7, // [7:7] is the sub-list for method input_type
@@ -4177,7 +4176,7 @@ func file_ark_oracle_v1_genesis_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_genesis_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AccountingState); i {
+			switch v := v.(*Accounting); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4189,7 +4188,7 @@ func file_ark_oracle_v1_genesis_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_genesis_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VoteTargetState); i {
+			switch v := v.(*VoteTargets); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4213,7 +4212,7 @@ func file_ark_oracle_v1_genesis_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_genesis_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ScoreWeight); i {
+			switch v := v.(*RewardWeight); i {
 			case 0:
 				return &v.state
 			case 1:

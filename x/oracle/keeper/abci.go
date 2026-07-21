@@ -30,9 +30,9 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 			return err
 		}
 
-		// Clear score weights after reward settlement.
-		if err := k.ScoreWeight.Clear(ctx, nil); err != nil {
-			return fmt.Errorf("clearing score weights: %w", err)
+		// Clear reward weights after reward settlement.
+		if err := k.RewardWeight.Clear(ctx, nil); err != nil {
+			return fmt.Errorf("clearing reward weights: %w", err)
 		}
 
 		if accounting.RewardWindow != params.RewardWindow ||

@@ -23,9 +23,8 @@ const (
 	Query_ExchangeRates_FullMethodName = "/ark.oracle.v1.Query/ExchangeRates"
 	Query_TobinTax_FullMethodName      = "/ark.oracle.v1.Query/TobinTax"
 	Query_TobinTaxes_FullMethodName    = "/ark.oracle.v1.Query/TobinTaxes"
-	Query_Actives_FullMethodName       = "/ark.oracle.v1.Query/Actives"
 	Query_VoteTargets_FullMethodName   = "/ark.oracle.v1.Query/VoteTargets"
-	Query_ScoreWeight_FullMethodName   = "/ark.oracle.v1.Query/ScoreWeight"
+	Query_RewardWeight_FullMethodName  = "/ark.oracle.v1.Query/RewardWeight"
 	Query_MissCount_FullMethodName     = "/ark.oracle.v1.Query/MissCount"
 	Query_Params_FullMethodName        = "/ark.oracle.v1.Query/Params"
 )
@@ -44,12 +43,10 @@ type QueryClient interface {
 	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest, opts ...grpc.CallOption) (*QueryTobinTaxesResponse, error)
-	// Actives returns all active denoms
-	Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
-	// ScoreWeight returns oracle miss count of a validator
-	ScoreWeight(ctx context.Context, in *QueryScoreWeightRequest, opts ...grpc.CallOption) (*QueryScoreWeightResponse, error)
+	// RewardWeight returns a validator's accumulated oracle reward weight.
+	RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error)
 	// MissCount returns oracle miss count of a validator
 	MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error)
 	// Params queries all parameters.
@@ -104,16 +101,6 @@ func (c *queryClient) TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest
 	return out, nil
 }
 
-func (c *queryClient) Actives(ctx context.Context, in *QueryActivesRequest, opts ...grpc.CallOption) (*QueryActivesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryActivesResponse)
-	err := c.cc.Invoke(ctx, Query_Actives_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryVoteTargetsResponse)
@@ -124,10 +111,10 @@ func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsReque
 	return out, nil
 }
 
-func (c *queryClient) ScoreWeight(ctx context.Context, in *QueryScoreWeightRequest, opts ...grpc.CallOption) (*QueryScoreWeightResponse, error) {
+func (c *queryClient) RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryScoreWeightResponse)
-	err := c.cc.Invoke(ctx, Query_ScoreWeight_FullMethodName, in, out, cOpts...)
+	out := new(QueryRewardWeightResponse)
+	err := c.cc.Invoke(ctx, Query_RewardWeight_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -168,12 +155,10 @@ type QueryServer interface {
 	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
 	// TobinTaxes returns tobin taxes of all denoms
 	TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error)
-	// Actives returns all active denoms
-	Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error)
 	// VoteTargets returns all vote target denoms
 	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
-	// ScoreWeight returns oracle miss count of a validator
-	ScoreWeight(context.Context, *QueryScoreWeightRequest) (*QueryScoreWeightResponse, error)
+	// RewardWeight returns a validator's accumulated oracle reward weight.
+	RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error)
 	// MissCount returns oracle miss count of a validator
 	MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error)
 	// Params queries all parameters.
@@ -200,14 +185,11 @@ func (UnimplementedQueryServer) TobinTax(context.Context, *QueryTobinTaxRequest)
 func (UnimplementedQueryServer) TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TobinTaxes not implemented")
 }
-func (UnimplementedQueryServer) Actives(context.Context, *QueryActivesRequest) (*QueryActivesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Actives not implemented")
-}
 func (UnimplementedQueryServer) VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VoteTargets not implemented")
 }
-func (UnimplementedQueryServer) ScoreWeight(context.Context, *QueryScoreWeightRequest) (*QueryScoreWeightResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ScoreWeight not implemented")
+func (UnimplementedQueryServer) RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RewardWeight not implemented")
 }
 func (UnimplementedQueryServer) MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MissCount not implemented")
@@ -308,24 +290,6 @@ func _Query_TobinTaxes_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Actives_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryActivesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Actives(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Actives_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Actives(ctx, req.(*QueryActivesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryVoteTargetsRequest)
 	if err := dec(in); err != nil {
@@ -344,20 +308,20 @@ func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_ScoreWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryScoreWeightRequest)
+func _Query_RewardWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRewardWeightRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).ScoreWeight(ctx, in)
+		return srv.(QueryServer).RewardWeight(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_ScoreWeight_FullMethodName,
+		FullMethod: Query_RewardWeight_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ScoreWeight(ctx, req.(*QueryScoreWeightRequest))
+		return srv.(QueryServer).RewardWeight(ctx, req.(*QueryRewardWeightRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -422,16 +386,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_TobinTaxes_Handler,
 		},
 		{
-			MethodName: "Actives",
-			Handler:    _Query_Actives_Handler,
-		},
-		{
 			MethodName: "VoteTargets",
 			Handler:    _Query_VoteTargets_Handler,
 		},
 		{
-			MethodName: "ScoreWeight",
-			Handler:    _Query_ScoreWeight_Handler,
+			MethodName: "RewardWeight",
+			Handler:    _Query_RewardWeight_Handler,
 		},
 		{
 			MethodName: "MissCount",
