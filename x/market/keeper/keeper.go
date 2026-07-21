@@ -77,11 +77,6 @@ func NewKeeper(
 	return k
 }
 
-// GetAuthority returns the x/market module's authority.
-func (k Keeper) GetAuthority() string {
-	return k.authority
-}
-
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx context.Context) log.Logger {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

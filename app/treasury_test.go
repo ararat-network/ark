@@ -320,7 +320,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	arkApp := Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 	voter := treasuryGovernanceVoter(t, arkApp, ctx)
-	authority := arkApp.TreasuryKeeper.Authority()
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	claimsCommittee := sdk.AccAddress(bytes.Repeat([]byte{0x43}, 20))
 	monetaryCommittee := sdk.AccAddress(bytes.Repeat([]byte{0x46}, 20))
 

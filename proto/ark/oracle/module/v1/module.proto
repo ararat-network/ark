@@ -10,12 +10,8 @@ message Module {
     go_import : "ark/x/oracle"
   };
 
-  // authority defines the custom module authority. If not set, defaults to the
-  // governance module.
-  string authority = 1;
-
   // distribution_name defines the module account name to
   // which the community pool remainder is sent. If not set, defaults to
   // "distribution".
-  string distribution_name = 2;
+  string distribution_name = 1;
 }

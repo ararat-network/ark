@@ -12,6 +12,8 @@ import (
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"ark/pkg/chain"
 	marketkeeper "ark/x/market/keeper"
@@ -56,7 +58,7 @@ func TestMarketPoolDenomTransitionPreservesQuotesAndUSDRSupport(t *testing.T) {
 	submitted.BasePool = sdk.NewDecCoinFromDec(chain.MicroUSDDenom, math.LegacySmallestDec())
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
 	_, err = msgServer.UpdateParams(ctx, &markettypes.MsgUpdateParams{
-		Authority: arkApp.MarketKeeper.GetAuthority(),
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Params:    submitted,
 	})
 	require.NoError(t, err)

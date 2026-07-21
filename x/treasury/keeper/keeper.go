@@ -139,9 +139,6 @@ func NewKeeper(
 	return k
 }
 
-// Authority returns the configured governance authority.
-func (k Keeper) Authority() string { return k.authority }
-
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx context.Context) log.Logger {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

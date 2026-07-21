@@ -30,7 +30,6 @@ func init() {
 type ModuleInputs struct {
 	depinject.In
 
-	Config                *modulev1.Module
 	Cdc                   codec.Codec
 	StoreService          store.KVStoreService
 	TransientStoreService store.TransientStoreService
@@ -49,16 +48,11 @@ type ModuleOutputs struct {
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
-	if in.Config.Authority != "" {
-		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
-	}
-
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
 		in.TransientStoreService,
-		authority.String(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		in.AccountKeeper,
 		in.BankKeeper,
 		in.OracleKeeper,

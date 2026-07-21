@@ -48,11 +48,6 @@ type ModuleOutputs struct {
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
-	if in.Config.Authority != "" {
-		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
-	}
-
 	distrName := in.Config.DistributionName
 	if distrName == "" {
 		distrName = distrtypes.ModuleName
@@ -61,7 +56,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
-		authority.String(),
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		distrName,
 		in.AccountKeeper,
 		in.BankKeeper,
