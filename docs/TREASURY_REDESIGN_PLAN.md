@@ -1,8 +1,8 @@
 # Ark Treasury and Monetary Policy Redesign Plan
 
-- Status: **Phases 1-3 reviewed; Phase 4 pending explicit review and approval**
-- Last updated: 2026-07-20
-- Target SDK: Cosmos SDK v0.54.2
+- Status: **Phases 1-3 reviewed; Phase 4 IBC foundation implemented, review pending**
+- Last updated: 2026-07-21
+- Target SDK: Cosmos SDK v0.54.3
 - Launch state: **confirmed prelaunch / fresh genesis**
 
 This document is the implementation contract for rebuilding Ark's Treasury and the monetary flows around it. It is
@@ -131,6 +131,20 @@ phase gate.
 | D37 | Governance owns the complete denomination-bearing `reference_tax_cap` Coin together with `reward_funding_window` in `Params`. Persist the six reversible economic levers once in `MonetaryPolicy`; Claims Mandate remains claims-only.                                                                                                                                                                          | Confirmed              |
 | D38 | Keep launch Claims minimal: the mandate stores its monotonic term, committee, half-open activation/expiry window, cancellation period, and fixed gross committee claim limit; claims have no category or per-claim cap, and there is no guardian or governance-cancellation flag.                                                                                                                               | Confirmed              |
 | D39 | Derive aggregate liability lazily on the first settlement that needs it each block, cache only a complete transient snapshot, and advance it from every Market burn/mint; an incomplete valuation is not cached and may be retried by a later settlement.                                                                                                                                                       | Confirmed              |
+| D40 | Begin Phase 4 by fixing execution-time tax payer, exactly-once identity, rollback, and fee-sponsorship semantics; then implement IBC foundations before Wasm because contracts may dispatch IBC messages. Design the Treasury execution hook into both paths, but keep both transfer surfaces production-disabled until the complete tax and recipient-restriction activation gate passes.                                                                                  | Confirmed              |
+| D41 | Use call-path ownership for exactly-once tax assessment: ante owns signed top-level inputs, while the Wasm dispatcher owns only execution-generated Bank sends, IBC sends, execute funds, and instantiate funds. Add no persistent transfer IDs, context markers, global Bank tax hook, or implicit execution-time feegrant. The sending contract pays the tax in addition to the complete requested principal.                                                              | Confirmed              |
+| D42 | Send execution-generated tax directly to `stability_tax_collector` and execute its collection with the matching transfer in one Wasm submessage cache. Synchronous or caught failures roll both back; a successfully created IBC packet retains its tax through later acknowledgement, timeout, refund, or return bookkeeping, none of which is a new taxable transfer.                                                                                                          | Confirmed              |
+| D43 | Expose a read-only contract-facing tax query through Ark's Wasm bindings. Parse the proposed execution-generated message through the same message adapter and invoke Treasury's canonical calculator; duplicate no rate/cap math. The result is an advisory current-state estimate only: it reserves no funds, grants no authority, and never replaces execution-time recomputation.                                                                                              | Confirmed              |
+| D44 | Treat `MonetaryPolicy.stability_tax_rate` as the sole tax activation switch. An explicit zero reference or derived tax cap means uncapped taxation, while a missing configured-denomination cap remains an error. Keep the complete derived cap map populated independently of the rate, and never rebuild it from `MsgUpdateMonetaryPolicy`; reject any positive reference-cap conversion that truncates to the zero sentinel.                                       | Confirmed              |
+| D45 | Build Ark's hub foundation against `github.com/cosmos/ibc-go/v11`, targeting v11.2.0 subject to dependency-resolution and compile verification. Wire IBC Classic and IBC v2 core/ICS-20 routes, the 07-Tendermint light client, and the transfer module account with minter/burner permissions. Keep standard module genesis defaults in application code; Ark's canonical launch genesis must allow only `07-tendermint` and launch transfer with send and receive disabled. | Confirmed              |
+| D46 | Put governance-controlled rate limiting and packet forwarding in the IBC Classic transfer stack, and apply the v11 rate limiter to the IBC v2 transfer path. Configure reviewed per-denomination, per-channel/client limits before enabling production transfer. A packet-forwarded hop is protocol-generated continuation of the original transfer, not a new user-facing taxable input; acknowledgement, timeout, refund, and return bookkeeping likewise receive no second tax. | Confirmed              |
+| D47 | Add IBC callbacks to both the Classic and v2 ICS-20 stacks when the Wasm keeper is wired. Callbacks are Ark's canonical transfer-and-call mechanism; add no separate IBC Hooks middleware. Callback-triggered execution uses the same Wasm/Treasury execution adapter, while acknowledgement, timeout, and callback delivery alone are not new taxable transfers.                                                                                                  | Confirmed              |
+| D48 | Add IBC v2 GMP together with the Wasm foundation and route its derived-account SDK-message execution through the same Treasury-aware router used by contract-generated messages. The derived GMP account pays any execution-generated tax in addition to principal; outer fee payers and feegrant do not sponsor it. Do not expose a partially integrated GMP route before its authorization, tax, rollback, and recipient-restriction tests pass.                 | Confirmed              |
+| D49 | Use upstream Wasmd `v0.70.x` and `wasmvm/v3`, subject to clean resolution and compile verification against Ark's SDK `v0.54.3` and IBC-Go `v11.2.0`; do not maintain a Wasmd fork or replacement-directive compatibility layer. Remove Ark's unused legacy `wasmvm` v1 parser/query interfaces when the real runtime is installed.                                                                                                                         | Confirmed              |
+| D50 | Consider 08-Wasm only with the Wasm foundation and only if its exact dependency and VM family integrates cleanly. If installed, keep it dormant at launch: the allowed-client list remains exactly `07-tendermint` and the launch genesis contains no Wasm-client checksums. `09-localhost` remains unavailable through that launch allowlist; add neither 06-Solo Machine nor the experimental attestations client.                                                   | Confirmed              |
+| D51 | Keep packet forwarding Classic-only until upstream provides reviewed v2 support; do not invent a v2 PFM adapter. Add no ICS-29 relayer-fee wiring because that application was removed from IBC-Go.                                                                                                                                                                                                                                                              | Confirmed              |
+| D52 | Retain standard user ICA controller and host support but launch both disabled and the host with an empty message allowlist. Defer a generic custom ICA authentication module; if contracts later need ICA control, prefer a narrowly scoped Wasm-to-ICA adapter with explicit authorization.                                                                                                                                                                       | Confirmed              |
+| D53 | Add neither ICS-721 NFT transfer nor a separate NFT module. Native Wasm IBC channels cover custom contract protocols, callbacks cover ICS-20 transfer-and-call, and GMP covers arbitrary remote SDK-message execution; revisit IBC Hooks only for a concrete requirement for Osmosis-compatible `wasm` memo or intermediary-address semantics.                                                                                                                       | Confirmed              |
 | P1  | Choose launch tax rate, reference cap Coin, three target ratios, subsidies, and genesis fund balances.                                                                                                                                                                                                                                                                                                          | Pending before launch  |
 | P2  | Phase 3A found no recipient-output, fixed-price cycle, or split residual-mint amplification under coverage-based Buffer funding; add no residual-mint limiter.                                                                                                                                                                                                                                                    | Confirmed              |
 | P3  | Apply the deterministic live-derived pool amount without comparing the submitted expectation to a rejection threshold; retain the submitted expectation in the transaction and emit the old and applied pool state for audit.                                                                                                                                                                                    | Confirmed              |
@@ -1071,7 +1085,8 @@ calculations single-sourced so that later target changes do not duplicate Market
 ### 8.1 Policy and governance settings
 
 - `MonetaryPolicy.stability_tax_rate`: reversible rate in `[0, 1]`.
-- `Params.reference_tax_cap`: governance-owned positive Coin with a canonical micro-denomination, launched in `usdr`.
+- `Params.reference_tax_cap`: governance-owned nonnegative Coin with a canonical micro-denomination, launched in
+  `usdr`; zero means no tax ceiling.
 - Per-denom `TaxCaps`: derived state, not an adaptive policy controller.
 
 The effective reference cap is stored directly in Params. Its denomination is only the unit for canonical tax-cap
@@ -1088,6 +1103,7 @@ revenue indicator.
 - Native Ark stablecoins configured in Oracle's Tobin-tax list are taxable.
 - NOAH is not taxable at inception.
 - A configured stable denomination with no tax cap is a configuration error and fails closed.
+- An explicit zero cap means the configured denomination is uncapped; it is distinct from a missing cap.
 - Oracle's current Tobin-tax list is authoritative at calculation time. A retained cap for a denomination no longer in
   that list does not make the denomination taxable.
 - A zero global tax rate disables tax without deleting denomination configuration.
@@ -1107,9 +1123,10 @@ Initial signed-message coverage:
 | Wasm instantiate/execute, when enabled         | Attached taxable stablecoin funds                                   |
 | Treasury, Oracle, governance, staking messages | No transfer-tax principal                                           |
 
-Every user-facing stablecoin transfer surface enabled in production must use the same Treasury calculator. Custom Wasm
-and IBC may remain disabled while their wiring is absent, but neither may be activated with an untaxed transfer path.
-Top-level IBC transfers and Wasm attached funds are visible to ante inspection. Contract-generated bank or IBC
+Every user-facing stablecoin transfer surface enabled in production must use the same Treasury calculator. Phase 4
+implements IBC foundations before Wasm, because contracts may dispatch IBC messages, and designs the Treasury execution
+hook into both paths from the start. Neither surface may become production-accessible until the complete activation gate
+passes. Top-level IBC transfers and Wasm attached funds are visible to ante inspection. Contract-generated bank or IBC
 submessages are discovered only during execution, so the custom Wasm/IBC integration must invoke the same calculator at
 that execution boundary rather than pretending the `TxFeeChecker` can see them in advance.
 
@@ -1118,19 +1135,24 @@ rejected by the fund restriction; it does not become admissible merely because t
 its denomination. When an external asset is later allowlisted, its user-facing transfer remains subject to the same tax
 classification as a transfer to an ordinary account; the fund recipient creates no exemption.
 
-Dynamic execution-time transfers use the same per-input calculation at their execution boundary. The taxable input is
-the coin set supplied to that transfer; an ante fee payer or feegrant granter may sponsor the resulting fee without
-changing which principal is assessed. For each input/denomination pair:
+An execution-generated transfer is a Bank send, IBC send, contract execute with funds, or contract instantiate with
+funds created by a contract while it runs and therefore absent from the original signed message list. It uses the same
+per-input calculation at its execution boundary. The taxable input is the complete coin set supplied to that transfer.
+The sending contract pays the resulting tax in addition to the complete requested principal; the recipient amount is
+never reduced to fund tax. An ante fee payer or feegrant granter pays only ante-visible tax and does not implicitly
+sponsor execution-generated tax. For each input/denomination pair:
 
 ```text
 tax[input][denom] =
-  min(floor(principal[input][denom] * stability_tax_rate), TaxCaps[denom])
+  floor(principal[input][denom] * stability_tax_rate)                    if TaxCaps[denom] == 0
+  min(floor(principal[input][denom] * stability_tax_rate), TaxCaps[denom]) otherwise
 ```
 
 Inputs are not combined merely because they share a source or occur in the same transaction. Each `MsgSend`,
-`MsgSwapSend`, and `MsgMultiSend` input receives its own cap, as does each later dynamic transfer input. The concrete
-Wasm/IBC wiring must define the execution-time payer, prove every economic transfer is assessed exactly once, and prove
-failed or reverted submessages roll back their tax with the transfer before either module is enabled.
+`MsgSwapSend`, and `MsgMultiSend` input receives its own cap, as does each later execution-generated transfer input.
+Ante owns the signed top-level path and the Wasm dispatcher owns only execution-generated messages, so exactly-once
+assessment requires no persistent transfer ID or context marker. Failed or reverted submessages roll back their tax
+with the transfer before either module is enabled.
 
 Do not tax arbitrary `BankKeeper` sends. A global bank hook would tax Market settlement, Redemption Buffer draws, future
 external strategic Reserve deployment, Insurance claims, Oracle funding, validator distribution, the governed
@@ -1143,7 +1165,8 @@ The calculator recursively extracts taxable inputs and applies each denomination
 ```text
 uncapped_tax[input][denom] = floor(principal[input][denom] * stability_tax_rate)
 
-tax[input][denom] = min(uncapped_tax[input][denom], TaxCaps[denom])
+tax[input][denom] = uncapped_tax[input][denom]                         if TaxCaps[denom] == 0
+tax[input][denom] = min(uncapped_tax[input][denom], TaxCaps[denom])     otherwise
 
 total_tax[denom] = sum(tax[input][denom] for every taxable input)
 ```
@@ -1159,8 +1182,9 @@ checked addition and return an out-of-range error rather than panicking when the
 
 ### 8.5 Tax-cap refresh and reference changes
 
-Treasury periodically converts `Params.reference_tax_cap` into every configured taxable stablecoin using one fresh
-Oracle snapshot.
+Treasury periodically converts a positive `Params.reference_tax_cap` into every configured taxable stablecoin using one
+fresh Oracle snapshot. A zero reference cap instead produces a complete map of explicit zero entries without requiring
+prices.
 
 Refresh rules:
 
@@ -1171,22 +1195,25 @@ Refresh rules:
 5. Never partially update the cap set.
 6. For a taxable denomination equal to `Params.reference_tax_cap.denom`, copy `Params.reference_tax_cap.amount` directly
    instead of converting it.
+7. A positive reference cap must derive a positive integer cap for every denomination. Reject a conversion that
+   truncates to zero so it cannot accidentally become the uncapped sentinel.
 
 This conversion keeps caps approximately equal in value without making tax-rate policy reactive to revenue.
 
-Changing the effective reference cap has stricter activation semantics than a scheduled refresh:
+Changing the effective reference cap has stricter replacement semantics than a scheduled refresh:
 
-1. The candidate Coin must be positive and use a canonical micro-denomination configured in Oracle's native-stable
-   set. It must already have every fresh, positive, representable consensus rate needed for conversion.
+1. The candidate Coin must be nonnegative and use a canonical micro-denomination configured in Oracle's native-stable
+   set. A positive candidate must already have every fresh, positive, representable consensus rate needed for conversion;
+   a zero candidate needs no conversion rates.
 2. Governance-only `MsgUpdateParams` rebuilds the complete candidate map whenever the reference Coin changes. Params and
    the cap map commit together or neither changes.
-3. `MsgUpdateMonetaryPolicy` validates and stores the candidate policy only; enabling tax does not synchronously rebuild
-   tax caps.
+3. `MsgUpdateMonetaryPolicy` validates and stores only the candidate policy. No rate change rebuilds caps because the
+   complete cap map exists independently and cap values do not depend on the rate.
 4. If a reference-cap change cannot derive every candidate cap, reject `MsgUpdateParams` and preserve the old Params and
    cap map. A scheduled or denomination-mismatch refresh likewise retains the old map when valuation is unavailable.
 5. Emit the complete derived tax-cap replacement from `MsgUpdateParams` or BeginBlock whenever either path successfully
-   replaces the map. Until every configured taxable denomination has a stored cap, `ComputeTax` fails closed when tax is
-   positive.
+   replaces the map. InitGenesis likewise requires or derives a complete map even when tax is disabled. If a configured
+   taxable denomination is nevertheless missing at calculation time, `ComputeTax` fails closed when tax is positive.
 
 Governance must configure the candidate denomination in Oracle and wait for a fresh settled rate before proposing the
 Treasury cap change. A reference-cap update never changes Market's pool denomination. Market performs that independent
@@ -1194,7 +1221,7 @@ live transition only through the denomination-changing `MsgUpdateParams` contrac
 
 ### 8.6 Fee checking and routing
 
-Use Cosmos SDK v0.54.2's stock ante handler with a custom `TxFeeChecker`, then wrap the completed stock ante handler to
+Use Cosmos SDK v0.54.3's stock ante handler with a custom `TxFeeChecker`, then wrap the completed stock ante handler to
 route the tax. Do not copy the SDK decorator list into Ark.
 
 The stock order remains:
@@ -1226,12 +1253,14 @@ usage, fee deduction, account sequence, and routing together.
 
 For a contract-generated transfer that was not knowable in ante, the custom Wasm/IBC execution adapter:
 
-1. Calculates the tax for that dynamic transfer input independently.
-2. Debits that tax from the explicitly defined execution-time payer in the transferred denomination.
+1. Calculates the tax for that execution-generated transfer input independently.
+2. Debits that tax from the sending contract account in the transferred denomination, in addition to the complete
+   requested principal.
 3. Sends the complete exact input tax to `stability_tax_collector`.
-4. Performs the tax collection and transfer in the same cached execution boundary.
+4. Performs the tax collection and transfer in the same Wasm submessage cache.
 
-The adapter must not reassess a transfer input already visible to ante. Failure of any step changes no balances. This is
+Only the contract dispatcher calls this adapter; top-level handlers bypass it because ante already owns those inputs.
+This structural separation replaces transfer IDs and context markers. Failure of any step changes no balances. This is
 scoped transfer integration, not a global `BankKeeper` hook.
 
 The custom fee checker must:
@@ -1246,16 +1275,20 @@ The custom fee checker must:
 8. Guard zero gas and values that cannot be represented by the SDK-compatible priority calculation.
 
 Feegrant semantics remain standard for ante-visible tax: the granter pays the complete declared fee and its allowance is
-charged for gas, tax, and overpayment. Feegrant does not silently make a granter responsible for dynamic tax incurred
-later by a contract; the Wasm/IBC integration must name and debit that execution-time payer explicitly.
+charged for gas, tax, and overpayment. Feegrant does not make a granter or outer transaction fee payer responsible for
+execution-generated tax incurred later by a contract; the sending contract pays it from its own balance.
 
 Ante-visible tax and gas fees are retained when message execution fails after a valid ante, matching normal
-transaction-fee semantics. A failure inside ante retains neither. Dynamic tax commits only with its corresponding
-execution-time transfer and rolls back when that transfer or its enclosing cached execution is reverted.
+transaction-fee semantics. A failure inside ante retains neither. Execution-generated tax commits only with its
+corresponding transfer and rolls back when that transfer or its enclosing cached execution is reverted. A successfully
+created IBC packet retains its tax if later acknowledgement, timeout, refund, or return bookkeeping occurs; those later
+operations are not new taxable transfers.
 
 SDK simulation skips the custom checker, so wallets must use the `ComputeTax` query rather than infer ante-visible tax
-from a simulation response. The query cannot predict contract-generated transfers that depend on execution; clients must
-treat any dynamic-tax estimate exposed by custom Wasm as contract-specific.
+from a simulation response. Contracts use Ark's Wasm tax query for a proposed execution-generated message. The binding
+parses that proposed message through the same execution adapter and calls Treasury's canonical calculator; it does not
+reimplement rate or cap math. The result is advisory current-state data only: it reserves no funds, proves no future
+balance, grants no execution authority, and does not replace recomputation immediately before dispatch.
 
 ## 9. Validator and Oracle funding
 
@@ -1400,7 +1433,7 @@ is organic transaction-fee value only.
 
 ### 9.3 Cosmos distribution genesis
 
-Cosmos SDK v0.54.2 generates distribution genesis with `community_tax` set to 2%. Ark does not override that SDK default
+Cosmos SDK v0.54.3 generates distribution genesis with `community_tax` set to 2%. Ark does not override that SDK default
 in application code. The canonical Ark launch genesis must explicitly set it to zero; otherwise 2% of gas fees and
 validator top-ups is deliberately diverted from validators. Generic `arkd init` output is a development scaffold until
 the canonical launch-genesis configuration is applied.
@@ -1416,7 +1449,7 @@ Oracle must distribute every positive denomination in its module account, not on
 
 1. Read all Oracle balances.
 2. For each denomination, calculate the existing reward-window share.
-3. Allocate that amount across validator score weights.
+3. Allocate that amount across validator reward weights.
 4. Truncate each validator's per-denom allocation deterministically.
 5. Call Distribution's existing multi-denom allocation API.
 6. Transfer exactly the summed integer allocations from Oracle to Distribution.
@@ -1489,7 +1522,7 @@ Validation:
 - Rate/share/ratio fields must be in `[0, 1]`.
 - The three target ratios are independent stock targets; their sum may exceed one. The allocation waterfall, not their
   sum, determines how scarce expansion principal is routed.
-- `Params.reference_tax_cap` must be a positive Coin with a canonical lowercase micro-denomination, and
+- `Params.reference_tax_cap` must be a nonnegative Coin with a canonical lowercase micro-denomination, and
   `reward_funding_window` must be positive. Each policy reward target must be set and nonnegative.
 - Reward-target/window compatibility is not precomputed during Params, Monetary Policy, or genesis validation. The
   active reward-funding state uses checked addition for each observation and fails the BeginBlock transition if an
@@ -1503,7 +1536,8 @@ Safe defaults:
 
 - Monetary Policy tax rate, reward targets, and fund target ratios default to zero until launch economics are
   configured.
-- The Params reference cap defaults to the inert minimum positive value, `1usdr`.
+- The Params reference cap defaults to zero `usdr`, producing explicit uncapped entries without genesis Oracle prices;
+  the zero Monetary Policy tax rate remains the inert default.
 - Reward-funding window defaults to one chain week.
 - Production genesis must explicitly set all nonzero launch values.
 
@@ -1613,12 +1647,13 @@ Subsidy pool, Redemption Buffer, strategic Reserve, and Insurance balances live 
 begin only with `unoah`. Redemption Buffer and strategic Reserve count their complete balances toward their targets;
 Insurance subtracts any imported reservation to derive its unencumbered balance. Treasury InitGenesis never mints them.
 
-Default genesis disables Claims and monetary delegation, stores the zero Monetary Policy, and uses no derived tax caps,
-zero accounting, no claims, and the canonical empty reward-funding state. Production genesis must supply the approved P4
-policy, zero accounting, and no pending/completed claims unless an explicit test or export/import case requires
-otherwise. InitGenesis validates the canonical committee address, role separation, unique claims, claim-status
-transitions, reservation sum, and `insurance_reserved <= insurance_unoah_balance`. Export/import preserves the mandate,
-Insurance reservation, immutable claim fields, executable heights, finalizers, and statuses.
+Default genesis disables Claims and monetary delegation, stores the zero Monetary Policy and zero reference cap, derives
+a complete explicit-zero uncapped map, and uses zero accounting, no claims, and the canonical empty reward-funding state.
+Production genesis must supply the approved P4 policy, zero accounting, and no pending/completed claims unless an explicit
+test or export/import case requires otherwise. InitGenesis validates the canonical committee address, role separation,
+unique claims, claim-status transitions, reservation sum, and `insurance_reserved <= insurance_unoah_balance`.
+Export/import preserves the mandate, Insurance reservation, immutable claim fields, executable heights, finalizers, and
+statuses.
 
 Reserve-to-Buffer history requires no Treasury genesis field. Bank genesis/export preserves the resulting account
 balances, while governance genesis/export preserves the authorising proposals and outcomes.
@@ -1628,8 +1663,10 @@ genesis if any contains a non-NOAH coin. This closes the one path that does not 
 restriction.
 
 Keeper-level InitGenesis must validate the Params reference-cap denomination against Oracle's configured native-stable
-set. When the Monetary Policy tax rate is nonzero, it must also verify the supplied cap set covers every configured
-native stable and exactly matches the effective reference Coin or can be fully derived from valid genesis Oracle prices.
+set and establish a complete cap set regardless of the Monetary Policy tax rate. It verifies that a supplied set covers
+every configured native stable and exactly matches the effective reference Coin, or fully derives it from valid genesis
+Oracle prices. A zero reference cap instead derives a complete explicit-zero uncapped set without prices. Supplied
+derived caps must all be zero when the reference cap is zero and positive when the reference cap is positive.
 
 ### 10.4 Queries
 
@@ -2065,7 +2102,7 @@ outcome without a Treasury-owned transfer record.
 
 Keep tax extraction and calculation in one Treasury-owned implementation. Ante, query, Wasm, and IBC adapters may use
 lower-level pure primitives from that implementation, but none may copy the formula or own separate policy state. The
-calculator must accept each dynamic transfer as a separate taxable input so execution boundaries preserve per-input caps
+calculator must accept each execution-generated transfer as a separate taxable input so execution boundaries preserve per-input caps
 without double-assessing any transfer already covered by ante.
 
 Keep target gaps, `RouteExpansion`, and coverage-based Buffer funding in `funds.go`. Keep the shared aggregate
@@ -2297,8 +2334,8 @@ Do not remove `x/mint` until Phase 2.
 - Treasury observes `fee_collector` before Distribution every completed block but never retains or moves those organic
   fee coins. Stability tax remains in its collector until the funding window settles.
 - A reference-cap update commits the candidate Params and complete derived cap map together or changes neither.
-  `MsgUpdateMonetaryPolicy` commits only the candidate policy; enabling tax does not rebuild caps, and tax computation
-  fails closed if the stored map lacks a configured taxable denomination.
+  InitGenesis establishes the complete map even while tax is disabled, and no stability-tax-rate change rebuilds it.
+  Tax computation fails closed if the stored map nevertheless lacks a configured taxable denomination.
 - Changing `Params.reference_tax_cap` changes no Market parameter/state, fund balance/target, conversion quote, or
   redemption coverage result.
 - Treasury liability, target, and coverage-funded output results are unchanged by a Market pool-denomination change
@@ -2376,7 +2413,8 @@ Modify:
   - remove `MintKeeper` import, field, and depinject target.
 - `app/app_test.go`:
   - remove Mint module-version expectations;
-  - assert Mint is absent and Market is the only minter.
+  - assert Mint is absent and Market retains the only native stable-conversion mint path. When IBC is installed later,
+    separately assert that the transfer account has only the standard voucher minter/burner permissions.
 - `app/test_helpers.go`:
   - delete the unused generic Mint-based account-funding helpers; existing active setup uses genesis balances;
   - permit direct Market minting only in tests explicitly exercising Market.
@@ -2837,17 +2875,190 @@ suites passed in the loopback-capable test environment.
 The user review and independent call-path review completed on 2026-07-20. The independent review's arithmetic boundary,
 rollback-coverage, and stale-plan findings were remediated and verified; Phase 3 is reviewed.
 
-## 16. Phase 4: Stability-tax ante and multi-denom Oracle rewards
+## 16. Phase 4: Wasm/IBC foundations, stability-tax integration, and multi-denom Oracle rewards
 
-Status: **Existing partial code retained without review; phase pending explicit Phase 4 review and approval**
+Status: **IBC foundation implemented; focused review and the remaining Phase 4 integrations are pending**
 
-This phase couples tax activation with Oracle's ability to distribute stablecoin-denominated rewards and closes every
-user-facing transfer surface enabled for production. Do not activate taxation without multi-denom Oracle distribution,
-and do not activate Wasm or IBC with an untaxed stablecoin transfer path.
+This phase first fixes the execution contract that every transfer adapter must implement, then adds IBC foundations,
+then Wasm foundations, and finally completes tax integration across the real execution paths. IBC precedes Wasm because
+contracts may dispatch IBC messages and the Wasm adapter must target the actual IBC boundary rather than a hypothetical
+one. The foundation work and tax adapters may be developed in this order, but neither transfer surface may become
+production-accessible or pass the phase review boundary until its complete tax and Treasury recipient-restriction tests
+pass.
 
-### 16.1 Ante files
+Tax activation remains coupled to Oracle's ability to distribute stablecoin-denominated rewards. Do not activate
+taxation without multi-denom Oracle distribution, and do not activate Wasm or IBC with an untaxed stablecoin transfer
+path.
 
-Add:
+### 16.1 Tax design gate
+
+Approved 2026-07-20. This gate changes no tax rate, cap, or calculator policy and establishes the following execution
+contract before implementation files are selected:
+
+- The normal SDK fee payer or feegrant granter pays every ante-visible tax as part of the declared transaction fee.
+- The sending contract account pays every execution-generated tax in addition to the complete requested principal. An
+  insufficient balance for `principal + tax` fails that execution-generated message without reducing recipient output.
+- Ante owns signed top-level `MsgTransfer` and Wasm attached funds. The Wasm dispatcher owns only contract-generated Bank
+  sends, IBC sends, execute funds, and instantiate funds. This structural ownership provides exactly-once assessment;
+  Ark adds no persistent transfer ID, context marker, or global Bank tax hook.
+- The dispatcher sends tax directly to `stability_tax_collector` and collects it in the same Wasm submessage cache as
+  the corresponding transfer. Synchronous, caught, and uncaught execution failures roll back both at that boundary.
+- Feegrant and the outer transaction fee payer do not sponsor execution-generated tax. A separate explicit sponsorship
+  mechanism would require later policy approval.
+- A successfully created IBC packet retains its tax through later acknowledgement, timeout, refund, or return
+  bookkeeping. Those operations, IBC escrow, Market settlement, Treasury movement, claims, and reward distribution are
+  not new user-facing transfer inputs and receive no second tax.
+
+The IBC dependency family, hub scope, and file-level foundation plan are approved below.
+
+### 16.2 IBC foundations and hub architecture
+
+Approved 2026-07-21. Implement the IBC core and transfer execution path before Wasm. Target
+`github.com/cosmos/ibc-go/v11` v11.2.0, whose SDK v0.54 and Go 1.25 dependency family matches the current app, but treat
+the exact resolved dependency graph and successful compile as part of the file-level implementation gate. Do not copy
+legacy `ParamSubspace` wiring or introduce a second tax calculator.
+
+Ark is intended to act as an interchain hub. Build the static routes and stateful modules that are expensive to add after
+launch, but distinguish installed capability from production activation:
+
+- Wire IBC core, ICS-20 transfer, both the IBC Classic and IBC v2 transfer routes, and their stores, module manager,
+  genesis, query, and CLI surfaces. The v2 route reuses the same transfer keeper rather than introducing duplicate
+  transfer state.
+- Give the transfer module account only its required minter and burner permissions.
+- The implemented foundation registers only the 07-Tendermint light-client module. Keep the standard IBC module genesis
+  defaults in generic application genesis construction, but set Ark's canonical launch genesis allowed-client list to
+  exactly `07-tendermint`, not the upstream wildcard. The conditional 08-Wasm installation below does not change that
+  launch authorization; any other client type requires a separate policy and implementation decision.
+- Build the IBC Classic transfer stack from the base application outward as transfer, callbacks when Wasm is added,
+  packet forwarding, and rate limiting. The effective inbound stack order is therefore rate limit, packet forward,
+  callbacks when present, then transfer. Packet forwarding is initially a Classic capability; do not invent a v2 PFM
+  adapter absent upstream support.
+- Wrap the IBC v2 transfer route with the v11-compatible rate limiter. Add its compatible callbacks during the Wasm
+  phase; fix and test the exact middleware order at that file-level gate.
+- Include the ICA controller and host keepers, stores, modules, and static routes, but launch both disabled. The
+  controller initially exposes only the standard user ICA path; add no generic custom authentication module. Launch the
+  host with an empty message allowlist; any later activation must name an explicit set of allowed protobuf message type
+  URLs and must never use the `"*"` wildcard. A future contract-facing controller integration should be a narrowly
+  scoped Wasm-to-ICA adapter with explicit authorization rather than a general contract authentication surface.
+- Add the IBC v2 GMP application together with the Wasm foundation, not as an independent partially integrated route.
+  GMP's derived-account SDK messages and contract-generated SDK messages must use one Treasury-aware execution router,
+  so the derived GMP account pays any execution-generated tax in addition to principal and the complete operation rolls
+  back on dispatch failure. GMP requires authorization, tax, recipient-restriction, acknowledgement, and timeout tests
+  before it becomes production-accessible.
+- Consider the 08-Wasm light client only while integrating the real Wasm runtime and only if its exact dependency and VM
+  family resolve and compile cleanly. If installed, keep it dormant at launch: Ark's allowed-client list remains exactly
+  `07-tendermint` and the canonical launch genesis contains no Wasm-client checksums. `09-localhost` is part of the core
+  client machinery but remains unavailable under that launch policy; add neither 06-Solo Machine nor the experimental
+  attestations client.
+- Keep packet forwarding Classic-only until upstream supplies reviewed v2 support. Add no custom v2 PFM adapter, no
+  ICS-29 relayer-fee application because it was removed from IBC-Go, no ICS-721 NFT transfer module, and no separate IBC
+  Hooks middleware. Callbacks are the canonical ICS-20 transfer-and-call path; native Wasm IBC channels serve custom
+  contract protocols, and GMP serves arbitrary remote SDK-message execution. Revisit IBC Hooks only for a concrete
+  requirement for Osmosis-compatible `wasm` memo or intermediary-address semantics.
+- Set both ICS-20 `send_enabled` and `receive_enabled` to false in Ark's canonical launch genesis. Before changing either
+  value, configure reviewed rate limits for every enabled transfer denomination and route, and pass the complete tax,
+  recipient-restriction, relay, acknowledgement, timeout, refund, and packet-forward activation tests.
+
+Foundation implementation recorded 2026-07-21:
+
+- `app/ibc.go` owns the manually wired IBC keepers, stores, Classic and v2 routes, 07-Tendermint registration, redundant
+  relay ante decorator, module basics, and IBC-Go testing-app accessors. It uses the SDK runtime's `RegisterStores` and
+  `RegisterModules` hooks so IBC can coexist with Ark's depinject-wired modules without duplicating the app lifecycle.
+- The currently implemented Classic ICS-20 stack is transfer, packet forwarding, then rate limiting; the v2 route is
+  transfer wrapped by the v11 rate limiter. ICA controller and host keepers and routes are installed. The approved Wasm
+  slice will insert callbacks between transfer and packet forwarding in Classic and between transfer and rate limiting
+  in v2, and will add GMP through the shared execution router. Those callbacks and GMP are not wired yet. 08-Wasm remains
+  conditional on the compatibility gate above.
+- `app/app_config.go` owns module accounts and lifecycle order. `cmd/arkd/cmd` merges IBC module basics into genesis and
+  client encoding and exposes their query and transaction commands.
+- Generic `DefaultGenesis()` deliberately retains the upstream module defaults. Building and reviewing Ark's canonical
+  launch `genesis.json` remains a Phase 5 TODO; that artifact must apply the disabled transfer and ICA settings, empty
+  ICA host allowlist, `07-tendermint`-only client policy, and no 08-Wasm checksums before production launch.
+
+The IBC design must:
+
+- Include top-level outbound Classic or v2 `MsgTransfer` principal in ante-visible tax.
+- Call the Treasury execution adapter for execution-generated outbound transfers that ante could not observe.
+- Treat a packet-forwarded hop as protocol-generated continuation, not a new user-facing transfer or a second taxable
+  input. The forwarding path must not call the Treasury execution adapter merely because it creates the next packet.
+- Keep escrow, packet commitment, acknowledgement, timeout, refund, and return bookkeeping outside the user-transfer
+  tax principal unless a distinct new user-facing transfer occurs.
+- Route every Bank credit through the configured Bank keeper so Treasury fund recipient restrictions cannot be bypassed.
+- Preserve the Section 16.1 structural ownership and atomic rollback before the transfer surface becomes
+  production-accessible.
+
+IBC foundation code may precede the final ante refactor in development, but it must remain production-disabled until the
+complete Phase 4 activation matrix passes.
+
+### 16.3 Wasm foundations
+
+Approved 2026-07-21. Implement Wasm after the real IBC transfer boundary exists. Use upstream Wasmd `v0.70.3` and
+`wasmvm/v3`: that Wasmd release targets the SDK v0.54 and IBC-Go v11 dependency family used by Ark. The initial
+read-only dependency resolution found no family conflict, but the final resolved graph and compilation against Ark's
+newer patch versions remain implementation gates. Do not add replacement directives to force compatibility and do not
+maintain an Ark Wasmd fork. If the clean integration fails, stop the slice and reassess the dependency rather than
+copying the runtime.
+
+The file-level implementation should:
+
+- Add the upstream Wasm keeper, store, module, module account permission, node configuration, CLI/genesis basics,
+  snapshot extension, pinned-code initialization, and native Classic and v2 contract IBC routes through Ark's existing
+  manual runtime-registration boundary.
+- Replace the unused `x/wasm/exported` `wasmvm` v1 parser/query interfaces with the real `wasmvm/v3` integration; retain
+  no parallel legacy adapter.
+- Wrap the SDK message router supplied to Wasmd rather than forking Wasmd's message parser or dispatcher. The wrapper
+  receives the exact SDK message produced by Wasmd's canonical encoder, invokes Treasury's canonical tax calculator,
+  collects execution-generated tax from the unique sending contract account, and then calls the existing handler in
+  the same cached execution boundary.
+- Supply that same Treasury-aware SDK message router to the v2 GMP keeper. GMP performs its own derived-account signer
+  authentication; the shared wrapper then charges that derived account for any taxable execution-generated principal
+  before dispatch. Top-level signed messages continue to use the ordinary application router and remain ante-owned.
+- Wrap Wasmd's query handler to expose one Ark custom tax query. Intercept the proposed `wasmvm/v3` `CosmosMsg`, encode
+  it with the same canonical encoder used by execution and the calling contract as sender, and invoke Treasury's
+  calculator. Do not parse through a second Ark-owned message model.
+- Install compatible callbacks around both transfer applications only after the Wasm keeper can receive them. The
+  Classic effective inbound order is rate limit, packet forward, callbacks, transfer; the v2 effective order is rate
+  limit, callbacks, transfer. Native Wasm IBC channels remain the path for custom contract protocols.
+- Add the v2 GMP route only after the shared execution router is present. Add no separate IBC Hooks, ICS-721, or generic
+  Wasm-to-ICA authentication surface in this slice.
+
+The Wasm design must:
+
+- Include instantiate/execute attached funds in ante-visible tax.
+- Assess contract-generated Bank sends, IBC sends, execute funds, and instantiate funds at execution using the Section
+  16.1 contract.
+- Expose one read-only Ark custom query that accepts a proposed execution-generated message, parses it through the same
+  message adapter used by dispatch, and returns the exact current per-denomination tax from Treasury's canonical
+  calculator. Add no Wasm-owned tax formula or duplicate rate/cap query path.
+- Treat the query response as advisory: it mutates and reserves nothing, does not validate future balances or authorise
+  execution, and cannot be supplied back as an authoritative tax amount. Dispatch always recomputes against current
+  state.
+- Preserve independent per-input caps across multiple contracts and nested submessages.
+- Keep top-level handlers outside the execution adapter without exempting a later, distinct execution-generated
+  transfer.
+- Roll back execution-generated tax with the matching transfer and enclosing cached execution according to Wasm reply
+  semantics.
+- Finish every Treasury fund credit through the restricted Bank send path.
+- Add compatible callbacks around the installed Classic and v2 transfer applications only after the Wasm keeper can
+  receive them. Callback-triggered execution follows the same execution-generated tax and rollback contract; callback
+  delivery itself is not a taxable transfer.
+- Preserve the middleware gas cap and callback authorization rules supplied by IBC-Go and Wasmd. A destination callback
+  failure returns a failed receive result and rolls back the receive; acknowledgement and timeout callback failures
+  follow the upstream non-blocking lifecycle semantics and must not undo completed protocol bookkeeping.
+- Keep 08-Wasm client activation independent from contract-runtime activation. A compatible installation does not
+  authorize the client at launch and adds no launch checksum; an incompatible dependency is omitted without blocking
+  Wasm contracts.
+
+Wasm foundation code may precede the final ante refactor in development, but it must remain production-disabled until
+the complete Phase 4 activation matrix passes.
+
+### 16.4 Ante and Treasury tax integration
+
+Review the currently retained `app/treasury_ante.go` implementation against the approved Section 16.1 contract. Decide at
+the file-level gate whether to retain that direct app layout or move the behavior into `app/ante`; do not refactor solely
+to match a planned directory.
+
+If the local ante package is selected, add:
 
 - `app/ante/ante.go`: construct the stock SDK handler with Ark's checker, then wrap successful ante execution.
 - `app/ante/fee_checker.go` and tests.
@@ -2861,10 +3072,8 @@ Modify:
 
 Do not copy or fork SDK signature decorators.
 
-### 16.2 Treasury tax/query files
-
 Reuse the Phase 1 calculator without changing its policy semantics. Complete only the ante-facing routing integration or
-correct a reviewed Phase 1 defect:
+execution adapters, or correct a reviewed Phase 1 defect:
 
 - `x/treasury/keeper/tax.go` and its existing concrete-message tests.
 - `x/treasury/keeper/grpc_query.go` and tests for explicit `Any` unpacking.
@@ -2887,10 +3096,15 @@ Test:
 - NOAH and non-native-denom exclusion.
 - Zero tax rate.
 - Exact cap boundary and cap truncation.
+- Explicit zero cap applies the full rate-derived tax without a ceiling.
 - Missing configured cap fails closed.
 - Checker, router, and query equality.
+- Top-level IBC `MsgTransfer` and Wasm attached funds.
+- Contract-generated Bank and IBC transfers assessed through the approved execution adapter.
+- Ante-visible and execution-generated inputs sharing a source or denomination receive independent caps without double
+  taxation.
 
-### 16.3 Oracle reward files
+### 16.5 Oracle reward files
 
 Modify narrowly around the active Oracle refactor:
 
@@ -2902,32 +3116,31 @@ Modify narrowly around the active Oracle refactor:
 
 No Oracle proto change is planned.
 
-### 16.4 Wasm and IBC activation gate
+### 16.6 Activation test matrix and invariants
 
-Custom Wasm and IBC are not assumed to be wired when earlier phases land. Before either transfer surface is enabled in
-production:
+Before either transfer surface is production-enabled:
 
 - Top-level IBC `MsgTransfer` and Wasm attached-funds principal must be included in ante tax computation.
 - Contract-generated bank and IBC transfers must call the Phase 1 Treasury calculator at their actual execution
   boundary.
 - Ante and execution adapters must treat each newly observed transfer input independently and must identify transfers
   already assessed by ante so no input is taxed twice.
-- The integration must define which execution account pays dynamic tax and reject a transfer when that account cannot
-  pay it; it must never mint or borrow the tax.
+- The sending contract must pay execution-generated tax in addition to principal; an insufficient balance rejects the
+  transfer and tax atomically, and the adapter must never mint or borrow the tax.
 - Every transfer must be assessed exactly once. Internal escrow, packet accounting, Market settlement, fund movement,
   claims, and reward distribution must not be mistaken for a second user transfer.
 - Every enabled Wasm, IBC, authz, or other ingress that can credit a Treasury custody address must finish through the
   restricted Bank send path; it must not write balances directly or bypass final-recipient validation. Tests must prove
   that mixed and non-NOAH credits to every fund fail atomically.
-- Failed or reverted dynamic transfers must roll back their tax and transfer together.
-- Tests must cover mixed top-level and dynamic inputs from the same source receiving separate caps; distinct inputs;
-  multiple contracts; nested Wasm submessages; outbound IBC; caught and uncaught submessage failures; insufficient tax
-  balance; and no double taxation.
+- Failed or reverted execution-generated transfers must roll back their tax and transfer together.
+- Tests must cover mixed top-level and execution-generated inputs from the same source receiving separate caps; distinct
+  inputs; multiple contracts; nested Wasm submessages; outbound IBC; caught and uncaught submessage failures;
+  insufficient tax balance; and no double taxation.
 
-The exact adapter files follow the custom Wasm and IBC wiring that exists at implementation time. Explain and approve
-that file-level plan before editing those surfaces; this activation gate itself is not optional.
+The exact adapter files follow the IBC and Wasm wiring approved under Sections 16.2 and 16.3. This activation gate itself
+is not optional.
 
-### 16.5 Ante test matrix
+Ante and routing tests:
 
 - Exact tax plus gas fee accepted.
 - Insufficient tax rejected in CheckTx and block execution.
@@ -2943,7 +3156,40 @@ that file-level plan before editing those surfaces; this activation gate itself 
 - Target-aware allocation conserves every denomination exactly between validator and Oracle destinations.
 - Validator tax rounds down per denomination and Oracle receives every integer remainder.
 
-### 16.6 Oracle reward invariants
+IBC and Wasm execution tests:
+
+- Ark's canonical launch genesis starts ICS-20 send and receive disabled, permits only the 07-Tendermint client type,
+  leaves both ICA sides disabled, gives ICA host no allowed messages, and contains no 08-Wasm checksums. If 08-Wasm is
+  installed after its compatibility gate, its client type remains unavailable under this launch policy.
+- Classic and v2 transfer reuse one transfer keeper and preserve their distinct routing and timeout semantics.
+- Classic transfer has the effective inbound order rate limit, packet forward, callbacks, transfer; v2 has rate limit,
+  callbacks, transfer. Classic packet forwarding still works through callbacks, while no v2 PFM route exists.
+- Governance rate limits apply per denomination and channel/client, reject an excess before transfer execution, restore
+  accounting correctly on failure/timeout, and are configured for every route before activation.
+- Packet forwarding covers multi-hop success, downstream error, retry, timeout, and refund without assessing a second
+  stability tax or bypassing the final Bank recipient restriction.
+- ICA controller and host traffic fails while disabled; host activation accepts only its explicit type-URL allowlist and
+  never a wildcard policy. No generic custom ICA authentication route exists.
+- Classic and v2 callbacks cover source send, destination receive, acknowledgement, timeout, malformed metadata,
+  callback rejection, out-of-gas behavior, and the exact rollback or non-blocking lifecycle semantics defined for each
+  callback stage.
+- GMP derived-account authentication rejects incorrect or multi-signer payloads. Every accepted taxable GMP SDK message
+  uses the shared Wasm execution router, charges the derived account exactly once, and rolls tax back with failed
+  dispatch or packet receipt.
+- Top-level IBC and Wasm principal is assessed by ante exactly once.
+- Execution-generated Bank, IBC, execute-funds, and instantiate-funds principal is assessed at execution exactly once.
+- The Wasm tax query matches immediate execution for each supported message shape and denomination, including cap
+  boundaries and multiple inputs, while malformed or unsupported messages and missing required cap state fail closed.
+- The Wasm tax query performs no writes, reserves no balance, and cannot override the tax recomputed at dispatch.
+- Multiple contracts, nested submessages, and distinct execution-generated inputs receive independent caps.
+- Caught and uncaught submessage failures, IBC send failures, and insufficient execution-generated-tax balances roll
+  back the tax and matching transfer at the approved boundary.
+- Escrow, packet accounting, acknowledgement, timeout, refund, and internal module movements create no duplicate tax.
+- Every attempted mixed or non-NOAH Treasury fund credit fails atomically through the Bank restriction.
+- The application registers no 06-Solo Machine, attestations, ICS-721 NFT transfer, IBC Hooks, or v2 PFM support and no
+  ICS-29 relayer-fee wiring. `09-localhost` is unavailable under the launch allowed-client policy.
+
+Oracle reward invariants:
 
 - Per-denom distribution never exceeds available Oracle balance.
 - Sum of validator allocations equals the Oracle-to-Distribution transfer exactly.
@@ -2955,15 +3201,16 @@ that file-level plan before editing those surfaces; this activation gate itself 
 ### 16.7 Phase 4 verification
 
 ```sh
-GOCACHE=/private/tmp/ark-gocache go test ./app/ante/...
+GOCACHE=/private/tmp/ark-gocache go test ./app/...
 GOCACHE=/private/tmp/ark-gocache go test ./x/treasury/...
 GOCACHE=/private/tmp/ark-gocache go test ./x/oracle/...
 GOCACHE=/private/tmp/ark-gocache go test ./x/wasm/...
-GOCACHE=/private/tmp/ark-gocache go test ./app/...
+GOCACHE=/private/tmp/ark-gocache go test ./...
 git diff --check
 ```
 
-Review tax semantics and real block lifecycle before Phase 5.
+Also run every new local IBC/Wasm adapter package test selected by the approved file-level plan. Review tax semantics,
+the real block lifecycle, execution-generated transfer rollback, and production activation state before Phase 5.
 
 ## 17. Phase 5: Full-system invariants, simplification, and launch readiness
 
@@ -3081,7 +3328,7 @@ stable -> NOAH:
   0 <= buffer_paid <= min(pre_trade_buffer, noah_output)
 
 Tax:
-  total_assessed_tax = ante_tax + sum(dynamic_input_tax)
+  total_assessed_tax = ante_tax + sum(execution_generated_input_tax)
   before settlement: stability_tax_collector accumulates every committed assessed-tax coin exactly
   at settlement: window_tax = oracle_tax_credit + validator_tax_credit
   aggregate_validator_target = sum(applied validator_block_reward_target for each observed block)
@@ -3098,7 +3345,8 @@ Tax:
   first observation initializes blocks_remaining from Params.reward_funding_window before decrementing
   positive blocks_remaining is unchanged by a reward_funding_window parameter update
   unavailable required valuation => validator_tax_credit = 0 and subsidy_paid = 0 at settlement
-  assessed_tax[input][denom] = min(floor(taxable_principal[input][denom] * rate), TaxCaps[denom])
+  TaxCaps[denom] = 0 => assessed_tax[input][denom] = floor(taxable_principal[input][denom] * rate)
+  TaxCaps[denom] > 0 => assessed_tax[input][denom] = min(floor(taxable_principal[input][denom] * rate), TaxCaps[denom])
   total_assessed_tax[denom] = sum(assessed_tax[input][denom] for every taxable input)
   each economic transfer is assessed exactly once
 
@@ -3265,7 +3513,8 @@ must survive this redesign. Implementation must therefore:
   account or grant it a generic fee or Bank authorization.
 - Initialise Market `BasePool` as the approved positive `sdk.DecCoin` in `usdr` and `ArkPoolDelta` to zero in that unit.
 - Supply launch Params with the intended `reference_tax_cap` Coin in `usdr` and a complete derived cap map when genesis
-  Oracle prices cannot derive that map deterministically.
+  Oracle prices cannot derive a positive reference cap deterministically. A zero reference cap derives a complete
+  explicit-zero uncapped map without Oracle prices.
 - Ensure bank supply exactly equals user balances plus every module-account allocation.
 - Discard and regenerate any developer or test genesis that uses the old Treasury or Mint schema.
 
@@ -3280,8 +3529,10 @@ initial launch genesis starts with zero `ArkPoolDelta`.
 
 Launch-readiness TODO: define the reproducible build process for Ark's canonical `genesis.json`, generate the artifact,
 and review it before launch. At minimum, the review must confirm zero Distribution `community_tax`, absence of Mint,
-approved module-account permissions, initial Treasury fund balances, economic parameters, and total-supply
-conservation. This is a Phase 5 launch-readiness deliverable, not Phase 2 application wiring.
+approved module-account permissions, initial Treasury fund balances, economic parameters, total-supply conservation,
+an IBC allowed-client list containing only `07-tendermint`, disabled ICS-20 send and receive, disabled ICA controller and
+host, an empty ICA host message allowlist, and no 08-Wasm client checksums. This is a Phase 5 launch-readiness
+deliverable, not Phase 2 application wiring.
 
 ## 19. Launch economic configuration
 
@@ -3311,7 +3562,7 @@ Architecture tests cannot choose sustainable economic values. Before launch, exp
 | Residual mint limit            | None; Phase 3A and P2 found no need for a hard cap                                             |
 | Oracle reward windows          | Tax-reward smoothing horizon                                                                  |
 | Distribution community tax     | Zero at launch                                                                                |
-| Transfer-surface activation    | Wasm and IBC remain disabled until their stablecoin tax integrations pass the Phase 4 gate    |
+| Transfer-surface activation    | Phase 4 implements IBC before Wasm; both remain production-disabled until their complete tax and recipient-restriction integrations pass |
 
 There is no global launch Reserve-withdrawal floor, rolling deployment cap, or price/target trigger to configure. Each
 governance Reserve-to-Buffer proposal states its exact `unoah` amount and minimum remaining Reserve balance. A future
@@ -3620,7 +3871,7 @@ tests, and review gate. None should be inferred while implementing the launch ph
 | 1     | Treasury proto, core, accounts                             | Reviewed                                | Treasury and required support accepted 2026-07-18          |
 | 2     | Remove Mint and activate subsidy-pool funding               | Reviewed                                | Verification passed; user approved closure 2026-07-20      |
 | 3     | Market settlement, labelled pool unit, and live transition | Reviewed                                | User and independent review completed 2026-07-20           |
-| 4     | Stability-tax ante and multi-denom Oracle rewards          | Partial code retained; unreviewed        | Revisit against original Phase 4 plan before starting      |
+| 4     | IBC/Wasm foundations, stability-tax integration, and multi-denom Oracle rewards | IBC foundation implemented; review and remaining integrations pending | Sections 16.1-16.3 approved; IBC keepers, routes, lifecycle, ante, CLI, and testing accessors implemented 2026-07-21; Wasm/GMP slice approved but not implemented |
 | 5     | Full-system invariants and simplification                  | Not started                             | Pending Phase 4                                            |
 | 6     | Reserve/Insurance covered-risk-exposure target models      | Deferred                                | Separate post-launch policy and implementation approval    |
 | 7     | First external asset: custody and recognition              | Deferred                                | Pending Phase 6 and exact asset-policy approval            |
@@ -3638,6 +3889,7 @@ complete:
 | Phase 1 app support | `app/app_config.go` registers the four fund accounts and tax collector, orders the Treasury send restriction, places Treasury before Distribution in BeginBlock, and removes Treasury EndBlock. `app/treasury_test.go` and `app/treasury_multisig_test.go` exercise this integration. | Accepted as required Phase 1 support; retain. |
 | Oracle quote support | `x/oracle/keeper/conversion.go` always includes the `unoah` identity rate in `GetRateSnapshot`, with corresponding keeper-test changes. | Accepted as the shared quote behavior used by Treasury reward and liability valuation; retain. |
 | Phase 3 Market settlement and pool-unit transition | Market injects a Treasury keeper and calls `RouteExpansion`, `DrawRedemptionBuffer`, and `RecordSupplyChange`; a successful Treasury result is authoritative. `BasePool` is a denomination-bearing `sdk.DecCoin`, delta queries return its unit, NOAH/stable math uses that unit, and stable-to-stable pricing is independent of virtual-pool state. `MsgUpdateParams` applies one fresh deterministic Oracle-derived amount on denomination changes, retains the submitted expectation in the transaction, emits old and applied pool state, atomically rescales delta on every amount change, and ordinary export preserves both values. | Reviewed and accepted. Treasury errors and actual rate, denomination, arithmetic, or effective-pool failures abort atomically. Do not add a submitted-versus-applied rejection threshold, duplicate audit fields, or a second transition path. |
+| Phase 4 IBC foundation | IBC-Go v11.2 keepers, stores, Classic/v2 ICS-20 routes, Classic PFM, Classic/v2 rate limiting, 07-Tendermint, ICA controller/host, module accounts, lifecycle, redundant-relay ante, CLI/genesis basics, and IBC testing accessors are wired through the SDK runtime's manual registration hooks. | Implemented under the approved Section 16.2 scope; focused review pending. Section 16.3 now approves the next Wasm/callback/GMP slice, but none of that later wiring is recorded as implemented. Production activation remains blocked on canonical launch genesis and the complete tax, recipient-restriction, rate-limit, relay, acknowledgement, timeout, refund, packet-forward, callback, and GMP gates. |
 | Partial Phase 4 ante | `app/app.go` installs `treasuryFeeChecker` and wraps the stock ante handler with `routeStabilityTax`; the implementation and tests live directly in `app/treasury_ante.go` rather than the planned `app/ante` package. | Leave unchanged and treat as provisional, unreviewed Phase 4 code. Revisit its layout, semantics, activation, and Wasm/IBC transfer-surface gate against the original Phase 4 plan when Phase 4 begins. |
 | Partial Phase 4 Oracle rewards | Oracle's Bank interface now uses `GetAllBalances`, and `x/oracle/keeper/reward.go` distributes every positive denomination with updated mocks and tests. | Leave unchanged and treat as provisional, unreviewed Phase 4 code. Review it together with tax activation when Phase 4 begins. |
 
