@@ -29,6 +29,10 @@ type VoteTargetClient interface {
 	) (*oracletypes.QueryVoteTargetsResponse, error)
 }
 
+// ErrNoActiveVoteTargets indicates that the chain has intentionally disabled
+// oracle voting by publishing an authoritative empty target snapshot.
+var ErrNoActiveVoteTargets = errors.New("no active vote targets")
+
 func (v *Validator) loadActiveDenoms(ctx context.Context, timeout time.Duration) ([]string, error) {
 	requestCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -45,7 +49,7 @@ func (v *Validator) loadActiveDenoms(ctx context.Context, timeout time.Duration)
 		return nil, errors.New("chain vote target response is nil")
 	}
 	if len(resp.VoteTargets) == 0 {
-		return nil, errors.New("active denoms cannot be empty")
+		return nil, ErrNoActiveVoteTargets
 	}
 
 	activeDenoms := append([]string(nil), resp.VoteTargets...)

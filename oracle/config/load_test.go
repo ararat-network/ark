@@ -37,6 +37,7 @@ func TestDefaultIsValid(t *testing.T) {
 	require.NoError(t, cfg.Validate())
 	require.NotEmpty(t, cfg.Providers)
 	require.NotEmpty(t, cfg.FallbackDenoms)
+	require.Equal(t, DefaultClientInterval, cfg.Client.Interval)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.NotNil(t, cfg.Resolver.BootstrapPrices)
 	require.Equal(t, []resolver.BootstrapPrice{{

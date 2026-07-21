@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -64,6 +65,19 @@ func TestValidateCmdPrintsSuccess(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, "oracle validation results:\nuusd: 100.00%\noracle validation passed\n", out.String())
+}
+
+func TestValidateCmdPrintsDisabledState(t *testing.T) {
+	out := new(bytes.Buffer)
+
+	err := writeValidationOutcome(
+		out,
+		nil,
+		fmt.Errorf("load initial active denoms: %w", validation.ErrNoActiveVoteTargets),
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, "oracle validation skipped: no active vote targets (oracle voting disabled)\n", out.String())
 }
 
 func TestRunValidationUsesExternalRPCs(t *testing.T) {

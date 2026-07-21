@@ -140,6 +140,46 @@ func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 	require.Nil(t, got)
 }
 
+func TestRunCachesAuthoritativeEmptyVoteTargets(t *testing.T) {
+	query := newFakeQueryServer(queryResult{targets: []string{}})
+	client := newTestClient(t, query, Config{
+		Address:  "passthrough:///bufnet",
+		Timeout:  time.Second,
+		Interval: time.Hour,
+	})
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	query.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{})
+}
+
+func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
+	query := newFakeQueryServer(
+		queryResult{targets: []string{"uusd"}},
+		queryResult{targets: []string{}},
+		queryResult{err: errors.New("node unavailable")},
+	)
+	client := newTestClient(t, query, Config{
+		Address:  "passthrough:///bufnet",
+		Timeout:  time.Second,
+		Interval: time.Millisecond,
+	})
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	query.waitForCalls(t, 1)
+	query.waitForCalls(t, 2)
+	requireEventuallyTargets(t, client, []string{})
+	query.waitForCalls(t, 3)
+
+	got, err := client.VoteTargets()
+	require.NoError(t, err)
+	require.Empty(t, got)
+}
+
 func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	query := newFakeQueryServer(
 		queryResult{targets: []string{"uusd"}},

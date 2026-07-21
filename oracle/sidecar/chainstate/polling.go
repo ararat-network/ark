@@ -83,6 +83,7 @@ func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
 
 	c.mut.Lock()
 	c.targets = targets
+	c.hasSnapshot = true
 	c.mut.Unlock()
 
 	chainstatemetrics.RecordRefresh(ctx, "success")
@@ -104,10 +105,6 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 	}
 
 	targets := append([]string(nil), resp.VoteTargets...)
-	if len(targets) == 0 {
-		return nil, errors.New("oracle vote targets response is empty")
-	}
-
 	seen := make(map[string]struct{}, len(targets))
 	for _, denom := range targets {
 		if err := chain.ValidateMicroDenom(denom); err != nil {

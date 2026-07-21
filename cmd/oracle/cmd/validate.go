@@ -95,6 +95,13 @@ func writeValidationOutcome(
 	results validation.LivenessResults,
 	validationErr error,
 ) error {
+	if errors.Is(validationErr, validation.ErrNoActiveVoteTargets) {
+		if _, err := fmt.Fprintln(w, "oracle validation skipped: no active vote targets (oracle voting disabled)"); err != nil {
+			return fmt.Errorf("writing disabled oracle validation result: %w", err)
+		}
+		return nil
+	}
+
 	if len(results) > 0 {
 		denoms := make([]string, 0, len(results))
 		for denom := range results {

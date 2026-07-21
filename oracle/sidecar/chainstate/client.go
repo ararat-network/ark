@@ -22,8 +22,11 @@ type Client struct {
 	// Config is mutable through Update and read by the polling loop.
 	cfg Config
 
-	// Cached chain state. targets is the last valid snapshot.
-	targets []string
+	// Cached chain state. targets is the last valid snapshot, including an
+	// authoritative empty snapshot. hasSnapshot distinguishes that state from a
+	// client that has not completed any successful query yet.
+	targets     []string
+	hasSnapshot bool
 }
 
 // NewClient validates cfg, applies opts, and returns a chainstate client ready
@@ -98,17 +101,17 @@ func (c *Client) Update(cfg Config) {
 }
 
 // VoteTargets returns a copy of the latest valid vote-target snapshot. It
-// returns an error until the first successful non-empty snapshot is cached;
-// later refresh failures preserve the last successful snapshot.
+// returns an error until the first successful snapshot is cached; later refresh
+// failures preserve the last successful snapshot, including an empty one.
 func (c *Client) VoteTargets() ([]string, error) {
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 
-	if len(c.targets) == 0 {
+	if !c.hasSnapshot {
 		return nil, errors.New("no vote targets fetched yet")
 	}
 
-	return append([]string(nil), c.targets...), nil
+	return append([]string{}, c.targets...), nil
 }
 
 // getConfig returns a copy of the current polling config under the client lock.

@@ -46,6 +46,41 @@ func TestRunUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
+func TestRunUsesAuthoritativeEmptyVoteTargets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	started := make(chan struct{})
+	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
+	expectFetcherRunAnyTimes(mp.fetcher, started)
+	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectVoteTargetsLifecycle(voteTargetsClient)
+	voteTargetsClient.EXPECT().
+		VoteTargets().
+		Return([]string{}, nil).
+		AnyTimes()
+
+	cfg := testRuntimeConfigWithUnknownProvider()
+	cfg.UpdateInterval = 5 * time.Millisecond
+	cfg.FallbackDenoms = []string{"ukrw"}
+	oracle, err := runtime.NewRuntime(
+		cfg,
+		withInitialProviders(mp.provider),
+		runtime.WithChainStateClient(voteTargetsClient),
+	)
+	require.NoError(t, err)
+
+	errCh, cancel := startOracle(t, oracle)
+	defer cancel()
+	requireProviderStarted(t, started)
+
+	requireCommittedDenoms(t, oracle)
+	require.Eventually(t, func() bool {
+		return len(mp.provider.GetTickers()) == 0
+	}, time.Second, time.Millisecond)
+
+	cancel()
+	requireOracleStopped(t, errCh)
+}
+
 func TestRunDoesNotRestartProviderWhenVoteTargetsAreUnchanged(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})

@@ -82,7 +82,7 @@ func Default() runtime.Config {
 		Client: chainstate.Config{
 			Address:  DefaultClientAddress,
 			Timeout:  DefaultClientTimeout,
-			Interval: DefaultUpdateInterval,
+			Interval: DefaultClientInterval,
 		},
 		FallbackDenoms: []string{
 			chain.MicroUSDDenom,

@@ -179,16 +179,26 @@ func TestRunRejectsNilVoteTargetResponse(t *testing.T) {
 	require.ErrorContains(t, err, "chain vote target response is nil")
 }
 
+func TestRunReportsNoActiveVoteTargets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	client := validationtestutil.NewMockPriceClient(ctrl)
+	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
+	expectVoteTargets(voteTargetClient, []string{}, nil)
+	validator, err := NewValidator(log.NewNopLogger(), client, voteTargetClient, validConfig())
+	require.NoError(t, err)
+
+	results, err := validator.Run(context.Background())
+
+	require.Nil(t, results)
+	require.ErrorIs(t, err, ErrNoActiveVoteTargets)
+}
+
 func TestRunRejectsInvalidInitialActiveDenoms(t *testing.T) {
 	tests := []struct {
 		name    string
 		denoms  []string
 		wantErr string
 	}{
-		{
-			name:    "empty set",
-			wantErr: "active denoms cannot be empty",
-		},
 		{
 			name:    "empty denom",
 			denoms:  []string{" "},
