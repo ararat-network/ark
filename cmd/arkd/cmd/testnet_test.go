@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -16,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
@@ -23,10 +26,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltest "github.com/cosmos/cosmos-sdk/x/genutil/client/testutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
 func Test_TestnetCmd(t *testing.T) {
+	const chainID = "ark-test"
+
 	moduleBasic := module.NewBasicManager(
 		auth.AppModuleBasic{},
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
@@ -55,9 +61,39 @@ func Test_TestnetCmd(t *testing.T) {
 	ctx = context.WithValue(ctx, server.ServerContextKey, serverCtx)
 	ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)
 	cmd := testnetInitFilesCmd(moduleBasic, banktypes.GenesisBalancesIterator{})
-	cmd.SetArgs([]string{fmt.Sprintf("--%s=test", flags.FlagKeyringBackend), fmt.Sprintf("--output-dir=%s", home)})
+	cmd.SetArgs([]string{
+		fmt.Sprintf("--%s=test", flags.FlagKeyringBackend),
+		fmt.Sprintf("--%s=%s", flags.FlagChainID, chainID),
+		fmt.Sprintf("--%s=%s", flagOutputDir, home),
+		fmt.Sprintf("--%s", flagSingleHost),
+	})
 	err = cmd.ExecuteContext(ctx)
 	require.NoError(t, err)
+
+	node0ConfigDir := filepath.Join(home, "node0", "simd", "config")
+	appConfig, err := os.ReadFile(filepath.Join(node0ConfigDir, "app.toml"))
+	require.NoError(t, err)
+	require.Contains(t, string(appConfig), `metrics-sink = "otel"`)
+	require.Contains(t, string(appConfig), "prometheus-retention-time = 0")
+
+	node0Otel, err := os.ReadFile(filepath.Join(node0ConfigDir, "otel.yaml"))
+	require.NoError(t, err)
+	require.Contains(t, string(node0Otel), `value: "ark-test/node0"`)
+	require.Contains(t, string(node0Otel), `value: "ark-test"`)
+	require.Contains(t, string(node0Otel), "port: 9464")
+
+	node1Otel, err := os.ReadFile(filepath.Join(home, "node1", "simd", "config", "otel.yaml"))
+	require.NoError(t, err)
+	require.Contains(t, string(node1Otel), "port: 9465")
+
+	expectedAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	for i := range 2 {
+		genesis, err := genutiltypes.AppGenesisFromFile(
+			filepath.Join(home, fmt.Sprintf("node%d", i), "simd", "config", "genesis.json"),
+		)
+		require.NoError(t, err)
+		require.Equal(t, expectedAuthority, genesis.Consensus.Params.Authority.Authority)
+	}
 
 	genFile := cfg.GenesisFile()
 	appState, _, err := genutiltypes.GenesisStateFromGenFile(genFile)

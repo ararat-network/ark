@@ -35,6 +35,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"ark/app"
@@ -240,10 +241,10 @@ func initTestnetFiles(
 	appConfig := srvconfig.DefaultConfig()
 	appConfig.MinGasPrices = args.minGasPrices
 	appConfig.API.Enable = true
-	appConfig.Telemetry.Enabled = true                                        //nolint:staticcheck // TODO: switch to OpenTelemetry
-	appConfig.Telemetry.PrometheusRetentionTime = 60                          //nolint:staticcheck // TODO: switch to OpenTelemetry
-	appConfig.Telemetry.EnableHostnameLabel = false                           //nolint:staticcheck // TODO: switch to OpenTelemetry
-	appConfig.Telemetry.GlobalLabels = [][]string{{"chain_id", args.chainID}} //nolint:staticcheck // TODO: switch to OpenTelemetry
+	// Cosmos SDK v0.54 still emits some metrics through its deprecated wrappers.
+	// Route those metrics into the node-owned OpenTelemetry provider.
+	appConfig.Telemetry.Enabled = true       //nolint:staticcheck // SDK legacy metrics bridge
+	appConfig.Telemetry.MetricsSink = "otel" //nolint:staticcheck // SDK legacy metrics bridge
 
 	var (
 		genAccounts []authtypes.GenesisAccount
@@ -256,6 +257,7 @@ func initTestnetFiles(
 		grpcPort         = 9090
 		pprofListen      = 6060
 		prometheusListen = 27780
+		otelListen       = 9464
 	)
 	p2pPortStart := 26656
 
@@ -278,6 +280,7 @@ func initTestnetFiles(
 		nodeDirName := fmt.Sprintf("%s%d", args.nodeDirPrefix, i)
 		nodeDir := filepath.Join(args.outputDir, nodeDirName, args.nodeDaemonHome)
 		gentxsDir := filepath.Join(args.outputDir, "gentxs")
+		otelPort := otelListen + portOffset
 
 		nodeConfig.SetRoot(nodeDir)
 		nodeConfig.Moniker = nodeDirName
@@ -397,6 +400,14 @@ func initTestnetFiles(
 			Config: *appConfig,
 			Oracle: oracleclient.NewDefaultConfig(),
 		})
+
+		if err := writeFile(
+			"otel.yaml",
+			filepath.Join(nodeDir, "config"),
+			testnetOtelConfig(args.chainID, nodeDirName, otelPort),
+		); err != nil {
+			return err
+		}
 	}
 
 	if err := initGenFiles(clientCtx, mm, args.chainID, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
@@ -410,6 +421,11 @@ func initTestnetFiles(
 	)
 	if err != nil {
 		return err
+	}
+	for _, genFile := range genFiles {
+		if err := setGenesisGovernanceAuthority(genFile); err != nil {
+			return err
+		}
 	}
 
 	cmd.PrintErrf("Successfully initialized %d node directories\n", args.numValidators)
@@ -528,6 +544,22 @@ func collectGenFiles(
 	return nil
 }
 
+func setGenesisGovernanceAuthority(genFile string) error {
+	genesis, err := genutiltypes.AppGenesisFromFile(genFile)
+	if err != nil {
+		return fmt.Errorf("reading generated genesis %s: %w", genFile, err)
+	}
+	if genesis.Consensus == nil || genesis.Consensus.Params == nil {
+		return fmt.Errorf("generated genesis %s has no consensus params", genFile)
+	}
+
+	genesis.Consensus.Params.Authority.Authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	if err := genesis.SaveAs(genFile); err != nil {
+		return fmt.Errorf("saving generated genesis %s: %w", genFile, err)
+	}
+	return nil
+}
+
 func getIP(i int, startingIPAddr string) (ip string, err error) {
 	if len(startingIPAddr) == 0 {
 		ip, err = server.ExternalIP()
@@ -564,6 +596,35 @@ func writeFile(name, dir string, contents []byte) error {
 	}
 
 	return nil
+}
+
+const testnetOtelConfigTemplate = `file_format: "1.0-rc.3"
+resource:
+  attributes:
+    - name: service.name
+      value: "arkd"
+    - name: service.instance.id
+      value: %q
+    - name: ark.chain.id
+      value: %q
+
+meter_provider:
+  readers:
+    - pull:
+        exporter:
+          prometheus/development:
+            host: "0.0.0.0"
+            port: %d
+            with_resource_constant_labels:
+              include:
+                - service.name
+                - service.instance.id
+                - ark.chain.id
+`
+
+func testnetOtelConfig(chainID, nodeName string, prometheusPort int) []byte {
+	serviceInstanceID := chainID + "/" + nodeName
+	return fmt.Appendf(nil, testnetOtelConfigTemplate, serviceInstanceID, chainID, prometheusPort)
 }
 
 // startTestnet starts an in-process testnet
