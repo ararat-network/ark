@@ -121,6 +121,7 @@ func queryCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
+		voteExtensionsCommand(),
 		rpc.ValidatorCommand(),
 		rpc.WaitTxCmd(),
 		server.QueryBlockCmd(),
