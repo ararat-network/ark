@@ -53,50 +53,48 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return fmt.Errorf("getting Tobin taxes: %w", err)
-	}
-	if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
-		return tax.Denom == data.Params.ReferenceTaxCap.Denom
-	}) {
-		return fmt.Errorf(
-			"reference tax cap denom %s is not configured in oracle",
-			data.Params.ReferenceTaxCap.Denom,
-		)
-	}
-
 	taxCaps := append([]types.TaxCap(nil), data.TaxCaps...)
-	if data.MonetaryPolicy.StabilityTaxRate.IsPositive() {
-		if len(taxCaps) == 0 {
-			taxCaps, err = k.BuildTaxCaps(ctx, data.Params)
-			if err != nil {
-				return fmt.Errorf("deriving genesis tax caps: %w", err)
+	if len(taxCaps) == 0 {
+		derivedTaxCaps, err := k.BuildTaxCaps(ctx, data.Params)
+		if err != nil {
+			return fmt.Errorf("deriving genesis tax caps: %w", err)
+		}
+		taxCaps = derivedTaxCaps
+	} else {
+		tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
+		if err != nil {
+			return fmt.Errorf("getting Tobin taxes: %w", err)
+		}
+		if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
+			return tax.Denom == data.Params.ReferenceTaxCap.Denom
+		}) {
+			return fmt.Errorf(
+				"reference tax cap denom %s is not configured in oracle",
+				data.Params.ReferenceTaxCap.Denom,
+			)
+		}
+		if len(taxCaps) != len(tobinTaxes) {
+			return fmt.Errorf(
+				"genesis tax cap set has %d denoms; expected %d configured native stables",
+				len(taxCaps),
+				len(tobinTaxes),
+			)
+		}
+		seen := make(map[string]math.Int, len(taxCaps))
+		for _, cap := range taxCaps {
+			seen[cap.Denom] = cap.TaxCap
+		}
+		for _, tax := range tobinTaxes {
+			if _, ok := seen[tax.Denom]; !ok {
+				return fmt.Errorf("genesis tax cap is missing configured native stable %s", tax.Denom)
 			}
-		} else {
-			if len(taxCaps) != len(tobinTaxes) {
-				return fmt.Errorf(
-					"genesis tax cap set has %d denoms; expected %d configured native stables",
-					len(taxCaps),
-					len(tobinTaxes),
-				)
-			}
-			seen := make(map[string]math.Int, len(taxCaps))
-			for _, cap := range taxCaps {
-				seen[cap.Denom] = cap.TaxCap
-			}
-			for _, tax := range tobinTaxes {
-				if _, ok := seen[tax.Denom]; !ok {
-					return fmt.Errorf("genesis tax cap is missing configured native stable %s", tax.Denom)
-				}
-			}
-			if amount, ok := seen[data.Params.ReferenceTaxCap.Denom]; !ok || !amount.Equal(data.Params.ReferenceTaxCap.Amount) {
-				return fmt.Errorf(
-					"genesis tax cap for reference denom %s must equal %s",
-					data.Params.ReferenceTaxCap.Denom,
-					&data.Params.ReferenceTaxCap.Amount,
-				)
-			}
+		}
+		if amount, ok := seen[data.Params.ReferenceTaxCap.Denom]; !ok || !amount.Equal(data.Params.ReferenceTaxCap.Amount) {
+			return fmt.Errorf(
+				"genesis tax cap for reference denom %s must equal %s",
+				data.Params.ReferenceTaxCap.Denom,
+				&data.Params.ReferenceTaxCap.Amount,
+			)
 		}
 	}
 

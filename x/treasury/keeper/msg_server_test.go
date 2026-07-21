@@ -101,18 +101,53 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 	}})
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsZeroReferenceCap() {
+func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
+	s.setBlockHeight(42)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 0)
+	configured := oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.MicroUSDDenom},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
 		Params:    params,
 	})
-	s.Require().ErrorContains(err, "ReferenceTaxCap must be positive")
+	s.Require().NoError(err)
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(types.DefaultParams(), stored)
+	s.Require().Equal(params, stored)
+	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		s.Require().NoError(err)
+		s.Require().True(cap.IsZero())
+	}
+	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.MicroUSDDenom, TaxCap: math.ZeroInt()},
+	}})
+}
+
+func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActivatingTax() {
+	s.Require().NoError(s.keeper.ReplaceTaxCaps(s.ctx, []types.TaxCap{
+		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+	}))
+
+	candidate := types.DefaultMonetaryPolicy()
+	candidate.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+		Signer: s.authority,
+		Policy: candidate,
+	})
+	s.Require().NoError(err)
+	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().True(candidate.Equal(stored))
+	cap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroSDRDenom)
+	s.Require().NoError(err)
+	s.Require().True(cap.IsZero())
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsInvalidAuthority() {
@@ -1063,6 +1098,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsUnconfiguredReferenceDenom()
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDirectly() {
 	current := types.DefaultParams()
+	current.ReferenceTaxCap.Amount = math.NewInt(8)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ReplaceTaxCaps(s.ctx, []types.TaxCap{
 		{Denom: chain.MicroKRWDenom, TaxCap: math.NewInt(9)},
@@ -1125,6 +1161,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			current := types.DefaultParams()
+			current.ReferenceTaxCap.Amount = math.NewInt(33)
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 			oldCaps := []types.TaxCap{
 				{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(33)},

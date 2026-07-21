@@ -80,6 +80,12 @@ func (gs GenesisState) Validate() error {
 		if taxCap.TaxCap.IsNegative() {
 			return fmt.Errorf("tax cap for %s must be zero or positive", taxCap.Denom)
 		}
+		if gs.Params.ReferenceTaxCap.IsZero() && !taxCap.TaxCap.IsZero() {
+			return fmt.Errorf("tax cap for %s must be zero when the reference tax cap is zero", taxCap.Denom)
+		}
+		if gs.Params.ReferenceTaxCap.IsPositive() && taxCap.TaxCap.IsZero() {
+			return fmt.Errorf("tax cap for %s must be positive when the reference tax cap is positive", taxCap.Denom)
+		}
 	}
 
 	if err := gs.validateClaims(); err != nil {

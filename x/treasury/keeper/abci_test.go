@@ -38,6 +38,9 @@ func (s *KeeperTestSuite) TestBeginBlockerAccruesRewardFundingWhenCapsMatch() {
 
 func (s *KeeperTestSuite) TestBeginBlockerRefreshesMismatchedCaps() {
 	s.setBlockHeight(1)
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.OneInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	configured := oracletypes.TobinTaxes{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
@@ -112,6 +115,33 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnrepresentableTaxCapConversion()
 		chain.MicroSDRDenom,
 		chain.MicroUSDDenom,
 	).Return(nil, oracletypes.ErrConversionOutOfRange)
+
+	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.requireTypedEvent(&types.EventTaxCapsUpdateSkipped{
+		Reason: types.EventSkipReason_EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE,
+	})
+	_, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroUSDDenom)
+	s.Require().Error(err)
+}
+
+func (s *KeeperTestSuite) TestBeginBlockerSkipsTaxCapConversionThatTruncatesToZero() {
+	s.setBlockHeight(1)
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.OneInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	configured := oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.MicroUSDDenom},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil).Times(2)
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(),
+		chain.MicroSDRDenom,
+		chain.MicroUSDDenom,
+	).Return(oracletypes.RateSnapshot{
+		chain.MicroSDRDenom: math.LegacyNewDec(2),
+		chain.MicroUSDDenom: math.LegacyOneDec(),
+	}, nil)
 
 	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
 	s.requireTypedEvent(&types.EventTaxCapsUpdateSkipped{

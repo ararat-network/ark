@@ -36,8 +36,7 @@ func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMone
 		if err := mandate.Validate(); err != nil {
 			return nil, err
 		}
-		if mandate.Committee == m.k.authority || mandate.Committee == msg.Authority ||
-			sdk.ValidateAuthority(sdkCtx, m.k.authority, mandate.Committee) == nil {
+		if sdk.ValidateAuthority(sdkCtx, m.k.authority, mandate.Committee) == nil {
 			return nil, errors.New("monetary-policy committee must be distinct from Treasury authority")
 		}
 		claimsMandate, err := m.k.ClaimsMandate.Get(ctx)

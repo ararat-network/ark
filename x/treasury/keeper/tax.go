@@ -83,7 +83,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 			}
 
 			tax := policy.StabilityTaxRate.MulInt(principal.Amount).TruncateInt()
-			if tax.GT(cap) {
+			if cap.IsPositive() && tax.GT(cap) {
 				tax = cap
 			}
 			if tax.IsPositive() {
@@ -179,11 +179,11 @@ func (k Keeper) BuildTaxCaps(
 	ctx context.Context,
 	params types.Params,
 ) ([]types.TaxCap, error) {
-	referenceTaxCap := params.ReferenceTaxCap
 	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting Tobin taxes: %w", err)
 	}
+	referenceTaxCap := params.ReferenceTaxCap
 	if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
 		return tax.Denom == referenceTaxCap.Denom
 	}) {
@@ -191,6 +191,16 @@ func (k Keeper) BuildTaxCaps(
 	}
 
 	caps := make([]types.TaxCap, 0, len(tobinTaxes))
+	if referenceTaxCap.IsZero() {
+		for _, tax := range tobinTaxes {
+			caps = append(caps, types.TaxCap{Denom: tax.Denom, TaxCap: math.ZeroInt()})
+		}
+		return caps, nil
+	}
+	if len(tobinTaxes) == 1 {
+		return []types.TaxCap{{Denom: referenceTaxCap.Denom, TaxCap: referenceTaxCap.Amount}}, nil
+	}
+
 	denoms := make([]string, len(tobinTaxes))
 	for i, tax := range tobinTaxes {
 		denoms[i] = tax.Denom
@@ -211,6 +221,14 @@ func (k Keeper) BuildTaxCaps(
 			return nil, fmt.Errorf("converting tax cap from %s to %s: %w", reference.Denom, tax.Denom, err)
 		}
 		coin, _ := converted.TruncateDecimal()
+		if !coin.Amount.IsPositive() {
+			return nil, errorsmod.Wrapf(
+				oracletypes.ErrConversionOutOfRange,
+				"converting positive tax cap from %s to %s truncated to zero",
+				reference.Denom,
+				tax.Denom,
+			)
+		}
 		caps = append(caps, types.TaxCap{Denom: tax.Denom, TaxCap: coin.Amount})
 	}
 	return caps, nil

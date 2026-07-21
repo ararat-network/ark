@@ -48,6 +48,59 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 	require.Equal(t, uint64(1), genesis.Claims[0].ClaimId)
 }
 
+func TestGenesisTaxCapValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(*types.GenesisState)
+		expectErr string
+	}{
+		{
+			name: "positive reference cap requires positive derived caps",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.OneInt()}}
+			},
+		},
+		{
+			name: "positive reference cap rejects uncapped sentinel",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()}}
+			},
+			expectErr: "must be positive when the reference tax cap is positive",
+		},
+		{
+			name: "zero reference cap permits uncapped sentinel",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()}}
+			},
+		},
+		{
+			name: "zero reference cap rejects positive derived cap",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.OneInt()}}
+			},
+			expectErr: "must be zero when the reference tax cap is zero",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			genesis := types.DefaultGenesisState()
+			tc.mutate(genesis)
+
+			err := genesis.Validate()
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
+}
+
 func TestGenesisClaimsValidation(t *testing.T) {
 	valid := func() *types.GenesisState {
 		claim := validPendingClaim()

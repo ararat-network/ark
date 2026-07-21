@@ -25,6 +25,7 @@ func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coin
 func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis := types.DefaultGenesisState()
 	genesis.NextClaimId = 7
+	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
 	genesis.TaxCaps = []types.TaxCap{
 		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
 	}
@@ -51,6 +52,61 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Empty(exported.Claims)
 	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
 	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
+}
+
+func (s *KeeperTestSuite) TestInitGenesisBuildsUncappedSetWhenTaxIsDisabled() {
+	genesis := types.DefaultGenesisState()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.MicroUSDDenom},
+	}, nil)
+	s.expectGenesisFundBalances(nil)
+
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
+	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		s.Require().NoError(err)
+		s.Require().True(cap.IsZero())
+	}
+}
+
+func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
+	genesis := types.DefaultGenesisState()
+	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.MicroUSDDenom},
+	}, nil)
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		s.ctx,
+		chain.MicroSDRDenom,
+		chain.MicroUSDDenom,
+	).Return(oracletypes.RateSnapshot{
+		chain.MicroSDRDenom: math.LegacyOneDec(),
+		chain.MicroUSDDenom: math.LegacyOneDec(),
+	}, nil)
+	s.expectGenesisFundBalances(nil)
+
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
+	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		s.Require().NoError(err)
+		s.Require().Equal(math.NewInt(100), cap)
+	}
+}
+
+func (s *KeeperTestSuite) TestInitGenesisRejectsIncompleteCapsWhenTaxIsDisabled() {
+	genesis := types.DefaultGenesisState()
+	genesis.TaxCaps = []types.TaxCap{
+		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.MicroUSDDenom},
+	}, nil)
+
+	err := s.keeper.InitGenesis(s.ctx, genesis)
+	s.Require().ErrorContains(err, "has 1 denoms; expected 2")
 }
 
 func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {

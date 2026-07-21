@@ -100,7 +100,8 @@ func (ClaimOrigin) EnumDescriptor() ([]byte, []int) {
 // Params defines the parameters for the treasury module.
 type Params struct {
 	// reference_tax_cap is the governance-owned cap used to derive the complete
-	// per-denomination tax-cap map.
+	// per-denomination tax-cap map. A zero amount means taxation is uncapped; a
+	// positive amount derives positive per-denomination ceilings.
 	ReferenceTaxCap types.Coin `protobuf:"bytes,1,opt,name=reference_tax_cap,json=referenceTaxCap,proto3" json:"reference_tax_cap"`
 	// reward_funding_window initializes each new funding countdown.
 	RewardFundingWindow uint64 `protobuf:"varint,2,opt,name=reward_funding_window,json=rewardFundingWindow,proto3" json:"reward_funding_window,omitempty"`
@@ -343,9 +344,11 @@ func (m *RewardFundingState) GetValuationComplete() bool {
 	return false
 }
 
-// TaxCap defines the maximum tax amount charged for one denomination.
+// TaxCap defines the tax ceiling for one denomination. A zero amount is the
+// explicit uncapped sentinel; a missing entry is a configuration error.
 type TaxCap struct {
-	Denom  string                `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	// tax_cap is zero for uncapped taxation or positive for a finite ceiling.
 	TaxCap cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=tax_cap,json=taxCap,proto3,customtype=cosmossdk.io/math.Int" json:"tax_cap"`
 }
 

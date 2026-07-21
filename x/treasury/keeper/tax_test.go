@@ -113,6 +113,21 @@ func (s *KeeperTestSuite) TestComputeTaxFailsClosedForConfiguredDenomWithoutTaxC
 	s.Require().ErrorIs(err, types.ErrTaxCapUnavailable)
 }
 
+func (s *KeeperTestSuite) TestComputeTaxTreatsZeroCapAsUncapped() {
+	source := authtypes.NewModuleAddress("tax-source").String()
+	policy := types.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.ZeroInt()))
+	s.expectTaxableDenoms(chain.MicroUSDDenom)
+
+	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 1_000))},
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)), tax)
+}
+
 func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
@@ -135,6 +150,41 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(500_000)},
 		{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(1_000_000)},
 	}, caps)
+}
+
+func (s *KeeperTestSuite) TestBuildTaxCapsUsesZeroAsUncappedWithoutRates() {
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.MicroSDRDenom},
+	}, nil)
+
+	caps, err := s.keeper.BuildTaxCaps(s.ctx, params)
+	s.Require().NoError(err)
+	s.Require().Equal([]types.TaxCap{
+		{Denom: chain.MicroUSDDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+	}, caps)
+}
+
+func (s *KeeperTestSuite) TestBuildTaxCapsRejectsPositiveConversionThatTruncatesToZero() {
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.OneInt()
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.MicroSDRDenom},
+	}, nil)
+	s.oracleKeeper.EXPECT().GetRateSnapshot(
+		gomock.Any(), chain.MicroUSDDenom, chain.MicroSDRDenom,
+	).Return(oracletypes.RateSnapshot{
+		chain.MicroSDRDenom: math.LegacyNewDec(2),
+		chain.MicroUSDDenom: math.LegacyOneDec(),
+	}, nil)
+
+	_, err := s.keeper.BuildTaxCaps(s.ctx, params)
+	s.Require().ErrorContains(err, "truncated to zero")
+	s.Require().ErrorIs(err, oracletypes.ErrConversionOutOfRange)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedMessagesWhenDisabled() {

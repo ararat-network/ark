@@ -10556,6 +10556,8 @@ type QueryTaxCapResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// tax_cap is zero when the configured denomination is explicitly uncapped.
+	// A missing cap returns an error rather than this sentinel.
 	TaxCap string `protobuf:"bytes,1,opt,name=tax_cap,json=taxCap,proto3" json:"tax_cap,omitempty"`
 }
 
@@ -10619,6 +10621,7 @@ type QueryTaxCapsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// tax_caps includes explicit zero entries for uncapped denominations.
 	TaxCaps []*TaxCap `protobuf:"bytes,1,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
 }
 

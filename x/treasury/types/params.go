@@ -19,7 +19,7 @@ const (
 // DefaultParams returns the safe launch defaults for Treasury.
 func DefaultParams() Params {
 	return Params{
-		ReferenceTaxCap:     sdk.NewCoin(DefaultReferenceTaxCapDenom, math.OneInt()),
+		ReferenceTaxCap:     sdk.NewCoin(DefaultReferenceTaxCapDenom, math.ZeroInt()),
 		RewardFundingWindow: DefaultRewardFundingWindow,
 	}
 }
@@ -32,9 +32,6 @@ func (p Params) Validate() error {
 	}
 	if err := chain.ValidateMicroDenom(p.ReferenceTaxCap.Denom); err != nil {
 		return fmt.Errorf("treasury parameter ReferenceTaxCap denom is invalid: %w", err)
-	}
-	if !p.ReferenceTaxCap.IsPositive() {
-		return errors.New("treasury parameter ReferenceTaxCap must be positive")
 	}
 	if p.RewardFundingWindow == 0 {
 		return errors.New("treasury parameter RewardFundingWindow must be positive")

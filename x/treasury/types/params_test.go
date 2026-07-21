@@ -44,9 +44,8 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "ReferenceTaxCap is invalid",
 		},
 		{
-			name:      "reference cap must be positive",
-			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Amount = math.ZeroInt() },
-			expectErr: "ReferenceTaxCap must be positive",
+			name:   "zero reference cap is uncapped",
+			mutate: func(p *types.Params) { p.ReferenceTaxCap.Amount = math.ZeroInt() },
 		},
 	}
 

@@ -339,6 +339,8 @@ func (m *QueryTaxCapRequest) GetDenom() string {
 
 // QueryTaxCapResponse is the response type for Query/TaxCap.
 type QueryTaxCapResponse struct {
+	// tax_cap is zero when the configured denomination is explicitly uncapped.
+	// A missing cap returns an error rather than this sentinel.
 	TaxCap cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=tax_cap,json=taxCap,proto3,customtype=cosmossdk.io/math.Int" json:"tax_cap"`
 }
 
@@ -414,6 +416,7 @@ var xxx_messageInfo_QueryTaxCapsRequest proto.InternalMessageInfo
 
 // QueryTaxCapsResponse is the response type for Query/TaxCaps.
 type QueryTaxCapsResponse struct {
+	// tax_caps includes explicit zero entries for uncapped denominations.
 	TaxCaps []TaxCap `protobuf:"bytes,1,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps"`
 }
 

@@ -126,6 +126,8 @@ message QueryTaxCapRequest { string denom = 1; }
 
 // QueryTaxCapResponse is the response type for Query/TaxCap.
 message QueryTaxCapResponse {
+  // tax_cap is zero when the configured denomination is explicitly uncapped.
+  // A missing cap returns an error rather than this sentinel.
   string tax_cap = 1 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -139,6 +141,7 @@ message QueryTaxCapsRequest {}
 
 // QueryTaxCapsResponse is the response type for Query/TaxCaps.
 message QueryTaxCapsResponse {
+  // tax_caps includes explicit zero entries for uncapped denominations.
   repeated TaxCap tax_caps = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

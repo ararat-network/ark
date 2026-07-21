@@ -146,6 +146,7 @@ func (s *KeeperTestSuite) TestQueryMonetaryMandate() {
 
 func (s *KeeperTestSuite) TestQueryTaxCap() {
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(100)))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroKRWDenom, math.ZeroInt()))
 	server := keeper.NewQueryServerImpl(s.keeper)
 	tests := []struct {
 		name     string
@@ -159,8 +160,13 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 			wantCap: math.NewInt(100),
 		},
 		{
+			name:    "uncapped",
+			request: &treasurytypes.QueryTaxCapRequest{Denom: chain.MicroKRWDenom},
+			wantCap: math.ZeroInt(),
+		},
+		{
 			name:     "not found",
-			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.MicroKRWDenom},
+			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.MicroSDRDenom},
 			wantCode: codes.NotFound,
 		},
 		{

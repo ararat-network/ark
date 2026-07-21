@@ -38,7 +38,8 @@ message Params {
   option (amino.name) = "ark/x/treasury/Params";
 
   // reference_tax_cap is the governance-owned cap used to derive the complete
-  // per-denomination tax-cap map.
+  // per-denomination tax-cap map. A zero amount means taxation is uncapped; a
+  // positive amount derives positive per-denomination ceilings.
   cosmos.base.v1beta1.Coin reference_tax_cap = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // reward_funding_window initializes each new funding countdown.
@@ -127,9 +128,11 @@ message RewardFundingState {
   bool valuation_complete = 5 [ (amino.dont_omitempty) = true ];
 }
 
-// TaxCap defines the maximum tax amount charged for one denomination.
+// TaxCap defines the tax ceiling for one denomination. A zero amount is the
+// explicit uncapped sentinel; a missing entry is a configuration error.
 message TaxCap {
   string denom = 1;
+  // tax_cap is zero for uncapped taxation or positive for a finite ceiling.
   string tax_cap = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
