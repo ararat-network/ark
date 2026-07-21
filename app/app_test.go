@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"strings"
 	"testing"
 
 	dbm "github.com/cosmos/cosmos-db"
@@ -12,6 +14,7 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/appmodule"
@@ -19,6 +22,7 @@ import (
 	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -53,6 +57,17 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	ica "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts"
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
+	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
+	ratelimiting "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting"
+	ratelimittypes "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/types"
+	"github.com/cosmos/ibc-go/v11/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v11/modules/core"
+	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
 
 	market "ark/x/market/module"
 	markettypes "ark/x/market/types"
@@ -95,6 +110,89 @@ func TestAppConstructs(t *testing.T) {
 
 func TestAppInitChainWithDefaultGenesis(t *testing.T) {
 	require.NotNil(t, Setup(t, false))
+}
+
+func TestAppEnforcesBlockGasLimit(t *testing.T) {
+	const chainID = "ark-block-gas-test"
+
+	privVal := mock.NewPV()
+	pubKey, err := privVal.GetPubKey()
+	require.NoError(t, err)
+	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(pubKey, 1)})
+
+	senderPrivKey := secp256k1.GenPrivKey()
+	sender := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
+	balance := banktypes.Balance{
+		Address: sender.GetAddress().String(),
+		Coins:   sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000_000_000)),
+	}
+
+	arkApp := NewArkApp(
+		log.NewTestLogger(t),
+		dbm.NewMemDB(),
+		true,
+		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+		baseapp.SetChainID(chainID),
+	)
+	genesisState, err := simtestutil.GenesisStateWithValSet(
+		arkApp.AppCodec(),
+		arkApp.DefaultGenesis(),
+		valSet,
+		[]authtypes.GenesisAccount{sender},
+		balance,
+	)
+	require.NoError(t, err)
+	stateBytes, err := json.Marshal(genesisState)
+	require.NoError(t, err)
+	consensusParams := proto.Clone(simtestutil.DefaultConsensusParams).(*cmtproto.ConsensusParams)
+	consensusParams.Block.MaxGas = 200_000
+	_, err = arkApp.InitChain(&abci.RequestInitChain{
+		ChainId:         chainID,
+		ConsensusParams: consensusParams,
+		AppStateBytes:   stateBytes,
+	})
+	require.NoError(t, err)
+
+	recipient := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	txs := make([][]byte, 10)
+	for i := range txs {
+		msg := banktypes.NewMsgSend(
+			sender.GetAddress(),
+			recipient,
+			sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1)),
+		)
+		tx, err := simtestutil.GenSignedMockTx(
+			rand.New(rand.NewSource(int64(i+1))),
+			arkApp.TxConfig(),
+			[]sdk.Msg{msg},
+			nil,
+			200_000,
+			chainID,
+			[]uint64{0},
+			[]uint64{uint64(i)},
+			senderPrivKey,
+		)
+		require.NoError(t, err)
+		txs[i], err = arkApp.TxConfig().TxEncoder()(tx)
+		require.NoError(t, err)
+	}
+
+	response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height:             1,
+		NextValidatorsHash: valSet.Hash(),
+		Txs:                txs,
+	})
+	require.NoError(t, err)
+	require.Len(t, response.TxResults, len(txs))
+	require.Zero(t, response.TxResults[0].Code, response.TxResults[0].Log)
+	require.Condition(t, func() bool {
+		for _, result := range response.TxResults {
+			if result.Code != 0 && strings.Contains(result.Log, "block gas meter") {
+				return true
+			}
+		}
+		return false
+	}, "expected cumulative block gas exhaustion")
 }
 
 func TestAppExportLatestState(t *testing.T) {
@@ -272,23 +370,28 @@ func TestRunMigrations(t *testing.T) {
 			_, err = app.ModuleManager.RunMigrations(
 				app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()}), configurator,
 				module.VersionMap{
-					banktypes.ModuleName:         1,
-					authtypes.ModuleName:         auth.AppModule{}.ConsensusVersion(),
-					authz.ModuleName:             authzmodule.AppModule{}.ConsensusVersion(),
-					stakingtypes.ModuleName:      staking.AppModule{}.ConsensusVersion(),
-					distrtypes.ModuleName:        distribution.AppModule{}.ConsensusVersion(),
-					slashingtypes.ModuleName:     slashing.AppModule{}.ConsensusVersion(),
-					govtypes.ModuleName:          gov.AppModule{}.ConsensusVersion(),
-					upgradetypes.ModuleName:      upgrade.AppModule{}.ConsensusVersion(),
-					vestingtypes.ModuleName:      vesting.AppModule{}.ConsensusVersion(),
-					feegrant.ModuleName:          feegrantmodule.AppModule{}.ConsensusVersion(),
-					evidencetypes.ModuleName:     evidence.AppModule{}.ConsensusVersion(),
-					genutiltypes.ModuleName:      genutil.AppModule{}.ConsensusVersion(),
-					epochstypes.ModuleName:       epochs.AppModule{}.ConsensusVersion(),
-					protocolpooltypes.ModuleName: protocolpool.AppModule{}.ConsensusVersion(),
-					markettypes.ModuleName:       market.AppModule{}.ConsensusVersion(),
-					oracletypes.ModuleName:       oracle.AppModule{}.ConsensusVersion(),
-					treasurytypes.ModuleName:     treasury.AppModule{}.ConsensusVersion(),
+					banktypes.ModuleName:          1,
+					authtypes.ModuleName:          auth.AppModule{}.ConsensusVersion(),
+					authz.ModuleName:              authzmodule.AppModule{}.ConsensusVersion(),
+					stakingtypes.ModuleName:       staking.AppModule{}.ConsensusVersion(),
+					distrtypes.ModuleName:         distribution.AppModule{}.ConsensusVersion(),
+					slashingtypes.ModuleName:      slashing.AppModule{}.ConsensusVersion(),
+					govtypes.ModuleName:           gov.AppModule{}.ConsensusVersion(),
+					upgradetypes.ModuleName:       upgrade.AppModule{}.ConsensusVersion(),
+					vestingtypes.ModuleName:       vesting.AppModule{}.ConsensusVersion(),
+					feegrant.ModuleName:           feegrantmodule.AppModule{}.ConsensusVersion(),
+					evidencetypes.ModuleName:      evidence.AppModule{}.ConsensusVersion(),
+					genutiltypes.ModuleName:       genutil.AppModule{}.ConsensusVersion(),
+					epochstypes.ModuleName:        epochs.AppModule{}.ConsensusVersion(),
+					protocolpooltypes.ModuleName:  protocolpool.AppModule{}.ConsensusVersion(),
+					markettypes.ModuleName:        market.AppModule{}.ConsensusVersion(),
+					oracletypes.ModuleName:        oracle.AppModule{}.ConsensusVersion(),
+					treasurytypes.ModuleName:      treasury.AppModule{}.ConsensusVersion(),
+					ibcexported.ModuleName:        ibc.AppModule{}.ConsensusVersion(),
+					ibctransfertypes.ModuleName:   transfer.AppModule{}.ConsensusVersion(),
+					ratelimittypes.ModuleName:     ratelimiting.AppModule{}.ConsensusVersion(),
+					packetforwardtypes.ModuleName: packetforward.AppModule{}.ConsensusVersion(),
+					icatypes.ModuleName:           ica.AppModule{}.ConsensusVersion(),
 				},
 			)
 			if tc.expRunErr {

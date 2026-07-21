@@ -26,6 +26,8 @@ import (
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 
 	"ark/pkg/chain"
 	marketkeeper "ark/x/market/keeper"
@@ -58,12 +60,23 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 			minters = append(minters, moduleName)
 		}
 	}
-	require.ElementsMatch(t, []string{markettypes.ModuleName}, minters, "Market must be the only module minter")
+	require.ElementsMatch(
+		t,
+		[]string{markettypes.ModuleName, ibctransfertypes.ModuleName},
+		minters,
+		"Only Market and IBC transfer may mint",
+	)
 	require.ElementsMatch(
 		t,
 		[]string{authtypes.Minter, authtypes.Burner},
 		permissions[markettypes.ModuleName],
 		"Market must retain conversion mint and burn permissions",
+	)
+	require.ElementsMatch(
+		t,
+		[]string{authtypes.Minter, authtypes.Burner},
+		permissions[ibctransfertypes.ModuleName],
+		"IBC transfer must retain voucher mint and burn permissions",
 	)
 
 	blocked := BlockedAddresses()
@@ -78,6 +91,8 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		protocolpooltypes.ModuleName,
 		protocolpooltypes.ProtocolPoolEscrowAccount,
 		markettypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		icatypes.ModuleName,
 		treasurytypes.StabilityTaxCollectorName,
 		oracletypes.ModuleName,
 	} {

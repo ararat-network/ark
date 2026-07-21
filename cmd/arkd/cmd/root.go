@@ -49,6 +49,13 @@ func NewRootCmd() *cobra.Command {
 		panic(err)
 	}
 
+	ibcModuleBasics := app.IBCModuleBasics()
+	ibcModuleBasics.RegisterLegacyAminoCodec(clientCtx.LegacyAmino)
+	ibcModuleBasics.RegisterInterfaces(clientCtx.InterfaceRegistry)
+	for name, basic := range ibcModuleBasics {
+		moduleBasicManager[name] = basic
+	}
+
 	rootCmd := &cobra.Command{
 		Use:   app.Name + "d",
 		Short: "Stargate Ark App",
@@ -90,7 +97,7 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
-	initRootCmd(rootCmd, clientCtx.TxConfig, moduleBasicManager)
+	initRootCmd(rootCmd, clientCtx.TxConfig, moduleBasicManager, ibcModuleBasics)
 
 	nodeCmds := nodeservice.NewNodeCommands()
 	if autoCliOpts.ModuleOptions == nil {

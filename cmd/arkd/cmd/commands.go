@@ -66,6 +66,7 @@ func initRootCmd(
 	rootCmd *cobra.Command,
 	txConfig client.TxConfig,
 	basicManager module.BasicManager,
+	ibcModuleBasics module.BasicManager,
 ) {
 	cfg := sdk.GetConfig()
 	cfg.Seal()
@@ -82,12 +83,17 @@ func initRootCmd(
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
 
+	queryCmd := queryCommand()
+	txCmd := txCommand()
+	ibcModuleBasics.AddQueryCommands(queryCmd)
+	ibcModuleBasics.AddTxCommands(txCmd)
+
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
 		server.StatusCommand(),
 		genesisCommand(txConfig, basicManager),
-		queryCommand(),
-		txCommand(),
+		queryCmd,
+		txCmd,
 		keys.Commands(),
 	)
 }

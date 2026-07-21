@@ -42,6 +42,13 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/keeper"
+	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
+	packetforwardkeeper "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/keeper"
+	ratelimitkeeper "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/keeper"
+	transferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
+
 	"ark/app/params"
 	marketkeeper "ark/x/market/keeper"
 	oraclekeeper "ark/x/oracle/keeper"
@@ -90,6 +97,12 @@ type ArkApp struct {
 	MarketKeeper          *marketkeeper.Keeper
 	TreasuryKeeper        *treasurykeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper
+	IBCKeeper             *ibckeeper.Keeper
+	TransferKeeper        *transferkeeper.Keeper
+	RateLimitKeeper       *ratelimitkeeper.Keeper
+	PacketForwardKeeper   *packetforwardkeeper.Keeper
+	ICAControllerKeeper   *icacontrollerkeeper.Keeper
+	ICAHostKeeper         *icahostkeeper.Keeper
 
 	// supplementary keepers
 	FeeGrantKeeper     feegrantkeeper.Keeper
@@ -187,9 +200,16 @@ func NewArkApp(
 	// }
 	// baseAppOptions = append(baseAppOptions, prepareOpt)
 
-	baseAppOptions = append(baseAppOptions, baseapp.SetOptimisticExecution())
+	baseAppOptions = append(
+		baseAppOptions,
+		baseapp.EnableBlockGasMeter(),
+		baseapp.SetOptimisticExecution(),
+	)
 
 	app.App = appBuilder.Build(db, baseAppOptions...)
+	if err := app.setupIBC(); err != nil {
+		panic(err)
+	}
 	oracleRuntime, err := newOracleRuntime(app, appOpts, logger)
 	if err != nil {
 		panic(err)
@@ -202,9 +222,6 @@ func NewArkApp(
 	}
 
 	/****  Module Options ****/
-
-	// RegisterUpgradeHandlers is used for registering any on-chain upgrades.
-	app.RegisterUpgradeHandlers()
 
 	// add test gRPC service for testing gRPC queries in isolation
 	testdata_pulsar.RegisterQueryServer(app.GRPCQueryRouter(), testdata_pulsar.QueryImpl{})
@@ -219,17 +236,6 @@ func NewArkApp(
 	app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
 
 	app.sm.RegisterStoreDecoders()
-
-	// A custom InitChainer can be set if extra pre-init-genesis logic is required.
-	// By default, when using app wiring enabled module, this is not required.
-	// For instance, the upgrade module will set automatically the module version map in its init genesis thanks to app wiring.
-	// However, when registering a module manually (i.e. that does not support app wiring), the module version map
-	// must be set manually as follow. The upgrade module will de-duplicate the module version map.
-	//
-	// app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
-	// 	return app.App.InitChainer(ctx, req)
-	// })
 
 	// set custom ante handler
 	app.setAnteHandler(app.txConfig)
@@ -274,7 +280,7 @@ func (app *ArkApp) setAnteHandler(txConfig client.TxConfig) {
 	}
 
 	// Set the AnteHandler for the app
-	app.SetAnteHandler(app.routeStabilityTax(anteHandler))
+	app.SetAnteHandler(app.routeStabilityTax(app.withIBCAnte(anteHandler)))
 }
 
 // LegacyAmino returns ArkApp's amino codec.

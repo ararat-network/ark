@@ -53,6 +53,12 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/x/upgrade" // import for side-effects
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
+	ratelimittypes "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
+
 	marketmodulev1 "ark/api/ark/market/module/v1"
 	oraclemodulev1 "ark/api/ark/oracle/module/v1"
 	treasurymodulev1 "ark/api/ark/treasury/module/v1"
@@ -75,6 +81,8 @@ var (
 		{Account: protocolpooltypes.ModuleName},
 		{Account: protocolpooltypes.ProtocolPoolEscrowAccount},
 		{Account: markettypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
+		{Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
+		{Account: icatypes.ModuleName},
 		{Account: treasurytypes.SubsidyPoolName},
 		{Account: treasurytypes.RedemptionBufferName},
 		{Account: treasurytypes.StrategicReserveName},
@@ -92,6 +100,8 @@ var (
 		protocolpooltypes.ModuleName,
 		protocolpooltypes.ProtocolPoolEscrowAccount,
 		markettypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		icatypes.ModuleName,
 		treasurytypes.StabilityTaxCollectorName,
 		oracletypes.ModuleName,
 		// We allow the following module accounts to receive funds:
@@ -118,6 +128,8 @@ var (
 				// NOTE: staking module is required if HistoricalEntries param > 0
 				BeginBlockers: []string{
 					treasurytypes.ModuleName,
+					ibcexported.ModuleName,
+					ratelimittypes.ModuleName,
 					distrtypes.ModuleName,
 					protocolpooltypes.ModuleName,
 					slashingtypes.ModuleName,
@@ -153,6 +165,7 @@ var (
 					stakingtypes.ModuleName,
 					slashingtypes.ModuleName,
 					govtypes.ModuleName,
+					ibcexported.ModuleName,
 					genutiltypes.ModuleName,
 					evidencetypes.ModuleName,
 					authz.ModuleName,
@@ -160,6 +173,10 @@ var (
 					upgradetypes.ModuleName,
 					vestingtypes.ModuleName,
 					protocolpooltypes.ModuleName,
+					ibctransfertypes.ModuleName,
+					ratelimittypes.ModuleName,
+					packetforwardtypes.ModuleName,
+					icatypes.ModuleName,
 					oracletypes.ModuleName,
 					markettypes.ModuleName,
 					treasurytypes.ModuleName,
@@ -175,12 +192,17 @@ var (
 					stakingtypes.ModuleName,
 					slashingtypes.ModuleName,
 					govtypes.ModuleName,
+					ibcexported.ModuleName,
 					genutiltypes.ModuleName,
 					evidencetypes.ModuleName,
 					authz.ModuleName,
 					feegrant.ModuleName,
 					upgradetypes.ModuleName,
 					vestingtypes.ModuleName,
+					ibctransfertypes.ModuleName,
+					ratelimittypes.ModuleName,
+					packetforwardtypes.ModuleName,
+					icatypes.ModuleName,
 					markettypes.ModuleName,
 					treasurytypes.ModuleName,
 					oracletypes.ModuleName,

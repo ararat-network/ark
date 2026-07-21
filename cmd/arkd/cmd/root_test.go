@@ -61,3 +61,28 @@ func TestMarketTxCommands(t *testing.T) {
 		swapSendCmd.Use,
 	)
 }
+
+func TestIBCCommands(t *testing.T) {
+	rootCmd := cmd.NewRootCmd()
+
+	transferCmd, args, err := rootCmd.Find([]string{"tx", "ibc-transfer", "transfer"})
+	require.NoError(t, err)
+	require.Empty(t, args)
+	require.Equal(t, "transfer", transferCmd.Name())
+	require.Equal(t, "transfer [src-port] [src-channel] [receiver] [coin]", transferCmd.Use)
+
+	paramsCmd, args, err := rootCmd.Find([]string{"query", "ibc-transfer", "params"})
+	require.NoError(t, err)
+	require.Empty(t, args)
+	require.Equal(t, "params", paramsCmd.Name())
+
+	ibcCmd, args, err := rootCmd.Find([]string{"query", "ibc"})
+	require.NoError(t, err)
+	require.Empty(t, args)
+	require.Equal(t, "ibc", ibcCmd.Name())
+
+	icaCmd, args, err := rootCmd.Find([]string{"tx", "interchain-accounts", "controller", "register"})
+	require.NoError(t, err)
+	require.Empty(t, args)
+	require.Equal(t, "register", icaCmd.Name())
+}
