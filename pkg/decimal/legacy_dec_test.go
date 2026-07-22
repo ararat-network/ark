@@ -13,6 +13,14 @@ import (
 )
 
 func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
+	directBoundary := math.LegacyNewDecFromBigIntWithPrec(
+		new(big.Int).Lsh(big.NewInt(1), 313),
+		math.LegacyPrecision,
+	)
+	outsideDirectBound := math.LegacyNewDecFromBigIntWithPrec(
+		new(big.Int).Lsh(big.NewInt(1), 314),
+		math.LegacyPrecision,
+	)
 	tests := []struct {
 		name    string
 		checked func(math.LegacyDec, math.LegacyDec) (math.LegacyDec, error)
@@ -28,6 +36,20 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 			b:       math.LegacyMustNewDecFromStr("78.9"),
 		},
 		{
+			name:    "add at direct bound",
+			checked: decimal.Add,
+			legacy:  math.LegacyDec.Add,
+			a:       directBoundary,
+			b:       directBoundary,
+		},
+		{
+			name:    "add representable result outside direct bound",
+			checked: decimal.Add,
+			legacy:  math.LegacyDec.Add,
+			a:       outsideDirectBound,
+			b:       math.LegacySmallestDec(),
+		},
+		{
 			name:    "subtract",
 			checked: decimal.Sub,
 			legacy:  math.LegacyDec.Sub,
@@ -35,11 +57,39 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 			b:       math.LegacyMustNewDecFromStr("200.1"),
 		},
 		{
+			name:    "subtract at direct bound",
+			checked: decimal.Sub,
+			legacy:  math.LegacyDec.Sub,
+			a:       directBoundary,
+			b:       directBoundary.Neg(),
+		},
+		{
+			name:    "subtract representable result outside direct bound",
+			checked: decimal.Sub,
+			legacy:  math.LegacyDec.Sub,
+			a:       outsideDirectBound,
+			b:       math.LegacySmallestDec(),
+		},
+		{
 			name:    "multiply",
 			checked: decimal.Mul,
 			legacy:  math.LegacyDec.Mul,
 			a:       math.LegacyMustNewDecFromStr("123.456"),
 			b:       math.LegacyMustNewDecFromStr("0.789"),
+		},
+		{
+			name:    "multiply at direct bound",
+			checked: decimal.Mul,
+			legacy:  math.LegacyDec.Mul,
+			a:       directBoundary,
+			b:       math.LegacyOneDec(),
+		},
+		{
+			name:    "multiply representable result outside direct bound",
+			checked: decimal.Mul,
+			legacy:  math.LegacyDec.Mul,
+			a:       outsideDirectBound,
+			b:       math.LegacyOneDec(),
 		},
 		{
 			name:    "multiply uses bankers rounding",
@@ -63,11 +113,48 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 			b:       math.LegacyMustNewDecFromStr("0.789"),
 		},
 		{
+			name:    "divide at direct bound",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a:       directBoundary,
+			b:       math.LegacyOneDec(),
+		},
+		{
 			name:    "divide negative",
 			checked: decimal.Quo,
 			legacy:  math.LegacyDec.Quo,
 			a:       math.LegacyMustNewDecFromStr("-123.456"),
 			b:       math.LegacyMustNewDecFromStr("0.789"),
+		},
+		{
+			name:    "divide by negative",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a:       math.LegacyMustNewDecFromStr("123.456"),
+			b:       math.LegacyMustNewDecFromStr("-0.789"),
+		},
+		{
+			name:    "divide zero",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a:       math.LegacyZeroDec(),
+			b:       math.LegacyOneDec(),
+		},
+		{
+			name:    "divide rounds to zero",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a:       math.LegacySmallestDec(),
+			b:       math.LegacyNewDec(3),
+		},
+		{
+			name:    "divide representable result outside direct bound",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a: math.LegacyNewDecFromBigInt(
+				new(big.Int).Lsh(big.NewInt(1), 255),
+			),
+			b: math.LegacyOneDec(),
 		},
 	}
 
@@ -144,6 +231,38 @@ func TestCheckedArithmeticReturnsErrors(t *testing.T) {
 				err := tc.operation()
 				require.True(t, errors.Is(err, tc.expectErr), "expected %v, got %v", tc.expectErr, err)
 			})
+		})
+	}
+}
+
+var (
+	benchmarkResult math.LegacyDec
+	benchmarkErr    error
+)
+
+func BenchmarkCheckedArithmetic(b *testing.B) {
+	a := math.LegacyMustNewDecFromStr("123.456")
+	other := math.LegacyMustNewDecFromStr("0.789")
+	benchmarks := []struct {
+		name      string
+		operation func(math.LegacyDec, math.LegacyDec) (math.LegacyDec, error)
+	}{
+		{name: "add", operation: decimal.Add},
+		{name: "subtract", operation: decimal.Sub},
+		{name: "multiply", operation: decimal.Mul},
+		{name: "divide", operation: decimal.Quo},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			var result math.LegacyDec
+			var err error
+			b.ReportAllocs()
+			for b.Loop() {
+				result, err = bm.operation(a, other)
+			}
+			benchmarkResult = result
+			benchmarkErr = err
 		})
 	}
 }

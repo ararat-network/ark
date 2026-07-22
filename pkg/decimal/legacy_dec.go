@@ -19,15 +19,35 @@ var (
 	squaredPrecision = new(big.Int).Mul(new(big.Int).Set(precision), precision)
 )
 
+const (
+	// Valid LegacyDec raw values extend beyond 2^315. Adding or subtracting
+	// operands no wider than 314 bits therefore cannot exceed the range.
+	maxDirectAddSubOperandBitLen = 314
+
+	// LegacyDec multiplication divides the raw product by 10^18, which is
+	// greater than 2^59. A combined operand width of 374 bits therefore rounds
+	// to at most 2^315.
+	maxDirectMulOperandBitLenSum = 374
+
+	// LegacyDec division multiplies the raw numerator by 10^18, which is less
+	// than 2^60. A bit-length difference of 254 therefore rounds to at most
+	// 2^315.
+	maxDirectQuotientBitDelta = 254
+)
+
 // Add returns a+b when both operands and the result are representable.
 func Add(a, b math.LegacyDec) (math.LegacyDec, error) {
-	aRaw, err := raw(a)
-	if err != nil {
+	if err := validate(a); err != nil {
 		return math.LegacyDec{}, err
 	}
-	bRaw, err := raw(b)
-	if err != nil {
+	if err := validate(b); err != nil {
 		return math.LegacyDec{}, err
+	}
+	aRaw := a.BigIntMut()
+	bRaw := b.BigIntMut()
+	if aRaw.BitLen() <= maxDirectAddSubOperandBitLen &&
+		bRaw.BitLen() <= maxDirectAddSubOperandBitLen {
+		return a.Add(b), nil
 	}
 
 	return fromRaw(new(big.Int).Add(aRaw, bRaw))
@@ -35,13 +55,17 @@ func Add(a, b math.LegacyDec) (math.LegacyDec, error) {
 
 // Sub returns a-b when both operands and the result are representable.
 func Sub(a, b math.LegacyDec) (math.LegacyDec, error) {
-	aRaw, err := raw(a)
-	if err != nil {
+	if err := validate(a); err != nil {
 		return math.LegacyDec{}, err
 	}
-	bRaw, err := raw(b)
-	if err != nil {
+	if err := validate(b); err != nil {
 		return math.LegacyDec{}, err
+	}
+	aRaw := a.BigIntMut()
+	bRaw := b.BigIntMut()
+	if aRaw.BitLen() <= maxDirectAddSubOperandBitLen &&
+		bRaw.BitLen() <= maxDirectAddSubOperandBitLen {
+		return a.Sub(b), nil
 	}
 
 	return fromRaw(new(big.Int).Sub(aRaw, bRaw))
@@ -50,13 +74,16 @@ func Sub(a, b math.LegacyDec) (math.LegacyDec, error) {
 // Mul returns a*b with LegacyDec's existing bankers-rounding semantics when
 // both operands and the result are representable.
 func Mul(a, b math.LegacyDec) (math.LegacyDec, error) {
-	aRaw, err := raw(a)
-	if err != nil {
+	if err := validate(a); err != nil {
 		return math.LegacyDec{}, err
 	}
-	bRaw, err := raw(b)
-	if err != nil {
+	if err := validate(b); err != nil {
 		return math.LegacyDec{}, err
+	}
+	aRaw := a.BigIntMut()
+	bRaw := b.BigIntMut()
+	if aRaw.BitLen()+bRaw.BitLen() <= maxDirectMulOperandBitLenSum {
+		return a.Mul(b), nil
 	}
 
 	product := new(big.Int).Mul(aRaw, bRaw)
@@ -66,16 +93,21 @@ func Mul(a, b math.LegacyDec) (math.LegacyDec, error) {
 // Quo returns a/b with LegacyDec's existing bankers-rounding semantics when
 // both operands and the result are representable.
 func Quo(a, b math.LegacyDec) (math.LegacyDec, error) {
-	aRaw, err := raw(a)
-	if err != nil {
+	if err := validate(a); err != nil {
 		return math.LegacyDec{}, err
 	}
-	bRaw, err := raw(b)
-	if err != nil {
+	if err := validate(b); err != nil {
 		return math.LegacyDec{}, err
 	}
-	if bRaw.Sign() == 0 {
+	if b.IsZero() {
 		return math.LegacyDec{}, ErrDivisionByZero
+	}
+
+	aRaw := a.BigIntMut()
+	bRaw := b.BigIntMut()
+	bitDelta := aRaw.BitLen() - bRaw.BitLen()
+	if bitDelta <= maxDirectQuotientBitDelta {
+		return a.Quo(b), nil
 	}
 
 	// LegacyDec.Quo keeps an extra precision factor during integer division,
@@ -87,14 +119,14 @@ func Quo(a, b math.LegacyDec) (math.LegacyDec, error) {
 	return fromRaw(roundByPrecision(quotient))
 }
 
-func raw(value math.LegacyDec) (*big.Int, error) {
+func validate(value math.LegacyDec) error {
 	if value.IsNil() {
-		return nil, ErrNil
+		return ErrNil
 	}
 	if !value.IsInValidRange() {
-		return nil, ErrOutOfRange
+		return ErrOutOfRange
 	}
-	return value.BigInt(), nil
+	return nil
 }
 
 func fromRaw(value *big.Int) (math.LegacyDec, error) {
