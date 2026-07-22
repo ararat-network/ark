@@ -73,7 +73,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 	s.setBlockHeight(42)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 100)
-	configured := oracletypes.TobinTaxes{
+	configured := []oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
 	}
@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 	s.setBlockHeight(42)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 0)
-	configured := oracletypes.TobinTaxes{
+	configured := []oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
 	}
@@ -131,9 +131,9 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActivatingTax() {
-	s.Require().NoError(s.keeper.ReplaceTaxCaps(s.ctx, []types.TaxCap{
+	s.setTaxCaps([]types.TaxCap{
 		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
-	}))
+	})
 
 	candidate := types.DefaultMonetaryPolicy()
 	candidate.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
@@ -289,7 +289,7 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 100)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
@@ -407,7 +407,7 @@ func (insuranceOracleKeeper) GetRateSnapshot(context.Context, ...string) (oracle
 	return oracletypes.RateSnapshot{}, nil
 }
 
-func (insuranceOracleKeeper) GetTobinTaxes(context.Context) (oracletypes.TobinTaxes, error) {
+func (insuranceOracleKeeper) GetTobinTaxes(context.Context) ([]oracletypes.TobinTax, error) {
 	return nil, nil
 }
 
@@ -1085,7 +1085,7 @@ func (s *ClaimsKeeperTestSuite) TestMandateRotationDoesNotRewritePendingClaim() 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsUnconfiguredReferenceDenom() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Denom = chain.MicroUSDDenom
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
 
@@ -1100,15 +1100,15 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDir
 	current := types.DefaultParams()
 	current.ReferenceTaxCap.Amount = math.NewInt(8)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-	s.Require().NoError(s.keeper.ReplaceTaxCaps(s.ctx, []types.TaxCap{
+	s.setTaxCaps([]types.TaxCap{
 		{Denom: chain.MicroKRWDenom, TaxCap: math.NewInt(9)},
 		{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(8)},
 		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(7)},
-	}))
+	})
 
 	candidate := current
 	candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 101)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 		{Denom: chain.MicroSDRDenom},
@@ -1167,10 +1167,10 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 				{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(33)},
 				{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(44)},
 			}
-			s.Require().NoError(s.keeper.ReplaceTaxCaps(s.ctx, oldCaps))
+			s.setTaxCaps(oldCaps)
 			candidate := current
 			candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 101)
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 				{Denom: chain.MicroSDRDenom},
 				{Denom: chain.MicroUSDDenom},
 			}, nil)
@@ -1331,4 +1331,11 @@ func (s *KeeperTestSuite) TestMsgTransferReserveToBufferReturnsBankFailureWithou
 	)
 	s.Require().ErrorContains(err, "injected bank failure")
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
+}
+
+func (s *KeeperTestSuite) setTaxCaps(caps []types.TaxCap) {
+	s.Require().NoError(s.keeper.TaxCaps.Clear(s.ctx, nil))
+	for _, cap := range caps {
+		s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, cap.Denom, cap.TaxCap))
+	}
 }

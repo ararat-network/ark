@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
@@ -44,17 +45,17 @@ func TestTreasuryFeeCheckerSeparatesTaxFromGasFee(t *testing.T) {
 	checkCtx := ctx.WithIsCheckTx(true).WithMinGasPrices(sdk.NewDecCoins(
 		sdk.NewDecCoin(chain.MicroSDRDenom, math.NewInt(5)),
 	))
-	fee, priority, err := arkApp.treasuryFeeChecker(checkCtx, tx)
+	fee, priority, err := checkTreasuryFee(arkApp, checkCtx, tx)
 	require.NoError(t, err)
 	require.Equal(t, tx.fee, fee)
 	require.Equal(t, int64(5), priority)
 
 	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 14))
-	_, _, err = arkApp.treasuryFeeChecker(checkCtx, tx)
+	_, _, err = checkTreasuryFee(arkApp, checkCtx, tx)
 	require.ErrorContains(t, err, "insufficient gas fees")
 
 	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 9))
-	_, _, err = arkApp.treasuryFeeChecker(checkCtx, tx)
+	_, _, err = checkTreasuryFee(arkApp, checkCtx, tx)
 	require.ErrorContains(t, err, "cover stability tax")
 }
 
@@ -63,16 +64,16 @@ func TestTreasuryFeeCheckerOnlyWaivesTaxBeforeTreasuryGenesis(t *testing.T) {
 	ctx = ctx.WithBlockHeight(0)
 	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 9))
 
-	_, _, err := arkApp.treasuryFeeChecker(ctx, tx)
+	_, _, err := checkTreasuryFee(arkApp, ctx, tx)
 	require.ErrorContains(t, err, "cover stability tax")
 
 	require.NoError(t, arkApp.TreasuryKeeper.MonetaryPolicy.Remove(ctx))
-	fee, _, err := arkApp.treasuryFeeChecker(ctx, tx)
+	fee, _, err := checkTreasuryFee(arkApp, ctx, tx)
 	require.NoError(t, err)
 	require.Equal(t, tx.fee, fee)
 }
 
-func TestRouteStabilityTaxCollectsExactTax(t *testing.T) {
+func TestRouteStabilityTaxCollectsCheckedTax(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	feeCollector := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
 	collector := authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName)
@@ -89,7 +90,21 @@ func TestRouteStabilityTaxCollectsExactTax(t *testing.T) {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 20)),
 	))
 
-	router := arkApp.routeStabilityTax(func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+	router := arkApp.routeStabilityTax(func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+		if simulate {
+			return ctx, nil
+		}
+		if _, _, err := arkApp.treasuryFeeChecker(ctx, tx); err != nil {
+			return ctx, err
+		}
+		policy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+		if err != nil {
+			return ctx, err
+		}
+		policy.StabilityTaxRate = math.LegacyZeroDec()
+		if err := arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy); err != nil {
+			return ctx, err
+		}
 		return ctx, nil
 	})
 	_, err := router(ctx, tx, false)
@@ -113,6 +128,19 @@ func TestRouteStabilityTaxCollectsExactTax(t *testing.T) {
 	)
 }
 
+func TestRouteStabilityTaxRequiresCheckedTax(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+	router := arkApp.routeStabilityTax(func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+		return ctx, nil
+	})
+
+	_, err := router(ctx, tx, false)
+	require.ErrorIs(t, err, sdkerrors.ErrLogic)
+
+	_, err = router(ctx, tx, true)
+	require.NoError(t, err)
+}
+
 func TestTreasuryAnteFailsClosedWhenConfiguredTaxCapIsMissing(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	require.NoError(t, arkApp.TreasuryKeeper.TaxCaps.Remove(ctx, chain.MicroSDRDenom))
@@ -122,14 +150,20 @@ func TestTreasuryAnteFailsClosedWhenConfiguredTaxCapIsMissing(t *testing.T) {
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 100)),
 	}}
 
-	_, _, err := arkApp.treasuryFeeChecker(ctx, tx)
+	_, _, err := checkTreasuryFee(arkApp, ctx, tx)
 	require.ErrorIs(t, err, treasurytypes.ErrTaxCapUnavailable)
 
-	router := arkApp.routeStabilityTax(func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
-		return ctx, nil
+	router := arkApp.routeStabilityTax(func(ctx sdk.Context, tx sdk.Tx, _ bool) (sdk.Context, error) {
+		_, _, err := arkApp.treasuryFeeChecker(ctx, tx)
+		return ctx, err
 	})
 	_, err = router(ctx, tx, false)
 	require.ErrorIs(t, err, treasurytypes.ErrTaxCapUnavailable)
+}
+
+func checkTreasuryFee(app *ArkApp, ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
+	state := new(treasuryAnteState)
+	return app.treasuryFeeChecker(ctx.WithValue(treasuryAnteStateKey{}, state), tx)
 }
 
 func setupTreasuryAnteTest(t *testing.T) (*ArkApp, sdk.Context, treasuryFeeTx) {

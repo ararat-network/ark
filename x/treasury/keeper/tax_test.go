@@ -131,7 +131,7 @@ func (s *KeeperTestSuite) TestComputeTaxTreatsZeroCapAsUncapped() {
 func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
@@ -144,34 +144,46 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 		chain.MicroUSDDenom: math.LegacyOneDec(),
 	}, nil)
 
-	caps, err := s.keeper.BuildTaxCaps(s.ctx, params)
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    params,
+	})
 	s.Require().NoError(err)
-	s.Require().Equal([]types.TaxCap{
-		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(500_000)},
-		{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(1_000_000)},
-	}, caps)
+	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroUSDDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(500_000), usdCap)
+	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroSDRDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
 }
 
 func (s *KeeperTestSuite) TestBuildTaxCapsUsesZeroAsUncappedWithoutRates() {
+	current := types.DefaultParams()
+	current.ReferenceTaxCap.Amount = math.OneInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.ZeroInt()
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
 
-	caps, err := s.keeper.BuildTaxCaps(s.ctx, params)
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    params,
+	})
 	s.Require().NoError(err)
-	s.Require().Equal([]types.TaxCap{
-		{Denom: chain.MicroUSDDenom, TaxCap: math.ZeroInt()},
-		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
-	}, caps)
+	for _, denom := range []string{chain.MicroUSDDenom, chain.MicroSDRDenom} {
+		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		s.Require().NoError(err)
+		s.Require().True(cap.IsZero())
+	}
 }
 
 func (s *KeeperTestSuite) TestBuildTaxCapsRejectsPositiveConversionThatTruncatesToZero() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.OneInt()
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
@@ -182,7 +194,10 @@ func (s *KeeperTestSuite) TestBuildTaxCapsRejectsPositiveConversionThatTruncates
 		chain.MicroUSDDenom: math.LegacyOneDec(),
 	}, nil)
 
-	_, err := s.keeper.BuildTaxCaps(s.ctx, params)
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    params,
+	})
 	s.Require().ErrorContains(err, "truncated to zero")
 	s.Require().ErrorIs(err, oracletypes.ErrConversionOutOfRange)
 }
@@ -331,7 +346,7 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 }
 
 func (s *KeeperTestSuite) expectTaxableDenoms(denoms ...string) {
-	tobinTaxes := make(oracletypes.TobinTaxes, len(denoms))
+	tobinTaxes := make([]oracletypes.TobinTax, len(denoms))
 	for i, denom := range denoms {
 		tobinTaxes[i] = oracletypes.TobinTax{Denom: denom}
 	}

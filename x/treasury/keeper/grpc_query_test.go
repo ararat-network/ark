@@ -310,7 +310,7 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 		treasurytypes.StrategicReserveName: 30,
 		treasurytypes.InsuranceName:        40,
 	}
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{}, nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{}, nil)
 	for moduleName, amount := range balances {
 		address := authtypes.NewModuleAddress(moduleName)
 		s.bankKeeper.EXPECT().GetBalance(s.ctx, address, chain.MicroNoahDenom).

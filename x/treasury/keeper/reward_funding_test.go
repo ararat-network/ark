@@ -22,10 +22,8 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingAccruesBlock() {
 	policy.OracleBlockRewardTarget = math.NewInt(3)
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 5)))
-	s.expectNoahRewardValuation()
 
-	_, err := s.keeper.UpdateRewardFunding(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(s.advanceRewardFunding())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
@@ -33,6 +31,18 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingAccruesBlock() {
 	s.Require().Equal(math.NewInt(3), funding.OracleTarget)
 	s.Require().Equal(math.NewInt(5), funding.ValidatorFeeValue)
 	s.Require().True(funding.ValuationComplete)
+}
+
+func (s *KeeperTestSuite) TestUpdateRewardFundingSkipsParamsReadDuringActiveWindow() {
+	s.setBlockHeight(2)
+	s.setRewardFunding(rewardFunding(2, 0, 0, 0, true))
+	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
+	s.expectValidatorFees(sdk.NewCoins())
+
+	s.Require().NoError(s.advanceRewardFunding())
+	funding, err := s.keeper.RewardFunding.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(uint64(1), funding.BlocksRemaining)
 }
 
 func (s *KeeperTestSuite) TestBeginBlockerDefersWindowChangeUntilNextWindow() {
@@ -94,7 +104,6 @@ func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 	s.setBlockHeight(3)
 	s.expectTaxCapsMatch()
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 200)))
-	s.expectNoahRewardValuation()
 	s.expectStabilityTaxBalance(sdk.NewCoins())
 	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any()).
 		Return(oracletypes.RateSnapshot{chain.MicroNoahDenom: math.LegacyOneDec()}, nil)
@@ -117,11 +126,10 @@ func (s *KeeperTestSuite) TestSettleRewardFundingSendsAllTaxToOracleWhenFeesCove
 	funding := rewardFunding(0, 7, 3, 7, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 5))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahRewardValuation()
 	s.expectSubsidyBalance(20)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
 		Denom:            chain.MicroNoahDenom,
 		ValidatorTarget:  math.NewInt(7),
@@ -137,35 +145,32 @@ func (s *KeeperTestSuite) TestSettleRewardFundingProtectsOracleThenFundsValidato
 	funding := rewardFunding(0, 7, 3, 2, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 8))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahRewardValuation()
 	s.expectSubsidyBalance(20)
 	s.expectTaxAllocation(
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 5)),
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 3)),
 	)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingReturnsResidualTaxToOracle() {
 	funding := rewardFunding(0, 7, 3, 5, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 10))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahRewardValuation()
 	s.expectSubsidyBalance(20)
 	s.expectTaxAllocation(
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 2)),
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 8)),
 	)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingPaysOnlyRemainingShortfalls() {
 	funding := rewardFunding(0, 7, 3, 5, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahRewardValuation()
 	s.expectSubsidyBalance(20)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -177,14 +182,13 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPaysOnlyRemainingShortfalls() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 2)),
 	).Return(nil)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesScarceSubsidyByShortfall() {
 	funding := rewardFunding(0, 6, 6, 2, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahRewardValuation()
 	s.expectSubsidyBalance(3)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -196,7 +200,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesScarceSubsidyByShortfa
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
 	).Return(nil)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRoundsToOracle() {
@@ -206,10 +210,6 @@ func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRounds
 		sdk.NewInt64Coin(chain.MicroKRWDenom, 2),
 	)
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroKRWDenom},
-	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
 		chain.MicroKRWDenom,
@@ -232,14 +232,18 @@ func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRounds
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
 	).Return(nil)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(
+		funding,
+		oracletypes.TobinTax{Denom: chain.MicroSDRDenom},
+		oracletypes.TobinTax{Denom: chain.MicroKRWDenom},
+	))
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingDoesNotCreditUnconfiguredTaxToTargets() {
 	funding := rewardFunding(0, 0, 3, 0, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahRewardValuation()
+	s.expectUnconfiguredRewardValuation()
 	s.expectSubsidyBalance(10)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -247,23 +251,21 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDoesNotCreditUnconfiguredTaxToT
 		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 3)),
 	).Return(nil)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 }
 
 func (s *KeeperTestSuite) TestUpdateRewardFundingMarksWindowIncompleteWhenFeeValuationUnavailable() {
 	s.setBlockHeight(2)
 	validatorFees := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 4))
 	s.expectValidatorFees(validatorFees)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
-		{Denom: chain.MicroSDRDenom},
-	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
 		chain.MicroSDRDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
 
-	_, err := s.keeper.UpdateRewardFunding(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(s.advanceRewardFunding(
+		oracletypes.TobinTax{Denom: chain.MicroSDRDenom},
+	))
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
@@ -280,8 +282,9 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingMarksWindowIncompleteWhenFeeVal
 	s.expectValidatorFees(validatorFees)
 	s.expectNoahAndSDRRewardValuation()
 
-	_, err := s.keeper.UpdateRewardFunding(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(s.advanceRewardFunding(
+		oracletypes.TobinTax{Denom: chain.MicroSDRDenom},
+	))
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
@@ -300,10 +303,8 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingRetainsAccruedFeesWhenCrossBloc
 		ValuationComplete: true,
 	})
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)))
-	s.expectNoahRewardValuation()
 
-	_, err := s.keeper.UpdateRewardFunding(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(s.advanceRewardFunding())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(1), funding.BlocksRemaining)
@@ -317,7 +318,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenWindowVa
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 	s.requireTypedEvent(&types.EventBlockRewardTopUpSkipped{
 		Reason: types.EventSkipReason_EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE,
 	})
@@ -327,16 +328,16 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValua
 	funding := rewardFunding(0, 1, 1, 0, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
-		{Denom: chain.MicroSDRDenom},
-	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
 		chain.MicroSDRDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(
+		funding,
+		oracletypes.TobinTax{Denom: chain.MicroSDRDenom},
+	))
 	s.requireTypedEvent(&types.EventBlockRewardTopUpSkipped{
 		Reason: types.EventSkipReason_EVENT_SKIP_REASON_STALE_EXCHANGE_RATE,
 	})
@@ -353,7 +354,10 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValue
 	s.expectNoahAndSDRRewardValuation()
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(
+		funding,
+		oracletypes.TobinTax{Denom: chain.MicroSDRDenom},
+	))
 	s.requireTypedEvent(&types.EventBlockRewardTopUpSkipped{
 		Reason: types.EventSkipReason_EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE,
 	})
@@ -365,7 +369,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingSendsTaxToOracleWhenTargetsAreD
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
-	s.Require().NoError(s.keeper.SettleRewardFunding(s.ctx, funding))
+	s.Require().NoError(s.runRewardFundingSettlement(funding))
 }
 
 func (s *KeeperTestSuite) TestBeginBlockerDoesNotClearAfterAllocationFailure() {
@@ -386,6 +390,31 @@ func (s *KeeperTestSuite) TestBeginBlockerDoesNotClearAfterAllocationFailure() {
 	s.Require().NoError(getErr)
 	s.Require().Zero(funding.BlocksRemaining)
 	s.Require().Equal(math.OneInt(), funding.ValidatorFeeValue)
+}
+
+func (s *KeeperTestSuite) advanceRewardFunding(tobinTaxes ...oracletypes.TobinTax) error {
+	s.expectRewardFundingConfiguration(tobinTaxes)
+	return s.keeper.BeginBlocker(s.ctx)
+}
+
+func (s *KeeperTestSuite) runRewardFundingSettlement(
+	funding types.RewardFundingState,
+	tobinTaxes ...oracletypes.TobinTax,
+) error {
+	s.setBlockHeight(2)
+	funding.BlocksRemaining = 1
+	s.setRewardFunding(funding)
+	if funding.ValuationComplete {
+		s.expectValidatorFees(sdk.NewCoins())
+	}
+	return s.advanceRewardFunding(tobinTaxes...)
+}
+
+func (s *KeeperTestSuite) expectRewardFundingConfiguration(tobinTaxes []oracletypes.TobinTax) {
+	for _, tobinTax := range tobinTaxes {
+		s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, tobinTax.Denom, math.ZeroInt()))
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil)
 }
 
 func (s *KeeperTestSuite) setRewardFunding(funding types.RewardFundingState) {
@@ -437,17 +466,13 @@ func (s *KeeperTestSuite) expectSubsidyBalance(amount int64) {
 	).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, amount))
 }
 
-func (s *KeeperTestSuite) expectNoahRewardValuation() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{}, nil)
+func (s *KeeperTestSuite) expectUnconfiguredRewardValuation() {
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
 	).Return(oracletypes.RateSnapshot{chain.MicroNoahDenom: math.LegacyOneDec()}, nil)
 }
 
 func (s *KeeperTestSuite) expectNoahAndSDRRewardValuation() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
-		{Denom: chain.MicroSDRDenom},
-	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
 		chain.MicroSDRDenom,
@@ -463,7 +488,7 @@ func maxRepresentableInt() math.Int {
 }
 
 func (s *KeeperTestSuite) expectTaxCapsMatch() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{}, nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{}, nil)
 }
 
 func (s *KeeperTestSuite) requireDefaultRewardFunding() {

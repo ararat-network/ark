@@ -15,10 +15,21 @@ import (
 	treasurytypes "ark/x/treasury/types"
 )
 
+type treasuryAnteStateKey struct{}
+
+type treasuryAnteState struct {
+	tax      sdk.Coins
+	computed bool
+}
+
 func (app *ArkApp) treasuryFeeChecker(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
 		return nil, 0, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+	}
+	state, ok := ctx.Value(treasuryAnteStateKey{}).(*treasuryAnteState)
+	if !ok {
+		return nil, 0, errorsmod.Wrap(sdkerrors.ErrLogic, "missing treasury ante state")
 	}
 
 	fee := feeTx.GetFee()
@@ -44,7 +55,7 @@ func (app *ArkApp) treasuryFeeChecker(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, in
 		minGasPrices := ctx.MinGasPrices()
 		if !minGasPrices.IsZero() {
 			requiredFees := make(sdk.Coins, len(minGasPrices))
-			gasLimit := sdkmath.LegacyNewDec(int64(gas))
+			gasLimit := sdkmath.LegacyNewDecFromInt(sdkmath.NewIntFromUint64(gas))
 			for i, gasPrice := range minGasPrices {
 				requiredFees[i] = sdk.NewCoin(
 					gasPrice.Denom,
@@ -62,6 +73,8 @@ func (app *ArkApp) treasuryFeeChecker(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, in
 		}
 	}
 
+	state.tax = tax
+	state.computed = true
 	return fee, txPriority(gasFee, gas), nil
 }
 
@@ -86,18 +99,16 @@ func txPriority(fee sdk.Coins, gas uint64) int64 {
 
 func (app *ArkApp) routeStabilityTax(next sdk.AnteHandler) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
-		newCtx, err := next(ctx, tx, simulate)
+		state := new(treasuryAnteState)
+		newCtx, err := next(ctx.WithValue(treasuryAnteStateKey{}, state), tx, simulate)
 		if err != nil || simulate {
 			return newCtx, err
 		}
-
-		tax, err := app.TreasuryKeeper.ComputeTax(newCtx, tx.GetMsgs())
-		if err != nil {
-			if newCtx.BlockHeight() != 0 || !errors.Is(err, collections.ErrNotFound) {
-				return newCtx, err
-			}
-			tax = sdk.NewCoins()
+		if !state.computed {
+			return newCtx, errorsmod.Wrap(sdkerrors.ErrLogic, "stability tax was not computed")
 		}
+
+		tax := state.tax
 		if tax.IsZero() {
 			return newCtx, nil
 		}

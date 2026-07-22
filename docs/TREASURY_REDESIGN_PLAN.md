@@ -1398,8 +1398,9 @@ validator_paid = B - oracle_paid
 ```
 
 This shares scarce coverage according to the actual shortfalls and assigns the final integer remainder to validators.
-`total_shortfall` is an execution-local unbounded integer denominator, not stored `math.Int` state; each target,
-shortfall, balance, and final payment remains individually representable. Handle zero shortfall without division.
+`total_shortfall` is an execution-local `math.Int` denominator. Each target, shortfall, balance, intermediate product,
+and final payment must remain representable; arithmetic outside that deliberately bounded domain is unsupported. Handle
+zero shortfall without division.
 Subsidy-pool depletion never mints, borrows from the Redemption Buffer, strategic Reserve, or Insurance, or stops block
 production merely because the balance is empty.
 

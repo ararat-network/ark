@@ -17,23 +17,21 @@ import (
 	"ark/x/treasury/types"
 )
 
-// UpdateRewardFunding records the previous block's reward targets and organic
-// validator funding in the current window.
-func (k Keeper) UpdateRewardFunding(ctx context.Context) (types.RewardFundingState, error) {
+func (k Keeper) updateRewardFunding(ctx context.Context, configuredDenoms map[string]struct{}) (types.RewardFundingState, error) {
 	funding, err := k.RewardFunding.Get(ctx)
 	if err != nil {
 		return types.RewardFundingState{}, fmt.Errorf("getting reward funding state: %w", err)
 	}
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return types.RewardFundingState{}, fmt.Errorf("getting params: %w", err)
+	if funding.BlocksRemaining == 0 {
+		params, err := k.Params.Get(ctx)
+		if err != nil {
+			return types.RewardFundingState{}, fmt.Errorf("getting params: %w", err)
+		}
+		funding.BlocksRemaining = params.RewardFundingWindow
 	}
 	policy, err := k.MonetaryPolicy.Get(ctx)
 	if err != nil {
 		return types.RewardFundingState{}, fmt.Errorf("getting monetary policy: %w", err)
-	}
-	if funding.BlocksRemaining == 0 {
-		funding.BlocksRemaining = params.RewardFundingWindow
 	}
 
 	funding.ValidatorTarget, err = funding.ValidatorTarget.SafeAdd(policy.ValidatorBlockRewardTarget)
@@ -50,7 +48,7 @@ func (k Keeper) UpdateRewardFunding(ctx context.Context) (types.RewardFundingSta
 			authtypes.NewModuleAddress(authtypes.FeeCollectorName),
 		)
 		if !validatorRewards.IsZero() {
-			validatorFeeValue, _, valueErr := k.valueRewardCoins(ctx, validatorRewards)
+			validatorFeeValue, _, valueErr := k.valueRewardCoins(ctx, validatorRewards, configuredDenoms)
 			if valueErr != nil {
 				if !isValuationUnavailable(valueErr) && !errors.Is(valueErr, decimal.ErrOutOfRange) {
 					return types.RewardFundingState{}, fmt.Errorf("valuing validator fees: %w", valueErr)
@@ -81,8 +79,7 @@ func (k Keeper) UpdateRewardFunding(ctx context.Context) (types.RewardFundingSta
 	return funding, nil
 }
 
-// SettleRewardFunding settles one completed reward-funding window.
-func (k Keeper) SettleRewardFunding(ctx context.Context, funding types.RewardFundingState) error {
+func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFundingState, configuredDenoms map[string]struct{}) error {
 	stabilityTax := k.bankKeeper.GetAllBalances(
 		ctx,
 		authtypes.NewModuleAddress(types.StabilityTaxCollectorName),
@@ -102,7 +99,7 @@ func (k Keeper) SettleRewardFunding(ctx context.Context, funding types.RewardFun
 		return k.allocateStabilityTax(ctx, sdk.NewCoins(), stabilityTax)
 	}
 
-	stabilityTaxValue, rates, err := k.valueRewardCoins(ctx, stabilityTax)
+	stabilityTaxValue, rates, err := k.valueRewardCoins(ctx, stabilityTax, configuredDenoms)
 	if err != nil {
 		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
 			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), err.Error())
@@ -231,19 +228,15 @@ func (k Keeper) allocateStabilityTax(ctx context.Context, validator, oracle sdk.
 	return nil
 }
 
-func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins) (math.Int, oracletypes.RateSnapshot, error) {
+func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins, configuredDenoms map[string]struct{}) (math.Int, oracletypes.RateSnapshot, error) {
 	if rewards.IsZero() {
 		rates, err := k.oracleKeeper.GetRateSnapshot(ctx)
 		return math.ZeroInt(), rates, err
 	}
-
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return math.Int{}, nil, fmt.Errorf("getting Tobin taxes: %w", err)
-	}
-	configured := make(map[string]struct{}, len(tobinTaxes))
-	for _, tax := range tobinTaxes {
-		configured[tax.Denom] = struct{}{}
+	if len(rewards) == 1 && rewards[0].Denom == chain.MicroNoahDenom {
+		return rewards[0].Amount, oracletypes.RateSnapshot{
+			chain.MicroNoahDenom: math.LegacyOneDec(),
+		}, nil
 	}
 
 	denoms := make([]string, 0, len(rewards))
@@ -251,7 +244,7 @@ func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins) (math.I
 		if coin.Denom == chain.MicroNoahDenom {
 			continue
 		}
-		if _, ok := configured[coin.Denom]; ok {
+		if _, ok := configuredDenoms[coin.Denom]; ok {
 			denoms = append(denoms, coin.Denom)
 		}
 	}

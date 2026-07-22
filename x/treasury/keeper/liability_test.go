@@ -12,7 +12,7 @@ import (
 )
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges() {
-	tobinTaxes := oracletypes.TobinTaxes{
+	tobinTaxes := []oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 	}
@@ -59,7 +59,7 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges(
 }
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation() {
-	tobinTaxes := oracletypes.TobinTaxes{
+	tobinTaxes := []oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 	}
@@ -102,7 +102,7 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation()
 }
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
-	tobinTaxes := oracletypes.TobinTaxes{{Denom: chain.MicroUSDDenom}}
+	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.MicroUSDDenom}}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
 		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)).Times(2)

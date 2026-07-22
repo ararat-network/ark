@@ -67,7 +67,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			if test.needsRegistry {
-				s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+				s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 					{Denom: chain.MicroUSDDenom},
 				}, nil)
 			}
@@ -83,7 +83,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFailsBeforeTransferWhenOutputRateUnavailable() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
 
@@ -97,7 +97,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFailsBeforeTransferWhenOutputRateUna
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionRejectsOutputValueAboveGrossOffer() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
 
@@ -114,7 +114,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsOutputValueAboveGrossOffer() 
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 	}, nil)
@@ -159,7 +159,7 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
@@ -219,7 +219,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
 	policy.InsuranceTargetRatio = math.LegacyZeroDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
@@ -257,7 +257,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRate() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 	}, nil)
@@ -290,7 +290,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 	}, nil)
@@ -338,7 +338,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 			policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.33")
 			policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.33")
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 				{Denom: chain.MicroUSDDenom},
 			}, nil)
 			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
@@ -392,7 +392,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
@@ -505,7 +505,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 			policy := types.DefaultMonetaryPolicy()
 			policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr(test.targetRatio)
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 				{Denom: chain.MicroUSDDenom},
 			}, nil)
 			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
@@ -546,7 +546,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiabilityBeforeAggregateValuation() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
 
@@ -563,7 +563,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiab
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregateValuation() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroUSDDenom},
 		{Denom: chain.MicroKRWDenom},
 	}, nil)

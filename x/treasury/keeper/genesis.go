@@ -55,7 +55,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 
 	taxCaps := append([]types.TaxCap(nil), data.TaxCaps...)
 	if len(taxCaps) == 0 {
-		derivedTaxCaps, err := k.BuildTaxCaps(ctx, data.Params)
+		derivedTaxCaps, err := k.buildTaxCaps(ctx, data.Params)
 		if err != nil {
 			return fmt.Errorf("deriving genesis tax caps: %w", err)
 		}
@@ -132,7 +132,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.MonetaryPolicy.Set(ctx, data.MonetaryPolicy); err != nil {
 		return fmt.Errorf("setting monetary policy: %w", err)
 	}
-	if err := k.ReplaceTaxCaps(ctx, taxCaps); err != nil {
+	if err := k.replaceTaxCaps(ctx, taxCaps); err != nil {
 		return fmt.Errorf("setting tax caps: %w", err)
 	}
 	if err := k.ClaimsMandate.Set(ctx, data.ClaimsMandate); err != nil {

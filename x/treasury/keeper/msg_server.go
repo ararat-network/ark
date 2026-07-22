@@ -44,7 +44,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	referenceChanged := !current.ReferenceTaxCap.Equal(msg.Params.ReferenceTaxCap)
 	var caps []types.TaxCap
 	if referenceChanged {
-		caps, err = m.k.BuildTaxCaps(ctx, msg.Params)
+		caps, err = m.k.buildTaxCaps(ctx, msg.Params)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +53,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, fmt.Errorf("setting params: %w", err)
 	}
 	if referenceChanged {
-		if err := m.k.ReplaceTaxCaps(ctx, caps); err != nil {
+		if err := m.k.replaceTaxCaps(ctx, caps); err != nil {
 			return nil, err
 		}
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{

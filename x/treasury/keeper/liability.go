@@ -67,7 +67,7 @@ func (k Keeper) RecordSupplyChange(
 
 func (k Keeper) nominalLiabilityValue(
 	ctx context.Context,
-	tobinTaxes oracletypes.TobinTaxes,
+	tobinTaxes []oracletypes.TobinTax,
 	rates oracletypes.RateSnapshot,
 ) (math.LegacyDec, bool, error) {
 	if rates == nil {
@@ -124,7 +124,7 @@ func (k Keeper) nominalLiabilityValue(
 // the transient snapshot maintained by Market supply changes.
 func (k Keeper) cachedLiabilityValue(
 	ctx context.Context,
-	tobinTaxes oracletypes.TobinTaxes,
+	tobinTaxes []oracletypes.TobinTax,
 	rates oracletypes.RateSnapshot,
 ) (math.LegacyDec, bool, error) {
 	liability, found, err := k.loadLiabilitySnapshot(ctx)

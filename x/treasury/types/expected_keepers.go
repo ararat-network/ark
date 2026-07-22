@@ -29,5 +29,5 @@ type BankKeeper interface {
 // functionality required by Treasury.
 type OracleKeeper interface {
 	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
-	GetTobinTaxes(ctx context.Context) (oracletypes.TobinTaxes, error)
+	GetTobinTaxes(ctx context.Context) ([]oracletypes.TobinTax, error)
 }

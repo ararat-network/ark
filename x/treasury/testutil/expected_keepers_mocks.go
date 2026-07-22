@@ -223,10 +223,10 @@ func (mr *MockOracleKeeperMockRecorder) GetRateSnapshot(ctx any, denoms ...any) 
 }
 
 // GetTobinTaxes mocks base method.
-func (m *MockOracleKeeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
+func (m *MockOracleKeeper) GetTobinTaxes(ctx context.Context) ([]types.TobinTax, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTobinTaxes", ctx)
-	ret0, _ := ret[0].(types.TobinTaxes)
+	ret0, _ := ret[0].([]types.TobinTax)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

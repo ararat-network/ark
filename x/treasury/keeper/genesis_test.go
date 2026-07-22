@@ -29,7 +29,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis.TaxCaps = []types.TaxCap{
 		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
 	}
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
@@ -56,7 +56,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 
 func (s *KeeperTestSuite) TestInitGenesisBuildsUncappedSetWhenTaxIsDisabled() {
 	genesis := types.DefaultGenesisState()
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
@@ -73,7 +73,7 @@ func (s *KeeperTestSuite) TestInitGenesisBuildsUncappedSetWhenTaxIsDisabled() {
 func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
@@ -100,7 +100,7 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsIncompleteCapsWhenTaxIsDisabled(
 	genesis.TaxCaps = []types.TaxCap{
 		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
 	}
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 		{Denom: chain.MicroUSDDenom},
 	}, nil)
@@ -111,7 +111,7 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsIncompleteCapsWhenTaxIsDisabled(
 
 func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 	genesis := types.DefaultGenesisState()
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.SubsidyPoolName).
@@ -143,7 +143,7 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsReservationAboveInsuranceBalance
 	recipient, err := sdk.AccAddressFromBech32(genesis.Claims[0].Recipient)
 	s.Require().NoError(err)
 	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(false)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
@@ -197,7 +197,7 @@ func (s *KeeperTestSuite) TestInitGenesisAllowsBlockedFinalizedClaimAuditRecord(
 	recipient, err := sdk.AccAddressFromBech32(claim.Recipient)
 	s.Require().NoError(err)
 	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(true).Times(0)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(oracletypes.TobinTaxes{
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: chain.MicroSDRDenom},
 	}, nil)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
