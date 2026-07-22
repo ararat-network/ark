@@ -31,7 +31,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			name: "full genesis stores all collections",
 			genesis: func() *types.GenesisState {
 				params := types.DefaultParams()
-				params.TobinTaxes = types.TobinTaxes{
+				params.TobinTaxes = []types.TobinTax{
 					{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 					{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 				}
@@ -50,10 +50,13 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 						{ValidatorAddress: valAddr1.String(), MissCount: 5},
 						{ValidatorAddress: valAddr2.String(), MissCount: 0},
 					},
-					VoteTargets: types.VoteTargets{Denoms: []string{
-						chain.MicroKRWDenom,
-						chain.MicroUSDDenom,
-					}},
+					VoteTargets: types.VoteTargets{
+						Denoms: []string{
+							chain.MicroKRWDenom,
+							chain.MicroUSDDenom,
+						},
+						Version: types.InitialVoteTargetVersion,
+					},
 				}
 			},
 			setup: func() {
@@ -96,10 +99,19 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			expectErr: "oracle genesis state is nil",
 		},
 		{
+			name: "unsorted vote targets return error",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.VoteTargets.Denoms = []string{chain.MicroUSDDenom, chain.MicroKRWDenom}
+				return gs
+			},
+			expectErr: "active vote targets must be sorted",
+		},
+		{
 			name: "future exchange rate timestamp returns error",
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{
 						Denom:          chain.MicroUSDDenom,
 						Rate:           math.LegacyOneDec(),
@@ -115,7 +127,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			name: "nil module account returns error",
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{
 						Denom:          chain.MicroUSDDenom,
 						Rate:           math.LegacyOneDec(),
@@ -250,9 +262,9 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	s.Require().NoError(err)
 	s.Require().Equal(expected.Params.TobinTaxes, tobinTaxes)
 
-	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
+	voteTargets, err := s.keeper.VoteTargets.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(expected.VoteTargets.Denoms, voteTargets)
+	s.Require().Equal(expected.VoteTargets, voteTargets)
 }
 
 func (s *KeeperTestSuite) TestExportGenesis() {
@@ -283,7 +295,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		VoteTargets: types.VoteTargets{Denoms: []string{
 			chain.MicroKRWDenom,
 			chain.MicroUSDDenom,
-		}},
+		}, Version: types.InitialVoteTargetVersion},
 	}
 	expected.Params.RewardWindow = 10
 	expected.Params.VoteThreshold = math.LegacyNewDecWithPrec(6, 1)

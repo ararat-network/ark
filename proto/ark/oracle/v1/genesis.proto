@@ -13,11 +13,8 @@ option go_package = "ark/x/oracle/types";
 message GenesisState {
   Params params = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated ExchangeRate exchange_rates = 2 [
-    (gogoproto.castrepeated) = "ExchangeRates",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  repeated ExchangeRate exchange_rates = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated RewardWeight reward_weights = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated MissCount miss_counts = 4
@@ -37,9 +34,6 @@ message Accounting {
   uint64 slash_window = 4;
   uint64 slash_window_start_height = 5;
 }
-
-// VoteTargets defines the staged denoms validators should report.
-message VoteTargets { repeated string denoms = 1; }
 
 // ExchangeRate - struct to store interpreted exchange rates data to store
 message ExchangeRate {

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -37,13 +38,16 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	if err != nil {
 		return nil, fmt.Errorf("getting current params: %w", err)
 	}
-	currentDenoms := make(map[string]struct{}, len(currentParams.TobinTaxes))
-	for _, tobinTax := range currentParams.TobinTaxes {
-		currentDenoms[tobinTax.Denom] = struct{}{}
-	}
+	currentVoteTargets := types.VoteTargetDenoms(currentParams)
 	for _, tobinTax := range msg.Params.TobinTaxes {
-		if _, ok := currentDenoms[tobinTax.Denom]; !ok {
+		if _, found := slices.BinarySearch(currentVoteTargets, tobinTax.Denom); !found {
 			m.k.registerTobinTaxMetadata(ctx, tobinTax.Denom)
+		}
+	}
+	nextVoteTargets := types.VoteTargetDenoms(msg.Params)
+	if !slices.Equal(currentVoteTargets, nextVoteTargets) {
+		if err := m.k.ScheduleVoteTargets(ctx, nextVoteTargets); err != nil {
+			return nil, fmt.Errorf("scheduling vote targets: %w", err)
 		}
 	}
 

@@ -70,15 +70,18 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().ErrorContains(err, "RewardWindow must be > 0")
 	})
 
-	s.Run("updates market taxes without syncing vote targets", func() {
+	s.Run("updates market taxes and schedules vote targets", func() {
 		oldVoteTargets := []string{chain.MicroKRWDenom}
-		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: oldVoteTargets}))
+		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
+			Denoms:  oldVoteTargets,
+			Version: types.InitialVoteTargetVersion,
+		}))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, newStoredExchangeRate(chain.MicroKRWDenom, math.LegacyOneDec())))
 
 		const newDenom = "uaud"
 		params := types.DefaultParams()
-		params.TobinTaxes = types.TobinTaxes{
+		params.TobinTaxes = []types.TobinTax{
 			{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 			{Denom: newDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
 		}
@@ -114,8 +117,15 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		_, err = s.keeper.GetTobinTax(s.ctx, chain.MicroKRWDenom)
 		s.Require().ErrorIs(err, types.ErrUnknownDenom)
 
-		voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
+		state, err := s.keeper.VoteTargets.Get(s.ctx)
 		s.Require().NoError(err)
-		s.Require().Equal(oldVoteTargets, voteTargets)
+		s.Require().Equal(oldVoteTargets, state.Denoms)
+		s.Require().NotNil(state.Pending)
+		s.Require().Equal(types.InitialVoteTargetVersion+1, state.Pending.Version)
+		s.Require().Equal(
+			sdk.UnwrapSDKContext(s.ctx).BlockHeight()+types.VoteTargetActivationDelayBlocks,
+			state.Pending.ActivationVoteHeight,
+		)
+		s.Require().Equal([]string{newDenom, chain.MicroUSDDenom}, state.Pending.Denoms)
 	})
 }

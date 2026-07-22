@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"math/big"
 	"testing"
 	"time"
 
@@ -247,6 +248,16 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 				BlockTimestamp: oracleTestBlockTime,
 			},
 		},
+		{
+			name: "rate is out of range",
+			exchangeRate: types.ExchangeRate{
+				Denom: chain.MicroUSDDenom,
+				Rate: math.LegacyNewDecFromBigInt(
+					new(big.Int).Lsh(big.NewInt(1), 256),
+				),
+				BlockTimestamp: oracleTestBlockTime,
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -330,7 +341,7 @@ func (s *KeeperTestSuite) TestGetExchangeRates() {
 }
 
 func (s *KeeperTestSuite) TestGetTobinTaxes() {
-	expected := types.TobinTaxes{
+	expected := []types.TobinTax{
 		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
 		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
@@ -348,7 +359,7 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 	expected := math.LegacyNewDecWithPrec(25, 4)
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.TobinTaxes = types.TobinTaxes{{Denom: chain.MicroUSDDenom, TobinTax: expected}}
+	params.TobinTaxes = []types.TobinTax{{Denom: chain.MicroUSDDenom, TobinTax: expected}}
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	tobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
@@ -358,59 +369,6 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 	_, err = s.keeper.GetTobinTax(s.ctx, "ufoo")
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
-}
-
-func (s *KeeperTestSuite) TestGetVoteTargets() {
-	expected := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: expected}))
-
-	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(expected, voteTargets)
-}
-
-func (s *KeeperTestSuite) TestSyncVoteTargets() {
-	oldVoteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: oldVoteTargets}))
-	for _, denom := range oldVoteTargets {
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, newStoredExchangeRate(denom, math.LegacyOneDec())))
-	}
-
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = types.TobinTaxes{
-		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
-		{Denom: chain.MicroSDRDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-	}
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-
-	s.Require().NoError(s.keeper.SyncVoteTargets(s.ctx, oldVoteTargets))
-
-	// SyncVoteTargets does not mutate the caller's old target slice.
-	s.Require().Equal([]string{chain.MicroKRWDenom, chain.MicroUSDDenom}, oldVoteTargets)
-	voteTargets, err := s.keeper.GetVoteTargets(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal([]string{chain.MicroSDRDenom, chain.MicroUSDDenom}, voteTargets)
-
-	updatedTobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
-	s.Require().NoError(err)
-	s.Require().True(math.LegacyNewDecWithPrec(5, 2).Equal(updatedTobinTax))
-
-	addedTobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroSDRDenom)
-	s.Require().NoError(err)
-	s.Require().True(math.LegacyNewDecWithPrec(25, 4).Equal(addedTobinTax))
-
-	_, err = s.keeper.GetTobinTax(s.ctx, chain.MicroKRWDenom)
-	s.Require().Error(err)
-	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
-
-	hasUSDExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
-	s.Require().NoError(err)
-	s.Require().True(hasUSDExchangeRate)
-
-	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
-	s.Require().NoError(err)
-	s.Require().False(hasKRWExchangeRate)
 }
 
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {

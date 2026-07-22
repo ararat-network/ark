@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"cosmossdk.io/math"
 
@@ -71,10 +70,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	voteTargets := data.VoteTargets
-	voteTargets.Denoms = slices.Clone(voteTargets.Denoms)
-	slices.Sort(voteTargets.Denoms)
-	if err := k.VoteTargets.Set(ctx, voteTargets); err != nil {
+	if err := k.VoteTargets.Set(ctx, data.VoteTargets); err != nil {
 		return fmt.Errorf("setting vote targets: %w", err)
 	}
 

@@ -28,9 +28,9 @@ import (
 
 const bufSize = 1024 * 1024
 
-func TestRunPollsImmediatelyAndCachesCanonicalVoteTargets(t *testing.T) {
-	source := []string{"uusd", "ukrw"}
-	query := newFakeQueryServer(queryResult{targets: source})
+func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
+	source := []string{"ukrw", "uusd"}
+	query := newFakeQueryServer(targetResult(source))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -54,8 +54,31 @@ func TestRunPollsImmediatelyAndCachesCanonicalVoteTargets(t *testing.T) {
 	require.Equal(t, []string{"ukrw", "uusd"}, got)
 }
 
+func TestRunCachesPendingTargetsForProviderWarmup(t *testing.T) {
+	query := newFakeQueryServer(queryResult{
+		targets: []string{"uusd"},
+		version: oracletypes.InitialVoteTargetVersion,
+		pending: &oracletypes.PendingVoteTargets{
+			Denoms:               []string{"uaud", "uusd"},
+			Version:              oracletypes.InitialVoteTargetVersion + 1,
+			ActivationVoteHeight: 10,
+		},
+	})
+	client := newTestClient(t, query, Config{
+		Address:  "passthrough:///bufnet",
+		Timeout:  time.Second,
+		Interval: time.Hour,
+	})
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	query.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"uaud", "uusd"})
+}
+
 func TestRunBlocksUntilContextCancellation(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
+	query := newFakeQueryServer(targetResult([]string{"uusd"}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -90,7 +113,7 @@ func TestRunBlocksUntilContextCancellation(t *testing.T) {
 
 func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 	logs := &lockedBuffer{}
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd", "ukrw"}})
+	query := newFakeQueryServer(targetResult([]string{"ukrw", "uusd"}))
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
 		Config{
@@ -141,7 +164,7 @@ func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 }
 
 func TestRunCachesAuthoritativeEmptyVoteTargets(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{}})
+	query := newFakeQueryServer(targetResult([]string{}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -157,8 +180,8 @@ func TestRunCachesAuthoritativeEmptyVoteTargets(t *testing.T) {
 
 func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
 	query := newFakeQueryServer(
-		queryResult{targets: []string{"uusd"}},
-		queryResult{targets: []string{}},
+		targetResult([]string{"uusd"}),
+		targetResult([]string{}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -182,7 +205,7 @@ func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
 
 func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	query := newFakeQueryServer(
-		queryResult{targets: []string{"uusd"}},
+		targetResult([]string{"uusd"}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -206,9 +229,9 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 	logs := &lockedBuffer{}
 	query := newFakeQueryServer(
-		queryResult{targets: []string{"uusd"}},
+		targetResult([]string{"uusd"}),
 		queryResult{err: errors.New("node unavailable")},
-		queryResult{targets: []string{"uusd", "ukrw"}},
+		targetResult([]string{"ukrw", "uusd"}),
 	)
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
@@ -253,7 +276,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	otel.SetMeterProvider(provider)
 
 	query := newFakeQueryServer(
-		queryResult{targets: []string{"uusd", "ukrw"}},
+		targetResult([]string{"ukrw", "uusd"}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -284,54 +307,8 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	}, time.Second, time.Millisecond)
 }
 
-func TestRunRejectsInvalidRefreshWithoutClearingCache(t *testing.T) {
-	query := newFakeQueryServer(
-		queryResult{targets: []string{"uusd"}},
-		queryResult{targets: []string{"uusd", "uusd"}},
-	)
-	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Millisecond,
-	})
-
-	cancel := startClient(t, client)
-	defer stopClient(cancel, client)
-
-	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd"})
-	query.waitForCalls(t, 2)
-
-	got, err := client.VoteTargets()
-	require.NoError(t, err)
-	require.Equal(t, []string{"uusd"}, got)
-}
-
-func TestRunRejectsNonCanonicalVoteTargetsWithoutClearingCache(t *testing.T) {
-	query := newFakeQueryServer(
-		queryResult{targets: []string{"uusd"}},
-		queryResult{targets: []string{"uUSD"}},
-	)
-	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Millisecond,
-	})
-
-	cancel := startClient(t, client)
-	defer stopClient(cancel, client)
-
-	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd"})
-	query.waitForCalls(t, 2)
-
-	got, err := client.VoteTargets()
-	require.NoError(t, err)
-	require.Equal(t, []string{"uusd"}, got)
-}
-
 func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
+	query := newFakeQueryServer(targetResult([]string{"uusd"}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -348,7 +325,7 @@ func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
 }
 
 func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
-	query := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
+	query := newFakeQueryServer(targetResult([]string{"uusd"}))
 	originalInterval := 75 * time.Millisecond
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
@@ -372,8 +349,8 @@ func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
 }
 
 func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
-	firstQuery := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
-	secondQuery := newFakeQueryServer(queryResult{targets: []string{"ukrw"}})
+	firstQuery := newFakeQueryServer(targetResult([]string{"uusd"}))
+	secondQuery := newFakeQueryServer(targetResult([]string{"ukrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 	originalInterval := 75 * time.Millisecond
@@ -407,8 +384,8 @@ func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 
 func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	logs := &lockedBuffer{}
-	firstQuery := newFakeQueryServer(queryResult{targets: []string{"uusd"}})
-	secondQuery := newFakeQueryServer(queryResult{targets: []string{"ukrw"}})
+	firstQuery := newFakeQueryServer(targetResult([]string{"uusd"}))
+	secondQuery := newFakeQueryServer(targetResult([]string{"ukrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 
@@ -446,8 +423,8 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 }
 
 func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *testing.T) {
-	firstQuery := newBlockingQueryServer(queryResult{targets: []string{"uusd"}})
-	secondQuery := newBlockingQueryServer(queryResult{targets: []string{"ukrw"}})
+	firstQuery := newBlockingQueryServer(targetResult([]string{"uusd"}))
+	secondQuery := newBlockingQueryServer(targetResult([]string{"ukrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 	originalInterval := 75 * time.Millisecond
@@ -507,7 +484,16 @@ func TestNewClientRejectsMissingAddress(t *testing.T) {
 
 type queryResult struct {
 	targets []string
+	version uint64
+	pending *oracletypes.PendingVoteTargets
 	err     error
+}
+
+func targetResult(targets []string) queryResult {
+	return queryResult{
+		targets: targets,
+		version: oracletypes.InitialVoteTargetVersion,
+	}
 }
 
 type blockingQueryServer struct {
@@ -541,7 +527,11 @@ func (b *blockingQueryServer) VoteTargets(
 	if b.result.err != nil {
 		return nil, b.result.err
 	}
-	return &oracletypes.QueryVoteTargetsResponse{VoteTargets: b.result.targets}, nil
+	return &oracletypes.QueryVoteTargetsResponse{
+		VoteTargets:   b.result.targets,
+		TargetVersion: b.result.version,
+		Pending:       b.result.pending,
+	}, nil
 }
 
 func (b *blockingQueryServer) waitForCalls(t *testing.T, want int) {
@@ -603,7 +593,11 @@ func (f *fakeQueryServer) VoteTargets(
 		return nil, result.err
 	}
 
-	return &oracletypes.QueryVoteTargetsResponse{VoteTargets: result.targets}, nil
+	return &oracletypes.QueryVoteTargetsResponse{
+		VoteTargets:   result.targets,
+		TargetVersion: result.version,
+		Pending:       result.pending,
+	}, nil
 }
 
 func (f *fakeQueryServer) waitForCalls(t *testing.T, want int) {

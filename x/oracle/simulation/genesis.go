@@ -110,7 +110,7 @@ func RandomisedGenState(simState *module.SimulationState) {
 		RewardBand:               rewardBand,
 		RewardWindow:             rewardWindow,
 		RewardDistributionWindow: rewardDistributionWindow,
-		TobinTaxes: types.TobinTaxes{
+		TobinTaxes: []types.TobinTax{
 			{Denom: chain.MicroKRWDenom, TobinTax: types.DefaultTobinTax},
 			{Denom: chain.MicroSDRDenom, TobinTax: types.DefaultTobinTax},
 			{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},

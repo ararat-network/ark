@@ -129,11 +129,8 @@ message QueryTobinTaxesRequest {}
 // Query/TobinTaxes RPC method.
 message QueryTobinTaxesResponse {
   // tobin_taxes defines a list of all the denoms and their respective tobin tax
-  repeated TobinTax tobin_taxes = 1 [
-    (gogoproto.castrepeated) = "TobinTaxes",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  repeated TobinTax tobin_taxes = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryVoteTargetsRequest is the request type for the Query/VoteTargets RPC
@@ -144,8 +141,12 @@ message QueryVoteTargetsRequest {}
 // Query/VoteTargets RPC method.
 message QueryVoteTargetsResponse {
   // vote_targets defines a list of the denomination in which everyone
-  // should vote in the current vote period.
+  // should vote in the active vote-target epoch.
   repeated string vote_targets = 1;
+  // target_version identifies the active vote-target epoch.
+  uint64 target_version = 2;
+  // pending defines the next scheduled vote-target epoch, when present.
+  PendingVoteTargets pending = 3;
 }
 
 // QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC

@@ -157,49 +157,49 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name: "tobin tax missing",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{{Denom: "uusd", TobinTax: math.LegacyDec{}}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "uusd", TobinTax: math.LegacyDec{}}}
 			},
 			expectErr: "TobinTaxes must have TobinTax set",
 		},
 		{
 			name: "tobin tax empty denom",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{{Denom: "", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
 			expectErr: "TobinTaxes denom must be a micro denom beginning with u",
 		},
 		{
 			name: "tobin tax denom must be canonical lowercase",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{{Denom: "uUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "uUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
 			expectErr: "canonical lowercase micro denom",
 		},
 		{
 			name: "tobin tax denom cannot contain path separators",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
 			expectErr: "canonical lowercase micro denom",
 		},
 		{
 			name: "tobin tax negative",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{{Denom: "uusd", TobinTax: math.LegacyNewDec(-1)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "uusd", TobinTax: math.LegacyNewDec(-1)}}
 			},
 			expectErr: "TobinTaxes must have TobinTax between [0, 1]",
 		},
 		{
 			name: "tobin tax above one",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(101, 2)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(101, 2)}}
 			},
 			expectErr: "TobinTaxes must have TobinTax between [0, 1]",
 		},
 		{
 			name: "empty tobin taxes is valid",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{}
+				p.TobinTaxes = []types.TobinTax{}
 			},
 		},
 		{
@@ -218,7 +218,7 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name: "duplicate tobin tax denom",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = types.TobinTaxes{
+				p.TobinTaxes = []types.TobinTax{
 					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
 				}
@@ -254,8 +254,8 @@ func TestDefaultParamsClonesTobinTaxes(t *testing.T) {
 	require.NotEqual(t, params.TobinTaxes[0].Denom, fresh.TobinTaxes[0].Denom)
 }
 
-func makeTestTobinTaxes(count int) types.TobinTaxes {
-	tobinTaxes := make(types.TobinTaxes, count)
+func makeTestTobinTaxes(count int) []types.TobinTax {
+	tobinTaxes := make([]types.TobinTax, count)
 	for i := range count {
 		tobinTaxes[i] = types.TobinTax{
 			Denom:    fmt.Sprintf("u%03d", i),

@@ -24,7 +24,7 @@ var (
 	DefaultVoteThreshold = math.LegacyNewDecWithPrec(667, 3) // 66.7%
 	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)   // 2% (-1, 1)
 	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4)  // 0.25%
-	DefaultTobinTaxes    = TobinTaxes{
+	DefaultTobinTaxes    = []TobinTax{
 		{Denom: chain.MicroUSDDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.MicroKRWDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.MicroSDRDenom, TobinTax: DefaultTobinTax},

@@ -104,12 +104,16 @@ func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesR
 
 // VoteTargets queries active vote target denoms.
 func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTargetsRequest) (*types.QueryVoteTargetsResponse, error) {
-	voteTargets, err := q.k.GetVoteTargets(ctx)
+	voteTargets, err := q.k.VoteTargets.Get(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting oracle vote targets: %v", err)
 	}
 
-	return &types.QueryVoteTargetsResponse{VoteTargets: voteTargets}, nil
+	return &types.QueryVoteTargetsResponse{
+		VoteTargets:   voteTargets.Denoms,
+		TargetVersion: voteTargets.Version,
+		Pending:       voteTargets.Pending,
+	}, nil
 }
 
 // RewardWeight queries a validator's oracle reward weight.

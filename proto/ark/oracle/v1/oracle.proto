@@ -30,11 +30,8 @@ message Params {
   // Distribution window changes take effect with reward window accounting at
   // the end of the active reward period.
   uint64 reward_distribution_window = 4;
-  repeated TobinTax tobin_taxes = 5 [
-    (gogoproto.castrepeated) = "TobinTaxes",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  repeated TobinTax tobin_taxes = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   string slash_fraction = 6 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -69,4 +66,20 @@ message TobinTax {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// VoteTargets defines the active vote-target epoch and an optional scheduled
+// replacement. Pending targets become authoritative for vote extensions at
+// activation_vote_height.
+message VoteTargets {
+  repeated string denoms = 1;
+  uint64 version = 2;
+  PendingVoteTargets pending = 3;
+}
+
+// PendingVoteTargets defines a scheduled vote-target epoch.
+message PendingVoteTargets {
+  repeated string denoms = 1;
+  uint64 version = 2;
+  int64 activation_vote_height = 3;
 }

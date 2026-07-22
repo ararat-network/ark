@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc"
 
 	chainstatemetrics "ark/oracle/sidecar/chainstate/metrics"
-	"ark/pkg/chain"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -70,9 +69,9 @@ func (c *Client) poll(
 	}
 }
 
-// refresh commits only valid snapshots. Failures log a warning and preserve the
-// previous snapshot so the runtime can keep using last-known vote targets with
-// operator-visible refresh errors.
+// refresh commits successful snapshots. Query failures log a warning and
+// preserve the previous snapshot so the runtime can keep using last-known vote
+// targets with operator-visible refresh errors.
 func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
 	targets, err := c.queryVoteTargets(ctx, query)
 	if err != nil {
@@ -89,8 +88,8 @@ func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
 	chainstatemetrics.RecordRefresh(ctx, "success")
 }
 
-// queryVoteTargets performs one oracle query and validates the response before
-// the caller stores it as the cached snapshot.
+// queryVoteTargets performs one oracle query and combines active and pending
+// targets before the caller stores them as the cached snapshot.
 func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryClient) ([]string, error) {
 	cfg := c.getConfig()
 	ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)
@@ -104,19 +103,12 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 		return nil, errors.New("oracle vote targets response is nil")
 	}
 
-	targets := append([]string(nil), resp.VoteTargets...)
-	seen := make(map[string]struct{}, len(targets))
-	for _, denom := range targets {
-		if err := chain.ValidateMicroDenom(denom); err != nil {
-			return nil, fmt.Errorf("invalid vote target denom %q: %w", denom, err)
-		}
-		if _, ok := seen[denom]; ok {
-			return nil, fmt.Errorf("duplicate vote target denom %q", denom)
-		}
-		seen[denom] = struct{}{}
+	denoms := resp.VoteTargets
+	if resp.Pending != nil {
+		denoms = append(denoms, resp.Pending.Denoms...)
 	}
-	slices.Sort(targets)
-	return targets, nil
+	slices.Sort(denoms)
+	return slices.Compact(denoms), nil
 }
 
 // waitForRetry sleeps until the next retry or cancellation.

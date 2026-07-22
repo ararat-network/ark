@@ -139,7 +139,7 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 			setup: func() {
 				params, err := s.keeper.Params.Get(s.ctx)
 				s.Require().NoError(err)
-				params.TobinTaxes = types.TobinTaxes{
+				params.TobinTaxes = []types.TobinTax{
 					{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 				}
 				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
@@ -175,7 +175,7 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 }
 
 func (s *KeeperTestSuite) TestQueryTobinTaxes() {
-	expected := types.TobinTaxes{
+	expected := []types.TobinTax{
 		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
@@ -191,11 +191,22 @@ func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 
 func (s *KeeperTestSuite) TestQueryVoteTargets() {
 	voteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{Denoms: voteTargets}))
+	pending := &types.PendingVoteTargets{
+		Denoms:               []string{chain.MicroUSDDenom},
+		Version:              types.InitialVoteTargetVersion + 1,
+		ActivationVoteHeight: 10,
+	}
+	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
+		Denoms:  voteTargets,
+		Version: types.InitialVoteTargetVersion,
+		Pending: pending,
+	}))
 
 	resp, err := s.queryClient.VoteTargets(s.ctx, &types.QueryVoteTargetsRequest{})
 	s.Require().NoError(err)
 	s.Require().Equal(voteTargets, resp.VoteTargets)
+	s.Require().Equal(types.InitialVoteTargetVersion, resp.TargetVersion)
+	s.Require().Equal(pending, resp.Pending)
 }
 
 func (s *KeeperTestSuite) TestQueryRewardWeight() {

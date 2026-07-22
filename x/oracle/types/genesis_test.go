@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -51,7 +52,7 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "exchange rate empty denom",
 			mutate: func(gs *types.GenesisState) {
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "", Rate: math.LegacyOneDec()},
 				}
 			},
@@ -60,7 +61,7 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "exchange rate denom must be canonical lowercase",
 			mutate: func(gs *types.GenesisState) {
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "uUSD", Rate: math.LegacyOneDec()},
 				}
 			},
@@ -69,7 +70,7 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "exchange rate not positive",
 			mutate: func(gs *types.GenesisState) {
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "uusd", Rate: math.LegacyZeroDec()},
 				}
 			},
@@ -78,16 +79,30 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "exchange rate is nil",
 			mutate: func(gs *types.GenesisState) {
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "uusd", Rate: math.LegacyDec{}},
 				}
 			},
 			expectErr: "exchange rate for uusd must be set",
 		},
 		{
+			name: "exchange rate is out of range",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = []types.ExchangeRate{
+					{
+						Denom: "uusd",
+						Rate: math.LegacyNewDecFromBigInt(
+							new(big.Int).Lsh(big.NewInt(1), 256),
+						),
+					},
+				}
+			},
+			expectErr: "exchange rate for uusd must be representable",
+		},
+		{
 			name: "duplicate exchange rate denom",
 			mutate: func(gs *types.GenesisState) {
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "uusd", Rate: math.LegacyOneDec()},
 					{Denom: "uusd", Rate: math.LegacyNewDec(2)},
 				}
@@ -97,7 +112,7 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "exchange rate denom must be a vote target",
 			mutate: func(gs *types.GenesisState) {
-				gs.ExchangeRates = types.ExchangeRates{
+				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "ufoo", Rate: math.LegacyOneDec()},
 				}
 			},
@@ -185,7 +200,7 @@ func TestValidateGenesis(t *testing.T) {
 			mutate: func(gs *types.GenesisState) {
 				gs.VoteTargets.Denoms = []string{"u"}
 			},
-			expectErr: "vote target denom must be a micro denom beginning with u: u",
+			expectErr: "active vote targets denom must be a micro denom beginning with u: u",
 		},
 		{
 			name: "vote target denom must be canonical lowercase",
@@ -206,12 +221,20 @@ func TestValidateGenesis(t *testing.T) {
 			mutate: func(gs *types.GenesisState) {
 				gs.VoteTargets.Denoms = []string{"uusd", "uusd"}
 			},
-			expectErr: "duplicate vote target denom uusd",
+			expectErr: "active vote targets contains duplicate denom uusd",
+		},
+		{
+			name: "vote targets must be sorted",
+			mutate: func(gs *types.GenesisState) {
+				gs.VoteTargets.Denoms = []string{"uusd", "ukrw"}
+			},
+			expectErr: "active vote targets must be sorted",
 		},
 		{
 			name: "maximum vote targets is valid",
 			mutate: func(gs *types.GenesisState) {
 				gs.VoteTargets.Denoms = makeTestVoteTargets(types.MaxVoteTargets)
+				gs.Params.TobinTaxes = tobinTaxesForDenoms(gs.VoteTargets.Denoms)
 			},
 		},
 		{
@@ -226,10 +249,14 @@ func TestValidateGenesis(t *testing.T) {
 			name: "custom valid genesis",
 			mutate: func(gs *types.GenesisState) {
 				params := types.DefaultParams()
+				params.TobinTaxes = []types.TobinTax{{
+					Denom:    "uusd",
+					TobinTax: math.LegacyZeroDec(),
+				}}
 				*gs = *types.NewGenesisState(
 					params,
 					types.NewAccounting(params),
-					types.ExchangeRates{
+					[]types.ExchangeRate{
 						{Denom: "uusd", Rate: math.LegacyOneDec()},
 					},
 					[]types.RewardWeight{
@@ -238,7 +265,10 @@ func TestValidateGenesis(t *testing.T) {
 					[]types.MissCount{
 						{ValidatorAddress: otherValidatorAddress, MissCount: 0},
 					},
-					types.VoteTargets{Denoms: []string{"uusd"}},
+					types.VoteTargets{
+						Denoms:  []string{"uusd"},
+						Version: types.InitialVoteTargetVersion,
+					},
 				)
 			},
 		},
@@ -265,4 +295,12 @@ func makeTestVoteTargets(count int) []string {
 		denoms[i] = fmt.Sprintf("u%03d", i)
 	}
 	return denoms
+}
+
+func tobinTaxesForDenoms(denoms []string) []types.TobinTax {
+	tobinTaxes := make([]types.TobinTax, len(denoms))
+	for i, denom := range denoms {
+		tobinTaxes[i] = types.TobinTax{Denom: denom, TobinTax: math.LegacyZeroDec()}
+	}
+	return tobinTaxes
 }

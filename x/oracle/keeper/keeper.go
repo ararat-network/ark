@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
@@ -156,27 +155,6 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 	return k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
 }
 
-func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime time.Time, maxAge time.Duration) (math.LegacyDec, error) {
-	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
-	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
-		}
-		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
-	}
-	if currentTime.Sub(exchangeRate.BlockTimestamp) > maxAge {
-		return math.LegacyZeroDec(), sdkerrors.Wrapf(
-			types.ErrStaleExchangeRate,
-			"%s rate age exceeds maximum (updated %s, current %s)",
-			denom,
-			exchangeRate.BlockTimestamp,
-			currentTime,
-		)
-	}
-
-	return exchangeRate.Rate, nil
-}
-
 // GetExchangeRates returns all non-stale stored exchange rates.
 func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 	params, err := k.Params.Get(ctx)
@@ -206,6 +184,9 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	}
 	if exchangeRate.Rate.IsNil() {
 		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate is unset", exchangeRate.Denom)
+	}
+	if !exchangeRate.Rate.IsInValidRange() {
+		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate is not representable", exchangeRate.Denom)
 	}
 	if !exchangeRate.Rate.IsPositive() {
 		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate %s is not positive", exchangeRate.Denom, exchangeRate.Rate)
@@ -253,7 +234,7 @@ func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, 
 }
 
 // GetTobinTaxes returns configured Tobin taxes.
-func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
+func (k Keeper) GetTobinTaxes(ctx context.Context) ([]types.TobinTax, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
@@ -262,52 +243,35 @@ func (k Keeper) GetTobinTaxes(ctx context.Context) (types.TobinTaxes, error) {
 	return params.TobinTaxes, nil
 }
 
-// GetVoteTargets returns the staged vote-target denoms.
-func (k Keeper) GetVoteTargets(ctx context.Context) ([]string, error) {
+// GetVoteTargets returns the target epoch validators must report at voteHeight.
+func (k Keeper) GetVoteTargets(ctx context.Context, voteHeight int64) (types.VoteTargetSet, error) {
 	voteTargets, err := k.VoteTargets.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting vote targets: %w", err)
+		return types.VoteTargetSet{}, fmt.Errorf("getting vote targets: %w", err)
 	}
 
-	return voteTargets.Denoms, nil
+	return voteTargets.AtHeight(voteHeight), nil
 }
 
-// SyncVoteTargets applies the configured denoms to the staged vote-target set
-// and prunes exchange rates for removed targets.
-func (k Keeper) SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error {
-	params, err := k.Params.Get(ctx)
+func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime time.Time, maxAge time.Duration) (math.LegacyDec, error) {
+	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
 	if err != nil {
-		return fmt.Errorf("getting params: %w", err)
-	}
-
-	denoms := make([]string, len(params.TobinTaxes))
-	for i, tobinTax := range params.TobinTaxes {
-		denoms[i] = tobinTax.Denom
-	}
-	slices.Sort(denoms)
-	if slices.Equal(oldVoteTargets, denoms) {
-		return nil
-	}
-
-	configured := make(map[string]struct{}, len(denoms))
-	for _, denom := range denoms {
-		configured[denom] = struct{}{}
-	}
-
-	for _, denom := range oldVoteTargets {
-		if _, ok := configured[denom]; ok {
-			continue
+		if errors.Is(err, collections.ErrNotFound) {
+			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
 		}
-		if err := k.ExchangeRate.Remove(ctx, denom); err != nil {
-			return fmt.Errorf("removing exchange rate for vote target %s: %w", denom, err)
-		}
+		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
+	}
+	if currentTime.Sub(exchangeRate.BlockTimestamp) > maxAge {
+		return math.LegacyZeroDec(), sdkerrors.Wrapf(
+			types.ErrStaleExchangeRate,
+			"%s rate age exceeds maximum (updated %s, current %s)",
+			denom,
+			exchangeRate.BlockTimestamp,
+			currentTime,
+		)
 	}
 
-	if err := k.VoteTargets.Set(ctx, types.VoteTargets{Denoms: denoms}); err != nil {
-		return fmt.Errorf("setting vote targets: %w", err)
-	}
-
-	return nil
+	return exchangeRate.Rate, nil
 }
 
 func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {

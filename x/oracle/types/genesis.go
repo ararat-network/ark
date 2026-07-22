@@ -21,9 +21,6 @@ func NewGenesisState(
 	missCounts []MissCount,
 	voteTargets VoteTargets,
 ) *GenesisState {
-	voteTargets.Denoms = slices.Clone(voteTargets.Denoms)
-	slices.Sort(voteTargets.Denoms)
-
 	return &GenesisState{
 		Params:        params,
 		Accounting:    accounting,
@@ -32,17 +29,6 @@ func NewGenesisState(
 		MissCounts:    missCounts,
 		VoteTargets:   voteTargets,
 	}
-}
-
-// NewVoteTargets returns a canonical vote-target snapshot derived from params.
-func NewVoteTargets(params Params) VoteTargets {
-	denoms := make([]string, len(params.TobinTaxes))
-	for i, tobinTax := range params.TobinTaxes {
-		denoms[i] = tobinTax.Denom
-	}
-	slices.Sort(denoms)
-
-	return VoteTargets{Denoms: denoms}
 }
 
 // NewAccounting starts reward and slash accounting from genesis using
@@ -89,6 +75,9 @@ func (gs GenesisState) Validate() error {
 		if er.Rate.IsNil() {
 			return fmt.Errorf("exchange rate for %s must be set", er.Denom)
 		}
+		if !er.Rate.IsInValidRange() {
+			return fmt.Errorf("exchange rate for %s must be representable", er.Denom)
+		}
 		if !er.Rate.IsPositive() {
 			return fmt.Errorf("exchange rate for %s must be positive: %s", er.Denom, er.Rate)
 		}
@@ -134,31 +123,29 @@ func (gs GenesisState) Validate() error {
 		seenValidators[mc.ValidatorAddress] = true
 	}
 
-	// VoteTargets: no duplicates and canonical micro denoms.
-	if len(gs.VoteTargets.Denoms) > MaxVoteTargets {
-		return fmt.Errorf(
-			"vote targets count %d exceeds maximum vote targets %d",
-			len(gs.VoteTargets.Denoms),
-			MaxVoteTargets,
-		)
+	if err := gs.VoteTargets.Validate(); err != nil {
+		return err
 	}
-	seenDenoms = make(map[string]bool)
-	for _, denom := range gs.VoteTargets.Denoms {
-		if err := chain.ValidateMicroDenom(denom); err != nil {
-			return fmt.Errorf("vote target %w", err)
-		}
-		if seenDenoms[denom] {
-			return fmt.Errorf("duplicate vote target denom %s", denom)
-		}
-		seenDenoms[denom] = true
-	}
+	voteTargets := gs.VoteTargets
 	for _, er := range gs.ExchangeRates {
-		if !seenDenoms[er.Denom] {
+		if _, found := slices.BinarySearch(voteTargets.Denoms, er.Denom); !found {
 			return fmt.Errorf("exchange rate denom %s is not a vote target", er.Denom)
 		}
 	}
 
-	return gs.Params.Validate()
+	if err := gs.Params.Validate(); err != nil {
+		return err
+	}
+	desiredDenoms := VoteTargetDenoms(gs.Params)
+	stagedDenoms := voteTargets.Denoms
+	if voteTargets.Pending != nil {
+		stagedDenoms = voteTargets.Pending.Denoms
+	}
+	if !slices.Equal(desiredDenoms, stagedDenoms) {
+		return errors.New("oracle params denoms must match the active or pending vote targets")
+	}
+
+	return nil
 }
 
 // GetGenesisStateFromAppState returns x/oracle GenesisState given raw application
