@@ -226,6 +226,21 @@ func (mr *MockOracleKeeperMockRecorder) GetTobinTax(ctx, denom any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTax", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTax), ctx, denom)
 }
 
+// GetTobinTaxes mocks base method.
+func (m *MockOracleKeeper) GetTobinTaxes(ctx context.Context) ([]types.TobinTax, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTobinTaxes", ctx)
+	ret0, _ := ret[0].([]types.TobinTax)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTobinTaxes indicates an expected call of GetTobinTaxes.
+func (mr *MockOracleKeeperMockRecorder) GetTobinTaxes(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTobinTaxes", reflect.TypeOf((*MockOracleKeeper)(nil).GetTobinTaxes), ctx)
+}
+
 // MockTreasuryKeeper is a mock of TreasuryKeeper interface.
 type MockTreasuryKeeper struct {
 	ctrl     *gomock.Controller

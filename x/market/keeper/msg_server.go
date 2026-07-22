@@ -80,11 +80,19 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	if !appliedParams.BasePool.Amount.Equal(currentParams.BasePool.Amount) {
 		scaledDelta, err := decimal.Mul(oldDelta, appliedParams.BasePool.Amount)
 		if err != nil {
-			return nil, arithmeticError("rescaling ark pool delta", err)
+			return nil, sdkerrors.Wrapf(
+				types.ErrArithmeticOutOfRange,
+				"rescaling ark pool delta: %v",
+				err,
+			)
 		}
 		newDelta, err = decimal.Quo(scaledDelta, currentParams.BasePool.Amount)
 		if err != nil {
-			return nil, arithmeticError("rescaling ark pool delta", err)
+			return nil, sdkerrors.Wrapf(
+				types.ErrArithmeticOutOfRange,
+				"rescaling ark pool delta: %v",
+				err,
+			)
 		}
 	}
 	if _, err := types.NewEffectivePools(appliedParams.BasePool.Amount, newDelta); err != nil {

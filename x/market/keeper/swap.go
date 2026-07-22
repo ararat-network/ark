@@ -57,13 +57,27 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 		if err != nil {
 			return swapQuote{}, err
 		}
-		offerTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, offerCoin.Denom)
+		tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
 		if err != nil {
 			return swapQuote{}, err
 		}
-		askTobinTax, err := k.oracleKeeper.GetTobinTax(ctx, askDenom)
-		if err != nil {
-			return swapQuote{}, err
+		var offerTobinTax, askTobinTax math.LegacyDec
+		var offerFound, askFound bool
+		for _, tobinTax := range tobinTaxes {
+			switch tobinTax.Denom {
+			case offerCoin.Denom:
+				offerTobinTax = tobinTax.TobinTax
+				offerFound = true
+			case askDenom:
+				askTobinTax = tobinTax.TobinTax
+				askFound = true
+			}
+		}
+		if !offerFound {
+			return swapQuote{}, sdkerrors.Wrap(oracletypes.ErrUnknownDenom, offerCoin.Denom)
+		}
+		if !askFound {
+			return swapQuote{}, sdkerrors.Wrap(oracletypes.ErrUnknownDenom, askDenom)
 		}
 		spread = math.LegacyMaxDec(askTobinTax, offerTobinTax)
 		quote.rates = rates
@@ -102,7 +116,11 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 
 		pools, err := types.NewEffectivePools(params.BasePool.Amount, arkPoolDelta)
 		if err != nil {
-			return swapQuote{}, arithmeticError("constructing effective pools", err)
+			return swapQuote{}, sdkerrors.Wrapf(
+				types.ErrArithmeticOutOfRange,
+				"constructing effective pools: %v",
+				err,
+			)
 		}
 
 		var offerPool math.LegacyDec
@@ -119,7 +137,11 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 		baseOfferAmount := baseOfferDecCoin.Amount
 		updatedOfferPool, err := decimal.Add(offerPool, baseOfferAmount)
 		if err != nil {
-			return swapQuote{}, arithmeticError("adding the offer amount to the effective pool", err)
+			return swapQuote{}, sdkerrors.Wrapf(
+				types.ErrArithmeticOutOfRange,
+				"adding the offer amount to the effective pool: %v",
+				err,
+			)
 		}
 		remainingAskPool := pools.ConstantProduct.Quo(updatedOfferPool)
 		askBaseAmount := askPool.Sub(remainingAskPool)
@@ -228,7 +250,11 @@ func (k Keeper) applySwapToPool(
 		var err error
 		arkPoolDelta, err = decimal.Add(arkPoolDelta, quote.baseOfferDecCoin.Amount)
 		if err != nil {
-			return arithmeticError("adding the offer amount to the ark pool delta", err)
+			return sdkerrors.Wrapf(
+				types.ErrArithmeticOutOfRange,
+				"adding the offer amount to the ark pool delta: %v",
+				err,
+			)
 		}
 	} else {
 		askBaseCoin, err := quote.rates.Convert(quote.swapDecCoin, quote.basePool.Denom)
@@ -237,12 +263,20 @@ func (k Keeper) applySwapToPool(
 		}
 		arkPoolDelta, err = decimal.Sub(arkPoolDelta, askBaseCoin.Amount)
 		if err != nil {
-			return arithmeticError("subtracting the ask amount from the ark pool delta", err)
+			return sdkerrors.Wrapf(
+				types.ErrArithmeticOutOfRange,
+				"subtracting the ask amount from the ark pool delta: %v",
+				err,
+			)
 		}
 	}
 
 	if _, err := types.NewEffectivePools(quote.basePool.Amount, arkPoolDelta); err != nil {
-		return arithmeticError("validating the updated effective pools", err)
+		return sdkerrors.Wrapf(
+			types.ErrArithmeticOutOfRange,
+			"validating the updated effective pools: %v",
+			err,
+		)
 	}
 
 	return k.ArkPoolDelta.Set(ctx, arkPoolDelta)
@@ -253,8 +287,4 @@ func marketRateError(err error) error {
 		return sdkerrors.Wrap(types.ErrNoEffectivePrice, err.Error())
 	}
 	return err
-}
-
-func arithmeticError(operation string, err error) error {
-	return sdkerrors.Wrapf(types.ErrArithmeticOutOfRange, "%s: %v", operation, err)
 }

@@ -113,8 +113,10 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 			chain.MicroSDRDenom: math.LegacyOneDec(),
 			"ukrw":              math.LegacyOneDec(),
 		}, nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").Return(math.LegacyZeroDec(), nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").Return(math.LegacyZeroDec(), nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
+		{Denom: "uusd", TobinTax: math.LegacyZeroDec()},
+		{Denom: "ukrw", TobinTax: math.LegacyZeroDec()},
+	}, nil)
 
 	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
@@ -134,8 +136,10 @@ func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentab
 			chain.MicroSDRDenom: math.LegacyNewDec(2),
 			"ukrw":              math.LegacyOneDec(),
 		}, nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").Return(math.LegacyZeroDec(), nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").Return(math.LegacyZeroDec(), nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
+		{Denom: "uusd", TobinTax: math.LegacyZeroDec()},
+		{Denom: "ukrw", TobinTax: math.LegacyZeroDec()},
+	}, nil)
 
 	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
@@ -254,8 +258,8 @@ func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate 
 			chain.MicroSDRDenom: math.LegacyOneDec(),
 			"ukrw":              askRate,
 		}, nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
-		Return(tobinTax, nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").
-		Return(tobinTax, nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
+		{Denom: "uusd", TobinTax: tobinTax},
+		{Denom: "ukrw", TobinTax: tobinTax},
+	}, nil)
 }

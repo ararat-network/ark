@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"errors"
+
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -57,10 +59,10 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), "uusd").
-				Return(tc.offerTobinTax, nil)
-			s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), "ukrw").
-				Return(tc.askTobinTax, nil)
+			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
+				{Denom: "uusd", TobinTax: tc.offerTobinTax},
+				{Denom: "ukrw", TobinTax: tc.askTobinTax},
+			}, nil)
 
 			response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 				OfferCoin: offerCoin.String(),
@@ -72,6 +74,54 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
 			expectedFee := tc.expectedSpread.Mul(expectedGross)
 			s.Require().True(expectedFee.Equal(response.SwapFee.Amount),
 				"expected fee %s, got %s", expectedFee, response.SwapFee.Amount)
+		})
+	}
+}
+
+func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTaxErrors() {
+	oracleErr := errors.New("oracle unavailable")
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "uusd", "ukrw").
+		Return(oracletypes.RateSnapshot{
+			"uusd": math.LegacyOneDec(),
+			"ukrw": math.LegacyNewDec(1300),
+		}, nil).AnyTimes()
+
+	tests := []struct {
+		name       string
+		tobinTaxes []oracletypes.TobinTax
+		lookupErr  error
+		expectErr  string
+	}{
+		{
+			name:      "configuration lookup fails",
+			lookupErr: oracleErr,
+			expectErr: oracleErr.Error(),
+		},
+		{
+			name: "offer denomination is missing",
+			tobinTaxes: []oracletypes.TobinTax{
+				{Denom: "ukrw", TobinTax: math.LegacyZeroDec()},
+			},
+			expectErr: "uusd: unknown denom",
+		},
+		{
+			name: "ask denomination is missing",
+			tobinTaxes: []oracletypes.TobinTax{
+				{Denom: "uusd", TobinTax: math.LegacyZeroDec()},
+			},
+			expectErr: "ukrw: unknown denom",
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tc.tobinTaxes, tc.lookupErr)
+
+			_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+				OfferCoin: "1000uusd",
+				AskDenom:  "ukrw",
+			})
+			s.Require().ErrorContains(err, tc.expectErr)
 		})
 	}
 }

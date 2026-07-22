@@ -30,6 +30,7 @@ type BankKeeper interface {
 type OracleKeeper interface {
 	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
 	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
+	GetTobinTaxes(ctx context.Context) ([]oracletypes.TobinTax, error)
 
 	// only used for simulation
 	GetExchangeRates(ctx context.Context) (sdk.DecCoins, error)

@@ -506,10 +506,10 @@ func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
 			"uusd": math.LegacyOneDec(),
 			"ukrw": math.LegacyNewDec(1300),
 		}, nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
-		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").
-		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
+		{Denom: "uusd", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
+		{Denom: "ukrw", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
+	}, nil)
 
 	beforeDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 	s.Require().NoError(err)
@@ -966,10 +966,10 @@ func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver
 
 func (s *KeeperTestSuite) expectStableToStableQuote(rates oracletypes.RateSnapshot) {
 	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").Return(rates, nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "uusd").
-		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ukrw").
-		Return(math.LegacyMustNewDecFromStr("0.0025"), nil)
+	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
+		{Denom: "uusd", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
+		{Denom: "ukrw", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
+	}, nil)
 }
 
 func maxLegacyDecForKeeperTest() math.LegacyDec {
