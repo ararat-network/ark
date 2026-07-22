@@ -20,7 +20,7 @@ import (
 
 	"ark/abci/codec"
 	oracleencoding "ark/abci/oracle/encoding"
-	vetypes "ark/abci/ve/types"
+	vetypes "ark/abci/voteextension/types"
 )
 
 func TestVoteExtensionsBlockHeight(t *testing.T) {
@@ -232,7 +232,7 @@ func voteExtensionsTestBlock(t *testing.T, height int64) *cmttypes.Block {
 		Rates: map[string][]byte{"uusd": rate},
 	})
 	require.NoError(t, err)
-	extendedCommit, err := codec.NewExtendedCommitCodec().Encode(cometabci.ExtendedCommitInfo{
+	extendedCommit, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{
 		Round: 2,
 		Votes: []cometabci.ExtendedVoteInfo{
 			{

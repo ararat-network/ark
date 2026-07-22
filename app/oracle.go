@@ -13,7 +13,7 @@ import (
 	"ark/abci/codec"
 	"ark/abci/preblock"
 	"ark/abci/proposals"
-	"ark/abci/ve"
+	"ark/abci/voteextension"
 	oracleclient "ark/oracle/client"
 )
 
@@ -40,28 +40,22 @@ func newOracleRuntime(app *ArkApp, appOpts servertypes.AppOptions, logger log.Lo
 	}
 
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
-	extendedCommitCodec := codec.NewExtendedCommitCodec()
-	validateVoteExtensions := ve.NewDefaultValidateVoteExtensionsFn(app.StakingKeeper)
-
 	defaultProposalHandler := baseapp.NewDefaultProposalHandler(app.Mempool(), app)
 	proposalHandler := proposals.NewHandler(
-		logger,
 		defaultProposalHandler.PrepareProposalHandler(),
 		defaultProposalHandler.ProcessProposalHandler(),
-		validateVoteExtensions,
-		extendedCommitCodec,
+		app.StakingKeeper,
 	)
-	voteExtensionHandler := ve.NewHandler(
+	voteExtensionHandler := voteextension.NewHandler(
 		logger,
 		client,
-		cfg.ClientTimeout,
-		voteExtensionCodec,
-	)
-	preBlockHandler := preblock.NewHandler(
-		logger,
 		app.OracleKeeper,
 		voteExtensionCodec,
-		extendedCommitCodec,
+		cfg.ClientTimeout,
+	)
+	preBlockHandler := preblock.NewHandler(
+		app.OracleKeeper,
+		voteExtensionCodec,
 	)
 
 	app.SetExtendVoteHandler(voteExtensionHandler.ExtendVoteHandler())

@@ -13,7 +13,6 @@ import (
 
 	"ark/abci/codec"
 	abcioracle "ark/abci/oracle"
-	oracleencoding "ark/abci/oracle/encoding"
 )
 
 type voteExtensionsOutput struct {
@@ -118,7 +117,7 @@ func inspectVoteExtensions(block *cmttypes.Block) (voteExtensionsOutput, error) 
 		return voteExtensionsOutput{}, fmt.Errorf("source block %d contains no vote-extension metadata", block.Height)
 	}
 
-	extendedCommit, err := codec.NewExtendedCommitCodec().Decode(block.Txs[0])
+	extendedCommit, err := codec.DecodeExtendedCommit(block.Txs[0])
 	if err != nil {
 		return voteExtensionsOutput{}, fmt.Errorf(
 			"decode vote-extension metadata from source block %d: %w",
@@ -134,7 +133,6 @@ func inspectVoteExtensions(block *cmttypes.Block) (voteExtensionsOutput, error) 
 		Votes:             make([]voteExtensionOutput, len(extendedCommit.Votes)),
 	}
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
-
 	for i, vote := range extendedCommit.Votes {
 		voteExtension, err := voteExtensionCodec.Decode(vote.VoteExtension)
 		if err != nil {
@@ -144,25 +142,17 @@ func inspectVoteExtensions(block *cmttypes.Block) (voteExtensionsOutput, error) 
 				err,
 			)
 		}
-		if err := abcioracle.ValidateVoteExtension(voteExtension); err != nil {
+		parsedRates, err := abcioracle.ParseVoteExtension(voteExtension)
+		if err != nil {
 			return voteExtensionsOutput{}, fmt.Errorf(
-				"validate vote extension for validator %X: %w",
+				"parse vote extension for validator %X: %w",
 				vote.Validator.Address,
 				err,
 			)
 		}
 
-		rates := make(map[string]string, len(voteExtension.Rates))
-		for denom, rawRate := range voteExtension.Rates {
-			rate, err := oracleencoding.DecodeRate(rawRate)
-			if err != nil {
-				return voteExtensionsOutput{}, fmt.Errorf(
-					"decode rate %s for validator %X: %w",
-					denom,
-					vote.Validator.Address,
-					err,
-				)
-			}
+		rates := make(map[string]string, len(parsedRates))
+		for denom, rate := range parsedRates {
 			rates[denom] = rate.String()
 		}
 
