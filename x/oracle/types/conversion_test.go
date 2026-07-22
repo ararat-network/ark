@@ -50,14 +50,7 @@ func TestRateSnapshotConvert(t *testing.T) {
 			askDenom:  "ufoo",
 			expectErr: types.ErrUnknownDenom,
 		},
-		{
-			name:      "non-positive rate",
-			offerCoin: sdk.NewDecCoinFromDec("uzero", math.LegacyOneDec()),
-			askDenom:  "uusd",
-			expectErr: types.ErrInvalidExchangeRate,
-		},
 	}
-	rates["uzero"] = math.LegacyZeroDec()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -114,6 +107,42 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 			},
 			offerCoin: sdk.NewDecCoinFromDec("uusd", outOfRange),
 			askDenom:  "uusd",
+		},
+		{
+			name: "offer rate is out of range",
+			rates: types.RateSnapshot{
+				"uusd": outOfRange,
+				"ukrw": math.LegacyOneDec(),
+			},
+			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
+			askDenom:  "ukrw",
+		},
+		{
+			name: "offer rate is nil",
+			rates: types.RateSnapshot{
+				"uusd": math.LegacyDec{},
+				"ukrw": math.LegacyOneDec(),
+			},
+			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
+			askDenom:  "ukrw",
+		},
+		{
+			name: "offer rate is zero",
+			rates: types.RateSnapshot{
+				"uusd": math.LegacyZeroDec(),
+				"ukrw": math.LegacyOneDec(),
+			},
+			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
+			askDenom:  "ukrw",
+		},
+		{
+			name: "ask rate is out of range",
+			rates: types.RateSnapshot{
+				"uusd": math.LegacyOneDec(),
+				"ukrw": outOfRange,
+			},
+			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
+			askDenom:  "ukrw",
 		},
 		{
 			name: "intermediate multiplication overflows",

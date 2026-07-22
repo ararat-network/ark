@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
@@ -40,16 +38,10 @@ func (r RateSnapshot) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCo
 	if !ok {
 		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, offerCoin.Denom)
 	}
-	if offerRate.IsNil() || !offerRate.IsInValidRange() || !offerRate.IsPositive() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrInvalidExchangeRate, "%s rate %s", offerCoin.Denom, formatRate(offerRate))
-	}
 
 	askRate, ok := r[askDenom]
 	if !ok {
 		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, askDenom)
-	}
-	if askRate.IsNil() || !askRate.IsInValidRange() || !askRate.IsPositive() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrInvalidExchangeRate, "%s rate %s", askDenom, formatRate(askRate))
 	}
 
 	convertedAmount, err := decimal.Mul(offerCoin.Amount, askRate)
@@ -76,11 +68,4 @@ func (r RateSnapshot) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCo
 	}
 
 	return sdk.NewDecCoinFromDec(askDenom, amount), nil
-}
-
-func formatRate(rate math.LegacyDec) string {
-	if rate.IsNil() {
-		return "<nil>"
-	}
-	return fmt.Sprint(rate)
 }

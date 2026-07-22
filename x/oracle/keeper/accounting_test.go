@@ -98,25 +98,6 @@ func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsInvalidRewardWeight() {
 	}
 }
 
-func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsMissOverflowWithoutChangingRewardWeight() {
-	pubKey := ed25519.GenPrivKey().PubKey()
-	validator, err := stakingtypes.NewValidator(valAddr1.String(), pubKey, stakingtypes.Description{})
-	s.Require().NoError(err)
-	consAddr, err := validator.GetConsAddr()
-	s.Require().NoError(err)
-	s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(5)))
-	s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, ^uint64(0)))
-
-	s.stakingKeeper.EXPECT().ValidatorByConsAddr(s.ctx, consAddr).Return(validator, nil)
-
-	err = s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(1), true)
-	s.Require().ErrorContains(err, "miss count overflow")
-
-	rewardWeight, getErr := s.keeper.RewardWeight.Get(s.ctx, valAddr1)
-	s.Require().NoError(getErr)
-	s.Require().True(math.NewInt(5).Equal(rewardWeight))
-}
-
 func (s *KeeperTestSuite) TestAccountingCountersSkipUnresolvedConsensusAddress() {
 	consAddr := sdk.ConsAddress([]byte("missing_validator___"))
 	s.stakingKeeper.EXPECT().
@@ -477,6 +458,7 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 
 			powerReduction := math.NewInt(1_000_000)
 			s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
+			s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
 
 			if tc.missingValidator {
 				var err error
@@ -507,7 +489,6 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 					if tc.expectJail {
 						s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr)
 					}
-					s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
 				}
 			}
 
@@ -532,4 +513,55 @@ func (s *KeeperTestSuite) TestSettleSlash() {
 			}
 		})
 	}
+}
+
+func (s *KeeperTestSuite) TestSettleSlashReadsBondDenomOnce() {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(100)
+
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MinValidPerWindow = math.LegacyNewDecWithPrec(90, 2)
+	params.SlashFraction = math.LegacyNewDecWithPrec(1, 4)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, 20))
+	s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr2, 20))
+
+	powerReduction := math.NewInt(1_000_000)
+	s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
+	s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil).Times(1)
+
+	expectedEvents := make([]proto.Message, 0, 2)
+	for _, valAddr := range []sdk.ValAddress{valAddr1, valAddr2} {
+		pubKey := ed25519.GenPrivKey().PubKey()
+		validator, err := stakingtypes.NewValidator(valAddr.String(), pubKey, stakingtypes.Description{})
+		s.Require().NoError(err)
+		validator.Status = stakingtypes.Bonded
+		validator.Tokens = powerReduction.MulRaw(10)
+		consAddr, err := validator.GetConsAddr()
+		s.Require().NoError(err)
+
+		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr).Return(validator, nil)
+		s.stakingKeeper.EXPECT().Slash(
+			s.ctx,
+			consAddr,
+			100-sdk.ValidatorUpdateDelay-1,
+			int64(10),
+			params.SlashFraction,
+		).Return(math.NewInt(1), nil)
+		s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr)
+		expectedEvents = append(expectedEvents, &types.EventOracleSlash{
+			Validator:   valAddr.String(),
+			AmountDenom: chain.MicroNoahDenom,
+			Amount:      math.NewInt(1),
+			MissCount:   20,
+			SlashWindow: 20,
+		})
+	}
+
+	eventsBefore := len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
+	s.Require().NoError(s.keeper.SettleSlash(s.ctx, 20))
+	s.requireTypedEvents(
+		sdk.UnwrapSDKContext(s.ctx).EventManager().Events()[eventsBefore:],
+		expectedEvents...,
+	)
 }

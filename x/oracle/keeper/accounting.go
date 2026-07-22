@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/bits"
 
 	"github.com/cosmos/gogoproto/proto"
 
@@ -65,11 +64,7 @@ func (k Keeper) RecordVoteAccounting(ctx context.Context, consAddr sdk.ConsAddre
 		if err != nil && !errors.Is(err, collections.ErrNotFound) {
 			return fmt.Errorf("getting miss count: %w", err)
 		}
-		var carry uint64
-		updatedMissCount, carry = bits.Add64(currentMissCount, 1, 0)
-		if carry != 0 {
-			return fmt.Errorf("miss count overflow for validator %s", valAddr)
-		}
+		updatedMissCount = currentMissCount + 1
 	}
 
 	if rewardWeight.IsPositive() {
@@ -122,24 +117,28 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 		return nil
 	}
 
-	// periodRewards = oraclePool * rewardWindow / rewardDistributionWindow.
-	periodRewards := make(sdk.DecCoins, 0, len(rewardBalances))
+	// rewardsPerWeight = oraclePool * rewardWindow / rewardDistributionWindow / totalRewardWeight.
+	rewardsPerWeight := make(sdk.DecCoins, 0, len(rewardBalances))
 	for _, balance := range rewardBalances {
 		amount := math.LegacyNewDecFromInt(balance.Amount).
 			MulInt(math.NewIntFromUint64(rewardWindow)).
-			QuoInt(math.NewIntFromUint64(rewardDistributionWindow))
-		periodRewards = append(periodRewards, sdk.NewDecCoinFromDec(balance.Denom, amount))
+			QuoInt(math.NewIntFromUint64(rewardDistributionWindow)).
+			QuoInt(totalRewardWeight)
+		rewardsPerWeight = append(rewardsPerWeight, sdk.NewDecCoinFromDec(balance.Denom, amount))
 	}
 
 	// Distribute rewards by reward weight.
-	var distributedReward sdk.Coins
-	rewardEvents := []proto.Message{}
+	distributedAmounts := make([]math.Int, len(rewardsPerWeight))
+	for i := range distributedAmounts {
+		distributedAmounts[i] = math.ZeroInt()
+	}
+	rewardEvents := make([]proto.Message, 0, len(validatorRewards))
 	for _, reward := range validatorRewards {
-		rewardCoins := sdk.NewCoins()
-		for _, periodReward := range periodRewards {
-			rewardAmt := periodReward.Amount.QuoInt(totalRewardWeight).MulInt(reward.weight).TruncateInt()
+		rewardCoins := make(sdk.Coins, 0, len(rewardsPerWeight))
+		for _, rewardPerWeight := range rewardsPerWeight {
+			rewardAmt := rewardPerWeight.Amount.MulInt(reward.weight).TruncateInt()
 			if rewardAmt.IsPositive() {
-				rewardCoins = rewardCoins.Add(sdk.NewCoin(periodReward.Denom, rewardAmt))
+				rewardCoins = append(rewardCoins, sdk.NewCoin(rewardPerWeight.Denom, rewardAmt))
 			}
 		}
 		if rewardCoins.IsZero() {
@@ -168,15 +167,33 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 				err,
 			)
 		}
-		distributedReward = distributedReward.Add(rewardCoins...)
+		rewardCoinIndex := 0
+		for rewardIndex, rewardPerWeight := range rewardsPerWeight {
+			if rewardCoinIndex == len(rewardCoins) {
+				break
+			}
+			rewardCoin := rewardCoins[rewardCoinIndex]
+			if rewardCoin.Denom != rewardPerWeight.Denom {
+				continue
+			}
+			distributedAmounts[rewardIndex] = distributedAmounts[rewardIndex].Add(rewardCoin.Amount)
+			rewardCoinIndex++
+		}
 		rewardEvents = append(rewardEvents, &types.EventOracleReward{
 			Validator: reward.addr.String(),
 			Rewards:   rewardCoins,
 		})
 	}
 
-	if distributedReward.IsZero() {
+	if len(rewardEvents) == 0 {
 		return nil
+	}
+	distributedReward := make(sdk.Coins, 0, len(rewardsPerWeight))
+	for rewardIndex, rewardPerWeight := range rewardsPerWeight {
+		amount := distributedAmounts[rewardIndex]
+		if amount.IsPositive() {
+			distributedReward = append(distributedReward, sdk.NewCoin(rewardPerWeight.Denom, amount))
+		}
 	}
 
 	// Move distributed rewards to the distribution module.
@@ -204,6 +221,10 @@ func (k Keeper) SettleSlash(ctx context.Context, slashWindowBlocks uint64) error
 	}
 
 	powerReduction := k.stakingKeeper.PowerReduction(ctx)
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return fmt.Errorf("getting bond denom for oracle slash event: %w", err)
+	}
 	slashWindow := math.LegacyNewDecFromInt(math.NewIntFromUint64(slashWindowBlocks))
 	if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, missCount uint64) (bool, error) {
 		// Cap missed votes at the slash window.
@@ -232,10 +253,6 @@ func (k Keeper) SettleSlash(ctx context.Context, slashWindowBlocks uint64) error
 			consAddr, err := validator.GetConsAddr()
 			if err != nil {
 				return true, fmt.Errorf("getting consensus address for validator %s: %w", valAddr, err)
-			}
-			bondDenom, err := k.stakingKeeper.BondDenom(ctx)
-			if err != nil {
-				return true, fmt.Errorf("getting bond denom for oracle slash event: %w", err)
 			}
 			consensusPower := sdk.TokensToConsensusPower(validator.GetTokens(), powerReduction)
 			slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, consensusPower, params.SlashFraction)
