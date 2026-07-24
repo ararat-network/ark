@@ -42,7 +42,8 @@ func TestRandomisedGenState(t *testing.T) {
 	var oracleGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &oracleGenesis)
 
-	require.True(t, oracleGenesis.Params.VoteThreshold.GT(math.LegacyNewDecWithPrec(33, 2)))
+	require.True(t, oracleGenesis.Params.VoteThreshold.GTE(types.MinVoteThreshold))
+	require.True(t, oracleGenesis.Params.VoteThreshold.LTE(math.LegacyOneDec()))
 	require.False(t, oracleGenesis.Params.RewardBand.IsNegative())
 	require.True(t, oracleGenesis.Params.RewardWindow > 0)
 	require.True(t, oracleGenesis.Params.RewardDistributionWindow >= 100)

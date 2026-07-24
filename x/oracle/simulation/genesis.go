@@ -28,7 +28,7 @@ const (
 
 // GenVoteThreshold randomised VoteThreshold
 func GenVoteThreshold(r *rand.Rand) math.LegacyDec {
-	return math.LegacyNewDecWithPrec(333, 3).Add(math.LegacyNewDecWithPrec(int64(r.Intn(333)), 3))
+	return types.MinVoteThreshold.Add(math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3))
 }
 
 // GenRewardBand randomised RewardBand

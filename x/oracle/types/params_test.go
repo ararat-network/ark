@@ -24,7 +24,7 @@ func TestParamsValidate(t *testing.T) {
 			name:   "default is valid",
 			mutate: func(p *types.Params) {},
 			check: func(t *testing.T, p types.Params) {
-				require.Equal(t, math.LegacyNewDecWithPrec(667, 3), p.VoteThreshold)
+				require.Equal(t, math.LegacyMustNewDecFromStr("0.666666666666666667"), p.VoteThreshold)
 				require.Equal(t, time.Minute, p.MaxExchangeRateAge)
 			},
 		},
@@ -35,18 +35,18 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "VoteThreshold must be set",
 		},
 		{
-			name:      "vote threshold at 33%",
-			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(33, 2) },
-			expectErr: "VoteThreshold must be greater than 33 percent",
+			name:      "vote threshold below 50%",
+			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(499, 3) },
+			expectErr: "VoteThreshold must be at least 50 percent",
 		},
 		{
 			name:      "vote threshold zero",
 			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyZeroDec() },
-			expectErr: "VoteThreshold must be greater than 33 percent",
+			expectErr: "VoteThreshold must be at least 50 percent",
 		},
 		{
-			name:   "vote threshold above 33%",
-			mutate: func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(34, 2) },
+			name:   "vote threshold at 50%",
+			mutate: func(p *types.Params) { p.VoteThreshold = types.MinVoteThreshold },
 		},
 		{
 			name:   "vote threshold at 100%",

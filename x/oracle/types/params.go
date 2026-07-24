@@ -21,9 +21,10 @@ const (
 
 // Default parameter values
 var (
-	DefaultVoteThreshold = math.LegacyNewDecWithPrec(667, 3) // 66.7%
-	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)   // 2% (-1, 1)
-	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4)  // 0.25%
+	MinVoteThreshold     = math.LegacyNewDecWithPrec(50, 2)                     // 50%
+	DefaultVoteThreshold = math.LegacyMustNewDecFromStr("0.666666666666666667") // > 2/3
+	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)                      // 2% (-1, 1)
+	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4)                     // 0.25%
 	DefaultTobinTaxes    = []TobinTax{
 		{Denom: chain.MicroUSDDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.MicroKRWDenom, TobinTax: DefaultTobinTax},
@@ -58,8 +59,8 @@ func (p Params) Validate() error {
 	if p.VoteThreshold.IsNil() {
 		return errors.New("oracle parameter VoteThreshold must be set")
 	}
-	if p.VoteThreshold.LTE(math.LegacyNewDecWithPrec(33, 2)) {
-		return errors.New("oracle parameter VoteThreshold must be greater than 33 percent")
+	if p.VoteThreshold.LT(MinVoteThreshold) {
+		return errors.New("oracle parameter VoteThreshold must be at least 50 percent")
 	}
 	if p.VoteThreshold.GT(math.LegacyOneDec()) {
 		return errors.New("oracle parameter VoteThreshold must not exceed 100 percent")
