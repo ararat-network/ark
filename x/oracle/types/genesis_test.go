@@ -11,6 +11,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
@@ -215,6 +216,17 @@ func TestValidateGenesis(t *testing.T) {
 				gs.VoteTargets.Denoms = []string{"ufoo/bar"}
 			},
 			expectErr: "canonical lowercase micro denom",
+		},
+		{
+			name: "native denom cannot be configured as a vote target",
+			mutate: func(gs *types.GenesisState) {
+				gs.Params.TobinTaxes = []types.TobinTax{{
+					Denom:    chain.MicroNoahDenom,
+					TobinTax: math.LegacyNewDecWithPrec(25, 4),
+				}}
+				gs.VoteTargets = types.NewVoteTargets(gs.Params)
+			},
+			expectErr: "active vote targets must not contain native denom unoah",
 		},
 		{
 			name: "duplicate vote target",

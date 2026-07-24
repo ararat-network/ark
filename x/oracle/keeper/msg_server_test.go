@@ -70,14 +70,58 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().ErrorContains(err, "RewardWindow must be > 0")
 	})
 
-	s.Run("updates market taxes and schedules vote targets", func() {
-		oldVoteTargets := []string{chain.MicroKRWDenom}
+	for _, tc := range []struct {
+		name   string
+		mutate func(*types.Params)
+	}{
+		{
+			name: "rejects removed vote target",
+			mutate: func(params *types.Params) {
+				params.TobinTaxes = params.TobinTaxes[1:]
+			},
+		},
+		{
+			name: "rejects empty vote targets",
+			mutate: func(params *types.Params) {
+				params.TobinTaxes = nil
+			},
+		},
+	} {
+		s.Run(tc.name, func() {
+			currentParams, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
+			currentVoteTargets := types.NewVoteTargets(currentParams)
+			s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, currentVoteTargets))
+
+			params := currentParams
+			tc.mutate(&params)
+			_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+				Authority: authority,
+				Params:    params,
+			})
+			s.Require().ErrorIs(err, types.ErrVoteTargetRemoval)
+
+			storedParams, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(currentParams, storedParams)
+			storedVoteTargets, err := s.keeper.VoteTargets.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(currentVoteTargets, storedVoteTargets)
+		})
+	}
+
+	s.Run("updates market taxes and schedules added vote targets", func() {
+		oldVoteTargets := []string{chain.MicroUSDDenom}
+		currentParams := types.DefaultParams()
+		currentParams.TobinTaxes = []types.TobinTax{
+			{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
+		}
+		s.Require().NoError(s.keeper.Params.Set(s.ctx, currentParams))
 		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
 			Denoms:  oldVoteTargets,
 			Version: types.InitialVoteTargetVersion,
 		}))
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, newStoredExchangeRate(chain.MicroKRWDenom, math.LegacyOneDec())))
 
 		const newDenom = "uaud"
 		params := types.DefaultParams()
@@ -102,10 +146,6 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().NoError(err)
 		s.Require().True(hasUSD)
 
-		hasKRW, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
-		s.Require().NoError(err)
-		s.Require().True(hasKRW)
-
 		usdTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
 		s.Require().NoError(err)
 		s.Require().True(math.LegacyNewDecWithPrec(25, 4).Equal(usdTax))
@@ -113,9 +153,6 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		audTax, err := s.keeper.GetTobinTax(s.ctx, newDenom)
 		s.Require().NoError(err)
 		s.Require().True(math.LegacyNewDecWithPrec(50, 4).Equal(audTax))
-
-		_, err = s.keeper.GetTobinTax(s.ctx, chain.MicroKRWDenom)
-		s.Require().ErrorIs(err, types.ErrUnknownDenom)
 
 		state, err := s.keeper.VoteTargets.Get(s.ctx)
 		s.Require().NoError(err)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"ark/pkg/chain"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -112,6 +113,20 @@ func TestVoteTargetsValidate(t *testing.T) {
 				targets.Pending.Denoms = []string{"uusd", "ukrw"}
 			},
 			expectedError: "pending vote targets must be sorted",
+		},
+		{
+			name: "native active target is rejected",
+			mutate: func(targets *oracletypes.VoteTargets) {
+				targets.Denoms = []string{chain.MicroNoahDenom}
+			},
+			expectedError: "active vote targets must not contain native denom unoah",
+		},
+		{
+			name: "native pending target is rejected",
+			mutate: func(targets *oracletypes.VoteTargets) {
+				targets.Pending.Denoms = []string{chain.MicroNoahDenom}
+			},
+			expectedError: "pending vote targets must not contain native denom unoah",
 		},
 		{
 			name: "duplicate pending denom is rejected",

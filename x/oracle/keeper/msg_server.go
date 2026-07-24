@@ -39,12 +39,18 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, fmt.Errorf("getting current params: %w", err)
 	}
 	currentVoteTargets := types.VoteTargetDenoms(currentParams)
+	nextVoteTargets := types.VoteTargetDenoms(msg.Params)
+	for _, denom := range currentVoteTargets {
+		if _, found := slices.BinarySearch(nextVoteTargets, denom); !found {
+			return nil, fmt.Errorf("%w: %s", types.ErrVoteTargetRemoval, denom)
+		}
+	}
+
 	for _, tobinTax := range msg.Params.TobinTaxes {
 		if _, found := slices.BinarySearch(currentVoteTargets, tobinTax.Denom); !found {
 			m.k.registerTobinTaxMetadata(ctx, tobinTax.Denom)
 		}
 	}
-	nextVoteTargets := types.VoteTargetDenoms(msg.Params)
 	if !slices.Equal(currentVoteTargets, nextVoteTargets) {
 		if err := m.k.ScheduleVoteTargets(ctx, nextVoteTargets); err != nil {
 			return nil, fmt.Errorf("scheduling vote targets: %w", err)

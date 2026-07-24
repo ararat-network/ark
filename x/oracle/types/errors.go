@@ -11,4 +11,5 @@ var (
 	ErrUnknownDenom         = sdkerrors.Register(ModuleName, 3, "unknown denom")
 	ErrStaleExchangeRate    = sdkerrors.Register(ModuleName, 4, "stale exchange rate")
 	ErrConversionOutOfRange = sdkerrors.Register(ModuleName, 5, "conversion result is out of range")
+	ErrVoteTargetRemoval    = sdkerrors.Register(ModuleName, 6, "vote target removal is not permitted")
 )

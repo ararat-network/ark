@@ -89,6 +89,9 @@ func validateVoteTargetDenoms(label string, denoms []string) error {
 		if err := chain.ValidateMicroDenom(denom); err != nil {
 			return fmt.Errorf("%s %w", label, err)
 		}
+		if denom == chain.MicroNoahDenom {
+			return fmt.Errorf("%s must not contain native denom %s", label, denom)
+		}
 		if i > 0 && denom == denoms[i-1] {
 			return fmt.Errorf("%s contains duplicate denom %s", label, denom)
 		}

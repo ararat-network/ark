@@ -9,6 +9,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	"ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
@@ -181,6 +182,13 @@ func TestParamsValidate(t *testing.T) {
 				p.TobinTaxes = []types.TobinTax{{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
 			expectErr: "canonical lowercase micro denom",
+		},
+		{
+			name: "tobin tax native denom",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = []types.TobinTax{{Denom: chain.MicroNoahDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+			},
+			expectErr: "TobinTaxes must not contain native denom unoah",
 		},
 		{
 			name: "tobin tax negative",

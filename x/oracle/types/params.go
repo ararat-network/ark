@@ -113,6 +113,9 @@ func (p Params) Validate() error {
 		if err := chain.ValidateMicroDenom(tobinTax.Denom); err != nil {
 			return fmt.Errorf("oracle parameter TobinTaxes %w", err)
 		}
+		if tobinTax.Denom == chain.MicroNoahDenom {
+			return fmt.Errorf("oracle parameter TobinTaxes must not contain native denom %s", tobinTax.Denom)
+		}
 
 		if _, ok := seen[tobinTax.Denom]; ok {
 			return fmt.Errorf("oracle parameter TobinTaxes contains duplicate denom: %s", tobinTax.Denom)
