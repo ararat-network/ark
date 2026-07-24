@@ -9,43 +9,43 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/klauspost/compress/zstd"
 	"github.com/stretchr/testify/require"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracleencoding "ark/abci/oracle/encoding"
-	vetypes "ark/abci/ve/types"
+	vetypes "ark/abci/voteextension/types"
+	arkencoding "ark/pkg/encoding"
 	oracletypes "ark/x/oracle/types"
 )
 
 func TestVoteExtensionCodec(t *testing.T) {
-	c := NewVoteExtensionCodec()
+	codec := NewVoteExtensionCodec()
 	voteExtension := vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{
 			"ukrw": []byte("2"),
 			"uusd": []byte("1"),
 		},
+		TargetVersion: oracletypes.InitialVoteTargetVersion,
 	}
 
-	encoded, err := c.Encode(voteExtension)
+	encoded, err := codec.Encode(voteExtension)
 	require.NoError(t, err)
 
-	decoded, err := c.Decode(encoded)
+	decoded, err := codec.Decode(encoded)
 	require.NoError(t, err)
-	require.Equal(t, voteExtension.Rates, decoded.Rates)
+	require.Equal(t, voteExtension, decoded)
 
-	decoded, err = c.Decode(nil)
+	decoded, err = codec.Decode(nil)
 	require.NoError(t, err)
 	require.Empty(t, decoded.Rates)
 }
 
 func TestExtendedCommitCodec(t *testing.T) {
-	c := NewExtendedCommitCodec()
 	extendedCommit := cmtabci.ExtendedCommitInfo{
 		Round: 1,
 		Votes: []cmtabci.ExtendedVoteInfo{
@@ -57,23 +57,101 @@ func TestExtendedCommitCodec(t *testing.T) {
 		},
 	}
 
-	encoded, err := c.Encode(extendedCommit)
+	encoded, err := EncodeExtendedCommit(extendedCommit)
 	require.NoError(t, err)
-	decoded, err := c.Decode(encoded)
+	expectedEncoded, err := extendedCommit.Marshal()
+	require.NoError(t, err)
+	require.Equal(t, expectedEncoded, encoded)
+
+	decoded, err := DecodeExtendedCommit(encoded, len(extendedCommit.Votes))
 	require.NoError(t, err)
 	require.Equal(t, extendedCommit, decoded)
 
-	decoded, err = c.Decode(nil)
+	decoded, err = DecodeExtendedCommit(nil, 0)
 	require.NoError(t, err)
 	require.Empty(t, decoded.Votes)
 }
 
+func TestExtendedCommitCodecBoundsVoteCount(t *testing.T) {
+	const maxVotes = 3
+
+	atLimit := bytes.Repeat([]byte{0x12, 0x00}, maxVotes)
+	decoded, err := DecodeExtendedCommit(atLimit, maxVotes)
+	require.NoError(t, err)
+	require.Len(t, decoded.Votes, maxVotes)
+
+	aboveLimit := append(bytes.Clone(atLimit), 0x12, 0x00)
+	decoded, err = DecodeExtendedCommit(aboveLimit, maxVotes)
+	require.ErrorContains(t, err, "extended commit vote count 4 exceeds maximum 3")
+	require.Empty(t, decoded.Votes)
+}
+
+func TestExtendedCommitCodecRejectsInvalidVoteLimits(t *testing.T) {
+	testCases := []int{-1, cmttypes.MaxVotesCount + 1}
+	for _, maxVotes := range testCases {
+		t.Run(fmt.Sprintf("max_votes_%d", maxVotes), func(t *testing.T) {
+			_, err := DecodeExtendedCommit(nil, maxVotes)
+			require.ErrorContains(t, err, "extended commit vote limit")
+		})
+	}
+}
+
+func TestExtendedCommitCodecRejectsMalformedWireBeforeUnmarshal(t *testing.T) {
+	testCases := []struct {
+		name    string
+		encoded []byte
+	}{
+		{name: "missing vote length", encoded: []byte{0x12}},
+		{name: "truncated vote length", encoded: []byte{0x12, 0x80}},
+		{name: "vote length exceeds input", encoded: []byte{0x12, 0x02, 0x00}},
+		{name: "vote has wrong wire type", encoded: []byte{0x10, 0x00}},
+		{name: "round has wrong wire type", encoded: []byte{0x0a, 0x00}},
+		{name: "overflowing tag", encoded: bytes.Repeat([]byte{0x80}, 10)},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := DecodeExtendedCommit(tc.encoded, cmttypes.MaxVotesCount)
+			require.Error(t, err)
+		})
+	}
+
+	decoded, err := DecodeExtendedCommit([]byte{0x18, 0x01}, 0)
+	require.NoError(t, err)
+	require.Empty(t, decoded.Votes)
+}
+
+func TestExtendedCommitCodecRejectsExcessVotesWithBoundedAllocation(t *testing.T) {
+	const attackPayloadBytes = 8 << 20
+
+	encoded := bytes.Repeat([]byte{0x12, 0x00}, attackPayloadBytes/2)
+	result := testing.Benchmark(func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			_, err := DecodeExtendedCommit(encoded, 100)
+			if err == nil {
+				b.Fatal("expected vote-count error")
+			}
+		}
+	})
+
+	require.Less(t, result.AllocedBytesPerOp(), int64(4<<10))
+}
+
+func TestExtendedCommitCodecRejectsExcessVotesOnEncode(t *testing.T) {
+	_, err := EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{
+		Votes: make([]cmtabci.ExtendedVoteInfo, cmttypes.MaxVotesCount+1),
+	})
+	require.ErrorContains(t, err, "extended commit vote count")
+}
+
 func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 	t.Run("256-target vote extension", func(t *testing.T) {
+		codec := NewVoteExtensionCodec()
 		maxRateRaw := new(big.Int).Lsh(big.NewInt(1), 256)
 		maxRateRaw.Mul(maxRateRaw, big.NewInt(1_000_000_000_000_000_000))
 		maxRateRaw.Sub(maxRateRaw, big.NewInt(1))
-		rate, err := oracleencoding.EncodeRate(
+		rate, err := arkencoding.EncodeLegacyDec(
 			math.LegacyNewDecFromBigIntWithPrec(maxRateRaw, math.LegacyPrecision),
 		)
 		require.NoError(t, err)
@@ -91,13 +169,14 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(decoded), maxVoteExtensionDecodedBytes)
 
-		encoded, err := NewVoteExtensionCodec().Encode(voteExtension)
+		encoded, err := codec.Encode(voteExtension)
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(encoded), maxVoteExtensionWireBytes)
 	})
 
-	t.Run("100-validator extended commit", func(t *testing.T) {
-		const validatorCount = 100
+	t.Run("130-validator extended commit fits default block budget", func(t *testing.T) {
+		// Terra operated with a governance-controlled 130-validator active set.
+		const validatorCount = 130
 
 		voteExtensions := make([]byte, validatorCount*maxVoteExtensionWireBytes)
 		_, err := rand.New(rand.NewSource(1)).Read(voteExtensions)
@@ -118,75 +197,68 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 			}
 		}
 
-		require.LessOrEqual(t, extendedCommit.Size(), maxExtendedCommitDecodedBytes)
-
-		encoded, err := NewExtendedCommitCodec().Encode(extendedCommit)
+		encoded, err := EncodeExtendedCommit(extendedCommit)
 		require.NoError(t, err)
-		require.LessOrEqual(t, len(encoded), maxExtendedCommitWireBytes)
 
-		decoded, err := NewExtendedCommitCodec().Decode(encoded)
+		consensusParams := cmttypes.DefaultConsensusParams()
+		maxDataBytes := cmttypes.MaxDataBytes(
+			consensusParams.Block.MaxBytes,
+			consensusParams.Evidence.MaxBytes,
+			validatorCount,
+		)
+		require.LessOrEqual(
+			t,
+			cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{encoded}),
+			maxDataBytes,
+		)
+
+		decoded, err := DecodeExtendedCommit(encoded, validatorCount)
 		require.NoError(t, err)
 		require.Len(t, decoded.Votes, validatorCount)
 	})
 }
 
-func TestCodecsRejectOversizedWirePayloads(t *testing.T) {
-	t.Run("vote extension", func(t *testing.T) {
-		_, err := NewVoteExtensionCodec().Decode(make([]byte, maxVoteExtensionWireBytes+1))
-		require.ErrorContains(t, err, "compressed vote extension")
-	})
-
-	t.Run("extended commit", func(t *testing.T) {
-		_, err := NewExtendedCommitCodec().Decode(make([]byte, maxExtendedCommitWireBytes+1))
-		require.ErrorContains(t, err, "compressed extended commit")
-	})
+func TestVoteExtensionCodecRejectsOversizedWirePayload(t *testing.T) {
+	_, err := NewVoteExtensionCodec().Decode(make([]byte, maxVoteExtensionWireBytes+1))
+	require.ErrorContains(t, err, "compressed vote extension")
 }
 
-func TestCodecsBoundDecompressedOutput(t *testing.T) {
-	t.Run("vote extension", func(t *testing.T) {
-		var compressed bytes.Buffer
-		writer := zlib.NewWriter(&compressed)
-		_, err := writer.Write(bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1))
-		require.NoError(t, err)
-		require.NoError(t, writer.Close())
+func TestVoteExtensionCodecBoundsDecompressedOutput(t *testing.T) {
+	var compressed bytes.Buffer
+	writer := zlib.NewWriter(&compressed)
+	_, err := writer.Write(bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1))
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
 
-		_, err = NewVoteExtensionCodec().Decode(compressed.Bytes())
-		require.ErrorContains(t, err, "decompressed output size")
-	})
-
-	t.Run("extended commit", func(t *testing.T) {
-		encoder, err := zstd.NewWriter(nil)
-		require.NoError(t, err)
-		t.Cleanup(func() { encoder.Close() })
-		compressed := encoder.EncodeAll(bytes.Repeat([]byte("a"), maxExtendedCommitDecodedBytes+1), nil)
-
-		_, err = NewExtendedCommitCodec().Decode(compressed)
-		require.Error(t, err)
-	})
+	_, err = NewVoteExtensionCodec().Decode(compressed.Bytes())
+	require.ErrorContains(t, err, "decompressed output size")
 }
 
-func TestCodecsRejectOversizedDecodedPayloads(t *testing.T) {
-	t.Run("vote extension", func(t *testing.T) {
-		_, err := NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
-			Rates: map[string][]byte{"uusd": bytes.Repeat([]byte("1"), maxVoteExtensionDecodedBytes)},
-		})
-		require.ErrorContains(t, err, "decoded vote extension")
+func TestVoteExtensionCodecRejectsOversizedPayloadOnEncode(t *testing.T) {
+	_, err := NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
+		Rates: map[string][]byte{"uusd": bytes.Repeat([]byte("1"), maxVoteExtensionDecodedBytes)},
 	})
-
-	t.Run("extended commit", func(t *testing.T) {
-		_, err := NewExtendedCommitCodec().Encode(cmtabci.ExtendedCommitInfo{
-			Votes: []cmtabci.ExtendedVoteInfo{{
-				VoteExtension: bytes.Repeat([]byte("1"), maxExtendedCommitDecodedBytes),
-			}},
-		})
-		require.ErrorContains(t, err, "decoded extended commit")
-	})
+	require.ErrorContains(t, err, "decoded vote extension")
 }
 
-func TestCodecsRejectMalformedCompressedPayloads(t *testing.T) {
+func TestCodecsRejectMalformedPayloads(t *testing.T) {
 	_, err := NewVoteExtensionCodec().Decode([]byte("not-zlib"))
 	require.Error(t, err)
 
-	_, err = NewExtendedCommitCodec().Decode([]byte("not-zstd"))
+	_, err = DecodeExtendedCommit([]byte("not-protobuf"), cmttypes.MaxVotesCount)
 	require.Error(t, err)
+}
+
+func FuzzDecodeExtendedCommitVoteLimit(f *testing.F) {
+	f.Add([]byte(nil))
+	f.Add([]byte{0x12, 0x00})
+	f.Add(bytes.Repeat([]byte{0x12, 0x00}, 5))
+	f.Add([]byte{0x12, 0x80})
+
+	f.Fuzz(func(t *testing.T, encoded []byte) {
+		decoded, err := DecodeExtendedCommit(encoded, 4)
+		if err == nil && len(decoded.Votes) > 4 {
+			t.Fatalf("decoded %d votes above limit 4", len(decoded.Votes))
+		}
+	})
 }

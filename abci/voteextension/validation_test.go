@@ -1,10 +1,9 @@
-package ve_test
+package voteextension_test
 
 import (
 	"bytes"
 	"context"
 	"errors"
-	"math"
 	"sort"
 	"testing"
 
@@ -23,7 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/ve"
+	"ark/abci/voteextension"
 )
 
 const testChainID = "test-chain"
@@ -39,12 +38,13 @@ type fakeValidatorStore struct {
 	errs    map[string]error
 }
 
-func TestVoteExtensionsEnabled(t *testing.T) {
+func TestVoteExtensionsAvailable(t *testing.T) {
 	testCases := []struct {
 		name         string
 		height       int64
 		enableHeight int64
 		withAbci     bool
+		withCommit   bool
 		expected     bool
 	}{
 		{
@@ -57,12 +57,20 @@ func TestVoteExtensionsEnabled(t *testing.T) {
 			height:       3,
 			enableHeight: 0,
 			withAbci:     true,
+			withCommit:   true,
 			expected:     false,
 		},
 		{
-			name:         "first block is disabled",
+			name:         "initial height one has no previous commit",
 			height:       1,
-			enableHeight: 0,
+			enableHeight: 1,
+			withAbci:     true,
+			expected:     false,
+		},
+		{
+			name:         "nonstandard initial height has no previous commit",
+			height:       100,
+			enableHeight: 1,
 			withAbci:     true,
 			expected:     false,
 		},
@@ -71,13 +79,15 @@ func TestVoteExtensionsEnabled(t *testing.T) {
 			height:       2,
 			enableHeight: 2,
 			withAbci:     true,
+			withCommit:   true,
 			expected:     false,
 		},
 		{
-			name:         "enable height below current height is enabled",
-			height:       3,
-			enableHeight: 2,
+			name:         "second block has previous commit",
+			height:       101,
+			enableHeight: 1,
 			withAbci:     true,
+			withCommit:   true,
 			expected:     true,
 		},
 	}
@@ -90,143 +100,18 @@ func TestVoteExtensionsEnabled(t *testing.T) {
 				params.Abci = &cmtproto.ABCIParams{VoteExtensionsEnableHeight: tc.enableHeight}
 			}
 			ctx = ctx.WithConsensusParams(params)
-
-			require.Equal(t, tc.expected, ve.VoteExtensionsEnabled(ctx))
-		})
-	}
-}
-
-func TestValidateExtendedCommitAgainstLastCommit(t *testing.T) {
-	vals := []testValidator{newTestValidator(), newTestValidator(), newTestValidator()}
-	validCommit := sortExtendedCommit(cometabci.ExtendedCommitInfo{
-		Round: 1,
-		Votes: []cometabci.ExtendedVoteInfo{
-			newExtendedVote(vals[0], 30, cmtproto.BlockIDFlagCommit, []byte("ve"), []byte("sig")),
-			newExtendedVote(vals[1], 20, cmtproto.BlockIDFlagCommit, []byte("ve"), []byte("sig")),
-			newExtendedVote(vals[2], 10, cmtproto.BlockIDFlagAbsent, nil, nil),
-		},
-	})
-	validLastCommit := lastCommitFromExtendedCommit(validCommit)
-	prunedCommit := cloneExtendedCommit(validCommit)
-	prunedCommit.Votes[1].BlockIdFlag = cmtproto.BlockIDFlagAbsent
-	prunedCommit.Votes[1].VoteExtension = nil
-	prunedCommit.Votes[1].ExtensionSignature = nil
-
-	testCases := []struct {
-		name      string
-		extCommit cometabci.ExtendedCommitInfo
-		last      comet.CommitInfo
-		expectErr bool
-	}{
-		{
-			name:      "valid commit",
-			extCommit: validCommit,
-			last:      validLastCommit,
-		},
-		{
-			name:      "round mismatch",
-			extCommit: validCommit,
-			last: lastCommitFromExtendedCommit(cometabci.ExtendedCommitInfo{
-				Round: 2,
-				Votes: validCommit.Votes,
-			}),
-			expectErr: true,
-		},
-		{
-			name:      "length mismatch",
-			extCommit: validCommit,
-			last: lastCommitFromExtendedCommit(cometabci.ExtendedCommitInfo{
-				Round: validCommit.Round,
-				Votes: validCommit.Votes[:2],
-			}),
-			expectErr: true,
-		},
-		{
-			name: "duplicate validator address",
-			extCommit: cometabci.ExtendedCommitInfo{
-				Round: validCommit.Round,
-				Votes: []cometabci.ExtendedVoteInfo{
-					validCommit.Votes[0],
-					validCommit.Votes[0],
-					validCommit.Votes[2],
-				},
-			},
-			last:      validLastCommit,
-			expectErr: true,
-		},
-		{
-			name: "incorrect order",
-			extCommit: cometabci.ExtendedCommitInfo{
-				Round: validCommit.Round,
-				Votes: []cometabci.ExtendedVoteInfo{
-					validCommit.Votes[1],
-					validCommit.Votes[0],
-					validCommit.Votes[2],
-				},
-			},
-			last:      validLastCommit,
-			expectErr: true,
-		},
-		{
-			name: "power mismatch",
-			extCommit: func() cometabci.ExtendedCommitInfo {
-				extCommit := cloneExtendedCommit(validCommit)
-				extCommit.Votes[0].Validator.Power++
-				return extCommit
-			}(),
-			last:      validLastCommit,
-			expectErr: true,
-		},
-		{
-			name: "address mismatch",
-			extCommit: func() cometabci.ExtendedCommitInfo {
-				extCommit := cloneExtendedCommit(validCommit)
-				extCommit.Votes[0].Validator.Address = vals[2].consAddr
-				return extCommit
-			}(),
-			last:      validLastCommit,
-			expectErr: true,
-		},
-		{
-			name:      "committed vote cannot be rewritten as absent",
-			extCommit: prunedCommit,
-			last:      validLastCommit,
-			expectErr: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := ve.ValidateExtendedCommitAgainstLastCommit(tc.extCommit, tc.last)
-			if tc.expectErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+			if tc.withCommit {
+				ctx = ctx.WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cometabci.CommitInfo{
+					Votes: []cometabci.VoteInfo{{}},
+				}))
 			}
+
+			require.Equal(t, tc.expected, voteextension.VoteExtensionsAvailable(ctx))
 		})
 	}
 }
 
-func TestValidateExtendedCommitAgainstLastCommitExtremePowerOrdering(t *testing.T) {
-	vals := []testValidator{newTestValidator(), newTestValidator()}
-	validCommit := sortExtendedCommit(cometabci.ExtendedCommitInfo{
-		Round: 1,
-		Votes: []cometabci.ExtendedVoteInfo{
-			newExtendedVote(vals[0], 20, cmtproto.BlockIDFlagCommit, []byte("ve"), []byte("sig")),
-			newExtendedVote(vals[1], 10, cmtproto.BlockIDFlagCommit, []byte("ve"), []byte("sig")),
-		},
-	})
-	lastCommit := lastCommitFromExtendedCommit(validCommit)
-	extremeCommit := cloneExtendedCommit(validCommit)
-	extremeCommit.Votes[0].Validator.Power = math.MaxInt64
-	extremeCommit.Votes[1].Validator.Power = math.MinInt64
-
-	err := ve.ValidateExtendedCommitAgainstLastCommit(extremeCommit, lastCommit)
-	require.ErrorContains(t, err, "does not match last commit vote power")
-	require.NotContains(t, err.Error(), "not sorted")
-}
-
-func TestValidateVoteExtensions(t *testing.T) {
+func TestValidateExtendedCommit(t *testing.T) {
 	vals := []testValidator{newTestValidator(), newTestValidator(), newTestValidator()}
 	ext := []byte("vote-extension")
 	enabledCtx := newVoteExtensionContext(3, 1)
@@ -243,13 +128,34 @@ func TestValidateVoteExtensions(t *testing.T) {
 	censoredCommit.Votes[1].BlockIdFlag = cmtproto.BlockIDFlagAbsent
 	censoredCommit.Votes[1].VoteExtension = nil
 	censoredCommit.Votes[1].ExtensionSignature = nil
+	emptyCommit := signedExtendedCommit(t, enabledCtx, vals, []int64{30, 20, 10}, nil)
+	emptyCommit, emptyInfo := extendedCommitToBlockInfo(emptyCommit)
+	emptyCtx := enabledCtx.WithCometInfo(emptyInfo)
+	nonCommitExtension := cloneExtendedCommit(validCommit)
+	nonCommitExtension.Votes[2].BlockIdFlag = cmtproto.BlockIDFlagAbsent
+	nonCommitExtension.Votes[2].ExtensionSignature = nil
+	nonCommitExtension, nonCommitExtensionInfo := extendedCommitToBlockInfo(nonCommitExtension)
+	nonCommitExtensionCtx := enabledCtx.WithCometInfo(nonCommitExtensionInfo)
+	nonCommitSignature := cloneExtendedCommit(validCommit)
+	nonCommitSignature.Votes[2].BlockIdFlag = cmtproto.BlockIDFlagAbsent
+	nonCommitSignature.Votes[2].VoteExtension = nil
+	nonCommitSignature, nonCommitSignatureInfo := extendedCommitToBlockInfo(nonCommitSignature)
+	nonCommitSignatureCtx := enabledCtx.WithCometInfo(nonCommitSignatureInfo)
+	insufficientCommit := cloneExtendedCommit(validCommit)
+	for i := range 2 {
+		insufficientCommit.Votes[i].BlockIdFlag = cmtproto.BlockIDFlagAbsent
+		insufficientCommit.Votes[i].VoteExtension = nil
+		insufficientCommit.Votes[i].ExtensionSignature = nil
+	}
+	insufficientCommit, insufficientInfo := extendedCommitToBlockInfo(insufficientCommit)
+	insufficientCtx := enabledCtx.WithCometInfo(insufficientInfo)
 
 	testCases := []struct {
-		name      string
-		ctx       sdk.Context
-		store     fakeValidatorStore
-		commit    cometabci.ExtendedCommitInfo
-		expectErr bool
+		name        string
+		ctx         sdk.Context
+		store       fakeValidatorStore
+		commit      cometabci.ExtendedCommitInfo
+		expectedErr string
 	}{
 		{
 			name:   "happy path verifies signatures",
@@ -258,11 +164,17 @@ func TestValidateVoteExtensions(t *testing.T) {
 			commit: validCommit,
 		},
 		{
-			name:      "proposer cannot erase committed report while retaining quorum",
-			ctx:       censorableCtx,
-			store:     validStore,
-			commit:    censoredCommit,
-			expectErr: true,
+			name:   "signed empty vote extensions are accepted",
+			ctx:    emptyCtx,
+			store:  validStore,
+			commit: emptyCommit,
+		},
+		{
+			name:        "proposer cannot erase committed report while retaining quorum",
+			ctx:         censorableCtx,
+			store:       validStore,
+			commit:      censoredCommit,
+			expectedErr: "mismatched block ID flag",
 		},
 		{
 			name:  "disabled vote extensions reject present extension",
@@ -273,7 +185,7 @@ func TestValidateVoteExtensions(t *testing.T) {
 				commit.Votes[0].ExtensionSignature = nil
 				return commit
 			}(),
-			expectErr: true,
+			expectedErr: "vote extensions disabled",
 		},
 		{
 			name:  "enabled commit vote missing signature rejects",
@@ -284,34 +196,28 @@ func TestValidateVoteExtensions(t *testing.T) {
 				commit.Votes[0].ExtensionSignature = nil
 				return commit
 			}(),
-			expectErr: true,
+			expectedErr: "empty vote extension signature",
 		},
 		{
-			name:  "non-commit vote with extension rejects",
-			ctx:   enabledCtx,
-			store: validStore,
-			commit: func() cometabci.ExtendedCommitInfo {
-				commit := cloneExtendedCommit(validCommit)
-				commit.Votes[0].BlockIdFlag = cmtproto.BlockIDFlagAbsent
-				return commit
-			}(),
-			expectErr: true,
+			name:        "non-commit vote with extension rejects",
+			ctx:         nonCommitExtensionCtx,
+			store:       validStore,
+			commit:      nonCommitExtension,
+			expectedErr: "non-commit vote extension present",
 		},
 		{
-			name:  "insufficient signed voting power rejects",
-			ctx:   enabledCtx,
-			store: validStore,
-			commit: func() cometabci.ExtendedCommitInfo {
-				commit := cloneExtendedCommit(validCommit)
-				commit.Votes[0].BlockIdFlag = cmtproto.BlockIDFlagAbsent
-				commit.Votes[0].VoteExtension = nil
-				commit.Votes[0].ExtensionSignature = nil
-				commit.Votes[1].BlockIdFlag = cmtproto.BlockIDFlagAbsent
-				commit.Votes[1].VoteExtension = nil
-				commit.Votes[1].ExtensionSignature = nil
-				return commit
-			}(),
-			expectErr: true,
+			name:        "non-commit vote with extension signature rejects",
+			ctx:         nonCommitSignatureCtx,
+			store:       validStore,
+			commit:      nonCommitSignature,
+			expectedErr: "non-commit vote extension signature present",
+		},
+		{
+			name:        "insufficient signed voting power rejects",
+			ctx:         insufficientCtx,
+			store:       validStore,
+			commit:      insufficientCommit,
+			expectedErr: "insufficient cumulative voting power",
 		},
 		{
 			name: "missing validator pubkey rejects fabricated extension",
@@ -328,15 +234,15 @@ func TestValidateVoteExtensions(t *testing.T) {
 				commit.Votes[1].ExtensionSignature = []byte("bogus-signature")
 				return commit
 			}(),
-			expectErr: true,
+			expectedErr: "failed to get validator",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := ve.ValidateVoteExtensions(tc.ctx, tc.store, tc.commit)
-			if tc.expectErr {
-				require.Error(t, err)
+			err := voteextension.ValidateExtendedCommit(tc.ctx, tc.store, tc.commit)
+			if tc.expectedErr != "" {
+				require.ErrorContains(t, err, tc.expectedErr)
 			} else {
 				require.NoError(t, err)
 			}
@@ -493,11 +399,6 @@ func cloneExtendedCommit(commit cometabci.ExtendedCommitInfo) cometabci.Extended
 	copy(clone.Votes, commit.Votes)
 
 	return clone
-}
-
-func lastCommitFromExtendedCommit(commit cometabci.ExtendedCommitInfo) comet.CommitInfo {
-	_, blockInfo := extendedCommitToBlockInfo(commit)
-	return blockInfo.GetLastCommit()
 }
 
 func marshalDelimited(msg proto.Message) ([]byte, error) {

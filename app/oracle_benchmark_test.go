@@ -27,9 +27,9 @@ import (
 
 	abcicodec "ark/abci/codec"
 	abcioracle "ark/abci/oracle"
-	oracleencoding "ark/abci/oracle/encoding"
 	vetypes "ark/abci/voteextension/types"
 	chain "ark/pkg/chain"
+	arkencoding "ark/pkg/encoding"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -117,8 +117,9 @@ func benchmarkProcessVoteExtensions(
 	voteExtensionCodec := abcicodec.NewVoteExtensionCodec()
 	commitBz := benchmarkExtendedCommit(b, voteExtensionCodec, fixture.consAddrs, targets, benchmarkCase)
 	req := &cometabci.RequestFinalizeBlock{
-		Height: 3,
-		Txs:    [][]byte{commitBz},
+		Height:            3,
+		Txs:               [][]byte{commitBz},
+		DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, len(fixture.consAddrs))},
 	}
 
 	b.ReportAllocs()
@@ -531,7 +532,7 @@ func benchmarkVoteExtension(
 
 	rates := make(map[string][]byte, len(targets))
 	for i, denom := range targets {
-		rate, err := oracleencoding.EncodeRate(math.LegacyNewDec(int64(i + 100)))
+		rate, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 100)))
 		if err != nil {
 			tb.Fatal(err)
 		}

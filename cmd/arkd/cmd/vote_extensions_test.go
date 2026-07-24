@@ -19,8 +19,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
 	"ark/abci/codec"
-	oracleencoding "ark/abci/oracle/encoding"
 	vetypes "ark/abci/voteextension/types"
+	arkencoding "ark/pkg/encoding"
 )
 
 func TestVoteExtensionsBlockHeight(t *testing.T) {
@@ -226,7 +226,7 @@ func TestVoteExtensionsCommandRegistration(t *testing.T) {
 func voteExtensionsTestBlock(t *testing.T, height int64) *cmttypes.Block {
 	t.Helper()
 
-	rate, err := oracleencoding.EncodeRate(math.LegacyMustNewDecFromStr("1.25"))
+	rate, err := arkencoding.EncodeLegacyDec(math.LegacyMustNewDecFromStr("1.25"))
 	require.NoError(t, err)
 	voteExtension, err := codec.NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{"uusd": rate},

@@ -25,6 +25,6 @@ submit no oracle prices.
 
 ## Boundaries
 
-- `abci/ve/types` defines the encoded oracle vote-extension payload.
+- `abci/voteextension/types` defines the encoded oracle vote-extension payload.
 - `abci/codec` encodes and decodes vote-extension bytes.
 - `abci/oracle` decodes accepted proposal data and applies aggregation rules later in preblock.

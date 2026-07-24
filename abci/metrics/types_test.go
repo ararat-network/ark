@@ -1,7 +1,6 @@
 package metrics_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -9,31 +8,29 @@ import (
 	"ark/abci/metrics"
 )
 
-func TestStatusFromError(t *testing.T) {
+func TestStatusString(t *testing.T) {
 	tests := []struct {
 		name string
-		err  error
+		got  string
 		want string
 	}{
-		{
-			name: "success",
-			want: "Success",
-		},
-		{
-			name: "generic failure",
-			err:  errors.New("failure"),
-			want: "Failure",
-		},
-		{
-			name: "labelled failure",
-			err:  labelledError{},
-			want: "LabelledError",
-		},
+		{name: "unset defaults to failure", got: metrics.Status("").String(), want: "Failure"},
+		{name: "success", got: metrics.StatusSuccess.String(), want: "Success"},
+		{name: "nil request", got: metrics.StatusNilRequest.String(), want: "NilRequestError"},
+		{name: "wrapped handler", got: metrics.StatusWrappedHandler.String(), want: "WrappedHandlerError"},
+		{name: "codec", got: metrics.StatusCodec.String(), want: "CodecError"},
+		{name: "missing commit info", got: metrics.StatusMissingCommitInfo.String(), want: "MissingCommitInfoError"},
+		{name: "extended commit validation", got: metrics.StatusExtendedCommitValidation.String(), want: "ExtendedCommitValidationError"},
+		{name: "panic", got: metrics.StatusPanic.String(), want: "Panic"},
+		{name: "oracle client", got: metrics.StatusOracleClient.String(), want: "OracleClientError"},
+		{name: "invalid oracle prices", got: metrics.StatusInvalidOraclePrices.String(), want: "InvalidOraclePricesError"},
+		{name: "vote extension validation", got: metrics.StatusVoteExtensionValidation.String(), want: "VoteExtensionValidationError"},
+		{name: "oracle keeper", got: metrics.StatusOracleKeeper.String(), want: "OracleKeeperError"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, metrics.StatusFromError(tt.err).Label())
+			require.Equal(t, tt.want, tt.got)
 		})
 	}
 }
@@ -58,14 +55,4 @@ func TestTypesString(t *testing.T) {
 			require.Equal(t, tt.want, tt.got)
 		})
 	}
-}
-
-type labelledError struct{}
-
-func (labelledError) Error() string {
-	return "labelled error"
-}
-
-func (labelledError) Label() string {
-	return "LabelledError"
 }

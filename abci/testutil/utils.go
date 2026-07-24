@@ -14,9 +14,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracleencoding "ark/abci/oracle/encoding"
-	vetypes "ark/abci/ve/types"
+	"ark/abci/codec"
+	vetypes "ark/abci/voteextension/types"
+	arkencoding "ark/pkg/encoding"
+	oracletypes "ark/x/oracle/types"
 )
+
+var voteExtensionCodec = codec.NewVoteExtensionCodec()
 
 // NewSDKContext returns a minimal SDK context for ABCI tests.
 func NewSDKContext(height int64, voteExtensionsEnableHeight int64, modes ...sdk.ExecMode) sdk.Context {
@@ -40,7 +44,7 @@ func NewSDKContext(height int64, voteExtensionsEnableHeight int64, modes ...sdk.
 func MustEncodeRate(t *testing.T, rate math.LegacyDec) []byte {
 	t.Helper()
 
-	encodedRate, err := oracleencoding.EncodeRate(rate)
+	encodedRate, err := arkencoding.EncodeLegacyDec(rate)
 	require.NoError(t, err)
 
 	return encodedRate
@@ -54,7 +58,28 @@ func NewOracleVoteExtension(t *testing.T, rates map[string]math.LegacyDec) vetyp
 		encodedRates[denom] = MustEncodeRate(t, rate)
 	}
 
-	return vetypes.OracleVoteExtension{Rates: encodedRates}
+	return vetypes.OracleVoteExtension{
+		Rates:         encodedRates,
+		TargetVersion: oracletypes.InitialVoteTargetVersion,
+	}
+}
+
+func MustEncodeVoteExtension(t *testing.T, voteExtension vetypes.OracleVoteExtension) []byte {
+	t.Helper()
+
+	encoded, err := voteExtensionCodec.Encode(voteExtension)
+	require.NoError(t, err)
+
+	return encoded
+}
+
+func MustEncodeExtendedCommit(t *testing.T, extendedCommit cometabci.ExtendedCommitInfo) []byte {
+	t.Helper()
+
+	encoded, err := codec.EncodeExtendedCommit(extendedCommit)
+	require.NoError(t, err)
+
+	return encoded
 }
 
 func NewExtendedVoteInfo(validator sdk.ConsAddress, power int64, voteExtension []byte) cometabci.ExtendedVoteInfo {

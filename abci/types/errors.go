@@ -1,60 +1,16 @@
 package types
 
-import (
-	"fmt"
+import "errors"
 
-	arkmetrics "ark/abci/metrics"
+var (
+	// ErrNilRequest is returned when an ABCI handler receives a nil request.
+	ErrNilRequest = errors.New("nil request")
+	// ErrWrappedHandler identifies a failure returned by a wrapped SDK handler.
+	ErrWrappedHandler = errors.New("wrapped handler failed")
+	// ErrCodec identifies an ABCI protocol encoding or decoding failure.
+	ErrCodec = errors.New("codec error")
+	// ErrMissingCommitInfo is returned when a proposal omits the previous height's commit information.
+	ErrMissingCommitInfo = errors.New("missing commit info")
+	// ErrOracleKeeper identifies an oracle keeper state access or mutation failure.
+	ErrOracleKeeper = errors.New("oracle keeper error")
 )
-
-// NilRequestError is an error that is returned when a nil request is given to the handler.
-type NilRequestError struct {
-	Handler arkmetrics.Method
-}
-
-func (e NilRequestError) Error() string {
-	return fmt.Sprintf("nil request for %s", e.Handler)
-}
-
-func (e NilRequestError) Label() string {
-	return "NilRequestError"
-}
-
-// WrappedHandlerError is an error that is returned when a handler that is wrapped by a Ark ABCI handler
-// returns an error.
-type WrappedHandlerError struct {
-	Handler arkmetrics.Method
-	Err     error
-}
-
-func (e WrappedHandlerError) Error() string {
-	return fmt.Sprintf("wrapped %s failed: %s", e.Handler, e.Err.Error())
-}
-
-func (e WrappedHandlerError) Label() string {
-	return "WrappedHandlerError"
-}
-
-// CodecError is an error that is returned when a codec fails to marshal or unmarshal a type.
-type CodecError struct {
-	Err error
-}
-
-func (e CodecError) Error() string {
-	return fmt.Sprintf("codec error: %s", e.Err.Error())
-}
-
-func (e CodecError) Label() string {
-	return "CodecError"
-}
-
-// MissingCommitInfoError is an error that is returned when a proposal is missing the CommitInfo from the previous
-// height.
-type MissingCommitInfoError struct{}
-
-func (e MissingCommitInfoError) Error() string {
-	return "missing commit info"
-}
-
-func (e MissingCommitInfoError) Label() string {
-	return "MissingCommitInfoError"
-}

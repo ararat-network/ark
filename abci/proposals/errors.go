@@ -1,18 +1,6 @@
 package proposals
 
-import (
-	"fmt"
-)
+import "errors"
 
-// InvalidExtendedCommitInfoError is an error that is returned when a proposed ExtendedCommitInfo is invalid.
-type InvalidExtendedCommitInfoError struct {
-	Err error
-}
-
-func (e InvalidExtendedCommitInfoError) Error() string {
-	return fmt.Sprintf("invalid extended commit info: %s", e.Err.Error())
-}
-
-func (e InvalidExtendedCommitInfoError) Label() string {
-	return "InvalidExtendedCommitInfoError"
-}
+// ErrExtendedCommitValidation is returned when an extended commit cannot be validated.
+var ErrExtendedCommitValidation = errors.New("extended commit validation failed")

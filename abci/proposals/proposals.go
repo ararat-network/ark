@@ -1,20 +1,20 @@
 package proposals
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
-	"cosmossdk.io/log/v2"
-
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"ark/abci/codec"
 	arkmetrics "ark/abci/metrics"
 	arkabci "ark/abci/types"
-	"ark/abci/ve"
+	"ark/abci/voteextension"
 )
 
 // Handler is responsible primarily for:
@@ -22,40 +22,29 @@ import (
 //  2. Injecting vote extensions into the proposal (if vote extensions are enabled).
 //  3. Verifying that the injected extended commit is complete and authenticated.
 //
-// The proposal handler calls validateVoteExtensionsFn to verify that the
-// injected commit matches consensus and contains a super-majority of valid
-// vote-extension signatures for the current block.
-// The extended commit is decoded in accordance with the given ExtendedCommitCodec.
+// The proposal handler validates that the injected commit matches consensus and
+// contains a super-majority of valid vote-extension signatures for the current block.
 type Handler struct {
-	logger log.Logger
-
 	// prepareProposalHandler fills a proposal with transactions.
 	prepareProposalHandler sdk.PrepareProposalHandler
 
 	// processProposalHandler processes transactions in a proposal.
 	processProposalHandler sdk.ProcessProposalHandler
 
-	// validateVoteExtensionsFn validates the vote extensions included in a proposal.
-	validateVoteExtensionsFn ve.ValidateVoteExtensionsFn
-
-	// extendedCommitCodec is used to decode extended commit info.
-	extendedCommitCodec codec.ExtendedCommitCodec
+	// validatorStore resolves consensus public keys used to authenticate vote extensions.
+	validatorStore baseapp.ValidatorStore
 }
 
 // NewHandler returns a new Handler.
 func NewHandler(
-	logger log.Logger,
 	prepareProposalHandler sdk.PrepareProposalHandler,
 	processProposalHandler sdk.ProcessProposalHandler,
-	validateVoteExtensionsFn ve.ValidateVoteExtensionsFn,
-	extendedCommitInfoCodec codec.ExtendedCommitCodec,
+	validatorStore baseapp.ValidatorStore,
 ) *Handler {
 	return &Handler{
-		logger:                   logger,
-		prepareProposalHandler:   prepareProposalHandler,
-		processProposalHandler:   processProposalHandler,
-		validateVoteExtensionsFn: validateVoteExtensionsFn,
-		extendedCommitCodec:      extendedCommitInfoCodec,
+		prepareProposalHandler: prepareProposalHandler,
+		processProposalHandler: processProposalHandler,
+		validatorStore:         validatorStore,
 	}
 }
 
@@ -63,72 +52,55 @@ func NewHandler(
 // by base app when a new block proposal is requested. The PrepareProposalHandler
 // will first fill the proposal with transactions. Then, if vote extensions are
 // enabled, the handler will inject the extended commit info into the proposal.
-// If the size of the vote extensions exceeds the request's MaxTxBytes size, this
-// handler will fail.
+// If the protobuf-encoded extended commit exceeds the request's MaxTxBytes
+// budget, this handler will fail.
 func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *cometabci.RequestPrepareProposal) (resp *cometabci.ResponsePrepareProposal, err error) {
 		start := time.Now()
 		var (
 			extInfoBz                     []byte
+			statusErr                     error
 			wrappedPrepareProposalLatency time.Duration
 		)
 
 		// Report the PrepareProposal latency excluding the wrapped handler.
 		defer func() {
 			totalLatency := time.Since(start)
-			arkmetrics.RecordLatencyAndStatus(totalLatency-wrappedPrepareProposalLatency, err, arkmetrics.PrepareProposal)
+			if statusErr == nil {
+				statusErr = err
+			}
+			arkmetrics.RecordLatencyAndStatus(
+				totalLatency-wrappedPrepareProposalLatency,
+				proposalStatus(statusErr),
+				arkmetrics.PrepareProposal,
+			)
 		}()
 
 		if req == nil {
-			h.logger.Error("PrepareProposalHandler received a nil request")
-			err = arkabci.NilRequestError{
-				Handler: arkmetrics.PrepareProposal,
-			}
+			err = fmt.Errorf("%w for %s", arkabci.ErrNilRequest, arkmetrics.PrepareProposal)
 			return nil, err
 		}
-		wrappedReq := req
 
+		wrappedReq := req
 		// If vote extensions are enabled, the proposer must inject the previous
 		// block's extended commit info into the proposal.
-		voteExtensionsEnabled := ve.VoteExtensionsEnabled(ctx)
+		voteExtensionsEnabled := voteextension.VoteExtensionsAvailable(ctx)
 		if voteExtensionsEnabled {
-			h.logger.Debug(
-				"injecting oracle data into proposal",
-				"height", req.Height,
-				"vote_extensions_enabled", voteExtensionsEnabled,
-			)
-
 			// Preserve and validate the consensus-provided extended commit. Payload
 			// classification happens later in preblock; the proposer must not erase
 			// or rewrite authenticated reports.
 			extInfo := req.LocalLastCommit
-			if err := h.ValidateExtendedCommitInfo(ctx, req.Height, extInfo); err != nil {
-				h.logger.Error(
-					"failed to validate extended commit info",
-					"height", req.Height,
-					"local_last_commit", req.LocalLastCommit,
-					"err", err,
-				)
-
-				err = InvalidExtendedCommitInfoError{
-					Err: err,
-				}
+			if err = voteextension.ValidateExtendedCommit(ctx, h.validatorStore, extInfo); err != nil {
+				err = fmt.Errorf("%w: %w", ErrExtendedCommitValidation, err)
 
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
 			// Encode the extended commit info that will be injected into the
 			// proposal and applied in PreBlock.
-			extInfoBz, err = h.extendedCommitCodec.Encode(extInfo)
+			extInfoBz, err = codec.EncodeExtendedCommit(extInfo)
 			if err != nil {
-				h.logger.Error(
-					"failed to extended commit info",
-					"commit_info", extInfo,
-					"err", err,
-				)
-				err = arkabci.CodecError{
-					Err: err,
-				}
+				err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
 
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
@@ -136,10 +108,11 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			// budget. Use a request copy so this wrapper does not mutate its input.
 			extInfoBzSize := cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{extInfoBz})
 			if extInfoBzSize > req.MaxTxBytes {
-				h.logger.Error("VE size consumes greater than entire block",
-					"extInfoBzSize", extInfoBzSize,
-					"MaxTxBytes", req.MaxTxBytes)
-				err := fmt.Errorf("VE size consumes greater than entire block: extInfoBzSize = %d: MaxTxBytes = %d", extInfoBzSize, req.MaxTxBytes)
+				err = fmt.Errorf(
+					"extended commit transaction size %d exceeds MaxTxBytes %d",
+					extInfoBzSize,
+					req.MaxTxBytes,
+				)
 				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
@@ -153,27 +126,28 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		resp, err = h.prepareProposalHandler(ctx, wrappedReq)
 		wrappedPrepareProposalLatency = time.Since(wrappedPrepareProposalStartTime)
 		if err != nil {
-			h.logger.Error("failed to prepare proposal", "err", err)
-			err = arkabci.WrappedHandlerError{
-				Handler: arkmetrics.PrepareProposal,
-				Err:     err,
+			err = fmt.Errorf("%w for %s: %w", arkabci.ErrWrappedHandler, arkmetrics.PrepareProposal, err)
+			if !voteExtensionsEnabled {
+				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
-			return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
+			statusErr = err
+			if logger := ctx.Logger(); logger != nil {
+				logger.Error(
+					"wrapped prepare proposal failed; using commit-only proposal",
+					"height", req.Height,
+					"err", err,
+				)
+			}
+
+			return &cometabci.ResponsePrepareProposal{Txs: [][]byte{extInfoBz}}, nil
 		}
-		h.logger.Debug("wrapped prepareProposalHandler produced response ", "txs", len(resp.Txs))
 
 		// The wrapped handler was budgeted without the extended commit, so prepend
 		// it exactly once after the handler returns.
 		if voteExtensionsEnabled {
 			resp.Txs = append([][]byte{extInfoBz}, resp.Txs...)
 		}
-
-		h.logger.Debug(
-			"prepared proposal",
-			"txs", len(resp.Txs),
-			"vote_extensions_enabled", voteExtensionsEnabled,
-		)
 
 		return resp, nil
 	}
@@ -191,34 +165,25 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// Defer a function to record the total time it took to process the proposal.
 		defer func() {
 			totalLatency := time.Since(start)
-			arkmetrics.RecordLatencyAndStatus(totalLatency-wrappedProcessProposalLatency, err, arkmetrics.ProcessProposal)
+			arkmetrics.RecordLatencyAndStatus(
+				totalLatency-wrappedProcessProposalLatency,
+				proposalStatus(err),
+				arkmetrics.ProcessProposal,
+			)
 		}()
 
 		// this should never happen, but just in case
 		if req == nil {
-			h.logger.Error("ProcessProposalHandler received a nil request")
-			err = arkabci.NilRequestError{
-				Handler: arkmetrics.ProcessProposal,
-			}
+			err = fmt.Errorf("%w for %s", arkabci.ErrNilRequest, arkmetrics.ProcessProposal)
 			return nil, err
 		}
 
-		voteExtensionsEnabled := ve.VoteExtensionsEnabled(ctx)
-
-		h.logger.Debug(
-			"processing proposal",
-			"height", req.Height,
-			"num_txs", len(req.Txs),
-			"vote_extensions_enabled", voteExtensionsEnabled,
-		)
-
 		wrappedReq := req
-
+		voteExtensionsEnabled := voteextension.VoteExtensionsAvailable(ctx)
 		if voteExtensionsEnabled {
 			// Ensure that the commit info was correctly injected into the proposal.
 			if len(req.Txs) < arkabci.NumInjectedTxs {
-				h.logger.Error("failed to process proposal: missing commit info", "num_txs", len(req.Txs))
-				err = arkabci.MissingCommitInfoError{}
+				err = arkabci.ErrMissingCommitInfo
 				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
 					err
 			}
@@ -227,27 +192,16 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 
 			// Validate the vote extensions included in the proposal.
 			var extInfo cometabci.ExtendedCommitInfo
-			extInfo, err = h.extendedCommitCodec.Decode(extCommitBz)
+			expectedVotes := ctx.CometInfo().GetLastCommit().Votes().Len()
+			extInfo, err = codec.DecodeExtendedCommit(extCommitBz, expectedVotes)
 			if err != nil {
-				h.logger.Error("failed to unmarshal commit info", "err", err)
-				err = arkabci.CodecError{
-					Err: err,
-				}
+				err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
 				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
 					err
 			}
 
-			if err := h.ValidateExtendedCommitInfo(ctx, req.Height, extInfo); err != nil {
-				h.logger.Error(
-					"failed to validate vote extensions",
-					"height", req.Height,
-					"commit_info", extInfo,
-					"err", err,
-				)
-				err = InvalidExtendedCommitInfoError{
-					Err: err,
-				}
-
+			if err = voteextension.ValidateExtendedCommit(ctx, h.validatorStore, extInfo); err != nil {
+				err = fmt.Errorf("%w: %w", ErrExtendedCommitValidation, err)
 				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
 					err
 			}
@@ -267,12 +221,28 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		resp, err = h.processProposalHandler(ctx, wrappedReq)
 		wrappedProcessProposalLatency = time.Since(wrappedProcessProposalStartTime)
 		if err != nil {
-			err = arkabci.WrappedHandlerError{
-				Handler: arkmetrics.ProcessProposal,
-				Err:     err,
-			}
+			err = fmt.Errorf("%w for %s: %w", arkabci.ErrWrappedHandler, arkmetrics.ProcessProposal, err)
 		}
 
 		return resp, err
+	}
+}
+
+func proposalStatus(err error) arkmetrics.Status {
+	switch {
+	case err == nil:
+		return arkmetrics.StatusSuccess
+	case errors.Is(err, arkabci.ErrNilRequest):
+		return arkmetrics.StatusNilRequest
+	case errors.Is(err, arkabci.ErrWrappedHandler):
+		return arkmetrics.StatusWrappedHandler
+	case errors.Is(err, ErrExtendedCommitValidation):
+		return arkmetrics.StatusExtendedCommitValidation
+	case errors.Is(err, arkabci.ErrCodec):
+		return arkmetrics.StatusCodec
+	case errors.Is(err, arkabci.ErrMissingCommitInfo):
+		return arkmetrics.StatusMissingCommitInfo
+	default:
+		return arkmetrics.StatusFailure
 	}
 }

@@ -45,6 +45,20 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
+// AdvanceVoteTargets mocks base method.
+func (m *MockOracleKeeper) AdvanceVoteTargets(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AdvanceVoteTargets", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AdvanceVoteTargets indicates an expected call of AdvanceVoteTargets.
+func (mr *MockOracleKeeperMockRecorder) AdvanceVoteTargets(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AdvanceVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).AdvanceVoteTargets), ctx)
+}
+
 // GetParams mocks base method.
 func (m *MockOracleKeeper) GetParams(ctx context.Context) (types0.Params, error) {
 	m.ctrl.T.Helper()
@@ -61,32 +75,32 @@ func (mr *MockOracleKeeperMockRecorder) GetParams(ctx any) *gomock.Call {
 }
 
 // GetVoteTargets mocks base method.
-func (m *MockOracleKeeper) GetVoteTargets(ctx context.Context) ([]string, error) {
+func (m *MockOracleKeeper) GetVoteTargets(ctx context.Context, voteHeight int64) (types0.VoteTargetSet, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVoteTargets", ctx)
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "GetVoteTargets", ctx, voteHeight)
+	ret0, _ := ret[0].(types0.VoteTargetSet)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetVoteTargets indicates an expected call of GetVoteTargets.
-func (mr *MockOracleKeeperMockRecorder) GetVoteTargets(ctx any) *gomock.Call {
+func (mr *MockOracleKeeperMockRecorder) GetVoteTargets(ctx, voteHeight any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).GetVoteTargets), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).GetVoteTargets), ctx, voteHeight)
 }
 
 // RecordVoteAccounting mocks base method.
-func (m *MockOracleKeeper) RecordVoteAccounting(ctx context.Context, validator types1.ConsAddress, scoreWeight math.Int, missed bool) error {
+func (m *MockOracleKeeper) RecordVoteAccounting(ctx context.Context, validator types1.ConsAddress, rewardWeight math.Int, missed bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordVoteAccounting", ctx, validator, scoreWeight, missed)
+	ret := m.ctrl.Call(m, "RecordVoteAccounting", ctx, validator, rewardWeight, missed)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecordVoteAccounting indicates an expected call of RecordVoteAccounting.
-func (mr *MockOracleKeeperMockRecorder) RecordVoteAccounting(ctx, validator, scoreWeight, missed any) *gomock.Call {
+func (mr *MockOracleKeeperMockRecorder) RecordVoteAccounting(ctx, validator, rewardWeight, missed any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVoteAccounting", reflect.TypeOf((*MockOracleKeeper)(nil).RecordVoteAccounting), ctx, validator, scoreWeight, missed)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVoteAccounting", reflect.TypeOf((*MockOracleKeeper)(nil).RecordVoteAccounting), ctx, validator, rewardWeight, missed)
 }
 
 // SetExchangeRateWithEvent mocks base method.
@@ -101,20 +115,6 @@ func (m *MockOracleKeeper) SetExchangeRateWithEvent(ctx context.Context, exchang
 func (mr *MockOracleKeeperMockRecorder) SetExchangeRateWithEvent(ctx, exchangeRate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRateWithEvent", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRateWithEvent), ctx, exchangeRate)
-}
-
-// SyncVoteTargets mocks base method.
-func (m *MockOracleKeeper) SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SyncVoteTargets", ctx, oldVoteTargets)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SyncVoteTargets indicates an expected call of SyncVoteTargets.
-func (mr *MockOracleKeeperMockRecorder) SyncVoteTargets(ctx, oldVoteTargets any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).SyncVoteTargets), ctx, oldVoteTargets)
 }
 
 // MockOracleClient is a mock of OracleClient interface.

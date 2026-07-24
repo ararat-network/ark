@@ -1,55 +1,45 @@
 package preblock
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
-	"cosmossdk.io/log/v2"
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"ark/abci/codec"
 	arkmetrics "ark/abci/metrics"
 	abcioracle "ark/abci/oracle"
+	oraclemetrics "ark/abci/oracle/metrics"
 	arkabcitypes "ark/abci/types"
-	"ark/abci/ve"
+	"ark/abci/voteextension"
 )
 
 // Handler is responsible for aggregating oracle data from each
 // validator and writing the oracle data into the store before any transactions
 // are executed/finalised for a given block.
 type Handler struct {
-	logger log.Logger
+	// oracleKeeper provides the oracle state used during preblock processing.
+	oracleKeeper arkabcitypes.OracleKeeper
 
-	// ok is the ok for the oracle module. This is utilised to write
-	// oracle data to state.
-	ok arkabcitypes.OracleKeeper
-
-	// pa is the price applier that is used to decode vote-extensions, aggregate price reports, and write prices to state.
-	pa *abcioracle.PriceApplier
+	// codec owns reusable vote-extension decompression state.
+	codec *codec.VoteExtensionCodec
 }
 
 // NewHandler returns a new Handler. The handler
 // is responsible for writing oracle data included in vote extensions to state.
 func NewHandler(
-	logger log.Logger,
 	oracleKeeper arkabcitypes.OracleKeeper,
-	veCodec codec.VoteExtensionCodec,
-	ecCodec codec.ExtendedCommitCodec,
+	voteExtensionCodec *codec.VoteExtensionCodec,
 ) *Handler {
-	pa := abcioracle.NewPriceApplier(
-		oracleKeeper,
-		veCodec,
-		ecCodec,
-		logger,
-	)
-
 	return &Handler{
-		logger: logger,
-		ok:     oracleKeeper,
-		pa:     pa,
+		oracleKeeper: oracleKeeper,
+		codec:        voteExtensionCodec,
 	}
 }
 
@@ -59,82 +49,67 @@ func NewHandler(
 func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
 		if req == nil {
-			h.logger.Error(
-				"received nil RequestFinalizeBlock in oracle preblocker",
-				"height", ctx.BlockHeight(),
-			)
-
-			return &sdk.ResponsePreBlock{}, fmt.Errorf("received nil RequestFinalizeBlock in oracle preblocker: height %d", ctx.BlockHeight())
+			return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", arkabcitypes.ErrNilRequest, arkmetrics.PreBlock)
 		}
 
 		// call module manager's PreBlocker first in case there is changes made on upgrades
 		// that can modify state and lead to serialisation/deserialisation issues
 		response, err = mm.PreBlock(ctx)
 		if err != nil {
-			return response, err
+			return response, fmt.Errorf("%w for %s: %w", arkabcitypes.ErrWrappedHandler, arkmetrics.PreBlock, err)
 		}
 
 		start := time.Now()
-		var result abcioracle.AggregationResult
+		var prices map[string]math.LegacyDec
 		defer func() {
 			// only measure latency in Finalise
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
 				latency := time.Since(start)
-				h.logger.Debug(
-					"finished executing the pre-block hook",
-					"height", ctx.BlockHeight(),
-					"latency (seconds)", latency.Seconds(),
-				)
-				arkmetrics.RecordLatencyAndStatus(latency, err, arkmetrics.PreBlock)
+				arkmetrics.RecordLatencyAndStatus(latency, preblockStatus(err), arkmetrics.PreBlock)
 
-				// Record price and validator-report metrics only if prices were written successfully.
-				if err == nil && result.Prices != nil {
-					// record price metrics
-					h.recordPrices(result.Prices)
-
-					// record validator report metrics
-					h.recordValidatorReports(result.ValidatorReports, result.VoteTargets)
+				// Record prices only if they were written successfully.
+				if err == nil && prices != nil {
+					for denom, price := range prices {
+						floatPrice, _ := price.Float64()
+						oraclemetrics.ObservePriceForTicker(denom, floatPrice)
+					}
 				}
 			}
 		}()
 
-		// If vote extensions are not enabled, then we don't need to do anything.
-		if !ve.VoteExtensionsEnabled(ctx) {
-			h.logger.Info(
-				"vote extensions are not enabled",
-				"height", ctx.BlockHeight(),
-			)
-
-			return response, nil
+		if voteextension.VoteExtensionsAvailable(ctx) {
+			// Decode vote extensions and apply prices to state.
+			prices, err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, h.codec, req)
+			if err != nil {
+				return response, err
+			}
 		}
 
-		h.logger.Debug(
-			"executing the pre-finalise block hook",
-			"height", req.Height,
-		)
-
-		// decode vote-extensions + apply prices to state
-		result, err = h.pa.ApplyPricesFromVoteExtensions(ctx, req)
+		err = h.oracleKeeper.AdvanceVoteTargets(ctx)
 		if err != nil {
-			h.logger.Error(
-				"failed to apply prices from vote extensions",
-				"height", req.Height,
-				"error", err,
+			return response, fmt.Errorf(
+				"%w: advance vote targets for height %d: %w",
+				arkabcitypes.ErrOracleKeeper,
+				req.Height,
+				err,
 			)
-
-			return response, err
-		}
-
-		err = h.ok.SyncVoteTargets(ctx, result.VoteTargets)
-		if err != nil {
-			h.logger.Error(
-				"failed to sync vote targets",
-				"height", req.Height,
-				"error", err,
-			)
-			return response, err
 		}
 
 		return response, nil
+	}
+}
+
+func preblockStatus(err error) arkmetrics.Status {
+	switch {
+	case err == nil:
+		return arkmetrics.StatusSuccess
+	case errors.Is(err, arkabcitypes.ErrOracleKeeper):
+		return arkmetrics.StatusOracleKeeper
+	case errors.Is(err, arkabcitypes.ErrCodec):
+		return arkmetrics.StatusCodec
+	case errors.Is(err, arkabcitypes.ErrMissingCommitInfo):
+		return arkmetrics.StatusMissingCommitInfo
+	default:
+		return arkmetrics.StatusFailure
 	}
 }

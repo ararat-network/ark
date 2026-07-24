@@ -5,181 +5,226 @@ import (
 	"compress/zlib"
 	"fmt"
 	"io"
+	"sync"
 
-	"github.com/klauspost/compress/zstd"
+	"google.golang.org/protobuf/encoding/protowire"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmttypes "github.com/cometbft/cometbft/types"
 
-	vetypes "ark/abci/ve/types"
+	vetypes "ark/abci/voteextension/types"
 )
 
-var zstdEncoder = func() *zstd.Encoder {
-	encoder, err := zstd.NewWriter(nil)
-	if err != nil {
-		panic(fmt.Errorf("create zstd encoder: %w", err))
+const (
+	maxVoteExtensionWireBytes    = 64 << 10
+	maxVoteExtensionDecodedBytes = 128 << 10
+)
+
+type resettableZlibReader interface {
+	io.ReadCloser
+	zlib.Resetter
+}
+
+// VoteExtensionCodec encodes and decodes Ark oracle vote extensions while
+// retaining reusable compression state. It is safe for concurrent use but must
+// not be copied after first use.
+type VoteExtensionCodec struct {
+	encodeMu sync.Mutex
+	writer   *zlib.Writer
+
+	readerPool sync.Pool
+	bufferPool sync.Pool
+}
+
+// NewVoteExtensionCodec returns Ark's bounded protobuf-plus-zlib vote-extension
+// codec.
+func NewVoteExtensionCodec() *VoteExtensionCodec {
+	return &VoteExtensionCodec{
+		writer: zlib.NewWriter(io.Discard),
+		bufferPool: sync.Pool{
+			New: func() any {
+				return new(bytes.Buffer)
+			},
+		},
 	}
-	return encoder
-}()
-
-// VoteExtensionCodec encodes and decodes Ark oracle vote extensions.
-type VoteExtensionCodec interface {
-	Encode(vetypes.OracleVoteExtension) ([]byte, error)
-	Decode([]byte) (vetypes.OracleVoteExtension, error)
 }
 
-// ExtendedCommitCodec encodes and decodes CometBFT extended commit info.
-type ExtendedCommitCodec interface {
-	Encode(cometabci.ExtendedCommitInfo) ([]byte, error)
-	Decode([]byte) (cometabci.ExtendedCommitInfo, error)
-}
-
-// NewVoteExtensionCodec returns Ark's bounded protobuf-plus-zlib vote-extension codec.
-func NewVoteExtensionCodec() VoteExtensionCodec {
-	return voteExtensionCodec{}
-}
-
-// NewExtendedCommitCodec returns Ark's bounded protobuf-plus-zstd extended-commit codec.
-func NewExtendedCommitCodec() ExtendedCommitCodec {
-	return extendedCommitCodec{}
-}
-
-type voteExtensionCodec struct{}
-
-func (voteExtensionCodec) Encode(voteExtension vetypes.OracleVoteExtension) ([]byte, error) {
+// Encode encodes an Ark oracle vote extension as bounded protobuf compressed
+// with zlib.
+func (c *VoteExtensionCodec) Encode(voteExtension vetypes.OracleVoteExtension) ([]byte, error) {
 	decoded, err := voteExtension.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	if err := validatePayloadSize("decoded vote extension", len(decoded), maxVoteExtensionDecodedBytes); err != nil {
-		return nil, err
+	if len(decoded) > maxVoteExtensionDecodedBytes {
+		return nil, fmt.Errorf(
+			"decoded vote extension size %d exceeds maximum %d",
+			len(decoded),
+			maxVoteExtensionDecodedBytes,
+		)
 	}
 
-	encoded, err := compressZlib(decoded)
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("compressed vote extension", len(encoded), maxVoteExtensionWireBytes); err != nil {
-		return nil, err
-	}
-
-	return encoded, nil
-}
-
-func (voteExtensionCodec) Decode(encoded []byte) (vetypes.OracleVoteExtension, error) {
-	if err := validatePayloadSize("compressed vote extension", len(encoded), maxVoteExtensionWireBytes); err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
-
-	decoded, err := decompressZlib(encoded, maxVoteExtensionDecodedBytes)
-	if err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
-
-	var voteExtension vetypes.OracleVoteExtension
-	return voteExtension, voteExtension.Unmarshal(decoded)
-}
-
-type extendedCommitCodec struct{}
-
-func (extendedCommitCodec) Encode(extendedCommit cometabci.ExtendedCommitInfo) ([]byte, error) {
-	decoded, err := extendedCommit.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	if err := validatePayloadSize("decoded extended commit", len(decoded), maxExtendedCommitDecodedBytes); err != nil {
-		return nil, err
-	}
-
-	encoded := zstdEncoder.EncodeAll(decoded, nil)
-	if err := validatePayloadSize("compressed extended commit", len(encoded), maxExtendedCommitWireBytes); err != nil {
-		return nil, err
-	}
-
-	return encoded, nil
-}
-
-func (extendedCommitCodec) Decode(encoded []byte) (cometabci.ExtendedCommitInfo, error) {
-	if err := validatePayloadSize("compressed extended commit", len(encoded), maxExtendedCommitWireBytes); err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-
-	decoded, err := decompressZstd(encoded, maxExtendedCommitDecodedBytes)
-	if err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
-	}
-	if len(decoded) == 0 {
-		return cometabci.ExtendedCommitInfo{}, nil
-	}
-
-	var extendedCommit cometabci.ExtendedCommitInfo
-	return extendedCommit, extendedCommit.Unmarshal(decoded)
-}
-
-func compressZlib(decoded []byte) ([]byte, error) {
 	var encoded bytes.Buffer
-	writer := zlib.NewWriter(&encoded)
-	if _, err := writer.Write(decoded); err != nil {
-		_ = writer.Close()
+	c.encodeMu.Lock()
+	c.writer.Reset(&encoded)
+	defer func() {
+		c.writer.Reset(io.Discard)
+		c.encodeMu.Unlock()
+	}()
+	if _, err := c.writer.Write(decoded); err != nil {
 		return nil, err
 	}
-	if err := writer.Close(); err != nil {
+	if err := c.writer.Close(); err != nil {
 		return nil, err
+	}
+	if encoded.Len() > maxVoteExtensionWireBytes {
+		return nil, fmt.Errorf(
+			"compressed vote extension size %d exceeds maximum %d",
+			encoded.Len(),
+			maxVoteExtensionWireBytes,
+		)
 	}
 
 	return encoded.Bytes(), nil
 }
 
-func decompressZlib(encoded []byte, maxOutputBytes int64) ([]byte, error) {
+// Decode decodes a bounded protobuf-plus-zlib oracle vote extension.
+func (c *VoteExtensionCodec) Decode(encoded []byte) (vetypes.OracleVoteExtension, error) {
+	if len(encoded) > maxVoteExtensionWireBytes {
+		return vetypes.OracleVoteExtension{}, fmt.Errorf(
+			"compressed vote extension size %d exceeds maximum %d",
+			len(encoded),
+			maxVoteExtensionWireBytes,
+		)
+	}
 	if len(encoded) == 0 {
-		return nil, nil
+		return vetypes.OracleVoteExtension{}, nil
 	}
 
-	reader, err := zlib.NewReader(bytes.NewReader(encoded))
+	reader, err := c.acquireReader(encoded)
+	if err != nil {
+		return vetypes.OracleVoteExtension{}, err
+	}
+
+	decodedBuffer := c.bufferPool.Get().(*bytes.Buffer)
+	decodedBuffer.Reset()
+	defer c.releaseBuffer(decodedBuffer)
+	limited := &io.LimitedReader{R: reader, N: maxVoteExtensionDecodedBytes + 1}
+	if _, err := decodedBuffer.ReadFrom(limited); err != nil {
+		_ = reader.Close()
+		return vetypes.OracleVoteExtension{}, err
+	}
+	if decodedBuffer.Len() > maxVoteExtensionDecodedBytes {
+		_ = reader.Close()
+		return vetypes.OracleVoteExtension{}, fmt.Errorf(
+			"decompressed output size %d exceeds maximum %d",
+			decodedBuffer.Len(),
+			maxVoteExtensionDecodedBytes,
+		)
+	}
+	if err := reader.Close(); err != nil {
+		return vetypes.OracleVoteExtension{}, err
+	}
+	c.readerPool.Put(reader)
+
+	var voteExtension vetypes.OracleVoteExtension
+	return voteExtension, voteExtension.Unmarshal(decodedBuffer.Bytes())
+}
+
+func (c *VoteExtensionCodec) acquireReader(encoded []byte) (resettableZlibReader, error) {
+	source := bytes.NewReader(encoded)
+	pooled := c.readerPool.Get()
+	if pooled != nil {
+		reader := pooled.(resettableZlibReader)
+		if err := reader.Reset(source, nil); err != nil {
+			_ = reader.Close()
+			return nil, err
+		}
+		return reader, nil
+	}
+
+	reader, err := zlib.NewReader(source)
 	if err != nil {
 		return nil, err
 	}
-	defer reader.Close()
-
-	return readLimited(reader, maxOutputBytes)
+	return reader.(resettableZlibReader), nil
 }
 
-func decompressZstd(encoded []byte, maxOutputBytes int64) ([]byte, error) {
+func (c *VoteExtensionCodec) releaseBuffer(buffer *bytes.Buffer) {
+	if buffer.Cap() > maxVoteExtensionDecodedBytes {
+		return
+	}
+	buffer.Reset()
+	c.bufferPool.Put(buffer)
+}
+
+// EncodeExtendedCommit encodes CometBFT extended commit info as protobuf.
+func EncodeExtendedCommit(extendedCommit cometabci.ExtendedCommitInfo) ([]byte, error) {
+	if len(extendedCommit.Votes) > cmttypes.MaxVotesCount {
+		return nil, fmt.Errorf(
+			"extended commit vote count %d exceeds maximum %d",
+			len(extendedCommit.Votes),
+			cmttypes.MaxVotesCount,
+		)
+	}
+
+	return extendedCommit.Marshal()
+}
+
+// DecodeExtendedCommit decodes protobuf extended commit info bounded by
+// repeated vote cardinality. CometBFT bounds the containing proposal bytes.
+func DecodeExtendedCommit(encoded []byte, maxVotes int) (cometabci.ExtendedCommitInfo, error) {
+	if maxVotes < 0 || maxVotes > cmttypes.MaxVotesCount {
+		return cometabci.ExtendedCommitInfo{}, fmt.Errorf(
+			"extended commit vote limit %d is outside range [0, %d]",
+			maxVotes,
+			cmttypes.MaxVotesCount,
+		)
+	}
 	if len(encoded) == 0 {
-		return nil, nil
+		return cometabci.ExtendedCommitInfo{}, nil
+	}
+	if err := preflightExtendedCommit(encoded, maxVotes); err != nil {
+		return cometabci.ExtendedCommitInfo{}, err
 	}
 
-	reader, err := zstd.NewReader(
-		bytes.NewReader(encoded),
-		zstd.WithDecoderConcurrency(1),
-		zstd.WithDecoderLowmem(true),
-		zstd.WithDecoderMaxMemory(uint64(maxOutputBytes)),
-		zstd.WithDecoderMaxWindow(uint64(maxOutputBytes)),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	return readLimited(reader, maxOutputBytes)
+	var extendedCommit cometabci.ExtendedCommitInfo
+	return extendedCommit, extendedCommit.Unmarshal(encoded)
 }
 
-func validatePayloadSize(name string, size, maximum int) error {
-	if size > maximum {
-		return fmt.Errorf("%s size %d exceeds maximum %d", name, size, maximum)
+func preflightExtendedCommit(encoded []byte, maxVotes int) error {
+	voteCount := 0
+	for len(encoded) > 0 {
+		fieldNumber, wireType, tagBytes := protowire.ConsumeTag(encoded)
+		if tagBytes < 0 {
+			return fmt.Errorf("invalid extended commit protobuf tag: %w", protowire.ParseError(tagBytes))
+		}
+
+		switch fieldNumber {
+		case 1:
+			if wireType != protowire.VarintType {
+				return fmt.Errorf("invalid extended commit round wire type %d", wireType)
+			}
+		case 2:
+			if wireType != protowire.BytesType {
+				return fmt.Errorf("invalid extended commit votes wire type %d", wireType)
+			}
+			voteCount++
+			if voteCount > maxVotes {
+				return fmt.Errorf(
+					"extended commit vote count %d exceeds maximum %d",
+					voteCount,
+					maxVotes,
+				)
+			}
+		}
+
+		valueBytes := protowire.ConsumeFieldValue(fieldNumber, wireType, encoded[tagBytes:])
+		if valueBytes < 0 {
+			return fmt.Errorf("invalid extended commit protobuf field: %w", protowire.ParseError(valueBytes))
+		}
+		encoded = encoded[tagBytes+valueBytes:]
 	}
 
 	return nil
-}
-
-func readLimited(reader io.Reader, maxOutputBytes int64) ([]byte, error) {
-	limited := &io.LimitedReader{R: reader, N: maxOutputBytes + 1}
-	decoded, err := io.ReadAll(limited)
-	if err != nil {
-		return nil, err
-	}
-	if int64(len(decoded)) > maxOutputBytes {
-		return nil, fmt.Errorf("decompressed output size %d exceeds maximum %d", len(decoded), maxOutputBytes)
-	}
-
-	return decoded, nil
 }

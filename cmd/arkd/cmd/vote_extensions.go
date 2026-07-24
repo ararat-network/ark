@@ -117,7 +117,7 @@ func inspectVoteExtensions(block *cmttypes.Block) (voteExtensionsOutput, error) 
 		return voteExtensionsOutput{}, fmt.Errorf("source block %d contains no vote-extension metadata", block.Height)
 	}
 
-	extendedCommit, err := codec.DecodeExtendedCommit(block.Txs[0])
+	extendedCommit, err := codec.DecodeExtendedCommit(block.Txs[0], cmttypes.MaxVotesCount)
 	if err != nil {
 		return voteExtensionsOutput{}, fmt.Errorf(
 			"decode vote-extension metadata from source block %d: %w",

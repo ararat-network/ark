@@ -13,19 +13,17 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-// OracleKeeper defines the interface that must be fulfilled by the oracle keeper. This
-// interface is utilised by the PreBlock handler to write oracle data to state for the
-// supported assets.
+// OracleKeeper exposes the oracle state required by vote-extension creation and
+// preblock processing.
 type OracleKeeper interface {
 	GetParams(ctx context.Context) (oracletypes.Params, error)
 	SetExchangeRateWithEvent(ctx context.Context, exchangeRate oracletypes.ExchangeRate) error
 	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, rewardWeight math.Int, missed bool) error
-	GetVoteTargets(ctx context.Context) ([]string, error)
-	SyncVoteTargets(ctx context.Context, oldVoteTargets []string) error
+	GetVoteTargets(ctx context.Context, voteHeight int64) (oracletypes.VoteTargetSet, error)
+	AdvanceVoteTargets(ctx context.Context) error
 }
 
-// OracleClient defines the interface that must be fulfilled by the connect client.
-// This interface is utilised by the vote extension handler to fetch prices.
+// OracleClient fetches prices for the vote-extension handler.
 type OracleClient interface {
 	Prices(ctx context.Context, in *transporttypes.OraclePricesRequest, opts ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error)
 }

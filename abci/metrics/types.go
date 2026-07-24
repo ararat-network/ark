@@ -1,36 +1,30 @@
 package metrics
 
-import "errors"
-
 const notImplemented = "not_implemented"
 
-type Labeller interface {
-	Label() string
-}
+// Status is a stable, low-cardinality ABCI request outcome used by metrics.
+type Status string
 
-func StatusFromError(err error) Labeller {
-	if err == nil {
-		return Success{}
+const (
+	StatusSuccess                  Status = "Success"
+	StatusFailure                  Status = "Failure"
+	StatusNilRequest               Status = "NilRequestError"
+	StatusWrappedHandler           Status = "WrappedHandlerError"
+	StatusCodec                    Status = "CodecError"
+	StatusMissingCommitInfo        Status = "MissingCommitInfoError"
+	StatusExtendedCommitValidation Status = "ExtendedCommitValidationError"
+	StatusPanic                    Status = "Panic"
+	StatusOracleClient             Status = "OracleClientError"
+	StatusInvalidOraclePrices      Status = "InvalidOraclePricesError"
+	StatusVoteExtensionValidation  Status = "VoteExtensionValidationError"
+	StatusOracleKeeper             Status = "OracleKeeperError"
+)
+
+func (s Status) String() string {
+	if s == "" {
+		return string(StatusFailure)
 	}
-
-	var labeller Labeller
-	if errors.As(err, &labeller) {
-		return labeller
-	}
-
-	return Failure{}
-}
-
-type Success struct{}
-
-func (Success) Label() string {
-	return "Success"
-}
-
-type Failure struct{}
-
-func (Failure) Label() string {
-	return "Failure"
+	return string(s)
 }
 
 type MessageType int

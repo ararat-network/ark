@@ -1,0 +1,97 @@
+package codec
+
+import (
+	"fmt"
+	"testing"
+
+	"cosmossdk.io/math"
+
+	vetypes "ark/abci/voteextension/types"
+	arkencoding "ark/pkg/encoding"
+	oracletypes "ark/x/oracle/types"
+)
+
+var (
+	benchmarkEncodedVoteExtension  []byte
+	benchmarkDecodedVoteExtensions []vetypes.OracleVoteExtension
+)
+
+func BenchmarkVoteExtensionCodec(b *testing.B) {
+	const validatorCount = 100
+	codec := NewVoteExtensionCodec()
+
+	targetCounts := []int{len(oracletypes.DefaultTobinTaxes), oracletypes.MaxVoteTargets}
+	fixtures := make(map[int]vetypes.OracleVoteExtension, len(targetCounts))
+	encodedFixtures := make(map[int][]byte, len(targetCounts))
+	for _, targetCount := range targetCounts {
+		fixture := benchmarkCodecVoteExtension(b, targetCount)
+		encoded, err := codec.Encode(fixture)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if _, err := codec.Decode(encoded); err != nil {
+			b.Fatal(err)
+		}
+		fixtures[targetCount] = fixture
+		encodedFixtures[targetCount] = encoded
+	}
+
+	b.Run("encode", func(b *testing.B) {
+		for _, targetCount := range targetCounts {
+			b.Run(fmt.Sprintf("targets_%d", targetCount), func(b *testing.B) {
+				fixture := fixtures[targetCount]
+				b.ReportAllocs()
+				b.ResetTimer()
+				for b.Loop() {
+					encoded, err := codec.Encode(fixture)
+					if err != nil {
+						b.Fatal(err)
+					}
+					benchmarkEncodedVoteExtension = encoded
+				}
+				b.ReportMetric(float64(len(encodedFixtures[targetCount])), "extension_B/op")
+			})
+		}
+	})
+
+	b.Run("decode/validators_100", func(b *testing.B) {
+		for _, targetCount := range targetCounts {
+			b.Run(fmt.Sprintf("targets_%d", targetCount), func(b *testing.B) {
+				encoded := encodedFixtures[targetCount]
+				decoded := make([]vetypes.OracleVoteExtension, validatorCount)
+				b.ReportAllocs()
+				b.ResetTimer()
+				for b.Loop() {
+					for i := range validatorCount {
+						voteExtension, err := codec.Decode(encoded)
+						if err != nil {
+							b.Fatal(err)
+						}
+						decoded[i] = voteExtension
+					}
+				}
+				benchmarkDecodedVoteExtensions = decoded
+				b.ReportMetric(float64(len(encoded)), "extension_B/validator")
+				b.ReportMetric(validatorCount, "validators/op")
+			})
+		}
+	})
+}
+
+func benchmarkCodecVoteExtension(b *testing.B, targetCount int) vetypes.OracleVoteExtension {
+	b.Helper()
+
+	rates := make(map[string][]byte, targetCount)
+	for i := range targetCount {
+		rate, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 1)))
+		if err != nil {
+			b.Fatal(err)
+		}
+		rates[fmt.Sprintf("uasset%03d", i)] = rate
+	}
+
+	return vetypes.OracleVoteExtension{
+		Rates:         rates,
+		TargetVersion: oracletypes.InitialVoteTargetVersion,
+	}
+}

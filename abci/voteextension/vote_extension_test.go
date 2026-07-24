@@ -1,6 +1,7 @@
-package ve_test
+package voteextension_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -14,37 +15,60 @@ import (
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"ark/abci/codec"
 	abcitestutil "ark/abci/testutil"
-	"ark/abci/ve"
-	vetypes "ark/abci/ve/types"
+	"ark/abci/voteextension"
+	vetypes "ark/abci/voteextension/types"
 	transporttypes "ark/oracle/types"
+	oracletypes "ark/x/oracle/types"
 )
 
 func TestExtendVoteHandler(t *testing.T) {
+	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
 	validPrices := map[string][]byte{"uusd": validRate}
-	validVoteExt := vetypes.OracleVoteExtension{Rates: validPrices}
-	encodedVoteExt := []byte("encoded-vote-extension")
+	targets := oracletypes.VoteTargetSet{
+		Version: oracletypes.InitialVoteTargetVersion,
+		Denoms:  []string{"uusd"},
+	}
+	validVoteExt := vetypes.OracleVoteExtension{
+		Rates:         validPrices,
+		TargetVersion: targets.Version,
+	}
+	partialVoteExt := vetypes.OracleVoteExtension{
+		Rates:         map[string][]byte{},
+		TargetVersion: targets.Version,
+	}
+	encodedVoteExt := abcitestutil.MustEncodeVoteExtension(t, validVoteExt)
+	encodedPartialVoteExt := abcitestutil.MustEncodeVoteExtension(t, partialVoteExt)
+	panicCause := errors.New("boom")
 
 	testCases := []struct {
 		name              string
 		req               *cometabci.RequestExtendVote
-		setup             func(*abcitestutil.MockOracleClient, *abcitestutil.MockVoteExtensionCodec)
+		setup             func(*abcitestutil.MockOracleClient)
+		targetErr         error
 		expectedExtension []byte
 		expectResp        bool
 		expectErr         bool
+		expectedErrIs     error
 	}{
 		{
-			name:      "nil request is swallowed as non-panic error",
+			name:      "nil request returns error",
 			req:       nil,
-			expectErr: false,
+			expectErr: true,
+		},
+		{
+			name:              "vote target error returns empty vote extension",
+			req:               &cometabci.RequestExtendVote{Height: 10},
+			targetErr:         errors.New("vote targets unavailable"),
+			expectedExtension: []byte{},
+			expectResp:        true,
 		},
 		{
 			name: "oracle client error returns empty vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient, _ *abcitestutil.MockVoteExtensionCodec) {
+			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
 					Return(nil, errors.New("oracle unavailable"))
@@ -55,7 +79,7 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "nil oracle response returns empty vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient, _ *abcitestutil.MockVoteExtensionCodec) {
+			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
 					Return(nil, nil)
@@ -66,40 +90,34 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "invalid oracle prices return empty vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient, _ *abcitestutil.MockVoteExtensionCodec) {
+			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
 					Return(&transporttypes.OraclePricesResponse{
-						Prices: map[string][]byte{"bad denom": validRate},
+						Prices: map[string][]byte{"uusd": []byte("invalid")},
 					}, nil)
 			},
 			expectedExtension: []byte{},
 			expectResp:        true,
 		},
 		{
-			name: "codec encode error returns empty vote extension",
+			name: "missing target price remains missing",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient, voteExtensionCodec *abcitestutil.MockVoteExtensionCodec) {
+			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-					Return(&transporttypes.OraclePricesResponse{Prices: validPrices}, nil)
-				voteExtensionCodec.EXPECT().
-					Encode(validVoteExt).
-					Return(nil, errors.New("encode failed"))
+					Return(&transporttypes.OraclePricesResponse{Prices: map[string][]byte{}}, nil)
 			},
-			expectedExtension: []byte{},
+			expectedExtension: encodedPartialVoteExt,
 			expectResp:        true,
 		},
 		{
 			name: "valid prices are encoded into vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient, voteExtensionCodec *abcitestutil.MockVoteExtensionCodec) {
+			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
 					Return(&transporttypes.OraclePricesResponse{Prices: validPrices}, nil)
-				voteExtensionCodec.EXPECT().
-					Encode(validVoteExt).
-					Return(encodedVoteExt, nil)
 			},
 			expectedExtension: encodedVoteExt,
 			expectResp:        true,
@@ -107,16 +125,17 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "panic returns empty vote extension and error",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient, _ *abcitestutil.MockVoteExtensionCodec) {
+			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-					DoAndReturn(func(sdk.Context, *transporttypes.OraclePricesRequest, ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error) {
-						panic("boom")
+					DoAndReturn(func(context.Context, *transporttypes.OraclePricesRequest, ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error) {
+						panic(panicCause)
 					})
 			},
 			expectedExtension: []byte{},
 			expectResp:        true,
 			expectErr:         true,
+			expectedErrIs:     panicCause,
 		},
 	}
 
@@ -124,16 +143,22 @@ func TestExtendVoteHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			oracleClient := abcitestutil.NewMockOracleClient(ctrl)
-			voteExtensionCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
+			oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
+			if tc.req != nil {
+				oracleKeeper.EXPECT().
+					GetVoteTargets(gomock.Any(), tc.req.Height).
+					Return(targets, tc.targetErr)
+			}
 			if tc.setup != nil {
-				tc.setup(oracleClient, voteExtensionCodec)
+				tc.setup(oracleClient)
 			}
 
-			handler := ve.NewHandler(
+			handler := voteextension.NewHandler(
 				log.NewNopLogger(),
 				oracleClient,
-				time.Second,
+				oracleKeeper,
 				voteExtensionCodec,
+				time.Second,
 			).ExtendVoteHandler()
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)
@@ -141,6 +166,9 @@ func TestExtendVoteHandler(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+			}
+			if tc.expectedErrIs != nil {
+				require.ErrorIs(t, err, tc.expectedErrIs)
 			}
 			if tc.expectResp {
 				require.NotNil(t, resp)
@@ -153,18 +181,29 @@ func TestExtendVoteHandler(t *testing.T) {
 }
 
 func TestVerifyVoteExtensionHandler(t *testing.T) {
+	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
-	validVoteExt := vetypes.OracleVoteExtension{Rates: map[string][]byte{
-		"uusd": validRate,
-	}}
-	invalidVoteExt := vetypes.OracleVoteExtension{Rates: map[string][]byte{
-		"bad denom": validRate,
-	}}
+	targets := oracletypes.VoteTargetSet{
+		Version: oracletypes.InitialVoteTargetVersion,
+		Denoms:  []string{"uusd"},
+	}
+	validVoteExt := vetypes.OracleVoteExtension{
+		Rates:         map[string][]byte{"uusd": validRate},
+		TargetVersion: targets.Version,
+	}
+	invalidVoteExt := vetypes.OracleVoteExtension{
+		Rates:         map[string][]byte{"bad denom": validRate},
+		TargetVersion: targets.Version,
+	}
+	wrongVersionVoteExt := validVoteExt
+	wrongVersionVoteExt.TargetVersion++
+	unversionedVoteExt := validVoteExt
+	unversionedVoteExt.TargetVersion = 0
 
 	testCases := []struct {
 		name           string
 		req            *cometabci.RequestVerifyVoteExtension
-		setup          func(*abcitestutil.MockVoteExtensionCodec)
+		targetErr      error
 		expectedStatus cometabci.ResponseVerifyVoteExtension_VerifyStatus
 		expectResp     bool
 		expectErr      bool
@@ -187,12 +226,7 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 			name: "decode error rejects vote extension",
 			req: &cometabci.RequestVerifyVoteExtension{
 				Height:        10,
-				VoteExtension: []byte("encoded-vote-extension"),
-			},
-			setup: func(voteExtensionCodec *abcitestutil.MockVoteExtensionCodec) {
-				voteExtensionCodec.EXPECT().
-					Decode([]byte("encoded-vote-extension")).
-					Return(vetypes.OracleVoteExtension{}, errors.New("decode failed"))
+				VoteExtension: []byte("not-zlib"),
 			},
 			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
@@ -202,12 +236,38 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 			name: "decoded invalid prices reject vote extension",
 			req: &cometabci.RequestVerifyVoteExtension{
 				Height:        10,
-				VoteExtension: []byte("encoded-vote-extension"),
+				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, invalidVoteExt),
 			},
-			setup: func(voteExtensionCodec *abcitestutil.MockVoteExtensionCodec) {
-				voteExtensionCodec.EXPECT().
-					Decode([]byte("encoded-vote-extension")).
-					Return(invalidVoteExt, nil)
+			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:     true,
+			expectErr:      true,
+		},
+		{
+			name: "vote target error rejects vote extension",
+			req: &cometabci.RequestVerifyVoteExtension{
+				Height:        10,
+				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, validVoteExt),
+			},
+			targetErr:      errors.New("vote targets unavailable"),
+			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:     true,
+			expectErr:      true,
+		},
+		{
+			name: "wrong target version rejects vote extension",
+			req: &cometabci.RequestVerifyVoteExtension{
+				Height:        10,
+				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, wrongVersionVoteExt),
+			},
+			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:     true,
+			expectErr:      true,
+		},
+		{
+			name: "unversioned report is rejected",
+			req: &cometabci.RequestVerifyVoteExtension{
+				Height:        10,
+				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, unversionedVoteExt),
 			},
 			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
@@ -217,12 +277,7 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 			name: "decoded valid prices accept vote extension",
 			req: &cometabci.RequestVerifyVoteExtension{
 				Height:        10,
-				VoteExtension: []byte("encoded-vote-extension"),
-			},
-			setup: func(voteExtensionCodec *abcitestutil.MockVoteExtensionCodec) {
-				voteExtensionCodec.EXPECT().
-					Decode([]byte("encoded-vote-extension")).
-					Return(validVoteExt, nil)
+				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, validVoteExt),
 			},
 			expectedStatus: cometabci.ResponseVerifyVoteExtension_ACCEPT,
 			expectResp:     true,
@@ -232,16 +287,17 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			voteExtensionCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
-			if tc.setup != nil {
-				tc.setup(voteExtensionCodec)
-			}
-
-			handler := ve.NewHandler(
+			oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
+			oracleKeeper.EXPECT().
+				GetVoteTargets(gomock.Any(), int64(10)).
+				Return(targets, tc.targetErr).
+				AnyTimes()
+			handler := voteextension.NewHandler(
 				log.NewNopLogger(),
 				nil,
-				time.Second,
+				oracleKeeper,
 				voteExtensionCodec,
+				time.Second,
 			).VerifyVoteExtensionHandler()
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)

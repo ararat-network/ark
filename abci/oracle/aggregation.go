@@ -1,157 +1,159 @@
 package oracle
 
 import (
-	"slices"
-
 	"cosmossdk.io/math"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"ark/pkg/decimal"
+	oracletypes "ark/x/oracle/types"
 )
 
-// tallyVote is one positive validator report in an aggregation-local ballot.
-type tallyVote struct {
-	validator int
-	rate      math.LegacyDec
-	power     int64
+// aggregationResult contains the internal output of one complete oracle aggregation.
+type aggregationResult struct {
+	prices map[string]math.LegacyDec
+	scores []validatorScore
 }
 
-// A source ballot caches positive reports both in tally order and by dense
-// validator index. A nil rate means that validator did not submit a positive
-// report. Derived cross ballots use only votes and power.
-type ballot struct {
-	votes []tallyVote
-	rates []math.LegacyDec
-	power int64
+// validatorScore directs oracle rewards and miss accounting to a validator.
+type validatorScore struct {
+	recipient       sdk.ConsAddress
+	votingPower     int64
+	rewardedTargets int64
+	rewardWeight    math.Int
+	missed          bool
 }
 
-func (b *ballot) add(vote tallyVote) {
-	b.votes = append(b.votes, vote)
-	b.rates[vote.validator] = vote.rate
-	b.power += vote.power
-}
-
-// weightedMedian returns the lower weighted median. At an exact even-power tie,
-// the lower rate wins; for odd power, cumulative power must reach the ceiling of
-// half the ballot power.
-func (b ballot) weightedMedian() math.LegacyDec {
-	if b.power <= 0 || len(b.votes) == 0 {
-		return math.LegacyZeroDec()
+// aggregateOracleVotes groups submitted oracle rates by supported denom,
+// selects a reference denom from the denoms that meet raw and overlap quorum,
+// computes weighted-median exchange rates, and returns validator accounting.
+// targetDenoms must be in canonical lexical order.
+func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms []string) aggregationResult {
+	result := aggregationResult{
+		prices: map[string]math.LegacyDec{},
+		scores: make([]validatorScore, len(votes)),
 	}
 
-	slices.SortFunc(b.votes, func(a, other tallyVote) int {
-		switch {
-		case a.rate.LT(other.rate):
-			return -1
-		case a.rate.GT(other.rate):
-			return 1
-		default:
-			return a.validator - other.validator
+	// Count first so each ballot can allocate exactly enough space for its
+	// positive reports without geometric slice growth.
+	positiveRateCounts := make([]int, len(targetDenoms))
+	var totalPower int64
+	for validatorIndex, vote := range votes {
+		// Proposal validation matched this voting power against DecidedLastCommit.
+		totalPower += vote.Validator.Power
+
+		recipient := sdk.ConsAddress(vote.Validator.Address)
+		result.scores[validatorIndex] = validatorScore{
+			recipient:    recipient,
+			votingPower:  vote.Validator.Power,
+			rewardWeight: math.ZeroInt(),
+			missed:       len(vote.Rates) != len(targetDenoms),
 		}
-	})
-
-	pivotPower := b.power/2 + b.power%2
-	var cumulativePower int64
-	for _, vote := range b.votes {
-		cumulativePower += vote.power
-		if cumulativePower >= pivotPower {
-			return vote.rate
+		for _, submittedRate := range vote.Rates {
+			targetIndex := submittedRate.TargetIndex
+			if !submittedRate.Value.IsPositive() {
+				result.scores[validatorIndex].missed = true
+				continue
+			}
+			positiveRateCounts[targetIndex]++
 		}
 	}
 
-	return math.LegacyZeroDec()
-}
-
-// crossRatePowers returns the usable overlap power for each reference
-// direction. A validator contributes only when that direction's derived
-// reference/target rate is inside the conservative safe range.
-func (b ballot) crossRatePowers(other ballot) (bReferencePower, otherReferencePower int64) {
-	if len(b.votes) > len(other.votes) {
-		otherPower, bPower := other.crossRatePowers(b)
-		return bPower, otherPower
+	if totalPower <= 0 {
+		return result
 	}
 
-	for _, vote := range b.votes {
-		if vote.validator >= len(other.rates) {
+	ballots := make([]ballot, len(targetDenoms))
+	for targetIndex, voteCount := range positiveRateCounts {
+		ballots[targetIndex] = ballot{
+			votes: make([]tallyVote, 0, voteCount),
+			rates: make([]math.LegacyDec, len(votes)),
+		}
+	}
+	for validatorIndex, vote := range votes {
+		for _, submittedRate := range vote.Rates {
+			rate := submittedRate.Value
+
+			// Non-positive submissions were classified as misses in the counting
+			// pass and do not contribute to ballots.
+			if !rate.IsPositive() {
+				continue
+			}
+
+			ballots[submittedRate.TargetIndex].add(tallyVote{
+				validator: validatorIndex,
+				rate:      rate,
+				power:     vote.Validator.Power,
+			})
+		}
+	}
+
+	thresholdPower := params.VoteThreshold.
+		MulInt64(totalPower).
+		Ceil().
+		TruncateInt64()
+
+	passingTargets := make([]int, 0, len(ballots))
+	for targetIndex := range ballots {
+		if ballots[targetIndex].power >= thresholdPower {
+			passingTargets = append(passingTargets, targetIndex)
+		}
+	}
+	if len(passingTargets) == 0 {
+		return result
+	}
+
+	pricedTallies := selectReference(passingTargets, ballots, thresholdPower)
+
+	result.prices = computePricesAndScores(
+		pricedTallies,
+		targetDenoms,
+		params.RewardBand,
+		result.scores,
+	)
+
+	return result
+}
+
+// computePricesAndScores applies fixed-band reward and miss accounting to the
+// already evaluated selected-reference tallies.
+func computePricesAndScores(
+	tallies []pricedTally,
+	targetDenoms []string,
+	rewardBand math.LegacyDec,
+	scores []validatorScore,
+) map[string]math.LegacyDec {
+	halfRewardBand := rewardBand.QuoInt64(2)
+	prices := make(map[string]math.LegacyDec, len(tallies))
+
+	for _, tally := range tallies {
+		rewardSpread, err := decimal.Mul(tally.median, halfRewardBand)
+		if err != nil {
 			continue
 		}
-		otherRate := other.rates[vote.validator]
-		if otherRate.IsNil() {
+		lowerBound, err := decimal.Sub(tally.median, rewardSpread)
+		if err != nil {
 			continue
 		}
-
-		if positiveQuotientSafelyRepresentable(vote.rate, otherRate) {
-			bReferencePower += vote.power
-		}
-		if positiveQuotientSafelyRepresentable(otherRate, vote.rate) {
-			otherReferencePower += vote.power
-		}
-	}
-
-	return bReferencePower, otherReferencePower
-}
-
-// appendCrossRates appends safe reference/target reports from validators with
-// a positive rate in both ballots into dst and returns the extended slice plus
-// their voting power.
-func (b ballot) appendCrossRates(reference ballot, dst []tallyVote) ([]tallyVote, int64) {
-	var power int64
-	for _, vote := range b.votes {
-		if vote.validator >= len(reference.rates) {
+		upperBound, err := decimal.Add(tally.median, rewardSpread)
+		if err != nil {
 			continue
 		}
-		referenceRate := reference.rates[vote.validator]
-		if referenceRate.IsNil() {
-			continue
+		for _, vote := range tally.votes {
+			if vote.rate.GTE(lowerBound) && vote.rate.LTE(upperBound) {
+				scores[vote.validator].rewardedTargets++
+			} else {
+				scores[vote.validator].missed = true
+			}
 		}
 
-		rate, ok := safePositiveQuotient(referenceRate, vote.rate)
-		if !ok {
-			continue
-		}
-
-		vote.rate = rate
-		dst = append(dst, vote)
-		power += vote.power
+		prices[targetDenoms[tally.targetIndex]] = tally.price
+	}
+	// Every tally vote for a validator carries the same proposal-validated
+	// voting power, so repeated reward additions are exactly one multiplication.
+	for i := range scores {
+		scores[i].rewardWeight = math.NewInt(scores[i].votingPower).MulRaw(scores[i].rewardedTargets)
 	}
 
-	return dst, power
-}
-
-const (
-	// These conservative magnitude bounds guarantee a positive, in-range
-	// LegacyDec quotient given its roughly 60 precision bits and 256 magnitude
-	// bits. Ratios near the numeric limits are deliberately treated as unusable
-	// oracle observations rather than supported exactly.
-	minSafeQuotientBitDelta = -58
-	maxSafeQuotientBitDelta = 254
-)
-
-// positiveQuotientSafelyRepresentable reports whether the quotient is well
-// inside LegacyDec's positive range. The conservative boundary intentionally
-// rejects technically representable extreme ratios that have no useful oracle
-// meaning, while keeping reference selection allocation-free.
-func positiveQuotientSafelyRepresentable(
-	numerator,
-	denominator math.LegacyDec,
-) bool {
-	if numerator.IsNil() || denominator.IsNil() ||
-		!numerator.IsPositive() || !denominator.IsPositive() {
-		return false
-	}
-
-	bitDelta := numerator.BigIntMut().BitLen() - denominator.BigIntMut().BitLen()
-
-	return bitDelta >= minSafeQuotientBitDelta && bitDelta <= maxSafeQuotientBitDelta
-}
-
-// safePositiveQuotient returns numerator/denominator when it is inside the
-// conservative oracle range. Invalid or extreme derived rates are unusable
-// observations rather than block-fatal panics.
-func safePositiveQuotient(
-	numerator,
-	denominator math.LegacyDec,
-) (math.LegacyDec, bool) {
-	if !positiveQuotientSafelyRepresentable(numerator, denominator) {
-		return math.LegacyZeroDec(), false
-	}
-
-	return numerator.Quo(denominator), true
+	return prices
 }

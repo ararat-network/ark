@@ -64,7 +64,8 @@ app/            # App wiring, depinject config
   `TransportType`.
 - `abci/` is fixed protocol code, not a pluggable strategy layer. Lifecycle hooks stay thin; `abci/oracle` owns vote
   extraction, aggregation, scoring, price application, and oracle-specific encoding policy.
-- Keep primitive codecs in `pkg/encoding`; keep vote-extension size/rate policy in `abci/oracle/encoding`.
+- Keep primitive codecs and per-value encoding limits in `pkg/encoding`; keep aggregate vote-extension wire and decoded
+  size limits in `abci/codec`.
 - Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `oracle/client/metrics`,
   `oracle/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
 

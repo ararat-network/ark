@@ -46,7 +46,7 @@ func init() {
 	}
 }
 
-func ObserveMethodLatency(method Method, duration time.Duration) {
+func observeMethodLatency(method Method, duration time.Duration) {
 	methodLatency.Record(
 		context.Background(),
 		durationMillis(duration),
@@ -54,20 +54,20 @@ func ObserveMethodLatency(method Method, duration time.Duration) {
 	)
 }
 
-func AddRequest(method Method, status Labeller) {
+func addRequest(method Method, status Status) {
 	requests.Add(
 		context.Background(),
 		1,
 		metric.WithAttributes(
 			attribute.String("method", method.String()),
-			attribute.String("status", label(status)),
+			attribute.String("status", status.String()),
 		),
 	)
 }
 
-func RecordLatencyAndStatus(latency time.Duration, err error, method Method) {
-	ObserveMethodLatency(method, latency)
-	AddRequest(method, StatusFromError(err))
+func RecordLatencyAndStatus(latency time.Duration, status Status, method Method) {
+	observeMethodLatency(method, latency)
+	addRequest(method, status)
 }
 
 func ObserveMessageSize(msg MessageType, size int) {
@@ -80,11 +80,4 @@ func ObserveMessageSize(msg MessageType, size int) {
 
 func durationMillis(duration time.Duration) float64 {
 	return float64(duration) / float64(time.Millisecond)
-}
-
-func label(labeller Labeller) string {
-	if labeller == nil {
-		return Failure{}.Label()
-	}
-	return labeller.Label()
 }

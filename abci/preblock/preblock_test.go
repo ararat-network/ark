@@ -2,6 +2,7 @@ package preblock_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,14 +11,16 @@ import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/core/appmodule"
-	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	"ark/abci/codec"
 	"ark/abci/preblock"
 	abcitestutil "ark/abci/testutil"
+	arkabcitypes "ark/abci/types"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -25,36 +28,51 @@ func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fake := &fakeModule{name: "fake"}
 	handler := preblock.NewHandler(
-		log.NewTestLogger(t),
 		abcitestutil.NewMockOracleKeeper(ctrl),
-		abcitestutil.NewMockVoteExtensionCodec(ctrl),
-		abcitestutil.NewMockExtendedCommitCodec(ctrl),
+		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith(fake))(abcitestutil.NewSDKContext(3, 2, sdk.ExecModeFinalize), nil)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "received nil RequestFinalizeBlock")
+	require.ErrorIs(t, err, arkabcitypes.ErrNilRequest)
 	require.Zero(t, fake.called)
 }
 
-func TestWrappedPreBlockerCallsModuleManagerWhenVoteExtensionsDisabled(t *testing.T) {
+func TestWrappedPreBlockerWrapsModuleManagerError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	moduleErr := errors.New("module preblock failed")
+	fake := &fakeModule{name: "fake", err: moduleErr}
+	handler := preblock.NewHandler(
+		abcitestutil.NewMockOracleKeeper(ctrl),
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith(fake))(
+		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
+		&cometabci.RequestFinalizeBlock{Height: 1},
+	)
+
+	require.ErrorIs(t, err, arkabcitypes.ErrWrappedHandler)
+	require.ErrorIs(t, err, moduleErr)
+}
+
+func TestWrappedPreBlockerSkipsVoteExtensionsWithoutPreviousCommit(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fake := &fakeModule{
 		name:     "fake",
 		response: preBlockResponse{consensusParamsChanged: true},
 	}
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
 	handler := preblock.NewHandler(
-		log.NewTestLogger(t),
 		keeper,
-		abcitestutil.NewMockVoteExtensionCodec(ctrl),
-		abcitestutil.NewMockExtendedCommitCodec(ctrl),
+		codec.NewVoteExtensionCodec(),
 	)
 
 	res, err := handler.WrappedPreBlocker(managerWith(fake))(
-		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
-		&cometabci.RequestFinalizeBlock{Height: 1},
+		abcitestutil.NewSDKContext(100, 1, sdk.ExecModeFinalize).
+			WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cometabci.CommitInfo{})),
+		&cometabci.RequestFinalizeBlock{Height: 100},
 	)
 
 	require.NoError(t, err)
@@ -62,39 +80,54 @@ func TestWrappedPreBlockerCallsModuleManagerWhenVoteExtensionsDisabled(t *testin
 	require.Equal(t, 1, fake.called)
 }
 
-func TestWrappedPreBlockerAppliesPricesAndSyncsVoteTargetsWhenVoteExtensionsEnabled(t *testing.T) {
+func TestWrappedPreBlockerWrapsAdvanceVoteTargetsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	veCodec := abcitestutil.NewMockVoteExtensionCodec(ctrl)
-	extCommitCodec := abcitestutil.NewMockExtendedCommitCodec(ctrl)
+	advanceErr := errors.New("advance failed")
+	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(advanceErr)
+	handler := preblock.NewHandler(
+		keeper,
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith())(
+		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
+		&cometabci.RequestFinalizeBlock{Height: 1},
+	)
+
+	require.ErrorIs(t, err, arkabcitypes.ErrOracleKeeper)
+	require.ErrorIs(t, err, advanceErr)
+	require.Contains(t, err.Error(), "advance vote targets for height 1")
+}
+
+func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsEnabled(t *testing.T) {
+	ctrl := gomock.NewController(t)
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := []string{"uusd"}
+	voteTargets := oracletypes.VoteTargetSet{
+		Version: oracletypes.InitialVoteTargetVersion,
+		Denoms:  []string{"uusd"},
+	}
 	handler := preblock.NewHandler(
-		log.NewTestLogger(t),
 		keeper,
-		veCodec,
-		extCommitCodec,
+		codec.NewVoteExtensionCodec(),
 	)
 	val1 := sdk.ConsAddress("validator1")
 	val2 := sdk.ConsAddress("validator2")
-	commitBz := []byte("commit")
-	ve1Bz := []byte("ve1")
-	ve2Bz := []byte("ve2")
 	voteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 		"uusd": math.LegacyNewDec(100),
 	})
-
-	extCommitCodec.EXPECT().Decode(commitBz).Return(cometabci.ExtendedCommitInfo{
+	ve1Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
+	ve2Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
+	commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
 		Votes: []cometabci.ExtendedVoteInfo{
 			abcitestutil.NewExtendedVoteInfo(val1, 1, ve1Bz),
 			abcitestutil.NewExtendedVoteInfo(val2, 1, ve2Bz),
 		},
-	}, nil)
-	veCodec.EXPECT().Decode(ve1Bz).Return(voteExtension, nil)
-	veCodec.EXPECT().Decode(ve2Bz).Return(voteExtension, nil)
+	})
 	keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
-	keeper.EXPECT().GetVoteTargets(gomock.Any()).Return(voteTargets, nil)
+	keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(100)).Return(voteTargets, nil)
 	keeper.EXPECT().
 		SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
@@ -104,13 +137,16 @@ func TestWrappedPreBlockerAppliesPricesAndSyncsVoteTargetsWhenVoteExtensionsEnab
 		})
 	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), false).Return(nil)
 	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), false).Return(nil)
-	keeper.EXPECT().SyncVoteTargets(gomock.Any(), voteTargets).Return(nil)
+	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
 
+	lastCommit := cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)}
 	_, err := handler.WrappedPreBlocker(managerWith())(
-		abcitestutil.NewSDKContext(3, 2, sdk.ExecModeFinalize),
+		abcitestutil.NewSDKContext(101, 1, sdk.ExecModeFinalize).
+			WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, lastCommit)),
 		&cometabci.RequestFinalizeBlock{
-			Height: 3,
-			Txs:    [][]byte{commitBz},
+			Height:            101,
+			Txs:               [][]byte{commitBz},
+			DecidedLastCommit: lastCommit,
 		},
 	)
 
@@ -121,6 +157,7 @@ type fakeModule struct {
 	name     string
 	called   int
 	response appmodule.ResponsePreBlock
+	err      error
 }
 
 func (f *fakeModule) IsOnePerModuleType() {}
@@ -131,6 +168,9 @@ func (f *fakeModule) Name() string { return f.name }
 
 func (f *fakeModule) PreBlock(context.Context) (appmodule.ResponsePreBlock, error) {
 	f.called++
+	if f.err != nil {
+		return nil, f.err
+	}
 	if f.response == nil {
 		return preBlockResponse{}, nil
 	}

@@ -16,11 +16,9 @@ func TestAggregateOracleVotesWithNoTargetsDoesNotRecordMisses(t *testing.T) {
 		{Validator: cometabci.Validator{Address: []byte("validator2"), Power: 20}},
 	}
 
-	result, err := aggregateOracleVotes(votes, oracletypes.DefaultParams(), []string{})
+	result := aggregateOracleVotes(votes, oracletypes.DefaultParams(), []string{})
 
-	require.NoError(t, err)
-	require.Empty(t, result.Prices)
-	require.Empty(t, result.VoteTargets)
+	require.Empty(t, result.prices)
 	require.Len(t, result.scores, len(votes))
 	for _, score := range result.scores {
 		require.True(t, score.rewardWeight.IsZero())

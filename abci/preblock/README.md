@@ -9,9 +9,9 @@ vote extensions are enabled, applies oracle prices from the extended commit info
 
 - Run the wrapped module manager preblock flow first.
 - Skip oracle work when vote extensions are disabled.
-- Delegate vote extraction, aggregation, scoring, and price writes to `abci/oracle.PriceApplier`.
-- Sync Tobin tax from the vote targets used for the block.
-- Record preblock latency, price, and validator-report metrics in finalize mode.
+- Delegate vote extraction, aggregation, scoring, and price writes to `abci/oracle.ProcessVoteExtensions`.
+- Advance pending vote targets after processing the previous height's reports.
+- Record preblock latency and consensus price metrics in finalize mode.
 
 ## Boundaries
 
