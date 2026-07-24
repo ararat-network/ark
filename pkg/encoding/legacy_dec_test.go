@@ -1,6 +1,7 @@
 package encoding_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,4 +48,20 @@ func TestLegacyDecValidation(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
+}
+
+func TestEncodeLegacyDecRejectsOutOfRangeValue(t *testing.T) {
+	raw := new(big.Int).Lsh(big.NewInt(1), 256)
+	raw.Mul(raw, new(big.Int).Exp(big.NewInt(10), big.NewInt(math.LegacyPrecision), nil))
+	value := math.LegacyNewDecFromBigIntWithPrec(raw, math.LegacyPrecision)
+
+	_, err := encoding.EncodeLegacyDec(value)
+
+	require.ErrorContains(t, err, "out of range")
+}
+
+func TestDecodeLegacyDecRejectsOversizedInput(t *testing.T) {
+	_, err := encoding.DecodeLegacyDec(make([]byte, encoding.MaxEncodedLegacyDecBytes+1))
+
+	require.ErrorContains(t, err, "exceeds maximum")
 }
