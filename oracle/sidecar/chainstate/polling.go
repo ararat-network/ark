@@ -102,6 +102,20 @@ func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryCl
 	if resp == nil {
 		return nil, errors.New("oracle vote targets response is nil")
 	}
+	if len(resp.VoteTargets) > oracletypes.MaxVoteTargets {
+		return nil, fmt.Errorf(
+			"active vote target count %d exceeds maximum %d",
+			len(resp.VoteTargets),
+			oracletypes.MaxVoteTargets,
+		)
+	}
+	if resp.Pending != nil && len(resp.Pending.Denoms) > oracletypes.MaxVoteTargets {
+		return nil, fmt.Errorf(
+			"pending vote target count %d exceeds maximum %d",
+			len(resp.Pending.Denoms),
+			oracletypes.MaxVoteTargets,
+		)
+	}
 
 	denoms := resp.VoteTargets
 	if resp.Pending != nil {

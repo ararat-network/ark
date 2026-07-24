@@ -238,6 +238,21 @@ func TestRunRejectsInvalidInitialActiveDenoms(t *testing.T) {
 	}
 }
 
+func TestRunRejectsTooManyActiveDenoms(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	client := validationtestutil.NewMockPriceClient(ctrl)
+	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
+	expectVoteTargets(voteTargetClient, make([]string, oracletypes.MaxVoteTargets+1), nil)
+	validator, err := NewValidator(log.NewNopLogger(), client, voteTargetClient, validConfig())
+	require.NoError(t, err)
+
+	results, err := validator.Run(context.Background())
+
+	require.Nil(t, results)
+	require.ErrorContains(t, err, "active vote target count")
+	require.ErrorContains(t, err, "exceeds maximum")
+}
+
 func TestRunPreservesActiveDenomsWhenRefreshFails(t *testing.T) {
 	now := time.Now().UTC()
 	ctrl := gomock.NewController(t)
@@ -315,6 +330,10 @@ func TestRunCountsInvalidPricesAsMissing(t *testing.T) {
 		{
 			name:     "malformed",
 			rawPrice: []byte("not-a-decimal"),
+		},
+		{
+			name:     "oversized",
+			rawPrice: make([]byte, encoding.MaxEncodedLegacyDecBytes+1),
 		},
 	}
 

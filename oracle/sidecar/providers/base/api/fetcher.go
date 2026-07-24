@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -18,6 +19,11 @@ import (
 	apimetrics "ark/oracle/sidecar/providers/base/api/metrics"
 	"ark/oracle/sidecar/providers/types"
 )
+
+// MaxResponseBodyBytes bounds one provider HTTP response before JSON decoding.
+// A 1 MiB ceiling retains at least 5x headroom over the maximum supported
+// 512-ticker Binance and Frankfurter response shapes.
+const MaxResponseBodyBytes int64 = 1 << 20
 
 // Fetcher polls an HTTP API for provider ticker prices and publishes responses
 // to the provider receive loop.
@@ -252,9 +258,11 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 				status,
 			)), nil
 	}
-	defer resp.Body.Close()
+	responseBody := resp.Body
+	defer responseBody.Close()
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		if _, err := io.Copy(io.Discard, resp.Body); err != nil && ctx.Err() == nil {
+		if _, err := io.CopyN(io.Discard, responseBody, MaxResponseBodyBytes+1); err != nil &&
+			!errors.Is(err, io.EOF) && ctx.Err() == nil {
 			f.logger.Debug("failed to drain API response body", "error", err)
 		}
 	}
@@ -284,7 +292,32 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 			),
 		)
 	default:
-		response = f.dataHandler.ParseResponse(tickers, resp)
+		body, readErr := io.ReadAll(io.LimitReader(responseBody, MaxResponseBodyBytes+1))
+		switch {
+		case readErr != nil:
+			response = types.NewErrorResponse(
+				tickers,
+				types.NewErrorWithCode(
+					fmt.Errorf("reading API response body: %w", readErr),
+					types.ErrorFailedToDecode,
+				),
+			)
+		case int64(len(body)) > MaxResponseBodyBytes:
+			response = types.NewErrorResponse(
+				tickers,
+				types.NewErrorWithCode(
+					fmt.Errorf(
+						"API response body size %d exceeds maximum %d",
+						len(body),
+						MaxResponseBodyBytes,
+					),
+					types.ErrorFailedToDecode,
+				),
+			)
+		default:
+			resp.Body = io.NopCloser(bytes.NewReader(body))
+			response = f.dataHandler.ParseResponse(tickers, resp)
+		}
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

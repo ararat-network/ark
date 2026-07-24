@@ -21,13 +21,14 @@ import (
 
 	"ark/oracle/sidecar/chainstate"
 	"ark/oracle/sidecar/runtime"
+	sidecartypes "ark/oracle/sidecar/types"
 	transporttypes "ark/oracle/types"
 )
 
 func TestOracleReloadConfigLoadsConstructionPath(t *testing.T) {
 	initialCfg := newTestRuntimeConfig()
 	reloadedCfg := initialCfg.Clone()
-	reloadedCfg.FallbackDenoms = []string{"ueur"}
+	reloadedCfg.FallbackDenoms = []string{"ukrw"}
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
@@ -39,9 +40,9 @@ func TestOracleReloadConfigLoadsConstructionPath(t *testing.T) {
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		snapshot := oracle.runtime.GetPriceSnapshot()
-		_, hasEUR := snapshot.Prices["ueur"]
+		_, hasKRW := snapshot.Prices["ukrw"]
 		_, hasUSD := snapshot.Prices["uusd"]
-		return snapshot.Timestamp.After(initial.Timestamp) && hasEUR && !hasUSD
+		return snapshot.Timestamp.After(initial.Timestamp) && hasKRW && !hasUSD
 	}, time.Second, time.Millisecond)
 }
 
@@ -63,7 +64,7 @@ func TestOracleReloadConfigPreservesRuntimeAfterInvalidFile(t *testing.T) {
 func TestAdminServiceReloadsConfigOverGRPC(t *testing.T) {
 	initialCfg := newTestRuntimeConfig()
 	reloadedCfg := initialCfg.Clone()
-	reloadedCfg.FallbackDenoms = []string{"ueur"}
+	reloadedCfg.FallbackDenoms = []string{"ukrw"}
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
@@ -105,7 +106,7 @@ func TestAdminServiceReloadsConfigOverGRPC(t *testing.T) {
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		snapshot := oracle.runtime.GetPriceSnapshot()
-		_, ok := snapshot.Prices["ueur"]
+		_, ok := snapshot.Prices["ukrw"]
 		return snapshot.Timestamp.After(initial.Timestamp) && ok
 	}, time.Second, time.Millisecond)
 }
@@ -134,7 +135,10 @@ func newReloadTestOracle(t *testing.T, cfg runtime.Config, configPath string) *O
 	return newTestOracleFromRuntime(
 		t,
 		cfg,
-		newServerTestFetcher(nil),
+		newServerTestFetcher(sidecartypes.Prices{
+			"NOAH/USD": mustBigFloat(t, "1.25"),
+			"NOAH/KRW": mustBigFloat(t, "1300"),
+		}),
 		unavailableVoteTargetsClient{},
 		ProcessConfig{
 			ServerAddress:     "127.0.0.1:0",

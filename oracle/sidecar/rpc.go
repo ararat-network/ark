@@ -66,6 +66,9 @@ func toReqPrices(prices sidecartypes.DenomPrices) (map[string][]byte, error) {
 		if price == nil {
 			return nil, fmt.Errorf("nil price for %s", ticker)
 		}
+		if err := sidecartypes.ValidatePrice(price); err != nil {
+			return nil, fmt.Errorf("invalid price for %s: %w", ticker, err)
+		}
 
 		rate, err := math.LegacyNewDecFromStr(price.Text('f', math.LegacyPrecision))
 		if err != nil {

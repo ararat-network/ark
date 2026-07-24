@@ -293,6 +293,58 @@ func TestRunMapsHTTPFailuresToUnresolvedResponses(t *testing.T) {
 	}
 }
 
+func TestRunBoundsNonSuccessResponseDrain(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	cfg := apiConfig()
+	body := &trackingReadCloser{
+		Reader: strings.NewReader(strings.Repeat("x", int(MaxResponseBodyBytes)+2)),
+	}
+
+	handler := newMockDataHandler(t)
+	handler.EXPECT().
+		CreateURL(cfg.Endpoints[0], tickers).
+		Return(testURL, nil)
+
+	fetcher, err := NewFetcher(cfg, &http.Client{
+		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusInternalServerError, Body: body}, nil
+		}),
+	}, handler)
+	require.NoError(t, err)
+
+	response, err := runAPIOnce(fetcher, tickers)
+
+	require.NoError(t, err)
+	require.Equal(t, types.ErrorCode(http.StatusInternalServerError), response.Unresolved["ATOMUSD"].Code())
+	require.Equal(t, MaxResponseBodyBytes+1, body.bytesRead)
+	require.False(t, body.readToEOF)
+	require.True(t, body.closed)
+}
+
+func TestRunRejectsOversizedSuccessResponseBeforeParsing(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	cfg := apiConfig()
+	handler := newMockDataHandler(t)
+	handler.EXPECT().
+		CreateURL(cfg.Endpoints[0], tickers).
+		Return(testURL, nil)
+
+	fetcher, err := NewFetcher(cfg, &http.Client{
+		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			body := strings.Repeat("x", int(MaxResponseBodyBytes)+1)
+			return httpResponse(http.StatusOK, body), nil
+		}),
+	}, handler)
+	require.NoError(t, err)
+
+	response, err := runAPIOnce(fetcher, tickers)
+
+	require.NoError(t, err)
+	providerErr := response.Unresolved["ATOMUSD"]
+	require.Equal(t, types.ErrorFailedToDecode, providerErr.Code())
+	require.ErrorContains(t, providerErr, "exceeds maximum")
+}
+
 func TestRunMapsClientErrorToUnresolvedResponse(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD"}
 	cfg := apiConfig()
@@ -575,10 +627,12 @@ type trackingReadCloser struct {
 	io.Reader
 	readToEOF bool
 	closed    bool
+	bytesRead int64
 }
 
 func (r *trackingReadCloser) Read(p []byte) (int, error) {
 	n, err := r.Reader.Read(p)
+	r.bytesRead += int64(n)
 	if errors.Is(err, io.EOF) {
 		r.readToEOF = true
 	}

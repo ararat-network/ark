@@ -10,6 +10,7 @@ import (
 	providertypes "ark/oracle/sidecar/providers/types"
 	"ark/oracle/sidecar/resolver"
 	"ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 )
 
 // Config defines the price runtime configuration. The runtime is configured
@@ -80,6 +81,13 @@ func (c *Config) Validate() error {
 	}
 	if len(c.FallbackDenoms) == 0 {
 		return errors.New("oracle denoms fallback cannot be empty")
+	}
+	if len(c.FallbackDenoms) > oracletypes.MaxVoteTargets {
+		return fmt.Errorf(
+			"oracle fallback denom count %d exceeds maximum vote targets %d",
+			len(c.FallbackDenoms),
+			oracletypes.MaxVoteTargets,
+		)
 	}
 	fallbackDenoms := make(map[string]struct{}, len(c.FallbackDenoms))
 	for _, denom := range c.FallbackDenoms {

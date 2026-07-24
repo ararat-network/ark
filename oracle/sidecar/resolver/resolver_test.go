@@ -269,6 +269,21 @@ func TestResolvePricesIgnoresInfinitePrices(t *testing.T) {
 	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
 }
 
+func TestResolvePricesIgnoresPricesOutsideLegacyDecRange(t *testing.T) {
+	tooLarge := new(big.Float).SetPrec(types.PricePrecisionBits)
+	tooLarge.SetInt(new(big.Int).Lsh(big.NewInt(1), 256))
+	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
+		"invalid": {
+			"NOAH/USD": tooLarge,
+		},
+		"valid": {
+			"NOAH/USD": mustBigFloat(t, "2"),
+		},
+	}, []string{"uusd"}, time.Now().UTC())
+
+	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+}
+
 func TestResolvePricesPreservesInputPrecision(t *testing.T) {
 	price := mustBigFloat(t, "1234.123456789123456789")
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{

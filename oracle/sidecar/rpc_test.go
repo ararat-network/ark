@@ -70,14 +70,13 @@ func TestPrices(t *testing.T) {
 	require.Equal(t, math.LegacyMustNewDecFromStr("42.25"), decodePrice(t, response.Prices["ukrw"]))
 }
 
-func TestPricesReturnsZeroPricesForMissingVoteTargets(t *testing.T) {
+func TestPricesOmitsMissingVoteTargets(t *testing.T) {
 	oracle := newTestOracle(t, oracletypes.Prices{})
 	startTestRuntime(t, oracle)
 
 	response := requireOracleTick(t, oracle)
 
-	require.Equal(t, math.LegacyZeroDec(), decodePrice(t, response.Prices["uusd"]))
-	require.Equal(t, math.LegacyZeroDec(), decodePrice(t, response.Prices["ukrw"]))
+	require.Empty(t, response.Prices)
 	require.False(t, response.Timestamp.IsZero())
 	require.Equal(t, version.Version, response.Version)
 }
@@ -177,6 +176,16 @@ func TestToReqPricesRejectsNilPrice(t *testing.T) {
 
 	require.Nil(t, got)
 	require.EqualError(t, err, "nil price for uusd")
+}
+
+func TestToReqPricesRejectsOutOfRangePriceBeforeFormatting(t *testing.T) {
+	tooLarge := new(big.Float).SetPrec(oracletypes.PricePrecisionBits)
+	tooLarge.SetInt(new(big.Int).Lsh(big.NewInt(1), 256))
+
+	got, err := toReqPrices(oracletypes.DenomPrices{"uusd": tooLarge})
+
+	require.Nil(t, got)
+	require.ErrorContains(t, err, "magnitude exceeds LegacyDec range")
 }
 
 func mustBigFloat(t *testing.T, value string) *big.Float {

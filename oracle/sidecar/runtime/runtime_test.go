@@ -12,6 +12,7 @@ import (
 	providertypes "ark/oracle/sidecar/providers/types"
 	. "ark/oracle/sidecar/runtime"
 	oracletestutil "ark/oracle/sidecar/runtime/testutil"
+	oracletypes "ark/x/oracle/types"
 )
 
 func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
@@ -64,6 +65,16 @@ func TestConfigValidateRejectsNonCanonicalFallbackDenom(t *testing.T) {
 	require.ErrorContains(t, err, "canonical lowercase micro denom")
 }
 
+func TestConfigValidateRejectsTooManyFallbackDenoms(t *testing.T) {
+	cfg := testRuntimeConfigWithUnknownProvider()
+	cfg.FallbackDenoms = make([]string, oracletypes.MaxVoteTargets+1)
+
+	err := cfg.Validate()
+
+	require.ErrorContains(t, err, "fallback denom count")
+	require.ErrorContains(t, err, "exceeds maximum")
+}
+
 func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 	testCases := []struct {
 		name              string
@@ -91,7 +102,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 			wantPrices:        map[string]*big.Float{},
 		},
 		{
-			name: "filters committed snapshot to active denoms",
+			name: "returns only resolved active denoms",
 			setup: func(t *testing.T) (*Runtime, func()) {
 				t.Helper()
 
@@ -145,9 +156,8 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 			},
 			wantPrices: map[string]*big.Float{
 				"uusd": big.NewFloat(1.25),
-				"ukrw": new(big.Float),
 			},
-			wantAbsent: []string{"ueur"},
+			wantAbsent: []string{"ukrw", "ueur"},
 		},
 	}
 

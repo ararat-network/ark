@@ -3,7 +3,10 @@ package types_test
 import (
 	. "ark/oracle/sidecar/types"
 	"math/big"
+	"strings"
 	"testing"
+
+	"ark/pkg/encoding"
 )
 
 func TestParsePriceUsesOraclePrecision(t *testing.T) {
@@ -19,6 +22,29 @@ func TestParsePriceUsesOraclePrecision(t *testing.T) {
 func TestParsePriceRejectsInfinity(t *testing.T) {
 	if _, err := ParsePrice("+Inf"); err == nil {
 		t.Fatal("ParsePrice() error = nil, want infinity rejection")
+	}
+}
+
+func TestParsePriceRejectsOversizedText(t *testing.T) {
+	_, err := ParsePrice(strings.Repeat("1", encoding.MaxEncodedLegacyDecBytes+1))
+	if err == nil || !strings.Contains(err.Error(), "exceeds maximum") {
+		t.Fatalf("ParsePrice() error = %v, want maximum-length error", err)
+	}
+}
+
+func TestParsePriceBoundsLegacyDecMagnitude(t *testing.T) {
+	maxAccepted := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1))
+	if _, err := ParsePrice(maxAccepted.String()); err != nil {
+		t.Fatalf("ParsePrice(max accepted) error = %v, want nil", err)
+	}
+
+	firstRejected := new(big.Int).Lsh(big.NewInt(1), 256)
+	if _, err := ParsePrice(firstRejected.String()); err == nil || !strings.Contains(err.Error(), "magnitude") {
+		t.Fatalf("ParsePrice(first rejected) error = %v, want magnitude error", err)
+	}
+
+	if _, err := ParsePrice("1e600000000"); err == nil || !strings.Contains(err.Error(), "magnitude") {
+		t.Fatalf("ParsePrice(huge exponent) error = %v, want magnitude error", err)
 	}
 }
 

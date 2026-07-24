@@ -51,6 +51,13 @@ func (v *Validator) loadActiveDenoms(ctx context.Context, timeout time.Duration)
 	if len(resp.VoteTargets) == 0 {
 		return nil, ErrNoActiveVoteTargets
 	}
+	if len(resp.VoteTargets) > oracletypes.MaxVoteTargets {
+		return nil, fmt.Errorf(
+			"active vote target count %d exceeds maximum %d",
+			len(resp.VoteTargets),
+			oracletypes.MaxVoteTargets,
+		)
+	}
 
 	activeDenoms := append([]string(nil), resp.VoteTargets...)
 	seenDenoms := make(map[string]struct{}, len(activeDenoms))

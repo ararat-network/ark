@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	oracletypes "ark/x/oracle/types"
 )
 
 func withDialOptions(opts ...grpc.DialOption) Option {
@@ -92,4 +94,60 @@ func TestRunPropagatesPollPanic(t *testing.T) {
 		cancel()
 		t.Fatal("chain state client did not propagate panic")
 	}
+}
+
+func TestQueryVoteTargetsRejectsOversizedEpochs(t *testing.T) {
+	client, err := NewClient(Config{
+		Address:  "passthrough:///unused",
+		Timeout:  time.Second,
+		Interval: time.Second,
+	})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name     string
+		response *oracletypes.QueryVoteTargetsResponse
+		wantErr  string
+	}{
+		{
+			name: "active",
+			response: &oracletypes.QueryVoteTargetsResponse{
+				VoteTargets: make([]string, oracletypes.MaxVoteTargets+1),
+			},
+			wantErr: "active vote target count",
+		},
+		{
+			name: "pending",
+			response: &oracletypes.QueryVoteTargetsResponse{
+				Pending: &oracletypes.PendingVoteTargets{
+					Denoms: make([]string, oracletypes.MaxVoteTargets+1),
+				},
+			},
+			wantErr: "pending vote target count",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query := voteTargetQueryClient{response: tt.response}
+
+			_, err := client.queryVoteTargets(context.Background(), query)
+
+			require.ErrorContains(t, err, tt.wantErr)
+			require.ErrorContains(t, err, "exceeds maximum")
+		})
+	}
+}
+
+type voteTargetQueryClient struct {
+	oracletypes.QueryClient
+	response *oracletypes.QueryVoteTargetsResponse
+}
+
+func (c voteTargetQueryClient) VoteTargets(
+	context.Context,
+	*oracletypes.QueryVoteTargetsRequest,
+	...grpc.CallOption,
+) (*oracletypes.QueryVoteTargetsResponse, error) {
+	return c.response, nil
 }

@@ -1,7 +1,9 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -17,6 +19,8 @@ import (
 
 	"ark/oracle/types"
 	transporttypestestutil "ark/oracle/types/testutil"
+	"ark/pkg/encoding"
+	oracletypes "ark/x/oracle/types"
 )
 
 func TestNewCachedPriceClient(t *testing.T) {
@@ -203,6 +207,52 @@ func TestCachedPriceClientDoesNotCacheFailedFetch(t *testing.T) {
 
 			cancel()
 			require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
+		})
+	}
+}
+
+func TestCachedPriceClientDoesNotCacheOversizedSnapshot(t *testing.T) {
+	tests := []struct {
+		name     string
+		response func() *types.OraclePricesResponse
+	}{
+		{
+			name: "price count",
+			response: func() *types.OraclePricesResponse {
+				response := freshResponse()
+				response.Prices = make(map[string][]byte, 2*oracletypes.MaxVoteTargets+1)
+				for i := range 2*oracletypes.MaxVoteTargets + 1 {
+					response.Prices[fmt.Sprintf("u%03d", i)] = []byte("1")
+				}
+				return response
+			},
+		},
+		{
+			name: "price bytes",
+			response: func() *types.OraclePricesResponse {
+				response := freshResponse()
+				response.Prices["btc/usd"] = bytes.Repeat(
+					[]byte("1"),
+					encoding.MaxEncodedLegacyDecBytes+1,
+				)
+				return response
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rpc := transporttypestestutil.NewMockOracleClient(gomock.NewController(t))
+			rpc.EXPECT().
+				Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(tt.response(), nil)
+			client := newTestCachedPriceClient(t, validClientConfig())
+
+			client.fetchPrices(context.Background(), rpc)
+
+			response, err := client.Prices(context.Background(), &types.OraclePricesRequest{})
+			require.Nil(t, response)
+			require.EqualError(t, err, "no prices fetched from the sidecar yet")
 		})
 	}
 }

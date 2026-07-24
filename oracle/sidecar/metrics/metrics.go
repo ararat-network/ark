@@ -152,7 +152,7 @@ func RecordBootstrapPriceUse(ctx context.Context, pair string) {
 	)
 }
 
-// RecordMissingPrice records an active denom missing before snapshot zero-filling.
+// RecordMissingPrice records an active denom missing from a price snapshot.
 func RecordMissingPrice(ctx context.Context, denom string) {
 	missingPrices.Add(
 		ctx,

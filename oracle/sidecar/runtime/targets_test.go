@@ -39,7 +39,7 @@ func TestRunUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 	defer cancel()
 	requireProviderStarted(t, started)
 
-	requireCommittedDenoms(t, oracle, "uusd")
+	requireCommittedSnapshot(t, oracle)
 	require.Equal(t, []providertypes.Ticker{"NOAHUSD"}, mp.provider.GetTickers())
 
 	cancel()
@@ -72,7 +72,7 @@ func TestRunUsesAuthoritativeEmptyVoteTargets(t *testing.T) {
 	defer cancel()
 	requireProviderStarted(t, started)
 
-	requireCommittedDenoms(t, oracle)
+	requireCommittedSnapshot(t, oracle)
 	require.Eventually(t, func() bool {
 		return len(mp.provider.GetTickers()) == 0
 	}, time.Second, time.Millisecond)
@@ -106,7 +106,8 @@ func TestRunDoesNotRestartProviderWhenVoteTargetsAreUnchanged(t *testing.T) {
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
 	requireProviderStarted(t, started)
-	requireCommittedDenoms(t, oracle, "uusd")
+	requireCommittedSnapshot(t, oracle)
+	require.Equal(t, []providertypes.Ticker{"NOAHUSD"}, mp.provider.GetTickers())
 
 	cancel()
 	requireOracleStopped(t, errCh)
@@ -178,7 +179,8 @@ func TestRunUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 	defer cancel()
 	requireProviderStarted(t, started)
 
-	requireCommittedDenoms(t, oracle, "ukrw")
+	requireCommittedSnapshot(t, oracle)
+	require.Equal(t, []providertypes.Ticker{"NOAHKRW"}, mp.provider.GetTickers())
 
 	cancel()
 	requireOracleStopped(t, errCh)
@@ -223,32 +225,23 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	requireProviderStarted(t, started)
 
 	requireCallNumber(t, callCh, 1)
-	requireCommittedDenoms(t, oracle, "uusd")
+	requireCommittedSnapshot(t, oracle)
 	firstSnapshot := oracle.GetPriceSnapshot()
 	requireCallNumber(t, callCh, 2)
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
-		_, hasUSD := snapshot.Prices["uusd"]
-		return snapshot.Timestamp.After(firstSnapshot.Timestamp) && hasUSD && len(snapshot.Prices) == 1
+		return snapshot.Timestamp.After(firstSnapshot.Timestamp)
 	}, time.Second, time.Millisecond)
+	require.Equal(t, []providertypes.Ticker{"NOAHUSD"}, mp.provider.GetTickers())
 
 	cancel()
 	requireOracleStopped(t, errCh)
 }
-func requireCommittedDenoms(t *testing.T, oracle *runtime.Runtime, denoms ...string) {
+func requireCommittedSnapshot(t *testing.T, oracle *runtime.Runtime) {
 	t.Helper()
 
 	require.Eventually(t, func() bool {
-		snapshot := oracle.GetPriceSnapshot()
-		if snapshot.Timestamp.IsZero() || len(snapshot.Prices) != len(denoms) {
-			return false
-		}
-		for _, denom := range denoms {
-			if _, ok := snapshot.Prices[denom]; !ok {
-				return false
-			}
-		}
-		return true
+		return !oracle.GetPriceSnapshot().Timestamp.IsZero()
 	}, time.Second, time.Millisecond)
 }
 

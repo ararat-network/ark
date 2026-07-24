@@ -54,7 +54,7 @@ func TestRunFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 		if prices["uusd"] == nil || prices["uusd"].Cmp(big.NewFloat(1.25)) != 0 {
 			return false
 		}
-		if prices["ukrw"] == nil || prices["ukrw"].Sign() != 0 {
+		if _, ok := prices["ukrw"]; ok {
 			return false
 		}
 		return !snapshot.Timestamp.IsZero()

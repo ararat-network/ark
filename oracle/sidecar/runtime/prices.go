@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"math/big"
 	"time"
 
 	oraclemetrics "ark/oracle/sidecar/metrics"
@@ -12,8 +11,8 @@ import (
 )
 
 // updatePriceSnapshot serialises vote-target sync, provider cache reads,
-// resolution, missing-denom zero-filling, and snapshot commit with config and
-// lifecycle transitions under updateMu.
+// resolution, and snapshot commit with config and lifecycle transitions under
+// updateMu. Missing denoms remain absent from the committed snapshot.
 func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	r.logger.Debug("updating price snapshot")
 
@@ -45,11 +44,6 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	resolvedPrices := resolver.ResolvePrices(ctx, resolverCfg, providerPrices, denoms, now)
 	prices := types.PricesByDenom(resolvedPrices, denoms)
 	r.recordMissingPrices(ctx, denoms, prices)
-	for _, denom := range denoms {
-		if _, ok := prices[denom]; !ok {
-			prices[denom] = new(big.Float)
-		}
-	}
 	r.commitPriceSnapshot(prices, now)
 	oraclemetrics.RecordOracleTick(ctx)
 }
@@ -116,7 +110,7 @@ func (r *Runtime) freshProviderPrices(
 }
 
 // recordMissingPrices records expected denoms missing from the latest aggregate
-// prices before the public snapshot is zero-filled.
+// prices.
 func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string, prices types.DenomPrices) {
 	if len(denoms) == 0 {
 		return

@@ -15,7 +15,11 @@ import (
 
 	clientmetrics "ark/oracle/client/metrics"
 	"ark/oracle/types"
+	"ark/pkg/encoding"
+	oracletypes "ark/x/oracle/types"
 )
+
+const maxPriceSnapshotEntries = 2 * oracletypes.MaxVoteTargets
 
 // Client polls the sidecar and serves its latest fresh price
 // snapshot to node-side callers without performing network I/O on the request
@@ -99,6 +103,9 @@ func (c *Client) fetchPrices(ctx context.Context, rpc types.OracleClient) {
 	if err == nil && resp == nil {
 		err = errors.New("sidecar returned a nil price response")
 	}
+	if err == nil {
+		err = validatePricesResponse(resp)
+	}
 	clientmetrics.RecordOracleResponse(time.Since(start), err)
 	if err != nil {
 		if ctx.Err() == nil {
@@ -120,6 +127,28 @@ func (c *Client) fetchPrices(ctx context.Context, rpc types.OracleClient) {
 	c.respMu.Lock()
 	c.resp = resp
 	c.respMu.Unlock()
+}
+
+func validatePricesResponse(resp *types.OraclePricesResponse) error {
+	if len(resp.Prices) > maxPriceSnapshotEntries {
+		return fmt.Errorf(
+			"sidecar price count %d exceeds maximum %d",
+			len(resp.Prices),
+			maxPriceSnapshotEntries,
+		)
+	}
+	for denom, rawPrice := range resp.Prices {
+		if len(rawPrice) > encoding.MaxEncodedLegacyDecBytes {
+			return fmt.Errorf(
+				"sidecar price %s length %d exceeds maximum %d",
+				denom,
+				len(rawPrice),
+				encoding.MaxEncodedLegacyDecBytes,
+			)
+		}
+	}
+
+	return nil
 }
 
 // Prices returns the latest cached price snapshot. The snapshot timestamp is

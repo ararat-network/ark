@@ -220,7 +220,7 @@ func calculateMedian(values []*big.Float) *big.Float {
 }
 
 func validPrice(price *big.Float) bool {
-	return price != nil && price.Sign() == 1 && !price.IsInf()
+	return price != nil && price.Sign() == 1 && types.ValidatePrice(price) == nil
 }
 
 func copyPrice(price *big.Float) *big.Float {

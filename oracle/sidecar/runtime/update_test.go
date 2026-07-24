@@ -123,8 +123,8 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
 		usd := snapshot.Prices["uusd"]
-		krw := snapshot.Prices["ukrw"]
-		return usd != nil && usd.Cmp(big.NewFloat(2)) == 0 && krw != nil && krw.Sign() == 0
+		_, hasKRW := snapshot.Prices["ukrw"]
+		return usd != nil && usd.Cmp(big.NewFloat(2)) == 0 && !hasKRW
 	}, time.Second, time.Millisecond)
 
 	require.NoError(t, oracle.Update(newCfg))
