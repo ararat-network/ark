@@ -11,9 +11,11 @@ canonical set of reports available for preblock aggregation.
 `Handler.ExtendVoteHandler` fetches prices from the oracle client, validates the response, encodes it with
 the configured vote-extension codec, and returns the encoded bytes to CometBFT.
 
+A fresh sparse response becomes a valid partial vote extension. An omitted target signals that the validator could not
+obtain a reliable price for that target; aggregation decides whether those omissions reach target-unavailability quorum.
 Oracle failures are not consensus failures. If the oracle client is unavailable, returns nil prices, returns invalid
-prices, or encoding fails, the handler logs the error and returns an empty vote extension. This preserves chain liveness
-while still letting later aggregation and metrics account for missing reports.
+prices, or encoding fails, the handler logs the error and returns an empty vote extension. Unlike a valid partial report,
+an empty extension is a missing report and contributes no target-unavailability power.
 
 ## VerifyVoteExtension
 

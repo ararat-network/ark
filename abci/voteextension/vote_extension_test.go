@@ -35,12 +35,12 @@ func TestExtendVoteHandler(t *testing.T) {
 		Rates:         validPrices,
 		TargetVersion: targets.Version,
 	}
-	partialVoteExt := vetypes.OracleVoteExtension{
+	unavailableVoteExt := vetypes.OracleVoteExtension{
 		Rates:         map[string][]byte{},
 		TargetVersion: targets.Version,
 	}
 	encodedVoteExt := abcitestutil.MustEncodeVoteExtension(t, validVoteExt)
-	encodedPartialVoteExt := abcitestutil.MustEncodeVoteExtension(t, partialVoteExt)
+	encodedUnavailableVoteExt := abcitestutil.MustEncodeVoteExtension(t, unavailableVoteExt)
 	panicCause := errors.New("boom")
 
 	testCases := []struct {
@@ -101,14 +101,14 @@ func TestExtendVoteHandler(t *testing.T) {
 			expectResp:        true,
 		},
 		{
-			name: "missing target price remains missing",
+			name: "fresh sparse response encodes target unavailability",
 			req:  &cometabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockOracleClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
 					Return(&transporttypes.OraclePricesResponse{Prices: map[string][]byte{}}, nil)
 			},
-			expectedExtension: encodedPartialVoteExt,
+			expectedExtension: encodedUnavailableVoteExt,
 			expectResp:        true,
 		},
 		{

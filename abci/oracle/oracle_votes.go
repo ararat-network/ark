@@ -30,10 +30,14 @@ type Vote struct {
 	// for this commit.
 	Validator cometabci.Validator
 
+	// ValidReport is true when the validator submitted a non-empty vote
+	// extension that decoded and matched the expected vote-target epoch. A valid
+	// report may omit rates to signal that those targets are unavailable.
+	ValidReport bool
+
 	// Rates contains validated domain rates keyed by canonical target index.
 	// Non-positive values are retained so aggregation can classify them as
-	// misses. It is nil when the validator was absent or submitted an invalid
-	// payload.
+	// misses. It is nil when ValidReport is false.
 	Rates []VoteRate
 }
 
@@ -146,6 +150,7 @@ func GetOracleVotes(
 		if err != nil {
 			continue
 		}
+		votes[i].ValidReport = true
 		votes[i].Rates = rates
 	}
 

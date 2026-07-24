@@ -18,6 +18,7 @@ import (
 	"ark/abci/oracle"
 	abcitestutil "ark/abci/testutil"
 	arkabci "ark/abci/types"
+	vetypes "ark/abci/voteextension/types"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -25,6 +26,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	val1 := sdk.ConsAddress("validator1")
 	val2 := sdk.ConsAddress("validator2")
+	val3 := sdk.ConsAddress("validator3")
 	voteTargetsErr := errors.New("vote targets unavailable")
 
 	testCases := []struct {
@@ -148,6 +150,41 @@ func TestProcessVoteExtensions(t *testing.T) {
 			expectedPrices: map[string]math.LegacyDec{
 				"uusd": math.LegacyNewDec(100),
 			},
+		},
+		{
+			name: "invalid payload does not contribute target unavailability power",
+			req: &cometabci.RequestFinalizeBlock{
+				Height:            3,
+				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 3)},
+			},
+			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
+				voteTargets := oracletypes.VoteTargetSet{
+					Version: oracletypes.InitialVoteTargetVersion,
+					Denoms:  []string{"uusd"},
+				}
+				params := oracletypes.DefaultParams()
+				params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
+				unavailableBz := abcitestutil.MustEncodeVoteExtension(t, vetypes.OracleVoteExtension{
+					TargetVersion: voteTargets.Version,
+				})
+				positiveBz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
+					"uusd": math.LegacyNewDec(100),
+				}))
+				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
+					Votes: []cometabci.ExtendedVoteInfo{
+						abcitestutil.NewCommitExtendedVoteInfo(val1, 40, []byte("not-zlib")),
+						abcitestutil.NewCommitExtendedVoteInfo(val2, 30, unavailableBz),
+						abcitestutil.NewCommitExtendedVoteInfo(val3, 30, positiveBz),
+					},
+				})
+				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
+				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(voteTargets, nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.ZeroInt(), true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val3, math.ZeroInt(), false).Return(nil)
+				return [][]byte{commitBz}
+			},
+			expectedPrices: map[string]math.LegacyDec{},
 		},
 		{
 			name: "invalid payload is classified as a missed report",

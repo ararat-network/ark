@@ -34,9 +34,6 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		scores: make([]validatorScore, len(votes)),
 	}
 
-	// Count first so each ballot can allocate exactly enough space for its
-	// positive reports without geometric slice growth.
-	positiveRateCounts := make([]int, len(targetDenoms))
 	var totalPower int64
 	for validatorIndex, vote := range votes {
 		// Proposal validation matched this voting power against DecidedLastCommit.
@@ -47,20 +44,34 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 			recipient:    recipient,
 			votingPower:  vote.Validator.Power,
 			rewardWeight: math.ZeroInt(),
-			missed:       len(vote.Rates) != len(targetDenoms),
 		}
+	}
+	if len(targetDenoms) == 0 {
+		return result
+	}
+
+	// Count first so each ballot can allocate exactly enough space for its
+	// positive reports without geometric slice growth. Reported power includes
+	// every submitted value so non-positive rates cannot masquerade as target
+	// unavailability.
+	positiveRateCounts := make([]int, len(targetDenoms))
+	reportedPowers := make([]int64, len(targetDenoms))
+	var validReportPower int64
+	for validatorIndex, vote := range votes {
+		if !vote.ValidReport {
+			result.scores[validatorIndex].missed = true
+			continue
+		}
+		validReportPower += vote.Validator.Power
 		for _, submittedRate := range vote.Rates {
 			targetIndex := submittedRate.TargetIndex
+			reportedPowers[targetIndex] += vote.Validator.Power
 			if !submittedRate.Value.IsPositive() {
 				result.scores[validatorIndex].missed = true
 				continue
 			}
 			positiveRateCounts[targetIndex]++
 		}
-	}
-
-	if totalPower <= 0 {
-		return result
 	}
 
 	ballots := make([]ballot, len(targetDenoms))
@@ -71,6 +82,9 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		}
 	}
 	for validatorIndex, vote := range votes {
+		if !vote.ValidReport {
+			continue
+		}
 		for _, submittedRate := range vote.Rates {
 			rate := submittedRate.Value
 
@@ -88,18 +102,52 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		}
 	}
 
-	thresholdPower := params.VoteThreshold.
-		MulInt64(totalPower).
-		Ceil().
-		TruncateInt64()
-
 	passingTargets := make([]int, 0, len(ballots))
-	for targetIndex := range ballots {
-		if ballots[targetIndex].power >= thresholdPower {
-			passingTargets = append(passingTargets, targetIndex)
+	unavailableTargets := make([]bool, len(targetDenoms))
+	unavailableTargetCount := 0
+	var thresholdPower int64
+	if totalPower > 0 {
+		thresholdPower = params.VoteThreshold.
+			MulInt64(totalPower).
+			Ceil().
+			TruncateInt64()
+
+		for targetIndex := range ballots {
+			// A configured price quorum takes precedence. Under the default
+			// two-thirds threshold, price and unavailability cannot both reach
+			// quorum because their voting-power sets are disjoint.
+			if ballots[targetIndex].power >= thresholdPower {
+				passingTargets = append(passingTargets, targetIndex)
+				continue
+			}
+			unavailablePower := validReportPower - reportedPowers[targetIndex]
+			if unavailablePower >= thresholdPower {
+				unavailableTargets[targetIndex] = true
+				unavailableTargetCount++
+			}
 		}
 	}
-	if len(passingTargets) == 0 {
+
+	// Omission from a valid report is an unavailability vote. It avoids a miss
+	// only when valid omissions reach quorum for that target. Invalid reports
+	// were already marked missed and never contribute availability power.
+	requiredReportCount := len(targetDenoms) - unavailableTargetCount
+	for validatorIndex, vote := range votes {
+		if !vote.ValidReport {
+			continue
+		}
+		reportedRequiredCount := 0
+		for _, submittedRate := range vote.Rates {
+			if !unavailableTargets[submittedRate.TargetIndex] {
+				reportedRequiredCount++
+			}
+		}
+		if reportedRequiredCount != requiredReportCount {
+			result.scores[validatorIndex].missed = true
+		}
+	}
+
+	if totalPower <= 0 || len(passingTargets) == 0 {
 		return result
 	}
 

@@ -19,7 +19,7 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {
+func TestAggregateOracleVotesRecognizesUnavailableTargetQuorum(t *testing.T) {
 	votes := []testVote{
 		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{
 			"uusd": math.LegacyNewDec(100),
@@ -43,8 +43,79 @@ func TestAggregateOracleVotesKeepsNoVoteTargetAccountable(t *testing.T) {
 	require.Len(t, keeper.scoreWeights, 2)
 
 	for _, vote := range votes {
-		require.Equal(t, uint64(1), keeper.missCounts[vote.validator.String()])
+		require.True(t, math.NewInt(vote.power).Equal(keeper.scoreWeights[vote.validator.String()]))
+		require.Zero(t, keeper.missCounts[vote.validator.String()])
 	}
+}
+
+func TestAggregateOracleVotesUsesCeilingForUnavailableTargetThreshold(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		unavailablePower     int64
+		reportPower          int64
+		expectedOmissionMiss uint64
+	}{
+		{
+			name:                 "rounded omission support below threshold fails",
+			unavailablePower:     5,
+			reportPower:          5,
+			expectedOmissionMiss: 1,
+		},
+		{
+			name:             "omission support at ceiling threshold passes",
+			unavailablePower: 6,
+			reportPower:      4,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			unavailableVoter := []byte{1}
+			reportingVoter := []byte{2}
+			votes := []testVote{
+				newTestVote(unavailableVoter, tc.unavailablePower, map[string]math.LegacyDec{}),
+				newTestVote(reportingVoter, tc.reportPower, map[string]math.LegacyDec{
+					"uusd": math.LegacyNewDec(100),
+				}),
+			}
+			params := oracletypes.DefaultParams()
+			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
+			voteTargets := map[string]math.LegacyDec{
+				"uusd": math.LegacyZeroDec(),
+			}
+
+			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+			require.NoError(t, err)
+			require.NotContains(t, prices, "uusd")
+			require.Equal(t, tc.expectedOmissionMiss, keeper.missCounts[sdk.ConsAddress(unavailableVoter).String()])
+			require.Zero(t, keeper.missCounts[sdk.ConsAddress(reportingVoter).String()])
+		})
+	}
+}
+
+func TestAggregateOracleVotesPriceQuorumPrecedesUnavailableQuorum(t *testing.T) {
+	positiveVoter := []byte{1}
+	unavailableVoter := []byte{2}
+	votes := []testVote{
+		newTestVote(positiveVoter, 50, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+		}),
+		newTestVote(unavailableVoter, 50, map[string]math.LegacyDec{}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	voteTargets := map[string]math.LegacyDec{
+		"uusd": math.LegacyZeroDec(),
+	}
+
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.True(t, math.LegacyNewDec(100).Equal(prices["uusd"]))
+	require.True(t, math.NewInt(50).Equal(keeper.scoreWeights[sdk.ConsAddress(positiveVoter).String()]))
+	require.Zero(t, keeper.missCounts[sdk.ConsAddress(positiveVoter).String()])
+	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(unavailableVoter).String()])
 }
 
 func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
@@ -233,6 +304,40 @@ func TestAggregateOracleVotesPenalizesNonPositiveTargetRates(t *testing.T) {
 	}
 }
 
+func TestAggregateOracleVotesDoesNotTreatNonPositiveRateAsUnavailable(t *testing.T) {
+	nonPositiveVoter := []byte{1}
+	unavailableVoter := []byte{2}
+	positiveVoter := []byte{3}
+	votes := []testVote{
+		newTestVote(nonPositiveVoter, 40, map[string]math.LegacyDec{
+			"ukrw": math.LegacyZeroDec(),
+			"uusd": math.LegacyNewDec(100),
+		}),
+		newTestVote(unavailableVoter, 30, map[string]math.LegacyDec{
+			"uusd": math.LegacyNewDec(100),
+		}),
+		newTestVote(positiveVoter, 30, map[string]math.LegacyDec{
+			"ukrw": math.LegacyNewDec(1000),
+			"uusd": math.LegacyNewDec(100),
+		}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
+	voteTargets := map[string]math.LegacyDec{
+		"ukrw": math.LegacyZeroDec(),
+		"uusd": math.LegacyZeroDec(),
+	}
+
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.NotContains(t, prices, "ukrw")
+	require.Contains(t, prices, "uusd")
+	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(nonPositiveVoter).String()])
+	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(unavailableVoter).String()])
+	require.Zero(t, keeper.missCounts[sdk.ConsAddress(positiveVoter).String()])
+}
+
 func TestAggregateOracleVotesCountsAtMostOneMissForMultipleNonPositiveTargets(t *testing.T) {
 	honestVoter := []byte{1}
 	nonPositiveVoter := []byte{2}
@@ -316,14 +421,14 @@ func TestAggregateOracleVotesUsesCeilingForVoteThreshold(t *testing.T) {
 	}{
 		{
 			name:         "rounded support below threshold fails",
-			reportPower:  3,
-			absentPower:  7,
+			reportPower:  5,
+			absentPower:  5,
 			expectsPrice: false,
 		},
 		{
 			name:         "support at ceiling threshold passes",
-			reportPower:  4,
-			absentPower:  6,
+			reportPower:  6,
+			absentPower:  4,
 			expectsPrice: true,
 		},
 	}
@@ -337,7 +442,7 @@ func TestAggregateOracleVotesUsesCeilingForVoteThreshold(t *testing.T) {
 				newTestVote([]byte{2}, tc.absentPower, map[string]math.LegacyDec{}),
 			}
 			params := oracletypes.DefaultParams()
-			params.VoteThreshold = math.LegacyNewDecWithPrec(34, 2)
+			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
 			voteTargets := map[string]math.LegacyDec{
 				"uusd": math.LegacyZeroDec(),
 			}
@@ -365,18 +470,18 @@ func TestAggregateOracleVotesUsesCeilingForOverlapThreshold(t *testing.T) {
 	}{
 		{
 			name:          "rounded overlap below threshold fails",
-			overlapPower:  3,
+			overlapPower:  5,
 			referenceOnly: 1,
 			targetOnly:    1,
-			absentPower:   5,
+			absentPower:   3,
 			expectsTarget: false,
 		},
 		{
 			name:          "overlap at ceiling threshold passes",
-			overlapPower:  4,
+			overlapPower:  6,
 			referenceOnly: 0,
 			targetOnly:    0,
-			absentPower:   6,
+			absentPower:   4,
 			expectsTarget: true,
 		},
 	}
@@ -397,7 +502,7 @@ func TestAggregateOracleVotesUsesCeilingForOverlapThreshold(t *testing.T) {
 				newTestVote([]byte{4}, tc.absentPower, map[string]math.LegacyDec{}),
 			}
 			params := oracletypes.DefaultParams()
-			params.VoteThreshold = math.LegacyNewDecWithPrec(34, 2)
+			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
 			voteTargets := map[string]math.LegacyDec{
 				"uaaa": math.LegacyZeroDec(),
 				"uzzz": math.LegacyZeroDec(),

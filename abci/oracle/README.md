@@ -9,7 +9,8 @@ extension data, aggregates validator reports, writes exchange rates, and updates
 decodes each validator vote extension into domain rates, and returns one `Vote` per validator entry. Empty, undecodable,
 and semantically invalid vote extensions become empty oracle reports so their validator remains accountable and their
 voting power still participates in quorum denominator logic. The authenticated extended commit itself is never
-rewritten.
+rewritten. A decoded, target-version-matched extension is marked as a valid report even when it contains only a subset of
+the canonical targets. This distinguishes a fresh sparse report from an absent or invalid extension.
 
 `ValidateVoteExtension` parses the transport rates, enforces payload bounds, and checks the submitted target version and
 denoms against the canonical target state required for its vote height. It returns decoded `VoteRate` values keyed by
@@ -36,8 +37,23 @@ threshold power = ceil(VoteThreshold * total commit power)
 ```
 
 The ceiling prevents fractional power requirements from rounding down. Non-positive submitted rates are unusable: they
-do not add ballot power or earn score weight, and they mark the validator missed for the block. A validator is initially
-marked missed when its validated report does not cover every canonical target or contains any non-positive target rate.
+do not add ballot power or earn score weight, and they mark the validator missed for the block. They still count as
+submitted values, so they cannot masquerade as target-unavailability signals.
+
+### Target Unavailability
+
+Omission from a valid, target-version-matched report is an unavailability vote for that target. Empty, undecodable, and
+semantically invalid extensions contribute no unavailability power. For each target:
+
+```text
+unavailability power = valid report power - power that submitted any value
+```
+
+When positive-report power does not meet raw quorum but unavailability power does, the target is unavailable for that
+block. No exchange rate is written or refreshed. A validator's valid omission avoids a miss only for a target that
+reaches unavailability quorum; below quorum, the omission remains a miss. Positive reports remain participation-valid
+when a target is unavailable but receive no target reward. Non-positive submissions and invalid whole reports remain
+misses.
 
 ### Reference Selection
 
