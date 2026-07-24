@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/cosmos/gogoproto/proto"
@@ -328,6 +329,59 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 40), response.InsuranceBalance)
 	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 7), response.InsuranceReserved)
 	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 33), response.InsuranceUnencumberedBalance)
+}
+
+func (s *KeeperTestSuite) TestQueryFundStatusClassifiesLiabilityValuationErrors() {
+	tests := []struct {
+		name        string
+		oracleErr   error
+		wantCode    codes.Code
+		wantMessage string
+	}{
+		{
+			name:        "stale exchange rate",
+			oracleErr:   oracletypes.ErrStaleExchangeRate,
+			wantCode:    codes.FailedPrecondition,
+			wantMessage: "getting treasury fund status: complete Treasury liability valuation is unavailable",
+		},
+		{
+			name:        "unknown denom",
+			oracleErr:   oracletypes.ErrUnknownDenom,
+			wantCode:    codes.FailedPrecondition,
+			wantMessage: "getting treasury fund status: complete Treasury liability valuation is unavailable",
+		},
+		{
+			name:        "conversion out of range",
+			oracleErr:   oracletypes.ErrConversionOutOfRange,
+			wantCode:    codes.FailedPrecondition,
+			wantMessage: "getting treasury fund status: complete Treasury liability valuation is unavailable",
+		},
+		{
+			name:        "unexpected oracle error",
+			oracleErr:   errors.New("oracle store failure"),
+			wantCode:    codes.Internal,
+			wantMessage: "getting treasury fund status: capturing aggregate liability rates: oracle store failure",
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			tobinTaxes := []oracletypes.TobinTax{{Denom: chain.MicroUSDDenom}}
+			s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(tobinTaxes, nil)
+			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.MicroUSDDenom).
+				Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100))
+			s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, chain.MicroUSDDenom).
+				Return(nil, tc.oracleErr)
+
+			response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
+				s.ctx,
+				&treasurytypes.QueryFundStatusRequest{},
+			)
+			s.Require().Nil(response)
+			s.Require().Equal(tc.wantCode, status.Code(err))
+			s.Require().Equal(tc.wantMessage, status.Convert(err).Message())
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {

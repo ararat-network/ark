@@ -150,7 +150,7 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
 	if !complete {
-		return nil, status.Error(codes.Internal, "getting treasury fund status: complete Treasury liability valuation is unavailable")
+		return nil, status.Error(codes.FailedPrecondition, "getting treasury fund status: complete Treasury liability valuation is unavailable")
 	}
 	fundStatus, err := q.k.calculateFundStatus(ctx, liabilityNoah)
 	if err != nil {
