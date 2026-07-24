@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"errors"
+	"math"
+	"math/big"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
@@ -11,6 +13,7 @@ import (
 	cmtcli "github.com/cometbft/cometbft/libs/cli"
 
 	"cosmossdk.io/log/v2"
+	sdkmath "cosmossdk.io/math"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -23,6 +26,7 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -30,12 +34,23 @@ import (
 
 	"ark/app"
 	oracleclient "ark/oracle/client"
+	"ark/pkg/decimal"
 )
 
 type arkAppConfig struct {
 	serverconfig.Config
 	Oracle oracleclient.Config
 }
+
+var (
+	maximumGasLimit   = sdkmath.LegacyNewDecFromInt(sdkmath.NewIntFromUint64(math.MaxUint64))
+	maximumCoinAmount = sdkmath.LegacyNewDecFromBigInt(
+		new(big.Int).Sub(
+			new(big.Int).Lsh(big.NewInt(1), sdkmath.MaxBitLen),
+			big.NewInt(1),
+		),
+	)
+)
 
 // initCometBFTConfig helps to override default CometBFT Config values.
 // return cmtcfg.DefaultConfig if no custom configuration is required for the application.
@@ -98,7 +113,33 @@ func initRootCmd(
 	)
 }
 
-func addModuleInitFlags(startCmd *cobra.Command) {}
+func addModuleInitFlags(startCmd *cobra.Command) {
+	startCmd.PreRunE = func(cmd *cobra.Command, _ []string) error {
+		serverCtx := server.GetServerContextFromCmd(cmd)
+		return validateMinGasPrices(serverCtx.Viper.GetString(server.FlagMinGasPrices))
+	}
+}
+
+func validateMinGasPrices(value string) error {
+	minGasPrices, err := sdk.ParseDecCoins(value)
+	if err != nil {
+		return sdkerrors.ErrAppConfig.Wrapf("invalid minimum gas prices: %v", err)
+	}
+
+	for _, gasPrice := range minGasPrices {
+		// A transaction gas limit is a uint64. Checking the largest possible
+		// value makes the ante calculation safe for every transaction.
+		requiredFee, err := decimal.Mul(gasPrice.Amount, maximumGasLimit)
+		if err != nil || requiredFee.GT(maximumCoinAmount) {
+			return sdkerrors.ErrAppConfig.Wrapf(
+				"minimum gas price %s is too large to multiply by the maximum gas limit",
+				gasPrice,
+			)
+		}
+	}
+
+	return nil
+}
 
 // genesisCommand builds genesis-related `arkd genesis` command. Users may provide application specific commands as a parameter
 func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
