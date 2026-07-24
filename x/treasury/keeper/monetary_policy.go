@@ -87,6 +87,17 @@ func (m msgServer) UpdateMonetaryPolicy(ctx context.Context, msg *types.MsgUpdat
 			return nil, err
 		}
 	}
+	params, err := m.k.Params.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting params: %w", err)
+	}
+	funding, err := m.k.RewardFunding.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting reward funding state: %w", err)
+	}
+	if err := types.ValidateRewardTargetCapacity(params, funding, msg.Policy); err != nil {
+		return nil, err
+	}
 
 	if err := m.k.MonetaryPolicy.Set(ctx, msg.Policy); err != nil {
 		return nil, fmt.Errorf("setting monetary policy: %w", err)

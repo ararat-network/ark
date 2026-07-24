@@ -40,6 +40,17 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	if err != nil {
 		return nil, fmt.Errorf("getting current params: %w", err)
 	}
+	policy, err := m.k.MonetaryPolicy.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting monetary policy: %w", err)
+	}
+	funding, err := m.k.RewardFunding.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting reward funding state: %w", err)
+	}
+	if err := types.ValidateRewardTargetCapacity(msg.Params, funding, policy); err != nil {
+		return nil, err
+	}
 
 	referenceChanged := !current.ReferenceTaxCap.Equal(msg.Params.ReferenceTaxCap)
 	var caps []types.TaxCap

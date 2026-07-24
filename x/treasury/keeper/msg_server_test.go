@@ -69,6 +69,27 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
 	s.Require().Equal(uint64(2), storedFunding.BlocksRemaining)
 }
 
+func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsRewardTargetCapacity() {
+	maxInt := maxRepresentableInt()
+	policy := types.DefaultMonetaryPolicy()
+	policy.ValidatorBlockRewardTarget = maxInt.QuoRaw(2).AddRaw(1)
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	currentParams := types.DefaultParams()
+	currentParams.RewardFundingWindow = 1
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, currentParams))
+
+	candidate := currentParams
+	candidate.RewardFundingWindow = 2
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    candidate,
+	})
+	s.Require().ErrorContains(err, "reward target capacity exceeded")
+	stored, getErr := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().Equal(currentParams, stored)
+}
+
 func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 	s.setBlockHeight(42)
 	params := types.DefaultParams()
@@ -148,6 +169,48 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActiv
 	cap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroSDRDenom)
 	s.Require().NoError(err)
 	s.Require().True(cap.IsZero())
+}
+
+func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyRejectsRewardTargetCapacity() {
+	params := types.DefaultParams()
+	params.RewardFundingWindow = 2
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	candidate := types.DefaultMonetaryPolicy()
+	candidate.ValidatorBlockRewardTarget = maxRepresentableInt().QuoRaw(2).AddRaw(1)
+
+	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+		Signer: s.authority,
+		Policy: candidate,
+	})
+	s.Require().ErrorContains(err, "reward target capacity exceeded")
+	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
+}
+
+func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyChecksActiveRewardFundingWindow() {
+	maxInt := maxRepresentableInt()
+	params := types.DefaultParams()
+	params.RewardFundingWindow = 1
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.setRewardFunding(types.RewardFundingState{
+		BlocksRemaining:   1,
+		ValidatorTarget:   maxInt.QuoRaw(2),
+		OracleTarget:      math.ZeroInt(),
+		ValidatorFeeValue: math.ZeroInt(),
+		ValuationComplete: true,
+	})
+	candidate := types.DefaultMonetaryPolicy()
+	candidate.ValidatorBlockRewardTarget = maxInt
+
+	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+		Signer: s.authority,
+		Policy: candidate,
+	})
+	s.Require().ErrorContains(err, "reward target capacity exceeded")
+	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsInvalidAuthority() {
