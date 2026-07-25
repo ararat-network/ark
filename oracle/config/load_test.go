@@ -23,7 +23,7 @@ func TestLoadDecodesDurationStrings(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1500*time.Millisecond, cfg.UpdateInterval)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
-	require.Equal(t, []string{"uusd"}, cfg.FallbackDenoms)
+	require.Equal(t, []string{"ausd"}, cfg.FallbackDenoms)
 	require.Equal(t, []resolver.BootstrapPrice{{
 		Pair:       "NOAH/USD",
 		Price:      "0.25",
@@ -49,38 +49,38 @@ func TestDefaultIsValid(t *testing.T) {
 
 func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
 	cfg := Default()
-	require.NotContains(t, cfg.Resolver.Routes, chain.MicroNoahDenom)
+	require.NotContains(t, cfg.Resolver.Routes, chain.NoahBaseDenom)
 
 	expectedRoutes := map[string]resolver.Route{
-		chain.MicroUSDDenom: {
+		chain.USDBaseDenom: {
 			Name:  "direct",
 			Pairs: []sidecartypes.Pair{"NOAH/USD"},
 		},
-		chain.MicroKRWDenom: {
+		chain.KRWBaseDenom: {
 			Name:  "noah-usd-krw",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/KRW"},
 		},
-		chain.MicroSDRDenom: {
+		chain.SDRBaseDenom: {
 			Name:  "noah-usd-sdr",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/SDR"},
 		},
-		chain.MicroCNYDenom: {
+		chain.CNYBaseDenom: {
 			Name:  "noah-usd-cny",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/CNY"},
 		},
-		chain.MicroJPYDenom: {
+		chain.JPYBaseDenom: {
 			Name:  "noah-usd-jpy",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/JPY"},
 		},
-		chain.MicroEURDenom: {
+		chain.EURBaseDenom: {
 			Name:  "noah-usd-eur",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/EUR"},
 		},
-		chain.MicroGBPDenom: {
+		chain.GBPBaseDenom: {
 			Name:  "noah-usd-gbp",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/GBP"},
 		},
-		chain.MicroMNTDenom: {
+		chain.MNTBaseDenom: {
 			Name:  "noah-usd-mnt",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/MNT"},
 		},
@@ -165,5 +165,5 @@ const validConfigJSON = `{
     "timeout": "2s",
     "interval": "5s"
   },
-  "fallbackDenoms": ["uusd"]
+  "fallbackDenoms": ["ausd"]
 }`

@@ -44,14 +44,14 @@ func TestValidateCmdPrintsResultsBeforeReturningFailure(t *testing.T) {
 	err := writeValidationOutcome(
 		out,
 		validation.LivenessResults{
-			"uusd": 100,
-			"ukrw": 50,
+			"ausd": 100,
+			"akrw": 50,
 		},
-		errors.New("ukrw below threshold"),
+		errors.New("akrw below threshold"),
 	)
 
 	require.ErrorContains(t, err, "oracle validation failed")
-	require.Equal(t, "oracle validation results:\nukrw: 50.00%\nuusd: 100.00%\n", out.String())
+	require.Equal(t, "oracle validation results:\nakrw: 50.00%\nausd: 100.00%\n", out.String())
 }
 
 func TestValidateCmdPrintsSuccess(t *testing.T) {
@@ -59,12 +59,12 @@ func TestValidateCmdPrintsSuccess(t *testing.T) {
 
 	err := writeValidationOutcome(
 		out,
-		validation.LivenessResults{"uusd": 100},
+		validation.LivenessResults{"ausd": 100},
 		nil,
 	)
 
 	require.NoError(t, err)
-	require.Equal(t, "oracle validation results:\nuusd: 100.00%\noracle validation passed\n", out.String())
+	require.Equal(t, "oracle validation results:\nausd: 100.00%\noracle validation passed\n", out.String())
 }
 
 func TestValidateCmdPrintsDisabledState(t *testing.T) {
@@ -85,7 +85,7 @@ func TestRunValidationUsesExternalRPCs(t *testing.T) {
 	require.NoError(t, err)
 
 	oracleServer := &validationOracleServer{rawPrice: rawPrice}
-	queryServer := &validationQueryServer{denoms: []string{"uusd"}}
+	queryServer := &validationQueryServer{denoms: []string{"ausd"}}
 	listener := bufconn.Listen(1024 * 1024)
 	server := grpc.NewServer()
 	transporttypes.RegisterOracleServer(server, oracleServer)
@@ -118,7 +118,7 @@ func TestRunValidationUsesExternalRPCs(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.Equal(t, validation.LivenessResults{"uusd": 100}, results)
+	require.Equal(t, validation.LivenessResults{"ausd": 100}, results)
 	require.True(t, oracleServer.called)
 	require.True(t, queryServer.called)
 }
@@ -170,7 +170,7 @@ func (s *validationOracleServer) Prices(
 ) (*transporttypes.OraclePricesResponse, error) {
 	s.called = true
 	return &transporttypes.OraclePricesResponse{
-		Prices:    map[string][]byte{"uusd": s.rawPrice},
+		Prices:    map[string][]byte{"ausd": s.rawPrice},
 		Timestamp: time.Now().UTC(),
 	}, nil
 }

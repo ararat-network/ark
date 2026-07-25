@@ -16,21 +16,21 @@ import (
 
 func (s *KeeperTestSuite) TestSwapQuote_RecursiveSwap() {
 	_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
-		OfferCoin: "1000uusd",
-		AskDenom:  "uusd",
+		OfferCoin: "1000ausd",
+		AskDenom:  "ausd",
 	})
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, types.ErrRecursiveSwap.Error())
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "uusd", "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", "akrw").
 		Return(oracletypes.RateSnapshot{
-			"uusd": math.LegacyOneDec(),
-			"ukrw": math.LegacyNewDec(1300),
+			"ausd": math.LegacyOneDec(),
+			"akrw": math.LegacyNewDec(1300),
 		}, nil).AnyTimes()
 
-	offerCoin := sdk.NewCoin("uusd", math.NewInt(1000000))
+	offerCoin := sdk.NewCoin("ausd", math.NewInt(1000000))
 	tests := []struct {
 		name           string
 		offerTobinTax  math.LegacyDec
@@ -60,16 +60,16 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: "uusd", TobinTax: tc.offerTobinTax},
-				{Denom: "ukrw", TobinTax: tc.askTobinTax},
+				{Denom: "ausd", TobinTax: tc.offerTobinTax},
+				{Denom: "akrw", TobinTax: tc.askTobinTax},
 			}, nil)
 
 			response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 				OfferCoin: offerCoin.String(),
-				AskDenom:  "ukrw",
+				AskDenom:  "akrw",
 			})
 			s.Require().NoError(err)
-			s.Require().Equal("ukrw", response.SwapCoin.Denom)
+			s.Require().Equal("akrw", response.SwapCoin.Denom)
 			expectedGross := math.LegacyNewDec(1_300_000_000)
 			expectedFee := tc.expectedSpread.Mul(expectedGross)
 			s.Require().True(expectedFee.Equal(response.SwapFee.Amount),
@@ -80,10 +80,10 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
 
 func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTaxErrors() {
 	oracleErr := errors.New("oracle unavailable")
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "uusd", "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", "akrw").
 		Return(oracletypes.RateSnapshot{
-			"uusd": math.LegacyOneDec(),
-			"ukrw": math.LegacyNewDec(1300),
+			"ausd": math.LegacyOneDec(),
+			"akrw": math.LegacyNewDec(1300),
 		}, nil).AnyTimes()
 
 	tests := []struct {
@@ -100,16 +100,16 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTaxErrors() {
 		{
 			name: "offer denomination is missing",
 			tobinTaxes: []oracletypes.TobinTax{
-				{Denom: "ukrw", TobinTax: math.LegacyZeroDec()},
+				{Denom: "akrw", TobinTax: math.LegacyZeroDec()},
 			},
-			expectErr: "uusd: unknown denom",
+			expectErr: "ausd: unknown denom",
 		},
 		{
 			name: "ask denomination is missing",
 			tobinTaxes: []oracletypes.TobinTax{
-				{Denom: "uusd", TobinTax: math.LegacyZeroDec()},
+				{Denom: "ausd", TobinTax: math.LegacyZeroDec()},
 			},
-			expectErr: "ukrw: unknown denom",
+			expectErr: "akrw: unknown denom",
 		},
 	}
 
@@ -118,8 +118,8 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTaxErrors() {
 			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tc.tobinTaxes, tc.lookupErr)
 
 			_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
-				OfferCoin: "1000uusd",
-				AskDenom:  "ukrw",
+				OfferCoin: "1000ausd",
+				AskDenom:  "akrw",
 			})
 			s.Require().ErrorContains(err, tc.expectErr)
 		})
@@ -130,9 +130,9 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 	// Unit rates (1:1:1) with a small base pool so CP spread is significant.
 	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(oracletypes.RateSnapshot{
-			"uusd":               math.LegacyOneDec(),
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroSDRDenom:  math.LegacyOneDec(),
+			"ausd":              math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.SDRBaseDenom:  math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
 	err := s.keeper.Params.Set(s.ctx, types.Params{
@@ -152,17 +152,17 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 	}{
 		{
 			name:           "ark to noah — CP spread = 100/500 = 0.2",
-			offerCoin:      sdk.NewCoin("uusd", math.NewInt(100)),
-			askDenom:       chain.MicroNoahDenom,
-			expectedDenom:  chain.MicroNoahDenom,
+			offerCoin:      sdk.NewCoin("ausd", math.NewInt(100)),
+			askDenom:       chain.NoahBaseDenom,
+			expectedDenom:  chain.NoahBaseDenom,
 			expectedAmount: math.LegacyNewDec(100),
 			expectedSpread: math.LegacyNewDecWithPrec(2, 1), // 0.2
 		},
 		{
 			name:           "noah to ark — symmetric with balanced pools",
-			offerCoin:      sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100)),
-			askDenom:       "uusd",
-			expectedDenom:  "uusd",
+			offerCoin:      sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(100)),
+			askDenom:       "ausd",
+			expectedDenom:  "ausd",
 			expectedAmount: math.LegacyNewDec(100),
 			expectedSpread: math.LegacyNewDecWithPrec(2, 1), // 0.2
 		},
@@ -189,20 +189,20 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 func (s *KeeperTestSuite) TestSwapQuote_SpreadNeverBelowMinSpread() {
 	// With small offers into the default large pool (1e12), CP spread ≈ 0.
 	// The minimum stability spread (2%) should always be the floor.
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "uusd", chain.MicroSDRDenom, chain.MicroNoahDenom).
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
 		Return(oracletypes.RateSnapshot{
-			"uusd":               math.LegacyOneDec(),
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroSDRDenom:  math.LegacyOneDec(),
+			"ausd":              math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.SDRBaseDenom:  math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
 	minSpread := math.LegacyNewDecWithPrec(2, 2) // 2%
 
 	for _, amt := range []int64{10, 100, 1000, 10000} {
-		offerCoin := sdk.NewCoin("uusd", math.NewInt(amt))
+		offerCoin := sdk.NewCoin("ausd", math.NewInt(amt))
 		response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 			OfferCoin: offerCoin.String(),
-			AskDenom:  chain.MicroNoahDenom,
+			AskDenom:  chain.NoahBaseDenom,
 		})
 		s.Require().NoError(err)
 		spread := response.SwapFee.Amount.Quo(math.LegacyNewDec(amt))
@@ -214,23 +214,23 @@ func (s *KeeperTestSuite) TestSwapQuote_SpreadNeverBelowMinSpread() {
 func (s *KeeperTestSuite) TestSwapQuote_NegativeRawSpreadUsesMinimumSpread() {
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
-		"uusd",
-		chain.MicroSDRDenom,
-		chain.MicroNoahDenom,
+		"ausd",
+		chain.SDRBaseDenom,
+		chain.NoahBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		"uusd":               math.LegacyOneDec(),
-		chain.MicroSDRDenom:  math.LegacyOneDec(),
-		chain.MicroNoahDenom: math.LegacyOneDec(),
+		"ausd":              math.LegacyOneDec(),
+		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(
 		s.ctx,
 		math.LegacyMustNewDecFromStr("-500000000000"),
 	))
 
-	offerCoin := sdk.NewInt64Coin("uusd", 100_000_000_000)
+	offerCoin := sdk.NewInt64Coin("ausd", 100_000_000_000)
 	response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
-		AskDenom:  chain.MicroNoahDenom,
+		AskDenom:  chain.NoahBaseDenom,
 	})
 	s.Require().NoError(err)
 	spread := response.SwapFee.Amount.Quo(math.LegacyNewDecFromInt(offerCoin.Amount))
@@ -250,49 +250,52 @@ func (s *KeeperTestSuite) TestSwapQuote_ExtremeNegativeRawSpreadUsesMinimumWitho
 
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
-		chain.MicroUSDDenom,
-		chain.MicroSDRDenom,
-		chain.MicroNoahDenom,
+		chain.USDBaseDenom,
+		chain.SDRBaseDenom,
+		chain.NoahBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroUSDDenom:  math.LegacyOneDec(),
-		chain.MicroSDRDenom:  math.LegacySmallestDec(),
-		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.SDRBaseDenom:  math.LegacySmallestDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
 	response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
-		OfferCoin: sdk.NewInt64Coin(chain.MicroUSDDenom, 1_000_000).String(),
-		AskDenom:  chain.MicroNoahDenom,
+		OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000).String(),
+		AskDenom:  chain.NoahBaseDenom,
 	})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.MicroNoahDenom, 980_000), response.SwapCoin)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 980_000), response.SwapCoin)
 	s.Require().True(math.LegacyNewDec(20_000).Equal(response.SwapFee.Amount))
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_PoolImbalanceIncreasesSpread() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "uusd", chain.MicroSDRDenom, chain.MicroNoahDenom).
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
 		Return(oracletypes.RateSnapshot{
-			"uusd":               math.LegacyOneDec(),
-			chain.MicroNoahDenom: math.LegacyNewDecWithPrec(5, 1),
-			chain.MicroSDRDenom:  math.LegacyNewDecWithPrec(17, 1),
+			"ausd":              math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyNewDecWithPrec(5, 1),
+			chain.SDRBaseDenom:  math.LegacyNewDecWithPrec(17, 1),
 		}, nil).AnyTimes()
 
-	offerCoin := sdk.NewCoin("uusd", math.NewInt(1000))
+	offerCoin := sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1))
 
 	// Get spread with balanced pool
 	balancedQuote, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
-		AskDenom:  chain.MicroNoahDenom,
+		AskDenom:  chain.NoahBaseDenom,
 	})
 	s.Require().NoError(err)
 
 	// Set large pool delta (imbalanced)
-	err = s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(1000000000000))
+	err = s.keeper.ArkPoolDelta.Set(
+		s.ctx,
+		math.LegacyNewDecFromInt(chain.NativeBaseAmount(1_000_000)),
+	)
 	s.Require().NoError(err)
 
 	// Spread should be larger with imbalanced pool
 	imbalancedQuote, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
-		AskDenom:  chain.MicroNoahDenom,
+		AskDenom:  chain.NoahBaseDenom,
 	})
 	s.Require().NoError(err)
 	s.Require().True(imbalancedQuote.SwapFee.Amount.GT(balancedQuote.SwapFee.Amount))

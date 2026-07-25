@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -66,10 +67,9 @@ func (gs GenesisState) Validate() error {
 		return errors.New("accounting slash window must be greater than zero")
 	}
 
-	// ExchangeRates: no duplicates, micro denoms, positive rate
-	seenDenoms := make(map[string]bool)
-	for _, er := range gs.ExchangeRates {
-		if err := chain.ValidateMicroDenom(er.Denom); err != nil {
+	// ExchangeRates: ordered unique Ark-native base denoms and positive rates
+	for i, er := range gs.ExchangeRates {
+		if err := chain.ValidateNativeBaseDenom(er.Denom); err != nil {
 			return fmt.Errorf("exchange rate %w", err)
 		}
 		if er.Rate.IsNil() {
@@ -81,46 +81,47 @@ func (gs GenesisState) Validate() error {
 		if !er.Rate.IsPositive() {
 			return fmt.Errorf("exchange rate for %s must be positive: %s", er.Denom, er.Rate)
 		}
-		if seenDenoms[er.Denom] {
-			return fmt.Errorf("duplicate exchange rate for denom %s", er.Denom)
+		if i > 0 && er.Denom <= gs.ExchangeRates[i-1].Denom {
+			return errors.New("genesis exchange rates must be sorted by unique denom")
 		}
-		seenDenoms[er.Denom] = true
 	}
 
-	// RewardWeights: no duplicate validators
-	seenValidators := make(map[string]bool)
-	for _, mc := range gs.RewardWeights {
-		if mc.RewardWeight.IsNil() {
+	// RewardWeights: ordered unique validator-address storage keys
+	var previousValidatorAddress sdk.ValAddress
+	for i, rewardWeight := range gs.RewardWeights {
+		if rewardWeight.RewardWeight.IsNil() {
 			return errors.New("reward weight must be set")
 		}
-		if mc.RewardWeight.IsNegative() {
-			return fmt.Errorf("reward weight must not be negative for validator %s", mc.ValidatorAddress)
+		if rewardWeight.RewardWeight.IsNegative() {
+			return fmt.Errorf("reward weight must not be negative for validator %s", rewardWeight.ValidatorAddress)
 		}
-		if len(mc.ValidatorAddress) == 0 {
+		if len(rewardWeight.ValidatorAddress) == 0 {
 			return errors.New("reward weight validator address must not be empty")
 		}
-		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
-			return fmt.Errorf("reward weight validator address is invalid: %s", mc.ValidatorAddress)
+		validatorAddress, err := sdk.ValAddressFromBech32(rewardWeight.ValidatorAddress)
+		if err != nil {
+			return fmt.Errorf("reward weight validator address is invalid: %s", rewardWeight.ValidatorAddress)
 		}
-		if seenValidators[mc.ValidatorAddress] {
-			return fmt.Errorf("duplicate reward weight for validator %s", mc.ValidatorAddress)
+		if i > 0 && bytes.Compare(validatorAddress, previousValidatorAddress) <= 0 {
+			return errors.New("genesis reward weights must be sorted by unique validator address")
 		}
-		seenValidators[mc.ValidatorAddress] = true
+		previousValidatorAddress = validatorAddress
 	}
 
-	// MissCounts: no duplicate validators
-	seenValidators = make(map[string]bool)
-	for _, mc := range gs.MissCounts {
+	// MissCounts: ordered unique validator-address storage keys
+	previousValidatorAddress = nil
+	for i, mc := range gs.MissCounts {
 		if len(mc.ValidatorAddress) == 0 {
 			return errors.New("miss count validator address must not be empty")
 		}
-		if _, err := sdk.ValAddressFromBech32(mc.ValidatorAddress); err != nil {
+		validatorAddress, err := sdk.ValAddressFromBech32(mc.ValidatorAddress)
+		if err != nil {
 			return fmt.Errorf("miss count validator address is invalid: %s", mc.ValidatorAddress)
 		}
-		if seenValidators[mc.ValidatorAddress] {
-			return fmt.Errorf("duplicate miss count for validator %s", mc.ValidatorAddress)
+		if i > 0 && bytes.Compare(validatorAddress, previousValidatorAddress) <= 0 {
+			return errors.New("genesis miss counts must be sorted by unique validator address")
 		}
-		seenValidators[mc.ValidatorAddress] = true
+		previousValidatorAddress = validatorAddress
 	}
 
 	if err := gs.VoteTargets.Validate(); err != nil {

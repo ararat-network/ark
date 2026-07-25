@@ -47,7 +47,7 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 	var swapDecCoin sdk.DecCoin
 	var spread math.LegacyDec
 
-	if offerCoin.Denom != chain.MicroNoahDenom && askDenom != chain.MicroNoahDenom {
+	if offerCoin.Denom != chain.NoahBaseDenom && askDenom != chain.NoahBaseDenom {
 		// Stablecoin-to-stablecoin swaps use only the larger Tobin tax.
 		rates, err := k.oracleKeeper.GetRateSnapshot(ctx, offerCoin.Denom, askDenom)
 		if err != nil {
@@ -125,7 +125,7 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 
 		var offerPool math.LegacyDec
 		var askPool math.LegacyDec
-		if offerCoin.Denom != chain.MicroNoahDenom {
+		if offerCoin.Denom != chain.NoahBaseDenom {
 			offerPool = pools.ArkPool
 			askPool = pools.NoahPool
 		} else {
@@ -186,18 +186,18 @@ func (k Keeper) settleSwap(
 
 	burned := offerCoin
 	minted := quote.swapCoin
-	if offerCoin.Denom == chain.MicroNoahDenom {
+	if offerCoin.Denom == chain.NoahBaseDenom {
 		allocation, err := k.treasuryKeeper.RouteExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "routing expansion for offer %s and output %s", offerCoin, quote.swapCoin)
 		}
-		burned = sdk.NewCoin(chain.MicroNoahDenom, allocation.TotalBurn())
-	} else if quote.swapCoin.Denom == chain.MicroNoahDenom {
+		burned = sdk.NewCoin(chain.NoahBaseDenom, allocation.TotalBurn())
+	} else if quote.swapCoin.Denom == chain.NoahBaseDenom {
 		draw, err := k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, quote.swapCoin.Amount, quote.rates)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, quote.swapCoin)
 		}
-		minted = sdk.NewCoin(chain.MicroNoahDenom, quote.swapCoin.Amount.Sub(draw.BufferPaid))
+		minted = sdk.NewCoin(chain.NoahBaseDenom, quote.swapCoin.Amount.Sub(draw.BufferPaid))
 	}
 
 	if !burned.IsZero() {
@@ -241,12 +241,12 @@ func (k Keeper) applySwapToPool(
 	offerCoin sdk.Coin,
 	quote swapQuote,
 ) error {
-	if offerCoin.Denom != chain.MicroNoahDenom && quote.swapDecCoin.Denom != chain.MicroNoahDenom {
+	if offerCoin.Denom != chain.NoahBaseDenom && quote.swapDecCoin.Denom != chain.NoahBaseDenom {
 		return nil
 	}
 
 	arkPoolDelta := quote.arkPoolDelta
-	if offerCoin.Denom != chain.MicroNoahDenom {
+	if offerCoin.Denom != chain.NoahBaseDenom {
 		var err error
 		arkPoolDelta, err = decimal.Add(arkPoolDelta, quote.baseOfferDecCoin.Amount)
 		if err != nil {

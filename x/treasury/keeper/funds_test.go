@@ -27,38 +27,38 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 	}{
 		{
 			name:         "wrong gross denom",
-			grossOffer:   sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
-			stableOutput: sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
+			grossOffer:   sdk.NewInt64Coin(chain.USDBaseDenom, 1),
+			stableOutput: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 			wantErr:      "invalid gross offer",
 		},
 		{
 			name:         "zero gross offer",
-			grossOffer:   sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
-			stableOutput: sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
+			grossOffer:   sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
+			stableOutput: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 			wantErr:      "invalid gross offer",
 		},
 		{
 			name:         "negative gross offer",
-			grossOffer:   sdk.Coin{Denom: chain.MicroNoahDenom, Amount: math.NewInt(-1)},
-			stableOutput: sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
+			grossOffer:   sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)},
+			stableOutput: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 			wantErr:      "invalid gross offer",
 		},
 		{
 			name:         "zero stable output",
-			grossOffer:   sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-			stableOutput: sdk.NewInt64Coin(chain.MicroUSDDenom, 0),
+			grossOffer:   sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+			stableOutput: sdk.NewInt64Coin(chain.USDBaseDenom, 0),
 			wantErr:      "stable output must be positive",
 		},
 		{
 			name:         "malformed stable output",
-			grossOffer:   sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
+			grossOffer:   sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 			stableOutput: sdk.Coin{Denom: "BAD DENOM", Amount: math.OneInt()},
 			wantErr:      "invalid stable output",
 		},
 		{
 			name:          "unconfigured stable output",
-			grossOffer:    sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-			stableOutput:  sdk.NewInt64Coin("uatom", 1),
+			grossOffer:    sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+			stableOutput:  sdk.NewInt64Coin("aatom", 1),
 			wantErr:       "is not configured in oracle",
 			needsRegistry: true,
 		},
@@ -68,7 +68,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 		s.Run(test.name, func() {
 			if test.needsRegistry {
 				s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-					{Denom: chain.MicroUSDDenom},
+					{Denom: chain.USDBaseDenom},
 				}, nil)
 			}
 			_, err := s.keeper.RouteExpansion(
@@ -84,46 +84,46 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 
 func (s *KeeperTestSuite) TestRouteExpansionFailsBeforeTransferWhenOutputRateUnavailable() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 
 	_, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 60),
-		oracletypes.RateSnapshot{chain.MicroNoahDenom: math.LegacyOneDec()},
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
+		oracletypes.RateSnapshot{chain.NoahBaseDenom: math.LegacyOneDec()},
 	)
 	s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionRejectsOutputValueAboveGrossOffer() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 
 	_, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 101),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 101),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
 	)
-	s.Require().ErrorContains(err, "stable output value 101unoah exceeds gross offer 100unoah")
+	s.Require().ErrorContains(err, "stable output value 101anoah exceeds gross offer 100anoah")
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
 	}, nil)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroKRWDenom).
-		Return(sdk.NewInt64Coin(chain.MicroKRWDenom, 10))
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 0))
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.MicroKRWDenom).
-		Return(oracletypes.RateSnapshot{chain.MicroKRWDenom: math.LegacyOneDec()}, nil)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.KRWBaseDenom).
+		Return(oracletypes.RateSnapshot{chain.KRWBaseDenom: math.LegacyOneDec()}, nil)
 	for _, moduleName := range []string{
 		types.RedemptionBufferName,
 		types.StrategicReserveName,
@@ -132,18 +132,18 @@ func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
 		s.bankKeeper.EXPECT().GetBalance(
 			gomock.Any(),
 			authtypes.NewModuleAddress(moduleName),
-			chain.MicroNoahDenom,
-		).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 0))
+			chain.NoahBaseDenom,
+		).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 	}
 
 	quoteRates := oracletypes.RateSnapshot{
-		chain.MicroNoahDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom:  math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
 	allocation, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 60),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
 		quoteRates,
 	)
 	s.Require().NoError(err)
@@ -160,10 +160,10 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 40))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 40))
 	for _, moduleName := range []string{
 		types.RedemptionBufferName,
 		types.StrategicReserveName,
@@ -172,26 +172,26 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 		s.bankKeeper.EXPECT().GetBalance(
 			gomock.Any(),
 			authtypes.NewModuleAddress(moduleName),
-			chain.MicroNoahDenom,
+			chain.NoahBaseDenom,
 		).
-			Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 0))
+			Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 	}
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 50)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 50)),
 	).Return(nil)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.StrategicReserveName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 10)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
 	).Return(nil)
 
 	allocation, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 60),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
 	)
 	s.Require().NoError(err)
@@ -203,7 +203,7 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 	s.Require().True(allocation.OverflowBurn.IsZero())
 	s.Require().True(allocation.TargetValuationComplete)
 	s.requireTypedEvent(&types.EventExpansionAllocated{
-		Denom:                   chain.MicroNoahDenom,
+		Denom:                   chain.NoahBaseDenom,
 		RedemptionBufferCredit:  math.NewInt(50),
 		StrategicReserveCredit:  math.NewInt(10),
 		InsuranceCredit:         math.ZeroInt(),
@@ -220,10 +220,10 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 	policy.InsuranceTargetRatio = math.LegacyZeroDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 0))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
 	for _, moduleName := range []string{
 		types.RedemptionBufferName,
 		types.StrategicReserveName,
@@ -232,21 +232,21 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 		s.bankKeeper.EXPECT().GetBalance(
 			gomock.Any(),
 			authtypes.NewModuleAddress(moduleName),
-			chain.MicroNoahDenom,
-		).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 0))
+			chain.NoahBaseDenom,
+		).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 	}
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 2)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
 	).Return(nil)
 
 	allocation, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 20),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 101),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 20),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 101),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyNewDec(10),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyNewDec(10),
 		},
 	)
 	s.Require().NoError(err)
@@ -258,27 +258,27 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRate() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
 	}, nil)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroKRWDenom).
-		Return(sdk.NewInt64Coin(chain.MicroKRWDenom, 10))
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 0))
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.MicroKRWDenom).
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.KRWBaseDenom).
 		Return(nil, oracletypes.ErrStaleExchangeRate)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 60)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 60)),
 	).Return(nil)
 
 	allocation, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 60),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
 	)
 	s.Require().NoError(err)
@@ -291,28 +291,28 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
 	}, nil)
 	largeSupply := new(big.Int).Lsh(big.NewInt(1), uint(math.MaxBitLen-1))
 	largeSupply.Add(largeSupply, big.NewInt(1))
-	for _, denom := range []string{chain.MicroKRWDenom, chain.MicroUSDDenom} {
+	for _, denom := range []string{chain.KRWBaseDenom, chain.USDBaseDenom} {
 		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), denom).
 			Return(sdk.NewCoin(denom, math.NewIntFromBigInt(largeSupply)))
 	}
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	).Return(nil)
 
 	allocation, err := s.keeper.RouteExpansion(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyOneDec(),
-			chain.MicroKRWDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+			chain.KRWBaseDenom:  math.LegacyOneDec(),
 		},
 	)
 	s.Require().NoError(err)
@@ -339,10 +339,10 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 			policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.33")
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: chain.MicroUSDDenom},
+				{Denom: chain.USDBaseDenom},
 			}, nil)
-			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-				Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 0))
+			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
 			for _, moduleName := range []string{
 				types.RedemptionBufferName,
 				types.StrategicReserveName,
@@ -351,8 +351,8 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 				s.bankKeeper.EXPECT().GetBalance(
 					gomock.Any(),
 					authtypes.NewModuleAddress(moduleName),
-					chain.MicroNoahDenom,
-				).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 0))
+					chain.NoahBaseDenom,
+				).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 			}
 			credits := []struct {
 				module string
@@ -367,7 +367,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 					gomock.Any(),
 					markettypes.ModuleName,
 					credit.module,
-					sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, credit.amount)),
+					sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, credit.amount)),
 				)
 				if credit.module == test.failModule {
 					call.Return(errors.New("injected transfer failure"))
@@ -378,11 +378,11 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 
 			_, err := s.keeper.RouteExpansion(
 				s.ctx,
-				sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-				sdk.NewInt64Coin(chain.MicroUSDDenom, 100),
+				sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+				sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 				oracletypes.RateSnapshot{
-					chain.MicroNoahDenom: math.LegacyOneDec(),
-					chain.MicroUSDDenom:  math.LegacyOneDec(),
+					chain.NoahBaseDenom: math.LegacyOneDec(),
+					chain.USDBaseDenom:  math.LegacyOneDec(),
 				},
 			)
 			s.Require().ErrorContains(err, "crediting "+test.failModule)
@@ -393,24 +393,24 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100))
-	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.MicroNoahDenom).
-		Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 40))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 40))
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 8)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 8)),
 	).Return(nil)
 
 	draw, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 25),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(10),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyNewDec(2),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyNewDec(2),
 		},
 	)
 	s.Require().NoError(err)
@@ -427,7 +427,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
 	)
 
 	s.requireTypedEvent(&types.EventRedemptionBufferDrawn{
-		Denom:                      chain.MicroNoahDenom,
+		Denom:                      chain.NoahBaseDenom,
 		Payment:                    math.NewInt(8),
 		AggregateValuationComplete: true,
 	})
@@ -506,31 +506,31 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 			policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr(test.targetRatio)
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: chain.MicroUSDDenom},
+				{Denom: chain.USDBaseDenom},
 			}, nil)
-			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-				Return(sdk.NewInt64Coin(chain.MicroUSDDenom, test.supply))
+			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+				Return(sdk.NewInt64Coin(chain.USDBaseDenom, test.supply))
 			s.bankKeeper.EXPECT().GetBalance(
 				gomock.Any(),
 				authtypes.NewModuleAddress(types.RedemptionBufferName),
-				chain.MicroNoahDenom,
-			).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, test.buffer))
+				chain.NoahBaseDenom,
+			).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, test.buffer))
 			if test.expectedBuffer > 0 {
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					gomock.Any(),
 					types.RedemptionBufferName,
 					markettypes.ModuleName,
-					sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, test.expectedBuffer)),
+					sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, test.expectedBuffer)),
 				).Return(nil)
 			}
 
 			draw, err := s.keeper.DrawRedemptionBuffer(
 				s.ctx,
-				sdk.NewInt64Coin(chain.MicroUSDDenom, test.redeemed),
+				sdk.NewInt64Coin(chain.USDBaseDenom, test.redeemed),
 				math.NewInt(test.noahOutput),
 				oracletypes.RateSnapshot{
-					chain.MicroNoahDenom: math.LegacyOneDec(),
-					chain.MicroUSDDenom:  math.LegacyOneDec(),
+					chain.NoahBaseDenom: math.LegacyOneDec(),
+					chain.USDBaseDenom:  math.LegacyOneDec(),
 				},
 			)
 			s.Require().NoError(err)
@@ -547,16 +547,16 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiabilityBeforeAggregateValuation() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 
 	_, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 		math.NewInt(11),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
 	)
 	s.Require().ErrorContains(err, "NOAH output 11 exceeds redeemed liability 10")
@@ -564,24 +564,24 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiab
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregateValuation() {
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
 	}, nil)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100))
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroKRWDenom).
-		Return(sdk.NewInt64Coin(chain.MicroKRWDenom, 100))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100))
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
-		gomock.Any(), chain.MicroKRWDenom,
+		gomock.Any(), chain.KRWBaseDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
 
 	draw, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 25),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(20),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroUSDDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
 	)
 	s.Require().NoError(err)

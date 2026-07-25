@@ -32,7 +32,7 @@ func TestRootCmdExposesPricesCommand(t *testing.T) {
 func TestPricesCmdRejectsArgumentsAndUnsupportedOutput(t *testing.T) {
 	t.Run("arguments", func(t *testing.T) {
 		cmd := newPricesCmd()
-		cmd.SetArgs([]string{"uusd"})
+		cmd.SetArgs([]string{"ausd"})
 
 		err := cmd.Execute()
 
@@ -87,7 +87,7 @@ func TestWritePricesTableSortsDenoms(t *testing.T) {
 	require.Contains(t, output, "AGE        2s")
 	require.Contains(t, output, "VERSION    v1.2.3")
 	require.Contains(t, output, "DENOM  PRICE")
-	require.Less(t, strings.Index(output, "ukrw"), strings.Index(output, "uusd"))
+	require.Less(t, strings.Index(output, "akrw"), strings.Index(output, "ausd"))
 }
 
 func TestWritePricesJSONUsesDecodedPrices(t *testing.T) {
@@ -101,8 +101,8 @@ func TestWritePricesJSONUsesDecodedPrices(t *testing.T) {
 	require.NoError(t, json.Unmarshal(out.Bytes(), &got))
 	require.Equal(t, pricesView{
 		Prices: map[string]string{
-			"ukrw": "1234.500000000000000000",
-			"uusd": "1.000000000000000000",
+			"akrw": "1234.500000000000000000",
+			"ausd": "1.000000000000000000",
 		},
 		Timestamp: resp.Timestamp,
 		Age:       "2s",
@@ -113,12 +113,12 @@ func TestWritePricesJSONUsesDecodedPrices(t *testing.T) {
 func TestWritePricesRejectsMalformedPrice(t *testing.T) {
 	err := writePrices(
 		new(bytes.Buffer),
-		&transporttypes.OraclePricesResponse{Prices: map[string][]byte{"uusd": []byte("invalid")}},
+		&transporttypes.OraclePricesResponse{Prices: map[string][]byte{"ausd": []byte("invalid")}},
 		pricesOutputTable,
 		time.Now(),
 	)
 
-	require.ErrorContains(t, err, `decoding oracle price "uusd"`)
+	require.ErrorContains(t, err, `decoding oracle price "ausd"`)
 }
 
 func TestPriceSnapshotAgeIsUnknownForZeroTimestamp(t *testing.T) {
@@ -128,15 +128,15 @@ func TestPriceSnapshotAgeIsUnknownForZeroTimestamp(t *testing.T) {
 func pricesResponse(t *testing.T) *transporttypes.OraclePricesResponse {
 	t.Helper()
 
-	uusd, err := encoding.EncodeLegacyDec(sdkmath.LegacyNewDec(1))
+	ausd, err := encoding.EncodeLegacyDec(sdkmath.LegacyNewDec(1))
 	require.NoError(t, err)
-	ukrw, err := encoding.EncodeLegacyDec(sdkmath.LegacyMustNewDecFromStr("1234.5"))
+	akrw, err := encoding.EncodeLegacyDec(sdkmath.LegacyMustNewDecFromStr("1234.5"))
 	require.NoError(t, err)
 
 	return &transporttypes.OraclePricesResponse{
 		Prices: map[string][]byte{
-			"uusd": uusd,
-			"ukrw": ukrw,
+			"ausd": ausd,
+			"akrw": akrw,
 		},
 		Timestamp: time.Date(2026, time.July, 10, 10, 11, 12, 0, time.UTC),
 		Version:   "v1.2.3",

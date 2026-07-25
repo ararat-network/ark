@@ -28,7 +28,7 @@ func TestNewValidatorDerivesComponentLogger(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
 			Return(nil, context.DeadlineExceeded),
@@ -72,13 +72,13 @@ func TestRunReturnsLivenessForAvailablePrices(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"ukrw", "uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"akrw", "ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "uusd", "ukrw"), nil),
+			Return(pricesResponse(t, now, "ausd", "akrw"), nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "uusd", "ukrw"), nil),
+			Return(pricesResponse(t, now, "ausd", "akrw"), nil),
 	)
 	cfg := validConfig()
 	cfg.ValidationPeriod = 20 * time.Millisecond
@@ -90,8 +90,8 @@ func TestRunReturnsLivenessForAvailablePrices(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, LivenessResults{
-		"uusd": 100,
-		"ukrw": 100,
+		"ausd": 100,
+		"akrw": 100,
 	}, results)
 }
 
@@ -100,22 +100,22 @@ func TestRunUsesVoteTargetsInsteadOfResponseKeys(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd", "ukrw"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd", "akrw"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, time.Now().UTC(), "uusd", "uatom"), nil),
+			Return(pricesResponse(t, time.Now().UTC(), "ausd", "aatom"), nil),
 	)
 	validator, err := NewValidator(log.NewNopLogger(), client, voteTargetClient, validConfig())
 	require.NoError(t, err)
 
 	results, err := validator.Run(context.Background())
 
-	require.ErrorContains(t, err, "invalid denoms below liveness threshold: [ukrw]")
+	require.ErrorContains(t, err, "invalid denoms below liveness threshold: [akrw]")
 	require.Equal(t, LivenessResults{
-		"uusd": 100,
-		"ukrw": 0,
+		"ausd": 100,
+		"akrw": 0,
 	}, results)
-	require.NotContains(t, results, "uatom")
+	require.NotContains(t, results, "aatom")
 }
 
 func TestRunTracksRotatedActiveDenoms(t *testing.T) {
@@ -124,14 +124,14 @@ func TestRunTracksRotatedActiveDenoms(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "uusd"), nil),
-		expectVoteTargets(voteTargetClient, []string{"ukrw"}, nil),
+			Return(pricesResponse(t, now, "ausd"), nil),
+		expectVoteTargets(voteTargetClient, []string{"akrw"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "ukrw"), nil),
+			Return(pricesResponse(t, now, "akrw"), nil),
 	)
 	cfg := validConfig()
 	cfg.ValidationPeriod = 20 * time.Millisecond
@@ -144,8 +144,8 @@ func TestRunTracksRotatedActiveDenoms(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, LivenessResults{
-		"uusd": 100,
-		"ukrw": 100,
+		"ausd": 100,
+		"akrw": 100,
 	}, results)
 }
 
@@ -206,8 +206,8 @@ func TestRunRejectsInvalidInitialActiveDenoms(t *testing.T) {
 		},
 		{
 			name:    "duplicate denom",
-			denoms:  []string{"uusd", "uusd"},
-			wantErr: `duplicate active denom "uusd"`,
+			denoms:  []string{"ausd", "ausd"},
+			wantErr: `duplicate active denom "ausd"`,
 		},
 		{
 			name:    "invalid SDK denom",
@@ -216,8 +216,8 @@ func TestRunRejectsInvalidInitialActiveDenoms(t *testing.T) {
 		},
 		{
 			name:    "noncanonical sidecar denom",
-			denoms:  []string{"uUSD"},
-			wantErr: `invalid active denom "uUSD"`,
+			denoms:  []string{"aUSD"},
+			wantErr: `invalid active denom "aUSD"`,
 		},
 	}
 
@@ -259,14 +259,14 @@ func TestRunPreservesActiveDenomsWhenRefreshFails(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "uusd"), nil),
+			Return(pricesResponse(t, now, "ausd"), nil),
 		expectVoteTargets(voteTargetClient, nil, errors.New("vote targets unavailable")),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "uusd"), nil),
+			Return(pricesResponse(t, now, "ausd"), nil),
 	)
 	cfg := validConfig()
 	cfg.ValidationPeriod = 20 * time.Millisecond
@@ -278,7 +278,7 @@ func TestRunPreservesActiveDenomsWhenRefreshFails(t *testing.T) {
 	results, err := validator.Run(context.Background())
 
 	require.NoError(t, err)
-	require.Equal(t, LivenessResults{"uusd": 100}, results)
+	require.Equal(t, LivenessResults{"ausd": 100}, results)
 }
 
 func TestRunFailsWhenDenomBelowLivenessThreshold(t *testing.T) {
@@ -287,15 +287,15 @@ func TestRunFailsWhenDenomBelowLivenessThreshold(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd", "ukrw"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd", "akrw"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, now, "uusd", "ukrw"), nil),
+			Return(pricesResponse(t, now, "ausd", "akrw"), nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
 			Return(pricesResponseWithValues(t, now, map[string]sdkmath.LegacyDec{
-				"uusd": positivePrice(),
-				"ukrw": sdkmath.LegacyZeroDec(),
+				"ausd": positivePrice(),
+				"akrw": sdkmath.LegacyZeroDec(),
 			}), nil),
 	)
 	cfg := validConfig()
@@ -309,8 +309,8 @@ func TestRunFailsWhenDenomBelowLivenessThreshold(t *testing.T) {
 
 	require.ErrorContains(t, err, "invalid denoms below liveness threshold")
 	require.Equal(t, LivenessResults{
-		"uusd": 100,
-		"ukrw": 50,
+		"ausd": 100,
+		"akrw": 50,
 	}, results)
 }
 
@@ -343,11 +343,11 @@ func TestRunCountsInvalidPricesAsMissing(t *testing.T) {
 			client := validationtestutil.NewMockPriceClient(ctrl)
 			voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 			gomock.InOrder(
-				expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+				expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 				client.EXPECT().
 					Prices(gomock.Any(), gomock.Any(), waitForReady()).
 					Return(&types.OraclePricesResponse{
-						Prices:    map[string][]byte{"uusd": tt.rawPrice},
+						Prices:    map[string][]byte{"ausd": tt.rawPrice},
 						Timestamp: time.Now().UTC(),
 					}, nil),
 			)
@@ -357,7 +357,7 @@ func TestRunCountsInvalidPricesAsMissing(t *testing.T) {
 			results, err := validator.Run(context.Background())
 
 			require.ErrorContains(t, err, "invalid denoms below liveness threshold")
-			require.Equal(t, LivenessResults{"uusd": 0}, results)
+			require.Equal(t, LivenessResults{"ausd": 0}, results)
 		})
 	}
 }
@@ -367,13 +367,13 @@ func TestRunCountsStaleResponsesAsMissing(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, time.Now().Add(-time.Hour), "uusd"), nil),
+			Return(pricesResponse(t, time.Now().Add(-time.Hour), "ausd"), nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, time.Now().UTC(), "uusd"), nil),
+			Return(pricesResponse(t, time.Now().UTC(), "ausd"), nil),
 	)
 	cfg := validConfig()
 	cfg.ValidationPeriod = 20 * time.Millisecond
@@ -385,7 +385,7 @@ func TestRunCountsStaleResponsesAsMissing(t *testing.T) {
 	results, err := validator.Run(context.Background())
 
 	require.ErrorContains(t, err, "invalid denoms below liveness threshold")
-	require.Equal(t, LivenessResults{"uusd": 50}, results)
+	require.Equal(t, LivenessResults{"ausd": 50}, results)
 }
 
 func TestRunCountsFutureResponsesAsMissing(t *testing.T) {
@@ -393,10 +393,10 @@ func TestRunCountsFutureResponsesAsMissing(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponse(t, time.Now().Add(time.Hour), "uusd"), nil),
+			Return(pricesResponse(t, time.Now().Add(time.Hour), "ausd"), nil),
 	)
 	validator, err := NewValidator(log.NewNopLogger(), client, voteTargetClient, validConfig())
 	require.NoError(t, err)
@@ -404,7 +404,7 @@ func TestRunCountsFutureResponsesAsMissing(t *testing.T) {
 	results, err := validator.Run(context.Background())
 
 	require.ErrorContains(t, err, "invalid denoms below liveness threshold")
-	require.Equal(t, LivenessResults{"uusd": 0}, results)
+	require.Equal(t, LivenessResults{"ausd": 0}, results)
 }
 
 func TestRunBoundsPriceRequests(t *testing.T) {
@@ -412,7 +412,7 @@ func TestRunBoundsPriceRequests(t *testing.T) {
 	client := validationtestutil.NewMockPriceClient(ctrl)
 	voteTargetClient := validationtestutil.NewMockVoteTargetClient(ctrl)
 	gomock.InOrder(
-		expectVoteTargets(voteTargetClient, []string{"uusd"}, nil),
+		expectVoteTargets(voteTargetClient, []string{"ausd"}, nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
 			DoAndReturn(func(
@@ -432,7 +432,7 @@ func TestRunBoundsPriceRequests(t *testing.T) {
 	results, err := validator.Run(context.Background())
 
 	require.ErrorContains(t, err, "invalid denoms below liveness threshold")
-	require.Equal(t, LivenessResults{"uusd": 0}, results)
+	require.Equal(t, LivenessResults{"ausd": 0}, results)
 }
 
 func TestRunBoundsInitialDenomRequest(t *testing.T) {

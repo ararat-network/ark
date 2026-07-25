@@ -25,8 +25,9 @@ const (
 
 // GenBasePool randomised BasePool
 func GenBasePool(r *rand.Rand) sdk.DecCoin {
-	amount := math.LegacyNewDec(50000000000000).Add(math.LegacyNewDec(int64(r.Intn(10000000000))))
-	return sdk.NewDecCoinFromDec(chain.MicroSDRDenom, amount)
+	wholeUnits := int64(50_000_000 + r.Intn(10_000))
+	amount := math.LegacyNewDecFromInt(chain.NativeBaseAmount(wholeUnits))
+	return sdk.NewDecCoinFromDec(chain.SDRBaseDenom, amount)
 }
 
 // GenPoolRecoveryPeriod randomised PoolRecoveryPeriod

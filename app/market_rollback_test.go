@@ -29,18 +29,18 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 	}{
 		{
 			name:      "noah to stable expansion",
-			offerCoin: sdk.NewInt64Coin(chain.MicroNoahDenom, 1_000_000),
-			askDenom:  chain.MicroSDRDenom,
+			offerCoin: sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000),
+			askDenom:  chain.SDRBaseDenom,
 		},
 		{
 			name:      "stable to noah redemption",
-			offerCoin: sdk.NewInt64Coin(chain.MicroSDRDenom, 1_000_000),
-			askDenom:  chain.MicroNoahDenom,
+			offerCoin: sdk.NewInt64Coin(chain.SDRBaseDenom, 1_000_000),
+			askDenom:  chain.NoahBaseDenom,
 		},
 		{
 			name:      "stable to stable conversion",
-			offerCoin: sdk.NewInt64Coin(chain.MicroSDRDenom, 1_000_000),
-			askDenom:  chain.MicroUSDDenom,
+			offerCoin: sdk.NewInt64Coin(chain.SDRBaseDenom, 1_000_000),
+			askDenom:  chain.USDBaseDenom,
 		},
 	}
 
@@ -53,7 +53,7 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 			})
 			trader := treasuryGovernanceVoter(t, arkApp, ctx)
 
-			for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+			for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
 				require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
 					Denom:          denom,
 					Rate:           math.LegacyOneDec(),
@@ -144,9 +144,9 @@ func captureMarketSettlementState(
 		traderBalance:   arkApp.BankKeeper.GetAllBalances(ctx, trader),
 		marketBalance:   arkApp.BankKeeper.GetAllBalances(ctx, authtypes.NewModuleAddress(markettypes.ModuleName)),
 		fundBalances:    fundBalances,
-		noahSupply:      arkApp.BankKeeper.GetSupply(ctx, chain.MicroNoahDenom).Amount,
-		sdrSupply:       arkApp.BankKeeper.GetSupply(ctx, chain.MicroSDRDenom).Amount,
-		usdSupply:       arkApp.BankKeeper.GetSupply(ctx, chain.MicroUSDDenom).Amount,
+		noahSupply:      arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount,
+		sdrSupply:       arkApp.BankKeeper.GetSupply(ctx, chain.SDRBaseDenom).Amount,
+		usdSupply:       arkApp.BankKeeper.GetSupply(ctx, chain.USDBaseDenom).Amount,
 		arkPoolDelta:    delta,
 		marketParams:    params,
 		liability:       fundStatus.NominalLiabilityNoahEquivalent,

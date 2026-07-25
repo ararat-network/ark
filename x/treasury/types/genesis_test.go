@@ -29,7 +29,7 @@ func TestDefaultGenesisState(t *testing.T) {
 func TestNewGenesisStateCopiesSlices(t *testing.T) {
 	mandate := validClaimsMandate()
 	claims := []types.Claim{validPendingClaim()}
-	taxCaps := []types.TaxCap{{Denom: chain.MicroUSDDenom, TaxCap: math.OneInt()}}
+	taxCaps := []types.TaxCap{{Denom: chain.USDBaseDenom, TaxCap: math.OneInt()}}
 	genesis := types.NewGenesisState(
 		types.DefaultParams(),
 		types.DefaultMonetaryPolicy(),
@@ -44,7 +44,7 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 	)
 	taxCaps[0].Denom = "mutated"
 	claims[0].ClaimId = 99
-	require.Equal(t, chain.MicroUSDDenom, genesis.TaxCaps[0].Denom)
+	require.Equal(t, chain.USDBaseDenom, genesis.TaxCaps[0].Denom)
 	require.Equal(t, uint64(1), genesis.Claims[0].ClaimId)
 }
 
@@ -58,14 +58,14 @@ func TestGenesisTaxCapValidation(t *testing.T) {
 			name: "positive reference cap requires positive derived caps",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.OneInt()}}
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()}}
 			},
 		},
 		{
 			name: "positive reference cap rejects uncapped sentinel",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()}}
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()}}
 			},
 			expectErr: "must be positive when the reference tax cap is positive",
 		},
@@ -73,16 +73,45 @@ func TestGenesisTaxCapValidation(t *testing.T) {
 			name: "zero reference cap permits uncapped sentinel",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()}}
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()}}
 			},
 		},
 		{
 			name: "zero reference cap rejects positive derived cap",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.MicroSDRDenom, TaxCap: math.OneInt()}}
+				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()}}
 			},
 			expectErr: "must be zero when the reference tax cap is zero",
+		},
+		{
+			name: "sorted tax caps are valid",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.TaxCaps = []types.TaxCap{
+					{Denom: chain.KRWBaseDenom, TaxCap: math.ZeroInt()},
+					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
+				}
+			},
+		},
+		{
+			name: "unsorted tax caps",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.TaxCaps = []types.TaxCap{
+					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
+					{Denom: chain.KRWBaseDenom, TaxCap: math.ZeroInt()},
+				}
+			},
+			expectErr: "genesis tax caps must be sorted by unique denom",
+		},
+		{
+			name: "duplicate tax cap denom",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.TaxCaps = []types.TaxCap{
+					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
+					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
+				}
+			},
+			expectErr: "genesis tax caps must be sorted by unique denom",
 		},
 	}
 
@@ -125,6 +154,21 @@ func TestGenesisClaimsValidation(t *testing.T) {
 	}{
 		{name: "valid", mutate: func(*types.GenesisState) {}},
 		{
+			name: "sorted claims are valid",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Claims = []types.Claim{validPendingClaim(), validPaidClaim()}
+				genesis.ClaimsAllowanceUsed = math.NewInt(200)
+			},
+		},
+		{
+			name: "unsorted claims",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Claims = []types.Claim{validPaidClaim(), validPendingClaim()}
+				genesis.ClaimsAllowanceUsed = math.NewInt(200)
+			},
+			expectErr: "genesis claims must be sorted by unique claim ID",
+		},
+		{
 			name: "zero next claim ID",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.NextClaimId = 0
@@ -144,7 +188,7 @@ func TestGenesisClaimsValidation(t *testing.T) {
 				genesis.Claims = append(genesis.Claims, genesis.Claims[0])
 				genesis.InsuranceReserved = math.NewInt(200)
 			},
-			expectErr: "duplicate claim ID",
+			expectErr: "genesis claims must be sorted by unique claim ID",
 		},
 		{
 			name: "Insurance reservation mismatch",

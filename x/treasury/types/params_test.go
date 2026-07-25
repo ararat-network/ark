@@ -30,7 +30,7 @@ func TestParamsValidate(t *testing.T) {
 		},
 		{
 			name:      "reference cap denom cannot be ibc path",
-			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "ufoo/bar" },
+			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "afoo/bar" },
 			expectErr: "ReferenceTaxCap denom is invalid",
 		},
 		{

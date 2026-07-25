@@ -157,16 +157,16 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
 	return &types.QueryFundStatusResponse{
-		NominalLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.MicroNoahDenom, liabilityNoah),
-		SubsidyPoolBalance:             sdk.NewCoin(chain.MicroNoahDenom, q.k.balance(ctx, types.SubsidyPoolName)),
-		RedemptionBufferBalance:        sdk.NewCoin(chain.MicroNoahDenom, fundStatus.bufferBalance),
-		RedemptionBufferTarget:         sdk.NewCoin(chain.MicroNoahDenom, fundStatus.bufferTarget),
-		StrategicReserveBalance:        sdk.NewCoin(chain.MicroNoahDenom, fundStatus.reserveBalance),
-		StrategicReserveTarget:         sdk.NewCoin(chain.MicroNoahDenom, fundStatus.reserveTarget),
-		InsuranceBalance:               sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceBalance),
-		InsuranceReserved:              sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceReserved),
-		InsuranceUnencumberedBalance:   sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceUnencumbered),
-		InsuranceTarget:                sdk.NewCoin(chain.MicroNoahDenom, fundStatus.insuranceTarget),
+		NominalLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.NoahBaseDenom, liabilityNoah),
+		SubsidyPoolBalance:             sdk.NewCoin(chain.NoahBaseDenom, q.k.balance(ctx, types.SubsidyPoolName)),
+		RedemptionBufferBalance:        sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferBalance),
+		RedemptionBufferTarget:         sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferTarget),
+		StrategicReserveBalance:        sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveBalance),
+		StrategicReserveTarget:         sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveTarget),
+		InsuranceBalance:               sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceBalance),
+		InsuranceReserved:              sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceReserved),
+		InsuranceUnencumberedBalance:   sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceUnencumbered),
+		InsuranceTarget:                sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceTarget),
 	}, nil
 }
 

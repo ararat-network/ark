@@ -246,7 +246,7 @@ func validPendingClaim() types.Claim {
 		MandateTerm:       1,
 		IncidentReference: "incident",
 		Recipient:         testAddress(3),
-		Amount:            sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
+		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		EvidenceReference: "evidence",
 		Status:            types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight:   20,

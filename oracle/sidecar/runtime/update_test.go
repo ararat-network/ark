@@ -22,7 +22,7 @@ func TestUpdateConfigAppliesUpdateIntervalWithoutRestart(t *testing.T) {
 		"unknown": testUnknownAPIProviderConfig("unknown", testMarkets()),
 	})
 	cfg.UpdateInterval = time.Hour
-	cfg.FallbackDenoms = []string{"uusd"}
+	cfg.FallbackDenoms = []string{"ausd"}
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	started := make(chan struct{})
@@ -64,7 +64,7 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 	})
 	cfg.UpdateInterval = 5 * time.Millisecond
 	newCfg := cfg
-	newCfg.Resolver = testResolverConfig("ukrw", "noah-krw", "NOAH/USD", "USD/KRW")
+	newCfg.Resolver = testResolverConfig("akrw", "noah-krw", "NOAH/USD", "USD/KRW")
 
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", markets)
@@ -108,7 +108,7 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 	expectVoteTargetsLifecycle(voteTargetsClient)
 	voteTargetsClient.EXPECT().
 		VoteTargets().
-		Return([]string{"uusd", "ukrw"}, nil).
+		Return([]string{"ausd", "akrw"}, nil).
 		AnyTimes()
 	oracle, err := NewRuntime(
 		cfg,
@@ -122,15 +122,15 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 	requireProviderStarted(t, firstStarted)
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
-		usd := snapshot.Prices["uusd"]
-		_, hasKRW := snapshot.Prices["ukrw"]
+		usd := snapshot.Prices["ausd"]
+		_, hasKRW := snapshot.Prices["akrw"]
 		return usd != nil && usd.Cmp(big.NewFloat(2)) == 0 && !hasKRW
 	}, time.Second, time.Millisecond)
 
 	require.NoError(t, oracle.Update(newCfg))
 	requireProviderStarted(t, restarted)
 	require.Eventually(t, func() bool {
-		price := oracle.GetPriceSnapshot().Prices["ukrw"]
+		price := oracle.GetPriceSnapshot().Prices["akrw"]
 		return price != nil && price.Cmp(big.NewFloat(2000)) == 0
 	}, time.Second, time.Millisecond)
 
@@ -143,7 +143,7 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 		"unknown": testUnknownAPIProviderConfig("unknown", testMarkets()),
 	})
 	newCfg := cfg
-	newCfg.Resolver = testResolverConfig("ukrw", "bad-route", "USDT/USD")
+	newCfg.Resolver = testResolverConfig("akrw", "bad-route", "USDT/USD")
 
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
@@ -155,7 +155,7 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 
 	err = oracle.Update(newCfg)
 
-	require.ErrorContains(t, err, "resolver denom \"ukrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"NOAH/KRW\"")
+	require.ErrorContains(t, err, "resolver denom \"akrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"NOAH/KRW\"")
 }
 
 func TestUpdateConfigUpdatesVoteTargetsClientConfig(t *testing.T) {
@@ -194,7 +194,7 @@ func TestUpdateConfigRefreshesFallbackDenomsWhenNoVoteTargetsHaveLoaded(t *testi
 	require.NoError(t, err)
 
 	newCfg := cfg
-	newCfg.FallbackDenoms = []string{"uusd"}
+	newCfg.FallbackDenoms = []string{"ausd"}
 
 	require.NoError(t, oracle.Update(newCfg))
 	require.Equal(t, []providertypes.Ticker{"NOAHUSD"}, mp.provider.GetTickers())

@@ -32,18 +32,18 @@ func TestVoteTargetTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	keeper := &transitionOracleKeeper{
 		params: oracletypes.DefaultParams(),
 		targets: oracletypes.VoteTargets{
-			Denoms:  []string{"uusd"},
+			Denoms:  []string{"ausd"},
 			Version: oracletypes.InitialVoteTargetVersion,
 			Pending: &oracletypes.PendingVoteTargets{
-				Denoms:               []string{"ukrw", "uusd"},
+				Denoms:               []string{"akrw", "ausd"},
 				Version:              oracletypes.InitialVoteTargetVersion + 1,
 				ActivationVoteHeight: activationVoteHeight,
 			},
 		},
 	}
 	oracleClient := staticOracleClient{prices: map[string][]byte{
-		"ukrw": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec()),
-		"uusd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
+		"akrw": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec()),
+		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
 	logger := log.NewTestLogger(t)
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
@@ -66,7 +66,7 @@ func TestVoteTargetTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	oldVoteExtension, err := voteExtensionCodec.Decode(oldResponse.VoteExtension)
 	require.NoError(t, err)
 	require.Equal(t, oracletypes.InitialVoteTargetVersion, oldVoteExtension.TargetVersion)
-	require.Equal(t, []string{"uusd"}, sortedKeys(oldVoteExtension.Rates))
+	require.Equal(t, []string{"ausd"}, sortedKeys(oldVoteExtension.Rates))
 
 	newResponse, err := extendVote(
 		abcitestutil.NewSDKContext(activationVoteHeight, 1),
@@ -76,8 +76,8 @@ func TestVoteTargetTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	newVoteExtension, err := voteExtensionCodec.Decode(newResponse.VoteExtension)
 	require.NoError(t, err)
 	require.Equal(t, oracletypes.InitialVoteTargetVersion+1, newVoteExtension.TargetVersion)
-	require.Equal(t, []string{"ukrw", "uusd"}, sortedKeys(newVoteExtension.Rates))
-	krwRate, err := arkencoding.DecodeLegacyDec(newVoteExtension.Rates["ukrw"])
+	require.Equal(t, []string{"akrw", "ausd"}, sortedKeys(newVoteExtension.Rates))
+	krwRate, err := arkencoding.DecodeLegacyDec(newVoteExtension.Rates["akrw"])
 	require.NoError(t, err)
 	require.True(t, krwRate.IsZero())
 

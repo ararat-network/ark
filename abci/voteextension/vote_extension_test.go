@@ -26,10 +26,10 @@ import (
 func TestExtendVoteHandler(t *testing.T) {
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
-	validPrices := map[string][]byte{"uusd": validRate}
+	validPrices := map[string][]byte{"ausd": validRate}
 	targets := oracletypes.VoteTargetSet{
 		Version: oracletypes.InitialVoteTargetVersion,
-		Denoms:  []string{"uusd"},
+		Denoms:  []string{"ausd"},
 	}
 	validVoteExt := vetypes.OracleVoteExtension{
 		Rates:         validPrices,
@@ -94,7 +94,7 @@ func TestExtendVoteHandler(t *testing.T) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
 					Return(&transporttypes.OraclePricesResponse{
-						Prices: map[string][]byte{"uusd": []byte("invalid")},
+						Prices: map[string][]byte{"ausd": []byte("invalid")},
 					}, nil)
 			},
 			expectedExtension: []byte{},
@@ -185,10 +185,10 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
 	targets := oracletypes.VoteTargetSet{
 		Version: oracletypes.InitialVoteTargetVersion,
-		Denoms:  []string{"uusd"},
+		Denoms:  []string{"ausd"},
 	}
 	validVoteExt := vetypes.OracleVoteExtension{
-		Rates:         map[string][]byte{"uusd": validRate},
+		Rates:         map[string][]byte{"ausd": validRate},
 		TargetVersion: targets.Version,
 	}
 	invalidVoteExt := vetypes.OracleVoteExtension{

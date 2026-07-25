@@ -24,10 +24,10 @@ func NewPair(base, quote string) (Pair, error) {
 	return pair, nil
 }
 
-// FromDenom converts a canonical u-prefixed vote-target denom into its
+// FromDenom converts a canonical a-prefixed vote-target denom into its
 // corresponding NOAH/QUOTE pair.
 func FromDenom(denom string) (Pair, error) {
-	if err := chain.ValidateMicroDenom(denom); err != nil {
+	if err := chain.ValidateNativeBaseDenom(denom); err != nil {
 		return "", err
 	}
 
@@ -100,7 +100,7 @@ func (p Pair) Quote() string {
 
 // VoteTargetDenom returns the public vote-target denom represented by the pair quote.
 func (p Pair) VoteTargetDenom() string {
-	return "u" + strings.ToLower(p.Quote())
+	return "a" + strings.ToLower(p.Quote())
 }
 
 // Inverse returns the reciprocal pair. Callers should only use this on

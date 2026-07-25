@@ -3,7 +3,7 @@ package types
 import "cosmossdk.io/math"
 
 // ExpansionAllocation is the execution-local result of routing one realised
-// NOAH-to-stable expansion. All amounts are implicit micro-NOAH.
+// NOAH-to-stable expansion. All amounts are implicit base-unit NOAH.
 type ExpansionAllocation struct {
 	EligiblePrincipalNoah   math.Int
 	RedemptionBufferCredit  math.Int

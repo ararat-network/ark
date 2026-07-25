@@ -29,7 +29,7 @@ import (
 const bufSize = 1024 * 1024
 
 func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
-	source := []string{"ukrw", "uusd"}
+	source := []string{"akrw", "ausd"}
 	query := newFakeQueryServer(targetResult(source))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
@@ -41,25 +41,25 @@ func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"ukrw", "uusd"})
+	requireEventuallyTargets(t, client, []string{"akrw", "ausd"})
 
-	source[0] = "umutated"
+	source[0] = "amutated"
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"ukrw", "uusd"}, got)
+	require.Equal(t, []string{"akrw", "ausd"}, got)
 
-	got[0] = "umodified"
+	got[0] = "amodified"
 	got, err = client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"ukrw", "uusd"}, got)
+	require.Equal(t, []string{"akrw", "ausd"}, got)
 }
 
 func TestRunCachesPendingTargetsForProviderWarmup(t *testing.T) {
 	query := newFakeQueryServer(queryResult{
-		targets: []string{"uusd"},
+		targets: []string{"ausd"},
 		version: oracletypes.InitialVoteTargetVersion,
 		pending: &oracletypes.PendingVoteTargets{
-			Denoms:               []string{"uaud", "uusd"},
+			Denoms:               []string{"aaud", "ausd"},
 			Version:              oracletypes.InitialVoteTargetVersion + 1,
 			ActivationVoteHeight: 10,
 		},
@@ -74,11 +74,11 @@ func TestRunCachesPendingTargetsForProviderWarmup(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uaud", "uusd"})
+	requireEventuallyTargets(t, client, []string{"aaud", "ausd"})
 }
 
 func TestRunBlocksUntilContextCancellation(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{"uusd"}))
+	query := newFakeQueryServer(targetResult([]string{"ausd"}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -113,7 +113,7 @@ func TestRunBlocksUntilContextCancellation(t *testing.T) {
 
 func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 	logs := &lockedBuffer{}
-	query := newFakeQueryServer(targetResult([]string{"ukrw", "uusd"}))
+	query := newFakeQueryServer(targetResult([]string{"akrw", "ausd"}))
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
 		Config{
@@ -128,7 +128,7 @@ func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 
 	cancel := startClient(t, client)
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"ukrw", "uusd"})
+	requireEventuallyTargets(t, client, []string{"akrw", "ausd"})
 	stopClient(cancel, client)
 
 	output := logs.String()
@@ -180,7 +180,7 @@ func TestRunCachesAuthoritativeEmptyVoteTargets(t *testing.T) {
 
 func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
 	query := newFakeQueryServer(
-		targetResult([]string{"uusd"}),
+		targetResult([]string{"ausd"}),
 		targetResult([]string{}),
 		queryResult{err: errors.New("node unavailable")},
 	)
@@ -205,7 +205,7 @@ func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
 
 func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	query := newFakeQueryServer(
-		targetResult([]string{"uusd"}),
+		targetResult([]string{"ausd"}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -218,20 +218,20 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd"})
+	requireEventuallyTargets(t, client, []string{"ausd"})
 	query.waitForCalls(t, 2)
 
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"uusd"}, got)
+	require.Equal(t, []string{"ausd"}, got)
 }
 
 func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 	logs := &lockedBuffer{}
 	query := newFakeQueryServer(
-		targetResult([]string{"uusd"}),
+		targetResult([]string{"ausd"}),
 		queryResult{err: errors.New("node unavailable")},
-		targetResult([]string{"ukrw", "uusd"}),
+		targetResult([]string{"akrw", "ausd"}),
 	)
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
@@ -249,7 +249,7 @@ func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd"})
+	requireEventuallyTargets(t, client, []string{"ausd"})
 	query.waitForCalls(t, 2)
 	query.waitForCalls(t, 3)
 
@@ -261,7 +261,7 @@ func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"ukrw", "uusd"}, got)
+	require.Equal(t, []string{"akrw", "ausd"}, got)
 }
 
 func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
@@ -276,7 +276,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	otel.SetMeterProvider(provider)
 
 	query := newFakeQueryServer(
-		targetResult([]string{"ukrw", "uusd"}),
+		targetResult([]string{"akrw", "ausd"}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -288,7 +288,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	cancel := startClient(t, client)
 
 	query.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"ukrw", "uusd"})
+	requireEventuallyTargets(t, client, []string{"akrw", "ausd"})
 	query.waitForCalls(t, 2)
 	stopClient(cancel, client)
 
@@ -308,7 +308,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 }
 
 func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{"uusd"}))
+	query := newFakeQueryServer(targetResult([]string{"ausd"}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -325,7 +325,7 @@ func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
 }
 
 func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{"uusd"}))
+	query := newFakeQueryServer(targetResult([]string{"ausd"}))
 	originalInterval := 75 * time.Millisecond
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
@@ -349,8 +349,8 @@ func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
 }
 
 func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
-	firstQuery := newFakeQueryServer(targetResult([]string{"uusd"}))
-	secondQuery := newFakeQueryServer(targetResult([]string{"ukrw"}))
+	firstQuery := newFakeQueryServer(targetResult([]string{"ausd"}))
+	secondQuery := newFakeQueryServer(targetResult([]string{"akrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 	originalInterval := 75 * time.Millisecond
@@ -369,7 +369,7 @@ func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	firstQuery.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd"})
+	requireEventuallyTargets(t, client, []string{"ausd"})
 
 	client.Update(Config{
 		Address:  secondEndpoint.address,
@@ -379,13 +379,13 @@ func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 
 	secondQuery.requireNoCalls(t, originalInterval/3)
 	secondQuery.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"ukrw"})
+	requireEventuallyTargets(t, client, []string{"akrw"})
 }
 
 func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	logs := &lockedBuffer{}
-	firstQuery := newFakeQueryServer(targetResult([]string{"uusd"}))
-	secondQuery := newFakeQueryServer(targetResult([]string{"ukrw"}))
+	firstQuery := newFakeQueryServer(targetResult([]string{"ausd"}))
+	secondQuery := newFakeQueryServer(targetResult([]string{"akrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 
@@ -404,7 +404,7 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	defer stopClient(cancel, client)
 
 	firstQuery.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"uusd"})
+	requireEventuallyTargets(t, client, []string{"ausd"})
 
 	client.Update(Config{
 		Address:  secondEndpoint.address,
@@ -413,7 +413,7 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	})
 
 	secondQuery.waitForCalls(t, 1)
-	requireEventuallyTargets(t, client, []string{"ukrw"})
+	requireEventuallyTargets(t, client, []string{"akrw"})
 
 	require.Eventually(t, func() bool {
 		output := logs.String()
@@ -423,8 +423,8 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 }
 
 func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *testing.T) {
-	firstQuery := newBlockingQueryServer(targetResult([]string{"uusd"}))
-	secondQuery := newBlockingQueryServer(targetResult([]string{"ukrw"}))
+	firstQuery := newBlockingQueryServer(targetResult([]string{"ausd"}))
+	secondQuery := newBlockingQueryServer(targetResult([]string{"akrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 	originalInterval := 75 * time.Millisecond
@@ -450,16 +450,16 @@ func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *t
 	})
 	firstQuery.release()
 
-	requireEventuallyTargets(t, client, []string{"uusd"})
+	requireEventuallyTargets(t, client, []string{"ausd"})
 
 	secondQuery.requireNoCalls(t, originalInterval/3)
 	secondQuery.waitForCalls(t, 1)
 	got, err := client.VoteTargets()
 	require.NoError(t, err)
-	require.Equal(t, []string{"uusd"}, got)
+	require.Equal(t, []string{"ausd"}, got)
 
 	secondQuery.release()
-	requireEventuallyTargets(t, client, []string{"ukrw"})
+	requireEventuallyTargets(t, client, []string{"akrw"})
 }
 
 func TestConfigValidateRejectsInvalidConfig(t *testing.T) {

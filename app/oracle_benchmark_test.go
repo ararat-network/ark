@@ -369,7 +369,7 @@ func newOracleBenchmarkFixture(
 	funder := authtypes.NewBaseAccount(funderKey.PubKey().Address().Bytes(), funderKey.PubKey(), 0, 0)
 	rewardPool := benchmarkRewardPool(rewardDenomCount)
 	genesisBalance := rewardPool.Add(
-		sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(1_000_000_000_000_000_000)),
+		sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(1_000_000_000_000_000_000)),
 	)
 
 	arkApp := NewArkApp(
@@ -563,7 +563,7 @@ func benchmarkRewardPool(count int) sdk.Coins {
 
 	rewards := make(sdk.Coins, 0, count)
 	for i := range count {
-		denom := chain.MicroNoahDenom
+		denom := chain.NoahBaseDenom
 		if i > 0 {
 			denom = fmt.Sprintf("ureward%03d", i)
 		}

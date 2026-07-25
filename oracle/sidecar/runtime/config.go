@@ -91,7 +91,7 @@ func (c *Config) Validate() error {
 	}
 	fallbackDenoms := make(map[string]struct{}, len(c.FallbackDenoms))
 	for _, denom := range c.FallbackDenoms {
-		if err := chain.ValidateMicroDenom(denom); err != nil {
+		if err := chain.ValidateNativeBaseDenom(denom); err != nil {
 			return fmt.Errorf("invalid fallback denom %q: %w", denom, err)
 		}
 		if _, ok := fallbackDenoms[denom]; ok {

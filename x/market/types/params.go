@@ -20,9 +20,9 @@ const (
 // Default parameter values
 var (
 	DefaultBasePool = sdk.NewDecCoin(
-		chain.MicroSDRDenom,
-		math.NewInt(1_000_000*chain.MicroUnit),
-	) // 1,000,000sdr = 1,000,000,000,000usdr
+		chain.SDRBaseDenom,
+		chain.NativeBaseAmount(1_000_000),
+	) // 1,000,000 SDR = 1,000,000,000,000,000,000,000,000 asdr
 	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
 )
 

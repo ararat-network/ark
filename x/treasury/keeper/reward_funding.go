@@ -162,7 +162,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 			ctx,
 			types.SubsidyPoolName,
 			authtypes.FeeCollectorName,
-			sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, validatorSubsidy)),
+			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, validatorSubsidy)),
 		); err != nil {
 			return fmt.Errorf("topping up validator rewards: %w", err)
 		}
@@ -172,13 +172,13 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 			ctx,
 			types.SubsidyPoolName,
 			oracletypes.ModuleName,
-			sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, oracleSubsidy)),
+			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, oracleSubsidy)),
 		); err != nil {
 			return fmt.Errorf("topping up Oracle rewards: %w", err)
 		}
 	}
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventBlockRewardsToppedUp{
-		Denom:            chain.MicroNoahDenom,
+		Denom:            chain.NoahBaseDenom,
 		ValidatorTarget:  validatorTarget,
 		OracleTarget:     oracleTarget,
 		ValidatorOrganic: validatorOrganic,
@@ -233,15 +233,15 @@ func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins, configu
 		rates, err := k.oracleKeeper.GetRateSnapshot(ctx)
 		return math.ZeroInt(), rates, err
 	}
-	if len(rewards) == 1 && rewards[0].Denom == chain.MicroNoahDenom {
+	if len(rewards) == 1 && rewards[0].Denom == chain.NoahBaseDenom {
 		return rewards[0].Amount, oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
 		}, nil
 	}
 
 	denoms := make([]string, 0, len(rewards))
 	for _, coin := range rewards {
-		if coin.Denom == chain.MicroNoahDenom {
+		if coin.Denom == chain.NoahBaseDenom {
 			continue
 		}
 		if _, ok := configuredDenoms[coin.Denom]; ok {
@@ -267,7 +267,7 @@ func valueRewards(rewards sdk.Coins, rates oracletypes.RateSnapshot) (math.Int, 
 		if _, ok := rates[coin.Denom]; !ok {
 			continue
 		}
-		converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.MicroNoahDenom)
+		converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
 		if err != nil {
 			return math.Int{}, err
 		}

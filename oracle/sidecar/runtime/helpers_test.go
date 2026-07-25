@@ -82,7 +82,7 @@ func newRecordingChainStateClient(
 		AnyTimes()
 	client.EXPECT().
 		VoteTargets().
-		Return([]string{"uusd"}, nil).
+		Return([]string{"ausd"}, nil).
 		AnyTimes()
 
 	return client, recorder
@@ -333,7 +333,7 @@ func testOracleConfig(providerCfgs map[string]providers.Config) Config {
 			Timeout:  time.Second,
 			Interval: time.Second,
 		},
-		FallbackDenoms: []string{"uusd", "ukrw"},
+		FallbackDenoms: []string{"ausd", "akrw"},
 	}
 }
 

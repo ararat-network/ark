@@ -142,7 +142,7 @@ func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 
 // GetExchangeRate returns the consensus Noah exchange rate for a denom.
 func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
-	if denom == chain.MicroNoahDenom {
+	if denom == chain.NoahBaseDenom {
 		return math.LegacyOneDec(), nil
 	}
 
@@ -179,7 +179,7 @@ func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 
 // SetExchangeRateWithEvent stores an exchange rate and emits an update event.
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
-	if err := chain.ValidateMicroDenom(exchangeRate.Denom); err != nil {
+	if err := chain.ValidateNativeBaseDenom(exchangeRate.Denom); err != nil {
 		return fmt.Errorf("invalid exchange rate denom: %w", err)
 	}
 	if exchangeRate.Rate.IsNil() {
@@ -283,9 +283,8 @@ func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
 	k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
 		Description: "The native stable token of Ark Icarus.",
 		DenomUnits: []*banktypes.DenomUnit{
-			{Denom: "u" + display, Exponent: uint32(0), Aliases: []string{"micro" + display}},
-			{Denom: "m" + display, Exponent: uint32(3), Aliases: []string{"milli" + display}},
-			{Denom: display, Exponent: uint32(6), Aliases: []string{}},
+			{Denom: denom, Exponent: 0},
+			{Denom: display, Exponent: chain.NativeDisplayExponent},
 		},
 		Base:    denom,
 		Display: display,

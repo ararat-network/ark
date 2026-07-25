@@ -135,7 +135,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				ExpectedTerm:      1,
 				IncidentReference: "incident-1",
 				Recipient:         sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()).String(),
-				Amount:            sdk.NewInt64Coin(chain.MicroNoahDenom, 10),
+				Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
 				EvidenceReference: "evidence-1",
 			}
 
@@ -323,12 +323,12 @@ func setupTreasuryMultisigApp(
 		{
 			Address: validatorAddress.String(),
 			Coins: sdk.NewCoins(
-				sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100_000_000_000)),
+				sdk.NewCoin(sdk.DefaultBondDenom, sdk.DefaultPowerReduction.MulRaw(100_000)),
 			),
 		},
 		{
 			Address: authtypes.NewModuleAddress(treasurytypes.InsuranceName).String(),
-			Coins:   sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1_000)),
+			Coins:   sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000)),
 		},
 	}
 	if includeCommitteeAccount {

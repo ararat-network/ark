@@ -62,7 +62,7 @@ func (v *Validator) loadActiveDenoms(ctx context.Context, timeout time.Duration)
 	activeDenoms := append([]string(nil), resp.VoteTargets...)
 	seenDenoms := make(map[string]struct{}, len(activeDenoms))
 	for _, denom := range activeDenoms {
-		if err := chain.ValidateMicroDenom(denom); err != nil {
+		if err := chain.ValidateNativeBaseDenom(denom); err != nil {
 			return nil, fmt.Errorf("invalid active denom %q: %w", denom, err)
 		}
 		if _, ok := seenDenoms[denom]; ok {

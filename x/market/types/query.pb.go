@@ -36,7 +36,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // QuerySwapRequest is the request type for the Query/Swap RPC method.
 type QuerySwapRequest struct {
-	// offer_coin defines the coin being offered (i.e. 1000000unoah)
+	// offer_coin defines the coin being offered (i.e. 1000000000000000000anoah)
 	OfferCoin string `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
 	// ask_denom defines the denom of the coin to swap to
 	AskDenom string `protobuf:"bytes,2,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`

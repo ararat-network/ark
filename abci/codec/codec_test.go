@@ -27,8 +27,8 @@ func TestVoteExtensionCodec(t *testing.T) {
 	codec := NewVoteExtensionCodec()
 	voteExtension := vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{
-			"ukrw": []byte("2"),
-			"uusd": []byte("1"),
+			"akrw": []byte("2"),
+			"ausd": []byte("1"),
 		},
 		TargetVersion: oracletypes.InitialVoteTargetVersion,
 	}
@@ -160,7 +160,7 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 			Rates: make(map[string][]byte, oracletypes.MaxVoteTargets),
 		}
 		for targetIndex := range oracletypes.MaxVoteTargets {
-			denom := fmt.Sprintf("u%03d%s", targetIndex, strings.Repeat("a", 124))
+			denom := fmt.Sprintf("a%03d%s", targetIndex, strings.Repeat("a", 124))
 			require.NoError(t, sdk.ValidateDenom(denom))
 			voteExtension.Rates[denom] = rate
 		}
@@ -236,7 +236,7 @@ func TestVoteExtensionCodecBoundsDecompressedOutput(t *testing.T) {
 
 func TestVoteExtensionCodecRejectsOversizedPayloadOnEncode(t *testing.T) {
 	_, err := NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
-		Rates: map[string][]byte{"uusd": bytes.Repeat([]byte("1"), maxVoteExtensionDecodedBytes)},
+		Rates: map[string][]byte{"ausd": bytes.Repeat([]byte("1"), maxVoteExtensionDecodedBytes)},
 	})
 	require.ErrorContains(t, err, "decoded vote extension")
 }

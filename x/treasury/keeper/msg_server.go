@@ -89,10 +89,10 @@ func (m msgServer) TransferReserveToBuffer(ctx context.Context, msg *types.MsgTr
 	if err := msg.MinimumReserveBalance.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid minimum reserve balance: %w", err)
 	}
-	if msg.MinimumReserveBalance.Denom != chain.MicroNoahDenom {
+	if msg.MinimumReserveBalance.Denom != chain.NoahBaseDenom {
 		return nil, fmt.Errorf(
 			"invalid minimum reserve balance: coin must be denominated in %s",
-			chain.MicroNoahDenom,
+			chain.NoahBaseDenom,
 		)
 	}
 

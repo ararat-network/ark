@@ -65,15 +65,10 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 
-	seenCaps := make(map[string]struct{}, len(gs.TaxCaps))
-	for _, taxCap := range gs.TaxCaps {
-		if err := chain.ValidateMicroDenom(taxCap.Denom); err != nil {
+	for i, taxCap := range gs.TaxCaps {
+		if err := chain.ValidateNativeBaseDenom(taxCap.Denom); err != nil {
 			return fmt.Errorf("tax cap denom %q is invalid: %w", taxCap.Denom, err)
 		}
-		if _, exists := seenCaps[taxCap.Denom]; exists {
-			return fmt.Errorf("duplicate tax cap for denom %s", taxCap.Denom)
-		}
-		seenCaps[taxCap.Denom] = struct{}{}
 		if taxCap.TaxCap.IsNil() {
 			return fmt.Errorf("tax cap for %s must be set", taxCap.Denom)
 		}
@@ -85,6 +80,9 @@ func (gs GenesisState) Validate() error {
 		}
 		if gs.Params.ReferenceTaxCap.IsPositive() && taxCap.TaxCap.IsZero() {
 			return fmt.Errorf("tax cap for %s must be positive when the reference tax cap is positive", taxCap.Denom)
+		}
+		if i > 0 && taxCap.Denom <= gs.TaxCaps[i-1].Denom {
+			return fmt.Errorf("genesis tax caps must be sorted by unique denom")
 		}
 	}
 

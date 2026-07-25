@@ -25,15 +25,15 @@ func TestValidateMinGasPrices(t *testing.T) {
 	}{
 		{
 			name:  "zero default",
-			value: "0unoah",
+			value: "0anoah",
 		},
 		{
 			name:  "ordinary prices",
-			value: "0.01unoah,0.1uusd",
+			value: "0.01anoah,0.1ausd",
 		},
 		{
 			name:  "maximum safe integer price",
-			value: maximumSafeIntegerPrice.String() + "unoah",
+			value: maximumSafeIntegerPrice.String() + "anoah",
 		},
 		{
 			name:        "malformed price",
@@ -42,7 +42,7 @@ func TestValidateMinGasPrices(t *testing.T) {
 		},
 		{
 			name:        "price overflows maximum gas",
-			value:       maximumCoinAmount.String() + "unoah",
+			value:       maximumCoinAmount.String() + "anoah",
 			errorSubstr: "too large to multiply by the maximum gas limit",
 		},
 	}
@@ -66,7 +66,7 @@ func TestAddModuleInitFlagsValidatesMinGasPrices(t *testing.T) {
 	serverCtx := server.NewDefaultContext()
 	serverCtx.Viper.Set(
 		server.FlagMinGasPrices,
-		maximumCoinAmount.String()+"unoah",
+		maximumCoinAmount.String()+"anoah",
 	)
 	startCmd.SetContext(context.WithValue(
 		context.Background(),

@@ -58,11 +58,11 @@ func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
 
 func TestConfigValidateRejectsNonCanonicalFallbackDenom(t *testing.T) {
 	cfg := testRuntimeConfigWithUnknownProvider()
-	cfg.FallbackDenoms = []string{"uUSD"}
+	cfg.FallbackDenoms = []string{"aUSD"}
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, "canonical lowercase micro denom")
+	require.ErrorContains(t, err, "canonical lowercase Ark-native base denom")
 }
 
 func TestConfigValidateRejectsTooManyFallbackDenoms(t *testing.T) {
@@ -131,7 +131,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 				expectVoteTargetsLifecycle(voteTargetsClient)
 				voteTargetsClient.EXPECT().
 					VoteTargets().
-					Return([]string{"uusd", "ukrw"}, nil).
+					Return([]string{"ausd", "akrw"}, nil).
 					AnyTimes()
 
 				cfg := testRuntimeConfigWithUnknownProvider()
@@ -155,9 +155,9 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 				}
 			},
 			wantPrices: map[string]*big.Float{
-				"uusd": big.NewFloat(1.25),
+				"ausd": big.NewFloat(1.25),
 			},
-			wantAbsent: []string{"ukrw", "ueur"},
+			wantAbsent: []string{"akrw", "aeur"},
 		},
 	}
 

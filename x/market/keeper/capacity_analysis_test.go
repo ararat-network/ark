@@ -9,11 +9,12 @@ import (
 
 	"cosmossdk.io/math"
 
+	"ark/pkg/chain"
 	"ark/pkg/decimal"
 	markettypes "ark/x/market/types"
 )
 
-const phase3ABasePool = int64(1_000_000_000_000)
+var phase3ABasePool = chain.NativeBaseAmount(1_000_000)
 
 type phase3AState struct {
 	basePool          math.LegacyDec
@@ -106,7 +107,7 @@ func TestPhase3ACapacityEnvelope(t *testing.T) {
 		}
 	}
 
-	base := math.LegacyNewDec(phase3ABasePool)
+	base := math.LegacyNewDecFromInt(phase3ABasePool)
 	residualToBase, err := decimal.Quo(math.LegacyNewDecFromInt(maxResult.residual), base)
 	require.NoError(t, err)
 	t.Logf(
@@ -155,6 +156,8 @@ func TestPhase3ASameBlockSplitting(t *testing.T) {
 	bufferRatios := []string{"0", "0.25", "0.5", "1"}
 	offerRatios := []string{"0.01", "0.1", "0.25", "0.5", "0.75", "1"}
 	splitCounts := []int{10, 100, 1_000}
+	maximumOutputExcess := math.ZeroInt()
+	maximumResidualExcess := math.ZeroInt()
 
 	for _, deltaRatio := range deltaRatios {
 		for _, liabilityRatio := range liabilityRatios {
@@ -176,10 +179,12 @@ func TestPhase3ASameBlockSplitting(t *testing.T) {
 					for _, splitCount := range splitCounts {
 						split, err := phase3ARunSameBlock(initial, totalOffer, splitCount)
 						require.NoError(t, err)
+						roundingTolerance := phase3ARelativeRoundingTolerance(unsplit.output, 8)
+						outputExcess := split.output.Sub(unsplit.output)
 						require.True(
 							t,
-							split.output.LTE(unsplit.output),
-							"same-block split increased output: delta=%s liability=%s buffer=%s offer=%s count=%d split=%s unsplit=%s",
+							!outputExcess.IsPositive() || outputExcess.LTE(roundingTolerance),
+							"same-block split output exceeded the rounding envelope: delta=%s liability=%s buffer=%s offer=%s count=%d split=%s unsplit=%s excess=%s tolerance=%s",
 							deltaRatio,
 							liabilityRatio,
 							bufferRatio,
@@ -187,13 +192,18 @@ func TestPhase3ASameBlockSplitting(t *testing.T) {
 							splitCount,
 							split.output,
 							unsplit.output,
+							outputExcess,
+							roundingTolerance,
 						)
+						if outputExcess.GT(maximumOutputExcess) {
+							maximumOutputExcess = outputExcess
+						}
 
 						residualExcess := split.residualMint.Sub(unsplit.residualMint)
-						require.False(
+						require.True(
 							t,
-							residualExcess.IsPositive(),
-							"same-block split increased residual mint: delta=%s liability=%s buffer=%s offer=%s count=%d split=%s unsplit=%s",
+							!residualExcess.IsPositive() || residualExcess.LTE(roundingTolerance),
+							"same-block split residual mint exceeded the rounding envelope: delta=%s liability=%s buffer=%s offer=%s count=%d split=%s unsplit=%s excess=%s tolerance=%s",
 							deltaRatio,
 							liabilityRatio,
 							bufferRatio,
@@ -201,14 +211,23 @@ func TestPhase3ASameBlockSplitting(t *testing.T) {
 							splitCount,
 							split.residualMint,
 							unsplit.residualMint,
+							residualExcess,
+							roundingTolerance,
 						)
+						if residualExcess.GT(maximumResidualExcess) {
+							maximumResidualExcess = residualExcess
+						}
 					}
 				}
 			}
 		}
 	}
 
-	t.Log("same-block split sweep: no split increased recipient output or residual mint")
+	t.Logf(
+		"same-block split sweep: no split exceeded the 18-decimal rounding envelope; maximum output excess=%s maximum residual-mint excess=%s",
+		maximumOutputExcess,
+		maximumResidualExcess,
+	)
 }
 
 func TestPhase3ARecoverySchedules(t *testing.T) {
@@ -326,7 +345,11 @@ func TestPhase3AParameterSensitivity(t *testing.T) {
 }
 
 func TestPhase3ABasePoolScaling(t *testing.T) {
-	basePools := []int64{500_000_000_000, 1_000_000_000_000, 2_000_000_000_000}
+	basePools := []math.Int{
+		chain.NativeBaseAmount(500_000),
+		chain.NativeBaseAmount(1_000_000),
+		chain.NativeBaseAmount(2_000_000),
+	}
 	for _, basePool := range basePools {
 		state := newPhase3AState(
 			"0",
@@ -337,19 +360,31 @@ func TestPhase3ABasePoolScaling(t *testing.T) {
 			markettypes.DefaultPoolRecoveryPeriod,
 			true,
 		)
-		state.basePool = math.LegacyNewDec(basePool)
+		state.basePool = math.LegacyNewDecFromInt(basePool)
 		state.delta = math.LegacyZeroDec()
-		state.stableSupply = math.NewInt(basePool)
+		state.stableSupply = basePool
 		offer := state.stableSupply.QuoRaw(2)
 		result, err := state.redeem(offer)
 		require.NoError(t, err)
 		ratio, err := decimal.Quo(
 			math.LegacyNewDecFromInt(result.output),
-			math.LegacyNewDec(basePool),
+			math.LegacyNewDecFromInt(basePool),
 		)
 		require.NoError(t, err)
-		require.Equal(t, math.NewInt(basePool).QuoRaw(3), result.output)
-		t.Logf("base-pool scaling: base_pool=%d output=%s output/base_pool=%s", basePool, result.output, ratio)
+		expected := basePool.QuoRaw(3)
+		require.True(
+			t,
+			result.output.Sub(expected).Abs().LTE(
+				phase3ARelativeRoundingTolerance(expected, 1),
+			),
+			"base_pool=%s expected=%s actual=%s difference=%s tolerance=%s",
+			basePool,
+			expected,
+			result.output,
+			result.output.Sub(expected),
+			phase3ARelativeRoundingTolerance(expected, 1),
+		)
+		t.Logf("base-pool scaling: base_pool=%s output=%s output/base_pool=%s", basePool, result.output, ratio)
 	}
 }
 
@@ -366,7 +401,7 @@ func TestPhase3AExpansionRedemptionCycles(t *testing.T) {
 			true,
 		)
 		state.stableSupply = math.ZeroInt()
-		noahOffer := phase3AFractionOfInt(math.NewInt(phase3ABasePool), offerRatio)
+		noahOffer := phase3AFractionOfInt(phase3ABasePool, offerRatio)
 		expansion, err := state.expand(noahOffer)
 		require.NoError(t, err)
 		require.True(t, expansion.IsPositive())
@@ -420,7 +455,7 @@ func TestPhase3AExpansionRecoveryRedemptionCycles(t *testing.T) {
 				true,
 			)
 			state.stableSupply = math.ZeroInt()
-			noahOffer := phase3AFractionOfInt(math.NewInt(phase3ABasePool), offerRatio)
+			noahOffer := phase3AFractionOfInt(phase3ABasePool, offerRatio)
 			stableOutput, err := state.expand(noahOffer)
 			require.NoError(t, err)
 			for block := 0; block < blocks; block++ {
@@ -452,7 +487,7 @@ func TestPhase3AExpansionRecoveryRedemptionCycles(t *testing.T) {
 		true,
 	)
 	state.stableSupply = math.ZeroInt()
-	cycleOffer := phase3AFractionOfInt(math.NewInt(phase3ABasePool), "0.1")
+	cycleOffer := phase3AFractionOfInt(phase3ABasePool, "0.1")
 	totalOffer := math.ZeroInt()
 	totalOutput := math.ZeroInt()
 	for i := 0; i < 100; i++ {
@@ -501,7 +536,7 @@ func newPhase3AStateFromRatios(
 	recoveryPeriod uint64,
 	valuationComplete bool,
 ) phase3AState {
-	basePool := math.LegacyNewDec(phase3ABasePool)
+	basePool := math.LegacyNewDecFromInt(phase3ABasePool)
 	delta, err := decimal.Mul(basePool, deltaRatio)
 	if err != nil {
 		panic(err)
@@ -836,6 +871,15 @@ func phase3AFractionOfIntByDec(value math.Int, fraction math.LegacyDec) math.Int
 		return math.OneInt()
 	}
 	return result
+}
+
+// phase3ARelativeRoundingTolerance bounds the accumulated effect of operations
+// on 18-decimal LegacyDec ratios applied to integer base-unit amounts.
+func phase3ARelativeRoundingTolerance(amount math.Int, operations int64) math.Int {
+	return amount.Abs().
+		Quo(chain.NativeBaseAmount(1)).
+		AddRaw(1).
+		MulRaw(operations)
 }
 
 func phase3ARatio(numerator, denominator int64) math.LegacyDec {

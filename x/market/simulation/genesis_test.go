@@ -43,8 +43,19 @@ func TestRandomisedGenState(t *testing.T) {
 	var marketGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &marketGenesis)
 
-	require.Equal(t, chain.MicroSDRDenom, marketGenesis.Params.BasePool.Denom)
-	require.True(t, marketGenesis.Params.BasePool.Amount.GT(math.LegacyZeroDec()))
+	require.Equal(t, chain.SDRBaseDenom, marketGenesis.Params.BasePool.Denom)
+	require.True(
+		t,
+		marketGenesis.Params.BasePool.Amount.GTE(
+			math.LegacyNewDecFromInt(chain.NativeBaseAmount(50_000_000)),
+		),
+	)
+	require.True(
+		t,
+		marketGenesis.Params.BasePool.Amount.LT(
+			math.LegacyNewDecFromInt(chain.NativeBaseAmount(50_010_000)),
+		),
+	)
 	require.True(t, marketGenesis.Params.PoolRecoveryPeriod > 0)
 	require.True(t, marketGenesis.Params.MinStabilitySpread.GT(math.LegacyZeroDec()))
 	require.True(t, marketGenesis.ArkPoolDelta.IsZero())

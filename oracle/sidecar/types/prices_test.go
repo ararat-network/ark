@@ -55,19 +55,19 @@ func TestPricesByDenomProjectsPairPricesToVoteTargets(t *testing.T) {
 		"USDT/JPY": big.NewFloat(160),
 	}
 
-	got := PricesByDenom(prices, []string{"uusd", "ukrw"})
+	got := PricesByDenom(prices, []string{"ausd", "akrw"})
 
 	if len(got) != 2 {
 		t.Fatalf("PricesByDenom() len = %d, want 2", len(got))
 	}
-	if got["uusd"].Cmp(big.NewFloat(1.23)) != 0 {
-		t.Fatalf("PricesByDenom()[uusd] = %s, want 1.23", got["uusd"].Text('f', -1))
+	if got["ausd"].Cmp(big.NewFloat(1.23)) != 0 {
+		t.Fatalf("PricesByDenom()[ausd] = %s, want 1.23", got["ausd"].Text('f', -1))
 	}
-	if got["ukrw"].Cmp(big.NewFloat(1300)) != 0 {
-		t.Fatalf("PricesByDenom()[ukrw] = %s, want 1300", got["ukrw"].Text('f', -1))
+	if got["akrw"].Cmp(big.NewFloat(1300)) != 0 {
+		t.Fatalf("PricesByDenom()[akrw] = %s, want 1300", got["akrw"].Text('f', -1))
 	}
-	if _, ok := got["ujpy"]; ok {
-		t.Fatal("PricesByDenom() included non-target ujpy")
+	if _, ok := got["ajpy"]; ok {
+		t.Fatal("PricesByDenom() included non-target ajpy")
 	}
 }
 
@@ -76,11 +76,11 @@ func TestPricesByDenomReturnsDeepCopy(t *testing.T) {
 		"USDT/USD": big.NewFloat(1.23),
 	}
 
-	got := PricesByDenom(prices, []string{"uusd"})
-	got["uusd"].SetFloat64(9.99)
+	got := PricesByDenom(prices, []string{"ausd"})
+	got["ausd"].SetFloat64(9.99)
 
-	got = PricesByDenom(prices, []string{"uusd"})
-	if got["uusd"].Cmp(big.NewFloat(1.23)) != 0 {
-		t.Fatalf("PricesByDenom() = %s, want 1.23", got["uusd"].Text('f', -1))
+	got = PricesByDenom(prices, []string{"ausd"})
+	if got["ausd"].Cmp(big.NewFloat(1.23)) != 0 {
+		t.Fatalf("PricesByDenom() = %s, want 1.23", got["ausd"].Text('f', -1))
 	}
 }

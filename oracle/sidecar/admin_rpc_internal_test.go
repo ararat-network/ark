@@ -28,20 +28,20 @@ import (
 func TestOracleReloadConfigLoadsConstructionPath(t *testing.T) {
 	initialCfg := newTestRuntimeConfig()
 	reloadedCfg := initialCfg.Clone()
-	reloadedCfg.FallbackDenoms = []string{"ukrw"}
+	reloadedCfg.FallbackDenoms = []string{"akrw"}
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
 	initial := requireOracleTick(t, oracle)
-	require.Contains(t, initial.Prices, "uusd")
+	require.Contains(t, initial.Prices, "ausd")
 
 	err := oracle.ReloadConfig(context.Background())
 
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		snapshot := oracle.runtime.GetPriceSnapshot()
-		_, hasKRW := snapshot.Prices["ukrw"]
-		_, hasUSD := snapshot.Prices["uusd"]
+		_, hasKRW := snapshot.Prices["akrw"]
+		_, hasUSD := snapshot.Prices["ausd"]
 		return snapshot.Timestamp.After(initial.Timestamp) && hasKRW && !hasUSD
 	}, time.Second, time.Millisecond)
 }
@@ -58,13 +58,13 @@ func TestOracleReloadConfigPreservesRuntimeAfterInvalidFile(t *testing.T) {
 	require.ErrorContains(t, err, "oracle update interval must be greater than 0")
 	snapshot := oracle.runtime.GetPriceSnapshot()
 	require.Equal(t, initial.Timestamp, snapshot.Timestamp)
-	require.Contains(t, snapshot.Prices, "uusd")
+	require.Contains(t, snapshot.Prices, "ausd")
 }
 
 func TestAdminServiceReloadsConfigOverGRPC(t *testing.T) {
 	initialCfg := newTestRuntimeConfig()
 	reloadedCfg := initialCfg.Clone()
-	reloadedCfg.FallbackDenoms = []string{"ukrw"}
+	reloadedCfg.FallbackDenoms = []string{"akrw"}
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
@@ -106,7 +106,7 @@ func TestAdminServiceReloadsConfigOverGRPC(t *testing.T) {
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		snapshot := oracle.runtime.GetPriceSnapshot()
-		_, ok := snapshot.Prices["ukrw"]
+		_, ok := snapshot.Prices["akrw"]
 		return snapshot.Timestamp.After(initial.Timestamp) && ok
 	}, time.Second, time.Millisecond)
 }

@@ -16,7 +16,7 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	genesis := types.DefaultGenesisState()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.MicroSDRDenom).Return(math.LegacyZeroDec(), nil)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.SDRBaseDenom).Return(math.LegacyZeroDec(), nil)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
@@ -48,14 +48,14 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 
 func (s *KeeperTestSuite) TestInitGenesis_UnknownBasePoolDenom() {
 	genesis := types.DefaultGenesisState()
-	genesis.Params.BasePool.Denom = "ufoo"
+	genesis.Params.BasePool.Denom = "afoo"
 	genesis.ArkPoolDelta = math.LegacyOneDec()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "ufoo").Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "afoo").Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
-	s.Require().ErrorContains(err, "base pool denom ufoo is not configured in oracle")
+	s.Require().ErrorContains(err, "base pool denom afoo is not configured in oracle")
 
 	params, getErr := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(getErr)
@@ -71,10 +71,10 @@ func (s *KeeperTestSuite) TestInitGenesis_OracleLookupFailure() {
 	oracleErr := errors.New("oracle params unavailable")
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.MicroSDRDenom).Return(math.LegacyZeroDec(), oracleErr)
+	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.SDRBaseDenom).Return(math.LegacyZeroDec(), oracleErr)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().ErrorIs(err, oracleErr)
-	s.Require().ErrorContains(err, "checking base pool denom usdr in oracle")
+	s.Require().ErrorContains(err, "checking base pool denom asdr in oracle")
 
 	params, getErr := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(getErr)

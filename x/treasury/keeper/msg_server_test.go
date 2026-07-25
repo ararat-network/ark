@@ -93,17 +93,17 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsRewardTargetCapacity() {
 func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 	s.setBlockHeight(42)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 100)
+	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 100)
 	configured := []oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.SDRBaseDenom},
+		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
-		gomock.Any(), chain.MicroSDRDenom, chain.MicroUSDDenom,
+		gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroSDRDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -111,24 +111,24 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 		Params:    params,
 	})
 	s.Require().NoError(err)
-	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), cap)
 	}
 	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
-		{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(100)},
-		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(100)},
+		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(100)},
+		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(100)},
 	}})
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 	s.setBlockHeight(42)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 0)
+	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 0)
 	configured := []oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.SDRBaseDenom},
+		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
 
@@ -140,20 +140,20 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(params, stored)
-	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
 	}
 	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
-		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
-		{Denom: chain.MicroUSDDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
 	}})
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActivatingTax() {
 	s.setTaxCaps([]types.TaxCap{
-		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 	})
 
 	candidate := types.DefaultMonetaryPolicy()
@@ -166,7 +166,7 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActiv
 	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(candidate.Equal(stored))
-	cap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroSDRDenom)
+	cap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(cap.IsZero())
 }
@@ -351,16 +351,16 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	s.Require().NoError(err)
 
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 100)
+	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 100)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.SDRBaseDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
-		gomock.Any(), chain.MicroSDRDenom, chain.MicroUSDDenom,
+		gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroSDRDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
 	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
@@ -435,7 +435,7 @@ func (b *insuranceBankKeeper) GetBalance(_ context.Context, _ sdk.AccAddress, de
 
 func (b *insuranceBankKeeper) GetAllBalances(_ context.Context, _ sdk.AccAddress) sdk.Coins {
 	if b.balance.IsPositive() {
-		return sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, b.balance))
+		return sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, b.balance))
 	}
 	return sdk.Coins{}
 }
@@ -453,7 +453,7 @@ func (b *insuranceBankKeeper) SendCoinsFromModuleToAccount(
 	if b.sendErr != nil {
 		return b.sendErr
 	}
-	next, err := b.balance.SafeSub(amount.AmountOf(chain.MicroNoahDenom))
+	next, err := b.balance.SafeSub(amount.AmountOf(chain.NoahBaseDenom))
 	if err != nil || next.IsNegative() {
 		return errors.New("insufficient fake bank balance")
 	}
@@ -585,7 +585,7 @@ func (s *ClaimsKeeperTestSuite) submission(amount int64) *types.MsgSubmitClaim {
 		ExpectedTerm:      1,
 		IncidentReference: "incident-1",
 		Recipient:         s.recipient,
-		Amount:            sdk.NewInt64Coin(chain.MicroNoahDenom, amount),
+		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, amount),
 		EvidenceReference: "evidence-1",
 	}
 }
@@ -811,7 +811,7 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimValidation() {
 		expectErr string
 	}{
 		{name: "unrelated submitter", mutate: func(msg *types.MsgSubmitClaim) { msg.Submitter = s.caller }, expectErr: "neither Treasury authority"},
-		{name: "wrong denom", mutate: func(msg *types.MsgSubmitClaim) { msg.Amount = sdk.NewInt64Coin("uusd", 1) }, expectErr: "unoah coin"},
+		{name: "wrong denom", mutate: func(msg *types.MsgSubmitClaim) { msg.Amount = sdk.NewInt64Coin("ausd", 1) }, expectErr: "anoah coin"},
 		{name: "self payment", mutate: func(msg *types.MsgSubmitClaim) {
 			msg.Recipient = authtypes.NewModuleAddress(types.InsuranceName).String()
 		}, expectErr: "cannot be the Insurance module"},
@@ -1090,7 +1090,7 @@ func (s *ClaimsKeeperTestSuite) TestExecuteClaimAtAndAfterBoundary() {
 	s.requireTypedEvent(&types.EventClaimPaid{
 		ClaimId:     1,
 		Recipient:   s.recipient,
-		AmountDenom: chain.MicroNoahDenom,
+		AmountDenom: chain.NoahBaseDenom,
 		Amount:      math.NewInt(80),
 	})
 
@@ -1147,9 +1147,9 @@ func (s *ClaimsKeeperTestSuite) TestMandateRotationDoesNotRewritePendingClaim() 
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsUnconfiguredReferenceDenom() {
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Denom = chain.MicroUSDDenom
+	params.ReferenceTaxCap.Denom = chain.USDBaseDenom
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -1164,24 +1164,24 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDir
 	current.ReferenceTaxCap.Amount = math.NewInt(8)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 	s.setTaxCaps([]types.TaxCap{
-		{Denom: chain.MicroKRWDenom, TaxCap: math.NewInt(9)},
-		{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(8)},
-		{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(7)},
+		{Denom: chain.KRWBaseDenom, TaxCap: math.NewInt(9)},
+		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(8)},
+		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(7)},
 	})
 
 	candidate := current
-	candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 101)
+	candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 101)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
-		gomock.Any(), chain.MicroUSDDenom, chain.MicroKRWDenom, chain.MicroSDRDenom,
+		gomock.Any(), chain.USDBaseDenom, chain.KRWBaseDenom, chain.SDRBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroKRWDenom: math.LegacyNewDec(2),
-		chain.MicroSDRDenom: math.LegacyNewDec(3),
-		chain.MicroUSDDenom: math.LegacyNewDec(7),
+		chain.KRWBaseDenom: math.LegacyNewDec(2),
+		chain.SDRBaseDenom: math.LegacyNewDec(3),
+		chain.USDBaseDenom: math.LegacyNewDec(7),
 	}, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -1192,13 +1192,13 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDir
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(candidate, stored)
-	referenceCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroUSDDenom)
+	referenceCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(101), referenceCap)
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroKRWDenom)
+	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(28), krwCap)
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroSDRDenom)
+	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(43), sdrCap)
 }
@@ -1212,7 +1212,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 		{
 			name: "missing candidate rate",
 			rates: oracletypes.RateSnapshot{
-				chain.MicroSDRDenom: math.LegacyOneDec(),
+				chain.SDRBaseDenom: math.LegacyOneDec(),
 			},
 		},
 		{
@@ -1227,18 +1227,18 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 			current.ReferenceTaxCap.Amount = math.NewInt(33)
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 			oldCaps := []types.TaxCap{
-				{Denom: chain.MicroSDRDenom, TaxCap: math.NewInt(33)},
-				{Denom: chain.MicroUSDDenom, TaxCap: math.NewInt(44)},
+				{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(33)},
+				{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(44)},
 			}
 			s.setTaxCaps(oldCaps)
 			candidate := current
-			candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.MicroUSDDenom, 101)
+			candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 101)
 			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: chain.MicroSDRDenom},
-				{Denom: chain.MicroUSDDenom},
+				{Denom: chain.SDRBaseDenom},
+				{Denom: chain.USDBaseDenom},
 			}, nil)
 			s.oracleKeeper.EXPECT().GetRateSnapshot(
-				gomock.Any(), chain.MicroSDRDenom, chain.MicroUSDDenom,
+				gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
 			).Return(test.rates, test.err)
 
 			_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -1268,23 +1268,23 @@ func (s *KeeperTestSuite) TestMsgTransferReserveToBufferRejectsInvalidAuthority(
 		s.ctx,
 		&types.MsgTransferReserveToBuffer{
 			Authority:             "not-authority",
-			Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-			MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
+			Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+			MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
 		},
 	)
 	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
 }
 
 func (s *KeeperTestSuite) TestMsgTransferReserveToBufferHonoursFloor() {
-	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.MicroNoahDenom).
-		Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 10))
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 10))
 
 	_, err := s.msgServer.TransferReserveToBuffer(
 		s.ctx,
 		&types.MsgTransferReserveToBuffer{
 			Authority:             s.authority,
-			Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 7),
-			MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 4),
+			Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 7),
+			MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 4),
 		},
 	)
 	s.Require().ErrorContains(err, "cannot fund")
@@ -1299,38 +1299,38 @@ func (s *KeeperTestSuite) TestMsgTransferReserveToBufferRejectsInvalidCoins() {
 	}{
 		{
 			name:    "zero amount",
-			amount:  sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
-			minimum: sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
+			amount:  sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
+			minimum: sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
 			wantErr: "invalid transfer amount",
 		},
 		{
 			name:    "negative amount",
-			amount:  sdk.Coin{Denom: chain.MicroNoahDenom, Amount: math.NewInt(-1)},
-			minimum: sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
+			amount:  sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)},
+			minimum: sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
 			wantErr: "invalid transfer amount",
 		},
 		{
 			name:    "wrong amount denom",
-			amount:  sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
-			minimum: sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
+			amount:  sdk.NewInt64Coin(chain.USDBaseDenom, 1),
+			minimum: sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
 			wantErr: "invalid transfer amount",
 		},
 		{
 			name:    "malformed amount denom",
 			amount:  sdk.Coin{Denom: "BAD DENOM", Amount: math.OneInt()},
-			minimum: sdk.NewInt64Coin(chain.MicroNoahDenom, 0),
+			minimum: sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
 			wantErr: "invalid transfer amount",
 		},
 		{
 			name:    "negative minimum",
-			amount:  sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-			minimum: sdk.Coin{Denom: chain.MicroNoahDenom, Amount: math.NewInt(-1)},
+			amount:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+			minimum: sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)},
 			wantErr: "invalid minimum reserve balance",
 		},
 		{
 			name:    "wrong minimum denom",
-			amount:  sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-			minimum: sdk.NewInt64Coin(chain.MicroUSDDenom, 0),
+			amount:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+			minimum: sdk.NewInt64Coin(chain.USDBaseDenom, 0),
 			wantErr: "invalid minimum reserve balance",
 		},
 	}
@@ -1352,21 +1352,21 @@ func (s *KeeperTestSuite) TestMsgTransferReserveToBufferRejectsInvalidCoins() {
 
 func (s *KeeperTestSuite) TestMsgTransferReserveToBufferTransfersFundsWithoutCustomEvent() {
 	s.bankKeeper.EXPECT().GetBalance(
-		gomock.Any(), authtypes.NewModuleAddress(types.StrategicReserveName), chain.MicroNoahDenom,
-	).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 10))
+		gomock.Any(), authtypes.NewModuleAddress(types.StrategicReserveName), chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 10))
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(),
 		types.StrategicReserveName,
 		types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 6)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 6)),
 	).Return(nil)
 
 	_, err := s.msgServer.TransferReserveToBuffer(
 		s.ctx,
 		&types.MsgTransferReserveToBuffer{
 			Authority:             s.authority,
-			Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 6),
-			MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 4),
+			Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 6),
+			MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 4),
 		},
 	)
 	s.Require().NoError(err)
@@ -1375,21 +1375,21 @@ func (s *KeeperTestSuite) TestMsgTransferReserveToBufferTransfersFundsWithoutCus
 
 func (s *KeeperTestSuite) TestMsgTransferReserveToBufferReturnsBankFailureWithoutEvent() {
 	s.bankKeeper.EXPECT().GetBalance(
-		gomock.Any(), authtypes.NewModuleAddress(types.StrategicReserveName), chain.MicroNoahDenom,
-	).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 10))
+		gomock.Any(), authtypes.NewModuleAddress(types.StrategicReserveName), chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 10))
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(),
 		types.StrategicReserveName,
 		types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 6)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 6)),
 	).Return(errors.New("injected bank failure"))
 
 	_, err := s.msgServer.TransferReserveToBuffer(
 		s.ctx,
 		&types.MsgTransferReserveToBuffer{
 			Authority:             s.authority,
-			Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 6),
-			MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 4),
+			Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 6),
+			MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 4),
 		},
 	)
 	s.Require().ErrorContains(err, "injected bank failure")

@@ -112,7 +112,7 @@ func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.Simula
 
 	idx := r.Intn(len(activeDenoms) * 2)
 	if idx < len(activeDenoms) {
-		return chain.MicroNoahDenom, activeDenoms[idx]
+		return chain.NoahBaseDenom, activeDenoms[idx]
 	}
-	return activeDenoms[idx-len(activeDenoms)], chain.MicroNoahDenom
+	return activeDenoms[idx-len(activeDenoms)], chain.NoahBaseDenom
 }

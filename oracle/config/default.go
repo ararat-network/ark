@@ -46,28 +46,28 @@ var DefaultResolver = resolver.Config{
 		},
 	},
 	Routes: map[string][]resolver.Route{
-		chain.MicroUSDDenom: {
+		chain.USDBaseDenom: {
 			{Name: "direct", Pairs: []sidecartypes.Pair{"NOAH/USD"}},
 		},
-		chain.MicroKRWDenom: {
+		chain.KRWBaseDenom: {
 			{Name: "noah-usd-krw", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/KRW"}},
 		},
-		chain.MicroSDRDenom: {
+		chain.SDRBaseDenom: {
 			{Name: "noah-usd-sdr", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/SDR"}},
 		},
-		chain.MicroCNYDenom: {
+		chain.CNYBaseDenom: {
 			{Name: "noah-usd-cny", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/CNY"}},
 		},
-		chain.MicroJPYDenom: {
+		chain.JPYBaseDenom: {
 			{Name: "noah-usd-jpy", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/JPY"}},
 		},
-		chain.MicroEURDenom: {
+		chain.EURBaseDenom: {
 			{Name: "noah-usd-eur", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/EUR"}},
 		},
-		chain.MicroGBPDenom: {
+		chain.GBPBaseDenom: {
 			{Name: "noah-usd-gbp", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/GBP"}},
 		},
-		chain.MicroMNTDenom: {
+		chain.MNTBaseDenom: {
 			{Name: "noah-usd-mnt", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/MNT"}},
 		},
 	},
@@ -85,14 +85,14 @@ func Default() runtime.Config {
 			Interval: DefaultClientInterval,
 		},
 		FallbackDenoms: []string{
-			chain.MicroUSDDenom,
-			chain.MicroKRWDenom,
-			chain.MicroSDRDenom,
-			chain.MicroCNYDenom,
-			chain.MicroJPYDenom,
-			chain.MicroEURDenom,
-			chain.MicroGBPDenom,
-			chain.MicroMNTDenom,
+			chain.USDBaseDenom,
+			chain.KRWBaseDenom,
+			chain.SDRBaseDenom,
+			chain.CNYBaseDenom,
+			chain.JPYBaseDenom,
+			chain.EURBaseDenom,
+			chain.GBPBaseDenom,
+			chain.MNTBaseDenom,
 		},
 	}
 }

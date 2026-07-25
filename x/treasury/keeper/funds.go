@@ -55,7 +55,7 @@ func (k Keeper) RouteExpansion(
 		return types.ExpansionAllocation{}, fmt.Errorf("stable output denom %s is not configured in oracle", stableOutput.Denom)
 	}
 
-	convertedOutput, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(stableOutput), chain.MicroNoahDenom)
+	convertedOutput, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(stableOutput), chain.NoahBaseDenom)
 	if err != nil {
 		return types.ExpansionAllocation{}, fmt.Errorf("valuing stable output: %w", err)
 	}
@@ -63,7 +63,7 @@ func (k Keeper) RouteExpansion(
 	if eligible.GT(grossOffer.Amount) {
 		return types.ExpansionAllocation{}, fmt.Errorf(
 			"stable output value %s exceeds gross offer %s",
-			sdk.NewCoin(chain.MicroNoahDenom, eligible),
+			sdk.NewCoin(chain.NoahBaseDenom, eligible),
 			grossOffer,
 		)
 	}
@@ -131,14 +131,14 @@ func (k Keeper) RouteExpansion(
 			ctx,
 			markettypes.ModuleName,
 			credit.module,
-			sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, credit.amount)),
+			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, credit.amount)),
 		); err != nil {
 			return types.ExpansionAllocation{}, fmt.Errorf("crediting %s: %w", credit.module, err)
 		}
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventExpansionAllocated{
-		Denom:                   chain.MicroNoahDenom,
+		Denom:                   chain.NoahBaseDenom,
 		RedemptionBufferCredit:  allocation.RedemptionBufferCredit,
 		StrategicReserveCredit:  allocation.StrategicReserveCredit,
 		InsuranceCredit:         allocation.InsuranceCredit,
@@ -180,7 +180,7 @@ func (k Keeper) DrawRedemptionBuffer(
 		return types.BufferDraw{}, fmt.Errorf("redeemed denom %s is not configured in oracle", redeemedStable.Denom)
 	}
 
-	convertedRedemption, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(redeemedStable), chain.MicroNoahDenom)
+	convertedRedemption, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(redeemedStable), chain.NoahBaseDenom)
 	if err != nil {
 		return types.BufferDraw{}, fmt.Errorf("valuing redeemed stable coin: %w", err)
 	}
@@ -228,7 +228,7 @@ func (k Keeper) DrawRedemptionBuffer(
 				ctx,
 				types.RedemptionBufferName,
 				markettypes.ModuleName,
-				sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, draw.BufferPaid)),
+				sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, draw.BufferPaid)),
 			); err != nil {
 				return types.BufferDraw{}, fmt.Errorf("drawing redemption buffer: %w", err)
 			}
@@ -236,7 +236,7 @@ func (k Keeper) DrawRedemptionBuffer(
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventRedemptionBufferDrawn{
-		Denom:                      chain.MicroNoahDenom,
+		Denom:                      chain.NoahBaseDenom,
 		Payment:                    draw.BufferPaid,
 		AggregateValuationComplete: draw.ValuationComplete,
 	}); err != nil {
@@ -275,15 +275,15 @@ func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.Lega
 
 func (k Keeper) balance(ctx context.Context, moduleName string) math.Int {
 	addr := k.accountKeeper.GetModuleAddress(moduleName)
-	return k.bankKeeper.GetBalance(ctx, addr, chain.MicroNoahDenom).Amount
+	return k.bankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
 }
 
 func validatePositiveNoahCoin(coin sdk.Coin) error {
 	if err := coin.Validate(); err != nil {
 		return err
 	}
-	if coin.Denom != chain.MicroNoahDenom || !coin.IsPositive() {
-		return fmt.Errorf("coin must be positive %s", chain.MicroNoahDenom)
+	if coin.Denom != chain.NoahBaseDenom || !coin.IsPositive() {
+		return fmt.Errorf("coin must be positive %s", chain.NoahBaseDenom)
 	}
 	return nil
 }

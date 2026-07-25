@@ -110,7 +110,7 @@ func TestInspectVoteExtensions(t *testing.T) {
 				require.Equal(t, "0102", got.Votes[0].ValidatorAddress)
 				require.Equal(t, int64(100), got.Votes[0].ValidatorPower)
 				require.Equal(t, "BLOCK_ID_FLAG_COMMIT", got.Votes[0].BlockIDFlag)
-				require.Equal(t, "1.250000000000000000", got.Votes[0].Rates["uusd"])
+				require.Equal(t, "1.250000000000000000", got.Votes[0].Rates["ausd"])
 				require.Empty(t, got.Votes[1].Rates)
 			},
 		},
@@ -229,7 +229,7 @@ func voteExtensionsTestBlock(t *testing.T, height int64) *cmttypes.Block {
 	rate, err := arkencoding.EncodeLegacyDec(math.LegacyMustNewDecFromStr("1.25"))
 	require.NoError(t, err)
 	voteExtension, err := codec.NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
-		Rates: map[string][]byte{"uusd": rate},
+		Rates: map[string][]byte{"ausd": rate},
 	})
 	require.NoError(t, err)
 	extendedCommit, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{

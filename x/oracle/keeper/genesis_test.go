@@ -32,15 +32,15 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			genesis: func() *types.GenesisState {
 				params := types.DefaultParams()
 				params.TobinTaxes = []types.TobinTax{
-					{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+					{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 				}
 				return &types.GenesisState{
 					Params:     params,
 					Accounting: types.NewAccounting(params),
 					ExchangeRates: []types.ExchangeRate{
-						{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-						{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+						{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
+						{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 					},
 					RewardWeights: []types.RewardWeight{
 						{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
@@ -52,8 +52,8 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 					},
 					VoteTargets: types.VoteTargets{
 						Denoms: []string{
-							chain.MicroKRWDenom,
-							chain.MicroUSDDenom,
+							chain.KRWBaseDenom,
+							chain.USDBaseDenom,
 						},
 						Version: types.InitialVoteTargetVersion,
 					},
@@ -63,9 +63,9 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
 					authtypes.NewEmptyModuleAccount(types.ModuleName),
 				)
-				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.MicroKRWDenom).Return(banktypes.Metadata{}, false)
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.KRWBaseDenom).Return(banktypes.Metadata{}, false)
 				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
-				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.MicroUSDDenom).Return(banktypes.Metadata{}, false)
+				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.USDBaseDenom).Return(banktypes.Metadata{}, false)
 				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
 			},
 		},
@@ -102,7 +102,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			name: "unsorted vote targets return error",
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
-				gs.VoteTargets.Denoms = []string{chain.MicroUSDDenom, chain.MicroKRWDenom}
+				gs.VoteTargets.Denoms = []string{chain.USDBaseDenom, chain.KRWBaseDenom}
 				return gs
 			},
 			expectErr: "active vote targets must be sorted",
@@ -113,7 +113,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				gs := types.DefaultGenesisState()
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom:          chain.MicroUSDDenom,
+						Denom:          chain.USDBaseDenom,
 						Rate:           math.LegacyOneDec(),
 						BlockTimestamp: oracleTestBlockTime.Add(time.Second),
 					},
@@ -121,7 +121,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				return gs
 			},
 			expectErr:    "timestamp 2026-07-12 12:00:01 +0000 UTC after genesis block time",
-			expectNoRate: chain.MicroUSDDenom,
+			expectNoRate: chain.USDBaseDenom,
 		},
 		{
 			name: "nil module account returns error",
@@ -129,7 +129,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				gs := types.DefaultGenesisState()
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom:          chain.MicroUSDDenom,
+						Denom:          chain.USDBaseDenom,
 						Rate:           math.LegacyOneDec(),
 						BlockTimestamp: oracleTestBlockTime,
 					},
@@ -140,7 +140,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(nil)
 			},
 			expectErr:    "module account has not been set",
-			expectNoRate: chain.MicroUSDDenom,
+			expectNoRate: chain.USDBaseDenom,
 		},
 	}
 
@@ -281,8 +281,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			SlashWindowStartHeight:   11,
 		},
 		ExchangeRates: []types.ExchangeRate{
-			{Denom: chain.MicroKRWDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-			{Denom: chain.MicroUSDDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+			{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
+			{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
 		},
 		RewardWeights: []types.RewardWeight{
 			{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
@@ -293,8 +293,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			{ValidatorAddress: valAddr2.String(), MissCount: 0},
 		},
 		VoteTargets: types.VoteTargets{Denoms: []string{
-			chain.MicroKRWDenom,
-			chain.MicroUSDDenom,
+			chain.KRWBaseDenom,
+			chain.USDBaseDenom,
 		}, Version: types.InitialVoteTargetVersion},
 	}
 	expected.Params.RewardWindow = 10

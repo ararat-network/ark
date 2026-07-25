@@ -10,7 +10,7 @@ import (
 )
 
 func (s *KeeperTestSuite) TestGetVoteTargets() {
-	expected := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	expected := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
 	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
 		Denoms:  expected,
 		Version: types.InitialVoteTargetVersion,
@@ -30,19 +30,19 @@ func (s *KeeperTestSuite) TestScheduleVoteTargets() {
 	}{
 		{
 			name:   "active targets are a no-op",
-			denoms: []string{chain.MicroUSDDenom},
+			denoms: []string{chain.USDBaseDenom},
 		},
 		{
 			name:      "invalid targets are rejected",
 			denoms:    []string{"u"},
-			expectErr: "pending vote targets denom must be a micro denom",
+			expectErr: "pending vote targets denom must be an Ark-native base denom",
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			expected := types.VoteTargets{
-				Denoms:  []string{chain.MicroUSDDenom},
+				Denoms:  []string{chain.USDBaseDenom},
 				Version: types.InitialVoteTargetVersion,
 			}
 			s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, expected))
@@ -62,7 +62,7 @@ func (s *KeeperTestSuite) TestScheduleVoteTargets() {
 }
 
 func (s *KeeperTestSuite) TestVoteTargetTransition() {
-	oldVoteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	oldVoteTargets := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
 	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
 		Denoms:  oldVoteTargets,
 		Version: types.InitialVoteTargetVersion,
@@ -71,10 +71,10 @@ func (s *KeeperTestSuite) TestVoteTargetTransition() {
 		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, denom, newStoredExchangeRate(denom, math.LegacyOneDec())))
 	}
 
-	nextVoteTargets := []string{chain.MicroUSDDenom, chain.MicroSDRDenom}
+	nextVoteTargets := []string{chain.USDBaseDenom, chain.SDRBaseDenom}
 	activationHeight := sdk.UnwrapSDKContext(s.ctx).BlockHeight() + types.VoteTargetActivationDelayBlocks
 	s.Require().NoError(s.keeper.ScheduleVoteTargets(s.ctx, nextVoteTargets))
-	s.Require().Equal([]string{chain.MicroUSDDenom, chain.MicroSDRDenom}, nextVoteTargets)
+	s.Require().Equal([]string{chain.USDBaseDenom, chain.SDRBaseDenom}, nextVoteTargets)
 	s.Require().NoError(s.keeper.ScheduleVoteTargets(s.ctx, nextVoteTargets))
 	s.Require().ErrorContains(
 		s.keeper.ScheduleVoteTargets(s.ctx, oldVoteTargets),
@@ -89,11 +89,11 @@ func (s *KeeperTestSuite) TestVoteTargetTransition() {
 	atActivation, err := s.keeper.GetVoteTargets(s.ctx, activationHeight)
 	s.Require().NoError(err)
 	s.Require().Equal(types.InitialVoteTargetVersion+1, atActivation.Version)
-	s.Require().Equal([]string{chain.MicroSDRDenom, chain.MicroUSDDenom}, atActivation.Denoms)
+	s.Require().Equal([]string{chain.SDRBaseDenom, chain.USDBaseDenom}, atActivation.Denoms)
 
 	beforeActivationCtx := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(activationHeight - 1)
 	s.Require().NoError(s.keeper.AdvanceVoteTargets(beforeActivationCtx))
-	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
+	hasKRWExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(hasKRWExchangeRate)
 
@@ -103,19 +103,19 @@ func (s *KeeperTestSuite) TestVoteTargetTransition() {
 	s.Require().NoError(err)
 	s.Require().Nil(state.Pending)
 	s.Require().Equal(types.InitialVoteTargetVersion+1, state.Version)
-	s.Require().Equal([]string{chain.MicroSDRDenom, chain.MicroUSDDenom}, state.Denoms)
+	s.Require().Equal([]string{chain.SDRBaseDenom, chain.USDBaseDenom}, state.Denoms)
 
-	hasUSDExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
+	hasUSDExchangeRate, err := s.keeper.ExchangeRate.Has(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(hasUSDExchangeRate)
 
-	hasKRWExchangeRate, err = s.keeper.ExchangeRate.Has(s.ctx, chain.MicroKRWDenom)
+	hasKRWExchangeRate, err = s.keeper.ExchangeRate.Has(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().False(hasKRWExchangeRate)
 }
 
 func (s *KeeperTestSuite) TestEmptyVoteTargetTransition() {
-	oldVoteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	oldVoteTargets := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
 	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
 		Denoms:  oldVoteTargets,
 		Version: types.InitialVoteTargetVersion,

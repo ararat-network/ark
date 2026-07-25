@@ -13,28 +13,28 @@ import (
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges() {
 	tobinTaxes := []oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)).Times(1)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroKRWDenom).
-		Return(sdk.NewInt64Coin(chain.MicroKRWDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
 	s.bankKeeper.EXPECT().GetBalance(
 		gomock.Any(),
 		gomock.Any(),
-		chain.MicroNoahDenom,
-	).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 0)).Times(2)
+		chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
 
 	rates := oracletypes.RateSnapshot{
-		chain.MicroNoahDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom:  math.LegacyOneDec(),
-		chain.MicroKRWDenom:  math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.KRWBaseDenom:  math.LegacyOneDec(),
 	}
 	first, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 		math.NewInt(10),
 		rates,
 	)
@@ -43,14 +43,14 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges(
 
 	s.Require().NoError(s.keeper.RecordSupplyChange(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 20),
-		sdk.NewInt64Coin(chain.MicroKRWDenom, 10),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 20),
+		sdk.NewInt64Coin(chain.KRWBaseDenom, 10),
 		rates,
 	))
 
 	second, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 		math.NewInt(10),
 		rates,
 	)
@@ -60,25 +60,25 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges(
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation() {
 	tobinTaxes := []oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroKRWDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)).Times(2)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroKRWDenom).
-		Return(sdk.NewInt64Coin(chain.MicroKRWDenom, 100)).Times(2)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.MicroKRWDenom).
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(2)
+	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.KRWBaseDenom).
 		Return(nil, oracletypes.ErrStaleExchangeRate).Times(2)
 
 	rates := oracletypes.RateSnapshot{
-		chain.MicroNoahDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom:  math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
 	for range 2 {
 		draw, err := s.keeper.DrawRedemptionBuffer(
 			s.ctx,
-			sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
+			sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 			math.NewInt(10),
 			rates,
 		)
@@ -89,8 +89,8 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation()
 
 	s.Require().NoError(s.keeper.RecordSupplyChange(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 10),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
 		rates,
 	))
 
@@ -102,24 +102,24 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation()
 }
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
-	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.MicroUSDDenom}}
+	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.USDBaseDenom}}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.MicroUSDDenom).
-		Return(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(2)
 	s.bankKeeper.EXPECT().GetBalance(
 		gomock.Any(),
 		gomock.Any(),
-		chain.MicroNoahDenom,
-	).Return(sdk.NewInt64Coin(chain.MicroNoahDenom, 0)).Times(2)
+		chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
 
 	rates := oracletypes.RateSnapshot{
-		chain.MicroNoahDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom:  math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
 	for block := int64(1); block <= 2; block++ {
 		draw, err := s.keeper.DrawRedemptionBuffer(
 			s.ctx,
-			sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
+			sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 			math.NewInt(10),
 			rates,
 		)
@@ -136,11 +136,11 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
 func (s *KeeperTestSuite) TestRecordSupplyChangeWithoutSnapshotIsNoOp() {
 	s.Require().NoError(s.keeper.RecordSupplyChange(
 		s.ctx,
-		sdk.NewInt64Coin(chain.MicroUSDDenom, 10),
-		sdk.NewInt64Coin(chain.MicroKRWDenom, 9),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		sdk.NewInt64Coin(chain.KRWBaseDenom, 9),
 		oracletypes.RateSnapshot{
-			chain.MicroUSDDenom: math.LegacyOneDec(),
-			chain.MicroKRWDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom: math.LegacyOneDec(),
+			chain.KRWBaseDenom: math.LegacyOneDec(),
 		},
 	))
 

@@ -124,7 +124,10 @@ func TestAppEnforcesBlockGasLimit(t *testing.T) {
 	sender := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
 	balance := banktypes.Balance{
 		Address: sender.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000_000_000)),
+		Coins: sdk.NewCoins(sdk.NewCoin(
+			sdk.DefaultBondDenom,
+			sdk.DefaultPowerReduction.MulRaw(1_000),
+		)),
 	}
 
 	arkApp := NewArkApp(

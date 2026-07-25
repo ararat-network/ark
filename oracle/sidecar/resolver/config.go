@@ -137,7 +137,7 @@ func (c Config) Validate() error {
 	}
 
 	for denom, routes := range c.Routes {
-		if err := chain.ValidateMicroDenom(denom); err != nil {
+		if err := chain.ValidateNativeBaseDenom(denom); err != nil {
 			return fmt.Errorf("invalid resolver denom %q: %w", denom, err)
 		}
 		if len(routes) == 0 {

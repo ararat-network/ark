@@ -121,7 +121,7 @@ string field_name = N [
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
   - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTax.Get(ctx, denom)` directly
   - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetFeederDelegation`
-    defaults to validator itself), domain checks (e.g., `GetExchangeRate` has MicroNoahDenom identity), side effects
+    defaults to validator itself), domain checks (e.g., `GetExchangeRate` has NoahBaseDenom identity), side effects
     (e.g., `SetExchangeRateWithEvent` emits events)
   - If a wrapper is just `return k.Collection.Get(ctx, key)` with no extra logic, delete it — the collection IS the
     getter

@@ -56,10 +56,9 @@ func (gs GenesisState) validateClaims() error {
 	if gs.NextClaimId == 0 {
 		return errors.New("next claim ID must be positive")
 	}
-	seenClaims := make(map[uint64]struct{}, len(gs.Claims))
 	allowanceUsed := math.ZeroInt()
 	insuranceReserved := math.ZeroInt()
-	for _, claim := range gs.Claims {
+	for i, claim := range gs.Claims {
 		if err := claim.Validate(); err != nil {
 			return fmt.Errorf("invalid claim %d: %w", claim.ClaimId, err)
 		}
@@ -74,10 +73,9 @@ func (gs GenesisState) validateClaims() error {
 				gs.ClaimsMandate.Term,
 			)
 		}
-		if _, exists := seenClaims[claim.ClaimId]; exists {
-			return fmt.Errorf("duplicate claim ID %d", claim.ClaimId)
+		if i > 0 && claim.ClaimId <= gs.Claims[i-1].ClaimId {
+			return errors.New("genesis claims must be sorted by unique claim ID")
 		}
-		seenClaims[claim.ClaimId] = struct{}{}
 
 		if claim.Origin == ClaimOrigin_CLAIM_ORIGIN_COMMITTEE &&
 			claim.MandateTerm == claimsMandate.Term {
@@ -182,8 +180,8 @@ func (claim Claim) Validate() error {
 	if claim.Recipient == authtypes.NewModuleAddress(InsuranceName).String() {
 		return errors.New("claim recipient cannot be the Insurance module account")
 	}
-	if !claim.Amount.IsValid() || !claim.Amount.IsPositive() || claim.Amount.Denom != chain.MicroNoahDenom {
-		return fmt.Errorf("claim amount must be a valid, positive %s coin", chain.MicroNoahDenom)
+	if !claim.Amount.IsValid() || !claim.Amount.IsPositive() || claim.Amount.Denom != chain.NoahBaseDenom {
+		return fmt.Errorf("claim amount must be a valid, positive %s coin", chain.NoahBaseDenom)
 	}
 	if err := ValidateClaimReference("evidence reference", claim.EvidenceReference, true); err != nil {
 		return err

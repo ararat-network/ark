@@ -142,20 +142,20 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 	}{
 		{
 			name:     "noah denom returns one",
-			denom:    chain.MicroNoahDenom,
+			denom:    chain.NoahBaseDenom,
 			expected: math.LegacyOneDec(),
 		},
 		{
 			name: "known denom returns stored rate",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyNewDecWithPrec(123, 2))))
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, newStoredExchangeRate(chain.USDBaseDenom, math.LegacyNewDecWithPrec(123, 2))))
 			},
-			denom:    chain.MicroUSDDenom,
+			denom:    chain.USDBaseDenom,
 			expected: math.LegacyNewDecWithPrec(123, 2),
 		},
 		{
 			name:      "unknown denom returns error",
-			denom:     "ufoo",
+			denom:     "afoo",
 			expectErr: true,
 		},
 	}
@@ -180,35 +180,35 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 }
 
 func (s *KeeperTestSuite) TestGetRateSnapshot() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          chain.MicroUSDDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroSDRDenom, types.ExchangeRate{
-		Denom:          chain.MicroSDRDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
 		Rate:           math.LegacyMustNewDecFromStr("1.7"),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
 
 	rates, err := s.keeper.GetRateSnapshot(
 		s.ctx,
-		chain.MicroUSDDenom,
-		chain.MicroSDRDenom,
-		chain.MicroUSDDenom,
+		chain.USDBaseDenom,
+		chain.SDRBaseDenom,
+		chain.USDBaseDenom,
 	)
 	s.Require().NoError(err)
 	s.Require().Len(rates, 3)
-	s.Require().True(rates[chain.MicroUSDDenom].Equal(math.LegacyOneDec()))
-	s.Require().True(rates[chain.MicroSDRDenom].Equal(math.LegacyMustNewDecFromStr("1.7")))
-	s.Require().True(rates[chain.MicroNoahDenom].Equal(math.LegacyOneDec()))
+	s.Require().True(rates[chain.USDBaseDenom].Equal(math.LegacyOneDec()))
+	s.Require().True(rates[chain.SDRBaseDenom].Equal(math.LegacyMustNewDecFromStr("1.7")))
+	s.Require().True(rates[chain.NoahBaseDenom].Equal(math.LegacyOneDec()))
 }
 
 func (s *KeeperTestSuite) TestGetRateSnapshotReturnsNoahIdentityByDefault() {
 	rates, err := s.keeper.GetRateSnapshot(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.RateSnapshot{
-		chain.MicroNoahDenom: math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, rates)
 }
 
@@ -217,13 +217,13 @@ func (s *KeeperTestSuite) TestGetRateSnapshotRejectsElapsedTimeStaleness() {
 	s.Require().NoError(err)
 	params.MaxExchangeRateAge = time.Minute
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          chain.MicroUSDDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
 	}))
 
-	_, err = s.keeper.GetRateSnapshot(s.ctx, chain.MicroUSDDenom)
+	_, err = s.keeper.GetRateSnapshot(s.ctx, chain.USDBaseDenom)
 	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
 }
 
@@ -235,7 +235,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 		{
 			name: "rate is unset",
 			exchangeRate: types.ExchangeRate{
-				Denom:          chain.MicroUSDDenom,
+				Denom:          chain.USDBaseDenom,
 				Rate:           math.LegacyDec{},
 				BlockTimestamp: oracleTestBlockTime,
 			},
@@ -243,7 +243,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 		{
 			name: "rate is not positive",
 			exchangeRate: types.ExchangeRate{
-				Denom:          chain.MicroUSDDenom,
+				Denom:          chain.USDBaseDenom,
 				Rate:           math.LegacyZeroDec(),
 				BlockTimestamp: oracleTestBlockTime,
 			},
@@ -251,7 +251,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 		{
 			name: "rate is out of range",
 			exchangeRate: types.ExchangeRate{
-				Denom: chain.MicroUSDDenom,
+				Denom: chain.USDBaseDenom,
 				Rate: math.LegacyNewDecFromBigInt(
 					new(big.Int).Lsh(big.NewInt(1), 256),
 				),
@@ -275,13 +275,13 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 
 func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsFutureTimestamp() {
 	err := s.keeper.SetExchangeRateWithEvent(s.ctx, types.ExchangeRate{
-		Denom:          chain.MicroUSDDenom,
+		Denom:          chain.USDBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(time.Second),
 	})
 	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
 
-	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
+	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(getErr)
 	s.Require().False(has)
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
@@ -290,39 +290,39 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsFutureTimestamp() {
 func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 	rate := math.LegacyNewDecWithPrec(123, 2)
 
-	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate(chain.MicroUSDDenom, rate))
+	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate(chain.USDBaseDenom, rate))
 	s.Require().NoError(err)
 
-	stored, err := s.keeper.ExchangeRate.Get(s.ctx, chain.MicroUSDDenom)
+	stored, err := s.keeper.ExchangeRate.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(chain.MicroUSDDenom, stored.Denom)
+	s.Require().Equal(chain.USDBaseDenom, stored.Denom)
 	s.Require().True(rate.Equal(stored.Rate))
 
 	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
 	s.requireTypedEvents(events, &types.EventExchangeRateUpdate{
-		Denom:        chain.MicroUSDDenom,
+		Denom:        chain.USDBaseDenom,
 		ExchangeRate: rate,
 	})
 }
 
 func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidDenom() {
-	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate("uUSD", math.LegacyOneDec()))
+	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate("aUSD", math.LegacyOneDec()))
 	s.Require().ErrorContains(err, "invalid exchange rate denom")
 
-	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, "uUSD")
+	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, "aUSD")
 	s.Require().NoError(getErr)
 	s.Require().False(has)
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 }
 
 func (s *KeeperTestSuite) TestGetExchangeRates() {
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          chain.MicroUSDDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, types.ExchangeRate{
-		Denom:          chain.MicroKRWDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.KRWBaseDenom, types.ExchangeRate{
+		Denom:          chain.KRWBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Minute),
 	}))
@@ -335,15 +335,15 @@ func (s *KeeperTestSuite) TestGetExchangeRates() {
 	exchangeRates, err := s.keeper.GetExchangeRates(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(
-		sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroUSDDenom, math.LegacyOneDec())},
+		sdk.DecCoins{sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec())},
 		exchangeRates,
 	)
 }
 
 func (s *KeeperTestSuite) TestGetTobinTaxes() {
 	expected := []types.TobinTax{
-		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 	}
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -359,14 +359,14 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 	expected := math.LegacyNewDecWithPrec(25, 4)
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.TobinTaxes = []types.TobinTax{{Denom: chain.MicroUSDDenom, TobinTax: expected}}
+	params.TobinTaxes = []types.TobinTax{{Denom: chain.USDBaseDenom, TobinTax: expected}}
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
-	tobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
+	tobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(expected.Equal(tobinTax))
 
-	_, err = s.keeper.GetTobinTax(s.ctx, "ufoo")
+	_, err = s.keeper.GetTobinTax(s.ctx, "afoo")
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
 }

@@ -17,7 +17,7 @@ import (
 const (
 	treasuryParamsKey         = "treasury_params"
 	treasuryMonetaryPolicyKey = "treasury_monetary_policy"
-	maxSimulatedRewardTarget  = int64(1_000_000)
+	maxSimulatedRewardTarget  = int64(1_000_000_000_000_000_000)
 )
 
 // GenUnitIntervalDec returns a representable decimal in [0, 1].
@@ -25,7 +25,7 @@ func GenUnitIntervalDec(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(int64(r.Intn(10_001)), 4)
 }
 
-// GenRewardTarget returns a nonnegative micro-NOAH block reward target.
+// GenRewardTarget returns a nonnegative base-unit NOAH block reward target.
 func GenRewardTarget(r *rand.Rand) math.Int {
 	return math.NewInt(r.Int63n(maxSimulatedRewardTarget + 1))
 }

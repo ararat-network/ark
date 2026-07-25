@@ -62,7 +62,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 			setup: func(_ *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(oracletypes.VoteTargetSet{
 					Version: oracletypes.InitialVoteTargetVersion,
-					Denoms:  []string{"uusd"},
+					Denoms:  []string{"ausd"},
 				}, nil)
 				return nil
 			},
@@ -76,12 +76,12 @@ func TestProcessVoteExtensions(t *testing.T) {
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				voteTargets := oracletypes.VoteTargetSet{
 					Version: oracletypes.InitialVoteTargetVersion,
-					Denoms:  []string{"uusd"},
+					Denoms:  []string{"ausd"},
 				}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 				voteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
+					"ausd": math.LegacyNewDec(100),
 				})
 				ve1Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
 				ve2Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
@@ -96,7 +96,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().
 					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
-						require.Equal(t, "uusd", exchangeRate.Denom)
+						require.Equal(t, "ausd", exchangeRate.Denom)
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
@@ -105,7 +105,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				return [][]byte{commitBz}
 			},
 			expectedPrices: map[string]math.LegacyDec{
-				"uusd": math.LegacyNewDec(100),
+				"ausd": math.LegacyNewDec(100),
 			},
 		},
 		{
@@ -117,16 +117,16 @@ func TestProcessVoteExtensions(t *testing.T) {
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				voteTargets := oracletypes.VoteTargetSet{
 					Version: oracletypes.InitialVoteTargetVersion,
-					Denoms:  []string{"ukrw", "uusd"},
+					Denoms:  []string{"akrw", "ausd"},
 				}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(75, 2)
 				ve1Bz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
-					"ukrw": math.LegacyNewDec(1000),
+					"ausd": math.LegacyNewDec(100),
+					"akrw": math.LegacyNewDec(1000),
 				}))
 				ve2Bz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
+					"ausd": math.LegacyNewDec(100),
 				}))
 				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{
@@ -139,7 +139,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().
 					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
-						require.Equal(t, "uusd", exchangeRate.Denom)
+						require.Equal(t, "ausd", exchangeRate.Denom)
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
@@ -148,7 +148,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				return [][]byte{commitBz}
 			},
 			expectedPrices: map[string]math.LegacyDec{
-				"uusd": math.LegacyNewDec(100),
+				"ausd": math.LegacyNewDec(100),
 			},
 		},
 		{
@@ -160,7 +160,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				voteTargets := oracletypes.VoteTargetSet{
 					Version: oracletypes.InitialVoteTargetVersion,
-					Denoms:  []string{"uusd"},
+					Denoms:  []string{"ausd"},
 				}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
@@ -168,7 +168,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 					TargetVersion: voteTargets.Version,
 				})
 				positiveBz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
+					"ausd": math.LegacyNewDec(100),
 				}))
 				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{
@@ -195,12 +195,12 @@ func TestProcessVoteExtensions(t *testing.T) {
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				voteTargets := oracletypes.VoteTargetSet{
 					Version: oracletypes.InitialVoteTargetVersion,
-					Denoms:  []string{"uusd"},
+					Denoms:  []string{"ausd"},
 				}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 				validBz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-					"uusd": math.LegacyNewDec(100),
+					"ausd": math.LegacyNewDec(100),
 				}))
 				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{
@@ -213,7 +213,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().
 					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
-						require.Equal(t, "uusd", exchangeRate.Denom)
+						require.Equal(t, "ausd", exchangeRate.Denom)
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
@@ -222,7 +222,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				return [][]byte{commitBz}
 			},
 			expectedPrices: map[string]math.LegacyDec{
-				"uusd": math.LegacyNewDec(100),
+				"ausd": math.LegacyNewDec(100),
 			},
 		},
 	}

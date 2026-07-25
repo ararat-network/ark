@@ -8,7 +8,7 @@ import (
 	"ark/pkg/chain"
 )
 
-func TestValidateMicroDenom(t *testing.T) {
+func TestValidateNativeBaseDenom(t *testing.T) {
 	tests := []struct {
 		name    string
 		denom   string
@@ -16,41 +16,41 @@ func TestValidateMicroDenom(t *testing.T) {
 	}{
 		{
 			name:  "canonical vote target",
-			denom: "uusd",
+			denom: "ausd",
 		},
 		{
 			name:  "canonical base denom",
-			denom: "unoah",
+			denom: "anoah",
 		},
 		{
 			name:    "empty denom",
-			wantErr: "micro denom beginning with u",
+			wantErr: "Ark-native base denom beginning with a",
 		},
 		{
 			name:    "short denom",
-			denom:   "ua",
-			wantErr: "micro denom beginning with u",
+			denom:   "a",
+			wantErr: "Ark-native base denom beginning with a",
 		},
 		{
 			name:    "uppercase denom",
-			denom:   "uUSD",
-			wantErr: "canonical lowercase micro denom",
+			denom:   "aUSD",
+			wantErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name:    "path denom",
-			denom:   "ufoo/bar",
+			denom:   "afoo/bar",
 			wantErr: "without path separators",
 		},
 		{
 			name:    "invalid SDK denom",
-			denom:   "u??",
-			wantErr: "canonical lowercase micro denom",
+			denom:   "a??",
+			wantErr: "canonical lowercase Ark-native base denom",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := chain.ValidateMicroDenom(tt.denom)
+			err := chain.ValidateNativeBaseDenom(tt.denom)
 			if tt.wantErr != "" {
 				require.ErrorContains(t, err, tt.wantErr)
 				return
@@ -59,4 +59,17 @@ func TestValidateMicroDenom(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestNativeBaseAmount(t *testing.T) {
+	require.Equal(
+		t,
+		"1000000000000000000",
+		chain.NativeBaseAmount(1).String(),
+	)
+	require.Equal(
+		t,
+		"1000000000000000000000000",
+		chain.NativeBaseAmount(1_000_000).String(),
+	)
 }

@@ -350,7 +350,8 @@ func (m *MsgUpdateMonetaryPolicyResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgUpdateMonetaryPolicyResponse proto.InternalMessageInfo
 
 // MsgSetClaimsMandate is the request for a complete Claims committee mandate.
-// The committee claim limit is a fixed gross unoah allowance for the new term.
+// The committee claim limit is a fixed gross base-unit NOAH allowance for the
+// new term.
 type MsgSetClaimsMandate struct {
 	Authority                string                `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Committee                string                `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`

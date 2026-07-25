@@ -106,7 +106,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 		balances := k.bankKeeper.GetAllBalances(ctx, moduleAccount.GetAddress())
 		for _, balance := range balances {
-			if balance.Denom != chain.MicroNoahDenom {
+			if balance.Denom != chain.NoahBaseDenom {
 				return fmt.Errorf(
 					"%s fund account contains unsupported genesis denom %s",
 					moduleName,
@@ -115,7 +115,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			}
 		}
 		if moduleName == types.InsuranceName {
-			insuranceBalance = balances.AmountOf(chain.MicroNoahDenom)
+			insuranceBalance = balances.AmountOf(chain.NoahBaseDenom)
 		}
 	}
 	if data.InsuranceReserved.GT(insuranceBalance) {

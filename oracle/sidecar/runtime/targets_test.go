@@ -22,12 +22,12 @@ func TestRunUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 	expectVoteTargetsLifecycle(voteTargetsClient)
 	voteTargetsClient.EXPECT().
 		VoteTargets().
-		Return([]string{"uusd"}, nil).
+		Return([]string{"ausd"}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ukrw"}
+	cfg.FallbackDenoms = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
@@ -60,7 +60,7 @@ func TestRunUsesAuthoritativeEmptyVoteTargets(t *testing.T) {
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ukrw"}
+	cfg.FallbackDenoms = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
@@ -90,12 +90,12 @@ func TestRunDoesNotRestartProviderWhenVoteTargetsAreUnchanged(t *testing.T) {
 	expectVoteTargetsLifecycle(voteTargetsClient)
 	voteTargetsClient.EXPECT().
 		VoteTargets().
-		Return([]string{"uusd"}, nil).
+		Return([]string{"ausd"}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"uusd"}
+	cfg.FallbackDenoms = []string{"ausd"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
@@ -130,12 +130,12 @@ func TestRunRestartsStoppedProviderWhenVoteTargetsChangeMarkets(t *testing.T) {
 	expectVoteTargetsLifecycle(voteTargetsClient)
 	voteTargetsClient.EXPECT().
 		VoteTargets().
-		Return([]string{"ukrw"}, nil).
+		Return([]string{"akrw"}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"uusd"}
+	cfg.FallbackDenoms = []string{"ausd"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
@@ -167,7 +167,7 @@ func TestRunUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ukrw"}
+	cfg.FallbackDenoms = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
@@ -204,7 +204,7 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 			default:
 			}
 			if calls == 1 {
-				return []string{"uusd"}, nil
+				return []string{"ausd"}, nil
 			}
 			return nil, errors.New("node unavailable")
 		}).
@@ -212,7 +212,7 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ukrw"}
+	cfg.FallbackDenoms = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),

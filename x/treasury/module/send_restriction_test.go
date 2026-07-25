@@ -24,19 +24,19 @@ func TestTreasurySendRestriction(t *testing.T) {
 		authtypes.NewModuleAddress(types.StrategicReserveName),
 		authtypes.NewModuleAddress(types.InsuranceName),
 	}
-	unoah := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1))
+	anoah := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
 
 	for _, fundAddress := range fundAddresses {
 		fundAddress := fundAddress
 		t.Run(fundAddress.String(), func(t *testing.T) {
-			got, err := TreasurySendRestriction(context.Background(), sdk.AccAddress{1}, fundAddress, unoah)
+			got, err := TreasurySendRestriction(context.Background(), sdk.AccAddress{1}, fundAddress, anoah)
 			require.NoError(t, err)
 			require.Equal(t, fundAddress, got)
 		})
 	}
 
 	unrelated := sdk.AccAddress{2}
-	invalid := sdk.Coins{{Denom: chain.MicroNoahDenom, Amount: math.NewInt(-1)}}
+	invalid := sdk.Coins{{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}}
 	got, err := TreasurySendRestriction(context.Background(), sdk.AccAddress{1}, unrelated, invalid)
 	require.NoError(t, err)
 	require.Equal(t, unrelated, got)
@@ -54,11 +54,11 @@ func TestTreasurySendRestrictionRejectsInvalidFundDeposits(t *testing.T) {
 		amount sdk.Coins
 	}{
 		{name: "empty", amount: sdk.Coins{}},
-		{name: "unset amount", amount: sdk.Coins{{Denom: chain.MicroNoahDenom}}},
-		{name: "zero", amount: sdk.Coins{sdk.NewInt64Coin(chain.MicroNoahDenom, 0)}},
-		{name: "negative", amount: sdk.Coins{{Denom: chain.MicroNoahDenom, Amount: math.NewInt(-1)}}},
-		{name: "non noah", amount: sdk.NewCoins(sdk.NewInt64Coin("usdr", 1))},
-		{name: "mixed", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1), sdk.NewInt64Coin("usdr", 1))},
+		{name: "unset amount", amount: sdk.Coins{{Denom: chain.NoahBaseDenom}}},
+		{name: "zero", amount: sdk.Coins{sdk.NewInt64Coin(chain.NoahBaseDenom, 0)}},
+		{name: "negative", amount: sdk.Coins{{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}}},
+		{name: "non noah", amount: sdk.NewCoins(sdk.NewInt64Coin("asdr", 1))},
+		{name: "mixed", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), sdk.NewInt64Coin("asdr", 1))},
 	}
 
 	for _, fundName := range fundNames {
@@ -91,7 +91,7 @@ func TestTreasurySendRestrictionUsesRewrittenRecipient(t *testing.T) {
 		context.Background(),
 		sdk.AccAddress{1},
 		sdk.AccAddress{2},
-		sdk.NewCoins(sdk.NewInt64Coin("usdr", 1)),
+		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
 	)
 	require.ErrorIs(t, err, errortypes.ErrInvalidCoins)
 	require.Nil(t, got)
@@ -100,7 +100,7 @@ func TestTreasurySendRestrictionUsesRewrittenRecipient(t *testing.T) {
 		context.Background(),
 		sdk.AccAddress{1},
 		sdk.AccAddress{2},
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	)
 	require.NoError(t, err)
 	require.Equal(t, fundAddress, got)

@@ -107,7 +107,7 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := oracletypes.VoteTargetSet{
 		Version: oracletypes.InitialVoteTargetVersion,
-		Denoms:  []string{"uusd"},
+		Denoms:  []string{"ausd"},
 	}
 	handler := preblock.NewHandler(
 		keeper,
@@ -116,7 +116,7 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	val1 := sdk.ConsAddress("validator1")
 	val2 := sdk.ConsAddress("validator2")
 	voteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-		"uusd": math.LegacyNewDec(100),
+		"ausd": math.LegacyNewDec(100),
 	})
 	ve1Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
 	ve2Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
@@ -131,7 +131,7 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	keeper.EXPECT().
 		SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
-			require.Equal(t, "uusd", exchangeRate.Denom)
+			require.Equal(t, "ausd", exchangeRate.Denom)
 			require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 			return nil
 		})

@@ -10,7 +10,7 @@ intentionally more detailed than a normal design note: each implementation phase
 and explicitly approved before work begins on the next phase.
 
 The reviewed `x/treasury` implementation is authoritative and must be carried forward. Its Treasury protobuf and
-generated API changes, required Phase 1 app account wiring, Oracle `unoah` identity quote support, and Phase 3 Market
+generated API changes, required Phase 1 app account wiring, Oracle `anoah` identity quote support, and Phase 3 Market
 settlement and pool-unit transition implementation are also retained as recorded in Section 21.1. Existing Phase 4 ante
 and multi-denomination Oracle reward changes remain in the tree but are provisional and unreviewed until the Phase 4 gate. Implementers must
 not replace whole files with an older baseline or treat the current branch state as disposable.
@@ -26,8 +26,8 @@ Ark will have no scheduled or routine NOAH issuance:
 - Keep each gross NOAH expansion offer in Market's transaction-local escrow. Treasury derives and executes the complete
   per-conversion fund-allocation waterfall from that escrow; a successful result is authoritative, and Market owns the
   resulting burn, stable mint, and receiver payment.
-- Make Market's single virtual pool denomination-bearing: launch it in `usdr`, then permit one atomic live unit change
-  to the future basket without changing which native stablecoins may be selected as outputs; `usdr` remains supported.
+- Make Market's single virtual pool denomination-bearing: launch it in `asdr`, then permit one atomic live unit change
+  to the future basket without changing which native stablecoins may be selected as outputs; `asdr` remains supported.
 - Fund validator and Oracle launch subsidies from an initially genesis-funded NOAH subsidy pool. Permissionless
   transfers of already-issued NOAH may extend it, but no automatic refill, conversion, or issuance path exists.
 - Fund Oracle rewards primarily from the fixed stability tax.
@@ -36,15 +36,15 @@ Ark will have no scheduled or routine NOAH issuance:
   committee policy directly or replace/disable the committee at any time.
 - Build a coverage-based Redemption Buffer, a separate strategic Reserve, and Insurance from existing genesis NOAH and
   Treasury-routed expansion principal initially escrowed by Market.
-- Permit governance to make a discrete, irreversible `unoah` commitment from the strategic Reserve into the shared
+- Permit governance to make a discrete, irreversible `anoah` commitment from the strategic Reserve into the shared
   Redemption Buffer. Keep source, destination, and denomination fixed in Treasury; expose no general Reserve withdrawal
   or Market-triggered Reserve path.
-- Permit irreversible `unoah` deposits to all four Treasury fund accounts at launch. Reject every mixed or non-NOAH
+- Permit irreversible `anoah` deposits to all four Treasury fund accounts at launch. Reject every mixed or non-NOAH
   transfer atomically, regardless of whether it originates from a user, module, Wasm, or IBC transfer surface. A deposit
   grants no ownership, withdrawal, coverage, priority, governance, deployment, or special Buffer right.
 - Put ordinary Insurance claims under a governance-owned, monotonically termed, height-scoped Claims Mandate. The exact
   active committee and governance may submit claims under the same term, held-balance, and cancellation-period rules;
-  committee submissions additionally consume a fixed gross `unoah` allowance for that term. Governance may cancel any
+  committee submissions additionally consume a fixed gross `anoah` allowance for that term. Governance may cancel any
   pending claim during that period regardless of the current mandate; the current active committee may cancel only
   non-governance-submitted claims using the current term. Neither receives Insurance custody or a generic Bank send.
 - Remove Terra's adaptive tax, reward, mining-increment, seigniorage-burden, and rolling-indicator controllers.
@@ -61,7 +61,7 @@ The proposed model retains a bounded endogenous conversion response:
 - Every redemption can expand NOAH supply by the portion not funded by the Buffer's actual pre-trade liability coverage.
 - The coverage-based draw recycles NOAH retained during prior expansions without creating a first-come depletion cliff.
 - The strategic Reserve is never an automatic Market funding source. Governance may commit a discrete amount of its
-  existing `unoah` to the shared Redemption Buffer between settlements, but Market cannot request, size, or trigger the
+  existing `anoah` to the shared Redemption Buffer between settlements, but Market cannot request, size, or trigger the
   transfer and no redeemer receives a direct Reserve payment.
 - Virtual-pool pricing penalises sustained one-way flow and remembers imbalance.
 - Time-based pool recovery limits how quickly cheap conversion capacity returns.
@@ -112,13 +112,13 @@ phase gate.
 | D18 | Tax every enabled user-facing stable transfer surface through one calculator, not internal bank movements.                                                                                                                                                                                                                                                                                                      | Confirmed              |
 | D19 | Report Redemption Buffer, strategic Reserve, and Insurance separately; never present a combined backing ratio.                                                                                                                                                                                                                                                                                                  | Confirmed              |
 | D20 | Launch from a clean genesis; discard legacy state/wire compatibility and implement no migration path.                                                                                                                                                                                                                                                                                                           | Confirmed              |
-| D21 | Governance owns Treasury's complete denomination-bearing `reference_tax_cap` Coin in Params; launch it in `usdr` independently of Market's pool unit, and require no Treasury Params update when Market changes its pool denomination.                                                                                                                                                                           | Confirmed              |
-| D22 | Make Market `BasePool` a denomination-bearing `sdk.DecCoin`; launch it in `usdr` and change its amount or denomination live only through Market's `MsgUpdateParams`. Oracle support is a prerequisite for a new denomination; Treasury never drives or intermediates the Market transition.                                                                                                                      | Confirmed              |
+| D21 | Governance owns Treasury's complete denomination-bearing `reference_tax_cap` Coin in Params; launch it in `asdr` independently of Market's pool unit, and require no Treasury Params update when Market changes its pool denomination.                                                                                                                                                                           | Confirmed              |
+| D22 | Make Market `BasePool` a denomination-bearing `sdk.DecCoin`; launch it in `asdr` and change its amount or denomination live only through Market's `MsgUpdateParams`. Oracle support is a prerequisite for a new denomination; Treasury never drives or intermediates the Market transition.                                                                                                                      | Confirmed              |
 | D23 | Every applied `BasePool` amount or denomination change atomically rescales `ArkPoolDelta` to preserve `delta / BasePool.Amount`. On a denomination change, treat submitted `BasePool.Amount` as a non-binding audit expectation and apply the amount derived from one fresh deterministic Oracle conversion.                                                                                                   | Confirmed              |
 | D24 | Value Treasury liabilities and targets directly in NOAH equivalents; stable-to-stable pricing does not use Market's pool denom.                                                                                                                                                                                                                                                                                 | Confirmed              |
-| D25 | Permit irreversible, permissionless `unoah` transfers into the subsidy pool; reject other denoms and add no automatic refill mechanism.                                                                                                                                                                                                                                                                         | Confirmed              |
-| D26 | At launch, permit only positive `unoah` deposits to all four Treasury fund accounts; reject every mixed or non-NOAH transfer atomically.                                                                                                                                                                                                                                                                        | Confirmed              |
-| D27 | At launch, governance alone may irreversibly transfer a discrete `unoah` amount from strategic Reserve to the shared Redemption Buffer, subject to an execution-time minimum remaining Reserve balance; no target, price, Oracle, or Market trigger applies.                                                                                                                                                    | Confirmed              |
+| D25 | Permit irreversible, permissionless `anoah` transfers into the subsidy pool; reject other denoms and add no automatic refill mechanism.                                                                                                                                                                                                                                                                         | Confirmed              |
+| D26 | At launch, permit only positive `anoah` deposits to all four Treasury fund accounts; reject every mixed or non-NOAH transfer atomically.                                                                                                                                                                                                                                                                        | Confirmed              |
+| D27 | At launch, governance alone may irreversibly transfer a discrete `anoah` amount from strategic Reserve to the shared Redemption Buffer, subject to an execution-time minimum remaining Reserve balance; no target, price, Oracle, or Market trigger applies.                                                                                                                                                    | Confirmed              |
 | D28 | Required Reserve and Insurance capital is based on each fund's covered risk exposure, never the gross value of assets held; future external assets may reduce a gap only through explicit fund-specific, risk-adjusted recognition plus a separate liquid-capital requirement, and Ark-issued stablecoins always receive zero credit.                                                                           | Confirmed              |
 | D29 | Governance retains Reserve policy authority; any future fast execution uses a governance-created, typed, bounded, expiring mandate executed by a threshold multisig with a separate pause-only guardian, never a generic Reserve sender or Treasury parameter authority.                                                                                                                                        | Confirmed              |
 | D30 | Governance owns the Insurance Claims Mandate. The exact active committee and governance share submission constraints and the same cancellation period; committee submissions consume a fixed gross term allowance, while governance submissions do not; governance may cancel any pending claim regardless of the current mandate, while the current committee may cancel only non-governance-submitted claims. | Confirmed              |
@@ -181,7 +181,7 @@ targets are full, the unused portion of eligible principal is also burned.
 The `treasury_subsidy_pool` module account's spendable NOAH balance. It is initially funded from genesis total supply,
 has no mint permission, and covers only gaps between aggregate organic validator and Oracle funding and the accumulated
 per-block targets at each completed reward-funding window. Anyone may irreversibly extend the pool by sending
-already-issued `unoah` to the module account. Deposits change neither total supply nor the reward targets; they only
+already-issued `anoah` to the module account. Deposits change neither total supply nor the reward targets; they only
 extend or restart shortfall coverage. There is no automatic refill, target balance, refund, withdrawal, or conversion
 path.
 
@@ -190,7 +190,7 @@ path.
 A Treasury-owned operational module account containing liquid NOAH retained from earlier expansions. With complete
 aggregate valuation, each redemption receives the Buffer's actual pre-trade liability-coverage share of its quoted
 NOAH output; otherwise it uses the conservative zero-draw fallback. It is endogenous conversion inventory, not collateral, solvency capital, or a
-first-come redemption pool. Anyone may irreversibly deposit already-issued `unoah`. A deposit increases the inventory
+first-come redemption pool. Anyone may irreversibly deposit already-issued `anoah`. A deposit increases the inventory
 available to the same coverage formula and may reduce later residual minting, but never changes a conversion quote,
 spread, minimum receive, or redemption eligibility and creates no withdrawal or ownership claim.
 
@@ -199,25 +199,25 @@ spread, minimum receive, or redemption eligibility and creates no withdrawal or 
 A separate Treasury-owned module account retained for governed emergency capacity and future external-asset mandates. It
 is never debited automatically or by an ordinary redemption and never directly pays a redeemer, validator or Oracle
 reward, or Insurance claim. At launch its only outbound policy action is a governance-authorised, one-way transfer of an
-exact `unoah` amount into `treasury_redemption_buffer`; source, destination, and denomination are fixed internally,
+exact `anoah` amount into `treasury_redemption_buffer`; source, destination, and denomination are fixed internally,
 Market cannot call it, and it never pays a redeemer directly. Once committed, that NOAH is Buffer inventory and has no
 Buffer-to-Reserve clawback path.
 
-Anyone may irreversibly deposit already-issued `unoah`, but every mixed or non-NOAH transfer is rejected at launch. The
-Reserve's live `unoah` balance is both its complete launch custody and the balance counted toward its target. A deposit
+Anyone may irreversibly deposit already-issued `anoah`, but every mixed or non-NOAH transfer is rejected at launch. The
+Reserve's live `anoah` balance is both its complete launch custody and the balance counted toward its target. A deposit
 grants no authority, withdrawal, or special claim on a later Reserve-to-Buffer commitment. External custody and
 deployment are introduced only with the first separately approved external-asset policy described in Section 20.
 
 ### 3.8 Insurance
 
 A separate Treasury-owned module account used only for authorised covered-loss payments. It is never a peg-redemption
-source. At launch it may receive and pay only already-issued `unoah`; every mixed or non-NOAH transfer is rejected. A
+source. At launch it may receive and pay only already-issued `anoah`; every mixed or non-NOAH transfer is rejected. A
 deposit grants no coverage, claim priority, refund, ownership, governance, or withdrawal right. If a later Insurance
 policy needs exact in-kind payouts, governance must first approve an explicit custody/payout allowlist; payout
 eligibility does not by itself create target credit.
 
 Insurance funds remain in the module account. The Claims committee is an ordinary threshold-multisig account appointed
-for one monotonically termed, half-open height window with a fixed gross `unoah` claim limit. It signs typed claim
+for one monotonically termed, half-open height window with a fixed gross `anoah` claim limit. It signs typed claim
 submissions and cancellations; each committee submission permanently consumes that term allowance even if the claim is
 later cancelled. It receives no custody, module-account permission, generic send authority, or ability to mint or
 borrow. Governance owns the mandate, may submit under the same active-mandate rules without consuming the committee
@@ -226,7 +226,7 @@ changed or ended.
 
 ### 3.9 Market pool denomination
 
-The denomination carried by Market's `BasePool` `sdk.DecCoin` is owned by Market. Ark launches with `usdr` as this
+The denomination carried by Market's `BasePool` `sdk.DecCoin` is owned by Market. Ark launches with `asdr` as this
 virtual-pool unit, but
 the later basket-pegged flagship may replace it while the chain is live. `ArkPoolDelta` is a signed decimal amount in
 the current `BasePool.Denom`; it must never exist without that unit being observable. The pool denomination is not
@@ -245,7 +245,7 @@ The submitted `BasePool.Amount` is a non-binding audit expectation in the candid
 uses one fresh immutable Oracle snapshot to derive and store the live-equivalent amount, emits both the submitted and
 applied values without comparing them to a rejection threshold, and rescales `ArkPoolDelta` by the same amount ratio. No
 transition object, second message, parallel pool, or persistent transition state is introduced. The transition changes
-no stablecoin's offer or output eligibility; `usdr` remains fully supported.
+no stablecoin's offer or output eligibility; `asdr` remains fully supported.
 
 A same-denomination depth change also rescales `ArkPoolDelta` by `new_base / old_base`. Both paths preserve the relative
 curve position instead of allowing a governance parameter update to create an implicit imbalance reset or immediate
@@ -314,7 +314,7 @@ func (a ExpansionAllocation) TotalBurn() math.Int
 `TotalBurn` sums the two separately reported burn causes; it is not a second authoritative field. `RouteExpansion`
 constructs every allocation amount directly from the positive gross offer and a monotonically decreasing remainder.
 
-`RouteExpansion` requires positive `unoah` as `grossOffer`, a positive native stable `stableOutput`, and the rate map
+`RouteExpansion` requires positive `anoah` as `grossOffer`, a positive native stable `stableOutput`, and the rate map
 already used by Market's quote. Treasury may add missing liability rates to that map but never replaces an existing
 quote rate. It derives eligible principal itself, captures any additional unchanged-Oracle rates needed for aggregate
 target valuation, calculates the complete waterfall, and only then moves the three fixed NOAH credits directly from the
@@ -346,10 +346,10 @@ Target module-account configuration:
 | Account name                 | Purpose                                       | Permissions        | Direct user sends |
 | ---------------------------- | --------------------------------------------- | ------------------ | ----------------- |
 | `market`                     | Conversion escrow and settlement              | `Minter`, `Burner` | Blocked           |
-| `treasury_subsidy_pool`      | Balance-constrained subsidy pool              | None               | `unoah` only      |
-| `treasury_redemption_buffer` | Coverage-based operational redemption inventory | None               | `unoah` only      |
-| `treasury_strategic_reserve` | Strategic/emergency Reserve                   | None               | `unoah` only      |
-| `treasury_insurance`         | Covered-loss Insurance                        | None               | `unoah` only      |
+| `treasury_subsidy_pool`      | Balance-constrained subsidy pool              | None               | `anoah` only      |
+| `treasury_redemption_buffer` | Coverage-based operational redemption inventory | None               | `anoah` only      |
+| `treasury_strategic_reserve` | Strategic/emergency Reserve                   | None               | `anoah` only      |
+| `treasury_insurance`         | Covered-loss Insurance                        | None               | `anoah` only      |
 | `stability_tax_collector`    | Current reward-funding-window stability tax   | None               | Blocked           |
 | `oracle`                     | Oracle reward pool                            | None               | Blocked           |
 | `fee_collector`              | Validator reward funding before Distribution  | None               | Blocked           |
@@ -362,7 +362,7 @@ accounts out of that list so normal bank transfers can reach them. Market, Oracl
 Treasury provides one recipient-aware bank `SendRestrictionFn`:
 
 - Transfers to any of `treasury_subsidy_pool`, `treasury_redemption_buffer`, `treasury_strategic_reserve`, or
-  `treasury_insurance` succeed only for a positive `sdk.Coins` value consisting solely of `unoah`; mixed or non-NOAH
+  `treasury_insurance` succeed only for a positive `sdk.Coins` value consisting solely of `anoah`; mixed or non-NOAH
   transfers fail atomically.
 - Transfers to every other address pass through unchanged.
 
@@ -373,7 +373,7 @@ unless it can prove it never rewrites a recipient.
 
 For ordinary direct `MsgSend`/`MsgMultiSend` deposits, Bank's send-enabled check still applies before Treasury's
 recipient rule. Passing Bank's general admission rule is necessary but not sufficient for a Treasury fund: the final
-credit must also be positive and `unoah`-only. The same Treasury restriction applies to module, Wasm, IBC, and every
+credit must also be positive and `anoah`-only. The same Treasury restriction applies to module, Wasm, IBC, and every
 other enabled ingress that ultimately credits a fund through Bank.
 
 The restriction owns no state and performs no conversion or redirection. Deposits use ordinary irreversible bank rails,
@@ -383,7 +383,7 @@ deposit remains subject to the ordinary stability-tax rules for its user-facing 
 create an exemption.
 
 No launch asset registry is needed: all four fund accounts have one allowed custody denomination, and consensus target
-and settlement paths read only `GetBalance(..., unoah)`. The future external-asset phase adds explicit per-fund custody
+and settlement paths read only `GetBalance(..., anoah)`. The future external-asset phase adds explicit per-fund custody
 and recognition policy together with the first approved asset; it does not pre-authorise arbitrary bank denominations.
 
 Only Market may retain `Minter`. Tests must inspect the configured module-account permissions, not merely search for
@@ -395,7 +395,7 @@ calls to `MintCoins`.
 
 Inputs:
 
-- `gross_offer`: positive integer `unoah` received from the trader and held in Market's transaction-local escrow.
+- `gross_offer`: positive integer `anoah` received from the trader and held in Market's transaction-local escrow.
 - `stable_output`: final positive integer native-stable output after Market spread and minimum-receive validation.
 - `quote_rates`: the Oracle snapshot already used by Market to produce that exact output.
 
@@ -413,7 +413,7 @@ conversion-time valuation of the priceable `stable_output`. Missing or invalid o
 Calculation:
 
 ```text
-stable_output_noah = quote_rates.Convert(stable_output, unoah).Amount
+stable_output_noah = quote_rates.Convert(stable_output, anoah).Amount
 eligible_principal_noah = truncate(stable_output_noah)
 reject if eligible_principal_noah > gross_offer.Amount
 
@@ -424,22 +424,22 @@ if target_valuation_complete:
                          plus stable_output exactly once
 
   redemption_buffer_gap = max(
-    redemption_buffer_target_noah - redemption_buffer_unoah_balance,
+    redemption_buffer_target_noah - redemption_buffer_anoah_balance,
     0,
   )
 
   strategic_reserve_gap = max(
-    strategic_reserve_target_noah - strategic_reserve_unoah_balance,
+    strategic_reserve_target_noah - strategic_reserve_anoah_balance,
     0,
   )
 
-  insurance_unencumbered_unoah =
-    insurance_unoah_balance - insurance_reserved
+  insurance_unencumbered_anoah =
+    insurance_anoah_balance - insurance_reserved
 
-  assert 0 <= insurance_reserved <= insurance_unoah_balance
+  assert 0 <= insurance_reserved <= insurance_anoah_balance
 
   insurance_gap = max(
-    insurance_target_noah - insurance_unencumbered_unoah,
+    insurance_target_noah - insurance_unencumbered_anoah,
     0,
   )
 
@@ -466,7 +466,7 @@ else:
 total_noah_burn = spread_and_dust_burn + overflow_burn
 ```
 
-Each account's actual `unoah` bank balance is its complete launch custody balance. For Redemption Buffer and strategic
+Each account's actual `anoah` bank balance is its complete launch custody balance. For Redemption Buffer and strategic
 Reserve, that complete balance counts toward the target. Insurance uses its unencumbered balance after subtracting
 approved pending claims. The allocator never converts deposited assets or substitutes another denomination for the NOAH
 credits above. Treasury constructs the complete allocation before making the first fund transfer: each credit is
@@ -532,12 +532,12 @@ When aggregate valuation is complete, calculate:
 
 ```text
 total_liability_noah_before = checked LegacyDec sum(
-  aggregate_rates.Convert(full_supply(denom), unoah).Amount
+  aggregate_rates.Convert(full_supply(denom), anoah).Amount
   for every native stable denom with nonzero supply
 )
 
 redeemed_liability_noah =
-  quote_rates.Convert(stable_offer, unoah).Amount
+  quote_rates.Convert(stable_offer, anoah).Amount
 
 buffer_coverage = min(
   1,
@@ -609,7 +609,7 @@ Boundary rules:
 - Retiring the final outstanding native stable liability does not automatically drain the Buffer. Apply pre-trade
   coverage to the final quoted output and leave any excess in the Buffer; do not gift it to the last redeemer or
   reclassify it.
-- With complete valuation, floor rounding conservatively retains less than one micro-NOAH per redemption relative to
+- With complete valuation, floor rounding conservatively retains less than one base-unit NOAH per redemption relative to
   the exact coverage-funded output. Do not add a persistent remainder accumulator in the initial implementation.
 - If the offered pair itself cannot be priced, fail atomically under the normal Market rules.
 - If the current offer is priceable but another nonzero-supply native stable lacks a fresh rate, set `buffer_paid = 0`,
@@ -654,7 +654,7 @@ Insurance ratios. Ark must make their meanings explicit rather than try to hide 
   custody alone.
 - The Insurance target ratio measures the unencumbered Insurance balance available for covered claims, not
   peg-redemption capacity. Its raw bank balance, reserved amount, and unencumbered balance must be reported separately.
-  At launch, authorised claims can pay only held `unoah`. Future in-kind payout eligibility is a separate allowlist and
+  At launch, authorised claims can pay only held `anoah`. Future in-kind payout eligibility is a separate allowlist and
   does not imply target recognition.
 
 No ratio crossing zero, target, or another threshold changes the redemption quote, spread, minimum receive, or
@@ -674,20 +674,20 @@ The request contains:
 
 ```text
 authority
-amount: sdk.Coin                    // positive unoah
-minimum_reserve_balance: sdk.Coin   // nonnegative unoah after transfer
+amount: sdk.Coin                    // positive anoah
+minimum_reserve_balance: sdk.Coin   // nonnegative anoah after transfer
 ```
 
 The general Treasury `authority`, configured as `x/gov` at launch, authorises the message. Do not use the Claims
 committee or introduce a launch Reserve operator. Source `treasury_strategic_reserve`, destination
-`treasury_redemption_buffer`, and denomination `unoah` are fixed in keeper code; the request has no recipient, purpose
+`treasury_redemption_buffer`, and denomination `anoah` are fixed in keeper code; the request has no recipient, purpose
 selector, asset selector, conversion, or arbitrary call data.
 
 Execution must:
 
-1. Validate the authority and both canonical `unoah` Coins.
+1. Validate the authority and both canonical `anoah` Coins.
 2. Require a positive transfer and a nonnegative minimum remaining balance.
-3. Read the live Reserve `unoah` bank balance without consulting the Buffer balance, Oracle rates, fund targets, prices,
+3. Read the live Reserve `anoah` bank balance without consulting the Buffer balance, Oracle rates, fund targets, prices,
    or Market state.
 4. Reject if the Reserve cannot fund the transfer or its post-transfer balance would be below `minimum_reserve_balance`.
 5. Atomically call `SendCoinsFromModuleToModule` from `treasury_strategic_reserve` to
@@ -700,7 +700,7 @@ settlements without a lock, queue, or Treasury EndBlocker. If any message in the
 of its message state. Keep the Reserve action outside Market so a redemption can never interleave with or trigger it.
 
 The minimum remaining balance is a per-proposal stale-state guard, not a global protocol floor. Governance may approve
-full emergency commitment by submitting `0unoah`. Do not compare against an exact expected pre-transfer balance because
+full emergency commitment by submitting `0anoah`. Do not compare against an exact expected pre-transfer balance because
 an otherwise harmless permissionless Reserve deposit could make the proposal fail. Do not cap the action by the Buffer
 target gap: targets are routing thresholds rather than custody caps, and an explicitly approved emergency commitment may
 leave the Buffer above target or the Reserve below target.
@@ -708,8 +708,8 @@ leave the Buffer above target or the Reserve below target.
 For transfer `amount`:
 
 ```text
-Delta strategic Reserve unoah = -amount
-Delta Redemption Buffer unoah = +amount
+Delta strategic Reserve anoah = -amount
+Delta Redemption Buffer anoah = +amount
 Delta total NOAH supply = 0
 Delta stable supply and consolidated liability = 0
 Delta Market pools, quote, spread, and minimum receive = 0
@@ -745,17 +745,17 @@ through `BasePool.Denom`, and do not load `BasePool` or `ArkPoolDelta` for this 
 - Do not touch NOAH, Redemption Buffer, strategic Reserve, Insurance, or `ArkPoolDelta`.
 
 Direct stable-to-stable conversion makes the economic result independent of which flagship denomination currently labels
-the virtual NOAH/stable pool. The basket and `usdr` remain valid in both directions; changing the pool unit does not
+the virtual NOAH/stable pool. The basket and `asdr` remain valid in both directions; changing the pool unit does not
 change stablecoin output eligibility.
 
 ### 6.6 Insurance claim
 
 Governance stores one Claims Mandate containing a chain-derived monotonic term, exact committee, half-open activation
-and expiry heights, cancellation-period blocks, and a fixed gross committee claim limit denominated in `unoah`. An empty
+and expiry heights, cancellation-period blocks, and a fixed gross committee claim limit denominated in `anoah`. An empty
 committee is the canonical disabled mandate while retaining the latest term. Replacing or disabling the mandate always
 advances that term, resets only the Claims allowance used, and never rewrites an existing claim or reservation.
 
-During the active window, the committee or governance submits a positive `unoah` claim with the exact current expected
+During the active window, the committee or governance submits a positive `anoah` claim with the exact current expected
 term under the same validation and held-balance rules. Treasury assigns the claim a globally monotonic `uint64` ID from
 consensus state. A committee submission must fit within the remaining Claims allowance and atomically increases the
 allowance used; a governance submission does not consume that delegated allowance. Treasury reserves the amount, stores
@@ -786,7 +786,7 @@ enforces a bounded Claims Mandate and records every decision. The Claims subsyst
 version                        // separate from the launch appointment term
 configured_state               // disabled | active | paused | retired
 term_start_height
-payout_denom                   // unoah at launch
+payout_denom                   // anoah at launch
 approval_window_blocks
 approval_window_cap
 minimum_uncommitted_insurance_balance
@@ -849,7 +849,7 @@ governance cancellation and permissionless expiry remain available while paused.
 
 The committee threshold-signs an exact approval containing the policy version, unique bounded claim ID, bounded incident
 or case reference, recipient, positive `sdk.Coins` amount, and external evidence reference. At launch the amount must
-contain only `unoah`; keeping `sdk.Coins` preserves a later additive payout path without weakening launch validation.
+contain only `anoah`; keeping `sdk.Coins` preserves a later additive payout path without weakening launch validation.
 
 Approval must:
 
@@ -873,7 +873,7 @@ liquidates, invokes Market, or draws another fund.
 #### Execution and cancellation
 
 After the challenge period, any fee-paying account may execute the exact stored approval while it remains pending,
-unexpired, and unpaused. Execution rechecks the Insurance balance, atomically sends the held `unoah` from
+unexpired, and unpaused. Execution rechecks the Insurance balance, atomically sends the held `anoah` from
 `treasury_insurance`, reduces `insurance_reserved` by the same amount, marks the claim paid, and emits the audit event.
 The committee never receives custody or chooses different execution fields.
 
@@ -906,7 +906,7 @@ may extend the old claim implicitly.
 Governance may authorise one exact exceptional payout through a separate governance-signed message. This path may bypass
 configured policy state, approval-window, term, challenge-delay, and retained-balance limits because the proposal itself
 is the explicit policy decision. It must still enforce a unique claim ID, valid recipient/reference, positive held
-`unoah` only, sufficient balance, no mint, no conversion, no borrowing, and no debit from Redemption Buffer, strategic
+`anoah` only, sufficient balance, no mint, no conversion, no borrowing, and no debit from Redemption Buffer, strategic
 Reserve, or the subsidy pool. It may not consume NOAH reserved for pending claims unless the same atomic proposal first
 cancels those claims.
 
@@ -929,7 +929,7 @@ Using one fresh Oracle snapshot and the same `LegacyDec` conversion path as Sect
 
 ```text
 target_exposure_noah = checked LegacyDec sum(
-  rates.Convert(full_supply(denom), unoah).Amount
+  rates.Convert(full_supply(denom), anoah).Amount
   for every native stable denom with nonzero supply
 )
 
@@ -947,7 +947,7 @@ insurance_target_noah =
 ```
 
 Target exposure and ratios remain `LegacyDec` values through multiplication; only the final target is rounded up to
-integer `unoah`. If the aggregate exposure cannot be represented while summing converted supplies, valuation is
+integer `anoah`. If the aggregate exposure cannot be represented while summing converted supplies, valuation is
 incomplete and the caller uses its documented fallback. Do not convert through SDR or divide by a separate NOAH/SDR
 price.
 
@@ -967,8 +967,8 @@ coverage.
 
 Initially:
 
-- Count the liquid `unoah` bank balance in Redemption Buffer and strategic Reserve toward their targets. For Insurance,
-  count only `insurance_unoah_balance - insurance_reserved`; approved pending claims are encumbered and cannot
+- Count the liquid `anoah` bank balance in Redemption Buffer and strategic Reserve toward their targets. For Insurance,
+  count only `insurance_anoah_balance - insurance_reserved`; approved pending claims are encumbered and cannot
   simultaneously cover another loss.
 - All four fund accounts reject mixed and non-NOAH deposits because every launch use is NOAH-denominated.
 - Never count an outstanding Ark-issued stablecoin as backing for Ark's consolidated stablecoin liabilities, including
@@ -977,7 +977,7 @@ Initially:
 - Do not count the subsidy pool as Redemption Buffer, strategic Reserve, or Insurance.
 - Do not count one fund's balance toward another fund.
 - Never convert a deposited asset automatically.
-- Keep launch target and settlement calculations denomination-specific: read `unoah` directly and never iterate a fund
+- Keep launch target and settlement calculations denomination-specific: read `anoah` directly and never iterate a fund
   account or infer target credit from arbitrary custody.
 
 Because every balance counted toward a target and every custodied asset is initially NOAH, the target system is
@@ -990,7 +990,7 @@ capital requirement:
 ```text
 required_capital = target_ratio * covered_risk_exposure
 
-recognised_capital = liquid_unencumbered_unoah + sum(risk_adjusted_eligible_external_assets)
+recognised_capital = liquid_unencumbered_anoah + sum(risk_adjusted_eligible_external_assets)
 
 capital_gap = max(required_capital - recognised_capital, 0)
 ```
@@ -1043,7 +1043,7 @@ therefore part of the anti-feedback policy, not only reporting.
 - A falling target never releases, burns, trades, or transfers an existing balance.
 - Coverage-based Redemption Buffer settlement may spend below target; the target itself never triggers that draw.
 - Strategic Reserve has no automatic withdrawal path. Its only launch debit is the discrete governance-authorised
-  `unoah` commitment to the Redemption Buffer defined in Section 6.4; no target, price, trend, Oracle result, or Market
+  `anoah` commitment to the Redemption Buffer defined in Section 6.4; no target, price, trend, Oracle result, or Market
   request triggers or sizes it.
 - The committee or governance may submit a claim only during the active Claims Mandate term. Submission may encumber
   Insurance below target and execution may spend the held balance, but the target itself authorises neither action.
@@ -1067,7 +1067,7 @@ therefore part of the anti-feedback policy, not only reporting.
   mandate term automatically.
 
 Completeness is defined by outstanding liabilities, not by either configurable policy denomination. A missing SDR rate
-alone is irrelevant when `usdr` supply is zero; nonzero `usdr` supply requires a fresh `usdr`/NOAH value like any other
+alone is irrelevant when `asdr` supply is zero; nonzero `asdr` supply requires a fresh `asdr`/NOAH value like any other
 liability. A stale `Params.reference_tax_cap.denom` rate affects cap refresh only. A stale Market pool-denom rate may
 prevent a Market quote that needs the virtual pool, but it is not an additional Treasury aggregate-valuation dependency.
 
@@ -1085,8 +1085,8 @@ calculations single-sourced so that later target changes do not duplicate Market
 ### 8.1 Policy and governance settings
 
 - `MonetaryPolicy.stability_tax_rate`: reversible rate in `[0, 1]`.
-- `Params.reference_tax_cap`: governance-owned nonnegative Coin with a canonical micro-denomination, launched in
-  `usdr`; zero means no tax ceiling.
+- `Params.reference_tax_cap`: governance-owned nonnegative Coin with a canonical Ark-native base denomination, launched in
+  `asdr`; zero means no tax ceiling.
 - Per-denom `TaxCaps`: derived state, not an adaptive policy controller.
 
 The effective reference cap is stored directly in Params. Its denomination is only the unit for canonical tax-cap
@@ -1130,7 +1130,7 @@ passes. Top-level IBC transfers and Wasm attached funds are visible to ante insp
 submessages are discovered only during execution, so the custom Wasm/IBC integration must invoke the same calculator at
 that execution boundary rather than pretending the `TxFeeChecker` can see them in advance.
 
-A launch deposit to any Treasury fund is `unoah` and has zero stability-tax principal. A mixed or non-NOAH deposit is
+A launch deposit to any Treasury fund is `anoah` and has zero stability-tax principal. A mixed or non-NOAH deposit is
 rejected by the fund restriction; it does not become admissible merely because the normal tax calculator could assess
 its denomination. When an external asset is later allowlisted, its user-facing transfer remains subject to the same tax
 classification as a transfer to an ordinary account; the fund recipient creates no exemption.
@@ -1202,7 +1202,7 @@ This conversion keeps caps approximately equal in value without making tax-rate 
 
 Changing the effective reference cap has stricter replacement semantics than a scheduled refresh:
 
-1. The candidate Coin must be nonnegative and use a canonical micro-denomination configured in Oracle's native-stable
+1. The candidate Coin must be nonnegative and use a canonical Ark-native base denomination configured in Oracle's native-stable
    set. A positive candidate must already have every fresh, positive, representable consensus rate needed for conversion;
    a zero candidate needs no conversion rates.
 2. Governance-only `MsgUpdateParams` rebuilds the complete candidate map whenever the reference Coin changes. Params and
@@ -1332,13 +1332,13 @@ Treasury persists the current `RewardFundingState`:
 blocks_remaining       // observations still required before settlement
 validator_target       // sum of the per-block validator target for observed blocks
 oracle_target          // sum of the per-block Oracle target for observed blocks
-validator_fee_value    // sum of eligible completed-block fee values in unoah
+validator_fee_value    // sum of eligible completed-block fee values in anoah
 valuation_complete     // false after any required fee valuation is unavailable
 ```
 
 For each completed block, add the then-current reward-target parameters. Parameter changes therefore affect only the
 observations to which the new values are applied; previously accumulated target values are never recomputed. Value each
-non-empty `fee_collector` balance before Distribution using that BeginBlock's accepted Oracle snapshot. `unoah` has
+non-empty `fee_collector` balance before Distribution using that BeginBlock's accepted Oracle snapshot. `anoah` has
 identity value. Only then-configured native stable denominations receive target credit; unrelated fee denominations
 continue through Distribution but do not count toward the validator target.
 
@@ -1385,7 +1385,7 @@ Consequently, gas at or above `V` sends all tax to Oracle. Tax at or below `O` a
 above the protected Oracle floor may replace finite subsidy spending on a validator gap, and every residual after both
 targets are covered returns to Oracle.
 
-`B` includes the initial genesis allocation and every completed permissionless `unoah` deposit. Deposits never change
+`B` includes the initial genesis allocation and every completed permissionless `anoah` deposit. Deposits never change
 `V` or `O`, so a large transfer extends shortfall coverage rather than increasing either reward target.
 
 If `B >= total_shortfall`, pay both shortfalls in full.
@@ -1404,7 +1404,7 @@ zero shortfall without division.
 Subsidy-pool depletion never mints, borrows from the Redemption Buffer, strategic Reserve, or Insurance, or stops block
 production merely because the balance is empty.
 
-At settlement, value `unoah` directly and value the accumulated tax pot from one current accepted Oracle snapshot. Only
+At settlement, value `anoah` directly and value the accumulated tax pot from one current accepted Oracle snapshot. Only
 currently configured native stable denominations receive target credit. Any unexpected or no-longer-configured tax
 denomination goes entirely to Oracle.
 
@@ -1421,8 +1421,8 @@ The settlement flow runs in Treasury BeginBlock immediately before that block's 
 ```text
 stability_tax_collector -> fee_collector: validator_tax coins
 stability_tax_collector -> oracle:       oracle_tax coins
-treasury_subsidy_pool   -> fee_collector: validator_paid unoah
-treasury_subsidy_pool   -> oracle:        oracle_paid unoah
+treasury_subsidy_pool   -> fee_collector: validator_paid anoah
+treasury_subsidy_pool   -> oracle:        oracle_paid anoah
 ```
 
 Organic funding above a target remains with its recipient and never causes a negative top-up or refund. The subsidy-pool
@@ -1446,7 +1446,7 @@ skim is zero. Treat complete removal or redirection of SDK residuals as a separa
 
 ### 9.4 Oracle reward distribution
 
-Oracle must distribute every positive denomination in its module account, not only `unoah`:
+Oracle must distribute every positive denomination in its module account, not only `anoah`:
 
 1. Read all Oracle balances.
 2. For each denomination, calculate the existing reward-window share.
@@ -1500,7 +1500,7 @@ field numbering; do not retain deprecated fields or compatibility wrapper messag
 `Params` stores only governance-owned settings:
 
 ```text
-1 reference_tax_cap                cosmos.base.v1beta1.Coin, launch denom usdr
+1 reference_tax_cap                cosmos.base.v1beta1.Coin, launch denom asdr
 2 reward_funding_window            uint64
 ```
 
@@ -1508,8 +1508,8 @@ field numbering; do not retain deprecated fields or compatibility wrapper messag
 
 ```text
 1 stability_tax_rate               cosmos.Dec / math.LegacyDec
-2 validator_block_reward_target    cosmos.Int / math.Int, implicit micro-NOAH
-3 oracle_block_reward_target       cosmos.Int / math.Int, implicit micro-NOAH
+2 validator_block_reward_target    cosmos.Int / math.Int, implicit base-unit NOAH
+3 oracle_block_reward_target       cosmos.Int / math.Int, implicit base-unit NOAH
 4 redemption_buffer_target_ratio   cosmos.Dec / math.LegacyDec
 5 strategic_reserve_target_ratio   cosmos.Dec / math.LegacyDec
 6 insurance_target_ratio           cosmos.Dec / math.LegacyDec
@@ -1523,7 +1523,7 @@ Validation:
 - Rate/share/ratio fields must be in `[0, 1]`.
 - The three target ratios are independent stock targets; their sum may exceed one. The allocation waterfall, not their
   sum, determines how scarce expansion principal is routed.
-- `Params.reference_tax_cap` must be a nonnegative Coin with a canonical lowercase micro-denomination, and
+- `Params.reference_tax_cap` must be a nonnegative Coin with a canonical lowercase Ark-native base denomination, and
   `reward_funding_window` must be positive. Each policy reward target must be set and nonnegative.
 - Reward-target/window compatibility is not precomputed during Params, Monetary Policy, or genesis validation. The
   active reward-funding state uses checked addition for each observation and fails the BeginBlock transition if an
@@ -1537,7 +1537,7 @@ Safe defaults:
 
 - Monetary Policy tax rate, reward targets, and fund target ratios default to zero until launch economics are
   configured.
-- The Params reference cap defaults to zero `usdr`, producing explicit uncapped entries without genesis Oracle prices;
+- The Params reference cap defaults to zero `asdr`, producing explicit uncapped entries without genesis Oracle prices;
   the zero Monetary Policy tax rate remains the inert default.
 - Reward-funding window defaults to one chain week.
 - Production genesis must explicitly set all nonzero launch values.
@@ -1583,7 +1583,7 @@ origin                         // committee | governance
 mandate_term                    // appointment used for submission
 incident_reference
 recipient
-amount                         // sdk.Coin; unoah-only at launch
+amount                         // sdk.Coin; anoah-only at launch
 evidence_reference
 status                         // pending | paid | cancelled
 submitted_height
@@ -1620,7 +1620,7 @@ No old store layout is preserved. Remove:
 - Revenue-total counters that do not drive policy.
 
 Bank balances are the source of truth for the subsidy pool, Redemption Buffer, strategic Reserve, and Insurance. Every
-launch balance automatically reflects accepted `unoah` deposits. No deposit ledger, receipt, ownership record, or refill
+launch balance automatically reflects accepted `anoah` deposits. No deposit ledger, receipt, ownership record, or refill
 state is stored. Claims state records authorization and encumbrance rather than duplicating custody. Fund targets,
 Reserve balance, and Insurance unencumbered balance are calculated live from Bank plus the Insurance reservation.
 Tax-routing and ordinary bank-transfer events provide observation without one additional consensus write per
@@ -1645,14 +1645,14 @@ Rewrite `GenesisState` with compact launch-only fields:
 ```
 
 Subsidy pool, Redemption Buffer, strategic Reserve, and Insurance balances live only in bank genesis. Every fund may
-begin only with `unoah`. Redemption Buffer and strategic Reserve count their complete balances toward their targets;
+begin only with `anoah`. Redemption Buffer and strategic Reserve count their complete balances toward their targets;
 Insurance subtracts any imported reservation to derive its unencumbered balance. Treasury InitGenesis never mints them.
 
 Default genesis disables Claims and monetary delegation, stores the zero Monetary Policy and zero reference cap, derives
 a complete explicit-zero uncapped map, and uses zero accounting, no claims, and the canonical empty reward-funding state.
 Production genesis must supply the approved P4 policy, zero accounting, and no pending/completed claims unless an explicit
 test or export/import case requires otherwise. InitGenesis validates the canonical committee address, role separation,
-unique claims, claim-status transitions, reservation sum, and `insurance_reserved <= insurance_unoah_balance`.
+unique claims, claim-status transitions, reservation sum, and `insurance_reserved <= insurance_anoah_balance`.
 Export/import preserves the mandate, Insurance reservation, immutable claim fields, executable heights, finalizers, and
 statuses.
 
@@ -1680,9 +1680,9 @@ The launch Query service exposes only:
 - `TaxCaps`.
 - `ComputeTax(messages)` using repeated `google.protobuf.Any` annotated as SDK messages.
 - `FundStatus` returning:
-  - `nominal_liability_noah_equivalent` as an `sdk.DecCoin` explicitly denominated in `unoah`;
-  - `subsidy_pool_balance` as the current subsidy-pool `unoah` `sdk.Coin`, including accepted deposits;
-  - `redemption_buffer_balance` and `redemption_buffer_target` as `sdk.Coin` values in `unoah`;
+  - `nominal_liability_noah_equivalent` as an `sdk.DecCoin` explicitly denominated in `anoah`;
+  - `subsidy_pool_balance` as the current subsidy-pool `anoah` `sdk.Coin`, including accepted deposits;
+  - `redemption_buffer_balance` and `redemption_buffer_target` as `sdk.Coin` values in `anoah`;
   - `strategic_reserve_balance` and `strategic_reserve_target` as separate `sdk.Coin` values;
   - `insurance_balance`, `insurance_reserved`, `insurance_unencumbered_balance`, and `insurance_target` as separate
     `sdk.Coin` values.
@@ -1719,9 +1719,9 @@ messages (`InvalidArgument`), configured denominations lacking a cap (`FailedPre
 tax (`OutOfRange`), and unexpected state failures (`Internal`).
 
 All Treasury liability and target-exposure query/event values are direct NOAH equivalents explicitly denominated in
-`unoah`. Clients must infer neither value from `Params.reference_tax_cap.denom` nor from Market's current
+`anoah`. Clients must infer neither value from `Params.reference_tax_cap.denom` nor from Market's current
 `BasePool.Denom`. Construct each `sdk.DecCoin` from the complete `LegacyDec` aggregate; never truncate the displayed
-aggregate to integer `unoah`.
+aggregate to integer `anoah`.
 
 Do not store or return a second authoritative subsidy-duration value. Clients derive the current estimate from the live
 subsidy pool balance and reward targets, using zero organic funding for a conservative estimate; the balance is
@@ -1759,13 +1759,13 @@ message to override those bounds. Neither path may change the governance-owned r
 
 `MsgSetClaimsMandate` is governance-signed and replaces or disables the complete committee appointment. Treasury derives
 a new monotonically increasing term. An empty committee disables the mandate; otherwise the message supplies the exact
-committee, half-open activation/expiry heights, cancellation-period blocks, and a positive fixed `unoah` committee claim
+committee, half-open activation/expiry heights, cancellation-period blocks, and a positive fixed `anoah` committee claim
 limit. The Claims committee, monetary-policy committee, and Treasury authority must be distinct addresses. The
 cancellation period must not exceed `expiry_height - activation_height`; equality permits a claim at the activation
 boundary to become executable exactly at expiry. A successful replacement resets Claims allowance used to zero without
 changing the Insurance reservation.
 
-`MsgSubmitClaim` is signed by the exact committee or governance authority. Both paths validate the same positive `unoah`
+`MsgSubmitClaim` is signed by the exact committee or governance authority. Both paths validate the same positive `anoah`
 amount, recipient, references, and live Insurance coverage against the same active Claims Mandate and exact expected
 term. The recipient must be neither the Insurance account itself nor any address Bank currently blocks from receiving
 module-account sends. Treasury assigns the next globally monotonic `uint64` claim ID, returns it in
@@ -1794,7 +1794,7 @@ minimum_reserve_balance: sdk.Coin
 Annotate `authority` as the signer and Cosmos address scalar. Generate both Coin fields as non-nullable `sdk.Coin`
 values with `amino.dont_omitempty = true`, following the launch schema's standard value-field annotations.
 
-It validates the general Treasury authority, which is `x/gov` at launch. Both Coins must use `unoah`; `amount` must be
+It validates the general Treasury authority, which is `x/gov` at launch. Both Coins must use `anoah`; `amount` must be
 positive and `minimum_reserve_balance` nonnegative. The handler enforces sufficient Reserve balance and
 `post_transfer_reserve_balance >= minimum_reserve_balance`, then performs the fixed module-to-module transfer described
 in Section 6.4. It must not read Oracle rates, calculate targets, accept an arbitrary recipient, convert an asset, call
@@ -1819,16 +1819,16 @@ Replace legacy policy/seigniorage events with:
 
 - `ark.treasury.v1.EventTaxCapsUpdated` with the complete typed `tax_caps` set, and
   `ark.treasury.v1.EventTaxCapsUpdateSkipped` with an `EventSkipReason`; detailed errors remain in logs.
-- `ark.treasury.v1.EventBlockRewardsToppedUp` with the `unoah` denomination and separate validator/Oracle target,
+- `ark.treasury.v1.EventBlockRewardsToppedUp` with the `anoah` denomination and separate validator/Oracle target,
   organic-funding, and exact-payment amounts. Shortfall is derived from target and organic funding, while the remaining
   subsidy balance is queryable Bank state.
 - `ark.treasury.v1.EventBlockRewardTopUpSkipped` with an `EventSkipReason`; detailed errors remain in logs, and collected
   stability tax is sent entirely to Oracle.
-- `ark.treasury.v1.EventExpansionAllocated` with the `unoah` denomination, separate Buffer, strategic Reserve, and
+- `ark.treasury.v1.EventExpansionAllocated` with the `anoah` denomination, separate Buffer, strategic Reserve, and
   Insurance credits, separate spread/dust and overflow burns, and the target-valuation-complete flag. Eligible
   principal, gross offer, total burn, and conservative fallback are derived from these fields; Market's
   conversion-settlement event owns the stable output.
-- `ark.treasury.v1.EventRedemptionBufferDrawn` with the `unoah` denomination, Buffer payment, and
+- `ark.treasury.v1.EventRedemptionBufferDrawn` with the `anoah` denomination, Buffer payment, and
   aggregate-valuation-complete flag. Market's conversion-settlement event owns the stable offer, quoted NOAH output,
   and residual mint; liability valuations remain execution-local.
 - `ark.treasury.v1.EventClaimSubmitted` with the keeper-assigned claim ID.
@@ -1841,7 +1841,7 @@ as the domain link between a claim ID and its Bank payment.
 
 Do not add a Treasury-specific deposit event for any fund. The canonical bank transfer event already records sender,
 recipient, and coins; standard Bank queries report custody, while `FundStatus` reports target comparison balances. Every
-accepted launch deposit is `unoah` and therefore has no stability-tax principal.
+accepted launch deposit is `anoah` and therefore has no stability-tax principal.
 
 On incomplete aggregate valuation, `EventRedemptionBufferDrawn` records Buffer payment zero and sets
 `aggregate_valuation_complete = false`, distinguishing the conservative fallback from a complete zero draw without
@@ -1917,7 +1917,7 @@ All core launch-policy decisions D1 through D33 are confirmed. This includes:
 - Use the zero-Buffer/full-mint fallback when another nonzero-supply native stable lacks a fresh direct NOAH valuation.
 - Treat public fund ratios as separate capacity measures, never as a combined solvency or backing claim.
 - Defer external-asset custody, target recognition, valuation/haircuts, and every strategic Reserve action other than
-  the launch governance-only `unoah` commitment to the shared Redemption Buffer. Introduce them with the first approved
+  the launch governance-only `anoah` commitment to the shared Redemption Buffer. Introduce them with the first approved
   external asset, not as dormant launch authority. Ark-issued stablecoins remain liabilities and always receive zero
   target credit.
 - Let governance invoke the fixed Reserve-to-Buffer action through Treasury's general authority with a positive amount
@@ -1925,9 +1925,9 @@ All core launch-policy decisions D1 through D33 are confirmed. This includes:
   untaxed, uncallable by Market, and audited through governance state plus Treasury and Bank events rather than a
   duplicate Treasury history collection.
 - Use the balance-constrained subsidy pool, Oracle-first tax lane, proportional pool shortfall, and zero launch
-  `community_tax` defined in Section 9. Seed the pool at genesis, allow irreversible permissionless `unoah` deposits,
+  `community_tax` defined in Section 9. Seed the pool at genesis, allow irreversible permissionless `anoah` deposits,
   and add no automatic refill or conversion mechanism.
-- Allow irreversible permissionless `unoah` deposits to all four Treasury fund accounts and reject mixed or non-NOAH
+- Allow irreversible permissionless `anoah` deposits to all four Treasury fund accounts and reject mixed or non-NOAH
   deposits atomically. Deposits create no ownership, withdrawal, coverage, priority, or deployment rights.
 - Base required Reserve and Insurance capital on each fund's covered risk exposure rather than its holdings. When
   external assets are introduced, reduce target gaps only by explicit fund-specific risk-adjusted recognition, preserve
@@ -1946,15 +1946,15 @@ All core launch-policy decisions D1 through D33 are confirmed. This includes:
   automatically resets when a fund is refilled.
 - Apply one tax cap per taxable input/denomination pair across every enabled user-facing bank, Market-send, Wasm, and
   IBC transfer boundary, without taxing arbitrary internal bank movements.
-- Store the canonical tax cap as a governance-changeable Coin launching in `usdr`, independent from Treasury's direct
+- Store the canonical tax cap as a governance-changeable Coin launching in `asdr`, independent from Treasury's direct
   NOAH-equivalent liability valuation and Market's changeable pool unit.
-- Make `BasePool` a denomination-bearing `sdk.DecCoin` launching in `usdr`, and support one live pool-unit transition
+- Make `BasePool` a denomination-bearing `sdk.DecCoin` launching in `asdr`, and support one live pool-unit transition
   through the existing `MsgUpdateParams` without adding a transition object, message, or parallel pool.
 - Treat submitted `BasePool.Amount` as a non-binding audit expectation on a denomination change; retain it in the
   transaction, derive and store the amount from one fresh deterministic conversion, emit the old and applied pool state,
   and atomically rescale `ArkPoolDelta`.
 - Price stable-to-stable conversion directly and keep Treasury fund calculations independent of Market's pool unit.
-- Keep `usdr` as a normal supported offer and output after the basket becomes the flagship and Market pool unit; the
+- Keep `asdr` as a normal supported offer and output after the basket becomes the flagship and Market pool unit; the
   pool-denomination change does not alter stablecoin mint eligibility.
 
 P1 numerical launch configuration and P4 Claims Mandate operating values remain pending before launch. P2 virtual-pool
@@ -2071,7 +2071,7 @@ Claim-submission tests must cover an actual Legacy Amino threshold multisig; wro
 nonexistent signer account, account sequence and fee behavior; expected-term mismatch for committee and governance;
 not-yet-active and expired mandate; keeper-assigned globally monotonic claim IDs, sequence exhaustion, bounded
 incident/evidence references, and numeric REST lookup; recipient validation; rejection of Insurance and Bank-blocked
-recipients before any accounting write; positive `unoah`-only amounts; pending-reservation and held-balance boundaries;
+recipients before any accounting write; positive `anoah`-only amounts; pending-reservation and held-balance boundaries;
 checked executable-height addition; rejection when the cancellation period would cross mandate expiry; atomic rollback;
 no Bank send on submission; and pending-genesis recipient validation.
 
@@ -2086,7 +2086,7 @@ Target tests must prove `insurance_unencumbered_balance = insurance_balance - in
 gap without moving coins; execution decreases balance and reservation equally without opening a second gap; and
 cancellation releases the reservation and closes the corresponding gap. None changes required exposure or the target.
 
-Reserve-to-Buffer message and fund tests must cover general-authority validation; positive exact `unoah`; rejection of
+Reserve-to-Buffer message and fund tests must cover general-authority validation; positive exact `anoah`; rejection of
 zero, malformed, or wrong-denomination Coins; insufficient Reserve balance; the per-proposal minimum remaining balance;
 partial and complete Reserve commitment; Buffer above target; Reserve below target or at zero when explicitly allowed;
 Bank-send rollback; exact pre/post Bank balances; and no custom Treasury event. The keeper must use fixed module names
@@ -2112,9 +2112,9 @@ valuation and transient snapshot mechanics in `liability.go`. Keep reward-window
 `msg_server.go`. Inject Treasury's module-scoped `store.TransientStoreService`; the cache is derived state with no
 genesis field, export surface, or migration. Use the shared `RateSnapshot.Convert` path and checked `LegacyDec`
 aggregation consistently for nominal liability, target exposure, expansion-principal valuation, and redemption
-coverage. Treasury fund logic must have no permanent `MicroSDRDenom` dependency.
+coverage. Treasury fund logic must have no permanent `SDRBaseDenom` dependency.
 
-`RouteExpansion` must validate positive `unoah` gross input and native-stable output, preserve every existing caller
+`RouteExpansion` must validate positive `anoah` gross input and native-stable output, preserve every existing caller
 quote rate, add only missing liability rates, derive eligible principal from the final integer output, reject output
 value above the gross offer, count the pending output exactly once in post-trade exposure, and calculate the complete
 Buffer → Reserve → Insurance → overflow waterfall from bounded remainders before performing only the positive fixed
@@ -2149,22 +2149,22 @@ incomplete-valuation fallback, split-versus-unsplit floor rounding, zero aggrega
 exceeding aggregate liability, quoted output exceeding redeemed liability, non-decreasing post-redemption coverage, and
 zero draw without a bank-send call. For identical pre-trade balances and liabilities, changing
 `redemption_buffer_target_ratio` must not change the coverage-based draw. An absent SDR rate must be irrelevant
-when `usdr` supply is zero, while nonzero `usdr` supply still requires a fresh `usdr`/NOAH valuation like every other
+when `asdr` supply is zero, while nonzero `asdr` supply still requires a fresh `asdr`/NOAH valuation like every other
 outstanding liability.
 
-Target-gap calculation must read each fund account's `unoah` Bank balance at launch and subtract `InsuranceReserved`
+Target-gap calculation must read each fund account's `anoah` Bank balance at launch and subtract `InsuranceReserved`
 from Insurance only. Tests must prove that mixed or non-NOAH credits to every fund are rejected atomically and cannot
-change a target gap, expansion routing, or coverage-based Buffer settlement. Buffer `unoah` deposits must be included
+change a target gap, expansion routing, or coverage-based Buffer settlement. Buffer `anoah` deposits must be included
 naturally in its live pre-redemption balance without any deposit ledger or special settlement branch.
 
 Keep the fixed Reserve-to-Buffer balance movement directly in the authorised handler in `msg_server.go`. Do not add it
-to Market's expected Treasury keeper interface. Read only the live Reserve `unoah` balance needed for validation; do not
+to Market's expected Treasury keeper interface. Read only the live Reserve `anoah` balance needed for validation; do not
 read the Buffer balance, invoke the valuation helper, emit a custom event, or store pre/post balances as consensus state.
 
 Phase 1 must deliver the complete final calculator and `ComputeTax` query described in Section 8, including bank send,
 multi-send inputs, `MsgSwapSend`, `MsgSwap`, recursive authz, denomination filtering, independent per-input and
 per-denomination caps, and malformed-message behavior. It must also atomically rebuild all derived caps when the
-effective reference Coin changes; tests cover a successful `usdr`-to-another-denom switch, direct reference-cap
+effective reference Coin changes; tests cover a successful `asdr`-to-another-denom switch, direct reference-cap
 copying, missing/stale-rate rollback, invalid candidate denoms, and export/import. Phase 4 wires the reviewed calculator
 into ante and every enabled Wasm/IBC execution boundary; it does not invent the tax semantics later.
 
@@ -2207,13 +2207,13 @@ may be simulated only against a real pending claim at the correct height.
 Add:
 
 - `x/treasury/module/send_restriction.go` and tests: for all four Treasury fund recipients, accept only a positive
-  `sdk.Coins` value consisting solely of `unoah` and reject every mixed or non-NOAH set; pass through every unrelated
+  `sdk.Coins` value consisting solely of `anoah` and reject every mixed or non-NOAH set; pass through every unrelated
   recipient. The restriction owns no state, conversion, or redirection.
 
 Restriction tests must also compose a preceding address-rewriting restriction and prove Treasury applies the NOAH-only
 rule to the rewritten final destination. Because Treasury is recipient-based, outbound reward top-ups and Insurance
 claims remain unrestricted by their source account, while every inbound non-NOAH module transfer to any fund must fail.
-The Reserve transfer passes the final-recipient rule because it sends only `unoah`.
+The Reserve transfer passes the final-recipient rule because it sends only `anoah`.
 
 The currently unwired `x/treasury/wasm` adapter contains a stub general query and references deleted state. Remove it in
 this phase if a production call path is still absent. Reintroduce a real adapter when custom Wasm is wired; do not keep
@@ -2243,25 +2243,25 @@ Modify `app/app_config.go` narrowly:
   add no Reserve operator, Claims committee, Reserve guardian, or hot-key address to app module configuration. Claims
   roles come from Treasury genesis/governance state.
 - Ensure the launch Claims committee has a BaseAccount and an explicit non-Treasury way to pay transaction fees, either
-  its own genesis `unoah` balance or a separately approved narrow fee grant. Insurance funds never pay role-account gas
+  its own genesis `anoah` balance or a separately approved narrow fee grant. Insurance funds never pay role-account gas
   automatically.
 
 Account-wiring tests must prove all four fund accounts exist, have no permissions, accept only the intended inbound
 deposits, and are distinct from one another and from the Treasury subsidy-pool account. Ordinary `MsgSend` and
 `MsgMultiSend` tests must prove:
 
-- Every fund accepts positive `unoah` and rejects every non-NOAH or mixed-denom deposit atomically.
+- Every fund accepts positive `anoah` and rejects every non-NOAH or mixed-denom deposit atomically.
 - A rejection leaves the rejected principal transfer and every `MsgMultiSend` output unchanged atomically. In a full
   transaction after Phase 4, already-valid ante gas fees and stability tax retain their normal message-failure behavior.
 - Unrelated recipients retain ordinary Bank behavior.
 - Deposits change no total supply and create ordinary bank events; after Phase 4 activates taxation, taxable stable
   deposits additionally use the ordinary stability-tax events.
-- Intended protocol `unoah` credits from Market to Buffer, Reserve, and Insurance pass the same final-recipient
+- Intended protocol `anoah` credits from Market to Buffer, Reserve, and Insurance pass the same final-recipient
   restriction; a non-NOAH module credit to any fund fails.
 - A preceding restriction that rewrites an address into any fund cannot bypass the NOAH-only rule.
 - Outbound reward top-ups and authorised Insurance claims are not rejected merely because of their source module
   account.
-- A passed governance message can move only positive `unoah` from `treasury_strategic_reserve` to
+- A passed governance message can move only positive `anoah` from `treasury_strategic_reserve` to
   `treasury_redemption_buffer`; no user-supplied source, destination, denomination, or Market call path exists.
 
 Do not remove `x/mint` until Phase 2.
@@ -2269,13 +2269,13 @@ Do not remove `x/mint` until Phase 2.
 ### 13.6 Phase 1 invariants
 
 - Treasury has no mint or burn dependency or permission.
-- The subsidy pool accepts only irreversible transfers of already-issued `unoah`; deposits create no Treasury message,
+- The subsidy pool accepts only irreversible transfers of already-issued `anoah`; deposits create no Treasury message,
   stored ledger, refund claim, target, or automatic refill trigger.
 - A subsidy-pool deposit changes only sender/pool balances and ordinary bank events; total supply, reward targets, tax
   policy, and every other Treasury fund remain unchanged.
-- Redemption Buffer accepts only irreversible `unoah`; its deposits create no special settlement path or depositor claim
+- Redemption Buffer accepts only irreversible `anoah`; its deposits create no special settlement path or depositor claim
   and never change conversion quotes or eligibility.
-- Strategic Reserve and Insurance accept only `unoah` at launch; there is no dormant external custody, recognition,
+- Strategic Reserve and Insurance accept only `anoah` at launch; there is no dormant external custody, recognition,
   conversion, deployment, or in-kind claim path.
 - Deposits remain valid above target; targets are not account caps.
 - Once Phase 4 activates taxation, a taxable stable deposit is assessed like the same user-facing transfer to any
@@ -2284,7 +2284,7 @@ Do not remove `x/mint` until Phase 2.
 - Protobuf tags and collection prefixes match the compact launch-only schema in Section 10.
 - Target calculation itself moves no coins.
 - A falling target causes no automatic outflow.
-- `RouteExpansion` derives eligible principal from the gross `unoah` offer, final integer stable output, and Market
+- `RouteExpansion` derives eligible principal from the gross `anoah` offer, final integer stable output, and Market
   quote rates; Market cannot supply that principal or any target, gap, credit, burn, source, or destination.
 - Post-trade stable liability is used for expansion allocation by adding the not-yet-minted `stable_output` exactly
   once.
@@ -2304,7 +2304,7 @@ Do not remove `x/mint` until Phase 2.
 - Redemption Buffer, strategic Reserve, and Insurance never share an account.
 - Market has no automatic interface for debiting strategic Reserve or Insurance.
 - The only launch production path naming `treasury_strategic_reserve` as a bank-send source is
-  `MsgTransferReserveToBuffer`; it is general-authority gated, `unoah`-only, uses the fixed Buffer destination, and
+  `MsgTransferReserveToBuffer`; it is general-authority gated, `anoah`-only, uses the fixed Buffer destination, and
   checks its per-proposal minimum remaining Reserve balance.
 - A successful Reserve-to-Buffer action satisfies `Delta Reserve = -amount`, `Delta Buffer = +amount`, and zero change
   to total supply, consolidated stable liability, Params, targets, Market state, quote, tax balances, subsidy pool, and
@@ -2312,7 +2312,7 @@ Do not remove `x/mint` until Phase 2.
 - No Buffer-to-Reserve, arbitrary-recipient, conversion, claim, reward, or direct-redeemer Reserve path exists.
 - Treasury's general authority remains governance. The Claims committee is a mandate role with exact canonical matching;
   it cannot update Params, change policy, access Reserve, send generically, mint, or borrow.
-- Claim submission enforces exact role authorization, unique ID, positive `unoah`-only amount, recipient/reference,
+- Claim submission enforces exact role authorization, unique ID, positive `anoah`-only amount, recipient/reference,
   derived executable height, live Insurance coverage, remaining Claims allowance when committee-origin, and audit record
   before encumbering funds.
 - Insurance reservation never exceeds Insurance balance. Approval changes `insurance_reserved` and the unencumbered
@@ -2459,8 +2459,8 @@ reaches zero. Test:
 - A per-block target change contributes the value in effect for each later observation without rewriting earlier
   accumulated targets.
 - Empty Treasury balance no-op.
-- An accepted `unoah` deposit before depletion extends shortfall coverage without changing either reward target.
-- An accepted `unoah` deposit after depletion restarts shortfall coverage on the next eligible BeginBlock.
+- An accepted `anoah` deposit before depletion extends shortfall coverage without changing either reward target.
+- An accepted `anoah` deposit after depletion restarts shortfall coverage on the next eligible BeginBlock.
 - Exact transfers to `fee_collector` and Oracle.
 - No supply change.
 - No Redemption Buffer, strategic Reserve, or Insurance debit.
@@ -2474,7 +2474,7 @@ Production genesis must allocate the initial already-issued NOAH balances throug
 - Strategic Reserve seed, if any.
 - Insurance seed, if any.
 
-All four allocations must contain only already-issued `unoah`. Each complete launch balance is counted according to its
+All four allocations must contain only already-issued `anoah`. Each complete launch balance is counted according to its
 fund-specific target rule. Treasury InitGenesis must never mint these balances.
 
 ### 14.4 Phase 2 invariants
@@ -2526,7 +2526,7 @@ Before editing Market, quantify the current virtual-pool mechanism:
 - Sensitivity to `BasePool`, `MinStabilitySpread`, and Oracle price movement.
 - Alternating expansion/redemption behavior.
 - Adversarial splitting across accounts and blocks.
-- Split-versus-unsplit coverage funding: each complete-valuation floor retains less than one micro-NOAH relative to its
+- Split-versus-unsplit coverage funding: each complete-valuation floor retains less than one base-unit NOAH relative to its
   exact coverage share. Measure adversarial transaction-count effects and prove splitting cannot increase residual mint
   merely by changing the settlement partition.
 - Whether any proposed quota or gate would create a public threshold and first-mover incentive.
@@ -2576,15 +2576,21 @@ settlement paths matched the runner exactly. The measured results are:
 - A full-app cross-check confirmed the corrected funding behavior through the real Market, Treasury, Oracle, and Bank
   keepers. At `delta = 0.9 * BasePool`, liability `BasePool`, Buffer `0.25 * liability`, and total redemption
   `0.5 * liability`, one settlement used `0.027412280701 * BasePool` of Buffer and minted
-  `0.082236842106 * BasePool`. Ten equal settlements returned four fewer micro-NOAH, used
+  `0.082236842106 * BasePool`. Ten equal settlements returned four fewer base-unit NOAH, used
   `0.033529886425 * BasePool` of Buffer, and minted less: `0.076119236378 * BasePool`.
-- BasePool scaling was linear apart from micro-unit truncation, Oracle-rate changes scaled NOAH output inversely, and
+- BasePool scaling was linear apart from base-unit truncation, Oracle-rate changes scaled NOAH output inversely, and
   changing the recovery-period block count while observing exactly one corresponding period produced effectively the
   same exponential recovery envelope.
 
-P2 is complete. The corrected measurements support no hard residual-mint limiter: they found no additional recipient
-output, residual-mint amplification from partitioning, or profitable fixed-price cycle, while a limiter would add the
-known public threshold and failed-redemption incentive. Keep coverage-based Buffer funding and add no limiter fields.
+Recorded 2026-07-25 after moving Ark-native denominations to exponent 18: the same-block split sweep remained within
+the explicit eight-operation `LegacyDec` rounding envelope. Its maximum positive recipient-output and residual-mint
+difference was `3000000anoah`, or `0.000000000003noah`. At launch BasePool scale, the one-third scaling cases differed
+from the exact integer quotient by at most `333334anoah`. These are bounded fixed-point effects, not value-level
+amplification; the tests now assert the relative rounding envelope instead of exact base-unit monotonicity.
+
+P2 is complete. The corrected measurements support no hard residual-mint limiter: they found no value-level recipient
+output or residual-mint amplification from partitioning and no profitable fixed-price cycle, while a limiter would add
+the known public threshold and failed-redemption incentive. Keep coverage-based Buffer funding and add no limiter fields.
 
 ### 15.2 Market implementation files
 
@@ -2622,7 +2628,7 @@ Regenerate:
 
 Modify:
 
-- `x/market/types/params.go`: construct the launch `BasePool` in `usdr` and validate positive canonical DecCoin data.
+- `x/market/types/params.go`: construct the launch `BasePool` in `asdr` and validate positive canonical DecCoin data.
   Keep the cross-module Oracle-native check in the keeper rather than pure Params validation.
 - `x/market/types/pool.go`: continue deriving effective pools from `BasePool.Amount` and the signed delta.
 - `x/market/types/genesis.go` and tests.
@@ -2663,7 +2669,7 @@ transition progress. Phase 3A decides only whether a separate residual-mint limi
    directly from offer to ask, and apply the larger Tobin tax. Its quote and settlement must be independent of
    `BasePool`, `ArkPoolDelta`, and the current pool denomination.
 4. For NOAH/stable pricing, read `Params.BasePool.Denom` and use it everywhere the current implementation hard-codes
-   `chain.MicroSDRDenom`: rate-snapshot capture, offer normalisation, constant-product inputs, ask normalisation, and
+   `chain.SDRBaseDenom`: rate-snapshot capture, offer normalisation, constant-product inputs, ask normalisation, and
    delta updates. The pool denomination is a unit of account, not an intermediate mint or transfer.
 5. Implement `MsgUpdateParams` with one branch inside the existing Market handler. This is the sole pool amount and
    denomination transition path; it makes no Treasury call:
@@ -2724,14 +2730,14 @@ transition progress. Phase 3A decides only whether a separate residual-mint limi
 The future flagship change uses ordinary module configuration and one Market parameter update:
 
 1. Add the new basket denomination to Oracle's native-stable/Tobin configuration, then wait for fresh settled basket
-   and `usdr` rates. Treasury observes the shared Oracle configuration and derives the corresponding tax cap; no
+   and `asdr` rates. Treasury observes the shared Oracle configuration and derives the corresponding tax cap; no
    Treasury Params change is required merely to make the denomination Market's pool unit.
 2. Submit one Market `MsgUpdateParams` whose `BasePool` carries the basket denom and governance's expected basket
    amount, together with any intended recovery-period or minimum-spread changes.
 3. At execution, retain the submitted value in the successful transaction, emit the old and applied pool state, apply
    the fresh live-derived basket amount, and rescale `ArkPoolDelta` atomically. Do not alter stablecoin output eligibility.
-4. Keep `usdr` in Oracle, Tobin-tax, Treasury-tax, and Market support. Both NOAH-to-`usdr` and basket-to-`usdr`
-   conversions remain valid, so `usdr` may continue to be minted as an ordinary Ark stablecoin.
+4. Keep `asdr` in Oracle, Tobin-tax, Treasury-tax, and Market support. Both NOAH-to-`asdr` and basket-to-`asdr`
+   conversions remain valid, so `asdr` may continue to be minted as an ordinary Ark stablecoin.
 5. Change `Params.reference_tax_cap` to a basket-denominated Coin later only if governance wants the basket to become
    the tax-cap reference; that separate Treasury update neither drives nor repeats the Market transition.
 
@@ -2739,7 +2745,7 @@ Do not add a Treasury orchestration message, a Treasury-to-Market keeper depende
 change Params together. Governance may coordinate the two independent policy choices operationally, but each module
 validates and writes only its own state.
 
-Ark never runs parallel SDR and basket virtual pools. Basket and `usdr` liabilities may coexist indefinitely and both
+Ark never runs parallel SDR and basket virtual pools. Basket and `asdr` liabilities may coexist indefinitely and both
 remain valid outputs, while all NOAH/stable pressure updates the one active pool expressed in the basket denomination
 after the transition.
 
@@ -2819,7 +2825,7 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 - Buffer balance and funding source never change an individual Market quote. Split-versus-unsplit output differences
   remain governed solely by Market's sequential virtual-pool state, spread, and integer truncation. The Phase 3A sweep
   proves that the coverage-based draw does not let a split path increase either aggregate recipient output or aggregate
-  residual mint; each extra Buffer floor can affect aggregate funding by less than one micro-NOAH.
+  residual mint; each extra Buffer floor can affect aggregate funding by less than one base-unit NOAH.
 - Stable-to-stable conversion touches none of the three funds or NOAH supply.
 - Stable-to-stable output is calculated directly from offer/ask rates and is unchanged by `BasePool.Denom`,
   `BasePool.Amount`, or `ArkPoolDelta` when the offer/ask snapshot and Tobin taxes are fixed.
@@ -2836,7 +2842,7 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 - A Market pool-denomination transition leaves Treasury nominal liability, target exposure, targets, and
   coverage-based Buffer funding unchanged under the same stable/NOAH rates. It also leaves `reference_tax_cap`
   unchanged unless governance later submits the independent Treasury Params update.
-- Changing `BasePool.Denom` changes no stablecoin's offer/output eligibility. `usdr` remains a valid output after the
+- Changing `BasePool.Denom` changes no stablecoin's offer/output eligibility. `asdr` remains a valid output after the
   basket transition and its supply may continue to increase through ordinary conversion settlement.
 - There is exactly one active virtual pool and no transition object, parallel delta, or persistent transition phase.
 - Same-direction pressure never improves the quoted price.
@@ -2867,8 +2873,8 @@ negative-spread flooring including an extreme valid pool state that previously o
 queries, mocked settlement error propagation, settlement event accounting, and the Phase 3A capacity model. Full-app
 cache tests force a late payout failure after each of the three directional settlement paths and confirm balances,
 supplies, pool state, transient Treasury liability, targets, and events all roll back. The full-app transition test
-changes the pool unit from `usdr` to `uusd`,
-applies the live-derived amount, rescales delta, preserves stable-to-stable quotes, confirms `usdr` remains a valid
+changes the pool unit from `asdr` to `ausd`,
+applies the live-derived amount, rescales delta, preserves stable-to-stable quotes, confirms `asdr` remains a valid
 NOAH conversion output, and confirms an ordinary app-genesis export preserves the denomination-bearing Params and
 post-settlement delta. The binary built at `/private/tmp/arkd-phase3`; the known listener-dependent app and command
 suites passed in the loopback-capable test environment.
@@ -3091,7 +3097,7 @@ Test:
 - Malformed `Any` or authz contents.
 - `MsgSwapSend` taxable stable offer.
 - `MsgSwap` exemption.
-- `unoah` fund deposits create no stability-tax principal.
+- `anoah` fund deposits create no stability-tax principal.
 - Taxable native-stable, mixed, and other non-NOAH fund principal is rejected atomically; tax classification does not
   bypass the recipient restriction, and ante-assessed tax retains the message-failure semantics defined in Section 8.6.
 - NOAH and non-native-denom exclusion.
@@ -3244,12 +3250,12 @@ Exercise:
 - Priceable redemption while an unrelated nonzero-supply stable rate is stale.
 - Strategic Reserve isolation throughout ordinary conversion and reward flows.
 - Empty and nearly empty subsidy pool.
-- Permissionless `unoah` subsidy-pool deposits before and after depletion, including subsidy extension/restart,
+- Permissionless `anoah` subsidy-pool deposits before and after depletion, including subsidy extension/restart,
   unchanged payout rates, unchanged total supply, and rejection of mixed/non-NOAH deposits.
-- Permissionless Buffer `unoah` deposits before redemption, including unchanged quotes and pool state, increased
+- Permissionless Buffer `anoah` deposits before redemption, including unchanged quotes and pool state, increased
   coverage-based existing-NOAH funding where applicable, reduced residual mint, unchanged total supply, and rejection of
   mixed/non-NOAH deposits.
-- Permissionless Reserve and Insurance `unoah` deposits, including over-target deposits, unchanged total supply, no
+- Permissionless Reserve and Insurance `anoah` deposits, including over-target deposits, unchanged total supply, no
   automatic conversion or Reserve action, and no depositor ownership, withdrawal, authority, coverage, or claim-priority
   rights; mixed and non-NOAH deposits from every ingress fail atomically.
 - Governance Reserve-to-Buffer commitments before and after ordinary redemptions, including partial and complete
@@ -3279,22 +3285,22 @@ Exercise:
 - Mixed bank, Market-send, Wasm, and IBC transfers receiving independent caps per taxable input, including multiple
   inputs from the same source.
 - Successful and failed Monetary Policy cap-amount changes, plus governance-only Params denomination changes.
-- Successful and failed same-denom BasePool resizes and live `usdr`-to-basket pool-denom changes, including zero, small,
+- Successful and failed same-denom BasePool resizes and live `asdr`-to-basket pool-denom changes, including zero, small,
   and arbitrarily large differences between submitted and applied amounts that do not independently reject execution.
 - Stable-to-stable quote equality before and after a pool-denom transition.
 - Treasury liability, target, and coverage-funded-output equality before and after both a pool-denom transition and a
   reference-tax-cap denomination change.
-- Missing SDR pricing with zero `usdr` supply versus nonzero `usdr` supply.
+- Missing SDR pricing with zero `asdr` supply versus nonzero `asdr` supply.
 - `FundStatus` with basket pricing missing when basket is only the Market pool unit versus when basket supply is
   outstanding; separately prove a NOAH/stable Market quote still fails when its required pool-unit rate is stale.
 - `RewardFunding` remains queryable without Oracle calls when `FundStatus` cannot produce a complete valuation.
-- Bidirectional `usdr` conversions remain valid after the basket transition, including NOAH-to-`usdr` and
-  basket-to-`usdr` outputs, and every flow updates the single basket-denominated virtual pool where applicable.
-- Target ceiling and redemption-floor rounding errors each remain below one micro-NOAH where their respective caps do
+- Bidirectional `asdr` conversions remain valid after the basket transition, including NOAH-to-`asdr` and
+  basket-to-`asdr` outputs, and every flow updates the single basket-denominated virtual pool where applicable.
+- Target ceiling and redemption-floor rounding errors each remain below one base-unit NOAH where their respective caps do
   not bind.
 - Governance parameter updates.
 - Every bank/mint/burn failure point.
-- Genesis export/import, preserving every `unoah`-only fund balance, Claims Mandate term and appointment, pending Claims
+- Genesis export/import, preserving every `anoah`-only fund balance, Claims Mandate term and appointment, pending Claims
   reservations, every pending/cancelled/paid claim and its origin and mandate term, the exact in-progress Reward Funding
   state, and governance proposals that authorised a Reserve-to-Buffer commitment or exact claim; imported non-NOAH fund
   balances and inconsistent claim reservations fail genesis validation.
@@ -3374,14 +3380,14 @@ Market pool denomination change:
 
 Supported stable outputs:
   BasePool.Denom does not determine mint eligibility
-  usdr remains valid as both offer and ask after the basket transition
+  asdr remains valid as both offer and ask after the basket transition
   changing the pool denomination adds no output ban
 
 Subsidy pool:
   validator_paid + oracle_paid <= pre_block_subsidy_pool_balance
   validator_paid <= validator_shortfall
   oracle_paid <= oracle_shortfall
-  accepted subsidy-pool deposit contains only unoah
+  accepted subsidy-pool deposit contains only anoah
   Delta total supply from a subsidy-pool deposit = 0
   subsidy-pool deposit changes neither validator_block_reward_target nor oracle_block_reward_target
   subsidy pool receives no automatic tax, fee, expansion, Buffer, Reserve, Insurance, mint, or conversion refill
@@ -3390,25 +3396,25 @@ Funds:
   Redemption Buffer >= 0
   strategic Reserve >= 0
   Insurance >= 0
-  every accepted fund deposit contains only unoah
+  every accepted fund deposit contains only anoah
   final recipient after the complete Bank restriction chain satisfies the same rule
-  mixed or non-unoah inbound user, module, Wasm, or IBC credit to any fund fails atomically
+  mixed or non-anoah inbound user, module, Wasm, or IBC credit to any fund fails atomically
   a direct user deposit rejected by Bank send-enabled policy never reaches any fund
   Delta total supply from every direct fund deposit = 0
-  each fund's complete launch custody is unoah
-  Buffer and Reserve balance counted toward target = their unoah Bank balance
-  Insurance unencumbered balance = Insurance unoah Bank balance - Insurance reserved
+  each fund's complete launch custody is anoah
+  Buffer and Reserve balance counted toward target = their anoah Bank balance
+  Insurance unencumbered balance = Insurance anoah Bank balance - Insurance reserved
   deposits create no refund, ownership, withdrawal, coverage, priority, governance, or deployment right
   no deposited asset is converted automatically
   targets alone move no money
   only Redemption Buffer funds Market automatically
   ordinary redemption never directly debits strategic Reserve
   strategic Reserve never directly pays a redeemer, reward, or claim
-  governance Reserve commitment: Delta Reserve unoah = -amount
-  governance Reserve commitment: Delta Buffer unoah = +amount
+  governance Reserve commitment: Delta Reserve anoah = -amount
+  governance Reserve commitment: Delta Buffer anoah = +amount
   governance Reserve commitment: Delta total supply, liability, quote, pool state, tax, subsidy pool, and Insurance = 0
   only MsgTransferReserveToBuffer names strategic Reserve as a launch bank-send source
-  Reserve commitment source, destination, and unoah denomination are fixed internally
+  Reserve commitment source, destination, and anoah denomination are fixed internally
   Reserve post-transfer balance >= the proposal's minimum_reserve_balance
   Reserve commitment succeeds without Oracle or target valuation and stores no duplicate Treasury history
   no Buffer-to-Reserve or arbitrary-recipient Reserve path exists
@@ -3426,7 +3432,7 @@ Funds:
   governance may cancel any pending claim before executable_height regardless of the current Claims Mandate
   cancellation is unavailable to both roles at or after executable_height
   permissionless execution is available at or after executable_height
-  0 <= Insurance reserved <= Insurance unoah Bank balance
+  0 <= Insurance reserved <= Insurance anoah Bank balance
   claim submission: Delta Insurance Bank balance = 0
   claim submission: Delta Insurance reserved = amount
   claim submission: Delta Insurance unencumbered balance = -amount
@@ -3440,7 +3446,7 @@ Funds:
   every settled claim is irreversible
   every Insurance claim performs no mint, borrow, cross-fund debit, conversion, or Market call
   an Insurance deposit alone never authorises a claim
-  liability and target-exposure values are direct unoah equivalents
+  liability and target-exposure values are direct anoah equivalents
 ```
 
 Also assert every successful `MintCoins` call belongs to Market conversion settlement, distinguishing stablecoin output
@@ -3504,16 +3510,16 @@ must survive this redesign. Implementation must therefore:
 - Set `app_state.distribution.params.community_tax` to zero in the canonical launch genesis. Do not treat the SDK's
   generic `arkd init` output as Ark's launch configuration.
 - Launch with all four Treasury custody accounts unblocked for inbound bank sends and the recipient-aware restriction
-  active: every fund accepts only positive `unoah`; every mixed or non-NOAH credit fails atomically after the complete
+  active: every fund accepts only positive `anoah`; every mixed or non-NOAH credit fails atomically after the complete
   restriction chain.
-- Require every fund's bank-genesis balance to contain only `unoah`; reject genesis otherwise.
+- Require every fund's bank-genesis balance to contain only `anoah`; reject genesis otherwise.
 - Initialise the approved Claims Mandate term, committee, half-open activation/expiry window, cancellation period, fixed
   gross claim limit, zero Claims allowance used, and zero Insurance reservation. The committee is an ordinary account
   distinct from Treasury authority and every other Treasury role; it is not a fund custodian.
 - Create the committee BaseAccount and give it an explicit non-Treasury fee path. Do not seed it from the Insurance
   account or grant it a generic fee or Bank authorization.
-- Initialise Market `BasePool` as the approved positive `sdk.DecCoin` in `usdr` and `ArkPoolDelta` to zero in that unit.
-- Supply launch Params with the intended `reference_tax_cap` Coin in `usdr` and a complete derived cap map when genesis
+- Initialise Market `BasePool` as the approved positive `sdk.DecCoin` in `asdr` and `ArkPoolDelta` to zero in that unit.
+- Supply launch Params with the intended `reference_tax_cap` Coin in `asdr` and a complete derived cap map when genesis
   Oracle prices cannot derive a positive reference cap deterministically. A zero reference cap derives a complete
   explicit-zero uncapped map without Oracle prices.
 - Ensure bank supply exactly equals user balances plus every module-account allocation.
@@ -3542,21 +3548,21 @@ Architecture tests cannot choose sustainable economic values. Before launch, exp
 | Parameter / balance            | Required decision                                                                             |
 | ------------------------------ | --------------------------------------------------------------------------------------------- |
 | Stability tax rate             | Fixed launch percentage                                                                       |
-| Reference tax cap              | Launch Coin amount and denomination; recommended initial denomination `usdr`                  |
-| Validator block reward target  | Minimum aggregate validator-funding value per block in micro-NOAH                             |
-| Oracle block reward target     | Minimum aggregate Oracle-funding value per block in micro-NOAH                                |
+| Reference tax cap              | Launch Coin amount and denomination; recommended initial denomination `asdr`                  |
+| Validator block reward target  | Minimum aggregate validator-funding value per block in base-unit NOAH                             |
+| Oracle block reward target     | Minimum aggregate Oracle-funding value per block in base-unit NOAH                                |
 | Reward funding window          | Settlement observations per window; default recommendation is one chain week                  |
-| Subsidy pool genesis balance   | Must imply intentional zero-revenue shortfall coverage; later `unoah` deposits may extend it  |
+| Subsidy pool genesis balance   | Must imply intentional zero-revenue shortfall coverage; later `anoah` deposits may extend it  |
 | Redemption Buffer target ratio | Operational NOAH inventory target as a percentage of stable liability                         |
 | Strategic Reserve target ratio | Retained emergency-capacity target as a percentage of stable liability                        |
 | Insurance target ratio         | Covered-loss capacity target as a percentage of stable liability                              |
 | Redemption Buffer genesis seed | Existing NOAH assigned to coverage-based redemption funding                                   |
-| Strategic Reserve genesis seed | Existing NOAH retained from automatic use; governance may commit `unoah` to the shared Buffer |
+| Strategic Reserve genesis seed | Existing NOAH retained from automatic use; governance may commit `anoah` to the shared Buffer |
 | Insurance genesis seed         | Existing NOAH recommended for immediate target capacity                                       |
 | Claims committee               | Role-specific Legacy Amino threshold-multisig address, membership, threshold, and role keys   |
 | Claims timing                  | Half-open committee activation/expiry heights and cancellation blocks before execution        |
 | Claims role fees               | Own genesis balance or separately approved narrow fee grants; never automatic Insurance spend |
-| BasePool                       | Launch virtual conversion depth as a positive `sdk.DecCoin` denominated in `usdr`             |
+| BasePool                       | Launch virtual conversion depth as a positive `sdk.DecCoin` denominated in `asdr`             |
 | Pool-denom submitted amount  | Non-binding expectation retained in the transaction; event exposes old and applied state; no rejection threshold |
 | MinStabilitySpread             | Minimum conversion friction                                                                   |
 | PoolRecoveryPeriod             | Exponential imbalance decay rate                                                              |
@@ -3566,7 +3572,7 @@ Architecture tests cannot choose sustainable economic values. Before launch, exp
 | Transfer-surface activation    | Phase 4 implements IBC before Wasm; both remain production-disabled until their complete tax and recipient-restriction integrations pass |
 
 There is no global launch Reserve-withdrawal floor, rolling deployment cap, or price/target trigger to configure. Each
-governance Reserve-to-Buffer proposal states its exact `unoah` amount and minimum remaining Reserve balance. A future
+governance Reserve-to-Buffer proposal states its exact `anoah` amount and minimum remaining Reserve balance. A future
 operational executor would require a separate bounded mandate; do not preconfigure one for launch.
 
 The Claims Mandate values above are P4 launch decisions. The Claims committee multisig address controls only typed claim
@@ -3586,7 +3592,7 @@ worst_case_coverage_blocks = current_subsidy_pool_noah /
 This is a conservative display estimate, not stored consensus state. Actual duration is longer whenever fees or Oracle
 tax cover part of either target and changes as organic revenue and deposits vary. Tax revenue, fees, expansion
 principal, and fund balances do not automatically refill the subsidy pool. Stablecoin tax cannot become NOAH subsidy
-funding without a conversion, and no automatic conversion belongs in the initial design. Permissionless direct `unoah`
+funding without a conversion, and no automatic conversion belongs in the initial design. Permissionless direct `anoah`
 transfers are the only launch replenishment path. Permissionless deposits to the other funds are donations to their
 distinct mandates and never refill the subsidy pool.
 
@@ -3633,7 +3639,7 @@ facts. An external asset may be allowed for in-kind Insurance payment but receiv
 recognised Reserve asset may be prohibited from direct Insurance payout. Ark-issued stablecoins always receive zero
 target credit because moving a consolidated liability into a fund does not extinguish it.
 
-For an affected fund, Phase 7 changes the recipient restriction from `unoah`-only to `unoah` plus its exact
+For an affected fund, Phase 7 changes the recipient restriction from `anoah`-only to `anoah` plus its exact
 custody-allowlist entries. Any unlisted coin makes the complete transfer fail atomically; whether one transfer may
 contain several listed assets is decided explicitly with the first asset. The change must handle native Bank, IBC, Wasm,
 and contract-token custody through explicit adapters rather than assuming every asset is represented by an ordinary Bank
@@ -3714,7 +3720,7 @@ outside committee bounds, or replace/disable the mandate immediately. `MsgUpdate
 changing the committee mandate. Separate queries expose the current Monetary Policy and the stored mandate; mandate
 activity is derived from the current height.
 
-The Claims committee and governance may submit any unique positive `unoah` claim covered by the live Insurance balance.
+The Claims committee and governance may submit any unique positive `anoah` claim covered by the live Insurance balance.
 Committee submissions additionally consume the fixed gross allowance for the current mandate term; governance
 submissions do not. Both may cancel before the same executable height, but the committee cannot cancel a
 governance-submitted claim. Governance may replace the committee but cannot cancel after the shared deadline or claw
@@ -3794,7 +3800,7 @@ A mandate must contain at least:
   adapter must have its code identity/checksum or administrative upgrade boundary pinned by policy;
 - per-transaction, rolling-window, and lifetime gross-outflow caps;
 - maximum outstanding exposure and per-asset/counterparty/correlated-group limits;
-- minimum immediately liquid `unoah` remaining in Reserve;
+- minimum immediately liquid `anoah` remaining in Reserve;
 - required Oracle sources, maximum price age, maximum slippage, minimum receive, and transaction deadline;
 - gross spent, returned capital, outstanding principal/exposure, realised loss, and remaining allowances; and
 - event fields sufficient to connect each execution, acknowledgment, return, write-down, pause, and revocation to the
@@ -3829,7 +3835,7 @@ Allowed action types are added individually. Examples include:
 - a close/return action that brings controlled assets back to Reserve.
 
 If Ark needs fast Reserve-to-Buffer support before external deployment, the first and safest operational mandate is a
-capped, expiring, fixed-destination `unoah` commitment with a minimum liquid Reserve floor. That authority does not
+capped, expiring, fixed-destination `anoah` commitment with a minimum liquid Reserve floor. That authority does not
 imply any external-transfer, swap, recipient, claim, or payment authority. The launch governance-only message remains
 the only such path until this separate mandate phase is approved.
 
@@ -3851,10 +3857,10 @@ The following also remains outside the launch phases:
 
 - A formal claims adjudication/voting module and any non-NOAH Insurance custody or in-kind payout allowlist.
 - Automated, revenue-routed, target-based, mint-funded, or conversion-funded subsidy-pool refill mechanisms beyond
-  permissionless direct `unoah` transfers.
+  permissionless direct `anoah` transfers.
 - The future basket's composition, weighting, rebalance rules, denomination, Oracle derivation, and governance launch
   schedule. The generic live Market pool-unit transition is implemented in Phase 3; activating it still requires a
-  separate operational proposal once the basket policy exists, and it leaves `usdr` fully supported.
+  separate operational proposal once the basket policy exists, and it leaves `asdr` fully supported.
 - Any future stablecoin retirement or output-disable policy. It is not implied by a flagship or pool-denomination change
   and requires its own authority, lifecycle, holder-exit, and reactivation decisions.
 - A hard rolling residual-mint cap if virtual-pool analysis requires one, with explicit review of the redemption queue
@@ -3888,7 +3894,7 @@ complete:
 | ---- | -------------------------- | ----------- |
 | Treasury protobuf/API | `proto/ark/treasury/**` defines the compact reviewed Treasury contract and `api/ark/treasury/**` contains its generated Pulsar/grpc output. | Accepted as part of the reviewed Treasury implementation; retain. |
 | Phase 1 app support | `app/app_config.go` registers the four fund accounts and tax collector, orders the Treasury send restriction, places Treasury before Distribution in BeginBlock, and removes Treasury EndBlock. `app/treasury_test.go` and `app/treasury_multisig_test.go` exercise this integration. | Accepted as required Phase 1 support; retain. |
-| Oracle quote support | `x/oracle/keeper/conversion.go` always includes the `unoah` identity rate in `GetRateSnapshot`, with corresponding keeper-test changes. | Accepted as the shared quote behavior used by Treasury reward and liability valuation; retain. |
+| Oracle quote support | `x/oracle/keeper/conversion.go` always includes the `anoah` identity rate in `GetRateSnapshot`, with corresponding keeper-test changes. | Accepted as the shared quote behavior used by Treasury reward and liability valuation; retain. |
 | Phase 3 Market settlement and pool-unit transition | Market injects a Treasury keeper and calls `RouteExpansion`, `DrawRedemptionBuffer`, and `RecordSupplyChange`; a successful Treasury result is authoritative. `BasePool` is a denomination-bearing `sdk.DecCoin`, delta queries return its unit, NOAH/stable math uses that unit, and stable-to-stable pricing is independent of virtual-pool state. `MsgUpdateParams` applies one fresh deterministic Oracle-derived amount on denomination changes, retains the submitted expectation in the transaction, emits old and applied pool state, atomically rescales delta on every amount change, and ordinary export preserves both values. | Reviewed and accepted. Treasury errors and actual rate, denomination, arithmetic, or effective-pool failures abort atomically. Do not add a submitted-versus-applied rejection threshold, duplicate audit fields, or a second transition path. |
 | Phase 4 IBC foundation | IBC-Go v11.2 keepers, stores, Classic/v2 ICS-20 routes, Classic PFM, Classic/v2 rate limiting, 07-Tendermint, ICA controller/host, module accounts, lifecycle, redundant-relay ante, CLI/genesis basics, and IBC testing accessors are wired through the SDK runtime's manual registration hooks. | Implemented under the approved Section 16.2 scope; focused review pending. Section 16.3 now approves the next Wasm/callback/GMP slice, but none of that later wiring is recorded as implemented. Production activation remains blocked on canonical launch genesis and the complete tax, recipient-restriction, rate-limit, relay, acknowledgement, timeout, refund, packet-forward, callback, and GMP gates. |
 | Partial Phase 4 ante | `app/app.go` installs `treasuryFeeChecker` and wraps the stock ante handler with `routeStabilityTax`; the implementation and tests live directly in `app/treasury_ante.go` rather than the planned `app/ante` package. | Leave unchanged and treat as provisional, unreviewed Phase 4 code. Revisit its layout, semantics, activation, and Wasm/IBC transfer-surface gate against the original Phase 4 plan when Phase 4 begins. |

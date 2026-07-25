@@ -21,7 +21,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "swap [offer-coin] [ask-denom]",
 					Short:     "Query a swap quote",
 					Long:      "Simulate a swap and return the estimated output coin and swap fee. Quotes use current oracle and pool state and may change before execution.",
-					Example:   fmt.Sprintf("%s query market swap 5000000unoah usdr", version.AppName),
+					Example:   fmt.Sprintf("%s query market swap 5000000000000000000anoah asdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "offer_coin"},
 						{ProtoField: "ask_denom"},
@@ -50,7 +50,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "swap [offer-coin] [ask-denom] [minimum-receive]",
 					Short:     "Atomically swap currencies at their target exchange rate",
 					Long:      "Swap the offer coin to the ask denomination at the oracle's effective exchange rate. The swap fails unless it returns at least minimum-receive.",
-					Example:   fmt.Sprintf(`%s tx market swap "1000ukrw" "uusd" "1uusd"`, version.AppName),
+					Example:   fmt.Sprintf(`%s tx market swap "1000000000000000000akrw" "ausd" "1ausd"`, version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "offer_coin"},
 						{ProtoField: "ask_denom"},

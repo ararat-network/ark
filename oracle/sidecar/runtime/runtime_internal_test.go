@@ -29,12 +29,12 @@ func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {
 	}{
 		{
 			name:        "filters markets to fallback denoms",
-			fallback:    []string{"uusd"},
+			fallback:    []string{"ausd"},
 			wantTickers: []providertypes.Ticker{"NOAHUSD"},
 		},
 		{
 			name:        "keeps provider without an active market",
-			fallback:    []string{"ueur"},
+			fallback:    []string{"aeur"},
 			wantTickers: []providertypes.Ticker{},
 		},
 	}
@@ -78,10 +78,10 @@ func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {
 func TestGetPriceSnapshotReturnsExactCommittedGeneration(t *testing.T) {
 	timestamp := time.Now().UTC()
 	oracle := &Runtime{
-		denoms: []string{"ukrw"},
+		denoms: []string{"akrw"},
 		priceSnapshot: oracletypes.PriceSnapshot{
 			Prices: oracletypes.DenomPrices{
-				"uusd": big.NewFloat(1.25),
+				"ausd": big.NewFloat(1.25),
 			},
 			Timestamp: timestamp,
 		},
@@ -91,11 +91,11 @@ func TestGetPriceSnapshotReturnsExactCommittedGeneration(t *testing.T) {
 
 	require.Equal(t, timestamp, snapshot.Timestamp)
 	require.Len(t, snapshot.Prices, 1)
-	require.Zero(t, snapshot.Prices["uusd"].Cmp(big.NewFloat(1.25)))
-	require.NotContains(t, snapshot.Prices, "ukrw")
+	require.Zero(t, snapshot.Prices["ausd"].Cmp(big.NewFloat(1.25)))
+	require.NotContains(t, snapshot.Prices, "akrw")
 
-	snapshot.Prices["uusd"].SetInt64(99)
-	require.Zero(t, oracle.GetPriceSnapshot().Prices["uusd"].Cmp(big.NewFloat(1.25)))
+	snapshot.Prices["ausd"].SetInt64(99)
+	require.Zero(t, oracle.GetPriceSnapshot().Prices["ausd"].Cmp(big.NewFloat(1.25)))
 }
 
 func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
@@ -113,7 +113,7 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 
 	cfg := testRuntimeLoggerConfig()
 	cfg.Resolver.Routes = map[string][]resolver.Route{
-		"uusd": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/USD"}}},
+		"ausd": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/USD"}}},
 	}
 	cfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
 		Pair:       "NOAH/USD",
@@ -132,23 +132,23 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	cfg.FallbackDenoms[0] = "ukrw"
+	cfg.FallbackDenoms[0] = "akrw"
 	constructionProviderCfg := cfg.Providers["logger-test"]
 	constructionProviderCfg.Markets[0].Symbol = "MUTATED"
-	cfg.Resolver.Routes["uusd"][0].Pairs[0] = "NOAH/KRW"
+	cfg.Resolver.Routes["ausd"][0].Pairs[0] = "NOAH/KRW"
 	cfg.Resolver.BootstrapPrices[0].Price = "99"
-	require.Equal(t, []string{"uusd"}, oracle.denoms)
+	require.Equal(t, []string{"ausd"}, oracle.denoms)
 	require.Equal(t, providertypes.Ticker("NOAHUSD"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
-	require.Equal(t, oracletypes.Pair("NOAH/USD"), oracle.cfg.Resolver.Routes["uusd"][0].Pairs[0])
+	require.Equal(t, oracletypes.Pair("NOAH/USD"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
 	require.Equal(t, "0.25", oracle.cfg.Resolver.BootstrapPrices[0].Price)
 
 	nextCfg := testRuntimeLoggerConfig()
 	nextProviderCfg := nextCfg.Providers["logger-test"]
 	nextProviderCfg.Markets = providertypes.Markets{{Pair: "NOAH/KRW", Symbol: "NOAHKRW"}}
 	nextCfg.Providers["logger-test"] = nextProviderCfg
-	nextCfg.FallbackDenoms = []string{"ukrw"}
+	nextCfg.FallbackDenoms = []string{"akrw"}
 	nextCfg.Resolver.Routes = map[string][]resolver.Route{
-		"ukrw": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/KRW"}}},
+		"akrw": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/KRW"}}},
 	}
 	nextCfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
 		Pair:       "NOAH/KRW",
@@ -157,15 +157,15 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	}}
 	require.NoError(t, oracle.Update(nextCfg))
 
-	nextCfg.FallbackDenoms[0] = "uusd"
+	nextCfg.FallbackDenoms[0] = "ausd"
 	nextProviderCfg = nextCfg.Providers["logger-test"]
 	nextProviderCfg.Markets[0].Symbol = "MUTATED"
-	nextCfg.Resolver.Routes["ukrw"][0].Pairs[0] = "NOAH/USD"
+	nextCfg.Resolver.Routes["akrw"][0].Pairs[0] = "NOAH/USD"
 	nextCfg.Resolver.BootstrapPrices[0].Price = "99"
-	require.Equal(t, []string{"ukrw"}, oracle.denoms)
+	require.Equal(t, []string{"akrw"}, oracle.denoms)
 	require.Equal(t, []providertypes.Ticker{"NOAHKRW"}, provider.GetTickers())
 	require.Equal(t, providertypes.Ticker("NOAHKRW"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
-	require.Equal(t, oracletypes.Pair("NOAH/KRW"), oracle.cfg.Resolver.Routes["ukrw"][0].Pairs[0])
+	require.Equal(t, oracletypes.Pair("NOAH/KRW"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
 	require.Equal(t, "250", oracle.cfg.Resolver.BootstrapPrices[0].Price)
 }
 
@@ -270,6 +270,6 @@ func testRuntimeLoggerConfig() Config {
 			Timeout:  time.Second,
 			Interval: time.Second,
 		},
-		FallbackDenoms: []string{"uusd"},
+		FallbackDenoms: []string{"ausd"},
 	}
 }

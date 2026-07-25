@@ -27,16 +27,16 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis.NextClaimId = 7
 	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
 	genesis.TaxCaps = []types.TaxCap{
-		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
-		types.SubsidyPoolName:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 3)),
-		types.RedemptionBufferName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 5)),
-		types.StrategicReserveName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 7)),
-		types.InsuranceName:        sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 11)),
+		types.SubsidyPoolName:      sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
+		types.RedemptionBufferName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)),
+		types.StrategicReserveName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 7)),
+		types.InsuranceName:        sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 11)),
 	})
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
@@ -57,13 +57,13 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 func (s *KeeperTestSuite) TestInitGenesisBuildsUncappedSetWhenTaxIsDisabled() {
 	genesis := types.DefaultGenesisState()
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.SDRBaseDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 	s.expectGenesisFundBalances(nil)
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
@@ -74,21 +74,21 @@ func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.SDRBaseDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		s.ctx,
-		chain.MicroSDRDenom,
-		chain.MicroUSDDenom,
+		chain.SDRBaseDenom,
+		chain.USDBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroSDRDenom: math.LegacyOneDec(),
-		chain.MicroUSDDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
 	s.expectGenesisFundBalances(nil)
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	for _, denom := range []string{chain.MicroSDRDenom, chain.MicroUSDDenom} {
+	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), cap)
@@ -98,11 +98,11 @@ func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
 func (s *KeeperTestSuite) TestInitGenesisRejectsIncompleteCapsWhenTaxIsDisabled() {
 	genesis := types.DefaultGenesisState()
 	genesis.TaxCaps = []types.TaxCap{
-		{Denom: chain.MicroSDRDenom, TaxCap: math.ZeroInt()},
+		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
-		{Denom: chain.MicroUSDDenom},
+		{Denom: chain.SDRBaseDenom},
+		{Denom: chain.USDBaseDenom},
 	}, nil)
 
 	err := s.keeper.InitGenesis(s.ctx, genesis)
@@ -112,12 +112,12 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsIncompleteCapsWhenTaxIsDisabled(
 func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 	genesis := types.DefaultGenesisState()
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.SubsidyPoolName).
 		Return(authtypes.NewEmptyModuleAccount(types.SubsidyPoolName))
 	s.bankKeeper.EXPECT().GetAllBalances(s.ctx, gomock.Any()).Return(
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1)),
 	)
 
 	err := s.keeper.InitGenesis(s.ctx, genesis)
@@ -144,10 +144,10 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsReservationAboveInsuranceBalance
 	s.Require().NoError(err)
 	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(false)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
-		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	})
 
 	err = s.keeper.InitGenesis(s.ctx, genesis)
@@ -198,10 +198,10 @@ func (s *KeeperTestSuite) TestInitGenesisAllowsBlockedFinalizedClaimAuditRecord(
 	s.Require().NoError(err)
 	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(true).Times(0)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
-		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 2)),
+		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
 	})
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
@@ -215,7 +215,7 @@ func pendingClaimForGenesis(amount int64) types.Claim {
 		MandateTerm:       1,
 		IncidentReference: "incident",
 		Recipient:         authtypes.NewModuleAddress("claim-recipient").String(),
-		Amount:            sdk.NewInt64Coin(chain.MicroNoahDenom, amount),
+		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, amount),
 		EvidenceReference: "evidence",
 		Status:            types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight:   1,

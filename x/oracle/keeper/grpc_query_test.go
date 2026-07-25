@@ -38,19 +38,19 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 		},
 		{
 			name:   "noah denom returns one",
-			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroNoahDenom},
+			req:    &types.QueryExchangeRateRequest{Denom: chain.NoahBaseDenom},
 			expect: math.LegacyOneDec(),
 		},
 		{
 			name: "stored denom returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-					Denom:          chain.MicroUSDDenom,
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+					Denom:          chain.USDBaseDenom,
 					Rate:           math.LegacyNewDec(7),
 					BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 				}))
 			},
-			req:    &types.QueryExchangeRateRequest{Denom: chain.MicroUSDDenom},
+			req:    &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
 			expect: math.LegacyNewDec(7),
 		},
 		{
@@ -60,19 +60,19 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 				s.Require().NoError(err)
 				params.MaxExchangeRateAge = time.Minute
 				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-					Denom:          chain.MicroUSDDenom,
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+					Denom:          chain.USDBaseDenom,
 					Rate:           math.LegacyNewDec(7),
 					BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
 				}))
 			},
-			req:       &types.QueryExchangeRateRequest{Denom: chain.MicroUSDDenom},
+			req:       &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
 			code:      codes.FailedPrecondition,
 			expectErr: true,
 		},
 		{
 			name:      "unknown denom maps to not found error",
-			req:       &types.QueryExchangeRateRequest{Denom: "ufoo"},
+			req:       &types.QueryExchangeRateRequest{Denom: "afoo"},
 			code:      codes.NotFound,
 			expectErr: true,
 		},
@@ -98,14 +98,14 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 }
 
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
-	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.MicroUSDDenom, math.LegacyOneDec())}
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, types.ExchangeRate{
-		Denom:          chain.MicroUSDDenom,
+	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec())}
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroKRWDenom, types.ExchangeRate{
-		Denom:          chain.MicroKRWDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.KRWBaseDenom, types.ExchangeRate{
+		Denom:          chain.KRWBaseDenom,
 		Rate:           math.LegacyNewDec(1000),
 		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Minute),
 	}))
@@ -140,16 +140,16 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 				params, err := s.keeper.Params.Get(s.ctx)
 				s.Require().NoError(err)
 				params.TobinTaxes = []types.TobinTax{
-					{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 				}
 				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			},
-			req:    &types.QueryTobinTaxRequest{Denom: chain.MicroUSDDenom},
+			req:    &types.QueryTobinTaxRequest{Denom: chain.USDBaseDenom},
 			expect: math.LegacyNewDecWithPrec(25, 4),
 		},
 		{
 			name:      "missing denom returns not found",
-			req:       &types.QueryTobinTaxRequest{Denom: "ufoo"},
+			req:       &types.QueryTobinTaxRequest{Denom: "afoo"},
 			code:      codes.NotFound,
 			expectErr: true,
 		},
@@ -176,8 +176,8 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 
 func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 	expected := []types.TobinTax{
-		{Denom: chain.MicroKRWDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
+		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
 	}
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -190,9 +190,9 @@ func (s *KeeperTestSuite) TestQueryTobinTaxes() {
 }
 
 func (s *KeeperTestSuite) TestQueryVoteTargets() {
-	voteTargets := []string{chain.MicroKRWDenom, chain.MicroUSDDenom}
+	voteTargets := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
 	pending := &types.PendingVoteTargets{
-		Denoms:               []string{chain.MicroUSDDenom},
+		Denoms:               []string{chain.USDBaseDenom},
 		Version:              types.InitialVoteTargetVersion + 1,
 		ActivationVoteHeight: 10,
 	}

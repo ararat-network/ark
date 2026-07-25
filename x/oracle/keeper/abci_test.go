@@ -52,8 +52,8 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(10)))
 		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr2, math.ZeroInt()))
 
-		rewardCoin := sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(100))
-		distributedCoins := sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, math.NewInt(10)))
+		rewardCoin := sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(100))
+		distributedCoins := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(10)))
 		validator := stakingtypes.Validator{
 			OperatorAddress: valAddr1.String(),
 			Status:          stakingtypes.Bonded,
@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 
 		s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
-		s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
+		s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.NoahBaseDenom, nil)
 		s.stakingKeeper.EXPECT().
 			Slash(
 				s.ctx,
@@ -155,7 +155,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 
 		s.stakingKeeper.EXPECT().PowerReduction(s.ctx).Return(powerReduction)
 		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
-		s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.MicroNoahDenom, nil)
+		s.stakingKeeper.EXPECT().BondDenom(s.ctx).Return(chain.NoahBaseDenom, nil)
 		s.stakingKeeper.EXPECT().Slash(
 			s.ctx,
 			consAddr,

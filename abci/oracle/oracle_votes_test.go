@@ -42,12 +42,12 @@ func TestParseVoteExtension(t *testing.T) {
 		{
 			name: "complete report",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"ukrw": validRate, "uusd": validRate},
+				Rates:         map[string][]byte{"akrw": validRate, "ausd": validRate},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
 			expected: map[string]math.LegacyDec{
-				"ukrw": math.LegacyNewDec(100),
-				"uusd": math.LegacyNewDec(100),
+				"akrw": math.LegacyNewDec(100),
+				"ausd": math.LegacyNewDec(100),
 			},
 		},
 		{
@@ -61,31 +61,31 @@ func TestParseVoteExtension(t *testing.T) {
 		{
 			name: "zero rate",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": zeroRate},
+				Rates:         map[string][]byte{"ausd": zeroRate},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
-			expected: map[string]math.LegacyDec{"uusd": math.LegacyZeroDec()},
+			expected: map[string]math.LegacyDec{"ausd": math.LegacyZeroDec()},
 		},
 		{
 			name: "negative rate",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": negativeRate},
+				Rates:         map[string][]byte{"ausd": negativeRate},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
-			expected: map[string]math.LegacyDec{"uusd": math.LegacyNewDec(-1)},
+			expected: map[string]math.LegacyDec{"ausd": math.LegacyNewDec(-1)},
 		},
 		{
 			name: "alternate integer representation",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": alternateRate},
+				Rates:         map[string][]byte{"ausd": alternateRate},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
-			expected: map[string]math.LegacyDec{"uusd": math.LegacyNewDec(100)},
+			expected: map[string]math.LegacyDec{"ausd": math.LegacyNewDec(100)},
 		},
 		{
 			name: "nil rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": nil},
+				Rates:         map[string][]byte{"ausd": nil},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
@@ -93,7 +93,7 @@ func TestParseVoteExtension(t *testing.T) {
 		{
 			name: "empty rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": {}},
+				Rates:         map[string][]byte{"ausd": {}},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
@@ -101,7 +101,7 @@ func TestParseVoteExtension(t *testing.T) {
 		{
 			name: "malformed rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": []byte("not-a-rate")},
+				Rates:         map[string][]byte{"ausd": []byte("not-a-rate")},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
@@ -109,7 +109,7 @@ func TestParseVoteExtension(t *testing.T) {
 		{
 			name: "oversized rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"uusd": make([]byte, arkencoding.MaxEncodedLegacyDecBytes+1)},
+				Rates:         map[string][]byte{"ausd": make([]byte, arkencoding.MaxEncodedLegacyDecBytes+1)},
 				TargetVersion: oracletypes.InitialVoteTargetVersion,
 			},
 			expectedErr: "exceeds maximum",
@@ -147,7 +147,7 @@ func TestValidateVoteExtension(t *testing.T) {
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
 	targets := oracletypes.VoteTargetSet{
 		Version: oracletypes.InitialVoteTargetVersion,
-		Denoms:  []string{"ukrw", "uusd"},
+		Denoms:  []string{"akrw", "ausd"},
 	}
 
 	tests := []struct {
@@ -160,7 +160,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "complete report",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"ukrw": validRate, "uusd": validRate},
+				Rates:         map[string][]byte{"akrw": validRate, "ausd": validRate},
 			},
 			targets: targets,
 		},
@@ -168,7 +168,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "partial report",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"uusd": validRate},
+				Rates:         map[string][]byte{"ausd": validRate},
 			},
 			targets: targets,
 		},
@@ -176,7 +176,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "zero rate remains decodable for aggregation",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"uusd": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())},
+				Rates:         map[string][]byte{"ausd": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())},
 			},
 			targets: targets,
 		},
@@ -191,7 +191,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "malformed rate",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"uusd": []byte("not-a-rate")},
+				Rates:         map[string][]byte{"ausd": []byte("not-a-rate")},
 			},
 			targets:     targets,
 			expectedErr: "invalid oracle vote extension rate",
@@ -200,7 +200,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "unexpected target",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"ueur": validRate},
+				Rates:         map[string][]byte{"aeur": validRate},
 			},
 			targets:     targets,
 			expectedErr: "is not in expected targets",
@@ -209,7 +209,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "wrong version",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version + 1,
-				Rates:         map[string][]byte{"uusd": validRate},
+				Rates:         map[string][]byte{"ausd": validRate},
 			},
 			targets:     targets,
 			expectedErr: "does not match expected version",
@@ -217,7 +217,7 @@ func TestValidateVoteExtension(t *testing.T) {
 		{
 			name: "zero target version",
 			voteExtension: vetypes.OracleVoteExtension{
-				Rates: map[string][]byte{"uusd": validRate},
+				Rates: map[string][]byte{"ausd": validRate},
 			},
 			targets:     targets,
 			expectedErr: "does not match expected version",
@@ -268,22 +268,22 @@ func TestValidateVoteExtension(t *testing.T) {
 func TestGetOracleVotes(t *testing.T) {
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validVoteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-		"uusd": math.LegacyNewDec(100),
+		"ausd": math.LegacyNewDec(100),
 	})
 	unversionedVoteExtension := validVoteExtension
 	unversionedVoteExtension.TargetVersion = 0
 	unexpectedTargetVoteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
-		"ukrw": math.LegacyNewDec(100),
+		"akrw": math.LegacyNewDec(100),
 	})
 	targets := oracletypes.VoteTargetSet{
 		Version: oracletypes.InitialVoteTargetVersion,
-		Denoms:  []string{"uusd"},
+		Denoms:  []string{"ausd"},
 	}
 
 	t.Run("invalid payloads are classified independently", func(t *testing.T) {
 		validBz := abcitestutil.MustEncodeVoteExtension(t, validVoteExtension)
 		invalidBz := abcitestutil.MustEncodeVoteExtension(t, vetypes.OracleVoteExtension{
-			Rates:         map[string][]byte{"uusd": nil},
+			Rates:         map[string][]byte{"ausd": nil},
 			TargetVersion: targets.Version,
 		})
 		unversionedBz := abcitestutil.MustEncodeVoteExtension(t, unversionedVoteExtension)
@@ -438,7 +438,7 @@ func makeRateMap(t testing.TB, count int) map[string][]byte {
 	for i := range count {
 		encoded, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 1)))
 		require.NoError(t, err)
-		rates[fmt.Sprintf("u%03d", i)] = encoded
+		rates[fmt.Sprintf("a%03d", i)] = encoded
 	}
 	return rates
 }
@@ -446,7 +446,7 @@ func makeRateMap(t testing.TB, count int) map[string][]byte {
 func makeTargetDenoms(count int) []string {
 	denoms := make([]string, count)
 	for i := range count {
-		denoms[i] = fmt.Sprintf("u%03d", i)
+		denoms[i] = fmt.Sprintf("a%03d", i)
 	}
 	return denoms
 }

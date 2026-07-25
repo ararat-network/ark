@@ -222,7 +222,7 @@ func TestCachedPriceClientDoesNotCacheOversizedSnapshot(t *testing.T) {
 				response := freshResponse()
 				response.Prices = make(map[string][]byte, 2*oracletypes.MaxVoteTargets+1)
 				for i := range 2*oracletypes.MaxVoteTargets + 1 {
-					response.Prices[fmt.Sprintf("u%03d", i)] = []byte("1")
+					response.Prices[fmt.Sprintf("a%03d", i)] = []byte("1")
 				}
 				return response
 			},

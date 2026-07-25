@@ -243,12 +243,12 @@ func TestComputePricesAndScoresRewardBand(t *testing.T) {
 					median:      tc.median,
 					price:       tc.expectedPrice,
 				}},
-				[]string{"uusd"},
+				[]string{"ausd"},
 				math.LegacyNewDecWithPrec(2, 2),
 				scores,
 			)
 
-			require.Equal(t, tc.expectedPrice, prices["uusd"])
+			require.Equal(t, tc.expectedPrice, prices["ausd"])
 			if tc.rewarded {
 				require.True(t, math.OneInt().Equal(scores[0].rewardWeight))
 				require.False(t, scores[0].missed)
@@ -274,7 +274,7 @@ func TestComputePricesAndScoresSkipsUnrepresentableRewardBand(t *testing.T) {
 			median:      nearMax,
 			price:       nearMax,
 		}},
-		[]string{"uusd"},
+		[]string{"ausd"},
 		math.LegacyNewDecWithPrec(2, 2),
 		scores,
 	)
@@ -593,7 +593,7 @@ func TestComputePricesAndScoresSupportsLegalMaximumPowerAcrossTargets(t *testing
 			median: math.LegacyOneDec(),
 			price:  math.LegacyOneDec(),
 		}
-		targetDenoms[targetIndex] = fmt.Sprintf("u%03d", targetIndex)
+		targetDenoms[targetIndex] = fmt.Sprintf("a%03d", targetIndex)
 	}
 
 	prices := computePricesAndScores(

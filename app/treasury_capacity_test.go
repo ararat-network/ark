@@ -69,12 +69,12 @@ func runPhase3AIntegrationRedemption(
 	basePool := math.LegacyNewDec(1_000_000_000_000)
 	initialDelta := math.LegacyMustNewDecFromStr("900000000000")
 	params := markettypes.DefaultParams()
-	params.BasePool = sdk.NewDecCoinFromDec(chain.MicroSDRDenom, basePool)
+	params.BasePool = sdk.NewDecCoinFromDec(chain.SDRBaseDenom, basePool)
 	require.NoError(t, arkApp.MarketKeeper.Params.Set(ctx, params))
 	require.NoError(t, arkApp.MarketKeeper.ArkPoolDelta.Set(ctx, initialDelta))
 
-	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, chain.MicroSDRDenom, oracletypes.ExchangeRate{
-		Denom:          chain.MicroSDRDenom,
+	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, chain.SDRBaseDenom, oracletypes.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: ctx.BlockTime(),
 		BlockHeight:    uint64(ctx.BlockHeight()),
@@ -84,17 +84,17 @@ func runPhase3AIntegrationRedemption(
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, stableSupply)),
+		sdk.NewCoins(sdk.NewCoin(chain.SDRBaseDenom, stableSupply)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		markettypes.ModuleName,
 		trader,
-		sdk.NewCoins(sdk.NewCoin(chain.MicroSDRDenom, stableSupply)),
+		sdk.NewCoins(sdk.NewCoin(chain.SDRBaseDenom, stableSupply)),
 	))
 
 	if !valuationComplete {
-		missingRateSupply := sdk.NewInt64Coin(chain.MicroKRWDenom, 1)
+		missingRateSupply := sdk.NewInt64Coin(chain.KRWBaseDenom, 1)
 		require.NoError(t, arkApp.BankKeeper.MintCoins(
 			ctx,
 			markettypes.ModuleName,
@@ -112,19 +112,19 @@ func runPhase3AIntegrationRedemption(
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, bufferSeed)),
+		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, bufferSeed)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		treasurytypes.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewCoin(chain.MicroNoahDenom, bufferSeed)),
+		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, bufferSeed)),
 	))
 
 	bufferAddress := authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName)
-	bufferBefore := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.MicroNoahDenom).Amount
-	noahSupplyBefore := arkApp.BankKeeper.GetSupply(ctx, chain.MicroNoahDenom).Amount
-	stableSupplyBefore := arkApp.BankKeeper.GetSupply(ctx, chain.MicroSDRDenom).Amount
+	bufferBefore := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.NoahBaseDenom).Amount
+	noahSupplyBefore := arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount
+	stableSupplyBefore := arkApp.BankKeeper.GetSupply(ctx, chain.SDRBaseDenom).Amount
 
 	totalOffer := math.NewInt(500_000_000_000)
 	chunk := totalOffer.QuoRaw(int64(splitCount))
@@ -133,17 +133,17 @@ func runPhase3AIntegrationRedemption(
 	for i := 0; i < splitCount; i++ {
 		response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
 			Trader:         trader.String(),
-			OfferCoin:      sdk.NewCoin(chain.MicroSDRDenom, chunk),
-			AskDenom:       chain.MicroNoahDenom,
-			MinimumReceive: sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
+			OfferCoin:      sdk.NewCoin(chain.SDRBaseDenom, chunk),
+			AskDenom:       chain.NoahBaseDenom,
+			MinimumReceive: sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 		})
 		require.NoError(t, err)
 		totalOutput = totalOutput.Add(response.SwapCoin.Amount)
 	}
 
-	bufferAfter := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.MicroNoahDenom).Amount
-	noahSupplyAfter := arkApp.BankKeeper.GetSupply(ctx, chain.MicroNoahDenom).Amount
-	stableSupplyAfter := arkApp.BankKeeper.GetSupply(ctx, chain.MicroSDRDenom).Amount
+	bufferAfter := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.NoahBaseDenom).Amount
+	noahSupplyAfter := arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount
+	stableSupplyAfter := arkApp.BankKeeper.GetSupply(ctx, chain.SDRBaseDenom).Amount
 	endingDelta, err := arkApp.MarketKeeper.ArkPoolDelta.Get(ctx)
 	require.NoError(t, err)
 

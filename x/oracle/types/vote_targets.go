@@ -86,10 +86,10 @@ func validateVoteTargetDenoms(label string, denoms []string) error {
 		return fmt.Errorf("%s must be sorted", label)
 	}
 	for i, denom := range denoms {
-		if err := chain.ValidateMicroDenom(denom); err != nil {
+		if err := chain.ValidateNativeBaseDenom(denom); err != nil {
 			return fmt.Errorf("%s %w", label, err)
 		}
-		if denom == chain.MicroNoahDenom {
+		if denom == chain.NoahBaseDenom {
 			return fmt.Errorf("%s must not contain native denom %s", label, denom)
 		}
 		if i > 0 && denom == denoms[i-1] {

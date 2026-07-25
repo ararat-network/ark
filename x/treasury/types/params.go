@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultReferenceTaxCapDenom = chain.MicroSDRDenom
+	DefaultReferenceTaxCapDenom = chain.SDRBaseDenom
 	DefaultRewardFundingWindow  = chain.BlocksPerWeek
 )
 
@@ -30,7 +30,7 @@ func (p Params) Validate() error {
 	if err := p.ReferenceTaxCap.Validate(); err != nil {
 		return fmt.Errorf("treasury parameter ReferenceTaxCap is invalid: %w", err)
 	}
-	if err := chain.ValidateMicroDenom(p.ReferenceTaxCap.Denom); err != nil {
+	if err := chain.ValidateNativeBaseDenom(p.ReferenceTaxCap.Denom); err != nil {
 		return fmt.Errorf("treasury parameter ReferenceTaxCap denom is invalid: %w", err)
 	}
 	if p.RewardFundingWindow == 0 {

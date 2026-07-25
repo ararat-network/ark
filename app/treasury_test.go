@@ -128,7 +128,7 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 	})
 	trader := treasuryGovernanceVoter(t, arkApp, ctx)
 
-	for _, denom := range []string{chain.MicroUSDDenom, chain.MicroSDRDenom} {
+	for _, denom := range []string{chain.USDBaseDenom, chain.SDRBaseDenom} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
 			Denom:          denom,
 			Rate:           math.LegacyOneDec(),
@@ -140,71 +140,71 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 200)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 200)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		markettypes.ModuleName,
 		trader,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 100)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		treasurytypes.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 100)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)),
 	))
 	initialStableSupply := math.NewInt(1_000)
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.MicroUSDDenom, initialStableSupply)),
+		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, initialStableSupply)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		markettypes.ModuleName,
 		trader,
-		sdk.NewCoins(sdk.NewCoin(chain.MicroUSDDenom, initialStableSupply)),
+		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, initialStableSupply)),
 	))
 
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
 	expansion, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
 		Trader:         trader.String(),
-		OfferCoin:      sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		AskDenom:       chain.MicroUSDDenom,
-		MinimumReceive: sdk.NewInt64Coin(chain.MicroUSDDenom, 1),
+		OfferCoin:      sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		AskDenom:       chain.USDBaseDenom,
+		MinimumReceive: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 	})
 	require.NoError(t, err)
 	require.True(t, expansion.SwapCoin.IsPositive())
 	require.Equal(
 		t,
 		initialStableSupply.Add(expansion.SwapCoin.Amount),
-		arkApp.BankKeeper.GetSupply(ctx, chain.MicroUSDDenom).Amount,
+		arkApp.BankKeeper.GetSupply(ctx, chain.USDBaseDenom).Amount,
 	)
 
 	bufferAddress := authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName)
-	bufferBefore := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.MicroNoahDenom).Amount
+	bufferBefore := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.NoahBaseDenom).Amount
 	redemptionOffer := sdk.NewCoin(
-		chain.MicroUSDDenom,
+		chain.USDBaseDenom,
 		math.NewInt(500),
 	)
 	redemption, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
 		Trader:         trader.String(),
 		OfferCoin:      redemptionOffer,
-		AskDenom:       chain.MicroNoahDenom,
-		MinimumReceive: sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
+		AskDenom:       chain.NoahBaseDenom,
+		MinimumReceive: sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 	})
 	require.NoError(t, err)
 	require.True(t, redemption.SwapCoin.IsPositive())
 	require.Equal(
 		t,
 		initialStableSupply.Add(expansion.SwapCoin.Amount).Sub(redemptionOffer.Amount),
-		arkApp.BankKeeper.GetSupply(ctx, chain.MicroUSDDenom).Amount,
+		arkApp.BankKeeper.GetSupply(ctx, chain.USDBaseDenom).Amount,
 	)
 	require.True(t, arkApp.BankKeeper.GetBalance(
 		ctx,
 		bufferAddress,
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	).Amount.LT(bufferBefore))
 }
 
@@ -217,12 +217,12 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 	sender := sdk.AccAddress(bytes.Repeat([]byte{0x41}, 20))
 	unrelated := sdk.AccAddress(bytes.Repeat([]byte{0x42}, 20))
 	userFunding := sdk.NewCoins(
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 100),
-		sdk.NewInt64Coin(chain.MicroSDRDenom, 100),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+		sdk.NewInt64Coin(chain.SDRBaseDenom, 100),
 	)
 	protocolFunding := sdk.NewCoins(
-		sdk.NewInt64Coin(chain.MicroNoahDenom, 20),
-		sdk.NewInt64Coin(chain.MicroSDRDenom, 20),
+		sdk.NewInt64Coin(chain.NoahBaseDenom, 20),
+		sdk.NewInt64Coin(chain.SDRBaseDenom, 20),
 	)
 	requiredFunding := userFunding.Add(protocolFunding...)
 	require.NoError(t, arkApp.BankKeeper.MintCoins(ctx, markettypes.ModuleName, requiredFunding))
@@ -232,15 +232,15 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 		sender,
 		userFunding,
 	))
-	noahSupply := arkApp.BankKeeper.GetSupply(ctx, chain.MicroNoahDenom)
-	sdrSupply := arkApp.BankKeeper.GetSupply(ctx, chain.MicroSDRDenom)
+	noahSupply := arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom)
+	sdrSupply := arkApp.BankKeeper.GetSupply(ctx, chain.SDRBaseDenom)
 
 	for _, moduleName := range treasurytypes.FundAccountNames() {
 		fundAddress := authtypes.NewModuleAddress(moduleName)
 		_, err := bankMsgServer.Send(goCtx, &banktypes.MsgSend{
 			FromAddress: sender.String(),
 			ToAddress:   fundAddress.String(),
-			Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+			Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 		})
 		require.NoError(t, err, moduleName)
 
@@ -248,7 +248,7 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 		_, err = bankMsgServer.Send(goCtx, &banktypes.MsgSend{
 			FromAddress: sender.String(),
 			ToAddress:   fundAddress.String(),
-			Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 1)),
+			Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
 		})
 		require.Error(t, err, moduleName)
 		require.Equal(t, balanceBefore, arkApp.BankKeeper.GetAllBalances(ctx, fundAddress))
@@ -257,8 +257,8 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 			FromAddress: sender.String(),
 			ToAddress:   fundAddress.String(),
 			Amount: sdk.NewCoins(
-				sdk.NewInt64Coin(chain.MicroNoahDenom, 1),
-				sdk.NewInt64Coin(chain.MicroSDRDenom, 1),
+				sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
+				sdk.NewInt64Coin(chain.SDRBaseDenom, 1),
 			),
 		})
 		require.Error(t, err, moduleName)
@@ -268,52 +268,52 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 	_, err := bankMsgServer.Send(goCtx, &banktypes.MsgSend{
 		FromAddress: sender.String(),
 		ToAddress:   unrelated.String(),
-		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	})
 	require.NoError(t, err)
 
-	senderSdrBefore := arkApp.BankKeeper.GetBalance(ctx, sender, chain.MicroSDRDenom)
-	unrelatedSdrBefore := arkApp.BankKeeper.GetBalance(ctx, unrelated, chain.MicroSDRDenom)
+	senderSdrBefore := arkApp.BankKeeper.GetBalance(ctx, sender, chain.SDRBaseDenom)
+	unrelatedSdrBefore := arkApp.BankKeeper.GetBalance(ctx, unrelated, chain.SDRBaseDenom)
 	reserveAddress := authtypes.NewModuleAddress(treasurytypes.StrategicReserveName)
-	reserveSdrBefore := arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.MicroSDRDenom)
+	reserveSdrBefore := arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.SDRBaseDenom)
 	_, err = bankMsgServer.MultiSend(goCtx, &banktypes.MsgMultiSend{
 		Inputs: []banktypes.Input{{
 			Address: sender.String(),
-			Coins:   sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 2)),
+			Coins:   sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 2)),
 		}},
 		Outputs: []banktypes.Output{
-			{Address: unrelated.String(), Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 1))},
-			{Address: reserveAddress.String(), Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 1))},
+			{Address: unrelated.String(), Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1))},
+			{Address: reserveAddress.String(), Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1))},
 		},
 	})
 	require.Error(t, err)
-	require.Equal(t, senderSdrBefore, arkApp.BankKeeper.GetBalance(ctx, sender, chain.MicroSDRDenom))
-	require.Equal(t, unrelatedSdrBefore, arkApp.BankKeeper.GetBalance(ctx, unrelated, chain.MicroSDRDenom))
-	require.Equal(t, reserveSdrBefore, arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.MicroSDRDenom))
+	require.Equal(t, senderSdrBefore, arkApp.BankKeeper.GetBalance(ctx, sender, chain.SDRBaseDenom))
+	require.Equal(t, unrelatedSdrBefore, arkApp.BankKeeper.GetBalance(ctx, unrelated, chain.SDRBaseDenom))
+	require.Equal(t, reserveSdrBefore, arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.SDRBaseDenom))
 
 	for _, moduleName := range treasurytypes.FundAccountNames() {
 		require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			markettypes.ModuleName,
 			moduleName,
-			sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+			sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 		))
 	}
 	require.Error(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		treasurytypes.InsuranceName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		treasurytypes.InsuranceName,
 		unrelated,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	))
 
-	require.Equal(t, noahSupply, arkApp.BankKeeper.GetSupply(ctx, chain.MicroNoahDenom))
-	require.Equal(t, sdrSupply, arkApp.BankKeeper.GetSupply(ctx, chain.MicroSDRDenom))
+	require.Equal(t, noahSupply, arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom))
+	require.Equal(t, sdrSupply, arkApp.BankKeeper.GetSupply(ctx, chain.SDRBaseDenom))
 }
 
 func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
@@ -327,25 +327,25 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 150)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 150)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		treasurytypes.StrategicReserveName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 100)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		treasurytypes.InsuranceName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 50)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 50)),
 	))
 
 	transfer := &treasurytypes.MsgTransferReserveToBuffer{
 		Authority:             authority,
-		Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 40),
-		MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 60),
+		Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 40),
+		MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 60),
 	}
 	claimsMandateUpdate := &treasurytypes.MsgSetClaimsMandate{
 		Authority:                authority,
@@ -388,17 +388,17 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.Equal(
 		t,
 		math.NewInt(60),
-		arkApp.BankKeeper.GetBalance(ctx, authtypes.NewModuleAddress(treasurytypes.StrategicReserveName), chain.MicroNoahDenom).Amount,
+		arkApp.BankKeeper.GetBalance(ctx, authtypes.NewModuleAddress(treasurytypes.StrategicReserveName), chain.NoahBaseDenom).Amount,
 	)
 	require.Equal(
 		t,
 		math.NewInt(40),
-		arkApp.BankKeeper.GetBalance(ctx, authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName), chain.MicroNoahDenom).Amount,
+		arkApp.BankKeeper.GetBalance(ctx, authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName), chain.NoahBaseDenom).Amount,
 	)
 	require.Equal(
 		t,
 		math.NewInt(50),
-		arkApp.BankKeeper.GetBalance(ctx, authtypes.NewModuleAddress(treasurytypes.InsuranceName), chain.MicroNoahDenom).Amount,
+		arkApp.BankKeeper.GetBalance(ctx, authtypes.NewModuleAddress(treasurytypes.InsuranceName), chain.NoahBaseDenom).Amount,
 	)
 	storedClaimsMandate, err := arkApp.TreasuryKeeper.ClaimsMandate.Get(ctx)
 	require.NoError(t, err)
@@ -416,7 +416,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		ExpectedTerm:      storedClaimsMandate.Term,
 		IncidentReference: "incident",
 		Recipient:         sdk.AccAddress(bytes.Repeat([]byte{0x45}, 20)).String(),
-		Amount:            sdk.NewInt64Coin(chain.MicroNoahDenom, 10),
+		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
 		EvidenceReference: "evidence",
 	}
 	submissionResponse, err := treasurykeeper.NewMsgServerImpl(arkApp.TreasuryKeeper).SubmitClaim(ctx, submission)
@@ -471,20 +471,20 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 10)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 10)),
 	))
-	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, chain.MicroSDRDenom, oracletypes.ExchangeRate{
-		Denom:          chain.MicroSDRDenom,
+	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, chain.SDRBaseDenom, oracletypes.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: ctx.BlockTime(),
 	}))
 	draw, err := arkApp.TreasuryKeeper.DrawRedemptionBuffer(
 		ctx,
-		sdk.NewInt64Coin(chain.MicroSDRDenom, 1),
+		sdk.NewInt64Coin(chain.SDRBaseDenom, 1),
 		math.NewInt(1),
 		oracletypes.RateSnapshot{
-			chain.MicroNoahDenom: math.LegacyOneDec(),
-			chain.MicroSDRDenom:  math.LegacyOneDec(),
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.SDRBaseDenom:  math.LegacyOneDec(),
 		},
 	)
 	require.NoError(t, err)
@@ -496,12 +496,12 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	reserveBefore := arkApp.BankKeeper.GetBalance(
 		ctx,
 		authtypes.NewModuleAddress(treasurytypes.StrategicReserveName),
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	)
 	bufferBefore := arkApp.BankKeeper.GetBalance(
 		ctx,
 		authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName),
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	)
 	ctx, failedProposal := executeTreasuryProposal(
 		t,
@@ -510,25 +510,25 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		voter,
 		&treasurytypes.MsgTransferReserveToBuffer{
 			Authority:             authority,
-			Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 5),
-			MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 50),
+			Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 5),
+			MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 50),
 		},
 		&treasurytypes.MsgTransferReserveToBuffer{
 			Authority:             authority,
-			Amount:                sdk.NewInt64Coin(chain.MicroNoahDenom, 10),
-			MinimumReserveBalance: sdk.NewInt64Coin(chain.MicroNoahDenom, 50),
+			Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
+			MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 50),
 		},
 	)
 	require.Equal(t, govv1.StatusFailed, failedProposal.Status)
 	require.Equal(t, reserveBefore, arkApp.BankKeeper.GetBalance(
 		ctx,
 		authtypes.NewModuleAddress(treasurytypes.StrategicReserveName),
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	))
 	require.Equal(t, bufferBefore, arkApp.BankKeeper.GetBalance(
 		ctx,
 		authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName),
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	))
 }
 

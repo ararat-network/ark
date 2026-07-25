@@ -38,7 +38,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 			name: "empty offer coin",
 			req: &types.QuerySwapRequest{
 				OfferCoin: "",
-				AskDenom:  "ukrw",
+				AskDenom:  "akrw",
 			},
 			code:      codes.InvalidArgument,
 			expectErr: "invalid decimal coin expression",
@@ -46,7 +46,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "empty ask denom",
 			req: &types.QuerySwapRequest{
-				OfferCoin: "1000000uusd",
+				OfferCoin: "1000000ausd",
 				AskDenom:  "",
 			},
 			code:      codes.InvalidArgument,
@@ -56,7 +56,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 			name: "invalid offer coin format",
 			req: &types.QuerySwapRequest{
 				OfferCoin: "notacoin",
-				AskDenom:  "ukrw",
+				AskDenom:  "akrw",
 			},
 			code:      codes.InvalidArgument,
 			expectErr: "invalid decimal coin expression",
@@ -64,11 +64,11 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "missing oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "unknown").
+				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "unknown").
 					Return(nil, oracletypes.ErrUnknownDenom)
 			},
 			req: &types.QuerySwapRequest{
-				OfferCoin: "1000000uusd",
+				OfferCoin: "1000000ausd",
 				AskDenom:  "unknown",
 			},
 			code:      codes.FailedPrecondition,
@@ -77,12 +77,12 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "stale oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
+				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
 					Return(nil, oracletypes.ErrStaleExchangeRate)
 			},
 			req: &types.QuerySwapRequest{
-				OfferCoin: "1000000uusd",
-				AskDenom:  "ukrw",
+				OfferCoin: "1000000ausd",
+				AskDenom:  "akrw",
 			},
 			code:      codes.FailedPrecondition,
 			expectErr: "stale exchange rate",
@@ -105,48 +105,48 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 
 func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	largeAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 200))
-	offerCoin := sdk.NewCoin("uusd", largeAmount)
+	offerCoin := sdk.NewCoin("ausd", largeAmount)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSnapshot{
-			"uusd":              math.LegacyOneDec(),
-			chain.MicroSDRDenom: math.LegacyOneDec(),
-			"ukrw":              math.LegacyOneDec(),
+			"ausd":             math.LegacyOneDec(),
+			chain.SDRBaseDenom: math.LegacyOneDec(),
+			"akrw":             math.LegacyOneDec(),
 		}, nil)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: "uusd", TobinTax: math.LegacyZeroDec()},
-		{Denom: "ukrw", TobinTax: math.LegacyZeroDec()},
+		{Denom: "ausd", TobinTax: math.LegacyZeroDec()},
+		{Denom: "akrw", TobinTax: math.LegacyZeroDec()},
 	}, nil)
 
 	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
-		AskDenom:  "ukrw",
+		AskDenom:  "akrw",
 	})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoin("ukrw", largeAmount), res.SwapCoin)
+	s.Require().Equal(sdk.NewCoin("akrw", largeAmount), res.SwapCoin)
 }
 
 func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentablePoolUnitIntermediate() {
 	offerAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
-	offerCoin := sdk.NewCoin("uusd", offerAmount)
+	offerCoin := sdk.NewCoin("ausd", offerAmount)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSnapshot{
-			"uusd":              math.LegacyOneDec(),
-			chain.MicroSDRDenom: math.LegacyNewDec(2),
-			"ukrw":              math.LegacyOneDec(),
+			"ausd":             math.LegacyOneDec(),
+			chain.SDRBaseDenom: math.LegacyNewDec(2),
+			"akrw":             math.LegacyOneDec(),
 		}, nil)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: "uusd", TobinTax: math.LegacyZeroDec()},
-		{Denom: "ukrw", TobinTax: math.LegacyZeroDec()},
+		{Denom: "ausd", TobinTax: math.LegacyZeroDec()},
+		{Denom: "akrw", TobinTax: math.LegacyZeroDec()},
 	}, nil)
 
 	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
 		OfferCoin: offerCoin.String(),
-		AskDenom:  "ukrw",
+		AskDenom:  "akrw",
 	})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoin("ukrw", offerAmount), res.SwapCoin)
+	s.Require().Equal(sdk.NewCoin("akrw", offerAmount), res.SwapCoin)
 }
 
 func (s *KeeperTestSuite) TestQuerySwapOutcome() {
@@ -165,24 +165,24 @@ func (s *KeeperTestSuite) TestQuerySwapOutcome() {
 			offerRate:        math.LegacyNewDec(2),
 			askRate:          math.LegacyNewDec(201),
 			tobinTax:         math.LegacyZeroDec(),
-			expectedSwapCoin: sdk.NewCoin("ukrw", math.NewInt(100)),
-			expectedSwapFee:  sdk.NewDecCoinFromDec("ukrw", math.LegacyMustNewDecFromStr("0.5")),
+			expectedSwapCoin: sdk.NewCoin("akrw", math.NewInt(100)),
+			expectedSwapFee:  sdk.NewDecCoinFromDec("akrw", math.LegacyMustNewDecFromStr("0.5")),
 		},
 		{
 			name:             "positive spread deducts explicit fee",
 			offerRate:        math.LegacyOneDec(),
 			askRate:          math.LegacyNewDec(100),
 			tobinTax:         math.LegacyMustNewDecFromStr("0.2"),
-			expectedSwapCoin: sdk.NewCoin("ukrw", math.NewInt(80)),
-			expectedSwapFee:  sdk.NewDecCoinFromDec("ukrw", math.LegacyNewDec(20)),
+			expectedSwapCoin: sdk.NewCoin("akrw", math.NewInt(80)),
+			expectedSwapFee:  sdk.NewDecCoinFromDec("akrw", math.LegacyNewDec(20)),
 		},
 		{
 			name:             "truncation remainder is folded into fee",
 			offerRate:        math.LegacyNewDec(20),
 			askRate:          math.LegacyNewDec(2011),
 			tobinTax:         math.LegacyMustNewDecFromStr("0.1"),
-			expectedSwapCoin: sdk.NewCoin("ukrw", math.NewInt(90)),
-			expectedSwapFee:  sdk.NewDecCoinFromDec("ukrw", math.LegacyMustNewDecFromStr("10.55")),
+			expectedSwapCoin: sdk.NewCoin("akrw", math.NewInt(90)),
+			expectedSwapFee:  sdk.NewDecCoinFromDec("akrw", math.LegacyMustNewDecFromStr("10.55")),
 		},
 		{
 			name:      "zero swap coin returns invalid argument",
@@ -199,8 +199,8 @@ func (s *KeeperTestSuite) TestQuerySwapOutcome() {
 			s.setupQuerySwapMocks(tc.offerRate, tc.askRate, tc.tobinTax)
 
 			res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
-				OfferCoin: "1uusd",
-				AskDenom:  "ukrw",
+				OfferCoin: "1ausd",
+				AskDenom:  "akrw",
 			})
 			if tc.expectErr != "" {
 				s.Require().Error(err)
@@ -246,20 +246,20 @@ func (s *KeeperTestSuite) TestQueryArkPoolDelta() {
 			s.Require().NoError(err)
 			s.Require().NotNil(res)
 			s.Require().True(tc.delta.Equal(res.ArkPoolDelta))
-			s.Require().Equal(chain.MicroSDRDenom, res.PoolDenom)
+			s.Require().Equal(chain.SDRBaseDenom, res.PoolDenom)
 		})
 	}
 }
 
 func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "uusd", "ukrw").
+	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSnapshot{
-			"uusd":              offerRate,
-			chain.MicroSDRDenom: math.LegacyOneDec(),
-			"ukrw":              askRate,
+			"ausd":             offerRate,
+			chain.SDRBaseDenom: math.LegacyOneDec(),
+			"akrw":             askRate,
 		}, nil)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: "uusd", TobinTax: tobinTax},
-		{Denom: "ukrw", TobinTax: tobinTax},
+		{Denom: "ausd", TobinTax: tobinTax},
+		{Denom: "akrw", TobinTax: tobinTax},
 	}, nil)
 }

@@ -30,7 +30,7 @@ import (
 
 func BenchmarkTreasuryBeginBlocker(b *testing.B) {
 	for _, targetCount := range []int{len(oracletypes.DefaultTobinTaxes), oracletypes.MaxVoteTargets} {
-		for _, feeDenom := range []string{"unoah", "stable"} {
+		for _, feeDenom := range []string{"anoah", "stable"} {
 			b.Run(fmt.Sprintf("targets_%d/fees_%s", targetCount, feeDenom), func(b *testing.B) {
 				keeper, ctx := benchmarkTreasuryKeeper(b, targetCount, feeDenom)
 				if err := keeper.BeginBlocker(ctx); err != nil {
@@ -110,7 +110,7 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	treasuryAccountKeeper.EXPECT().GetModuleAddress(treasurytypes.StabilityTaxCollectorName).
 		Return(authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName))
 	treasuryBankKeeper := treasurytestutil.NewMockBankKeeper(ctrl)
-	fees := sdk.NewCoins(sdk.NewInt64Coin(chain.MicroNoahDenom, 1))
+	fees := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
 	if feeDenom == "stable" {
 		stableDenom := tobinTaxes[0].Denom
 		fees = sdk.NewCoins(sdk.NewInt64Coin(stableDenom, 1))

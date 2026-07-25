@@ -57,67 +57,86 @@ func TestValidateGenesis(t *testing.T) {
 					{Denom: "", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "exchange rate denom must be a micro denom beginning with u",
+			expectErr: "exchange rate denom must be an Ark-native base denom beginning with a",
 		},
 		{
 			name: "exchange rate denom must be canonical lowercase",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
-					{Denom: "uUSD", Rate: math.LegacyOneDec()},
+					{Denom: "aUSD", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "canonical lowercase micro denom",
+			expectErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name: "exchange rate not positive",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
-					{Denom: "uusd", Rate: math.LegacyZeroDec()},
+					{Denom: "ausd", Rate: math.LegacyZeroDec()},
 				}
 			},
-			expectErr: "exchange rate for uusd must be positive",
+			expectErr: "exchange rate for ausd must be positive",
 		},
 		{
 			name: "exchange rate is nil",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
-					{Denom: "uusd", Rate: math.LegacyDec{}},
+					{Denom: "ausd", Rate: math.LegacyDec{}},
 				}
 			},
-			expectErr: "exchange rate for uusd must be set",
+			expectErr: "exchange rate for ausd must be set",
 		},
 		{
 			name: "exchange rate is out of range",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom: "uusd",
+						Denom: "ausd",
 						Rate: math.LegacyNewDecFromBigInt(
 							new(big.Int).Lsh(big.NewInt(1), 256),
 						),
 					},
 				}
 			},
-			expectErr: "exchange rate for uusd must be representable",
+			expectErr: "exchange rate for ausd must be representable",
+		},
+		{
+			name: "sorted exchange rates are valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = []types.ExchangeRate{
+					{Denom: "akrw", Rate: math.LegacyOneDec()},
+					{Denom: "ausd", Rate: math.LegacyNewDec(2)},
+				}
+			},
+		},
+		{
+			name: "unsorted exchange rates",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = []types.ExchangeRate{
+					{Denom: "ausd", Rate: math.LegacyOneDec()},
+					{Denom: "akrw", Rate: math.LegacyNewDec(2)},
+				}
+			},
+			expectErr: "genesis exchange rates must be sorted by unique denom",
 		},
 		{
 			name: "duplicate exchange rate denom",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
-					{Denom: "uusd", Rate: math.LegacyOneDec()},
-					{Denom: "uusd", Rate: math.LegacyNewDec(2)},
+					{Denom: "ausd", Rate: math.LegacyOneDec()},
+					{Denom: "ausd", Rate: math.LegacyNewDec(2)},
 				}
 			},
-			expectErr: "duplicate exchange rate for denom uusd",
+			expectErr: "genesis exchange rates must be sorted by unique denom",
 		},
 		{
 			name: "exchange rate denom must be a vote target",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
-					{Denom: "ufoo", Rate: math.LegacyOneDec()},
+					{Denom: "afoo", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "exchange rate denom ufoo is not a vote target",
+			expectErr: "exchange rate denom afoo is not a vote target",
 		},
 		// RewardWeights
 		{
@@ -148,6 +167,25 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "reward weight validator address must not be empty",
 		},
 		{
+			name: "sorted reward weights are valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(1)},
+					{ValidatorAddress: otherValidatorAddress, RewardWeight: math.NewInt(2)},
+				}
+			},
+		},
+		{
+			name: "unsorted reward weights",
+			mutate: func(gs *types.GenesisState) {
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: otherValidatorAddress, RewardWeight: math.NewInt(1)},
+					{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(2)},
+				}
+			},
+			expectErr: "genesis reward weights must be sorted by unique validator address",
+		},
+		{
 			name: "duplicate reward weight",
 			mutate: func(gs *types.GenesisState) {
 				gs.RewardWeights = []types.RewardWeight{
@@ -155,7 +193,7 @@ func TestValidateGenesis(t *testing.T) {
 					{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(2)},
 				}
 			},
-			expectErr: "duplicate reward weight for validator " + validatorAddress,
+			expectErr: "genesis reward weights must be sorted by unique validator address",
 		},
 		{
 			name: "reward weight invalid validator address",
@@ -177,6 +215,25 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "miss count validator address must not be empty",
 		},
 		{
+			name: "sorted miss counters are valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.MissCounts = []types.MissCount{
+					{ValidatorAddress: validatorAddress, MissCount: 1},
+					{ValidatorAddress: otherValidatorAddress, MissCount: 2},
+				}
+			},
+		},
+		{
+			name: "unsorted miss counters",
+			mutate: func(gs *types.GenesisState) {
+				gs.MissCounts = []types.MissCount{
+					{ValidatorAddress: otherValidatorAddress, MissCount: 1},
+					{ValidatorAddress: validatorAddress, MissCount: 2},
+				}
+			},
+			expectErr: "genesis miss counts must be sorted by unique validator address",
+		},
+		{
 			name: "duplicate miss counter",
 			mutate: func(gs *types.GenesisState) {
 				gs.MissCounts = []types.MissCount{
@@ -184,7 +241,7 @@ func TestValidateGenesis(t *testing.T) {
 					{ValidatorAddress: validatorAddress, MissCount: 2},
 				}
 			},
-			expectErr: "duplicate miss count for validator " + validatorAddress,
+			expectErr: "genesis miss counts must be sorted by unique validator address",
 		},
 		{
 			name: "miss count invalid validator address",
@@ -197,48 +254,48 @@ func TestValidateGenesis(t *testing.T) {
 		},
 		// VoteTargets
 		{
-			name: "vote target denom must be micro denom",
+			name: "vote target denom must be an Ark-native base denom",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"u"}
+				gs.VoteTargets.Denoms = []string{"a"}
 			},
-			expectErr: "active vote targets denom must be a micro denom beginning with u: u",
+			expectErr: "active vote targets denom must be an Ark-native base denom beginning with a: a",
 		},
 		{
 			name: "vote target denom must be canonical lowercase",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"uUSD"}
+				gs.VoteTargets.Denoms = []string{"aUSD"}
 			},
-			expectErr: "canonical lowercase micro denom",
+			expectErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name: "vote target denom cannot contain path separators",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"ufoo/bar"}
+				gs.VoteTargets.Denoms = []string{"afoo/bar"}
 			},
-			expectErr: "canonical lowercase micro denom",
+			expectErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name: "native denom cannot be configured as a vote target",
 			mutate: func(gs *types.GenesisState) {
 				gs.Params.TobinTaxes = []types.TobinTax{{
-					Denom:    chain.MicroNoahDenom,
+					Denom:    chain.NoahBaseDenom,
 					TobinTax: math.LegacyNewDecWithPrec(25, 4),
 				}}
 				gs.VoteTargets = types.NewVoteTargets(gs.Params)
 			},
-			expectErr: "active vote targets must not contain native denom unoah",
+			expectErr: "active vote targets must not contain native denom anoah",
 		},
 		{
 			name: "duplicate vote target",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"uusd", "uusd"}
+				gs.VoteTargets.Denoms = []string{"ausd", "ausd"}
 			},
-			expectErr: "active vote targets contains duplicate denom uusd",
+			expectErr: "active vote targets contains duplicate denom ausd",
 		},
 		{
 			name: "vote targets must be sorted",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"uusd", "ukrw"}
+				gs.VoteTargets.Denoms = []string{"ausd", "akrw"}
 			},
 			expectErr: "active vote targets must be sorted",
 		},
@@ -262,14 +319,14 @@ func TestValidateGenesis(t *testing.T) {
 			mutate: func(gs *types.GenesisState) {
 				params := types.DefaultParams()
 				params.TobinTaxes = []types.TobinTax{{
-					Denom:    "uusd",
+					Denom:    "ausd",
 					TobinTax: math.LegacyZeroDec(),
 				}}
 				*gs = *types.NewGenesisState(
 					params,
 					types.NewAccounting(params),
 					[]types.ExchangeRate{
-						{Denom: "uusd", Rate: math.LegacyOneDec()},
+						{Denom: "ausd", Rate: math.LegacyOneDec()},
 					},
 					[]types.RewardWeight{
 						{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(1)},
@@ -278,7 +335,7 @@ func TestValidateGenesis(t *testing.T) {
 						{ValidatorAddress: otherValidatorAddress, MissCount: 0},
 					},
 					types.VoteTargets{
-						Denoms:  []string{"uusd"},
+						Denoms:  []string{"ausd"},
 						Version: types.InitialVoteTargetVersion,
 					},
 				)
@@ -304,7 +361,7 @@ func TestValidateGenesis(t *testing.T) {
 func makeTestVoteTargets(count int) []string {
 	denoms := make([]string, count)
 	for i := range count {
-		denoms[i] = fmt.Sprintf("u%03d", i)
+		denoms[i] = fmt.Sprintf("a%03d", i)
 	}
 	return denoms
 }

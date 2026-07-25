@@ -20,7 +20,7 @@ var treasuryFundAddresses = map[string]struct{}{
 	string(authtypes.NewModuleAddress(types.InsuranceName)):        {},
 }
 
-// TreasurySendRestriction permits only positive unoah-only transfers into a
+// TreasurySendRestriction permits only positive anoah-only transfers into a
 // Treasury custody account. Transfers to every other recipient pass through
 // unchanged.
 func TreasurySendRestriction(
@@ -34,13 +34,13 @@ func TreasurySendRestriction(
 	}
 
 	if len(amount) != 1 ||
-		amount[0].Denom != chain.MicroNoahDenom ||
+		amount[0].Denom != chain.NoahBaseDenom ||
 		amount[0].Amount.IsNil() ||
 		!amount[0].Amount.IsPositive() {
 		return nil, errorsmod.Wrapf(
 			errortypes.ErrInvalidCoins,
 			"treasury fund deposits must contain exactly one positive %s coin",
-			chain.MicroNoahDenom,
+			chain.NoahBaseDenom,
 		)
 	}
 

@@ -64,23 +64,23 @@ func TestFromDenom(t *testing.T) {
 	}{
 		{
 			name:  "converts canonical vote target",
-			denom: "uusd",
+			denom: "ausd",
 			want:  "NOAH/USD",
 		},
 		{
 			name:    "rejects uppercase vote target",
-			denom:   "uUSD",
-			wantErr: "canonical lowercase micro denom",
+			denom:   "aUSD",
+			wantErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name:    "rejects path denom",
-			denom:   "ufoo/bar",
+			denom:   "afoo/bar",
 			wantErr: "without path separators",
 		},
 		{
 			name:    "rejects surrounding whitespace",
-			denom:   " uusd ",
-			wantErr: "micro denom beginning with u",
+			denom:   " ausd ",
+			wantErr: "Ark-native base denom beginning with a",
 		},
 	}
 
@@ -234,14 +234,14 @@ func TestPairVoteTargetDenom(t *testing.T) {
 		want string
 	}{
 		{
-			name: "projects quote to micro denom",
+			name: "projects quote to native base denom",
 			pair: "USDT/USD",
-			want: "uusd",
+			want: "ausd",
 		},
 		{
 			name: "preserves terra sdr vote target spelling",
 			pair: "USDT/SDR",
-			want: "usdr",
+			want: "asdr",
 		},
 	}
 

@@ -66,8 +66,8 @@ func TestPrices(t *testing.T) {
 
 	require.False(t, response.Timestamp.IsZero())
 	require.Equal(t, version.Version, response.Version)
-	require.Equal(t, math.LegacyMustNewDecFromStr("123.456"), decodePrice(t, response.Prices["uusd"]))
-	require.Equal(t, math.LegacyMustNewDecFromStr("42.25"), decodePrice(t, response.Prices["ukrw"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("123.456"), decodePrice(t, response.Prices["ausd"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("42.25"), decodePrice(t, response.Prices["akrw"]))
 }
 
 func TestPricesOmitsMissingVoteTargets(t *testing.T) {
@@ -105,8 +105,8 @@ func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, initial.Timestamp, response.Timestamp)
-	require.Equal(t, math.LegacyMustNewDecFromStr("1.25"), decodePrice(t, response.Prices["uusd"]))
-	require.Equal(t, math.LegacyMustNewDecFromStr("1300"), decodePrice(t, response.Prices["ukrw"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("1.25"), decodePrice(t, response.Prices["ausd"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("1300"), decodePrice(t, response.Prices["akrw"]))
 	client.release()
 }
 
@@ -144,12 +144,12 @@ func TestToReqPrices(t *testing.T) {
 		{
 			name: "multiple prices",
 			prices: oracletypes.DenomPrices{
-				"uusd": mustBigFloat(t, "123.456"),
-				"ukrw": mustBigFloat(t, "42.25"),
+				"ausd": mustBigFloat(t, "123.456"),
+				"akrw": mustBigFloat(t, "42.25"),
 			},
 			want: map[string]math.LegacyDec{
-				"uusd": math.LegacyMustNewDecFromStr("123.456"),
-				"ukrw": math.LegacyMustNewDecFromStr("42.25"),
+				"ausd": math.LegacyMustNewDecFromStr("123.456"),
+				"akrw": math.LegacyMustNewDecFromStr("42.25"),
 			},
 		},
 	}
@@ -171,18 +171,18 @@ func TestToReqPrices(t *testing.T) {
 
 func TestToReqPricesRejectsNilPrice(t *testing.T) {
 	got, err := toReqPrices(oracletypes.DenomPrices{
-		"uusd": nil,
+		"ausd": nil,
 	})
 
 	require.Nil(t, got)
-	require.EqualError(t, err, "nil price for uusd")
+	require.EqualError(t, err, "nil price for ausd")
 }
 
 func TestToReqPricesRejectsOutOfRangePriceBeforeFormatting(t *testing.T) {
 	tooLarge := new(big.Float).SetPrec(oracletypes.PricePrecisionBits)
 	tooLarge.SetInt(new(big.Int).Lsh(big.NewInt(1), 256))
 
-	got, err := toReqPrices(oracletypes.DenomPrices{"uusd": tooLarge})
+	got, err := toReqPrices(oracletypes.DenomPrices{"ausd": tooLarge})
 
 	require.Nil(t, got)
 	require.ErrorContains(t, err, "magnitude exceeds LegacyDec range")

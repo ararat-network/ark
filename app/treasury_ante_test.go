@@ -43,18 +43,18 @@ func TestTreasuryFeeCheckerSeparatesTaxFromGasFee(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 
 	checkCtx := ctx.WithIsCheckTx(true).WithMinGasPrices(sdk.NewDecCoins(
-		sdk.NewDecCoin(chain.MicroSDRDenom, math.NewInt(5)),
+		sdk.NewDecCoin(chain.SDRBaseDenom, math.NewInt(5)),
 	))
 	fee, priority, err := checkTreasuryFee(arkApp, checkCtx, tx)
 	require.NoError(t, err)
 	require.Equal(t, tx.fee, fee)
 	require.Equal(t, int64(5), priority)
 
-	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 14))
+	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 14))
 	_, _, err = checkTreasuryFee(arkApp, checkCtx, tx)
 	require.ErrorContains(t, err, "insufficient gas fees")
 
-	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 9))
+	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 9))
 	_, _, err = checkTreasuryFee(arkApp, checkCtx, tx)
 	require.ErrorContains(t, err, "cover stability tax")
 }
@@ -62,7 +62,7 @@ func TestTreasuryFeeCheckerSeparatesTaxFromGasFee(t *testing.T) {
 func TestTreasuryFeeCheckerOnlyWaivesTaxBeforeTreasuryGenesis(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	ctx = ctx.WithBlockHeight(0)
-	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 9))
+	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 9))
 
 	_, _, err := checkTreasuryFee(arkApp, ctx, tx)
 	require.ErrorContains(t, err, "cover stability tax")
@@ -81,13 +81,13 @@ func TestRouteStabilityTaxCollectsCheckedTax(t *testing.T) {
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
 		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 20)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 20)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		authtypes.FeeCollectorName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 20)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 20)),
 	))
 
 	router := arkApp.routeStabilityTax(func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
@@ -112,19 +112,19 @@ func TestRouteStabilityTaxCollectsCheckedTax(t *testing.T) {
 	require.Equal(
 		t,
 		math.NewInt(10),
-		arkApp.BankKeeper.GetBalance(ctx, feeCollector, chain.MicroSDRDenom).Amount,
+		arkApp.BankKeeper.GetBalance(ctx, feeCollector, chain.SDRBaseDenom).Amount,
 	)
 	require.Equal(
 		t,
 		math.NewInt(10),
-		arkApp.BankKeeper.GetBalance(ctx, collector, chain.MicroSDRDenom).Amount,
+		arkApp.BankKeeper.GetBalance(ctx, collector, chain.SDRBaseDenom).Amount,
 	)
 	_, err = router(ctx, tx, true)
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		math.NewInt(10),
-		arkApp.BankKeeper.GetBalance(ctx, collector, chain.MicroSDRDenom).Amount,
+		arkApp.BankKeeper.GetBalance(ctx, collector, chain.SDRBaseDenom).Amount,
 	)
 }
 
@@ -143,11 +143,11 @@ func TestRouteStabilityTaxRequiresCheckedTax(t *testing.T) {
 
 func TestTreasuryAnteFailsClosedWhenConfiguredTaxCapIsMissing(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
-	require.NoError(t, arkApp.TreasuryKeeper.TaxCaps.Remove(ctx, chain.MicroSDRDenom))
+	require.NoError(t, arkApp.TreasuryKeeper.TaxCaps.Remove(ctx, chain.SDRBaseDenom))
 	tx.msgs = []sdk.Msg{&banktypes.MsgSend{
 		FromAddress: sdk.AccAddress(bytes.Repeat([]byte{1}, 20)).String(),
 		ToAddress:   sdk.AccAddress(bytes.Repeat([]byte{2}, 20)).String(),
-		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 100)),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 100)),
 	}}
 
 	_, _, err := checkTreasuryFee(arkApp, ctx, tx)
@@ -177,16 +177,16 @@ func setupTreasuryAnteTest(t *testing.T) (*ArkApp, sdk.Context, treasuryFeeTx) {
 	policy := treasurytypes.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	require.NoError(t, arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
-	require.NoError(t, arkApp.TreasuryKeeper.TaxCaps.Set(ctx, chain.MicroSDRDenom, math.NewInt(100)))
+	require.NoError(t, arkApp.TreasuryKeeper.TaxCaps.Set(ctx, chain.SDRBaseDenom, math.NewInt(100)))
 
 	msg := &banktypes.MsgSend{
 		FromAddress: sdk.AccAddress(bytes.Repeat([]byte{1}, 20)).String(),
 		ToAddress:   sdk.AccAddress(bytes.Repeat([]byte{2}, 20)).String(),
-		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 100)),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 100)),
 	}
 	return arkApp, ctx, treasuryFeeTx{
 		msgs: []sdk.Msg{msg},
-		fee:  sdk.NewCoins(sdk.NewInt64Coin(chain.MicroSDRDenom, 15)),
+		fee:  sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 15)),
 		gas:  1,
 	}
 }

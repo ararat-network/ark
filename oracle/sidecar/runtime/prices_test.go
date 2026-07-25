@@ -51,10 +51,10 @@ func TestRunFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
 		prices := snapshot.Prices
-		if prices["uusd"] == nil || prices["uusd"].Cmp(big.NewFloat(1.25)) != 0 {
+		if prices["ausd"] == nil || prices["ausd"].Cmp(big.NewFloat(1.25)) != 0 {
 			return false
 		}
-		if _, ok := prices["ukrw"]; ok {
+		if _, ok := prices["akrw"]; ok {
 			return false
 		}
 		return !snapshot.Timestamp.IsZero()
@@ -100,7 +100,7 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 		shortCfg.Name: shortCfg,
 	})
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"uusd"}
+	cfg.FallbackDenoms = []string{"ausd"}
 
 	oracle, err := runtime.NewRuntime(
 		cfg,
@@ -113,7 +113,7 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 	defer cancel()
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
-		price := snapshot.Prices["uusd"]
+		price := snapshot.Prices["ausd"]
 		return !snapshot.Timestamp.IsZero() && price != nil && price.Cmp(big.NewFloat(1.25)) == 0
 	}, time.Second, time.Millisecond)
 
@@ -129,7 +129,7 @@ func TestRunUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T) {
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"uusd"}
+	cfg.FallbackDenoms = []string{"ausd"}
 	cfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
 		Pair:       "NOAH/USD",
 		Price:      "0.25",
@@ -148,7 +148,7 @@ func TestRunUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
-		price := snapshot.Prices["uusd"]
+		price := snapshot.Prices["ausd"]
 		return !snapshot.Timestamp.IsZero() && price != nil && price.Cmp(big.NewFloat(0.25)) == 0
 	}, time.Second, time.Millisecond)
 
@@ -190,7 +190,7 @@ func TestRunRecordsMissingPriceMetricsFromFallbackDenoms(t *testing.T) {
 		if missingPrices == nil {
 			return false
 		}
-		value, ok := oracleCounterValue(missingPrices, map[string]string{"denom": "ukrw"})
+		value, ok := oracleCounterValue(missingPrices, map[string]string{"denom": "akrw"})
 		return ok && value >= 1
 	}, time.Second, time.Millisecond)
 
@@ -234,7 +234,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 				close(voteTargetsStarted)
 			})
 			<-allowVoteTargets
-			return []string{"uusd"}, nil
+			return []string{"ausd"}, nil
 		}).
 		AnyTimes()
 
@@ -252,7 +252,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 	requireSignal(t, voteTargetsStarted, "price tick did not start")
 
 	newCfg := cfg
-	newCfg.Resolver = testResolverConfig("uusd", "direct", "NOAH/USD")
+	newCfg.Resolver = testResolverConfig("ausd", "direct", "NOAH/USD")
 
 	updateErrCh := make(chan error, 1)
 	go func() {

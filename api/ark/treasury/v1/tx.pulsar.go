@@ -8091,7 +8091,8 @@ func (*MsgUpdateMonetaryPolicyResponse) Descriptor() ([]byte, []int) {
 }
 
 // MsgSetClaimsMandate is the request for a complete Claims committee mandate.
-// The committee claim limit is a fixed gross unoah allowance for the new term.
+// The committee claim limit is a fixed gross base-unit NOAH allowance for the
+// new term.
 type MsgSetClaimsMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

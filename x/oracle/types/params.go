@@ -26,14 +26,14 @@ var (
 	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)                      // 2% (-1, 1)
 	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4)                     // 0.25%
 	DefaultTobinTaxes    = []TobinTax{
-		{Denom: chain.MicroUSDDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroKRWDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroSDRDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroCNYDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroJPYDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroEURDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroGBPDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MicroMNTDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
+		{Denom: chain.CNYBaseDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.EURBaseDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.GBPBaseDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.JPYBaseDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.KRWBaseDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.MNTBaseDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
+		{Denom: chain.SDRBaseDenom, TobinTax: DefaultTobinTax},
+		{Denom: chain.USDBaseDenom, TobinTax: DefaultTobinTax},
 	}
 	DefaultSlashFraction     = math.LegacyNewDecWithPrec(1, 4) // 0.01%
 	DefaultMinValidPerWindow = math.LegacyNewDecWithPrec(5, 2) // 5%
@@ -102,8 +102,7 @@ func (p Params) Validate() error {
 			MaxVoteTargets,
 		)
 	}
-	seen := make(map[string]struct{}, len(p.TobinTaxes))
-	for _, tobinTax := range p.TobinTaxes {
+	for i, tobinTax := range p.TobinTaxes {
 		if tobinTax.TobinTax.IsNil() {
 			return fmt.Errorf("oracle parameter TobinTaxes must have TobinTax set for denom %s", tobinTax.Denom)
 		}
@@ -111,17 +110,15 @@ func (p Params) Validate() error {
 			return errors.New("oracle parameter TobinTaxes must have TobinTax between [0, 1]")
 		}
 
-		if err := chain.ValidateMicroDenom(tobinTax.Denom); err != nil {
+		if err := chain.ValidateNativeBaseDenom(tobinTax.Denom); err != nil {
 			return fmt.Errorf("oracle parameter TobinTaxes %w", err)
 		}
-		if tobinTax.Denom == chain.MicroNoahDenom {
+		if tobinTax.Denom == chain.NoahBaseDenom {
 			return fmt.Errorf("oracle parameter TobinTaxes must not contain native denom %s", tobinTax.Denom)
 		}
-
-		if _, ok := seen[tobinTax.Denom]; ok {
-			return fmt.Errorf("oracle parameter TobinTaxes contains duplicate denom: %s", tobinTax.Denom)
+		if i > 0 && tobinTax.Denom <= p.TobinTaxes[i-1].Denom {
+			return errors.New("oracle parameter TobinTaxes must be sorted by unique denom")
 		}
-		seen[tobinTax.Denom] = struct{}{}
 	}
 
 	return nil

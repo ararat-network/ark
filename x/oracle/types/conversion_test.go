@@ -10,13 +10,15 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
 func TestRateSnapshotConvert(t *testing.T) {
 	rates := types.RateSnapshot{
-		"uusd": math.LegacyOneDec(),
-		"ukrw": math.LegacyNewDec(1300),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyNewDec(2),
+		chain.KRWBaseDenom:  math.LegacyNewDec(1300),
 	}
 
 	tests := []struct {
@@ -28,26 +30,38 @@ func TestRateSnapshotConvert(t *testing.T) {
 	}{
 		{
 			name:      "converts through captured rates",
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyNewDec(2)),
-			askDenom:  "ukrw",
-			expected:  sdk.NewDecCoinFromDec("ukrw", math.LegacyNewDec(2600)),
+			offerCoin: sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyNewDec(2)),
+			askDenom:  chain.KRWBaseDenom,
+			expected:  sdk.NewDecCoinFromDec(chain.KRWBaseDenom, math.LegacyNewDec(1300)),
+		},
+		{
+			name: "equal exponents preserve the display price in base units",
+			offerCoin: sdk.NewDecCoinFromDec(
+				chain.NoahBaseDenom,
+				math.LegacyNewDecFromInt(chain.NativeBaseAmount(1)),
+			),
+			askDenom: chain.USDBaseDenom,
+			expected: sdk.NewDecCoinFromDec(
+				chain.USDBaseDenom,
+				math.LegacyNewDecFromInt(chain.NativeBaseAmount(2)),
+			),
 		},
 		{
 			name:      "same denom preserves zero amount",
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyZeroDec()),
-			askDenom:  "uusd",
-			expected:  sdk.NewDecCoinFromDec("uusd", math.LegacyZeroDec()),
+			offerCoin: sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyZeroDec()),
+			askDenom:  chain.USDBaseDenom,
+			expected:  sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyZeroDec()),
 		},
 		{
 			name:      "missing offer rate",
-			offerCoin: sdk.NewDecCoinFromDec("ufoo", math.LegacyOneDec()),
-			askDenom:  "uusd",
+			offerCoin: sdk.NewDecCoinFromDec("afoo", math.LegacyOneDec()),
+			askDenom:  chain.USDBaseDenom,
 			expectErr: types.ErrUnknownDenom,
 		},
 		{
 			name:      "missing ask rate",
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
-			askDenom:  "ufoo",
+			offerCoin: sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec()),
+			askDenom:  "afoo",
 			expectErr: types.ErrUnknownDenom,
 		},
 	}
@@ -69,13 +83,13 @@ func TestRateSnapshotConvert(t *testing.T) {
 
 func TestRateSnapshotConvertLargeRepresentableAmount(t *testing.T) {
 	largeAmount := new(big.Int).Lsh(big.NewInt(1), 200)
-	offerCoin := sdk.NewDecCoinFromCoin(sdk.NewCoin("uusd", math.NewIntFromBigInt(largeAmount)))
+	offerCoin := sdk.NewDecCoinFromCoin(sdk.NewCoin("ausd", math.NewIntFromBigInt(largeAmount)))
 	rates := types.RateSnapshot{
-		"uusd": math.LegacyOneDec(),
-		"ukrw": math.LegacyOneDec(),
+		"ausd": math.LegacyOneDec(),
+		"akrw": math.LegacyOneDec(),
 	}
 
-	actual, err := rates.Convert(offerCoin, "ukrw")
+	actual, err := rates.Convert(offerCoin, "akrw")
 	require.NoError(t, err)
 	require.True(t, offerCoin.Amount.Equal(actual.Amount))
 }
@@ -95,81 +109,81 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		{
 			name: "offer amount is nil",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyOneDec(),
+				"ausd": math.LegacyOneDec(),
 			},
-			offerCoin: sdk.DecCoin{Denom: "uusd", Amount: math.LegacyDec{}},
-			askDenom:  "uusd",
+			offerCoin: sdk.DecCoin{Denom: "ausd", Amount: math.LegacyDec{}},
+			askDenom:  "ausd",
 		},
 		{
 			name: "offer amount is out of range",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyOneDec(),
+				"ausd": math.LegacyOneDec(),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", outOfRange),
-			askDenom:  "uusd",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", outOfRange),
+			askDenom:  "ausd",
 		},
 		{
 			name: "offer rate is out of range",
 			rates: types.RateSnapshot{
-				"uusd": outOfRange,
-				"ukrw": math.LegacyOneDec(),
+				"ausd": outOfRange,
+				"akrw": math.LegacyOneDec(),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()),
+			askDenom:  "akrw",
 		},
 		{
 			name: "offer rate is nil",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyDec{},
-				"ukrw": math.LegacyOneDec(),
+				"ausd": math.LegacyDec{},
+				"akrw": math.LegacyOneDec(),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()),
+			askDenom:  "akrw",
 		},
 		{
 			name: "offer rate is zero",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyZeroDec(),
-				"ukrw": math.LegacyOneDec(),
+				"ausd": math.LegacyZeroDec(),
+				"akrw": math.LegacyOneDec(),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()),
+			askDenom:  "akrw",
 		},
 		{
 			name: "ask rate is out of range",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyOneDec(),
-				"ukrw": outOfRange,
+				"ausd": math.LegacyOneDec(),
+				"akrw": outOfRange,
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacyOneDec()),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()),
+			askDenom:  "akrw",
 		},
 		{
 			name: "intermediate multiplication overflows",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyNewDec(2),
-				"ukrw": math.LegacyNewDec(2),
+				"ausd": math.LegacyNewDec(2),
+				"akrw": math.LegacyNewDec(2),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", max),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", max),
+			askDenom:  "akrw",
 		},
 		{
 			name: "quotient overflows",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacySmallestDec(),
-				"ukrw": math.LegacyOneDec(),
+				"ausd": math.LegacySmallestDec(),
+				"akrw": math.LegacyOneDec(),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", max),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", max),
+			askDenom:  "akrw",
 		},
 		{
 			name: "conversion underflows to zero",
 			rates: types.RateSnapshot{
-				"uusd": math.LegacyOneDec(),
-				"ukrw": math.LegacySmallestDec(),
+				"ausd": math.LegacyOneDec(),
+				"akrw": math.LegacySmallestDec(),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("uusd", math.LegacySmallestDec()),
-			askDenom:  "ukrw",
+			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacySmallestDec()),
+			askDenom:  "akrw",
 		},
 	}
 

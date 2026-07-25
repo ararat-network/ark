@@ -86,9 +86,9 @@ func TestUpdateConfigDoesNotMutateRuntimeStateWhenProviderPlanFails(t *testing.T
 	newCfg.Providers = map[string]providers.Config{
 		"unknown": newProviderCfg,
 	}
-	newCfg.Resolver = testResolverConfig("ukrw", "noah-krw", "NOAH/USD", "USD/KRW")
+	newCfg.Resolver = testResolverConfig("akrw", "noah-krw", "NOAH/USD", "USD/KRW")
 	newCfg.Client.Interval = 10 * time.Millisecond
-	newCfg.FallbackDenoms = []string{"uusd"}
+	newCfg.FallbackDenoms = []string{"ausd"}
 
 	err = oracle.Update(newCfg)
 
@@ -228,7 +228,7 @@ func TestUpdateConfigKeepsProviderWhenFallbackDenomsDeactivateMarkets(t *testing
 	require.NoError(t, err)
 
 	newCfg := cfg
-	newCfg.FallbackDenoms = []string{"ueur"}
+	newCfg.FallbackDenoms = []string{"aeur"}
 
 	require.NoError(t, oracle.Update(newCfg))
 	require.Empty(t, mp.provider.GetTickers())

@@ -101,7 +101,7 @@ func (k Keeper) nominalLiabilityValue(
 
 	total := math.LegacyZeroDec()
 	for _, coin := range coins {
-		converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.MicroNoahDenom)
+		converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
 		if err != nil {
 			if isValuationUnavailable(err) {
 				return math.LegacyZeroDec(), false, nil
@@ -149,11 +149,11 @@ func (k Keeper) cachedLiabilityValue(
 }
 
 func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSnapshot) (math.LegacyDec, error) {
-	if coin.Denom == chain.MicroNoahDenom || coin.Amount.IsZero() {
+	if coin.Denom == chain.NoahBaseDenom || coin.Amount.IsZero() {
 		return math.LegacyZeroDec(), nil
 	}
 
-	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.MicroNoahDenom)
+	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
 	if err != nil {
 		return math.LegacyDec{}, err
 	}

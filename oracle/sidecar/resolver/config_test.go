@@ -20,7 +20,7 @@ func TestConfigMarketPairs(t *testing.T) {
 		{
 			name:   "nil routes includes active direct pairs and inverses",
 			cfg:    resolver.Config{},
-			denoms: []string{"uusd"},
+			denoms: []string{"ausd"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -31,7 +31,7 @@ func TestConfigMarketPairs(t *testing.T) {
 			cfg: resolver.Config{
 				Routes: map[string][]resolver.Route{},
 			},
-			denoms: []string{"uusd"},
+			denoms: []string{"ausd"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -41,7 +41,7 @@ func TestConfigMarketPairs(t *testing.T) {
 			name: "includes route pairs and inverses",
 			cfg: resolver.Config{
 				Routes: map[string][]resolver.Route{
-					"ukrw": {
+					"akrw": {
 						{
 							Name:  "noah-krw",
 							Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
@@ -49,7 +49,7 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
-			denoms: []string{"ukrw"},
+			denoms: []string{"akrw"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -61,7 +61,7 @@ func TestConfigMarketPairs(t *testing.T) {
 			name: "collapses duplicate direct and inverse pairs",
 			cfg: resolver.Config{
 				Routes: map[string][]resolver.Route{
-					"uusd": {
+					"ausd": {
 						{
 							Name:  "noah-usd",
 							Pairs: []types.Pair{"NOAH/USD", "USD/NOAH", "NOAH/USD"},
@@ -69,7 +69,7 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
-			denoms: []string{"uusd"},
+			denoms: []string{"ausd"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -79,7 +79,7 @@ func TestConfigMarketPairs(t *testing.T) {
 			name: "adds default direct pairs for denoms without configured routes",
 			cfg: resolver.Config{
 				Routes: map[string][]resolver.Route{
-					"ukrw": {
+					"akrw": {
 						{
 							Name:  "noah-krw",
 							Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
@@ -87,7 +87,7 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
-			denoms: []string{"uusd", "ukrw"},
+			denoms: []string{"ausd", "akrw"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -107,7 +107,7 @@ func TestConfigMarketPairs(t *testing.T) {
 func TestConfigValidateAllowsEmptyRoutesForDefaultDirectPath(t *testing.T) {
 	cfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
-			"uusd": {},
+			"ausd": {},
 		},
 	}
 
@@ -117,13 +117,13 @@ func TestConfigValidateAllowsEmptyRoutesForDefaultDirectPath(t *testing.T) {
 func TestConfigValidateRejectsNonCanonicalDenomWithEmptyRoutes(t *testing.T) {
 	cfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
-			"uUSD": {},
+			"aUSD": {},
 		},
 	}
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, "canonical lowercase micro denom")
+	require.ErrorContains(t, err, "canonical lowercase Ark-native base denom")
 }
 
 func TestConfigValidateBootstrapPrices(t *testing.T) {
@@ -217,7 +217,7 @@ func TestConfigCloneCopiesBootstrapPrices(t *testing.T) {
 func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 	cfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
-			"ukrw": {
+			"akrw": {
 				{
 					Name:  "noah-usd",
 					Pairs: []types.Pair{"NOAH/USD"},
@@ -228,13 +228,13 @@ func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, `resolver denom "ukrw" route "noah-usd" resolves to "NOAH/USD", want "NOAH/KRW"`)
+	require.ErrorContains(t, err, `resolver denom "akrw" route "noah-usd" resolves to "NOAH/USD", want "NOAH/KRW"`)
 }
 
 func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
 	cfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
-			"ukrw": {
+			"akrw": {
 				{
 					Name:  "bad-path",
 					Pairs: []types.Pair{"NOAH/USD", "EUR/KRW"},
@@ -245,5 +245,5 @@ func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, `resolver denom "ukrw" route "bad-path" is invalid: pair "EUR/KRW" does not connect after "USD"`)
+	require.ErrorContains(t, err, `resolver denom "akrw" route "bad-path" is invalid: pair "EUR/KRW" does not connect after "USD"`)
 }

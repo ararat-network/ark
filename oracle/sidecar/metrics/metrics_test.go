@@ -31,7 +31,7 @@ func TestRecordOracleMetrics(t *testing.T) {
 	metrics.RecordPairSampleCount(context.Background(), "NOAH/USD", 2)
 	metrics.RecordResolvedSourceCount(context.Background(), "NOAH/KRW", 3)
 	metrics.RecordRoutePrice(context.Background(), "NOAH/KRW", "noah-usd-krw", 2000)
-	metrics.RecordMissingPrices(context.Background(), []string{"ukrw"})
+	metrics.RecordMissingPrices(context.Background(), []string{"akrw"})
 
 	families, err := registry.Gather()
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestRecordOracleMetrics(t *testing.T) {
 
 	missingPrices := metricFamily(t, families, "ark_oracle_missing_prices_total")
 	require.Equal(t, float64(1), counterValue(t, missingPrices, map[string]string{
-		"denom": "ukrw",
+		"denom": "akrw",
 	}))
 }
 

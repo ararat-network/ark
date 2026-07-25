@@ -26,7 +26,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "ExchangeRate",
 					Use:       "exchange-rate [denom]",
 					Short:     "Query the current oracle exchange rate for a denom",
-					Example:   fmt.Sprintf("%s query oracle exchange-rate ukrw", version.AppName),
+					Example:   fmt.Sprintf("%s query oracle exchange-rate akrw", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},
 					},
@@ -71,7 +71,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "TobinTax",
 					Use:       "tobin-tax [denom]",
 					Short:     "Query the current oracle Tobin tax for a denom",
-					Example:   fmt.Sprintf("%s query oracle tobin-tax ukrw", version.AppName),
+					Example:   fmt.Sprintf("%s query oracle tobin-tax akrw", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},
 					},

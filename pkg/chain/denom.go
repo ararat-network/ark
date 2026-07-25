@@ -4,32 +4,43 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
-	MicroNoahDenom = "unoah"
-	MicroUSDDenom  = "uusd"
-	MicroKRWDenom  = "ukrw"
-	MicroSDRDenom  = "usdr"
-	MicroCNYDenom  = "ucny"
-	MicroJPYDenom  = "ujpy"
-	MicroEURDenom  = "ueur"
-	MicroGBPDenom  = "ugbp"
-	MicroMNTDenom  = "umnt"
+	NoahBaseDenom = "anoah"
+	USDBaseDenom  = "ausd"
+	KRWBaseDenom  = "akrw"
+	SDRBaseDenom  = "asdr"
+	CNYBaseDenom  = "acny"
+	JPYBaseDenom  = "ajpy"
+	EURBaseDenom  = "aeur"
+	GBPBaseDenom  = "agbp"
+	MNTBaseDenom  = "amnt"
 
-	MicroUnit = int64(1e6)
+	NativeDisplayExponent = 18
 )
 
-// ValidateMicroDenom validates denom as a canonical lowercase micro denom.
-func ValidateMicroDenom(denom string) error {
-	if len(denom) < 3 || denom[0] != 'u' {
-		return fmt.Errorf("denom must be a micro denom beginning with u: %s", denom)
+// NativeBaseAmount converts a whole Ark-native display amount into base units.
+func NativeBaseAmount(wholeUnits int64) math.Int {
+	return math.NewIntWithDecimal(wholeUnits, NativeDisplayExponent)
+}
+
+// ValidateNativeBaseDenom validates denom as a canonical lowercase Ark-native
+// base denomination.
+func ValidateNativeBaseDenom(denom string) error {
+	if len(denom) < 3 || denom[0] != 'a' {
+		return fmt.Errorf("denom must be an Ark-native base denom beginning with a: %s", denom)
 	}
 	if err := sdk.ValidateDenom(denom); err != nil ||
 		denom != strings.ToLower(denom) ||
 		strings.Contains(denom[1:], "/") {
-		return fmt.Errorf("denom must be a canonical lowercase micro denom without path separators: %s", denom)
+		return fmt.Errorf(
+			"denom must be a canonical lowercase Ark-native base denom without path separators: %s",
+			denom,
+		)
 	}
 
 	return nil

@@ -34,9 +34,9 @@ func TestWithAutomaticFees(t *testing.T) {
 	msg := banktypes.NewMsgSend(
 		sdk.AccAddress("sender"),
 		sdk.AccAddress("recipient"),
-		sdk.NewCoins(sdk.NewInt64Coin("usdr", 100)),
+		sdk.NewCoins(sdk.NewInt64Coin("asdr", 100)),
 	)
-	tax := sdk.NewCoins(sdk.NewInt64Coin("usdr", 3))
+	tax := sdk.NewCoins(sdk.NewInt64Coin("asdr", 3))
 
 	t.Run("fixed gas adds tax and gas fee", func(t *testing.T) {
 		querier := taxQuerierFunc(func(
@@ -50,14 +50,14 @@ func TestWithAutomaticFees(t *testing.T) {
 		})
 		txf := clienttx.Factory{}.
 			WithGas(100).
-			WithGasPrices("0.25unoah")
+			WithGasPrices("0.25anoah")
 		got, err := withAutomaticFees(sdkclient.Context{}, txf, querier, msg)
 
 		require.NoError(t, err)
 		require.Equal(t, uint64(100), got.Gas())
 		require.Equal(t, sdk.NewCoins(
-			sdk.NewInt64Coin("unoah", 25),
-			sdk.NewInt64Coin("usdr", 3),
+			sdk.NewInt64Coin("anoah", 25),
+			sdk.NewInt64Coin("asdr", 3),
 		), got.Fees())
 		require.True(t, got.GasPrices().IsZero())
 		require.False(t, got.SimulateAndExecute())
@@ -73,7 +73,7 @@ func TestWithAutomaticFees(t *testing.T) {
 			return nil, nil
 		})
 
-		txf := clienttx.Factory{}.WithFees("7unoah")
+		txf := clienttx.Factory{}.WithFees("7anoah")
 		got, err := withAutomaticFees(
 			sdkclient.Context{Offline: true},
 			txf,

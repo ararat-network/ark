@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
+	"ark/pkg/chain"
 	"ark/x/treasury/simulation"
 	"ark/x/treasury/types"
 )
@@ -46,6 +47,14 @@ func TestRandomisedGenState(t *testing.T) {
 	require.True(t, treasuryGenesis.Params.ReferenceTaxCap.IsZero())
 	require.False(t, treasuryGenesis.MonetaryPolicy.ValidatorBlockRewardTarget.IsNegative())
 	require.False(t, treasuryGenesis.MonetaryPolicy.OracleBlockRewardTarget.IsNegative())
+	require.True(
+		t,
+		treasuryGenesis.MonetaryPolicy.ValidatorBlockRewardTarget.LTE(chain.NativeBaseAmount(1)),
+	)
+	require.True(
+		t,
+		treasuryGenesis.MonetaryPolicy.OracleBlockRewardTarget.LTE(chain.NativeBaseAmount(1)),
+	)
 	require.False(t, treasuryGenesis.MonetaryPolicy.RedemptionBufferTargetRatio.IsNegative())
 	require.False(t, treasuryGenesis.MonetaryPolicy.RedemptionBufferTargetRatio.GT(math.LegacyOneDec()))
 	require.False(t, treasuryGenesis.MonetaryPolicy.StrategicReserveTargetRatio.IsNegative())

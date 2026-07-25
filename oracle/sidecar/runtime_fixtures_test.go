@@ -209,7 +209,7 @@ func newTestRuntimeConfig() runtimepkg.Config {
 			Timeout:  time.Second,
 			Interval: time.Hour,
 		},
-		FallbackDenoms: []string{"uusd", "ukrw"},
+		FallbackDenoms: []string{"ausd", "akrw"},
 	}
 }
 
@@ -234,7 +234,7 @@ func testInternalRuntimeConfig() runtimepkg.Config {
 			Timeout:  time.Second,
 			Interval: time.Second,
 		},
-		FallbackDenoms: []string{"uusd"},
+		FallbackDenoms: []string{"ausd"},
 	}
 }
 

@@ -33,14 +33,14 @@ func TestValidateParams(t *testing.T) {
 		{
 			name: "nil base pool amount with valid denom",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.DecCoin{Denom: chain.MicroSDRDenom}
+				p.BasePool = sdk.DecCoin{Denom: chain.SDRBaseDenom}
 			},
 			expectErr: "base pool amount must be set",
 		},
 		{
 			name: "zero base pool",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.NewDecCoin(chain.MicroSDRDenom, math.ZeroInt())
+				p.BasePool = sdk.NewDecCoin(chain.SDRBaseDenom, math.ZeroInt())
 			},
 			expectErr: "base pool must be positive",
 		},
@@ -48,7 +48,7 @@ func TestValidateParams(t *testing.T) {
 			name: "negative base pool",
 			mutate: func(p *types.Params) {
 				p.BasePool = sdk.DecCoin{
-					Denom:  chain.MicroSDRDenom,
+					Denom:  chain.SDRBaseDenom,
 					Amount: math.LegacyNewDec(-1),
 				}
 			},
@@ -57,7 +57,7 @@ func TestValidateParams(t *testing.T) {
 		{
 			name: "base pool square is out of range",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.NewDecCoinFromDec(chain.MicroSDRDenom, maxLegacyDec())
+				p.BasePool = sdk.NewDecCoinFromDec(chain.SDRBaseDenom, maxLegacyDec())
 			},
 			expectErr: "base pool square must be representable",
 		},
@@ -104,4 +104,13 @@ func TestValidateParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDefaultBasePoolUsesNativeDisplayScale(t *testing.T) {
+	require.Equal(t, chain.SDRBaseDenom, types.DefaultBasePool.Denom)
+	require.True(
+		t,
+		math.LegacyNewDecFromInt(chain.NativeBaseAmount(1_000_000)).
+			Equal(types.DefaultBasePool.Amount),
+	)
 }

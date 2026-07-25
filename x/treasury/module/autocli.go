@@ -32,7 +32,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "TaxCap",
 					Use:       "tax-cap [denom]",
 					Short:     "Query the derived stability-tax cap for a denomination",
-					Example:   fmt.Sprintf("%s query treasury tax-cap usdr", version.AppName),
+					Example:   fmt.Sprintf("%s query treasury tax-cap asdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},
 					},

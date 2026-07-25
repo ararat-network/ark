@@ -24,16 +24,16 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(50)))
-	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(50)))
+	s.expectTaxableDenoms(chain.USDBaseDenom)
 
 	msgs := []sdk.Msg{
-		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 700))},
-		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 700))},
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
 	}
 	tax, err := s.keeper.ComputeTax(s.ctx, msgs)
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
@@ -42,22 +42,22 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(1_000)))
-	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
+	s.expectTaxableDenoms(chain.USDBaseDenom)
 
 	msgs := []sdk.Msg{
 		&banktypes.MsgMultiSend{Inputs: []banktypes.Input{
-			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100))},
-			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 200))},
+			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
+			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
 		}},
-		&markettypes.MsgSwapSend{FromAddress: sourceA, OfferCoin: sdk.NewInt64Coin(chain.MicroUSDDenom, 300)},
+		&markettypes.MsgSwapSend{FromAddress: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 300)},
 		// Direct swaps are intentionally exempt because Market already charges
 		// the conversion spread.
-		&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.MicroUSDDenom, 10_000)},
+		&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)},
 	}
 	tax, err := s.keeper.ComputeTax(s.ctx, msgs)
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 60)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 60)), tax)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
@@ -68,21 +68,21 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(50)))
-	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(50)))
+	s.expectTaxableDenoms(chain.USDBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
 		Inputs: []banktypes.Input{
-			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 700))},
-			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 700))},
+			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
+			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
 		},
 		Outputs: []banktypes.Output{
-			{Address: recipientA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 300))},
-			{Address: recipientB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 1_100))},
+			{Address: recipientA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 300))},
+			{Address: recipientB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_100))},
 		},
 	}})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxIgnoresUnconfiguredDenomWithStaleTaxCap() {
@@ -90,11 +90,11 @@ func (s *KeeperTestSuite) TestComputeTaxIgnoresUnconfiguredDenomWithStaleTaxCap(
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(10)))
-	s.expectTaxableDenoms(chain.MicroSDRDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(10)))
+	s.expectTaxableDenoms(chain.SDRBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
-		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100))},
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
 	})
 	s.Require().NoError(err)
 	s.Require().True(tax.IsZero())
@@ -105,10 +105,10 @@ func (s *KeeperTestSuite) TestComputeTaxFailsClosedForConfiguredDenomWithoutTaxC
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	s.expectTaxableDenoms(chain.USDBaseDenom)
 
 	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
-		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100))},
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
 	})
 	s.Require().ErrorIs(err, types.ErrTaxCapUnavailable)
 }
@@ -118,30 +118,30 @@ func (s *KeeperTestSuite) TestComputeTaxTreatsZeroCapAsUncapped() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.ZeroInt()))
-	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.ZeroInt()))
+	s.expectTaxableDenoms(chain.USDBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
-		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 1_000))},
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000))},
 	})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
 }
 
 func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
 		gomock.Any(),
-		chain.MicroUSDDenom,
-		chain.MicroSDRDenom,
+		chain.USDBaseDenom,
+		chain.SDRBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroSDRDenom: math.LegacyNewDec(2),
-		chain.MicroUSDDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom: math.LegacyNewDec(2),
+		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -149,10 +149,10 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 		Params:    params,
 	})
 	s.Require().NoError(err)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroUSDDenom)
+	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(500_000), usdCap)
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.MicroSDRDenom)
+	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
 }
@@ -164,8 +164,8 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesZeroAsUncappedWithoutRates() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.ZeroInt()
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -173,7 +173,7 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesZeroAsUncappedWithoutRates() {
 		Params:    params,
 	})
 	s.Require().NoError(err)
-	for _, denom := range []string{chain.MicroUSDDenom, chain.MicroSDRDenom} {
+	for _, denom := range []string{chain.USDBaseDenom, chain.SDRBaseDenom} {
 		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
@@ -184,14 +184,14 @@ func (s *KeeperTestSuite) TestBuildTaxCapsRejectsPositiveConversionThatTruncates
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.OneInt()
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.MicroUSDDenom},
-		{Denom: chain.MicroSDRDenom},
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.SDRBaseDenom},
 	}, nil)
 	s.oracleKeeper.EXPECT().GetRateSnapshot(
-		gomock.Any(), chain.MicroUSDDenom, chain.MicroSDRDenom,
+		gomock.Any(), chain.USDBaseDenom, chain.SDRBaseDenom,
 	).Return(oracletypes.RateSnapshot{
-		chain.MicroSDRDenom: math.LegacyNewDec(2),
-		chain.MicroUSDDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom: math.LegacyNewDec(2),
+		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -212,7 +212,7 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsZeroWithoutOracleLookupWhenDisabl
 	source := authtypes.NewModuleAddress("tax-source").String()
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
 		FromAddress: source,
-		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 100)),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 	}})
 	s.Require().NoError(err)
 	s.Require().True(tax.IsZero())
@@ -260,8 +260,8 @@ func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, math.NewInt(1_000)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroKRWDenom, math.NewInt(1_000)))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(1_000)))
 
 	pack := func(msg sdk.Msg) *codectypes.Any {
 		packed, err := codectypes.NewAnyWithValue(msg)
@@ -279,42 +279,42 @@ func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 				return []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{pack(&banktypes.MsgSend{
 					FromAddress: sourceA,
 					Amount: sdk.NewCoins(
-						sdk.NewInt64Coin("uatom", 900),
-						sdk.NewInt64Coin(chain.MicroUSDDenom, 100),
+						sdk.NewInt64Coin("aatom", 900),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 					),
 				})}}}
 			},
-			want: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 10)),
+			want: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10)),
 		},
 		{
 			name: "multiply nested messages aggregate all supported principals",
 			msgs: func() []sdk.Msg {
 				inner := &authz.MsgExec{Msgs: []*codectypes.Any{
 					pack(&banktypes.MsgSend{FromAddress: sourceA, Amount: sdk.NewCoins(
-						sdk.NewInt64Coin("uatom", 900),
-						sdk.NewInt64Coin(chain.MicroUSDDenom, 100),
+						sdk.NewInt64Coin("aatom", 900),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 					)}),
 					pack(&banktypes.MsgMultiSend{Inputs: []banktypes.Input{
-						{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroUSDDenom, 200))},
-						{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.MicroKRWDenom, 300))},
+						{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
+						{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 300))},
 					}}),
 				}}
 				return []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{
 					pack(inner),
-					pack(&markettypes.MsgSwapSend{FromAddress: sourceA, OfferCoin: sdk.NewInt64Coin(chain.MicroUSDDenom, 400)}),
-					pack(&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.MicroUSDDenom, 10_000)}),
+					pack(&markettypes.MsgSwapSend{FromAddress: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 400)}),
+					pack(&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)}),
 				}}}
 			},
 			want: sdk.NewCoins(
-				sdk.NewInt64Coin(chain.MicroKRWDenom, 30),
-				sdk.NewInt64Coin(chain.MicroUSDDenom, 70),
+				sdk.NewInt64Coin(chain.KRWBaseDenom, 30),
+				sdk.NewInt64Coin(chain.USDBaseDenom, 70),
 			),
 		},
 	}
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			s.expectTaxableDenoms(chain.MicroUSDDenom, chain.MicroKRWDenom)
+			s.expectTaxableDenoms(chain.USDBaseDenom, chain.KRWBaseDenom)
 			tax, err := s.keeper.ComputeTax(s.ctx, test.msgs())
 			s.Require().NoError(err)
 			s.Require().Equal(test.want, tax)
@@ -331,13 +331,13 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.MicroUSDDenom, maxInt))
-	s.expectTaxableDenoms(chain.MicroUSDDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, maxInt))
+	s.expectTaxableDenoms(chain.USDBaseDenom)
 	source := authtypes.NewModuleAddress("tax-source").String()
 	msg := func() sdk.Msg {
 		return &banktypes.MsgSend{
 			FromAddress: source,
-			Amount:      sdk.NewCoins(sdk.NewCoin(chain.MicroUSDDenom, maxInt)),
+			Amount:      sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, maxInt)),
 		}
 	}
 

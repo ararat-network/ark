@@ -158,7 +158,7 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name: "tobin tax missing",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "uusd", TobinTax: math.LegacyDec{}}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "ausd", TobinTax: math.LegacyDec{}}}
 			},
 			expectErr: "TobinTaxes must have TobinTax set",
 		},
@@ -167,40 +167,40 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) {
 				p.TobinTaxes = []types.TobinTax{{Denom: "", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
-			expectErr: "TobinTaxes denom must be a micro denom beginning with u",
+			expectErr: "TobinTaxes denom must be an Ark-native base denom beginning with a",
 		},
 		{
 			name: "tobin tax denom must be canonical lowercase",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "uUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "aUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
-			expectErr: "canonical lowercase micro denom",
+			expectErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name: "tobin tax denom cannot contain path separators",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "ufoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "afoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
-			expectErr: "canonical lowercase micro denom",
+			expectErr: "canonical lowercase Ark-native base denom",
 		},
 		{
 			name: "tobin tax native denom",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: chain.MicroNoahDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: chain.NoahBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
 			},
-			expectErr: "TobinTaxes must not contain native denom unoah",
+			expectErr: "TobinTaxes must not contain native denom anoah",
 		},
 		{
 			name: "tobin tax negative",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "uusd", TobinTax: math.LegacyNewDec(-1)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "ausd", TobinTax: math.LegacyNewDec(-1)}}
 			},
 			expectErr: "TobinTaxes must have TobinTax between [0, 1]",
 		},
 		{
 			name: "tobin tax above one",
 			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(101, 2)}}
+				p.TobinTaxes = []types.TobinTax{{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(101, 2)}}
 			},
 			expectErr: "TobinTaxes must have TobinTax between [0, 1]",
 		},
@@ -224,14 +224,33 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "exceeds maximum vote targets",
 		},
 		{
+			name: "sorted tobin taxes are valid",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = []types.TobinTax{
+					{Denom: "akrw", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+				}
+			},
+		},
+		{
+			name: "unsorted tobin taxes",
+			mutate: func(p *types.Params) {
+				p.TobinTaxes = []types.TobinTax{
+					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: "akrw", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+				}
+			},
+			expectErr: "TobinTaxes must be sorted by unique denom",
+		},
+		{
 			name: "duplicate tobin tax denom",
 			mutate: func(p *types.Params) {
 				p.TobinTaxes = []types.TobinTax{
-					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					{Denom: "uusd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
+					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
 				}
 			},
-			expectErr: "TobinTaxes contains duplicate denom: uusd",
+			expectErr: "TobinTaxes must be sorted by unique denom",
 		},
 	}
 
@@ -255,7 +274,7 @@ func TestParamsValidate(t *testing.T) {
 
 func TestDefaultParamsClonesTobinTaxes(t *testing.T) {
 	params := types.DefaultParams()
-	params.TobinTaxes[0].Denom = "umutated"
+	params.TobinTaxes[0].Denom = "amutated"
 
 	fresh := types.DefaultParams()
 	require.Equal(t, types.DefaultTobinTaxes, fresh.TobinTaxes)
@@ -266,7 +285,7 @@ func makeTestTobinTaxes(count int) []types.TobinTax {
 	tobinTaxes := make([]types.TobinTax, count)
 	for i := range count {
 		tobinTaxes[i] = types.TobinTax{
-			Denom:    fmt.Sprintf("u%03d", i),
+			Denom:    fmt.Sprintf("a%03d", i),
 			TobinTax: math.LegacyNewDecWithPrec(25, 4),
 		}
 	}

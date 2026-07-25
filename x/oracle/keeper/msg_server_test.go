@@ -111,29 +111,34 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 	}
 
 	s.Run("updates market taxes and schedules added vote targets", func() {
-		oldVoteTargets := []string{chain.MicroUSDDenom}
+		oldVoteTargets := []string{chain.USDBaseDenom}
 		currentParams := types.DefaultParams()
 		currentParams.TobinTaxes = []types.TobinTax{
-			{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
+			{Denom: chain.USDBaseDenom, TobinTax: types.DefaultTobinTax},
 		}
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, currentParams))
 		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
 			Denoms:  oldVoteTargets,
 			Version: types.InitialVoteTargetVersion,
 		}))
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.MicroUSDDenom, newStoredExchangeRate(chain.MicroUSDDenom, math.LegacyOneDec())))
+		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, newStoredExchangeRate(chain.USDBaseDenom, math.LegacyOneDec())))
 
-		const newDenom = "uaud"
+		const newDenom = "aaud"
 		params := types.DefaultParams()
 		params.TobinTaxes = []types.TobinTax{
-			{Denom: chain.MicroUSDDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 			{Denom: newDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
+			{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
 		}
 		s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, newDenom).Return(banktypes.Metadata{}, false)
 		s.bankKeeper.EXPECT().
 			SetDenomMetaData(s.ctx, gomock.Any()).
 			Do(func(_ context.Context, metadata banktypes.Metadata) {
 				s.Require().Equal(newDenom, metadata.Base)
+				s.Require().Equal("aud", metadata.Display)
+				s.Require().Equal([]*banktypes.DenomUnit{
+					{Denom: newDenom, Exponent: 0},
+					{Denom: "aud", Exponent: chain.NativeDisplayExponent},
+				}, metadata.DenomUnits)
 			})
 
 		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -142,11 +147,11 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		})
 		s.Require().NoError(err)
 
-		hasUSD, err := s.keeper.ExchangeRate.Has(s.ctx, chain.MicroUSDDenom)
+		hasUSD, err := s.keeper.ExchangeRate.Has(s.ctx, chain.USDBaseDenom)
 		s.Require().NoError(err)
 		s.Require().True(hasUSD)
 
-		usdTax, err := s.keeper.GetTobinTax(s.ctx, chain.MicroUSDDenom)
+		usdTax, err := s.keeper.GetTobinTax(s.ctx, chain.USDBaseDenom)
 		s.Require().NoError(err)
 		s.Require().True(math.LegacyNewDecWithPrec(25, 4).Equal(usdTax))
 
@@ -163,6 +168,6 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 			sdk.UnwrapSDKContext(s.ctx).BlockHeight()+types.VoteTargetActivationDelayBlocks,
 			state.Pending.ActivationVoteHeight,
 		)
-		s.Require().Equal([]string{newDenom, chain.MicroUSDDenom}, state.Pending.Denoms)
+		s.Require().Equal([]string{newDenom, chain.USDBaseDenom}, state.Pending.Denoms)
 	})
 }

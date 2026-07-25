@@ -68,7 +68,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 // return "", nil if no custom configuration is required for the application.
 func initAppConfig() (string, any) {
 	srvCfg := serverconfig.DefaultConfig()
-	srvCfg.MinGasPrices = "0unoah"
+	srvCfg.MinGasPrices = "0anoah"
 	// TODO: look into other default configs I might want
 
 	return serverconfig.DefaultConfigTemplate + oracleclient.DefaultConfigTemplate, arkAppConfig{

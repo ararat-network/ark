@@ -61,6 +61,7 @@ func Test_TestnetCmd(t *testing.T) {
 	ctx = context.WithValue(ctx, server.ServerContextKey, serverCtx)
 	ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)
 	cmd := testnetInitFilesCmd(moduleBasic, banktypes.GenesisBalancesIterator{})
+	require.Equal(t, "6000000anoah", cmd.Flags().Lookup(server.FlagMinGasPrices).DefValue)
 	cmd.SetArgs([]string{
 		fmt.Sprintf("--%s=test", flags.FlagKeyringBackend),
 		fmt.Sprintf("--%s=%s", flags.FlagChainID, chainID),

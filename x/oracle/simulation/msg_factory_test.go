@@ -62,8 +62,8 @@ func TestMsgUpdateParamsFactory(t *testing.T) {
 			ctx, oracleKeeper, accountKeeper := newOracleSimulationKeeper(t)
 			stored := types.DefaultParams()
 			stored.TobinTaxes = []types.TobinTax{
-				{Denom: chain.MicroUSDDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: chain.MicroSDRDenom, TobinTax: types.DefaultTobinTax},
+				{Denom: chain.SDRBaseDenom, TobinTax: types.DefaultTobinTax},
+				{Denom: chain.USDBaseDenom, TobinTax: types.DefaultTobinTax},
 			}
 			stored.MaxExchangeRateAge = 2 * time.Minute
 			if tt.storeParams {

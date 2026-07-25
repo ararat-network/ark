@@ -171,7 +171,7 @@ func (m msgServer) SubmitClaim(ctx context.Context, msg *types.MsgSubmitClaim) (
 	balance := m.k.bankKeeper.GetBalance(
 		ctx,
 		m.k.accountKeeper.GetModuleAddress(types.InsuranceName),
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	)
 	if balance.Amount.LT(nextInsuranceReserved) {
 		return nil, fmt.Errorf("insurance balance %s cannot cover Insurance reservation %s", balance.Amount, nextInsuranceReserved)
@@ -318,7 +318,7 @@ func (m msgServer) ExecuteClaim(ctx context.Context, msg *types.MsgExecuteClaim)
 	balanceBefore := m.k.bankKeeper.GetBalance(
 		ctx,
 		m.k.accountKeeper.GetModuleAddress(types.InsuranceName),
-		chain.MicroNoahDenom,
+		chain.NoahBaseDenom,
 	)
 	if balanceBefore.Amount.LT(amount) {
 		return nil, fmt.Errorf("insurance balance %s is below claim amount %s", balanceBefore.Amount, amount)
