@@ -1,0 +1,21 @@
+syntax = "proto3";
+package ark.asset.v1;
+
+import "amino/amino.proto";
+import "ark/asset/v1/asset.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/asset/types";
+
+// GenesisState defines the asset module's genesis state. Asset locks are
+// rebuilt deterministically from Market and Treasury genesis state.
+message GenesisState {
+  repeated Asset assets = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  OracleTargets oracle_targets = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated SettlementPlan settlement_plans = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated WriteOffRecord write_off_records = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}

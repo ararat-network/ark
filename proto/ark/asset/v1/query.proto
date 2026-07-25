@@ -1,0 +1,116 @@
+syntax = "proto3";
+package ark.asset.v1;
+
+import "amino/amino.proto";
+import "ark/asset/v1/asset.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/query/v1/query.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "ark/x/asset/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Asset returns one registered asset.
+  rpc Asset(QueryAssetRequest) returns (QueryAssetResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/assets/{denom}";
+  }
+
+  // Assets returns registered assets with pagination.
+  rpc Assets(QueryAssetsRequest) returns (QueryAssetsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/assets";
+  }
+
+  // AssetLocks returns downstream protocol dependencies for one asset.
+  rpc AssetLocks(QueryAssetLocksRequest) returns (QueryAssetLocksResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/assets/{denom}/locks";
+  }
+
+  // OracleTargets returns the active and pending target epochs.
+  rpc OracleTargets(QueryOracleTargetsRequest)
+      returns (QueryOracleTargetsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/oracle_targets";
+  }
+
+  // SettlementPlan returns the active settlement plan for one asset.
+  rpc SettlementPlan(QuerySettlementPlanRequest)
+      returns (QuerySettlementPlanResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/assets/{denom}/settlement";
+  }
+
+  // WriteOffHistory returns append-only write-off records for one asset.
+  rpc WriteOffHistory(QueryWriteOffHistoryRequest)
+      returns (QueryWriteOffHistoryResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/assets/{denom}/write_offs";
+  }
+}
+
+// QueryAssetRequest is the request type for Query/Asset.
+message QueryAssetRequest { string denom = 1; }
+
+// QueryAssetResponse is the response type for Query/Asset.
+message QueryAssetResponse {
+  Asset asset = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryAssetsRequest is the request type for Query/Assets.
+message QueryAssetsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryAssetsResponse is the response type for Query/Assets.
+message QueryAssetsResponse {
+  repeated Asset assets = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryAssetLocksRequest is the request type for Query/AssetLocks.
+message QueryAssetLocksRequest { string denom = 1; }
+
+// QueryAssetLocksResponse is the response type for Query/AssetLocks.
+message QueryAssetLocksResponse {
+  repeated AssetLock locks = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryOracleTargetsRequest is the request type for Query/OracleTargets.
+message QueryOracleTargetsRequest {}
+
+// QueryOracleTargetsResponse is the response type for Query/OracleTargets.
+message QueryOracleTargetsResponse {
+  // oracle_targets contains the canonical active and pending target epochs.
+  OracleTargets oracle_targets = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QuerySettlementPlanRequest is the request type for Query/SettlementPlan.
+message QuerySettlementPlanRequest { string denom = 1; }
+
+// QuerySettlementPlanResponse returns one active settlement plan.
+message QuerySettlementPlanResponse {
+  SettlementPlan settlement_plan = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryWriteOffHistoryRequest is the request type for Query/WriteOffHistory.
+message QueryWriteOffHistoryRequest {
+  string denom = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryWriteOffHistoryResponse returns append-only write-off records ordered by
+// increasing asset version.
+message QueryWriteOffHistoryResponse {
+  repeated WriteOffRecord write_off_records = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

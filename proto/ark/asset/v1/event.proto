@@ -1,0 +1,94 @@
+syntax = "proto3";
+package ark.asset.v1;
+
+import "amino/amino.proto";
+import "ark/asset/v1/asset.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/asset/types";
+
+// EventAssetRegistered is emitted after a new asset is registered.
+message EventAssetRegistered {
+  Asset asset = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// EventAssetStatusChanged is emitted after an asset lifecycle transition.
+message EventAssetStatusChanged {
+  string denom = 1;
+  AssetStatus old_status = 2 [ (amino.dont_omitempty) = true ];
+  AssetStatus new_status = 3 [ (amino.dont_omitempty) = true ];
+  uint64 version = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// EventOracleRequiredChanged is emitted after an asset's Oracle requirement
+// changes.
+message EventOracleRequiredChanged {
+  string denom = 1;
+  bool old_oracle_required = 2 [ (amino.dont_omitempty) = true ];
+  bool new_oracle_required = 3 [ (amino.dont_omitempty) = true ];
+  uint64 version = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// EventOracleTargetsScheduled is emitted after the next target epoch is
+// scheduled.
+message EventOracleTargetsScheduled {
+  uint64 active_version = 1;
+  uint64 pending_version = 2;
+  int64 activation_vote_height = 3;
+  repeated string added_denoms = 4;
+  repeated string removed_denoms = 5;
+}
+
+// EventOracleTargetsActivated is emitted after the pending target epoch becomes
+// active.
+message EventOracleTargetsActivated {
+  uint64 version = 1;
+  repeated string added_denoms = 2;
+  repeated string removed_denoms = 3;
+}
+
+// EventAssetLockAdded is emitted after a downstream dependency is recorded.
+message EventAssetLockAdded {
+  string denom = 1;
+  AssetLockKind kind = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// EventAssetLockRemoved is emitted after a downstream dependency is removed.
+message EventAssetLockRemoved {
+  string denom = 1;
+  AssetLockKind kind = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// EventSettlementOpened is emitted when governance stores a settlement plan.
+message EventSettlementOpened {
+  SettlementPlan settlement_plan = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// EventSettlementActivated is emitted at the first height that permits
+// settlement redemption.
+message EventSettlementActivated {
+  string denom = 1;
+  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// EventSettlementCancelled is emitted when governance cancels a settlement
+// before activation.
+message EventSettlementCancelled {
+  string denom = 1;
+  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// EventSettlementClosed is emitted when settlement ends through retirement,
+// relisting, or write-off.
+message EventSettlementClosed {
+  string denom = 1;
+  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// EventAssetWrittenOff is emitted after a write-off record is appended.
+message EventAssetWrittenOff {
+  WriteOffRecord write_off_record = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}

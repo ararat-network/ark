@@ -1,0 +1,139 @@
+syntax = "proto3";
+package ark.asset.v1;
+
+import "amino/amino.proto";
+import "cosmos/bank/v1beta1/bank.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/asset/types";
+
+// AssetStatus identifies an asset's position in the issuance, pricing, and
+// resolution lifecycle.
+enum AssetStatus {
+  // ASSET_STATUS_UNSPECIFIED is not a valid persisted status.
+  ASSET_STATUS_UNSPECIFIED = 0;
+  // ASSET_STATUS_PENDING identifies an asset that is registered but cannot
+  // yet be issued.
+  ASSET_STATUS_PENDING = 1;
+  // ASSET_STATUS_ACTIVE identifies an asset available for normal policy use.
+  ASSET_STATUS_ACTIVE = 2;
+  // ASSET_STATUS_RETIRING identifies an asset for which new issuance has
+  // stopped while existing supply remains supported.
+  ASSET_STATUS_RETIRING = 3;
+  // ASSET_STATUS_REMOVAL_PENDING identifies a priced asset whose target
+  // removal has been scheduled but has not activated.
+  ASSET_STATUS_REMOVAL_PENDING = 4;
+  // ASSET_STATUS_RETIRED identifies a zero-supply asset retained as a
+  // historical tombstone.
+  ASSET_STATUS_RETIRED = 5;
+  // ASSET_STATUS_DELISTING identifies an asset whose unsafe economic
+  // operations have stopped while Oracle target removal is pending.
+  ASSET_STATUS_DELISTING = 6;
+  // ASSET_STATUS_DELISTED identifies an outstanding asset without live Oracle
+  // pricing or protocol redemption.
+  ASSET_STATUS_DELISTED = 7;
+  // ASSET_STATUS_SETTLING identifies a delisted or written-off asset with a
+  // governance-defined one-way NOAH redemption plan.
+  ASSET_STATUS_SETTLING = 8;
+  // ASSET_STATUS_RELISTING identifies an asset awaiting restored Oracle
+  // pricing and policy before issuance can resume.
+  ASSET_STATUS_RELISTING = 9;
+  // ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
+  // governance currently recognizes no protocol redemption obligation.
+  ASSET_STATUS_WRITTEN_OFF = 10;
+}
+
+// AssetLockKind identifies a protocol dependency that prevents final
+// retirement.
+enum AssetLockKind {
+  // ASSET_LOCK_KIND_UNSPECIFIED is not a valid persisted lock kind.
+  ASSET_LOCK_KIND_UNSPECIFIED = 0;
+  // ASSET_LOCK_KIND_MARKET_ASSET_POLICY protects Market conversion policy.
+  ASSET_LOCK_KIND_MARKET_ASSET_POLICY = 1;
+  // ASSET_LOCK_KIND_MARKET_BASE_POOL protects Market's base-pool reference.
+  ASSET_LOCK_KIND_MARKET_BASE_POOL = 2;
+  // ASSET_LOCK_KIND_TREASURY_STABLE_POLICY protects Treasury stable-liability
+  // enrollment.
+  ASSET_LOCK_KIND_TREASURY_STABLE_POLICY = 3;
+  // ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP protects Treasury's
+  // reference-tax-cap denomination.
+  ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP = 4;
+}
+
+// Asset is the authoritative registry record for one governance-managed Bank
+// denomination.
+message Asset {
+  // denom is the immutable Bank base denomination and asset identifier.
+  string denom = 1;
+  // metadata defines the asset's canonical Bank denomination units.
+  cosmos.bank.v1beta1.Metadata metadata = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // status is the asset's current lifecycle status.
+  AssetStatus status = 3 [ (amino.dont_omitempty) = true ];
+  // version increases on every lifecycle or Oracle-participation mutation.
+  uint64 version = 4 [ (amino.dont_omitempty) = true ];
+  // oracle_required specifies whether the asset requires a denomination-keyed
+  // Oracle rate normalized as base units of denom per one anoah.
+  bool oracle_required = 5 [ (amino.dont_omitempty) = true ];
+}
+
+// AssetLock records one downstream protocol dependency on an asset.
+message AssetLock {
+  string denom = 1;
+  AssetLockKind kind = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// OracleTargets defines the active vote-target epoch and an optional scheduled
+// replacement. Pending targets become authoritative for vote extensions at
+// activation_vote_height.
+message OracleTargets {
+  repeated string denoms = 1;
+  uint64 version = 2;
+  PendingOracleTargets pending = 3;
+}
+
+// PendingOracleTargets defines a scheduled vote-target epoch.
+message PendingOracleTargets {
+  repeated string denoms = 1;
+  uint64 version = 2;
+  int64 activation_vote_height = 3;
+}
+
+// SettlementPlan defines a governance-approved one-way asset-to-NOAH
+// redemption rate.
+message SettlementPlan {
+  // denom identifies the asset accepted for settlement.
+  string denom = 1;
+  // redemption_rate is the positive amount of NOAH paid per unit of the
+  // settled asset.
+  string redemption_rate = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // activation_height is the first block height at which redemption is
+  // permitted.
+  int64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  // earliest_closing_height is zero until relisting establishes the earliest
+  // height at which settlement may close. Reaching it does not close
+  // settlement automatically.
+  int64 earliest_closing_height = 4 [ (amino.dont_omitempty) = true ];
+  // version is the asset version that last created or changed this plan.
+  uint64 version = 5 [ (amino.dont_omitempty) = true ];
+}
+
+// WriteOffRecord is an immutable snapshot appended whenever governance writes
+// off outstanding asset supply.
+message WriteOffRecord {
+  string denom = 1;
+  // version is the asset version produced by the write-off transition.
+  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+  int64 write_off_height = 3 [ (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin outstanding_supply = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // settlement_plan is present only when a SETTLING asset was written off.
+  SettlementPlan settlement_plan = 5;
+}

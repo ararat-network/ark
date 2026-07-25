@@ -1,0 +1,243 @@
+syntax = "proto3";
+package ark.asset.v1;
+
+import "amino/amino.proto";
+import "cosmos/bank/v1beta1/bank.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/asset/types";
+
+// Msg defines the asset Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // RegisterAsset registers a new governance-managed Bank asset.
+  rpc RegisterAsset(MsgRegisterAsset) returns (MsgRegisterAssetResponse) {}
+  // SetOracleRequired changes whether an asset requires Oracle target
+  // participation during normal listed operation.
+  rpc SetOracleRequired(MsgSetOracleRequired)
+      returns (MsgSetOracleRequiredResponse) {}
+  // ActivateAsset enables normal policy use for a pending asset.
+  rpc ActivateAsset(MsgActivateAsset) returns (MsgActivateAssetResponse) {}
+  // CancelAssetRegistration retires an unscheduled pending registration.
+  rpc CancelAssetRegistration(MsgCancelAssetRegistration)
+      returns (MsgCancelAssetRegistrationResponse) {}
+  // BeginRetirement stops new issuance for an active asset.
+  rpc BeginRetirement(MsgBeginRetirement) returns (MsgBeginRetirementResponse) {
+  }
+  // CancelRetirement returns a retiring asset to active status.
+  rpc CancelRetirement(MsgCancelRetirement)
+      returns (MsgCancelRetirementResponse) {}
+  // FinalizeRetirement retires a zero-supply, unlocked asset.
+  rpc FinalizeRetirement(MsgFinalizeRetirement)
+      returns (MsgFinalizeRetirementResponse) {}
+  // ReactivateAsset starts a new pending lifecycle from a retired tombstone.
+  rpc ReactivateAsset(MsgReactivateAsset) returns (MsgReactivateAssetResponse) {
+  }
+  // BeginDelisting stops unsafe economic operations and starts Oracle target
+  // removal.
+  rpc BeginDelisting(MsgBeginDelisting) returns (MsgBeginDelistingResponse) {}
+  // OpenSettlement establishes a one-way asset-to-NOAH redemption plan.
+  rpc OpenSettlement(MsgOpenSettlement) returns (MsgOpenSettlementResponse) {}
+  // CancelSettlement cancels a settlement before its activation height.
+  rpc CancelSettlement(MsgCancelSettlement)
+      returns (MsgCancelSettlementResponse) {}
+  // BeginRelisting starts restoration of Oracle pricing and economic policy.
+  rpc BeginRelisting(MsgBeginRelisting) returns (MsgBeginRelistingResponse) {}
+  // WriteOffAsset derecognizes outstanding supply without changing balances.
+  rpc WriteOffAsset(MsgWriteOffAsset) returns (MsgWriteOffAssetResponse) {}
+}
+
+// MsgRegisterAsset registers a new governance-managed Bank asset. The asset
+// denomination is metadata.base.
+message MsgRegisterAsset {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgRegisterAsset";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  cosmos.bank.v1beta1.Metadata metadata = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  bool oracle_required = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgRegisterAssetResponse is the response type for MsgRegisterAsset.
+message MsgRegisterAssetResponse {}
+
+// MsgSetOracleRequired changes whether a zero-supply pending or retired asset
+// participates in Oracle target epochs.
+message MsgSetOracleRequired {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgSetOracleRequired";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  bool oracle_required = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgSetOracleRequiredResponse is the response type for MsgSetOracleRequired.
+message MsgSetOracleRequiredResponse {}
+
+// MsgActivateAsset enables normal policy use, scheduling Oracle target
+// addition first when required.
+message MsgActivateAsset {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgActivateAsset";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgActivateAssetResponse is the response type for MsgActivateAsset.
+message MsgActivateAssetResponse {}
+
+// MsgCancelAssetRegistration retires an unscheduled pending registration.
+message MsgCancelAssetRegistration {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgCancelAssetRegistration";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCancelAssetRegistrationResponse is the response type for
+// MsgCancelAssetRegistration.
+message MsgCancelAssetRegistrationResponse {}
+
+// MsgBeginRetirement immediately stops new issuance for an active asset.
+message MsgBeginRetirement {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgBeginRetirement";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgBeginRetirementResponse is the response type for MsgBeginRetirement.
+message MsgBeginRetirementResponse {}
+
+// MsgCancelRetirement returns a retiring asset to active status.
+message MsgCancelRetirement {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgCancelRetirement";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCancelRetirementResponse is the response type for MsgCancelRetirement.
+message MsgCancelRetirementResponse {}
+
+// MsgFinalizeRetirement retires a zero-supply, unlocked asset, scheduling
+// Oracle target removal first when required.
+message MsgFinalizeRetirement {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgFinalizeRetirement";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgFinalizeRetirementResponse is the response type for
+// MsgFinalizeRetirement.
+message MsgFinalizeRetirementResponse {}
+
+// MsgReactivateAsset begins a new pending lifecycle for a retired tombstone.
+message MsgReactivateAsset {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgReactivateAsset";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgReactivateAssetResponse is the response type for MsgReactivateAsset.
+message MsgReactivateAssetResponse {}
+
+// MsgBeginDelisting immediately stops unsafe economic operations and starts
+// Oracle target removal for an active or retiring asset.
+message MsgBeginDelisting {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgBeginDelisting";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgBeginDelistingResponse is the response type for MsgBeginDelisting.
+message MsgBeginDelistingResponse {}
+
+// MsgOpenSettlement creates a one-way asset-to-NOAH redemption plan.
+message MsgOpenSettlement {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgOpenSettlement";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  // redemption_rate is the positive amount of NOAH paid per unit of the
+  // settled asset.
+  string redemption_rate = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  int64 activation_height = 5 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgOpenSettlementResponse is the response type for MsgOpenSettlement.
+message MsgOpenSettlementResponse {}
+
+// MsgCancelSettlement cancels a settlement before its activation height and
+// returns the asset to DELISTED.
+message MsgCancelSettlement {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgCancelSettlement";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCancelSettlementResponse is the response type for MsgCancelSettlement.
+message MsgCancelSettlementResponse {}
+
+// MsgBeginRelisting schedules restoration of Oracle pricing. When a settlement
+// is active, earliest_closing_height announces the earliest height at which
+// one-way redemption may close.
+message MsgBeginRelisting {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgBeginRelisting";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  int64 earliest_closing_height = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgBeginRelistingResponse is the response type for MsgBeginRelisting.
+message MsgBeginRelistingResponse {}
+
+// MsgWriteOffAsset derecognizes outstanding DELISTED or SETTLING supply without
+// burning, transferring, or repricing holder balances.
+message MsgWriteOffAsset {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/asset/MsgWriteOffAsset";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string denom = 2;
+  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgWriteOffAssetResponse is the response type for MsgWriteOffAsset.
+message MsgWriteOffAssetResponse {}
