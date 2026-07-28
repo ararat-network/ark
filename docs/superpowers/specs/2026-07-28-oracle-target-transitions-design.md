@@ -68,12 +68,44 @@ This is *not* derive-from-status-on-read. Membership is derived from asset
 status once, at **write** time, when a lifecycle transition emits a dated
 record. Reads touch only the materialized set plus the small record list.
 
-## Scope: Phase 3 cutover bundled
+## Implementation scoping
 
-The mechanism is implemented **once, in `x/asset`**, completing the Phase 3
-target-ownership cutover that `docs/ASSET_MODULE_PLAN.md` leaves pending. The
-alternative — rebuilding inside `x/oracle` now and porting later — means
-building the fold twice.
+Planning surfaced a fact that changes how this design ships: **`x/asset` is not
+wired into the application.** There is no `AssetKeeper` field or depinject
+output in `app/app.go`, no module entry or init-genesis position in
+`app/app_config.go`, and no file outside `x/asset/` imports it. The module is
+complete — keeper, genesis, query server, protos, tests — but dormant. The live
+chain still resolves targets through `x/oracle`.
+
+Two consequences:
+
+1. The bottleneck this design fixes is **not currently live**. It exists in
+   `x/asset`'s lifecycle code, which nothing calls yet.
+2. The cutover described below is not a rewiring. It requires first activating
+   a dormant module: depinject output, module config, init-genesis ordering,
+   its governance-gated msg server, and its query service.
+
+**Decision: implement the mechanism only, in `x/asset`, and leave it dormant.**
+The fold is still built exactly once, in its permanent home. `abci/`,
+`x/oracle`, `app/`, and the sidecar are untouched, so every commit is green and
+the live chain is unaffected. The cutover section below stays in this document
+as the specification of the end state; it executes as part of the `x/asset`
+activation milestone, not this one.
+
+What this milestone delivers: the state model, fold, phase derivation,
+validation, per-denom scheduling, batched promotion, genesis handling, and the
+full test suite — all in `x/asset`.
+
+What it defers to activation: the ABCI target-keeper interface, repointing
+`abci/preblock` and `abci/voteextension`, deleting `x/oracle`'s target
+machinery, the sidecar's query switch, and app wiring.
+
+## Scope: Phase 3 cutover bundled (deferred to activation)
+
+The mechanism is implemented **once, in `x/asset`**. This section specifies the
+Phase 3 target-ownership cutover that `docs/ASSET_MODULE_PLAN.md` leaves
+pending; per "Implementation scoping" above, it executes during `x/asset`
+activation rather than in the mechanism milestone.
 
 Concretely:
 
@@ -274,7 +306,16 @@ with the rest of the oracle target machinery).
 The sidecar's warm-up union (`oracle/sidecar/chainstate/polling.go:120-125`)
 changes from "active ∪ pending.denoms" to "active ∪ denoms of ADD records" — a
 few lines, preserving the whole advance-notice mechanism. The sidecar remains
-wall-clock polled and version-blind; no height is threaded through it.
+wall-clock polled and version-blind; no height is threaded through it. Deferred
+to activation: the sidecar reads `ark.oracle.v1.Query/VoteTargets` today, so
+this change accompanies the query-service switch, which is itself a client-type
+change (`oracletypes.QueryClient` to `assettypes.QueryClient`) plus a
+response-nesting change.
+
+The `x/asset` query service (`Query/OracleTargets`) does change in this
+milestone, because its response embeds the `OracleTargets` message directly
+(`x/asset/keeper/grpc_query.go:134`). No handler logic changes; the new field
+flows through the generated type.
 
 Two pre-existing properties that consecutive boundaries stress without breaking,
 recorded so implementers do not mistake them for regressions:
@@ -383,7 +424,8 @@ single-pending model and need the same pass.
 - Promotion of two batches due at the same block (records scheduled in
   consecutive earlier blocks) advancing the version twice.
 
-**ABCI** (`abci/preblock/`):
+**ABCI** (`abci/preblock/`) — deferred to activation along with the cutover,
+since these paths still run against `x/oracle` until then:
 
 - `target_transition_test.go` keeps its existing single-boundary case
   (`TestVoteTargetTransitionAcrossVoteAndFinaliseHeights`) with the fold
