@@ -30,11 +30,8 @@ import (
 	treasurytypes "ark/x/treasury/types"
 )
 
-// Transient keys mirroring the unexported values in liability.go.
-var (
-	benchLiabilitySnapshotKey    = []byte{0x01}
-	benchLiabilityUnavailableKey = []byte{0x02}
-)
+// benchLiabilityValuationKey mirrors the unexported key in liability.go.
+var benchLiabilityValuationKey = []byte{0x01}
 
 type liabilityBenchFixture struct {
 	keeper           *treasurykeeper.Keeper
@@ -63,10 +60,7 @@ func (f *liabilityBenchFixture) draw() error {
 func (f *liabilityBenchFixture) resetSnapshot(tb testing.TB) {
 	tb.Helper()
 	store := f.transientService.OpenTransientStore(f.ctx)
-	if err := store.Delete(benchLiabilitySnapshotKey); err != nil {
-		tb.Fatal(err)
-	}
-	if err := store.Delete(benchLiabilityUnavailableKey); err != nil {
+	if err := store.Delete(benchLiabilityValuationKey); err != nil {
 		tb.Fatal(err)
 	}
 }

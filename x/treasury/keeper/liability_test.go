@@ -94,15 +94,30 @@ func (s *KeeperTestSuite) TestLiabilityIncompleteValuationMarksBlockUnavailable(
 		rates,
 	))
 
-	// Key 0x01 is the liability snapshot, key 0x02 the unavailability marker
-	// (mirrors the unexported keys in liability.go).
+	// Key 0x01 holds the block's valuation, and 0x00 is the unavailable
+	// sentinel (mirrors the unexported values in liability.go).
 	transientStore := s.transientStoreService.OpenTransientStore(s.ctx)
-	snapshot, err := transientStore.Get([]byte{0x01})
+	valuation, err := transientStore.Get([]byte{0x01})
 	s.Require().NoError(err)
-	s.Require().Nil(snapshot)
-	marker, err := transientStore.Get([]byte{0x02})
-	s.Require().NoError(err)
-	s.Require().NotNil(marker)
+	s.Require().Equal([]byte{0x00}, valuation)
+}
+
+// The unavailable sentinel shares a key with marshalled valuations, so it must
+// never be a value LegacyDec.Marshal can produce.
+func (s *KeeperTestSuite) TestLiabilityUnavailableSentinelCannotCollide() {
+	for _, liability := range []math.LegacyDec{
+		math.LegacyZeroDec(),
+		math.LegacyOneDec(),
+		math.LegacyNewDec(200),
+		math.LegacyNewDecWithPrec(1, 18),
+		math.LegacyMustNewDecFromStr("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
+	} {
+		encoded, err := liability.Marshal()
+		s.Require().NoError(err)
+		s.Require().NotEmpty(encoded)
+		s.Require().NotEqual([]byte{0x00}, encoded)
+		s.Require().NotContains(encoded, byte(0x00))
+	}
 }
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {

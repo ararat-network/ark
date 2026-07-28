@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -16,27 +17,59 @@ import (
 )
 
 // liabilityValuationGas is the flat gas charged for one transaction-time
-// aggregate-liability valuation, hit or miss. The preblocker performs the real
-// scan as unmetered block work, so the honest marginal cost is the primed
-// path's single transient snapshot read. Transient stores opened through the
-// store service are metered with the KV gas config rather than the cheaper
-// transient one, because OpenTransientStore calls Context.KVStore; that is
-// 1,000 flat plus 3 per key and value byte, so a typical snapshot read costs
-// ~1,066 gas and the largest representable LegacyDec ~1,183. 2,000 covers the
-// worst case with headroom. Recalibrate if the app customises store gas
-// configs. Charging a constant keeps swap gas position-independent within a
-// block and independent of the oracle whitelist size, and simulation (which
-// always runs with an empty transient store) quotes exactly what execution
-// consumes.
+// aggregate-liability valuation, whatever it finds. The preblocker performs the
+// real scan as unmetered block work, so the honest marginal cost is the single
+// transient read that every lookup performs.
+//
+// Transient stores opened through the store service are metered with the KV gas
+// config rather than the cheaper transient one, because OpenTransientStore
+// calls Context.KVStore; that is 1,000 flat plus 3 per key and value byte.
+// Measured against that config: a typical valuation reads 1,066 gas, an
+// unvalued block 1,003, and the largest storable LegacyDec 1,291 (upperLimit is
+// raw 2^256 * 10^18 - 1, which Marshal emits as 96 bytes of decimal text). So
+// 2,000 strictly covers every lookup with at least 709 gas of headroom.
+// Recalibrate if the app customises store gas configs, or if a second key is
+// ever added, since two reads would cost about 2,009.
+//
+// The lazy scan reached on an unvalued block is deliberately not covered: it is
+// bounded to once per block by the recorded valuation, and it is the path
+// simulation always takes, where gas is not limiting. Charging a constant keeps
+// swap gas position-independent within a block and independent of the oracle
+// whitelist size, and simulation, which always runs with an empty transient
+// store, quotes exactly what execution consumes.
 const liabilityValuationGas = 2_000
 
 var (
-	liabilitySnapshotKey = []byte{0x01}
-	// liabilityUnavailableKey marks the block as having an incomplete liability
-	// valuation. Rates are fixed at preblock, so retrying within the block
-	// cannot succeed; the marker suppresses repeat scans until the transient
-	// store resets at commit.
-	liabilityUnavailableKey = []byte{0x02}
+	// liabilityValuationKey holds the block's aggregate liability valuation.
+	// Its value is either a marshalled LegacyDec, meaning the valuation
+	// succeeded, or liabilityUnavailableSentinel, meaning the block could not
+	// price every listed denom. Rates are fixed at preblock, so an unavailable
+	// valuation cannot become available within the block; recording it stops
+	// later callers from rescanning until the transient store resets at commit.
+	//
+	// Both states share one key so that every transaction-time lookup is a
+	// single transient read and so that they are mutually exclusive by
+	// construction rather than by a rule each writer has to honour.
+	liabilityValuationKey = []byte{0x01}
+
+	// liabilityUnavailableSentinel cannot collide with a stored valuation:
+	// LegacyDec.Marshal emits big.Int decimal text, which is always non-empty
+	// ASCII digits with an optional leading minus and never contains NUL.
+	liabilityUnavailableSentinel = []byte{0x00}
+)
+
+// liabilityValuationState describes what the current block has recorded about
+// its aggregate liability.
+type liabilityValuationState uint8
+
+const (
+	// liabilityUnvalued means the block has not been valued yet.
+	liabilityUnvalued liabilityValuationState = iota
+	// liabilityUnavailable means the block was valued but could not price every
+	// listed denom.
+	liabilityUnavailable
+	// liabilityAvailable means the block has a usable aggregate liability.
+	liabilityAvailable
 )
 
 // RecordSupplyChange updates an existing block-local liability snapshot after
@@ -51,11 +84,11 @@ func (k Keeper) RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted 
 		return fmt.Errorf("invalid minted coin: %w", err)
 	}
 
-	liability, found, err := k.loadLiabilitySnapshot(ctx)
+	liability, state, err := k.loadLiabilityValuation(ctx)
 	if err != nil {
 		return err
 	}
-	if !found {
+	if state != liabilityAvailable {
 		return nil
 	}
 
@@ -85,10 +118,10 @@ func (k Keeper) RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted 
 
 // PrimeLiabilitySnapshot values the aggregate stable liability once for the
 // block. The preblocker calls it immediately after oracle price application
-// and vote-target advancement, so transaction-time callers always find either
-// the snapshot or the unavailability marker and never rescan. Hard state
-// errors propagate and fail the block; an incomplete valuation (stale or
-// missing rates) is an expected degraded mode and only sets the marker.
+// and vote-target advancement, so transaction-time callers always find a
+// recorded valuation and never rescan. Hard state errors propagate and fail the
+// block; an incomplete valuation (stale or missing rates) is an expected
+// degraded mode and is recorded as unavailable.
 func (k Keeper) PrimeLiabilitySnapshot(ctx context.Context) error {
 	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
 	if err != nil {
@@ -99,19 +132,10 @@ func (k Keeper) PrimeLiabilitySnapshot(ctx context.Context) error {
 		return err
 	}
 
-	// Priming is authoritative for the block, so it clears whichever key it is
-	// not about to write. Without this a snapshot left by an earlier prime
-	// would outrank a later unavailable result, because valuation reads the
-	// snapshot first.
-	store := k.transientStoreService.OpenTransientStore(ctx)
+	// Both outcomes write the same key, so priming is authoritative for the
+	// block without having to retract anything an earlier prime left behind.
 	if !complete {
-		if err := store.Delete(liabilitySnapshotKey); err != nil {
-			return fmt.Errorf("clearing cached liability: %w", err)
-		}
 		return k.markLiabilityUnavailable(ctx)
-	}
-	if err := store.Delete(liabilityUnavailableKey); err != nil {
-		return fmt.Errorf("clearing liability unavailability marker: %w", err)
 	}
 	return k.storeLiabilitySnapshot(ctx, liability)
 }
@@ -170,10 +194,14 @@ func (k Keeper) nominalLiabilityValue(
 	return total, true, nil
 }
 
-// cachedLiabilityValue charges a flat fee for the block-local liability lookup
-// and runs the lookup itself against a free meter. Do not free-meter the query
-// path: FundStatus calls nominalLiabilityValue directly so node query gas
-// limits keep bounding its work.
+// cachedLiabilityValue returns the current block's aggregate stable liability.
+// It charges a flat fee and evaluates the lookup itself against a free meter.
+// Do not free-meter the query path: FundStatus calls nominalLiabilityValue
+// directly so node query gas limits keep bounding its work.
+//
+// The preblocker primes it; the lazy scan below is the fallback. An incomplete
+// valuation records the whole block as unavailable instead of retrying, because
+// oracle rates cannot change until the next block's preblock.
 func (k Keeper) cachedLiabilityValue(
 	ctx context.Context,
 	tobinTaxes []oracletypes.TobinTax,
@@ -181,48 +209,33 @@ func (k Keeper) cachedLiabilityValue(
 ) (math.LegacyDec, bool, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.GasMeter().ConsumeGas(liabilityValuationGas, "treasury liability valuation")
-	return k.liabilityValue(sdkCtx.WithGasMeter(storetypes.NewInfiniteGasMeter()), tobinTaxes, rates)
-}
 
-// liabilityValue returns the current block's aggregate stable liability.
-// The preblocker primes it; the lazy scan below is the fallback. An incomplete
-// valuation marks the whole block unavailable instead of retrying, because
-// oracle rates cannot change until the next block's preblock. The snapshot is
-// checked before the marker: the two keys are mutually exclusive by
-// construction, and this order keeps the common primed path at a single
-// transient read.
-func (k Keeper) liabilityValue(
-	ctx context.Context,
-	tobinTaxes []oracletypes.TobinTax,
-	rates oracletypes.RateSet,
-) (math.LegacyDec, bool, error) {
-	liability, found, err := k.loadLiabilitySnapshot(ctx)
+	// Every access below must use freeCtx rather than ctx, or the store reads
+	// and writes are metered again and the flat charge stops being flat.
+	freeCtx := sdkCtx.WithGasMeter(storetypes.NewInfiniteGasMeter())
+
+	liability, state, err := k.loadLiabilityValuation(freeCtx)
 	if err != nil {
 		return math.LegacyDec{}, false, err
 	}
-	if found {
+	switch state {
+	case liabilityAvailable:
 		return liability, true, nil
-	}
-
-	unavailable, err := k.liabilityUnavailable(ctx)
-	if err != nil {
-		return math.LegacyDec{}, false, err
-	}
-	if unavailable {
+	case liabilityUnavailable:
 		return math.LegacyZeroDec(), false, nil
 	}
 
-	liability, complete, err := k.nominalLiabilityValue(ctx, tobinTaxes, rates)
+	liability, complete, err := k.nominalLiabilityValue(freeCtx, tobinTaxes, rates)
 	if err != nil {
 		return math.LegacyDec{}, false, err
 	}
 	if !complete {
-		if err := k.markLiabilityUnavailable(ctx); err != nil {
+		if err := k.markLiabilityUnavailable(freeCtx); err != nil {
 			return math.LegacyDec{}, false, err
 		}
 		return liability, false, nil
 	}
-	if err := k.storeLiabilitySnapshot(ctx, liability); err != nil {
+	if err := k.storeLiabilitySnapshot(freeCtx, liability); err != nil {
 		return math.LegacyDec{}, false, err
 	}
 	return liability, true, nil
@@ -240,46 +253,46 @@ func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSet) (math.LegacyDe
 	return converted.Amount, nil
 }
 
-func (k Keeper) loadLiabilitySnapshot(ctx context.Context) (math.LegacyDec, bool, error) {
+// loadLiabilityValuation reads the block's recorded valuation. The returned
+// liability is meaningful only when the state is liabilityAvailable.
+func (k Keeper) loadLiabilityValuation(ctx context.Context) (math.LegacyDec, liabilityValuationState, error) {
 	store := k.transientStoreService.OpenTransientStore(ctx)
-	bz, err := store.Get(liabilitySnapshotKey)
+	bz, err := store.Get(liabilityValuationKey)
 	if err != nil {
-		return math.LegacyDec{}, false, fmt.Errorf("getting cached liability: %w", err)
+		return math.LegacyDec{}, liabilityUnvalued, fmt.Errorf("getting cached liability: %w", err)
 	}
 	if bz == nil {
-		return math.LegacyDec{}, false, nil
+		return math.LegacyDec{}, liabilityUnvalued, nil
 	}
 	if len(bz) == 0 {
-		return math.LegacyDec{}, false, fmt.Errorf("cached liability is empty")
+		return math.LegacyDec{}, liabilityUnvalued, fmt.Errorf("cached liability is empty")
+	}
+	if bytes.Equal(bz, liabilityUnavailableSentinel) {
+		return math.LegacyDec{}, liabilityUnavailable, nil
 	}
 
 	var liability math.LegacyDec
 	if err := liability.Unmarshal(bz); err != nil {
-		return math.LegacyDec{}, false, fmt.Errorf("decoding cached liability: %w", err)
+		return math.LegacyDec{}, liabilityUnvalued, fmt.Errorf("decoding cached liability: %w", err)
 	}
 	if liability.IsNil() || liability.IsNegative() || !liability.IsInValidRange() {
-		return math.LegacyDec{}, false, fmt.Errorf("cached liability is invalid")
+		return math.LegacyDec{}, liabilityUnvalued, fmt.Errorf("cached liability is invalid")
 	}
-	return liability, true, nil
+	return liability, liabilityAvailable, nil
 }
 
+// markLiabilityUnavailable records that this block cannot value liability. It
+// overwrites any valuation already stored, so a later prime always wins.
 func (k Keeper) markLiabilityUnavailable(ctx context.Context) error {
 	store := k.transientStoreService.OpenTransientStore(ctx)
-	if err := store.Set(liabilityUnavailableKey, []byte{0x01}); err != nil {
+	if err := store.Set(liabilityValuationKey, liabilityUnavailableSentinel); err != nil {
 		return fmt.Errorf("marking liability valuation unavailable: %w", err)
 	}
 	return nil
 }
 
-func (k Keeper) liabilityUnavailable(ctx context.Context) (bool, error) {
-	store := k.transientStoreService.OpenTransientStore(ctx)
-	bz, err := store.Get(liabilityUnavailableKey)
-	if err != nil {
-		return false, fmt.Errorf("getting liability unavailability marker: %w", err)
-	}
-	return bz != nil, nil
-}
-
+// storeLiabilitySnapshot records a usable aggregate liability for this block.
+// It overwrites any unavailable marking already stored.
 func (k Keeper) storeLiabilitySnapshot(ctx context.Context, liability math.LegacyDec) error {
 	if liability.IsNil() || liability.IsNegative() || !liability.IsInValidRange() {
 		return fmt.Errorf("cannot cache invalid liability")
@@ -288,9 +301,12 @@ func (k Keeper) storeLiabilitySnapshot(ctx context.Context, liability math.Legac
 	if err != nil {
 		return fmt.Errorf("encoding cached liability: %w", err)
 	}
+	if bytes.Equal(value, liabilityUnavailableSentinel) {
+		return fmt.Errorf("encoded liability collides with the unavailable sentinel")
+	}
 
 	store := k.transientStoreService.OpenTransientStore(ctx)
-	if err := store.Set(liabilitySnapshotKey, value); err != nil {
+	if err := store.Set(liabilityValuationKey, value); err != nil {
 		return fmt.Errorf("setting cached liability: %w", err)
 	}
 	return nil
