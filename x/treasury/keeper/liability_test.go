@@ -137,6 +137,68 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
 	}
 }
 
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotStoresCompleteValuation() {
+	tobinTaxes := []oracletypes.TobinTax{
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom, chain.KRWBaseDenom).
+		Return(oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+			chain.KRWBaseDenom:  math.LegacyOneDec(),
+		}, nil).Times(1)
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(1)
+
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	// GetSupply/GetRateSet expectations are exhausted by priming: the draw
+	// below must reuse the primed snapshot without rescanning.
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().True(draw.ValuationComplete)
+	s.Require().Equal(math.LegacyNewDec(200), draw.AggregateLiabilityNoah)
+}
+
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotMarksUnavailableValuation() {
+	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.USDBaseDenom}}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom).
+		Return(nil, oracletypes.ErrStaleExchangeRate).Times(1)
+
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	// The rest of the block reuses the marker without rescanning.
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().False(draw.ValuationComplete)
+	s.Require().True(draw.BufferPaid.IsZero())
+}
+
 func (s *KeeperTestSuite) TestRecordSupplyChangeWithoutSnapshotIsNoOp() {
 	s.Require().NoError(s.keeper.RecordSupplyChange(
 		s.ctx,

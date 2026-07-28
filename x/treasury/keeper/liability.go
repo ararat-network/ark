@@ -67,6 +67,27 @@ func (k Keeper) RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted 
 	return k.storeLiabilitySnapshot(ctx, liability)
 }
 
+// PrimeLiabilitySnapshot values the aggregate stable liability once for the
+// block. The preblocker calls it immediately after oracle price application
+// and vote-target advancement, so transaction-time callers always find either
+// the snapshot or the unavailability marker and never rescan. Hard state
+// errors propagate and fail the block; an incomplete valuation (stale or
+// missing rates) is an expected degraded mode and only sets the marker.
+func (k Keeper) PrimeLiabilitySnapshot(ctx context.Context) error {
+	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
+	if err != nil {
+		return fmt.Errorf("getting Tobin taxes: %w", err)
+	}
+	liability, complete, err := k.nominalLiabilityValue(ctx, tobinTaxes, nil)
+	if err != nil {
+		return err
+	}
+	if !complete {
+		return k.markLiabilityUnavailable(ctx)
+	}
+	return k.storeLiabilitySnapshot(ctx, liability)
+}
+
 func (k Keeper) nominalLiabilityValue(
 	ctx context.Context,
 	tobinTaxes []oracletypes.TobinTax,
