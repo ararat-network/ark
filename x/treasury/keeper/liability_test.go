@@ -199,6 +199,45 @@ func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotMarksUnavailableValuation() 
 	s.Require().True(draw.BufferPaid.IsZero())
 }
 
+func (s *KeeperTestSuite) TestLiabilityValuationGasIsPositionIndependent() {
+	tobinTaxes := []oracletypes.TobinTax{
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
+
+	// Quote rates cover every listed denom, so the lazy scan never calls
+	// GetRateSet and the map is never mutated; sharing it across draws is safe.
+	rates := oracletypes.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.KRWBaseDenom:  math.LegacyOneDec(),
+	}
+	draw := func() uint64 {
+		before := sdk.UnwrapSDKContext(s.ctx).GasMeter().GasConsumed()
+		_, err := s.keeper.DrawRedemptionBuffer(
+			s.ctx,
+			sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+			math.NewInt(10),
+			rates,
+		)
+		s.Require().NoError(err)
+		return sdk.UnwrapSDKContext(s.ctx).GasMeter().GasConsumed() - before
+	}
+
+	scanGas := draw() // first call performs the full lazy scan
+	hitGas := draw()  // second call reads the snapshot
+	s.Require().Equal(scanGas, hitGas)
+	// 2_000 mirrors liabilityValuationGas in liability.go.
+	s.Require().GreaterOrEqual(hitGas, uint64(2_000))
+}
+
 func (s *KeeperTestSuite) TestRecordSupplyChangeWithoutSnapshotIsNoOp() {
 	s.Require().NoError(s.keeper.RecordSupplyChange(
 		s.ctx,

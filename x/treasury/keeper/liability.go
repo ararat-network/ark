@@ -7,12 +7,28 @@ import (
 
 	"cosmossdk.io/math"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
 	oracletypes "ark/x/oracle/types"
 )
+
+// liabilityValuationGas is the flat gas charged for one transaction-time
+// aggregate-liability valuation, hit or miss. The preblocker performs the real
+// scan as unmetered block work, so the honest marginal cost is the primed
+// path's single transient snapshot read. Transient stores opened through the
+// store service are metered with the KV gas config rather than the cheaper
+// transient one, because OpenTransientStore calls Context.KVStore; that is
+// 1,000 flat plus 3 per key and value byte, so a typical snapshot read costs
+// ~1,066 gas and the largest representable LegacyDec ~1,183. 2,000 covers the
+// worst case with headroom. Recalibrate if the app customises store gas
+// configs. Charging a constant keeps swap gas position-independent within a
+// block and independent of the oracle whitelist size, and simulation (which
+// always runs with an empty transient store) quotes exactly what execution
+// consumes.
+const liabilityValuationGas = 2_000
 
 var (
 	liabilitySnapshotKey = []byte{0x01}
@@ -142,14 +158,28 @@ func (k Keeper) nominalLiabilityValue(
 	return total, true, nil
 }
 
-// cachedLiabilityValue returns the current block's aggregate stable liability.
+// cachedLiabilityValue charges a flat fee for the block-local liability lookup
+// and runs the lookup itself against a free meter. Do not free-meter the query
+// path: FundStatus calls nominalLiabilityValue directly so node query gas
+// limits keep bounding its work.
+func (k Keeper) cachedLiabilityValue(
+	ctx context.Context,
+	tobinTaxes []oracletypes.TobinTax,
+	rates oracletypes.RateSet,
+) (math.LegacyDec, bool, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx.GasMeter().ConsumeGas(liabilityValuationGas, "treasury liability valuation")
+	return k.liabilityValue(sdkCtx.WithGasMeter(storetypes.NewInfiniteGasMeter()), tobinTaxes, rates)
+}
+
+// liabilityValue returns the current block's aggregate stable liability.
 // The preblocker primes it; the lazy scan below is the fallback. An incomplete
 // valuation marks the whole block unavailable instead of retrying, because
 // oracle rates cannot change until the next block's preblock. The snapshot is
 // checked before the marker: the two keys are mutually exclusive by
 // construction, and this order keeps the common primed path at a single
 // transient read.
-func (k Keeper) cachedLiabilityValue(
+func (k Keeper) liabilityValue(
 	ctx context.Context,
 	tobinTaxes []oracletypes.TobinTax,
 	rates oracletypes.RateSet,
