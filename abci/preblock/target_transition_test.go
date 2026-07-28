@@ -83,6 +83,7 @@ func TestVoteTargetTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 
 	preBlocker := preblock.NewHandler(
 		keeper,
+		noopTreasuryKeeper{},
 		voteExtensionCodec,
 	).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
@@ -126,6 +127,12 @@ func (c staticOracleClient) Prices(
 ) (*transporttypes.OraclePricesResponse, error) {
 	return &transporttypes.OraclePricesResponse{Prices: c.prices}, nil
 }
+
+// noopTreasuryKeeper stands in for Treasury in tests that exercise oracle
+// target transitions; liability priming is covered in preblock_test.go.
+type noopTreasuryKeeper struct{}
+
+func (noopTreasuryKeeper) PrimeLiabilitySnapshot(context.Context) error { return nil }
 
 type transitionOracleKeeper struct {
 	params   oracletypes.Params

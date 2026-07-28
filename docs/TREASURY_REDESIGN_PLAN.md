@@ -2340,8 +2340,27 @@ Do not remove `x/mint` until Phase 2.
   quote rates; Market cannot supply that principal or any target, gap, credit, burn, source, or destination.
 - Post-trade stable liability is used for expansion allocation by adding the not-yet-minted `stable_output` exactly
   once.
-- Complete aggregate liability is scanned at most once per block after the first successful valuation. Its transient
-  snapshot tracks every later successful Market stable burn/mint; incomplete valuations are not cached and may retry.
+- Aggregate liability is scanned exactly once per block, by the preblocker immediately after oracle price application
+  and vote-target advancement; transactions never rescan. The transient snapshot tracks every later successful Market
+  stable burn/mint. A single transient key holds either a marshalled valuation or a one-byte unavailable sentinel, so
+  the two states are mutually exclusive by construction, every transaction-time lookup is one read, and priming is
+  authoritative for the block without having to retract anything an earlier prime wrote. The sentinel cannot collide
+  with a valuation because `LegacyDec.Marshal` emits big.Int decimal text, which never contains a NUL byte.
+- An incomplete preblock valuation marks liability unavailable for the entire block. Rates are fixed at preblock, so an
+  intra-block retry cannot succeed, and availability returns at the next block's preblock. A mid-block governance
+  change to the tobin whitelist does not lift the unavailable state early; the block stays conservatively degraded. The
+  lazy scan in `cachedLiabilityValue` remains as the fallback and itself records the block on incompleteness, bounding
+  free-metered scans to one per block. That fallback is not dead code: simulation runs against `checkState`, whose
+  transient store is always empty, so it takes the lazy scan on every call.
+- Transaction-time liability valuation charges a flat 2,000 gas whatever it finds. Measured against the KV gas config
+  that transient store-service reads are metered with, the single lookup costs 1,003 gas when unvalued, 1,006 on the
+  unavailable sentinel, 1,066 for a typical valuation, and 1,291 for the largest storable `LegacyDec`, so the constant
+  strictly covers every lookup with at least 709 gas of headroom. Swap gas is therefore position-independent within a
+  block and independent of whitelist size, and simulation quotes exactly what execution consumes. Query-path valuation
+  (`FundStatus`) stays normally metered so node query gas limits keep bounding its work.
+- Only Market may change tobin-denom supply during a block. Preblock priming makes this a hard requirement rather than
+  an implicit one, because the snapshot now precedes every transaction. Module account permissions enforce it: only
+  `market` and `ibctransfer` may mint, and IBC mints only `ibc/` voucher denoms, never native listed denoms.
 - Complete expansion settlement occurs per conversion. Treasury stores no pending principal and has no periodic or
   EndBlock allocation path.
 - Incomplete unrelated expansion-target pricing routes all eligible principal to the Redemption Buffer, but failure to

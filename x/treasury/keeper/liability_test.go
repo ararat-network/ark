@@ -58,18 +58,18 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges(
 	s.Require().Equal(math.LegacyNewDec(190), second.AggregateLiabilityNoah)
 }
 
-func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation() {
+func (s *KeeperTestSuite) TestLiabilityIncompleteValuationMarksBlockUnavailable() {
 	tobinTaxes := []oracletypes.TobinTax{
 		{Denom: chain.USDBaseDenom},
 		{Denom: chain.KRWBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
-		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(2)
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
-		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(2)
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
 	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
-		Return(nil, oracletypes.ErrStaleExchangeRate).Times(2)
+		Return(nil, oracletypes.ErrStaleExchangeRate).Times(1)
 
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -94,11 +94,30 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation()
 		rates,
 	))
 
+	// Key 0x01 holds the block's valuation, and 0x00 is the unavailable
+	// sentinel (mirrors the unexported values in liability.go).
 	transientStore := s.transientStoreService.OpenTransientStore(s.ctx)
-	iterator, err := transientStore.Iterator(nil, nil)
+	valuation, err := transientStore.Get([]byte{0x01})
 	s.Require().NoError(err)
-	s.Require().False(iterator.Valid())
-	s.Require().NoError(iterator.Close())
+	s.Require().Equal([]byte{0x00}, valuation)
+}
+
+// The unavailable sentinel shares a key with marshalled valuations, so it must
+// never be a value LegacyDec.Marshal can produce.
+func (s *KeeperTestSuite) TestLiabilityUnavailableSentinelCannotCollide() {
+	for _, liability := range []math.LegacyDec{
+		math.LegacyZeroDec(),
+		math.LegacyOneDec(),
+		math.LegacyNewDec(200),
+		math.LegacyNewDecWithPrec(1, 18),
+		math.LegacyMustNewDecFromStr("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
+	} {
+		encoded, err := liability.Marshal()
+		s.Require().NoError(err)
+		s.Require().NotEmpty(encoded)
+		s.Require().NotEqual([]byte{0x00}, encoded)
+		s.Require().NotContains(encoded, byte(0x00))
+	}
 }
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
@@ -131,6 +150,145 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
 			s.setBlockHeight(block + 1)
 		}
 	}
+}
+
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotStoresCompleteValuation() {
+	tobinTaxes := []oracletypes.TobinTax{
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom, chain.KRWBaseDenom).
+		Return(oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+			chain.KRWBaseDenom:  math.LegacyOneDec(),
+		}, nil).Times(1)
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(1)
+
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	// GetSupply/GetRateSet expectations are exhausted by priming: the draw
+	// below must reuse the primed snapshot without rescanning.
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().True(draw.ValuationComplete)
+	s.Require().Equal(math.LegacyNewDec(200), draw.AggregateLiabilityNoah)
+}
+
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotMarksUnavailableValuation() {
+	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.USDBaseDenom}}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom).
+		Return(nil, oracletypes.ErrStaleExchangeRate).Times(1)
+
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	// The rest of the block reuses the marker without rescanning.
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().False(draw.ValuationComplete)
+	s.Require().True(draw.BufferPaid.IsZero())
+}
+
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotOverridesEarlierPrime() {
+	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.USDBaseDenom}}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(3)
+	gomock.InOrder(
+		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+			Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1),
+		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+			Return(sdk.NewInt64Coin(chain.USDBaseDenom, 200)).Times(1),
+	)
+	gomock.InOrder(
+		s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom).
+			Return(oracletypes.RateSet{
+				chain.NoahBaseDenom: math.LegacyOneDec(),
+				chain.USDBaseDenom:  math.LegacyOneDec(),
+			}, nil).Times(1),
+		s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom).
+			Return(nil, oracletypes.ErrStaleExchangeRate).Times(1),
+	)
+
+	// A complete prime stores a snapshot; a later prime that cannot value the
+	// same denom must retract it rather than leave the stale value winning.
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().False(draw.ValuationComplete)
+	s.Require().True(draw.BufferPaid.IsZero())
+}
+
+func (s *KeeperTestSuite) TestLiabilityValuationGasIsPositionIndependent() {
+	tobinTaxes := []oracletypes.TobinTax{
+		{Denom: chain.USDBaseDenom},
+		{Denom: chain.KRWBaseDenom},
+	}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
+
+	// Quote rates cover every listed denom, so the lazy scan never calls
+	// GetRateSet and the map is never mutated; sharing it across draws is safe.
+	rates := oracletypes.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.KRWBaseDenom:  math.LegacyOneDec(),
+	}
+	draw := func() uint64 {
+		before := sdk.UnwrapSDKContext(s.ctx).GasMeter().GasConsumed()
+		_, err := s.keeper.DrawRedemptionBuffer(
+			s.ctx,
+			sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+			math.NewInt(10),
+			rates,
+		)
+		s.Require().NoError(err)
+		return sdk.UnwrapSDKContext(s.ctx).GasMeter().GasConsumed() - before
+	}
+
+	scanGas := draw() // first call performs the full lazy scan
+	hitGas := draw()  // second call reads the snapshot
+	s.Require().Equal(scanGas, hitGas)
+	// 2_000 mirrors liabilityValuationGas in liability.go.
+	s.Require().GreaterOrEqual(hitGas, uint64(2_000))
 }
 
 func (s *KeeperTestSuite) TestRecordSupplyChangeWithoutSnapshotIsNoOp() {

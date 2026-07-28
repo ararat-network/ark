@@ -27,6 +27,10 @@ type Handler struct {
 	// oracleKeeper provides the oracle state used during preblock processing.
 	oracleKeeper arkabcitypes.OracleKeeper
 
+	// treasuryKeeper primes block-local treasury valuations once oracle prices
+	// for the block are final.
+	treasuryKeeper arkabcitypes.TreasuryKeeper
+
 	// codec owns reusable vote-extension decompression state.
 	codec *codec.VoteExtensionCodec
 }
@@ -35,11 +39,13 @@ type Handler struct {
 // is responsible for writing oracle data included in vote extensions to state.
 func NewHandler(
 	oracleKeeper arkabcitypes.OracleKeeper,
+	treasuryKeeper arkabcitypes.TreasuryKeeper,
 	voteExtensionCodec *codec.VoteExtensionCodec,
 ) *Handler {
 	return &Handler{
-		oracleKeeper: oracleKeeper,
-		codec:        voteExtensionCodec,
+		oracleKeeper:   oracleKeeper,
+		treasuryKeeper: treasuryKeeper,
+		codec:          voteExtensionCodec,
 	}
 }
 
@@ -90,6 +96,17 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			return response, fmt.Errorf(
 				"%w: advance vote targets for height %d: %w",
 				arkabcitypes.ErrOracleKeeper,
+				req.Height,
+				err,
+			)
+		}
+
+		// Prices and vote targets for the block are final here; prime the
+		// treasury liability snapshot so transactions never rescan.
+		if err = h.treasuryKeeper.PrimeLiabilitySnapshot(ctx); err != nil {
+			return response, fmt.Errorf(
+				"%w: prime liability snapshot for height %d: %w",
+				arkabcitypes.ErrTreasuryKeeper,
 				req.Height,
 				err,
 			)
