@@ -107,13 +107,15 @@ backstops it, and governance recovers by lowering the param or re-appointing.
 
 ## Keeper shape
 
-`submitClaim(ctx, sub claimSubmission)` reads `Params` for the executable
-height, then branches once on origin: the committee branch loads the mandate
-and performs `IsActive`, `RequireTerm`, the expiry cap, allowance metering, and
-the term stamp; the governance branch touches none of it and stamps term zero.
-The committee handler keeps its identity check (and its own mandate read — one
-extra cached KV read, taken in exchange for keeping every submission rule in
-one core). The governance handler is authority check plus core call.
+`CommitteeSubmitClaim` owns committee authorization — identity, `IsActive`,
+and `RequireTerm`, mirroring `CommitteeCancelClaim` — and passes the mandate
+facts the core consumes (`MandateTerm`, `MandateExpiryHeight`,
+`CommitteeClaimLimit`) as plain data on `claimSubmission`; governance leaves
+them zero. `submitClaim(ctx, sub claimSubmission)` reads `Params` for the
+executable height and never reads the Claims mandate: only the expiry cap and
+allowance metering stay committee-conditional in the core, because the
+executable height is computed there and the allowance check must stay atomic
+with its write. The governance handler is authority check plus core call.
 
 ## Plan-doc amendments
 
