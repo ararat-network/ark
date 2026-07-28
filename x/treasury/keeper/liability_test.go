@@ -58,18 +58,18 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges(
 	s.Require().Equal(math.LegacyNewDec(190), second.AggregateLiabilityNoah)
 }
 
-func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation() {
+func (s *KeeperTestSuite) TestLiabilityIncompleteValuationMarksBlockUnavailable() {
 	tobinTaxes := []oracletypes.TobinTax{
 		{Denom: chain.USDBaseDenom},
 		{Denom: chain.KRWBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(2)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
-		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(2)
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
-		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(2)
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
 	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
-		Return(nil, oracletypes.ErrStaleExchangeRate).Times(2)
+		Return(nil, oracletypes.ErrStaleExchangeRate).Times(1)
 
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -94,11 +94,15 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation()
 		rates,
 	))
 
+	// Key 0x01 is the liability snapshot, key 0x02 the unavailability marker
+	// (mirrors the unexported keys in liability.go).
 	transientStore := s.transientStoreService.OpenTransientStore(s.ctx)
-	iterator, err := transientStore.Iterator(nil, nil)
+	snapshot, err := transientStore.Get([]byte{0x01})
 	s.Require().NoError(err)
-	s.Require().False(iterator.Valid())
-	s.Require().NoError(iterator.Close())
+	s.Require().Nil(snapshot)
+	marker, err := transientStore.Get([]byte{0x02})
+	s.Require().NoError(err)
+	s.Require().NotNil(marker)
 }
 
 func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {

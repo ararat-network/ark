@@ -14,7 +14,14 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-var liabilitySnapshotKey = []byte{0x01}
+var (
+	liabilitySnapshotKey = []byte{0x01}
+	// liabilityUnavailableKey marks the block as having an incomplete liability
+	// valuation. Rates are fixed at preblock, so retrying within the block
+	// cannot succeed; the marker suppresses repeat scans until the transient
+	// store resets at commit.
+	liabilityUnavailableKey = []byte{0x02}
+)
 
 // RecordSupplyChange updates an existing block-local liability snapshot after
 // Market has successfully applied its burn and mint. It deliberately does not
@@ -115,8 +122,12 @@ func (k Keeper) nominalLiabilityValue(
 }
 
 // cachedLiabilityValue returns the current block's aggregate stable liability.
-// The first caller derives it from Bank and Oracle state; later callers reuse
-// the transient snapshot maintained by Market supply changes.
+// The preblocker primes it; the lazy scan below is the fallback. An incomplete
+// valuation marks the whole block unavailable instead of retrying, because
+// oracle rates cannot change until the next block's preblock. The snapshot is
+// checked before the marker: the two keys are mutually exclusive by
+// construction, and this order keeps the common primed path at a single
+// transient read.
 func (k Keeper) cachedLiabilityValue(
 	ctx context.Context,
 	tobinTaxes []oracletypes.TobinTax,
@@ -130,11 +141,22 @@ func (k Keeper) cachedLiabilityValue(
 		return liability, true, nil
 	}
 
+	unavailable, err := k.liabilityUnavailable(ctx)
+	if err != nil {
+		return math.LegacyDec{}, false, err
+	}
+	if unavailable {
+		return math.LegacyZeroDec(), false, nil
+	}
+
 	liability, complete, err := k.nominalLiabilityValue(ctx, tobinTaxes, rates)
 	if err != nil {
 		return math.LegacyDec{}, false, err
 	}
 	if !complete {
+		if err := k.markLiabilityUnavailable(ctx); err != nil {
+			return math.LegacyDec{}, false, err
+		}
 		return liability, false, nil
 	}
 	if err := k.storeLiabilitySnapshot(ctx, liability); err != nil {
@@ -176,6 +198,23 @@ func (k Keeper) loadLiabilitySnapshot(ctx context.Context) (math.LegacyDec, bool
 		return math.LegacyDec{}, false, fmt.Errorf("cached liability is invalid")
 	}
 	return liability, true, nil
+}
+
+func (k Keeper) markLiabilityUnavailable(ctx context.Context) error {
+	store := k.transientStoreService.OpenTransientStore(ctx)
+	if err := store.Set(liabilityUnavailableKey, []byte{0x01}); err != nil {
+		return fmt.Errorf("marking liability valuation unavailable: %w", err)
+	}
+	return nil
+}
+
+func (k Keeper) liabilityUnavailable(ctx context.Context) (bool, error) {
+	store := k.transientStoreService.OpenTransientStore(ctx)
+	bz, err := store.Get(liabilityUnavailableKey)
+	if err != nil {
+		return false, fmt.Errorf("getting liability unavailability marker: %w", err)
+	}
+	return bz != nil, nil
 }
 
 func (k Keeper) storeLiabilitySnapshot(ctx context.Context, liability math.LegacyDec) error {
