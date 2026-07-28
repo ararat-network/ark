@@ -229,6 +229,7 @@ func TestGenesisClaimsValidation(t *testing.T) {
 			name: "governance claims do not use committee allowance",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Claims[0].Origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
+				genesis.Claims[0].MandateTerm = 0
 				genesis.ClaimsAllowanceUsed = math.ZeroInt()
 			},
 		},

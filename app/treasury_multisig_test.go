@@ -27,6 +27,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"ark/pkg/chain"
+	"ark/pkg/mandate"
 	treasurytypes "ark/x/treasury/types"
 )
 
@@ -119,19 +120,20 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				!test.omitCommitteeAccount,
 				func(genesis *treasurytypes.GenesisState, committee string) {
 					genesis.ClaimsMandate = treasurytypes.ClaimsMandate{
-						Term:                     1,
-						Committee:                committee,
-						ActivationHeight:         1,
-						ExpiryHeight:             1_000_000,
-						CancellationPeriodBlocks: 1,
-						CommitteeClaimLimit:      math.NewInt(100),
+						Envelope: mandate.Envelope{
+							Term:             1,
+							Committee:        committee,
+							ActivationHeight: 1,
+							ExpiryHeight:     1_000_000,
+						},
+						CommitteeClaimLimit: math.NewInt(100),
 					}
 				},
 			)
 			sequence += test.sequenceOffset
 			const claimID uint64 = 1
-			msg := &treasurytypes.MsgSubmitClaim{
-				Submitter:         committee.String(),
+			msg := &treasurytypes.MsgCommitteeSubmitClaim{
+				Committee:         committee.String(),
 				ExpectedTerm:      1,
 				IncidentReference: "incident-1",
 				Recipient:         sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()).String(),
@@ -243,12 +245,14 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 						InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
 					}
 					genesis.MonetaryMandate = treasurytypes.MonetaryMandate{
-						Term:             1,
-						Committee:        committee,
-						ActivationHeight: 1,
-						ExpiryHeight:     100,
-						MinimumPolicy:    minimum,
-						MaximumPolicy:    maximum,
+						Envelope: mandate.Envelope{
+							Term:             1,
+							Committee:        committee,
+							ActivationHeight: 1,
+							ExpiryHeight:     100,
+						},
+						MinimumPolicy: minimum,
+						MaximumPolicy: maximum,
 					}
 				},
 			)
@@ -260,8 +264,8 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 				StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
 				InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.25"),
 			}
-			msg := &treasurytypes.MsgUpdateMonetaryPolicy{
-				Signer:       committee.String(),
+			msg := &treasurytypes.MsgCommitteeUpdateMonetaryPolicy{
+				Committee:    committee.String(),
 				ExpectedTerm: 1,
 				Policy:       policy,
 			}

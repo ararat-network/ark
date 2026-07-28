@@ -67,7 +67,7 @@ func (q queryServer) MonetaryMandate(ctx context.Context, req *types.QueryMoneta
 	}
 	return &types.QueryMonetaryMandateResponse{
 		Mandate: mandate,
-		Active:  mandate.IsActive(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+		Active:  mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
 	}, nil
 }
 
@@ -244,6 +244,12 @@ func (q queryServer) Claim(ctx context.Context, req *types.QueryClaimRequest) (*
 func (q queryServer) Claims(ctx context.Context, req *types.QueryClaimsRequest) (*types.QueryClaimsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"pagination must not specify both key and offset",
+		)
 	}
 
 	claims, pageResponse, err := sdkquery.CollectionPaginate(

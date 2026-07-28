@@ -10,6 +10,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	chain "ark/pkg/chain"
+	"ark/pkg/mandate"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
@@ -77,11 +78,11 @@ func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
 		{Denom: chain.SDRBaseDenom},
 		{Denom: chain.USDBaseDenom},
 	}, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		s.ctx,
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
@@ -127,12 +128,13 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 func (s *KeeperTestSuite) TestInitGenesisRejectsReservationAboveInsuranceBalance() {
 	genesis := types.DefaultGenesisState()
 	genesis.ClaimsMandate = types.ClaimsMandate{
-		Term:                     1,
-		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
-		ActivationHeight:         1,
-		ExpiryHeight:             100,
-		CancellationPeriodBlocks: 1,
-		CommitteeClaimLimit:      math.NewInt(10),
+		Envelope: mandate.Envelope{
+			Term:             1,
+			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
+			ActivationHeight: 1,
+			ExpiryHeight:     100,
+		},
+		CommitteeClaimLimit: math.NewInt(10),
 	}
 	genesis.ClaimsAllowanceUsed = math.NewInt(2)
 	genesis.InsuranceReserved = math.NewInt(2)
@@ -157,12 +159,13 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsReservationAboveInsuranceBalance
 func (s *KeeperTestSuite) TestInitGenesisRejectsBlockedPendingClaimRecipient() {
 	genesis := types.DefaultGenesisState()
 	genesis.ClaimsMandate = types.ClaimsMandate{
-		Term:                     1,
-		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
-		ActivationHeight:         1,
-		ExpiryHeight:             100,
-		CancellationPeriodBlocks: 1,
-		CommitteeClaimLimit:      math.NewInt(2),
+		Envelope: mandate.Envelope{
+			Term:             1,
+			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
+			ActivationHeight: 1,
+			ExpiryHeight:     100,
+		},
+		CommitteeClaimLimit: math.NewInt(2),
 	}
 	genesis.ClaimsAllowanceUsed = math.NewInt(2)
 	genesis.InsuranceReserved = math.NewInt(2)
@@ -180,15 +183,17 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsBlockedPendingClaimRecipient() {
 func (s *KeeperTestSuite) TestInitGenesisAllowsBlockedFinalizedClaimAuditRecord() {
 	genesis := types.DefaultGenesisState()
 	genesis.ClaimsMandate = types.ClaimsMandate{
-		Term:                     1,
-		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
-		ActivationHeight:         1,
-		ExpiryHeight:             100,
-		CancellationPeriodBlocks: 1,
-		CommitteeClaimLimit:      math.NewInt(2),
+		Envelope: mandate.Envelope{
+			Term:             1,
+			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
+			ActivationHeight: 1,
+			ExpiryHeight:     100,
+		},
+		CommitteeClaimLimit: math.NewInt(2),
 	}
 	claim := pendingClaimForGenesis(2)
 	claim.Origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
+	claim.MandateTerm = 0
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_PAID
 	claim.FinalizedHeight = claim.ExecutableHeight
 	claim.FinalizedBy = authtypes.NewModuleAddress("claim-executor").String()

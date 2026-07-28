@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"ark/pkg/chain"
+	"ark/pkg/mandate"
 	"ark/x/treasury/types"
 )
 
@@ -26,19 +27,20 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 	if err != nil {
 		return nil, fmt.Errorf("getting Claims mandate: %w", err)
 	}
-	if current.Term == ^uint64(0) {
-		return nil, errors.New("Claims mandate term cannot advance")
+	term, err := current.NextTerm()
+	if err != nil {
+		return nil, err
 	}
-	term := current.Term + 1
 	claimsMandate := types.NewDisabledClaimsMandate(term)
 	if msg.Committee != "" {
 		claimsMandate = types.ClaimsMandate{
-			Term:                     term,
-			Committee:                msg.Committee,
-			ActivationHeight:         msg.ActivationHeight,
-			ExpiryHeight:             msg.ExpiryHeight,
-			CancellationPeriodBlocks: msg.CancellationPeriodBlocks,
-			CommitteeClaimLimit:      msg.CommitteeClaimLimit,
+			Envelope: mandate.Envelope{
+				Term:             term,
+				Committee:        msg.Committee,
+				ActivationHeight: msg.ActivationHeight,
+				ExpiryHeight:     msg.ExpiryHeight,
+			},
+			CommitteeClaimLimit: msg.CommitteeClaimLimit,
 		}
 		if err := claimsMandate.Validate(); err != nil {
 			return nil, err
@@ -54,6 +56,19 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 	if monetaryMandate.Committee != "" && claimsMandate.Committee == monetaryMandate.Committee {
 		return nil, errors.New("Claims committee must be distinct from the monetary-policy committee")
 	}
+	if msg.Committee != "" {
+		params, err := m.k.Params.Get(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting Treasury params: %w", err)
+		}
+		// The envelope validated activation < expiry, so the span subtraction
+		// cannot underflow. A span shorter than the cancellation period would
+		// leave the committee unable to submit any claim for the whole
+		// appointment, because every executable height would land past expiry.
+		if msg.ExpiryHeight-msg.ActivationHeight < params.ClaimCancellationPeriodBlocks {
+			return nil, errors.New("Claims mandate active span cannot be shorter than the claim cancellation period")
+		}
+	}
 	if err := m.k.ClaimsMandate.Set(ctx, claimsMandate); err != nil {
 		return nil, fmt.Errorf("setting Claims mandate: %w", err)
 	}
@@ -63,93 +78,151 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 	return &types.MsgSetClaimsMandateResponse{}, nil
 }
 
+// SubmitClaim records one governance-submitted pending claim. Governance
+// submissions never consume the committee term allowance and do not depend on
+// the Claims mandate; their cancellation period comes from Treasury params.
 func (m msgServer) SubmitClaim(ctx context.Context, msg *types.MsgSubmitClaim) (*types.MsgSubmitClaimResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil submit claim message")
+	}
+	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
+		return nil, err
+	}
+	claimID, err := m.k.submitClaim(ctx, claimSubmission{
+		Submitter:         msg.Authority,
+		Origin:            types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE,
+		IncidentReference: msg.IncidentReference,
+		Recipient:         msg.Recipient,
+		Amount:            msg.Amount,
+		EvidenceReference: msg.EvidenceReference,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgSubmitClaimResponse{ClaimId: claimID}, nil
+}
+
+// CommitteeSubmitClaim records one committee-submitted pending claim against
+// the current term's gross allowance.
+func (m msgServer) CommitteeSubmitClaim(ctx context.Context, msg *types.MsgCommitteeSubmitClaim) (*types.MsgCommitteeSubmitClaimResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil committee submit claim message")
+	}
+	if _, err := chain.ParseCanonicalAccountAddress("committee", msg.Committee); err != nil {
+		return nil, err
 	}
 	mandate, err := m.k.ClaimsMandate.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting Claims mandate: %w", err)
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if sdkCtx.BlockHeight() < 0 {
-		return nil, errors.New("claim submission requires a nonnegative block height")
+	if mandate.Committee == "" || msg.Committee != mandate.Committee {
+		return nil, errors.New("signer is not the exact Claims committee")
 	}
-	height := uint64(sdkCtx.BlockHeight())
-	if !mandate.IsActive(height) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if !mandate.IsActive(uint64(sdkCtx.BlockHeight())) {
 		return nil, errors.New("Claims mandate is not active")
 	}
-	if msg.ExpectedTerm != mandate.Term {
-		return nil, fmt.Errorf("Claims mandate term mismatch: expected %d, got %d", mandate.Term, msg.ExpectedTerm)
+	if err := mandate.RequireTerm(msg.ExpectedTerm); err != nil {
+		return nil, err
 	}
-	if mandate.CancellationPeriodBlocks > ^uint64(0)-height {
-		return nil, errors.New("claim executable height overflows")
+	claimID, err := m.k.submitClaim(ctx, claimSubmission{
+		Submitter:           msg.Committee,
+		Origin:              types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE,
+		MandateTerm:         mandate.Term,
+		MandateExpiryHeight: mandate.ExpiryHeight,
+		CommitteeClaimLimit: mandate.CommitteeClaimLimit,
+		IncidentReference:   msg.IncidentReference,
+		Recipient:           msg.Recipient,
+		Amount:              msg.Amount,
+		EvidenceReference:   msg.EvidenceReference,
+	})
+	if err != nil {
+		return nil, err
 	}
-	executableHeight := height + mandate.CancellationPeriodBlocks
-	if executableHeight > mandate.ExpiryHeight {
-		return nil, fmt.Errorf(
+	return &types.MsgCommitteeSubmitClaimResponse{ClaimId: claimID}, nil
+}
+
+// claimSubmission carries one already-authorized claim request into the shared
+// submission core. Origin is decided by the message type that authorized it.
+// The three mandate fields are committee-only facts supplied by the committee
+// handler after its window and term checks; governance leaves them zero.
+type claimSubmission struct {
+	Submitter           string
+	Origin              types.ClaimOrigin
+	MandateTerm         uint64
+	MandateExpiryHeight uint64
+	CommitteeClaimLimit math.Int
+	IncidentReference   string
+	Recipient           string
+	Amount              sdk.Coin
+	EvidenceReference   string
+}
+
+// submitClaim reserves one authorized claim against live Insurance coverage
+// without moving coins. The cancellation period comes from Treasury params for
+// both origins; the core never reads the Claims mandate. A committee-origin
+// submission carries its mandate facts from the handler's window and term
+// checks: its executable height must not pass the mandate expiry and it
+// permanently consumes the current term allowance.
+func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	height := uint64(sdkCtx.BlockHeight())
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("getting Treasury params: %w", err)
+	}
+	executableHeight := height + params.ClaimCancellationPeriodBlocks
+	if sub.Origin == types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE && executableHeight > sub.MandateExpiryHeight {
+		return 0, fmt.Errorf(
 			"claim executable height %d exceeds Claims mandate expiry height %d",
 			executableHeight,
-			mandate.ExpiryHeight,
+			sub.MandateExpiryHeight,
 		)
 	}
-	claimID, err := m.k.NextClaimID.Peek(ctx)
+	claimID, err := k.NextClaimID.Peek(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting next claim ID: %w", err)
-	}
-	if claimID == 0 {
-		return nil, errors.New("next claim ID must be positive")
-	}
-	if claimID == ^uint64(0) {
-		return nil, errors.New("claim ID sequence is exhausted")
-	}
-	origin := types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE
-	if sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Submitter) == nil {
-		origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
+		return 0, fmt.Errorf("getting next claim ID: %w", err)
 	}
 	claim := types.Claim{
 		ClaimId:           claimID,
-		Submitter:         msg.Submitter,
-		Origin:            origin,
-		MandateTerm:       mandate.Term,
-		IncidentReference: msg.IncidentReference,
-		Recipient:         msg.Recipient,
-		Amount:            msg.Amount,
-		EvidenceReference: msg.EvidenceReference,
+		Submitter:         sub.Submitter,
+		Origin:            sub.Origin,
+		MandateTerm:       sub.MandateTerm,
+		IncidentReference: sub.IncidentReference,
+		Recipient:         sub.Recipient,
+		Amount:            sub.Amount,
+		EvidenceReference: sub.EvidenceReference,
 		Status:            types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight:   height,
 		ExecutableHeight:  executableHeight,
 	}
 	if err := claim.Validate(); err != nil {
-		return nil, err
+		return 0, err
 	}
-	recipient, err := types.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
+	recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	if m.k.bankKeeper.BlockedAddr(recipient) {
-		return nil, fmt.Errorf("claim recipient %s is blocked from receiving funds", claim.Recipient)
-	}
-	if claim.Submitter != mandate.Committee && sdk.ValidateAuthority(sdkCtx, m.k.authority, claim.Submitter) != nil {
-		return nil, errors.New("claim submitter is neither Treasury authority nor the exact Claims committee")
+	if k.bankKeeper.BlockedAddr(recipient) {
+		return 0, fmt.Errorf("claim recipient %s is blocked from receiving funds", claim.Recipient)
 	}
 	amount := claim.Amount.Amount
 	allowanceUsed := math.ZeroInt()
 	if claim.Origin == types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE {
-		currentAllowanceUsed, err := m.k.ClaimsAllowanceUsed.Get(ctx)
+		currentAllowanceUsed, err := k.ClaimsAllowanceUsed.Get(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("getting Claims allowance usage: %w", err)
+			return 0, fmt.Errorf("getting Claims allowance usage: %w", err)
 		}
-		remaining, err := mandate.CommitteeClaimLimit.SafeSub(currentAllowanceUsed)
+		remaining, err := sub.CommitteeClaimLimit.SafeSub(currentAllowanceUsed)
 		if err != nil || remaining.IsNegative() {
-			return nil, fmt.Errorf(
+			return 0, fmt.Errorf(
 				"Claims allowance usage %s exceeds mandate limit %s",
 				currentAllowanceUsed,
-				mandate.CommitteeClaimLimit,
+				sub.CommitteeClaimLimit,
 			)
 		}
 		if amount.GT(remaining) {
-			return nil, fmt.Errorf(
+			return 0, fmt.Errorf(
 				"claim amount %s exceeds remaining Claims allowance %s",
 				amount,
 				remaining,
@@ -157,128 +230,167 @@ func (m msgServer) SubmitClaim(ctx context.Context, msg *types.MsgSubmitClaim) (
 		}
 		allowanceUsed, err = currentAllowanceUsed.SafeAdd(amount)
 		if err != nil {
-			return nil, fmt.Errorf("adding Claims allowance usage: %w", err)
+			return 0, fmt.Errorf("adding Claims allowance usage: %w", err)
 		}
 	}
-	insuranceReserved, err := m.k.InsuranceReserved.Get(ctx)
+	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting Insurance reservation: %w", err)
+		return 0, fmt.Errorf("getting Insurance reservation: %w", err)
 	}
 	nextInsuranceReserved, err := insuranceReserved.SafeAdd(amount)
 	if err != nil {
-		return nil, fmt.Errorf("adding Insurance reservation: %w", err)
+		return 0, fmt.Errorf("adding Insurance reservation: %w", err)
 	}
-	balance := m.k.bankKeeper.GetBalance(
+	balance := k.bankKeeper.GetBalance(
 		ctx,
-		m.k.accountKeeper.GetModuleAddress(types.InsuranceName),
+		k.accountKeeper.GetModuleAddress(types.InsuranceName),
 		chain.NoahBaseDenom,
 	)
 	if balance.Amount.LT(nextInsuranceReserved) {
-		return nil, fmt.Errorf("insurance balance %s cannot cover Insurance reservation %s", balance.Amount, nextInsuranceReserved)
+		return 0, fmt.Errorf("insurance balance %s cannot cover Insurance reservation %s", balance.Amount, nextInsuranceReserved)
 	}
 	if claim.Origin == types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE {
-		if err := m.k.ClaimsAllowanceUsed.Set(ctx, allowanceUsed); err != nil {
-			return nil, fmt.Errorf("setting Claims allowance usage: %w", err)
+		if err := k.ClaimsAllowanceUsed.Set(ctx, allowanceUsed); err != nil {
+			return 0, fmt.Errorf("setting Claims allowance usage: %w", err)
 		}
 	}
-	if err := m.k.InsuranceReserved.Set(ctx, nextInsuranceReserved); err != nil {
-		return nil, fmt.Errorf("setting Insurance reservation: %w", err)
+	if err := k.InsuranceReserved.Set(ctx, nextInsuranceReserved); err != nil {
+		return 0, fmt.Errorf("setting Insurance reservation: %w", err)
 	}
-	if err := m.k.NextClaimID.Set(ctx, claimID+1); err != nil {
-		return nil, fmt.Errorf("setting next claim ID: %w", err)
+	if err := k.NextClaimID.Set(ctx, claimID+1); err != nil {
+		return 0, fmt.Errorf("setting next claim ID: %w", err)
 	}
-	if err := m.k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
-		return nil, fmt.Errorf("setting claim %d: %w", claim.ClaimId, err)
+	if err := k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
+		return 0, fmt.Errorf("setting claim %d: %w", claim.ClaimId, err)
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventClaimSubmitted{
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventClaimSubmitted{
 		ClaimId: claim.ClaimId,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Treasury claim submission event: %w", err)
+		return 0, fmt.Errorf("emitting Treasury claim submission event: %w", err)
 	}
-	return &types.MsgSubmitClaimResponse{ClaimId: claim.ClaimId}, nil
+	return claim.ClaimId, nil
 }
 
-// CancelClaim releases one Insurance reservation during its cancellation period.
-// Governance may cancel any claim. The current committee may cancel only a
-// claim that was not submitted by governance.
+// CancelClaim releases one Insurance reservation as the governance authority.
+// Governance may cancel any pending claim regardless of origin, and its
+// authorization does not depend on the current Claims mandate.
 func (m msgServer) CancelClaim(ctx context.Context, msg *types.MsgCancelClaim) (*types.MsgCancelClaimResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil cancel claim message")
 	}
-	if msg.ClaimId == 0 {
-		return nil, errors.New("claim ID must be positive")
-	}
-	if _, err := types.ParseCanonicalAccountAddress("signer", msg.Signer); err != nil {
+	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
 	}
-	if err := types.ValidateClaimReference("reason", msg.Reason, true); err != nil {
+	if err := m.k.cancelClaim(ctx, claimCancellation{
+		Signer:                msg.Authority,
+		AllowGovernanceOrigin: true,
+		ClaimID:               msg.ClaimId,
+		Reason:                msg.Reason,
+		Reference:             msg.Reference,
+	}); err != nil {
 		return nil, err
 	}
-	if err := types.ValidateClaimReference("reference", msg.Reference, false); err != nil {
+	return &types.MsgCancelClaimResponse{}, nil
+}
+
+// CommitteeCancelClaim releases one Insurance reservation as the exact
+// appointed committee, which may cancel only a claim it could have submitted.
+func (m msgServer) CommitteeCancelClaim(ctx context.Context, msg *types.MsgCommitteeCancelClaim) (*types.MsgCommitteeCancelClaimResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil committee cancel claim message")
+	}
+	if _, err := chain.ParseCanonicalAccountAddress("committee", msg.Committee); err != nil {
 		return nil, err
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	isGovernance := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Signer) == nil
-	if !isGovernance {
-		if sdkCtx.BlockHeight() < 0 {
-			return nil, errors.New("claim cancellation requires a nonnegative block height")
-		}
-		mandate, err := m.k.ClaimsMandate.Get(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("getting Claims mandate: %w", err)
-		}
-		if !mandate.IsActive(uint64(sdkCtx.BlockHeight())) || msg.Signer != mandate.Committee {
-			return nil, errors.New("signer is neither Treasury authority nor the exact Claims committee")
-		}
-		if msg.ExpectedTerm != mandate.Term {
-			return nil, fmt.Errorf("Claims mandate term mismatch: expected %d, got %d", mandate.Term, msg.ExpectedTerm)
-		}
+	mandate, err := m.k.ClaimsMandate.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting Claims mandate: %w", err)
+	}
+	if mandate.Committee == "" || msg.Committee != mandate.Committee {
+		return nil, errors.New("signer is not the exact Claims committee")
+	}
+	if !mandate.IsActive(uint64(sdkCtx.BlockHeight())) {
+		return nil, errors.New("Claims mandate is not active")
+	}
+	if err := mandate.RequireTerm(msg.ExpectedTerm); err != nil {
+		return nil, err
 	}
 
-	claim, err := m.k.Claims.Get(ctx, msg.ClaimId)
+	if err := m.k.cancelClaim(ctx, claimCancellation{
+		Signer:                msg.Committee,
+		AllowGovernanceOrigin: false,
+		ClaimID:               msg.ClaimId,
+		Reason:                msg.Reason,
+		Reference:             msg.Reference,
+	}); err != nil {
+		return nil, err
+	}
+	return &types.MsgCommitteeCancelClaimResponse{}, nil
+}
+
+// claimCancellation carries one already-authorized cancellation into the shared
+// core. Only governance may cancel a governance-submitted claim.
+type claimCancellation struct {
+	Signer                string
+	AllowGovernanceOrigin bool
+	ClaimID               uint64
+	Reason                string
+	Reference             string
+}
+
+// cancelClaim releases the Insurance reservation of one pending claim before
+// its executable height and records who finalised it.
+func (k *Keeper) cancelClaim(ctx context.Context, cancellation claimCancellation) error {
+	if err := types.ValidateClaimReference("reason", cancellation.Reason, true); err != nil {
+		return err
+	}
+	if err := types.ValidateClaimReference("reference", cancellation.Reference, false); err != nil {
+		return err
+	}
+
+	claim, err := k.Claims.Get(ctx, cancellation.ClaimID)
 	if err != nil {
-		return nil, fmt.Errorf("getting claim %d: %w", msg.ClaimId, err)
+		return fmt.Errorf("getting claim %d: %w", cancellation.ClaimID, err)
 	}
 	if claim.Status != types.ClaimStatus_CLAIM_STATUS_PENDING {
-		return nil, fmt.Errorf("claim %d is not pending", claim.ClaimId)
+		return fmt.Errorf("claim %d is not pending", claim.ClaimId)
 	}
-	if !isGovernance && claim.Origin == types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE {
-		return nil, fmt.Errorf("Claims committee cannot cancel governance-submitted claim %d", claim.ClaimId)
+	if !cancellation.AllowGovernanceOrigin && claim.Origin == types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE {
+		return fmt.Errorf("Claims committee cannot cancel governance-submitted claim %d", claim.ClaimId)
 	}
-	if sdkCtx.BlockHeight() < 0 {
-		return nil, errors.New("claim cancellation requires a nonnegative block height")
-	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := uint64(sdkCtx.BlockHeight())
 	if height >= claim.ExecutableHeight {
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"claim %d cancellation period ended at height %d",
 			claim.ClaimId,
 			claim.ExecutableHeight,
 		)
 	}
 
-	insuranceReserved, err := m.k.InsuranceReserved.Get(ctx)
+	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting Insurance reservation: %w", err)
+		return fmt.Errorf("getting Insurance reservation: %w", err)
 	}
 	amount := claim.Amount.Amount
 	nextInsuranceReserved := insuranceReserved.Sub(amount)
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_CANCELLED
 	claim.FinalizedHeight = height
-	claim.FinalizedBy = msg.Signer
-	claim.CancellationReason = msg.Reason
-	claim.CancellationReference = msg.Reference
+	claim.FinalizedBy = cancellation.Signer
+	claim.CancellationReason = cancellation.Reason
+	claim.CancellationReference = cancellation.Reference
 	if err := claim.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid cancelled claim: %w", err)
+		return fmt.Errorf("invalid cancelled claim: %w", err)
 	}
-	if err := m.k.InsuranceReserved.Set(ctx, nextInsuranceReserved); err != nil {
-		return nil, fmt.Errorf("setting Insurance reservation: %w", err)
+	if err := k.InsuranceReserved.Set(ctx, nextInsuranceReserved); err != nil {
+		return fmt.Errorf("setting Insurance reservation: %w", err)
 	}
-	if err := m.k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
-		return nil, fmt.Errorf("cancelling claim %d: %w", claim.ClaimId, err)
+	if err := k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
+		return fmt.Errorf("cancelling claim %d: %w", claim.ClaimId, err)
 	}
-	return &types.MsgCancelClaimResponse{}, nil
+	return nil
 }
 
 // ExecuteClaim pays the immutable stored claim after its cancellation period
@@ -287,10 +399,7 @@ func (m msgServer) ExecuteClaim(ctx context.Context, msg *types.MsgExecuteClaim)
 	if msg == nil {
 		return nil, fmt.Errorf("nil execute claim message")
 	}
-	if msg.ClaimId == 0 {
-		return nil, errors.New("claim ID must be positive")
-	}
-	if _, err := types.ParseCanonicalAccountAddress("caller", msg.Caller); err != nil {
+	if _, err := chain.ParseCanonicalAccountAddress("caller", msg.Caller); err != nil {
 		return nil, err
 	}
 	claim, err := m.k.Claims.Get(ctx, msg.ClaimId)
@@ -323,7 +432,7 @@ func (m msgServer) ExecuteClaim(ctx context.Context, msg *types.MsgExecuteClaim)
 	if balanceBefore.Amount.LT(amount) {
 		return nil, fmt.Errorf("insurance balance %s is below claim amount %s", balanceBefore.Amount, amount)
 	}
-	recipient, err := types.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
+	recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
 	if err != nil {
 		return nil, err
 	}

@@ -24,6 +24,11 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardFundingWindow must be positive",
 		},
 		{
+			name:      "zero claim cancellation period",
+			mutate:    func(p *types.Params) { p.ClaimCancellationPeriodBlocks = 0 },
+			expectErr: "ClaimCancellationPeriodBlocks must be positive",
+		},
+		{
 			name:      "reference cap denom must be canonical micro denom",
 			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "USDR" },
 			expectErr: "ReferenceTaxCap denom is invalid",

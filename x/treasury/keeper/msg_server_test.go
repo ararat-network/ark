@@ -99,9 +99,9 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
@@ -159,8 +159,8 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActiv
 	candidate := types.DefaultMonetaryPolicy()
 	candidate.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer: s.authority,
-		Policy: candidate,
+		Authority: s.authority,
+		Policy:    candidate,
 	})
 	s.Require().NoError(err)
 	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
@@ -179,8 +179,8 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyRejectsRewardTargetCapacity
 	candidate.ValidatorBlockRewardTarget = maxRepresentableInt().QuoRaw(2).AddRaw(1)
 
 	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer: s.authority,
-		Policy: candidate,
+		Authority: s.authority,
+		Policy:    candidate,
 	})
 	s.Require().ErrorContains(err, "reward target capacity exceeded")
 	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
@@ -204,8 +204,8 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyChecksActiveRewardFundingWi
 	candidate.ValidatorBlockRewardTarget = maxInt
 
 	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer: s.authority,
-		Policy: candidate,
+		Authority: s.authority,
+		Policy:    candidate,
 	})
 	s.Require().ErrorContains(err, "reward target capacity exceeded")
 	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
@@ -241,8 +241,8 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Equal(committee, mandate.Committee)
 
 	policy := committeePolicyCandidate()
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer:       committee,
+	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+		Committee:    committee,
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
@@ -254,15 +254,15 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Require().NoError(err)
 	s.Equal(types.DefaultRewardFundingWindow, storedParams.RewardFundingWindow)
 
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer:       sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String(),
+	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+		Committee:    sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String(),
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "neither Treasury authority")
+	s.Require().ErrorContains(err, "not the exact monetary-policy committee")
 
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer:       committee,
+	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+		Committee:    committee,
 		ExpectedTerm: mandate.Term + 1,
 		Policy:       policy,
 	})
@@ -270,8 +270,8 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 
 	outOfBounds := policy
 	outOfBounds.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.9")
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer:       committee,
+	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+		Committee:    committee,
 		ExpectedTerm: mandate.Term,
 		Policy:       outOfBounds,
 	})
@@ -280,8 +280,8 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	governanceOverride := policy
 	governanceOverride.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.9")
 	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer: s.authority,
-		Policy: governanceOverride,
+		Authority: s.authority,
+		Policy:    governanceOverride,
 	})
 	s.Require().NoError(err)
 	stored, err = s.keeper.MonetaryPolicy.Get(s.ctx)
@@ -297,12 +297,50 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Equal(uint64(2), disabled.Term)
 	s.Empty(disabled.Committee)
 
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
-		Signer:       committee,
+	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+		Committee:    committee,
 		ExpectedTerm: disabled.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "neither Treasury authority")
+	s.Require().ErrorContains(err, "not the exact monetary-policy committee")
+}
+
+// TestMonetaryPolicyMessagesAreRoleDisjoint proves the split messages cannot be
+// crossed: the governance message rejects the committee, and the committee
+// message rejects the governance authority even while its mandate is live.
+func (s *KeeperTestSuite) TestMonetaryPolicyMessagesAreRoleDisjoint() {
+	s.setBlockHeight(10)
+	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
+	minimum, maximum := monetaryPolicyBounds()
+	_, err := s.msgServer.SetMonetaryMandate(s.ctx, &types.MsgSetMonetaryMandate{
+		Authority:        s.authority,
+		Committee:        committee,
+		ActivationHeight: 10,
+		ExpiryHeight:     20,
+		MinimumPolicy:    minimum,
+		MaximumPolicy:    maximum,
+	})
+	s.Require().NoError(err)
+	mandate, err := s.keeper.MonetaryMandate.Get(s.ctx)
+	s.Require().NoError(err)
+	policy := committeePolicyCandidate()
+
+	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+		Authority: committee,
+		Policy:    policy,
+	})
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+		Committee:    s.authority,
+		ExpectedTerm: mandate.Term,
+		Policy:       policy,
+	})
+	s.Require().ErrorContains(err, "not the exact monetary-policy committee")
+
+	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
 }
 
 func (s *KeeperTestSuite) TestMonetaryMandateAuthorityAndRoleSeparation() {
@@ -328,11 +366,10 @@ func (s *KeeperTestSuite) TestMonetaryMandateAuthorityAndRoleSeparation() {
 	_, err = s.msgServer.SetMonetaryMandate(s.ctx, message)
 	s.Require().NoError(err)
 	_, err = s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
-		Authority:                s.authority,
-		Committee:                committee,
-		ExpiryHeight:             100,
-		CancellationPeriodBlocks: 1,
-		CommitteeClaimLimit:      math.NewInt(100),
+		Authority:           s.authority,
+		Committee:           committee,
+		ExpiryHeight:        100,
+		CommitteeClaimLimit: math.NewInt(100),
 	})
 	s.Require().ErrorContains(err, "distinct from the monetary-policy committee")
 }
@@ -356,9 +393,9 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 		{Denom: chain.SDRBaseDenom},
 		{Denom: chain.USDBaseDenom},
 	}, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
@@ -466,8 +503,8 @@ func (b *insuranceBankKeeper) SendCoinsFromModuleToAccount(
 
 type insuranceOracleKeeper struct{}
 
-func (insuranceOracleKeeper) GetRateSnapshot(context.Context, ...string) (oracletypes.RateSnapshot, error) {
-	return oracletypes.RateSnapshot{}, nil
+func (insuranceOracleKeeper) GetRateSet(context.Context, ...string) (oracletypes.RateSet, error) {
+	return oracletypes.RateSet{}, nil
 }
 
 func (insuranceOracleKeeper) GetTobinTaxes(context.Context) ([]oracletypes.TobinTax, error) {
@@ -528,6 +565,11 @@ func (s *ClaimsKeeperTestSuite) SetupTest() {
 		s.bank,
 		insuranceOracleKeeper{},
 	)
+	// Keep the two-block cancellation period the suite's height math is
+	// built around; the launch default is far larger.
+	testParams := types.DefaultParams()
+	testParams.ClaimCancellationPeriodBlocks = 2
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, testParams))
 	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, types.DefaultClaimsMandate()))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.ZeroInt()))
 	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.ZeroInt()))
@@ -562,12 +604,11 @@ func (s *ClaimsKeeperTestSuite) requireTypedEvent(expected proto.Message) {
 
 func (s *ClaimsKeeperTestSuite) mandateMessage() *types.MsgSetClaimsMandate {
 	return &types.MsgSetClaimsMandate{
-		Authority:                s.authority,
-		Committee:                s.committee,
-		ActivationHeight:         0,
-		ExpiryHeight:             1_000,
-		CancellationPeriodBlocks: 2,
-		CommitteeClaimLimit:      math.NewInt(100),
+		Authority:           s.authority,
+		Committee:           s.committee,
+		ActivationHeight:    0,
+		ExpiryHeight:        1_000,
+		CommitteeClaimLimit: math.NewInt(100),
 	}
 }
 
@@ -579,9 +620,9 @@ func (s *ClaimsKeeperTestSuite) createMandate() types.ClaimsMandate {
 	return mandate
 }
 
-func (s *ClaimsKeeperTestSuite) submission(amount int64) *types.MsgSubmitClaim {
-	return &types.MsgSubmitClaim{
-		Submitter:         s.committee,
+func (s *ClaimsKeeperTestSuite) submission(amount int64) *types.MsgCommitteeSubmitClaim {
+	return &types.MsgCommitteeSubmitClaim{
+		Committee:         s.committee,
 		ExpectedTerm:      1,
 		IncidentReference: "incident-1",
 		Recipient:         s.recipient,
@@ -590,8 +631,26 @@ func (s *ClaimsKeeperTestSuite) submission(amount int64) *types.MsgSubmitClaim {
 	}
 }
 
+func (s *ClaimsKeeperTestSuite) governanceSubmission(amount int64) *types.MsgSubmitClaim {
+	return &types.MsgSubmitClaim{
+		Authority:         s.authority,
+		IncidentReference: "incident-1",
+		Recipient:         s.recipient,
+		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, amount),
+		EvidenceReference: "evidence-1",
+	}
+}
+
 func (s *ClaimsKeeperTestSuite) submit(amount int64) types.Claim {
-	response, err := s.msgServer.SubmitClaim(s.ctx, s.submission(amount))
+	response, err := s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(amount))
+	s.Require().NoError(err)
+	claim, err := s.keeper.Claims.Get(s.ctx, response.ClaimId)
+	s.Require().NoError(err)
+	return claim
+}
+
+func (s *ClaimsKeeperTestSuite) submitGovernance(amount int64) types.Claim {
+	response, err := s.msgServer.SubmitClaim(s.ctx, s.governanceSubmission(amount))
 	s.Require().NoError(err)
 	claim, err := s.keeper.Claims.Get(s.ctx, response.ClaimId)
 	s.Require().NoError(err)
@@ -616,19 +675,18 @@ func (s *ClaimsKeeperTestSuite) TestDefaultSentinelAndMandateUpdate() {
 	s.Equal(uint64(1), mandate.Term)
 	s.Equal(uint64(0), mandate.ActivationHeight)
 	s.Equal(uint64(1_000), mandate.ExpiryHeight)
-	s.Equal(uint64(2), mandate.CancellationPeriodBlocks)
 	s.Equal(math.NewInt(100), mandate.CommitteeClaimLimit)
 
 	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(30)))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(20)))
 	update := s.mandateMessage()
-	update.CancellationPeriodBlocks = 3
+	update.CommitteeClaimLimit = math.NewInt(200)
 	_, err = s.msgServer.SetClaimsMandate(s.ctx, update)
 	s.Require().NoError(err)
 	mandate, err = s.keeper.ClaimsMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(uint64(2), mandate.Term)
-	s.Equal(uint64(3), mandate.CancellationPeriodBlocks)
+	s.Equal(math.NewInt(200), mandate.CommitteeClaimLimit)
 	allowanceUsed, err = s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
 	s.Require().NoError(err)
 	s.True(allowanceUsed.IsZero())
@@ -672,9 +730,8 @@ func (s *ClaimsKeeperTestSuite) TestMandateValidation() {
 	}{
 		{name: "committee is authority", mutate: func(msg *types.MsgSetClaimsMandate) { msg.Committee = s.authority }},
 		{name: "invalid active heights", mutate: func(msg *types.MsgSetClaimsMandate) { msg.ActivationHeight = msg.ExpiryHeight }},
-		{name: "zero cancellation period", mutate: func(msg *types.MsgSetClaimsMandate) { msg.CancellationPeriodBlocks = 0 }},
-		{name: "cancellation period exceeds active span", mutate: func(msg *types.MsgSetClaimsMandate) {
-			msg.ExpiryHeight = msg.ActivationHeight + msg.CancellationPeriodBlocks - 1
+		{name: "active span shorter than cancellation period", mutate: func(msg *types.MsgSetClaimsMandate) {
+			msg.ExpiryHeight = msg.ActivationHeight + 1
 		}},
 		{name: "unset committee claim limit", mutate: func(msg *types.MsgSetClaimsMandate) { msg.CommitteeClaimLimit = math.Int{} }},
 		{name: "zero committee claim limit", mutate: func(msg *types.MsgSetClaimsMandate) { msg.CommitteeClaimLimit = math.ZeroInt() }},
@@ -734,24 +791,70 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimReservesFunds() {
 
 func (s *ClaimsKeeperTestSuite) TestGovernanceCanSubmitClaim() {
 	s.createMandate()
-	msg := s.submission(20)
-	msg.Submitter = s.authority
 
-	response, err := s.msgServer.SubmitClaim(s.ctx, msg)
-	s.Require().NoError(err)
-	claim, err := s.keeper.Claims.Get(s.ctx, response.ClaimId)
-	s.Require().NoError(err)
+	claim := s.submitGovernance(20)
 	s.Equal(s.authority, claim.Submitter)
 	s.Equal(types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE, claim.Origin)
+	s.Equal(uint64(0), claim.MandateTerm)
 	allowanceUsed, err := s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
 	s.Require().NoError(err)
 	s.True(allowanceUsed.IsZero())
+}
 
-	msg = s.submission(20)
-	msg.Submitter = s.authority
-	msg.ExpectedTerm++
-	_, err = s.msgServer.SubmitClaim(s.ctx, msg)
-	s.Require().ErrorContains(err, "term mismatch")
+// TestGovernanceSubmitClaimIgnoresMandateWindow proves governance submission
+// depends only on Treasury params: it works against the disabled sentinel,
+// after the appointment window has lapsed, and across the mandate expiry that
+// still caps committee submissions.
+func (s *ClaimsKeeperTestSuite) TestGovernanceSubmitClaimIgnoresMandateWindow() {
+	sentinel := s.submitGovernance(10)
+	s.Equal(types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE, sentinel.Origin)
+	s.Equal(uint64(0), sentinel.MandateTerm)
+
+	s.createMandate()
+	s.setHeight(1_000)
+	_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(1))
+	s.Require().ErrorContains(err, "not active")
+
+	lapsed := s.submitGovernance(20)
+	s.Equal(uint64(0), lapsed.MandateTerm)
+	s.Equal(uint64(1_002), lapsed.ExecutableHeight)
+}
+
+// TestClaimMessagesAreRoleDisjoint proves neither claim role can act through
+// the other's message while both mandates are live.
+func (s *ClaimsKeeperTestSuite) TestClaimMessagesAreRoleDisjoint() {
+	s.createMandate()
+	s.setHeight(25)
+
+	unauthorized := s.governanceSubmission(10)
+	unauthorized.Authority = s.committee
+	_, err := s.msgServer.SubmitClaim(s.ctx, unauthorized)
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+	impersonating := s.submission(10)
+	impersonating.Committee = s.authority
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, impersonating)
+	s.Require().ErrorContains(err, "not the exact Claims committee")
+
+	governanceClaim := s.submitGovernance(10)
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.authority,
+		ExpectedTerm: 1,
+		ClaimId:      governanceClaim.ClaimId,
+		Reason:       "impersonating the committee",
+	})
+	s.Require().ErrorContains(err, "not the exact Claims committee")
+
+	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
+		Authority: s.committee,
+		ClaimId:   governanceClaim.ClaimId,
+		Reason:    "impersonating governance",
+	})
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+	stored, err := s.keeper.Claims.Get(s.ctx, governanceClaim.ClaimId)
+	s.Require().NoError(err)
+	s.Equal(types.ClaimStatus_CLAIM_STATUS_PENDING, stored.Status)
 }
 
 func (s *ClaimsKeeperTestSuite) TestCommitteeClaimLimitIsGrossForTerm() {
@@ -759,8 +862,8 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeClaimLimitIsGrossForTerm() {
 	s.setHeight(25)
 	cancelledClaim := s.submit(60)
 
-	_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err := s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 1,
 		ClaimId:      cancelledClaim.ClaimId,
 		Reason:       "not covered",
@@ -775,7 +878,7 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeClaimLimitIsGrossForTerm() {
 	s.Require().NoError(err)
 	s.Equal(math.NewInt(40), insuranceReserved)
 
-	_, err = s.msgServer.SubmitClaim(s.ctx, s.submission(1))
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(1))
 	s.Require().ErrorContains(err, "exceeds remaining Claims allowance 0")
 
 	update := s.mandateMessage()
@@ -790,7 +893,7 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeClaimLimitIsGrossForTerm() {
 
 	newTermSubmission := s.submission(100)
 	newTermSubmission.ExpectedTerm = 2
-	_, err = s.msgServer.SubmitClaim(s.ctx, newTermSubmission)
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, newTermSubmission)
 	s.Require().NoError(err)
 	allowanceUsed, err = s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
 	s.Require().NoError(err)
@@ -801,18 +904,20 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeClaimLimitIsGrossForTerm() {
 }
 
 func (s *ClaimsKeeperTestSuite) TestSubmitClaimValidation() {
-	_, err := s.msgServer.SubmitClaim(s.ctx, s.submission(1))
-	s.Require().ErrorContains(err, "not active")
+	// The default sentinel mandate has no committee, so the identity check
+	// rejects the submission before any window or term reasoning.
+	_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(1))
+	s.Require().ErrorContains(err, "not the exact Claims committee")
 
 	s.createMandate()
 	tests := []struct {
 		name      string
-		mutate    func(*types.MsgSubmitClaim)
+		mutate    func(*types.MsgCommitteeSubmitClaim)
 		expectErr string
 	}{
-		{name: "unrelated submitter", mutate: func(msg *types.MsgSubmitClaim) { msg.Submitter = s.caller }, expectErr: "neither Treasury authority"},
-		{name: "wrong denom", mutate: func(msg *types.MsgSubmitClaim) { msg.Amount = sdk.NewInt64Coin("ausd", 1) }, expectErr: "anoah coin"},
-		{name: "self payment", mutate: func(msg *types.MsgSubmitClaim) {
+		{name: "unrelated submitter", mutate: func(msg *types.MsgCommitteeSubmitClaim) { msg.Committee = s.caller }, expectErr: "not the exact Claims committee"},
+		{name: "wrong denom", mutate: func(msg *types.MsgCommitteeSubmitClaim) { msg.Amount = sdk.NewInt64Coin("ausd", 1) }, expectErr: "anoah coin"},
+		{name: "self payment", mutate: func(msg *types.MsgCommitteeSubmitClaim) {
 			msg.Recipient = authtypes.NewModuleAddress(types.InsuranceName).String()
 		}, expectErr: "cannot be the Insurance module"},
 	}
@@ -820,13 +925,13 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimValidation() {
 		s.Run(tc.name, func() {
 			msg := s.submission(1)
 			tc.mutate(msg)
-			_, err := s.msgServer.SubmitClaim(s.ctx, msg)
+			_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, msg)
 			s.Require().ErrorContains(err, tc.expectErr)
 		})
 	}
 
 	s.bank.balance = math.NewInt(50)
-	_, err = s.msgServer.SubmitClaim(s.ctx, s.submission(51))
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(51))
 	s.Require().ErrorContains(err, "cannot cover Insurance reservation")
 }
 
@@ -837,7 +942,7 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimRejectsBlockedRecipientBeforeRese
 	msg := s.submission(10)
 	msg.Recipient = blockedRecipient.String()
 
-	_, err := s.msgServer.SubmitClaim(s.ctx, msg)
+	_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, msg)
 	s.Require().ErrorContains(err, "blocked from receiving funds")
 
 	exists, err := s.keeper.Claims.Has(s.ctx, 1)
@@ -854,30 +959,24 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimRejectsBlockedRecipientBeforeRese
 	s.Equal(uint64(1), nextClaimID)
 }
 
-func (s *ClaimsKeeperTestSuite) TestSubmitClaimRejectsExhaustedIDSequenceBeforeAccounting() {
+func (s *ClaimsKeeperTestSuite) TestClaimActionsRejectMissingClaim() {
 	s.createMandate()
-	s.Require().NoError(s.keeper.NextClaimID.Set(s.ctx, ^uint64(0)))
 
-	_, err := s.msgServer.SubmitClaim(s.ctx, s.submission(10))
-	s.Require().ErrorContains(err, "claim ID sequence is exhausted")
+	_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
+		Authority: s.authority,
+		Reason:    "missing",
+	})
+	s.Require().ErrorContains(err, "getting claim 0")
 
-	insuranceReserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
-	s.Require().NoError(err)
-	s.True(insuranceReserved.IsZero())
-	allowanceUsed, err := s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
-	s.Require().NoError(err)
-	s.True(allowanceUsed.IsZero())
-	nextClaimID, err := s.keeper.NextClaimID.Peek(s.ctx)
-	s.Require().NoError(err)
-	s.Equal(^uint64(0), nextClaimID)
-}
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
+		ExpectedTerm: 1,
+		Reason:       "missing",
+	})
+	s.Require().ErrorContains(err, "getting claim 0")
 
-func (s *ClaimsKeeperTestSuite) TestClaimActionsRejectZeroID() {
-	_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{})
-	s.Require().ErrorContains(err, "claim ID must be positive")
-
-	_, err = s.msgServer.ExecuteClaim(s.ctx, &types.MsgExecuteClaim{})
-	s.Require().ErrorContains(err, "claim ID must be positive")
+	_, err = s.msgServer.ExecuteClaim(s.ctx, &types.MsgExecuteClaim{Caller: s.caller})
+	s.Require().ErrorContains(err, "getting claim 0")
 }
 
 func (s *ClaimsKeeperTestSuite) TestSubmitClaimEnforcesMandateTermAndWindow() {
@@ -885,11 +984,11 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimEnforcesMandateTermAndWindow() {
 	s.setHeight(25)
 	stale := s.submission(1)
 	stale.ExpectedTerm++
-	_, err := s.msgServer.SubmitClaim(s.ctx, stale)
+	_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, stale)
 	s.Require().ErrorContains(err, "term mismatch")
 
 	s.setHeight(1_000)
-	_, err = s.msgServer.SubmitClaim(s.ctx, s.submission(1))
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(1))
 	s.Require().ErrorContains(err, "not active")
 
 	s.setHeight(25)
@@ -899,20 +998,25 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimEnforcesMandateTermAndWindow() {
 	s.Require().NoError(err)
 	crossesExpiry := s.submission(1)
 	crossesExpiry.ExpectedTerm = 2
-	_, err = s.msgServer.SubmitClaim(s.ctx, crossesExpiry)
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, crossesExpiry)
 	s.Require().ErrorContains(err, "exceeds Claims mandate expiry height")
 }
 
-func (s *ClaimsKeeperTestSuite) TestSubmitClaimRejectsExecutableHeightOverflow() {
+func (s *ClaimsKeeperTestSuite) TestSubmitClaimRejectsWrappedExecutableHeight() {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.ClaimCancellationPeriodBlocks = ^uint64(0)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	update := s.mandateMessage()
 	update.ExpiryHeight = ^uint64(0)
-	update.CancellationPeriodBlocks = ^uint64(0)
-	_, err := s.msgServer.SetClaimsMandate(s.ctx, update)
+	_, err = s.msgServer.SetClaimsMandate(s.ctx, update)
 	s.Require().NoError(err)
 
 	s.setHeight(1)
-	_, err = s.msgServer.SubmitClaim(s.ctx, s.submission(1))
-	s.Require().ErrorContains(err, "executable height overflows")
+	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(1))
+	s.Require().ErrorContains(err, "must follow its submission height")
+	_, err = s.msgServer.SubmitClaim(s.ctx, s.governanceSubmission(1))
+	s.Require().ErrorContains(err, "must follow its submission height")
 }
 
 func (s *ClaimsKeeperTestSuite) TestCommitteeAndGovernanceCanCancelDuringPeriod() {
@@ -921,23 +1025,24 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeAndGovernanceCanCancelDuringPeriod(
 	committeeClaim := s.submit(40)
 	governanceClaim := s.submit(30)
 
-	_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:  s.caller,
-		ClaimId: committeeClaim.ClaimId,
-		Reason:  "unauthorized",
+	_, err := s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.caller,
+		ExpectedTerm: 1,
+		ClaimId:      committeeClaim.ClaimId,
+		Reason:       "unauthorized",
 	})
-	s.Require().ErrorContains(err, "neither Treasury authority")
+	s.Require().ErrorContains(err, "not the exact Claims committee")
 
-	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 2,
 		ClaimId:      committeeClaim.ClaimId,
 		Reason:       "stale committee transaction",
 	})
 	s.Require().ErrorContains(err, "term mismatch")
 
-	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 1,
 		ClaimId:      committeeClaim.ClaimId,
 		Reason:       "not covered",
@@ -951,9 +1056,9 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeAndGovernanceCanCancelDuringPeriod(
 	s.Equal("case-1", committeeClaim.CancellationReference)
 
 	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:  s.authority,
-		ClaimId: governanceClaim.ClaimId,
-		Reason:  "governance veto",
+		Authority: s.authority,
+		ClaimId:   governanceClaim.ClaimId,
+		Reason:    "governance veto",
 	})
 	s.Require().NoError(err)
 	governanceClaim, err = s.keeper.Claims.Get(s.ctx, governanceClaim.ClaimId)
@@ -973,28 +1078,25 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeAndGovernanceCanCancelDuringPeriod(
 func (s *ClaimsKeeperTestSuite) TestCommitteeCannotCancelGovernanceClaim() {
 	s.createMandate()
 	s.setHeight(25)
-	msg := s.submission(20)
-	msg.Submitter = s.authority
-	response, err := s.msgServer.SubmitClaim(s.ctx, msg)
-	s.Require().NoError(err)
+	claim := s.submitGovernance(20)
 	// Rotate the effective governance authority after submission. The stored
 	// origin, not current address equality, continues to protect the claim.
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
 		Authority: &cmtproto.AuthorityParams{Authority: s.caller},
 	})
 
-	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err := s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 1,
-		ClaimId:      response.ClaimId,
+		ClaimId:      claim.ClaimId,
 		Reason:       "committee veto",
 	})
 	s.Require().ErrorContains(err, "cannot cancel governance-submitted claim")
 
 	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:  s.caller,
-		ClaimId: response.ClaimId,
-		Reason:  "governance cancellation",
+		Authority: s.caller,
+		ClaimId:   claim.ClaimId,
+		Reason:    "governance cancellation",
 	})
 	s.Require().NoError(err)
 }
@@ -1009,18 +1111,18 @@ func (s *ClaimsKeeperTestSuite) TestGovernanceCancellationDoesNotDependOnCurrent
 	})
 	s.Require().NoError(err)
 
-	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 2,
 		ClaimId:      claim.ClaimId,
 		Reason:       "disabled committee",
 	})
-	s.Require().ErrorContains(err, "neither Treasury authority")
+	s.Require().ErrorContains(err, "not the exact Claims committee")
 
 	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:  s.authority,
-		ClaimId: claim.ClaimId,
-		Reason:  "governance cancellation",
+		Authority: s.authority,
+		ClaimId:   claim.ClaimId,
+		Reason:    "governance cancellation",
 	})
 	s.Require().NoError(err)
 }
@@ -1031,8 +1133,8 @@ func (s *ClaimsKeeperTestSuite) TestCancellationBoundaryIsExclusive() {
 	claim := s.submit(20)
 	s.setHeight(27)
 
-	_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err := s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 1,
 		ClaimId:      claim.ClaimId,
 		Reason:       "too late",
@@ -1040,9 +1142,9 @@ func (s *ClaimsKeeperTestSuite) TestCancellationBoundaryIsExclusive() {
 	s.Require().ErrorContains(err, "ended at height 27")
 
 	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:  s.authority,
-		ClaimId: claim.ClaimId,
-		Reason:  "governance cancellation after deadline",
+		Authority: s.authority,
+		ClaimId:   claim.ClaimId,
+		Reason:    "governance cancellation after deadline",
 	})
 	s.Require().ErrorContains(err, "ended at height 27")
 	claim, err = s.keeper.Claims.Get(s.ctx, claim.ClaimId)
@@ -1128,16 +1230,16 @@ func (s *ClaimsKeeperTestSuite) TestMandateRotationDoesNotRewritePendingClaim() 
 	s.Require().NoError(err)
 	s.True(allowanceUsed.IsZero())
 
-	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       s.committee,
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    s.committee,
 		ExpectedTerm: 1,
 		ClaimId:      claim.ClaimId,
 		Reason:       "old committee",
 	})
-	s.Require().ErrorContains(err, "neither Treasury authority")
+	s.Require().ErrorContains(err, "not the exact Claims committee")
 
-	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
-		Signer:       newCommittee,
+	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
+		Committee:    newCommittee,
 		ExpectedTerm: 2,
 		ClaimId:      claim.ClaimId,
 		Reason:       "current committee",
@@ -1176,9 +1278,9 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDir
 		{Denom: chain.KRWBaseDenom},
 		{Denom: chain.SDRBaseDenom},
 	}, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(), chain.USDBaseDenom, chain.KRWBaseDenom, chain.SDRBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.KRWBaseDenom: math.LegacyNewDec(2),
 		chain.SDRBaseDenom: math.LegacyNewDec(3),
 		chain.USDBaseDenom: math.LegacyNewDec(7),
@@ -1206,12 +1308,12 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDir
 func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCaps() {
 	tests := []struct {
 		name  string
-		rates oracletypes.RateSnapshot
+		rates oracletypes.RateSet
 		err   error
 	}{
 		{
 			name: "missing candidate rate",
-			rates: oracletypes.RateSnapshot{
+			rates: oracletypes.RateSet{
 				chain.SDRBaseDenom: math.LegacyOneDec(),
 			},
 		},
@@ -1237,7 +1339,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 				{Denom: chain.SDRBaseDenom},
 				{Denom: chain.USDBaseDenom},
 			}, nil)
-			s.oracleKeeper.EXPECT().GetRateSnapshot(
+			s.oracleKeeper.EXPECT().GetRateSet(
 				gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
 			).Return(test.rates, test.err)
 

@@ -348,12 +348,11 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		MinimumReserveBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 60),
 	}
 	claimsMandateUpdate := &treasurytypes.MsgSetClaimsMandate{
-		Authority:                authority,
-		Committee:                claimsCommittee.String(),
-		ActivationHeight:         1,
-		ExpiryHeight:             1_000_000,
-		CancellationPeriodBlocks: 10,
-		CommitteeClaimLimit:      math.NewInt(50),
+		Authority:           authority,
+		Committee:           claimsCommittee.String(),
+		ActivationHeight:    1,
+		ExpiryHeight:        1_000_000,
+		CommitteeClaimLimit: math.NewInt(50),
 	}
 	minimumPolicy := treasurytypes.DefaultMonetaryPolicy()
 	maximumPolicy := treasurytypes.MonetaryPolicy{
@@ -404,22 +403,21 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, claimsCommittee.String(), storedClaimsMandate.Committee)
 	require.Equal(t, uint64(1), storedClaimsMandate.Term)
-	require.Equal(t, uint64(10), storedClaimsMandate.CancellationPeriodBlocks)
 	require.Equal(t, math.NewInt(50), storedClaimsMandate.CommitteeClaimLimit)
 	storedMonetaryMandate, err := arkApp.TreasuryKeeper.MonetaryMandate.Get(ctx)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), storedMonetaryMandate.Term)
 	require.Equal(t, monetaryCommittee.String(), storedMonetaryMandate.Committee)
 
-	submission := &treasurytypes.MsgSubmitClaim{
-		Submitter:         claimsCommittee.String(),
+	submission := &treasurytypes.MsgCommitteeSubmitClaim{
+		Committee:         claimsCommittee.String(),
 		ExpectedTerm:      storedClaimsMandate.Term,
 		IncidentReference: "incident",
 		Recipient:         sdk.AccAddress(bytes.Repeat([]byte{0x45}, 20)).String(),
 		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
 		EvidenceReference: "evidence",
 	}
-	submissionResponse, err := treasurykeeper.NewMsgServerImpl(arkApp.TreasuryKeeper).SubmitClaim(ctx, submission)
+	submissionResponse, err := treasurykeeper.NewMsgServerImpl(arkApp.TreasuryKeeper).CommitteeSubmitClaim(ctx, submission)
 	require.NoError(t, err)
 	pendingClaim, err := arkApp.TreasuryKeeper.Claims.Get(ctx, submissionResponse.ClaimId)
 	require.NoError(t, err)
@@ -427,11 +425,11 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	governancePolicy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.9")
 	ctx, cancelProposal := executeTreasuryProposal(t, arkApp, ctx, voter,
 		&treasurytypes.MsgUpdateMonetaryPolicy{
-			Signer: authority,
-			Policy: governancePolicy,
+			Authority: authority,
+			Policy:    governancePolicy,
 		},
 		&treasurytypes.MsgCancelClaim{
-			Signer:    authority,
+			Authority: authority,
 			ClaimId:   pendingClaim.ClaimId,
 			Reason:    "governance veto",
 			Reference: "proposal",
@@ -482,7 +480,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		ctx,
 		sdk.NewInt64Coin(chain.SDRBaseDenom, 1),
 		math.NewInt(1),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.SDRBaseDenom:  math.LegacyOneDec(),
 		},

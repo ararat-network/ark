@@ -3,7 +3,13 @@ package types
 import (
 	"errors"
 	"fmt"
+
+	"ark/pkg/mandate"
 )
+
+// MonetaryMandateLabel names the shared appointment envelope in
+// monetary-policy errors.
+const MonetaryMandateLabel = "monetary mandate"
 
 // DefaultMonetaryMandate returns the canonical disabled committee
 // mandate. The term may increase later while the mandate remains disabled.
@@ -16,7 +22,7 @@ func DefaultMonetaryMandate() MonetaryMandate {
 func NewDisabledMonetaryMandate(term uint64) MonetaryMandate {
 	policy := DefaultMonetaryPolicy()
 	return MonetaryMandate{
-		Term:          term,
+		Envelope:      mandate.Disabled(term),
 		MinimumPolicy: policy,
 		MaximumPolicy: policy,
 	}
@@ -32,37 +38,21 @@ func (mandate MonetaryMandate) Validate() error {
 		return fmt.Errorf("invalid monetary-policy maximum: %w", err)
 	}
 
-	if mandate.Committee == "" {
-		if mandate.ActivationHeight != 0 || mandate.ExpiryHeight != 0 {
-			return errors.New("disabled monetary mandate must not have an activation or expiry height")
-		}
+	if err := mandate.Envelope.Validate(); err != nil {
+		return fmt.Errorf("%s: %w", MonetaryMandateLabel, err)
+	}
+
+	if mandate.IsDisabled() {
 		if !mandate.MinimumPolicy.Equal(mandate.MaximumPolicy) || !mandate.MinimumPolicy.IsZero() {
 			return errors.New("disabled monetary mandate must use identical zero bounds")
 		}
 		return nil
 	}
 
-	if mandate.Term == 0 {
-		return errors.New("configured monetary mandate term must be positive")
-	}
-	if _, err := ParseCanonicalAccountAddress("monetary-policy committee", mandate.Committee); err != nil {
-		return err
-	}
-	if mandate.ActivationHeight >= mandate.ExpiryHeight {
-		return errors.New("monetary mandate activation height must precede expiry height")
-	}
 	if err := mandate.ValidatePolicy(mandate.MinimumPolicy); err != nil {
 		return fmt.Errorf("invalid monetary-policy bounds: %w", err)
 	}
 	return nil
-}
-
-// IsActive reports whether the mandate can authorize a committee update at
-// the supplied height.
-func (mandate MonetaryMandate) IsActive(height int64) bool {
-	return mandate.Committee != "" &&
-		mandate.ActivationHeight <= uint64(height) &&
-		uint64(height) < mandate.ExpiryHeight
 }
 
 // ValidatePolicy checks a committee policy against every mandate bound.

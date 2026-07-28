@@ -19,14 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_UpdateParams_FullMethodName            = "/ark.treasury.v1.Msg/UpdateParams"
-	Msg_SetMonetaryMandate_FullMethodName      = "/ark.treasury.v1.Msg/SetMonetaryMandate"
-	Msg_UpdateMonetaryPolicy_FullMethodName    = "/ark.treasury.v1.Msg/UpdateMonetaryPolicy"
-	Msg_SetClaimsMandate_FullMethodName        = "/ark.treasury.v1.Msg/SetClaimsMandate"
-	Msg_SubmitClaim_FullMethodName             = "/ark.treasury.v1.Msg/SubmitClaim"
-	Msg_CancelClaim_FullMethodName             = "/ark.treasury.v1.Msg/CancelClaim"
-	Msg_ExecuteClaim_FullMethodName            = "/ark.treasury.v1.Msg/ExecuteClaim"
-	Msg_TransferReserveToBuffer_FullMethodName = "/ark.treasury.v1.Msg/TransferReserveToBuffer"
+	Msg_UpdateParams_FullMethodName                  = "/ark.treasury.v1.Msg/UpdateParams"
+	Msg_SetMonetaryMandate_FullMethodName            = "/ark.treasury.v1.Msg/SetMonetaryMandate"
+	Msg_UpdateMonetaryPolicy_FullMethodName          = "/ark.treasury.v1.Msg/UpdateMonetaryPolicy"
+	Msg_CommitteeUpdateMonetaryPolicy_FullMethodName = "/ark.treasury.v1.Msg/CommitteeUpdateMonetaryPolicy"
+	Msg_SetClaimsMandate_FullMethodName              = "/ark.treasury.v1.Msg/SetClaimsMandate"
+	Msg_SubmitClaim_FullMethodName                   = "/ark.treasury.v1.Msg/SubmitClaim"
+	Msg_CommitteeSubmitClaim_FullMethodName          = "/ark.treasury.v1.Msg/CommitteeSubmitClaim"
+	Msg_CancelClaim_FullMethodName                   = "/ark.treasury.v1.Msg/CancelClaim"
+	Msg_CommitteeCancelClaim_FullMethodName          = "/ark.treasury.v1.Msg/CommitteeCancelClaim"
+	Msg_ExecuteClaim_FullMethodName                  = "/ark.treasury.v1.Msg/ExecuteClaim"
+	Msg_TransferReserveToBuffer_FullMethodName       = "/ark.treasury.v1.Msg/TransferReserveToBuffer"
 )
 
 // MsgClient is the client API for Msg service.
@@ -40,18 +43,27 @@ type MsgClient interface {
 	// SetMonetaryMandate appoints, replaces, or disables the bounded
 	// monetary-policy committee.
 	SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMandate, opts ...grpc.CallOption) (*MsgSetMonetaryMandateResponse, error)
-	// UpdateMonetaryPolicy applies one complete reversible policy candidate.
-	// The configured committee or governance authority may sign.
+	// UpdateMonetaryPolicy applies one complete reversible policy candidate as
+	// the governance authority, unbounded by the committee mandate.
 	UpdateMonetaryPolicy(ctx context.Context, in *MsgUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgUpdateMonetaryPolicyResponse, error)
+	// CommitteeUpdateMonetaryPolicy applies one complete reversible policy
+	// candidate as the monetary-policy committee, inside its mandate bounds.
+	CommitteeUpdateMonetaryPolicy(ctx context.Context, in *MsgCommitteeUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdateMonetaryPolicyResponse, error)
 	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
-	// committee and shared cancellation period.
+	// committee.
 	SetClaimsMandate(ctx context.Context, in *MsgSetClaimsMandate, opts ...grpc.CallOption) (*MsgSetClaimsMandateResponse, error)
-	// SubmitClaim records a committee- or governance-submitted pending claim.
+	// SubmitClaim records a governance-submitted pending claim, which never
+	// consumes the committee allowance.
 	SubmitClaim(ctx context.Context, in *MsgSubmitClaim, opts ...grpc.CallOption) (*MsgSubmitClaimResponse, error)
-	// CancelClaim cancels one pending claim during its cancellation period.
-	// Governance may cancel any claim; the committee may cancel only a claim not
-	// submitted by governance.
+	// CommitteeSubmitClaim records a committee-submitted pending claim against
+	// the current term allowance.
+	CommitteeSubmitClaim(ctx context.Context, in *MsgCommitteeSubmitClaim, opts ...grpc.CallOption) (*MsgCommitteeSubmitClaimResponse, error)
+	// CancelClaim cancels any pending claim as the governance authority during
+	// its cancellation period.
 	CancelClaim(ctx context.Context, in *MsgCancelClaim, opts ...grpc.CallOption) (*MsgCancelClaimResponse, error)
+	// CommitteeCancelClaim cancels one pending non-governance claim as the
+	// Claims committee during its cancellation period.
+	CommitteeCancelClaim(ctx context.Context, in *MsgCommitteeCancelClaim, opts ...grpc.CallOption) (*MsgCommitteeCancelClaimResponse, error)
 	// ExecuteClaim pays a pending claim after its cancellation period.
 	ExecuteClaim(ctx context.Context, in *MsgExecuteClaim, opts ...grpc.CallOption) (*MsgExecuteClaimResponse, error)
 	// TransferReserveToBuffer commits strategic Reserve NOAH to the Buffer.
@@ -96,6 +108,16 @@ func (c *msgClient) UpdateMonetaryPolicy(ctx context.Context, in *MsgUpdateMonet
 	return out, nil
 }
 
+func (c *msgClient) CommitteeUpdateMonetaryPolicy(ctx context.Context, in *MsgCommitteeUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdateMonetaryPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeUpdateMonetaryPolicyResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeUpdateMonetaryPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *msgClient) SetClaimsMandate(ctx context.Context, in *MsgSetClaimsMandate, opts ...grpc.CallOption) (*MsgSetClaimsMandateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgSetClaimsMandateResponse)
@@ -116,10 +138,30 @@ func (c *msgClient) SubmitClaim(ctx context.Context, in *MsgSubmitClaim, opts ..
 	return out, nil
 }
 
+func (c *msgClient) CommitteeSubmitClaim(ctx context.Context, in *MsgCommitteeSubmitClaim, opts ...grpc.CallOption) (*MsgCommitteeSubmitClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeSubmitClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeSubmitClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *msgClient) CancelClaim(ctx context.Context, in *MsgCancelClaim, opts ...grpc.CallOption) (*MsgCancelClaimResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgCancelClaimResponse)
 	err := c.cc.Invoke(ctx, Msg_CancelClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeCancelClaim(ctx context.Context, in *MsgCommitteeCancelClaim, opts ...grpc.CallOption) (*MsgCommitteeCancelClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeCancelClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeCancelClaim_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,18 +199,27 @@ type MsgServer interface {
 	// SetMonetaryMandate appoints, replaces, or disables the bounded
 	// monetary-policy committee.
 	SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error)
-	// UpdateMonetaryPolicy applies one complete reversible policy candidate.
-	// The configured committee or governance authority may sign.
+	// UpdateMonetaryPolicy applies one complete reversible policy candidate as
+	// the governance authority, unbounded by the committee mandate.
 	UpdateMonetaryPolicy(context.Context, *MsgUpdateMonetaryPolicy) (*MsgUpdateMonetaryPolicyResponse, error)
+	// CommitteeUpdateMonetaryPolicy applies one complete reversible policy
+	// candidate as the monetary-policy committee, inside its mandate bounds.
+	CommitteeUpdateMonetaryPolicy(context.Context, *MsgCommitteeUpdateMonetaryPolicy) (*MsgCommitteeUpdateMonetaryPolicyResponse, error)
 	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
-	// committee and shared cancellation period.
+	// committee.
 	SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error)
-	// SubmitClaim records a committee- or governance-submitted pending claim.
+	// SubmitClaim records a governance-submitted pending claim, which never
+	// consumes the committee allowance.
 	SubmitClaim(context.Context, *MsgSubmitClaim) (*MsgSubmitClaimResponse, error)
-	// CancelClaim cancels one pending claim during its cancellation period.
-	// Governance may cancel any claim; the committee may cancel only a claim not
-	// submitted by governance.
+	// CommitteeSubmitClaim records a committee-submitted pending claim against
+	// the current term allowance.
+	CommitteeSubmitClaim(context.Context, *MsgCommitteeSubmitClaim) (*MsgCommitteeSubmitClaimResponse, error)
+	// CancelClaim cancels any pending claim as the governance authority during
+	// its cancellation period.
 	CancelClaim(context.Context, *MsgCancelClaim) (*MsgCancelClaimResponse, error)
+	// CommitteeCancelClaim cancels one pending non-governance claim as the
+	// Claims committee during its cancellation period.
+	CommitteeCancelClaim(context.Context, *MsgCommitteeCancelClaim) (*MsgCommitteeCancelClaimResponse, error)
 	// ExecuteClaim pays a pending claim after its cancellation period.
 	ExecuteClaim(context.Context, *MsgExecuteClaim) (*MsgExecuteClaimResponse, error)
 	// TransferReserveToBuffer commits strategic Reserve NOAH to the Buffer.
@@ -192,14 +243,23 @@ func (UnimplementedMsgServer) SetMonetaryMandate(context.Context, *MsgSetMonetar
 func (UnimplementedMsgServer) UpdateMonetaryPolicy(context.Context, *MsgUpdateMonetaryPolicy) (*MsgUpdateMonetaryPolicyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateMonetaryPolicy not implemented")
 }
+func (UnimplementedMsgServer) CommitteeUpdateMonetaryPolicy(context.Context, *MsgCommitteeUpdateMonetaryPolicy) (*MsgCommitteeUpdateMonetaryPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeUpdateMonetaryPolicy not implemented")
+}
 func (UnimplementedMsgServer) SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetClaimsMandate not implemented")
 }
 func (UnimplementedMsgServer) SubmitClaim(context.Context, *MsgSubmitClaim) (*MsgSubmitClaimResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SubmitClaim not implemented")
 }
+func (UnimplementedMsgServer) CommitteeSubmitClaim(context.Context, *MsgCommitteeSubmitClaim) (*MsgCommitteeSubmitClaimResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeSubmitClaim not implemented")
+}
 func (UnimplementedMsgServer) CancelClaim(context.Context, *MsgCancelClaim) (*MsgCancelClaimResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelClaim not implemented")
+}
+func (UnimplementedMsgServer) CommitteeCancelClaim(context.Context, *MsgCommitteeCancelClaim) (*MsgCommitteeCancelClaimResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeCancelClaim not implemented")
 }
 func (UnimplementedMsgServer) ExecuteClaim(context.Context, *MsgExecuteClaim) (*MsgExecuteClaimResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExecuteClaim not implemented")
@@ -282,6 +342,24 @@ func _Msg_UpdateMonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CommitteeUpdateMonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeUpdateMonetaryPolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeUpdateMonetaryPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeUpdateMonetaryPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeUpdateMonetaryPolicy(ctx, req.(*MsgCommitteeUpdateMonetaryPolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_SetClaimsMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgSetClaimsMandate)
 	if err := dec(in); err != nil {
@@ -318,6 +396,24 @@ func _Msg_SubmitClaim_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CommitteeSubmitClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeSubmitClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeSubmitClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeSubmitClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeSubmitClaim(ctx, req.(*MsgCommitteeSubmitClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_CancelClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgCancelClaim)
 	if err := dec(in); err != nil {
@@ -332,6 +428,24 @@ func _Msg_CancelClaim_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).CancelClaim(ctx, req.(*MsgCancelClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeCancelClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeCancelClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeCancelClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeCancelClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeCancelClaim(ctx, req.(*MsgCommitteeCancelClaim))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -392,6 +506,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_UpdateMonetaryPolicy_Handler,
 		},
 		{
+			MethodName: "CommitteeUpdateMonetaryPolicy",
+			Handler:    _Msg_CommitteeUpdateMonetaryPolicy_Handler,
+		},
+		{
 			MethodName: "SetClaimsMandate",
 			Handler:    _Msg_SetClaimsMandate_Handler,
 		},
@@ -400,8 +518,16 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_SubmitClaim_Handler,
 		},
 		{
+			MethodName: "CommitteeSubmitClaim",
+			Handler:    _Msg_CommitteeSubmitClaim_Handler,
+		},
+		{
 			MethodName: "CancelClaim",
 			Handler:    _Msg_CancelClaim_Handler,
+		},
+		{
+			MethodName: "CommitteeCancelClaim",
+			Handler:    _Msg_CommitteeCancelClaim_Handler,
 		},
 		{
 			MethodName: "ExecuteClaim",

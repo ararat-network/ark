@@ -27,7 +27,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		if claim.Status != types.ClaimStatus_CLAIM_STATUS_PENDING {
 			continue
 		}
-		recipient, err := types.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
+		recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
 		if err != nil {
 			return fmt.Errorf("invalid pending claim %d: %w", claim.ClaimId, err)
 		}

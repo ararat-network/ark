@@ -7,7 +7,6 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"ark/pkg/chain"
 )
@@ -93,25 +92,13 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 	if err := gs.MonetaryMandate.Validate(); err != nil {
-		return fmt.Errorf("invalid monetary mandate: %w", err)
+		return err
 	}
 	if gs.MonetaryMandate.Committee != "" && gs.MonetaryMandate.Committee == gs.ClaimsMandate.Committee {
 		return fmt.Errorf("monetary-policy committee must be distinct from Claims committee")
 	}
 
 	return nil
-}
-
-// ParseCanonicalAccountAddress parses one canonical bech32 account address.
-func ParseCanonicalAccountAddress(field, value string) (sdk.AccAddress, error) {
-	address, err := sdk.AccAddressFromBech32(value)
-	if err != nil {
-		return nil, fmt.Errorf("%s is invalid: %w", field, err)
-	}
-	if address.String() != value {
-		return nil, fmt.Errorf("%s must be a canonical account address", field)
-	}
-	return address, nil
 }
 
 // GetGenesisStateFromAppState returns the Treasury genesis state from raw app

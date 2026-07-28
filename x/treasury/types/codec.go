@@ -14,9 +14,12 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/treasury/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgSetMonetaryMandate{}, "ark/x/treasury/MsgSetMonetaryMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateMonetaryPolicy{}, "ark/x/treasury/MsgUpdateMonetaryPolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdateMonetaryPolicy{}, "ark/x/treasury/MsgCommitteeUpdatePolicy")
 	legacy.RegisterAminoMsg(cdc, &MsgSetClaimsMandate{}, "ark/x/treasury/MsgSetClaimsMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgSubmitClaim{}, "ark/x/treasury/MsgSubmitClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeSubmitClaim{}, "ark/x/treasury/MsgCommitteeSubmitClaim")
 	legacy.RegisterAminoMsg(cdc, &MsgCancelClaim{}, "ark/x/treasury/MsgCancelClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeCancelClaim{}, "ark/x/treasury/MsgCommitteeCancelClaim")
 	legacy.RegisterAminoMsg(cdc, &MsgExecuteClaim{}, "ark/x/treasury/MsgExecuteClaim")
 	legacy.RegisterAminoMsg(cdc, &MsgTransferReserveToBuffer{}, "ark/x/treasury/MsgTransferToBuffer")
 
@@ -31,9 +34,12 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgUpdateParams{},
 		&MsgSetMonetaryMandate{},
 		&MsgUpdateMonetaryPolicy{},
+		&MsgCommitteeUpdateMonetaryPolicy{},
 		&MsgSetClaimsMandate{},
 		&MsgSubmitClaim{},
+		&MsgCommitteeSubmitClaim{},
 		&MsgCancelClaim{},
+		&MsgCommitteeCancelClaim{},
 		&MsgExecuteClaim{},
 		&MsgTransferReserveToBuffer{},
 	)

@@ -17,6 +17,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"ark/pkg/chain"
+	"ark/pkg/mandate"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	treasurytypes "ark/x/treasury/types"
@@ -370,7 +371,7 @@ func (s *KeeperTestSuite) TestQueryFundStatusClassifiesLiabilityValuationErrors(
 			s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(tobinTaxes, nil)
 			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
 				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
-			s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, chain.USDBaseDenom).
+			s.oracleKeeper.EXPECT().GetRateSet(s.ctx, chain.USDBaseDenom).
 				Return(nil, tc.oracleErr)
 
 			response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
@@ -410,20 +411,21 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 	s.Require().True(response.AllowanceRemaining.IsZero())
 	s.False(response.Active)
 
-	mandate := treasurytypes.ClaimsMandate{
-		Term:                     1,
-		Committee:                authtypes.NewModuleAddress("claims-committee").String(),
-		ActivationHeight:         10,
-		ExpiryHeight:             20,
-		CancellationPeriodBlocks: 2,
-		CommitteeClaimLimit:      math.NewInt(100),
+	claimsMandate := treasurytypes.ClaimsMandate{
+		Envelope: mandate.Envelope{
+			Term:             1,
+			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
+			ActivationHeight: 10,
+			ExpiryHeight:     20,
+		},
+		CommitteeClaimLimit: math.NewInt(100),
 	}
-	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, mandate))
+	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, claimsMandate))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(40)))
 	s.setBlockHeight(10)
 	response, err = server.ClaimsMandate(s.ctx, &treasurytypes.QueryClaimsMandateRequest{})
 	s.Require().NoError(err)
-	s.Require().Equal(mandate, response.Mandate)
+	s.Require().Equal(claimsMandate, response.Mandate)
 	s.Require().Equal(math.NewInt(40), response.AllowanceUsed)
 	s.Require().Equal(math.NewInt(60), response.AllowanceRemaining)
 	s.True(response.Active)
@@ -476,6 +478,12 @@ func (s *KeeperTestSuite) TestQueryClaimsPagination() {
 	})
 	s.Require().NoError(err)
 	s.Require().Equal([]uint64{3}, claimIDs(second.Claims))
+
+	_, err = server.Claims(s.ctx, &treasurytypes.QueryClaimsRequest{
+		Pagination: &querytypes.PageRequest{Key: first.Pagination.NextKey, Offset: 1},
+	})
+	s.Require().Error(err)
+	s.Require().Equal(codes.InvalidArgument, status.Code(err))
 }
 
 func claimIDs(claims []treasurytypes.Claim) []uint64 {

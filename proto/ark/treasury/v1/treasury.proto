@@ -2,6 +2,7 @@ syntax = "proto3";
 package ark.treasury.v1;
 
 import "amino/amino.proto";
+import "ark/mandate/v1/envelope.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
@@ -44,6 +45,9 @@ message Params {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // reward_funding_window initializes each new funding countdown.
   uint64 reward_funding_window = 2 [ (amino.dont_omitempty) = true ];
+  // claim_cancellation_period_blocks is the shared veto window between any
+  // claim's submission and its executable height, for both origins.
+  uint64 claim_cancellation_period_blocks = 3 [ (amino.dont_omitempty) = true ];
 }
 
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
@@ -92,13 +96,15 @@ message MonetaryPolicy {
 // increases on replacement so previously prepared committee transactions
 // cannot become valid again.
 message MonetaryMandate {
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
-  MonetaryPolicy minimum_policy = 5
+  // envelope carries the shared term, committee, and half-open height window.
+  ark.mandate.v1.Envelope envelope = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  MonetaryPolicy minimum_policy = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryPolicy maximum_policy = 6
+  MonetaryPolicy maximum_policy = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
@@ -142,17 +148,18 @@ message TaxCap {
 }
 
 // ClaimsMandate stores one governance-created, height-scoped Claims committee
-// appointment, its shared cancellation period, and the fixed gross claim limit
-// delegated to that committee for the term. An empty committee identifies a
-// disabled mandate; term still increases on replacement so old committee
-// transactions cannot become valid again.
+// appointment and the fixed gross claim limit delegated to that committee for
+// the term. An empty committee identifies a disabled mandate; term still
+// increases on replacement so old committee transactions cannot become valid
+// again.
 message ClaimsMandate {
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
-  uint64 cancellation_period_blocks = 5 [ (amino.dont_omitempty) = true ];
-  string committee_claim_limit = 6 [
+  // envelope carries the shared term, committee, and half-open height window.
+  ark.mandate.v1.Envelope envelope = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string committee_claim_limit = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -165,6 +172,8 @@ message Claim {
   uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
   string submitter = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   ClaimOrigin origin = 3;
+  // mandate_term records the committee appointment that authorized the claim;
+  // zero for governance claims, which do not depend on the Claims mandate.
   uint64 mandate_term = 4 [ (amino.dont_omitempty) = true ];
   string incident_reference = 5;
   string recipient = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];

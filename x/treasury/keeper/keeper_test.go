@@ -81,6 +81,10 @@ func (s *KeeperTestSuite) SetupTest() {
 		GetModuleAddress(types.StabilityTaxCollectorName).
 		Return(authtypes.NewModuleAddress(types.StabilityTaxCollectorName)).
 		AnyTimes()
+	s.accountKeeper.EXPECT().
+		GetModuleAddress(authtypes.FeeCollectorName).
+		Return(authtypes.NewModuleAddress(authtypes.FeeCollectorName)).
+		AnyTimes()
 
 	s.keeper = keeper.NewKeeper(
 		s.cdc,

@@ -43,8 +43,10 @@ Ark will have no scheduled or routine NOAH issuance:
   transfer atomically, regardless of whether it originates from a user, module, Wasm, or IBC transfer surface. A deposit
   grants no ownership, withdrawal, coverage, priority, governance, deployment, or special Buffer right.
 - Put ordinary Insurance claims under a governance-owned, monotonically termed, height-scoped Claims Mandate. The exact
-  active committee and governance may submit claims under the same term, held-balance, and cancellation-period rules;
-  committee submissions additionally consume a fixed gross `anoah` allowance for that term. Governance may cancel any
+  active committee submits claims under the mandate's term, window, and held-balance rules; governance submits under
+  the same validation and held-balance rules without depending on the mandate. Both origins share the cancellation
+  period stored in Treasury `Params`; committee submissions additionally consume a fixed gross `anoah` allowance for
+  that term. Governance may cancel any
   pending claim during that period regardless of the current mandate; the current active committee may cancel only
   non-governance-submitted claims using the current term. Neither receives Insurance custody or a generic Bank send.
 - Remove Terra's adaptive tax, reward, mining-increment, seigniorage-burden, and rolling-indicator controllers.
@@ -121,21 +123,21 @@ phase gate.
 | D27 | At launch, governance alone may irreversibly transfer a discrete `anoah` amount from strategic Reserve to the shared Redemption Buffer, subject to an execution-time minimum remaining Reserve balance; no target, price, Oracle, or Market trigger applies.                                                                                                                                                    | Confirmed              |
 | D28 | Required Reserve and Insurance capital is based on each fund's covered risk exposure, never the gross value of assets held; future external assets may reduce a gap only through explicit fund-specific, risk-adjusted recognition plus a separate liquid-capital requirement, and Ark-issued stablecoins always receive zero credit.                                                                           | Confirmed              |
 | D29 | Governance retains Reserve policy authority; any future fast execution uses a governance-created, typed, bounded, expiring mandate executed by a threshold multisig with a separate pause-only guardian, never a generic Reserve sender or Treasury parameter authority.                                                                                                                                        | Confirmed              |
-| D30 | Governance owns the Insurance Claims Mandate. The exact active committee and governance share submission constraints and the same cancellation period; committee submissions consume a fixed gross term allowance, while governance submissions do not; governance may cancel any pending claim regardless of the current mandate, while the current committee may cancel only non-governance-submitted claims. | Confirmed              |
+| D30 | Governance owns the Insurance Claims Mandate. The shared cancellation period is a Treasury parameter applying to both origins; committee submissions are bound to the active mandate window and exact term and consume a fixed gross term allowance, while governance submissions depend only on params and record no mandate term; governance may cancel any pending claim regardless of the current mandate, while the current committee may cancel only non-governance-submitted claims. | Confirmed              |
 | D31 | Monetary policy, Insurance claims, and future Reserve operations use distinct role addresses and typed authority domains even if human memberships overlap; no role receives Treasury's general authority.                                                                                                                                                                                                      | Confirmed              |
 | D32 | Claims use submit-then-pay with encumbered pending amounts; cancellation ends for every actor at the executable height, and no authority can claw back a paid claim or bypass held-balance, denomination, uniqueness, no-mint, no-borrow, or no-cross-fund invariants.                                                                                                                                          | Confirmed              |
 | D33 | Market escrows each gross expansion offer and owns conversion burn/mint/payout; Treasury derives and executes the complete per-conversion waterfall, returns an error if it cannot complete it, and otherwise returns the authoritative allocation Market uses to finish settlement.                                                                                                                                | Confirmed              |
 | D34 | Govern `reward_funding_window`, default it to one chain week, initialise `blocks_remaining` from it when an empty Treasury window records its first observation, and apply later parameter changes only after the active countdown settles.                                                                                                                                                                     | Confirmed              |
 | D35 | Keep `FundStatus` limited to fund stocks, liabilities, and targets; expose active reward-funding accounting through an independent direct-state query that remains available when fund valuation is unavailable.                                                                                                                                                                                                | Confirmed              |
 | D36 | Governance may appoint one exact threshold-multisig monetary-policy committee under a bounded, height-scoped, chain-termed mandate. The committee controls only the six reversible policy fields; governance may override policy and replace or disable the mandate at any time.                                                                                                                               | Confirmed              |
-| D37 | Governance owns the complete denomination-bearing `reference_tax_cap` Coin together with `reward_funding_window` in `Params`. Persist the six reversible economic levers once in `MonetaryPolicy`; Claims Mandate remains claims-only.                                                                                                                                                                          | Confirmed              |
-| D38 | Keep launch Claims minimal: the mandate stores its monotonic term, committee, half-open activation/expiry window, cancellation period, and fixed gross committee claim limit; claims have no category or per-claim cap, and there is no guardian or governance-cancellation flag.                                                                                                                               | Confirmed              |
+| D37 | Governance owns the complete denomination-bearing `reference_tax_cap` Coin together with `reward_funding_window` and `claim_cancellation_period_blocks` in `Params`. Persist the six reversible economic levers once in `MonetaryPolicy`; Claims Mandate remains claims-only.                                                                                                                                                                          | Confirmed              |
+| D38 | Keep launch Claims minimal: the mandate stores its monotonic term, committee, half-open activation/expiry window, and fixed gross committee claim limit; the shared cancellation period lives in Treasury `Params`; claims have no category or per-claim cap, and there is no guardian or governance-cancellation flag.                                                                                                                               | Confirmed              |
 | D39 | Derive aggregate liability lazily on the first settlement that needs it each block, cache only a complete transient snapshot, and advance it from every Market burn/mint; an incomplete valuation is not cached and may be retried by a later settlement.                                                                                                                                                       | Confirmed              |
 | D40 | Begin Phase 4 by fixing execution-time tax payer, exactly-once identity, rollback, and fee-sponsorship semantics; then implement IBC foundations before Wasm because contracts may dispatch IBC messages. Design the Treasury execution hook into both paths, but keep both transfer surfaces production-disabled until the complete tax and recipient-restriction activation gate passes.                                                                                  | Confirmed              |
 | D41 | Use call-path ownership for exactly-once tax assessment: ante owns signed top-level inputs, while the Wasm dispatcher owns only execution-generated Bank sends, IBC sends, execute funds, and instantiate funds. Add no persistent transfer IDs, context markers, global Bank tax hook, or implicit execution-time feegrant. The sending contract pays the tax in addition to the complete requested principal.                                                              | Confirmed              |
 | D42 | Send execution-generated tax directly to `stability_tax_collector` and execute its collection with the matching transfer in one Wasm submessage cache. Synchronous or caught failures roll both back; a successfully created IBC packet retains its tax through later acknowledgement, timeout, refund, or return bookkeeping, none of which is a new taxable transfer.                                                                                                          | Confirmed              |
 | D43 | Expose a read-only contract-facing tax query through Ark's Wasm bindings. Parse the proposed execution-generated message through the same message adapter and invoke Treasury's canonical calculator; duplicate no rate/cap math. The result is an advisory current-state estimate only: it reserves no funds, grants no authority, and never replaces execution-time recomputation.                                                                                              | Confirmed              |
-| D44 | Treat `MonetaryPolicy.stability_tax_rate` as the sole tax activation switch. An explicit zero reference or derived tax cap means uncapped taxation, while a missing configured-denomination cap remains an error. Keep the complete derived cap map populated independently of the rate, and never rebuild it from `MsgUpdateMonetaryPolicy`; reject any positive reference-cap conversion that truncates to the zero sentinel.                                       | Confirmed              |
+| D44 | Treat `MonetaryPolicy.stability_tax_rate` as the sole tax activation switch. An explicit zero reference or derived tax cap means uncapped taxation, while a missing configured-denomination cap remains an error. Keep the complete derived cap map populated independently of the rate, and never rebuild it from either policy-update message; reject any positive reference-cap conversion that truncates to the zero sentinel.                                       | Confirmed              |
 | D45 | Build Ark's hub foundation against `github.com/cosmos/ibc-go/v11`, targeting v11.2.0 subject to dependency-resolution and compile verification. Wire IBC Classic and IBC v2 core/ICS-20 routes, the 07-Tendermint light client, and the transfer module account with minter/burner permissions. Keep standard module genesis defaults in application code; Ark's canonical launch genesis must allow only `07-tendermint` and launch transfer with send and receive disabled. | Confirmed              |
 | D46 | Put governance-controlled rate limiting and packet forwarding in the IBC Classic transfer stack, and apply the v11 rate limiter to the IBC v2 transfer path. Configure reviewed per-denomination, per-channel/client limits before enabling production transfer. A packet-forwarded hop is protocol-generated continuation of the original transfer, not a new user-facing taxable input; acknowledgement, timeout, refund, and return bookkeeping likewise receive no second tax. | Confirmed              |
 | D47 | Add IBC callbacks to both the Classic and v2 ICS-20 stacks when the Wasm keeper is wired. Callbacks are Ark's canonical transfer-and-call mechanism; add no separate IBC Hooks middleware. Callback-triggered execution uses the same Wasm/Treasury execution adapter, while acknowledgement, timeout, and callback delivery alone are not new taxable transfers.                                                                                                  | Confirmed              |
@@ -148,7 +150,7 @@ phase gate.
 | P1  | Choose launch tax rate, reference cap Coin, three target ratios, subsidies, and genesis fund balances.                                                                                                                                                                                                                                                                                                          | Pending before launch  |
 | P2  | Phase 3A found no recipient-output, fixed-price cycle, or split residual-mint amplification under coverage-based Buffer funding; add no residual-mint limiter.                                                                                                                                                                                                                                                    | Confirmed              |
 | P3  | Apply the deterministic live-derived pool amount without comparing the submitted expectation to a rejection threshold; retain the submitted expectation in the transaction and emit the old and applied pool state for audit.                                                                                                                                                                                    | Confirmed              |
-| P4  | Choose the launch monetary-policy committee and bounds, Claims committee multisig and appointment window, shared cancellation period, fixed gross committee claim limit, and operational fee funding.                                                                                                                                                                                                           | Pending before launch  |
+| P4  | Choose the launch monetary-policy committee and bounds, Claims committee multisig and appointment window, the shared cancellation-period Treasury param, fixed gross committee claim limit, and operational fee funding.                                                                                                                                                                                                           | Pending before launch  |
 
 Whenever a decision changes, update this table before changing code.
 
@@ -220,9 +222,9 @@ Insurance funds remain in the module account. The Claims committee is an ordinar
 for one monotonically termed, half-open height window with a fixed gross `anoah` claim limit. It signs typed claim
 submissions and cancellations; each committee submission permanently consumes that term allowance even if the claim is
 later cancelled. It receives no custody, module-account permission, generic send authority, or ability to mint or
-borrow. Governance owns the mandate, may submit under the same active-mandate rules without consuming the committee
-allowance, and may cancel any claim during the shared cancellation period even if the committee appointment has since
-changed or ended.
+borrow. Governance owns the mandate, may submit claims without depending on it and without consuming the committee
+allowance (the shared cancellation period is a Treasury parameter), and may cancel any claim during the shared
+cancellation period even if the committee appointment has since changed or ended.
 
 ### 3.9 Market pool denomination
 
@@ -264,6 +266,7 @@ repricing without conversion flow.
 | Claims committee multisig | Off-chain adjudication and exact on-chain claim approval within the live Claims Mandate                                                                                          | Policy changes, direct custody, generic sends, Reserve use                 |
 | Reserve executor multisig | Future typed Reserve actions within a live governance mandate                                                                                                                    | Claims, parameters, generic sends, mandate changes                         |
 | Future Reserve guardian   | Immediate pause of an assigned future Reserve mandate                                                                                                                            | Claims, approval, payment, deployment, resume, widening, withdrawal        |
+| Asset emergency committee | Immediate issuance halt or suspension of a failing asset within a live Asset Emergency Mandate (see `docs/ASSET_MODULE_PLAN.md`)                                                 | Recovery, resumption, settlement, write-off, retirement, reference choice, mandate changes |
 
 Treasury exposes narrow Market-facing settlement operations. Market remains the sole owner and writer of `BasePool` and
 `ArkPoolDelta`; Treasury exposes no Market-parameter operation, receives no Market keeper, and cannot initiate or
@@ -276,21 +279,21 @@ type TreasuryKeeper interface {
         ctx context.Context,
         grossOffer sdk.Coin,
         stableOutput sdk.Coin,
-        quoteRates oracletypes.RateSnapshot,
+        quoteRates oracletypes.RateSet,
     ) (treasurytypes.ExpansionAllocation, error)
 
     DrawRedemptionBuffer(
         ctx context.Context,
         redeemedStable sdk.Coin,
         noahOutput math.Int,
-        quoteRates oracletypes.RateSnapshot,
+        quoteRates oracletypes.RateSet,
     ) (treasurytypes.BufferDraw, error)
 
     RecordSupplyChange(
         ctx context.Context,
         burned sdk.Coin,
         minted sdk.Coin,
-        quoteRates oracletypes.RateSnapshot,
+        quoteRates oracletypes.RateSet,
     ) error
 }
 ```
@@ -751,15 +754,24 @@ change stablecoin output eligibility.
 ### 6.6 Insurance claim
 
 Governance stores one Claims Mandate containing a chain-derived monotonic term, exact committee, half-open activation
-and expiry heights, cancellation-period blocks, and a fixed gross committee claim limit denominated in `anoah`. An empty
-committee is the canonical disabled mandate while retaining the latest term. Replacing or disabling the mandate always
+and expiry heights, and a fixed gross committee claim limit denominated in `anoah`. The shared cancellation period is
+the governance-owned `claim_cancellation_period_blocks` Treasury parameter, and appointing a committee requires an
+active span no shorter than the current period. An empty committee is the canonical disabled mandate while retaining
+the latest term. Replacing or disabling the mandate always
 advances that term, resets only the Claims allowance used, and never rewrites an existing claim or reservation.
 
-During the active window, the committee or governance submits a positive `anoah` claim with the exact current expected
-term under the same validation and held-balance rules. Treasury assigns the claim a globally monotonic `uint64` ID from
-consensus state. A committee submission must fit within the remaining Claims allowance and atomically increases the
-allowance used; a governance submission does not consume that delegated allowance. Treasury reserves the amount, stores
-the mandate term, and derives an executable height that must not exceed the mandate expiry. During the half-open
+The term, committee, and activation/expiry window are the shared mandate envelope: one `ark.mandate.v1` proto message
+embedded here and by the Asset Emergency Mandate (`docs/ASSET_MODULE_PLAN.md`), with term, window-activity, and
+disabled checks in `pkg/mandate`. The envelope is a shared type and helper library, deliberately not a module; the
+claim limit and every Claims power remain Treasury-owned fields under the confirmed decisions above.
+
+During the active window, the committee submits a positive `anoah` claim with the exact current expected term;
+governance submits under the same validation and held-balance rules at any height, without an expected term and
+without reading the mandate. Treasury assigns the claim a globally monotonic `uint64` ID from consensus state. A
+committee submission must fit within the remaining Claims allowance and atomically increases the allowance used; a
+governance submission does not consume that delegated allowance. Treasury reserves the amount and derives the
+executable height from the params cancellation period; a committee claim additionally stores the mandate term and its
+executable height must not exceed the mandate expiry, while a governance claim records term zero. During the half-open
 cancellation period, governance may cancel any pending claim without depending on the current mandate term. The current
 active committee may cancel only a non-governance-submitted claim and must supply the exact current term. At the
 executable height, cancellation closes for both actors and any account may execute the immutable payment. Paid claims
@@ -1207,8 +1219,9 @@ Changing the effective reference cap has stricter replacement semantics than a s
    a zero candidate needs no conversion rates.
 2. Governance-only `MsgUpdateParams` rebuilds the complete candidate map whenever the reference Coin changes. Params and
    the cap map commit together or neither changes.
-3. `MsgUpdateMonetaryPolicy` validates and stores only the candidate policy. No rate change rebuilds caps because the
-   complete cap map exists independently and cap values do not depend on the rate.
+3. Neither `MsgUpdateMonetaryPolicy` nor `MsgCommitteeUpdateMonetaryPolicy` does more than validate and store the
+   candidate policy. No rate change rebuilds caps because the complete cap map exists independently and cap values do
+   not depend on the rate.
 4. If a reference-cap change cannot derive every candidate cap, reject `MsgUpdateParams` and preserve the old Params and
    cap map. A scheduled or denomination-mismatch refresh likewise retains the old map when valuation is unavailable.
 5. Emit the complete derived tax-cap replacement from `MsgUpdateParams` or BeginBlock whenever either path successfully
@@ -1530,8 +1543,8 @@ Validation:
   accumulated target is unrepresentable.
 - Keeper-level genesis verifies the reference-cap denomination belongs to Oracle's configured native-stable set.
   `MsgUpdateParams` performs the same cross-module check while rebuilding caps when the reference Coin changes; pure
-  Params validation does not pretend it can validate cross-module state. `MsgUpdateMonetaryPolicy` validates only the
-  candidate policy and its signer/mandate bounds.
+  Params validation does not pretend it can validate cross-module state. Both policy-update messages validate only the
+  candidate policy, plus the mandate bounds on the committee path.
 
 Safe defaults:
 
@@ -1568,7 +1581,8 @@ empty-committee form is the canonical disabled state. Replacement derives `curre
 specified in Section 10.5.
 
 `ClaimsMandate` stores the chain-derived monotonic term, current exact committee, half-open activation and expiry
-heights, shared cancellation-period blocks, and the fixed gross committee claim limit. Its empty-committee form is the
+heights, and the fixed gross committee claim limit; the shared cancellation period is the
+`claim_cancellation_period_blocks` Treasury parameter. Its empty-committee form is the
 canonical disabled state and retains the latest term. `ClaimsAllowanceUsed` stores the gross amount of committee-origin
 claims submitted in the current term across every status; mandate replacement resets it, while cancellation and payment
 do not. `InsuranceReserved` stores the aggregate amount encumbered by pending claims across all terms. Mandate edits
@@ -1580,7 +1594,7 @@ Each `Claim` stores:
 claim_id                       // keeper-assigned globally monotonic uint64
 submitter                      // committee or governance authority
 origin                         // committee | governance
-mandate_term                    // appointment used for submission
+mandate_term                   // committee appointment; zero for governance
 incident_reference
 recipient
 amount                         // sdk.Coin; anoah-only at launch
@@ -1688,8 +1702,9 @@ The launch Query service exposes only:
     `sdk.Coin` values.
 - `RewardFunding` returning the stored aggregate state, including `blocks_remaining`, without requiring Oracle prices or
   fund valuation. The separate `Params` query exposes the configured length that the next empty state will use.
-- `ClaimsMandate` returning the current committee appointment, cancellation period, Insurance reservation, allowance
-  used/remaining, and whether the appointment is active at the current height.
+- `ClaimsMandate` returning the current committee appointment, Insurance reservation, allowance used/remaining, and
+  whether the appointment is active at the current height; the shared cancellation period is exposed by the `Params`
+  query.
 - `Claim(claim_id)`. Its canonical REST binding is `GET /ark/treasury/v1/claims/{claim_id}`.
 - `Claims` as a paginated audit and operations view of claim records.
 
@@ -1731,14 +1746,40 @@ authoritative and may change through an ordinary deposit at any time.
 
 The launch Msg service exposes:
 
+Governance-signed messages:
+
 - `MsgUpdateParams`.
 - `MsgSetMonetaryMandate`.
 - `MsgUpdateMonetaryPolicy`.
 - `MsgSetClaimsMandate`.
 - `MsgSubmitClaim`.
 - `MsgCancelClaim`.
-- `MsgExecuteClaim`.
 - `MsgTransferReserveToBuffer`.
+
+Committee-signed messages (term-checked, one exact appointed committee each):
+
+- `MsgCommitteeUpdateMonetaryPolicy`.
+- `MsgCommitteeSubmitClaim`.
+- `MsgCommitteeCancelClaim`.
+
+Permissionless messages:
+
+- `MsgExecuteClaim`.
+
+Every action a committee may take is its own message type, so the complete committee surface is enumerable from the
+proto service alone rather than by reading handler branches. This matches `x/asset`'s emergency mandate and the future
+Reserve mandate in Section 20.2. The governing principle: **roles with disjoint powers or different execution semantics
+get separate messages per role; one message serves several roles only when they are the same action under the same
+rules.** In Treasury no role passes that second test — governance and each committee differ in staleness guard,
+allowance metering, or cancellable set — so every role gets its own message. Each handler is one positive authorization
+assertion followed by a shared keeper core (`applyMonetaryPolicy`, `submitClaim`, `cancelClaim`), so effect logic
+cannot drift between roles while authorization stays legible per message.
+
+Two consequences of the split are deliberate. Governance messages carry no `expected_term`, because no governance
+authorization depends on a mandate: the cancellation period `MsgSubmitClaim` once pinned through its term now comes
+from the governance-owned Treasury params. And a committee message
+naming the wrong signer is rejected before any term or window reasoning, because identity is checked in the wrapper;
+a disabled mandate therefore reports a committee mismatch rather than an inactive mandate.
 
 Do not add `MsgFundSubsidyPool`, `MsgFundRedemptionBuffer`, `MsgFundReserve`, or `MsgFundInsurance`. Deposits use
 ordinary bank `MsgSend`/`MsgMultiSend` paths plus Treasury's recipient-specific restriction, so they need no Treasury
@@ -1751,37 +1792,45 @@ store the wrapped zero term. An empty committee otherwise disables the mandate; 
 committee address, half-open activation/expiry heights, and complete minimum/maximum policy bounds.
 
 `MsgUpdateParams` is governance-only and replaces the complete governance-owned settings, including the reference-cap
-Coin. It cannot change a tax rate, reward target, or fund target ratio.
+Coin and `claim_cancellation_period_blocks`, the shared claim veto window for both origins. It cannot change a tax
+rate, reward target, or fund target ratio.
 
-`MsgUpdateMonetaryPolicy` contains one complete candidate policy. The exact stored committee may sign only during the
-active term, with the current expected term and every field inside its bounds. Governance may sign the same typed
-message to override those bounds. Neither path may change the governance-owned reference cap in Params.
+`MsgCommitteeUpdateMonetaryPolicy` contains one complete candidate policy signed by the exact stored committee. It is
+accepted only during the active term and window, with the current expected term and every field inside the mandate
+bounds. `MsgUpdateMonetaryPolicy` is the governance form of the same effect: it applies any structurally valid
+candidate, overriding those bounds without depending on the mandate at all. Neither path may change the
+governance-owned reference cap in Params. Because the protobuf-derived Amino name of the committee message exceeds the
+SDK type-name limit, it registers under the compact identifier `ark/x/treasury/MsgCommitteeUpdatePolicy`, following the
+`MsgTransferToBuffer` precedent; its protobuf message name, RPC name, signer, and semantics are unchanged.
 
 `MsgSetClaimsMandate` is governance-signed and replaces or disables the complete committee appointment. Treasury derives
 a new monotonically increasing term. An empty committee disables the mandate; otherwise the message supplies the exact
-committee, half-open activation/expiry heights, cancellation-period blocks, and a positive fixed `anoah` committee claim
-limit. The Claims committee, monetary-policy committee, and Treasury authority must be distinct addresses. The
+committee, half-open activation/expiry heights, and a positive fixed `anoah` committee claim limit. The Claims
+committee, monetary-policy committee, and Treasury authority must be distinct addresses. The current params
 cancellation period must not exceed `expiry_height - activation_height`; equality permits a claim at the activation
 boundary to become executable exactly at expiry. A successful replacement resets Claims allowance used to zero without
 changing the Insurance reservation.
 
-`MsgSubmitClaim` is signed by the exact committee or governance authority. Both paths validate the same positive `anoah`
-amount, recipient, references, and live Insurance coverage against the same active Claims Mandate and exact expected
-term. The recipient must be neither the Insurance account itself nor any address Bank currently blocks from receiving
-module-account sends. Treasury assigns the next globally monotonic `uint64` claim ID, returns it in
-`MsgSubmitClaimResponse`, derives an executable height no later than mandate expiry, stores the mandate term, and
-reserves the amount without moving coins. Committee-origin submissions must fit within and permanently consume the
-current term allowance; governance-origin submissions do not consume it. `MsgExecuteClaim` is permissionless at or after
+`MsgCommitteeSubmitClaim` is signed by the exact committee and `MsgSubmitClaim` by the governance authority. Both
+validate the same positive `anoah` amount, recipient, references, and live Insurance coverage, and both derive the
+executable height from the params cancellation period. Only the committee message carries `expected_term`: it is
+accepted only during the active window, its executable height must not pass mandate expiry, and its claim stores the
+mandate term, while a governance submission never reads the mandate and stores term zero. The recipient must be
+neither the Insurance account itself nor any address Bank currently blocks from receiving module-account sends.
+Treasury assigns the next globally monotonic `uint64` claim ID, returns it in the response, and reserves the amount
+without moving coins. The message type decides the immutable stored origin: committee submissions must fit within and
+permanently consume the current term allowance; governance submissions do not consume it. `MsgExecuteClaim` is permissionless at or after
 the stored executable height and pays only the immutable stored recipient and amount, independent of later mandate
 replacement, disablement, or expiry. Genesis persists the next claim ID and enforces the same Bank-receivability
 invariant for pending claims; an app upgrade that changes the blocked set must explicitly migrate any affected pending
 claim.
 
-`MsgCancelClaim` is signed by the exact current committee or governance authority. Both may cancel only before the
-stored executable height. Governance may cancel any pending claim without depending on the current Claims Mandate. The
-committee must be in the current active appointment, supply its exact expected term, and may cancel only a claim whose
-immutable origin is not governance. Cancellation releases the reservation and records the signer in `finalized_by`; no
-separate governance-cancellation flag is stored.
+`MsgCancelClaim` is signed by the governance authority and `MsgCommitteeCancelClaim` by the exact current committee.
+Both may cancel only before the stored executable height. Governance may cancel any pending claim without depending on
+the current Claims Mandate, so its message carries no expected term. The committee must be in the current active
+appointment, supply its exact expected term, and may cancel only a claim whose immutable origin is not governance.
+Cancellation releases the reservation and records the signer in `finalized_by`; no separate governance-cancellation
+flag is stored.
 
 `MsgTransferReserveToBuffer` contains:
 
@@ -2062,14 +2111,17 @@ Add:
 - `x/treasury/keeper/claims.go` and claims coverage in the message-server tests.
 
 Claims Mandate tests must cover the disabled default, governance-only replacement and disablement, monotonic term
-advancement and overflow rejection, a canonical committee distinct from every other Treasury authority, a positive
-cancellation period no longer than the appointment span and fixed gross claim limit, exact half-open activation/expiry
+advancement and overflow rejection, a canonical committee distinct from every other Treasury authority, an appointment
+span no shorter than the params cancellation period and a positive fixed gross claim limit, exact half-open
+activation/expiry
 behavior, committee rotation, non-restoring cancellation/payment usage, reset only on a new term, and exact address
 matching that is not silently replaced by the SDK consensus-authority override.
 
 Claim-submission tests must cover an actual Legacy Amino threshold multisig; wrong signer, insufficient signatures,
-nonexistent signer account, account sequence and fee behavior; expected-term mismatch for committee and governance;
-not-yet-active and expired mandate; keeper-assigned globally monotonic claim IDs, sequence exhaustion, bounded
+nonexistent signer account, account sequence and fee behavior; expected-term mismatch for the committee;
+role disjointness in both directions, proving neither role can act through the other's message even while both are
+live; not-yet-active and expired mandate for the committee alongside governance submission that ignores the window
+and the disabled sentinel; keeper-assigned globally monotonic claim IDs, sequence exhaustion, bounded
 incident/evidence references, and numeric REST lookup; recipient validation; rejection of Insurance and Bank-blocked
 recipients before any accounting write; positive `anoah`-only amounts; pending-reservation and held-balance boundaries;
 checked executable-height addition; rejection when the cancellation period would cross mandate expiry; atomic rollback;
@@ -2110,7 +2162,7 @@ Keep target gaps, `RouteExpansion`, and coverage-based Buffer funding in `funds.
 valuation and transient snapshot mechanics in `liability.go`. Keep reward-window observation and settlement in
 `reward_funding.go`, Claims lifecycle handling in `claims.go`, and the governed Reserve-to-Buffer handler in
 `msg_server.go`. Inject Treasury's module-scoped `store.TransientStoreService`; the cache is derived state with no
-genesis field, export surface, or migration. Use the shared `RateSnapshot.Convert` path and checked `LegacyDec`
+genesis field, export surface, or migration. Use the shared `RateSet.Convert` path and checked `LegacyDec`
 aggregation consistently for nominal liability, target exposure, expansion-principal valuation, and redemption
 coverage. Treasury fund logic must have no permanent `SDRBaseDenom` dependency.
 
@@ -3513,8 +3565,9 @@ must survive this redesign. Implementation must therefore:
   active: every fund accepts only positive `anoah`; every mixed or non-NOAH credit fails atomically after the complete
   restriction chain.
 - Require every fund's bank-genesis balance to contain only `anoah`; reject genesis otherwise.
-- Initialise the approved Claims Mandate term, committee, half-open activation/expiry window, cancellation period, fixed
-  gross claim limit, zero Claims allowance used, and zero Insurance reservation. The committee is an ordinary account
+- Initialise the approved Claims Mandate term, committee, half-open activation/expiry window, fixed gross claim limit,
+  zero Claims allowance used, and zero Insurance reservation; the shared cancellation period ships in Treasury
+  `Params`. The committee is an ordinary account
   distinct from Treasury authority and every other Treasury role; it is not a fund custodian.
 - Create the committee BaseAccount and give it an explicit non-Treasury fee path. Do not seed it from the Insurance
   account or grant it a generic fee or Bank authorization.
@@ -3714,8 +3767,8 @@ the expected term and replace the entire reversible policy subset atomically; st
 partial updates fail. Normal account authentication enforces the configured threshold multisig, after which Treasury
 uses exact address equality for role authorization.
 
-Governance retains both override levers. It may sign `MsgUpdateMonetaryPolicy` to apply a structurally valid candidate
-outside committee bounds, or replace/disable the mandate immediately. `MsgUpdateParams` remains governance-only for
+Governance retains both override levers. It may sign its own `MsgUpdateMonetaryPolicy` to apply a structurally valid
+candidate outside committee bounds, or replace/disable the mandate immediately. `MsgUpdateParams` remains governance-only for
 `reward_funding_window` and the complete reference-cap Coin. Reference-cap changes rebuild the derived cap map without
 changing the committee mandate. Separate queries expose the current Monetary Policy and the stored mandate; mandate
 activity is derived from the current height.
@@ -3894,7 +3947,7 @@ complete:
 | ---- | -------------------------- | ----------- |
 | Treasury protobuf/API | `proto/ark/treasury/**` defines the compact reviewed Treasury contract and `api/ark/treasury/**` contains its generated Pulsar/grpc output. | Accepted as part of the reviewed Treasury implementation; retain. |
 | Phase 1 app support | `app/app_config.go` registers the four fund accounts and tax collector, orders the Treasury send restriction, places Treasury before Distribution in BeginBlock, and removes Treasury EndBlock. `app/treasury_test.go` and `app/treasury_multisig_test.go` exercise this integration. | Accepted as required Phase 1 support; retain. |
-| Oracle quote support | `x/oracle/keeper/conversion.go` always includes the `anoah` identity rate in `GetRateSnapshot`, with corresponding keeper-test changes. | Accepted as the shared quote behavior used by Treasury reward and liability valuation; retain. |
+| Oracle quote support | `x/oracle/keeper/conversion.go` always includes the `anoah` identity rate in `GetRateSet`, with corresponding keeper-test changes. | Accepted as the shared quote behavior used by Treasury reward and liability valuation; retain. |
 | Phase 3 Market settlement and pool-unit transition | Market injects a Treasury keeper and calls `RouteExpansion`, `DrawRedemptionBuffer`, and `RecordSupplyChange`; a successful Treasury result is authoritative. `BasePool` is a denomination-bearing `sdk.DecCoin`, delta queries return its unit, NOAH/stable math uses that unit, and stable-to-stable pricing is independent of virtual-pool state. `MsgUpdateParams` applies one fresh deterministic Oracle-derived amount on denomination changes, retains the submitted expectation in the transaction, emits old and applied pool state, atomically rescales delta on every amount change, and ordinary export preserves both values. | Reviewed and accepted. Treasury errors and actual rate, denomination, arithmetic, or effective-pool failures abort atomically. Do not add a submitted-versus-applied rejection threshold, duplicate audit fields, or a second transition path. |
 | Phase 4 IBC foundation | IBC-Go v11.2 keepers, stores, Classic/v2 ICS-20 routes, Classic PFM, Classic/v2 rate limiting, 07-Tendermint, ICA controller/host, module accounts, lifecycle, redundant-relay ante, CLI/genesis basics, and IBC testing accessors are wired through the SDK runtime's manual registration hooks. | Implemented under the approved Section 16.2 scope; focused review pending. Section 16.3 now approves the next Wasm/callback/GMP slice, but none of that later wiring is recorded as implemented. Production activation remains blocked on canonical launch genesis and the complete tax, recipient-restriction, rate-limit, relay, acknowledgement, timeout, refund, packet-forward, callback, and GMP gates. |
 | Partial Phase 4 ante | `app/app.go` installs `treasuryFeeChecker` and wraps the stock ante handler with `routeStabilityTax`; the implementation and tests live directly in `app/treasury_ante.go` rather than the planned `app/ante` package. | Leave unchanged and treat as provisional, unreviewed Phase 4 code. Revisit its layout, semantics, activation, and Wasm/IBC transfer-surface gate against the original Phase 4 plan when Phase 4 begins. |

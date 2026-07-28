@@ -109,6 +109,9 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	}
 	treasuryAccountKeeper.EXPECT().GetModuleAddress(treasurytypes.StabilityTaxCollectorName).
 		Return(authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName))
+	treasuryAccountKeeper.EXPECT().GetModuleAddress(authtypes.FeeCollectorName).
+		Return(authtypes.NewModuleAddress(authtypes.FeeCollectorName)).
+		AnyTimes()
 	treasuryBankKeeper := treasurytestutil.NewMockBankKeeper(ctrl)
 	fees := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
 	if feeDenom == "stable" {

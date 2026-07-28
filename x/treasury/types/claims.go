@@ -10,9 +10,13 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"ark/pkg/chain"
+	"ark/pkg/mandate"
 )
 
 const MaxClaimReferenceLength = 512
+
+// ClaimsMandateLabel names the shared appointment envelope in Claims errors.
+const ClaimsMandateLabel = "Claims mandate"
 
 // DefaultClaimsMandate returns the canonical unconfigured sentinel.
 func DefaultClaimsMandate() ClaimsMandate {
@@ -23,7 +27,7 @@ func DefaultClaimsMandate() ClaimsMandate {
 // supplied term.
 func NewDisabledClaimsMandate(term uint64) ClaimsMandate {
 	return ClaimsMandate{
-		Term:                term,
+		Envelope:            mandate.Disabled(term),
 		CommitteeClaimLimit: math.ZeroInt(),
 	}
 }
@@ -117,29 +121,14 @@ func (mandate ClaimsMandate) Validate() error {
 	if mandate.CommitteeClaimLimit.IsNil() {
 		return errors.New("Claims committee claim limit must be set")
 	}
-	if mandate.Committee == "" {
-		if mandate.ActivationHeight != 0 ||
-			mandate.ExpiryHeight != 0 ||
-			mandate.CancellationPeriodBlocks != 0 ||
-			!mandate.CommitteeClaimLimit.IsZero() {
+	if err := mandate.Envelope.Validate(); err != nil {
+		return fmt.Errorf("%s: %w", ClaimsMandateLabel, err)
+	}
+	if mandate.IsDisabled() {
+		if !mandate.CommitteeClaimLimit.IsZero() {
 			return errors.New("unconfigured Claims mandate must be empty")
 		}
 		return nil
-	}
-	if mandate.Term == 0 {
-		return errors.New("configured Claims mandate term must be positive")
-	}
-	if _, err := ParseCanonicalAccountAddress("Claims committee", mandate.Committee); err != nil {
-		return err
-	}
-	if mandate.ActivationHeight >= mandate.ExpiryHeight {
-		return errors.New("Claims mandate activation height must precede expiry height")
-	}
-	if mandate.CancellationPeriodBlocks == 0 {
-		return errors.New("Claims cancellation period blocks must be positive")
-	}
-	if mandate.CancellationPeriodBlocks > mandate.ExpiryHeight-mandate.ActivationHeight {
-		return errors.New("Claims cancellation period blocks cannot exceed the Claims mandate active span")
 	}
 	if !mandate.CommitteeClaimLimit.IsPositive() {
 		return errors.New("Claims committee claim limit must be positive")
@@ -148,33 +137,30 @@ func (mandate ClaimsMandate) Validate() error {
 	return nil
 }
 
-// IsActive reports whether the Claims committee appointment is active at the
-// supplied height.
-func (mandate ClaimsMandate) IsActive(height uint64) bool {
-	return mandate.Committee != "" &&
-		mandate.ActivationHeight <= height &&
-		height < mandate.ExpiryHeight
-}
-
 // Validate validates the immutable shape of one claim record.
 func (claim Claim) Validate() error {
 	if claim.ClaimId == 0 {
 		return errors.New("claim ID must be positive")
 	}
-	if _, err := ParseCanonicalAccountAddress("claim submitter", claim.Submitter); err != nil {
+	if _, err := chain.ParseCanonicalAccountAddress("claim submitter", claim.Submitter); err != nil {
 		return err
 	}
-	if claim.Origin != ClaimOrigin_CLAIM_ORIGIN_COMMITTEE &&
-		claim.Origin != ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE {
+	switch claim.Origin {
+	case ClaimOrigin_CLAIM_ORIGIN_COMMITTEE:
+		if claim.MandateTerm == 0 {
+			return errors.New("committee claim must record its authorizing mandate term")
+		}
+	case ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE:
+		if claim.MandateTerm != 0 {
+			return errors.New("governance claim must not record a mandate term")
+		}
+	default:
 		return errors.New("claim origin is invalid")
-	}
-	if claim.MandateTerm == 0 {
-		return errors.New("claim mandate term must be positive")
 	}
 	if err := ValidateClaimReference("incident reference", claim.IncidentReference, true); err != nil {
 		return err
 	}
-	if _, err := ParseCanonicalAccountAddress("claim recipient", claim.Recipient); err != nil {
+	if _, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient); err != nil {
 		return err
 	}
 	if claim.Recipient == authtypes.NewModuleAddress(InsuranceName).String() {
@@ -198,7 +184,7 @@ func (claim Claim) Validate() error {
 		if claim.FinalizedHeight < claim.ExecutableHeight {
 			return errors.New("paid claim cannot finalise before its executable height")
 		}
-		if _, err := ParseCanonicalAccountAddress("claim finalised by", claim.FinalizedBy); err != nil {
+		if _, err := chain.ParseCanonicalAccountAddress("claim finalised by", claim.FinalizedBy); err != nil {
 			return err
 		}
 		if claim.CancellationReason != "" || claim.CancellationReference != "" {
@@ -211,7 +197,7 @@ func (claim Claim) Validate() error {
 		if claim.FinalizedHeight >= claim.ExecutableHeight {
 			return errors.New("cancelled claim must finalise during its cancellation period")
 		}
-		if _, err := ParseCanonicalAccountAddress("claim finalised by", claim.FinalizedBy); err != nil {
+		if _, err := chain.ParseCanonicalAccountAddress("claim finalised by", claim.FinalizedBy); err != nil {
 			return err
 		}
 		if err := ValidateClaimReference("cancellation reason", claim.CancellationReason, true); err != nil {

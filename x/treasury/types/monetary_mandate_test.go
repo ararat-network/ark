@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	"ark/pkg/mandate"
 	"ark/x/treasury/types"
 )
 
@@ -106,12 +107,14 @@ func validMonetaryMandate() types.MonetaryMandate {
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
 	}
 	return types.MonetaryMandate{
-		Term:             1,
-		Committee:        testAddress(9),
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Envelope: mandate.Envelope{
+			Term:             1,
+			Committee:        testAddress(9),
+			ActivationHeight: 10,
+			ExpiryHeight:     20,
+		},
+		MinimumPolicy: minimum,
+		MaximumPolicy: maximum,
 	}
 }
 

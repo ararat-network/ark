@@ -107,9 +107,15 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					GovProposal: true,
 				},
 				{
-					RpcMethod: "UpdateMonetaryPolicy",
-					Use:       "update-monetary-policy",
-					Short:     "Update reversible Treasury policy as the committee or governance authority",
+					RpcMethod:   "UpdateMonetaryPolicy",
+					Use:         "update-monetary-policy-proposal",
+					Short:       "Submit a governance proposal to update reversible Treasury policy outside committee bounds",
+					GovProposal: true,
+				},
+				{
+					RpcMethod: "CommitteeUpdateMonetaryPolicy",
+					Use:       "committee-update-monetary-policy",
+					Short:     "Update reversible Treasury policy as the monetary-policy committee",
 				},
 				{
 					RpcMethod:   "SetClaimsMandate",
@@ -118,14 +124,29 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					GovProposal: true,
 				},
 				{
-					RpcMethod: "SubmitClaim",
-					Use:       "submit-claim",
-					Short:     "Submit a claim as the configured claims committee or governance authority",
+					RpcMethod:   "SubmitClaim",
+					Use:         "submit-claim-proposal",
+					Short:       "Submit a governance proposal to record a claim outside the committee allowance",
+					GovProposal: true,
 				},
 				{
-					RpcMethod: "CancelClaim",
-					Use:       "cancel-claim [claim-id]",
-					Short:     "Cancel a pending claim as the claims committee or governance authority",
+					RpcMethod: "CommitteeSubmitClaim",
+					Use:       "committee-submit-claim",
+					Short:     "Submit a claim as the configured Claims committee",
+				},
+				{
+					RpcMethod:   "CancelClaim",
+					Use:         "cancel-claim-proposal [claim-id]",
+					Short:       "Submit a governance proposal to cancel any pending claim",
+					GovProposal: true,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "claim_id"},
+					},
+				},
+				{
+					RpcMethod: "CommitteeCancelClaim",
+					Use:       "committee-cancel-claim [claim-id]",
+					Short:     "Cancel a pending non-governance claim as the Claims committee",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "claim_id"},
 					},

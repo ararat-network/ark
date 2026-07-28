@@ -5,14 +5,15 @@ import (
 	"strings"
 	"testing"
 
-	"cosmossdk.io/math"
-
 	"github.com/stretchr/testify/require"
+
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"ark/pkg/chain"
+	"ark/pkg/mandate"
 	"ark/x/treasury/types"
 )
 
@@ -33,16 +34,9 @@ func TestClaimsMandateValidate(t *testing.T) {
 		},
 		{name: "configured", mandate: validClaimsMandate, mutate: func(*types.ClaimsMandate) {}},
 		{
-			name:    "cancellation period equals active span",
-			mandate: validClaimsMandate,
-			mutate: func(mandate *types.ClaimsMandate) {
-				mandate.ExpiryHeight = mandate.ActivationHeight + mandate.CancellationPeriodBlocks
-			},
-		},
-		{
 			name:      "partial sentinel",
 			mandate:   types.DefaultClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CancellationPeriodBlocks = 1 },
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.NewInt(1) },
 			expectErr: "must be empty",
 		},
 		{
@@ -62,20 +56,6 @@ func TestClaimsMandateValidate(t *testing.T) {
 			mandate:   validClaimsMandate,
 			mutate:    func(mandate *types.ClaimsMandate) { mandate.ActivationHeight = mandate.ExpiryHeight },
 			expectErr: "activation height must precede expiry height",
-		},
-		{
-			name:      "zero cancellation period",
-			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CancellationPeriodBlocks = 0 },
-			expectErr: "cancellation period blocks must be positive",
-		},
-		{
-			name:    "cancellation period exceeds active span",
-			mandate: validClaimsMandate,
-			mutate: func(mandate *types.ClaimsMandate) {
-				mandate.ExpiryHeight = mandate.ActivationHeight + mandate.CancellationPeriodBlocks - 1
-			},
-			expectErr: "cannot exceed the Claims mandate active span",
 		},
 		{
 			name:      "unset committee claim limit",
@@ -112,12 +92,14 @@ func TestClaimsMandateValidate(t *testing.T) {
 }
 
 func TestClaimsMandateIsActive(t *testing.T) {
-	mandate := validClaimsMandate()
-	require.False(t, mandate.IsActive(mandate.ActivationHeight-1))
-	require.True(t, mandate.IsActive(mandate.ActivationHeight))
-	require.True(t, mandate.IsActive(mandate.ExpiryHeight-1))
-	require.False(t, mandate.IsActive(mandate.ExpiryHeight))
-	require.False(t, types.NewDisabledClaimsMandate(mandate.Term+1).IsActive(mandate.ActivationHeight))
+	claimsMandate := validClaimsMandate()
+	activation := claimsMandate.ActivationHeight
+	expiry := claimsMandate.ExpiryHeight
+	require.False(t, claimsMandate.IsActive(activation-1))
+	require.True(t, claimsMandate.IsActive(activation))
+	require.True(t, claimsMandate.IsActive(expiry-1))
+	require.False(t, claimsMandate.IsActive(expiry))
+	require.False(t, types.NewDisabledClaimsMandate(claimsMandate.Term+1).IsActive(activation))
 }
 
 func TestClaimValidate(t *testing.T) {
@@ -149,10 +131,26 @@ func TestClaimValidate(t *testing.T) {
 			expectErr: "origin is invalid",
 		},
 		{
-			name:      "zero mandate term",
+			name:      "committee claim without mandate term",
 			claim:     validPendingClaim,
 			mutate:    func(claim *types.Claim) { claim.MandateTerm = 0 },
-			expectErr: "mandate term must be positive",
+			expectErr: "must record its authorizing mandate term",
+		},
+		{
+			name:  "governance claim without mandate term",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
+				claim.MandateTerm = 0
+			},
+		},
+		{
+			name:  "governance claim with mandate term",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
+			},
+			expectErr: "must not record a mandate term",
 		},
 		{
 			name:  "Insurance self-payment",
@@ -169,7 +167,7 @@ func TestClaimValidate(t *testing.T) {
 			expectErr: "must follow its submission height",
 		},
 		{
-			name:      "pending with finalized by",
+			name:      "pending with finalised by",
 			claim:     validPendingClaim,
 			mutate:    func(claim *types.Claim) { claim.FinalizedBy = testAddress(4) },
 			expectErr: "cannot contain finalisation fields",
@@ -229,12 +227,13 @@ func TestClaimReferenceBounds(t *testing.T) {
 
 func validClaimsMandate() types.ClaimsMandate {
 	return types.ClaimsMandate{
-		Term:                     1,
-		Committee:                testAddress(1),
-		ActivationHeight:         10,
-		ExpiryHeight:             100,
-		CancellationPeriodBlocks: 5,
-		CommitteeClaimLimit:      math.NewInt(1_000),
+		Envelope: mandate.Envelope{
+			Term:             1,
+			Committee:        testAddress(1),
+			ActivationHeight: 10,
+			ExpiryHeight:     100,
+		},
+		CommitteeClaimLimit: math.NewInt(1_000),
 	}
 }
 
