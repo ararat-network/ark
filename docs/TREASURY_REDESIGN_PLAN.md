@@ -2340,8 +2340,22 @@ Do not remove `x/mint` until Phase 2.
   quote rates; Market cannot supply that principal or any target, gap, credit, burn, source, or destination.
 - Post-trade stable liability is used for expansion allocation by adding the not-yet-minted `stable_output` exactly
   once.
-- Complete aggregate liability is scanned at most once per block after the first successful valuation. Its transient
-  snapshot tracks every later successful Market stable burn/mint; incomplete valuations are not cached and may retry.
+- Aggregate liability is scanned exactly once per block, by the preblocker immediately after oracle price application
+  and vote-target advancement; transactions never rescan. The transient snapshot tracks every later successful Market
+  stable burn/mint. Priming is authoritative for the block and clears whichever transient key it does not write, since
+  valuation reads the snapshot before the unavailability marker.
+- An incomplete preblock valuation marks liability unavailable for the entire block. Rates are fixed at preblock, so an
+  intra-block retry cannot succeed, and availability returns at the next block's preblock. A mid-block governance
+  change to the tobin whitelist does not lift the marker early; the block stays conservatively degraded. The lazy scan
+  in `cachedLiabilityValue` remains only as a fallback and itself marks the block on incompleteness, bounding
+  free-metered scans to one per block.
+- Transaction-time liability valuation charges a flat 2,000 gas whether it reads the snapshot, the marker, or falls
+  back to a lazy scan. Swap gas is therefore position-independent within a block and independent of whitelist size, and
+  simulation, whose transient store is always empty, quotes exactly what execution consumes. Query-path valuation
+  (`FundStatus`) stays normally metered so node query gas limits keep bounding its work.
+- Only Market may change tobin-denom supply during a block. Preblock priming makes this a hard requirement rather than
+  an implicit one, because the snapshot now precedes every transaction. Module account permissions enforce it: only
+  `market` and `ibctransfer` may mint, and IBC mints only `ibc/` voucher denoms, never native listed denoms.
 - Complete expansion settlement occurs per conversion. Treasury stores no pending principal and has no periodic or
   EndBlock allocation path.
 - Incomplete unrelated expansion-target pricing routes all eligible principal to the Redemption Buffer, but failure to
