@@ -100,9 +100,8 @@ func TestVoteTargetTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	require.Nil(t, keeper.targets.Pending)
 
 	// FinalizeBlock A+1 aggregates the already-produced extension for A against
-	// the new epoch. The newly added target is carried as an explicit zero and is
-	// therefore accountable as a non-positive report rather than silently
-	// dropped during the target transition.
+	// the new epoch. The newly added target is carried as an explicit zero,
+	// which is an abstention on that target alone.
 	newRequest := finalizeRequest(t, activationVoteHeight+1, validator, newResponse.VoteExtension)
 	_, err = preBlocker(
 		abcitestutil.NewSDKContext(activationVoteHeight+1, 1, sdk.ExecModeFinalize).
@@ -110,7 +109,10 @@ func TestVoteTargetTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 		newRequest,
 	)
 	require.NoError(t, err)
-	require.Equal(t, []bool{false, true}, keeper.missed)
+	// Both blocks function (the sole validator participates), and the explicit
+	// zero on the just-activated target is an abstention that does not affect
+	// attendance while ausd is still priced.
+	require.Equal(t, []bool{true, true}, keeper.attended)
 }
 
 type staticOracleClient struct {
@@ -126,9 +128,9 @@ func (c staticOracleClient) Prices(
 }
 
 type transitionOracleKeeper struct {
-	params  oracletypes.Params
-	targets oracletypes.VoteTargets
-	missed  []bool
+	params   oracletypes.Params
+	targets  oracletypes.VoteTargets
+	attended []bool
 }
 
 func (k *transitionOracleKeeper) GetVoteTargets(
@@ -146,13 +148,16 @@ func (k *transitionOracleKeeper) SetExchangeRateWithEvent(context.Context, oracl
 	return nil
 }
 
+// RecordVoteAccounting records the attendance credit the keeper would apply:
+// participation only counts on a functioning block.
 func (k *transitionOracleKeeper) RecordVoteAccounting(
 	_ context.Context,
 	_ sdk.ConsAddress,
 	_ math.Int,
-	missed bool,
+	eligible bool,
+	participated bool,
 ) error {
-	k.missed = append(k.missed, missed)
+	k.attended = append(k.attended, eligible && participated)
 	return nil
 }
 

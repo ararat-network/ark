@@ -501,33 +501,31 @@ func (x *fastReflection_EventExchangeRateUpdate) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_EventOracleSlash              protoreflect.MessageDescriptor
-	fd_EventOracleSlash_validator    protoreflect.FieldDescriptor
-	fd_EventOracleSlash_amount_denom protoreflect.FieldDescriptor
-	fd_EventOracleSlash_amount       protoreflect.FieldDescriptor
-	fd_EventOracleSlash_miss_count   protoreflect.FieldDescriptor
-	fd_EventOracleSlash_slash_window protoreflect.FieldDescriptor
+	md_EventOracleJail                   protoreflect.MessageDescriptor
+	fd_EventOracleJail_validator         protoreflect.FieldDescriptor
+	fd_EventOracleJail_eligible_blocks   protoreflect.FieldDescriptor
+	fd_EventOracleJail_attended_blocks   protoreflect.FieldDescriptor
+	fd_EventOracleJail_attendance_window protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_event_proto_init()
-	md_EventOracleSlash = File_ark_oracle_v1_event_proto.Messages().ByName("EventOracleSlash")
-	fd_EventOracleSlash_validator = md_EventOracleSlash.Fields().ByName("validator")
-	fd_EventOracleSlash_amount_denom = md_EventOracleSlash.Fields().ByName("amount_denom")
-	fd_EventOracleSlash_amount = md_EventOracleSlash.Fields().ByName("amount")
-	fd_EventOracleSlash_miss_count = md_EventOracleSlash.Fields().ByName("miss_count")
-	fd_EventOracleSlash_slash_window = md_EventOracleSlash.Fields().ByName("slash_window")
+	md_EventOracleJail = File_ark_oracle_v1_event_proto.Messages().ByName("EventOracleJail")
+	fd_EventOracleJail_validator = md_EventOracleJail.Fields().ByName("validator")
+	fd_EventOracleJail_eligible_blocks = md_EventOracleJail.Fields().ByName("eligible_blocks")
+	fd_EventOracleJail_attended_blocks = md_EventOracleJail.Fields().ByName("attended_blocks")
+	fd_EventOracleJail_attendance_window = md_EventOracleJail.Fields().ByName("attendance_window")
 }
 
-var _ protoreflect.Message = (*fastReflection_EventOracleSlash)(nil)
+var _ protoreflect.Message = (*fastReflection_EventOracleJail)(nil)
 
-type fastReflection_EventOracleSlash EventOracleSlash
+type fastReflection_EventOracleJail EventOracleJail
 
-func (x *EventOracleSlash) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventOracleSlash)(x)
+func (x *EventOracleJail) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventOracleJail)(x)
 }
 
-func (x *EventOracleSlash) slowProtoReflect() protoreflect.Message {
+func (x *EventOracleJail) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_event_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -539,43 +537,43 @@ func (x *EventOracleSlash) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_EventOracleSlash_messageType fastReflection_EventOracleSlash_messageType
-var _ protoreflect.MessageType = fastReflection_EventOracleSlash_messageType{}
+var _fastReflection_EventOracleJail_messageType fastReflection_EventOracleJail_messageType
+var _ protoreflect.MessageType = fastReflection_EventOracleJail_messageType{}
 
-type fastReflection_EventOracleSlash_messageType struct{}
+type fastReflection_EventOracleJail_messageType struct{}
 
-func (x fastReflection_EventOracleSlash_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventOracleSlash)(nil)
+func (x fastReflection_EventOracleJail_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventOracleJail)(nil)
 }
-func (x fastReflection_EventOracleSlash_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventOracleSlash)
+func (x fastReflection_EventOracleJail_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventOracleJail)
 }
-func (x fastReflection_EventOracleSlash_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleSlash
+func (x fastReflection_EventOracleJail_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventOracleJail
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_EventOracleSlash) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleSlash
+func (x *fastReflection_EventOracleJail) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventOracleJail
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventOracleSlash) Type() protoreflect.MessageType {
-	return _fastReflection_EventOracleSlash_messageType
+func (x *fastReflection_EventOracleJail) Type() protoreflect.MessageType {
+	return _fastReflection_EventOracleJail_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventOracleSlash) New() protoreflect.Message {
-	return new(fastReflection_EventOracleSlash)
+func (x *fastReflection_EventOracleJail) New() protoreflect.Message {
+	return new(fastReflection_EventOracleJail)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventOracleSlash) Interface() protoreflect.ProtoMessage {
-	return (*EventOracleSlash)(x)
+func (x *fastReflection_EventOracleJail) Interface() protoreflect.ProtoMessage {
+	return (*EventOracleJail)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -583,34 +581,28 @@ func (x *fastReflection_EventOracleSlash) Interface() protoreflect.ProtoMessage 
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_EventOracleSlash) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_EventOracleJail) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Validator != "" {
 		value := protoreflect.ValueOfString(x.Validator)
-		if !f(fd_EventOracleSlash_validator, value) {
+		if !f(fd_EventOracleJail_validator, value) {
 			return
 		}
 	}
-	if x.AmountDenom != "" {
-		value := protoreflect.ValueOfString(x.AmountDenom)
-		if !f(fd_EventOracleSlash_amount_denom, value) {
+	if x.EligibleBlocks != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EligibleBlocks)
+		if !f(fd_EventOracleJail_eligible_blocks, value) {
 			return
 		}
 	}
-	if x.Amount != "" {
-		value := protoreflect.ValueOfString(x.Amount)
-		if !f(fd_EventOracleSlash_amount, value) {
+	if x.AttendedBlocks != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.AttendedBlocks)
+		if !f(fd_EventOracleJail_attended_blocks, value) {
 			return
 		}
 	}
-	if x.MissCount != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.MissCount)
-		if !f(fd_EventOracleSlash_miss_count, value) {
-			return
-		}
-	}
-	if x.SlashWindow != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.SlashWindow)
-		if !f(fd_EventOracleSlash_slash_window, value) {
+	if x.AttendanceWindow != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.AttendanceWindow)
+		if !f(fd_EventOracleJail_attendance_window, value) {
 			return
 		}
 	}
@@ -627,23 +619,21 @@ func (x *fastReflection_EventOracleSlash) Range(f func(protoreflect.FieldDescrip
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventOracleSlash) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_EventOracleJail) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.EventOracleSlash.validator":
+	case "ark.oracle.v1.EventOracleJail.validator":
 		return x.Validator != ""
-	case "ark.oracle.v1.EventOracleSlash.amount_denom":
-		return x.AmountDenom != ""
-	case "ark.oracle.v1.EventOracleSlash.amount":
-		return x.Amount != ""
-	case "ark.oracle.v1.EventOracleSlash.miss_count":
-		return x.MissCount != uint64(0)
-	case "ark.oracle.v1.EventOracleSlash.slash_window":
-		return x.SlashWindow != uint64(0)
+	case "ark.oracle.v1.EventOracleJail.eligible_blocks":
+		return x.EligibleBlocks != uint64(0)
+	case "ark.oracle.v1.EventOracleJail.attended_blocks":
+		return x.AttendedBlocks != uint64(0)
+	case "ark.oracle.v1.EventOracleJail.attendance_window":
+		return x.AttendanceWindow != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleSlash"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleJail"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.EventOracleSlash does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.EventOracleJail does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -653,23 +643,21 @@ func (x *fastReflection_EventOracleSlash) Has(fd protoreflect.FieldDescriptor) b
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleSlash) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_EventOracleJail) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.EventOracleSlash.validator":
+	case "ark.oracle.v1.EventOracleJail.validator":
 		x.Validator = ""
-	case "ark.oracle.v1.EventOracleSlash.amount_denom":
-		x.AmountDenom = ""
-	case "ark.oracle.v1.EventOracleSlash.amount":
-		x.Amount = ""
-	case "ark.oracle.v1.EventOracleSlash.miss_count":
-		x.MissCount = uint64(0)
-	case "ark.oracle.v1.EventOracleSlash.slash_window":
-		x.SlashWindow = uint64(0)
+	case "ark.oracle.v1.EventOracleJail.eligible_blocks":
+		x.EligibleBlocks = uint64(0)
+	case "ark.oracle.v1.EventOracleJail.attended_blocks":
+		x.AttendedBlocks = uint64(0)
+	case "ark.oracle.v1.EventOracleJail.attendance_window":
+		x.AttendanceWindow = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleSlash"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleJail"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.EventOracleSlash does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.EventOracleJail does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -679,28 +667,25 @@ func (x *fastReflection_EventOracleSlash) Clear(fd protoreflect.FieldDescriptor)
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventOracleSlash) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventOracleJail) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.EventOracleSlash.validator":
+	case "ark.oracle.v1.EventOracleJail.validator":
 		value := x.Validator
 		return protoreflect.ValueOfString(value)
-	case "ark.oracle.v1.EventOracleSlash.amount_denom":
-		value := x.AmountDenom
-		return protoreflect.ValueOfString(value)
-	case "ark.oracle.v1.EventOracleSlash.amount":
-		value := x.Amount
-		return protoreflect.ValueOfString(value)
-	case "ark.oracle.v1.EventOracleSlash.miss_count":
-		value := x.MissCount
+	case "ark.oracle.v1.EventOracleJail.eligible_blocks":
+		value := x.EligibleBlocks
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.EventOracleSlash.slash_window":
-		value := x.SlashWindow
+	case "ark.oracle.v1.EventOracleJail.attended_blocks":
+		value := x.AttendedBlocks
+		return protoreflect.ValueOfUint64(value)
+	case "ark.oracle.v1.EventOracleJail.attendance_window":
+		value := x.AttendanceWindow
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleSlash"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleJail"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.EventOracleSlash does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.EventOracleJail does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -714,23 +699,21 @@ func (x *fastReflection_EventOracleSlash) Get(descriptor protoreflect.FieldDescr
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleSlash) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_EventOracleJail) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.EventOracleSlash.validator":
+	case "ark.oracle.v1.EventOracleJail.validator":
 		x.Validator = value.Interface().(string)
-	case "ark.oracle.v1.EventOracleSlash.amount_denom":
-		x.AmountDenom = value.Interface().(string)
-	case "ark.oracle.v1.EventOracleSlash.amount":
-		x.Amount = value.Interface().(string)
-	case "ark.oracle.v1.EventOracleSlash.miss_count":
-		x.MissCount = value.Uint()
-	case "ark.oracle.v1.EventOracleSlash.slash_window":
-		x.SlashWindow = value.Uint()
+	case "ark.oracle.v1.EventOracleJail.eligible_blocks":
+		x.EligibleBlocks = value.Uint()
+	case "ark.oracle.v1.EventOracleJail.attended_blocks":
+		x.AttendedBlocks = value.Uint()
+	case "ark.oracle.v1.EventOracleJail.attendance_window":
+		x.AttendanceWindow = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleSlash"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleJail"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.EventOracleSlash does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.EventOracleJail does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -744,56 +727,52 @@ func (x *fastReflection_EventOracleSlash) Set(fd protoreflect.FieldDescriptor, v
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleSlash) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventOracleJail) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.EventOracleSlash.validator":
-		panic(fmt.Errorf("field validator of message ark.oracle.v1.EventOracleSlash is not mutable"))
-	case "ark.oracle.v1.EventOracleSlash.amount_denom":
-		panic(fmt.Errorf("field amount_denom of message ark.oracle.v1.EventOracleSlash is not mutable"))
-	case "ark.oracle.v1.EventOracleSlash.amount":
-		panic(fmt.Errorf("field amount of message ark.oracle.v1.EventOracleSlash is not mutable"))
-	case "ark.oracle.v1.EventOracleSlash.miss_count":
-		panic(fmt.Errorf("field miss_count of message ark.oracle.v1.EventOracleSlash is not mutable"))
-	case "ark.oracle.v1.EventOracleSlash.slash_window":
-		panic(fmt.Errorf("field slash_window of message ark.oracle.v1.EventOracleSlash is not mutable"))
+	case "ark.oracle.v1.EventOracleJail.validator":
+		panic(fmt.Errorf("field validator of message ark.oracle.v1.EventOracleJail is not mutable"))
+	case "ark.oracle.v1.EventOracleJail.eligible_blocks":
+		panic(fmt.Errorf("field eligible_blocks of message ark.oracle.v1.EventOracleJail is not mutable"))
+	case "ark.oracle.v1.EventOracleJail.attended_blocks":
+		panic(fmt.Errorf("field attended_blocks of message ark.oracle.v1.EventOracleJail is not mutable"))
+	case "ark.oracle.v1.EventOracleJail.attendance_window":
+		panic(fmt.Errorf("field attendance_window of message ark.oracle.v1.EventOracleJail is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleSlash"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleJail"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.EventOracleSlash does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.EventOracleJail does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventOracleSlash) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventOracleJail) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.EventOracleSlash.validator":
+	case "ark.oracle.v1.EventOracleJail.validator":
 		return protoreflect.ValueOfString("")
-	case "ark.oracle.v1.EventOracleSlash.amount_denom":
-		return protoreflect.ValueOfString("")
-	case "ark.oracle.v1.EventOracleSlash.amount":
-		return protoreflect.ValueOfString("")
-	case "ark.oracle.v1.EventOracleSlash.miss_count":
+	case "ark.oracle.v1.EventOracleJail.eligible_blocks":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.EventOracleSlash.slash_window":
+	case "ark.oracle.v1.EventOracleJail.attended_blocks":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.oracle.v1.EventOracleJail.attendance_window":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleSlash"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.EventOracleJail"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.EventOracleSlash does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.EventOracleJail does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventOracleSlash) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_EventOracleJail) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.EventOracleSlash", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.EventOracleJail", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -801,7 +780,7 @@ func (x *fastReflection_EventOracleSlash) WhichOneof(d protoreflect.OneofDescrip
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventOracleSlash) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_EventOracleJail) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -812,7 +791,7 @@ func (x *fastReflection_EventOracleSlash) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleSlash) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_EventOracleJail) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -824,7 +803,7 @@ func (x *fastReflection_EventOracleSlash) SetUnknown(fields protoreflect.RawFiel
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_EventOracleSlash) IsValid() bool {
+func (x *fastReflection_EventOracleJail) IsValid() bool {
 	return x != nil
 }
 
@@ -834,9 +813,9 @@ func (x *fastReflection_EventOracleSlash) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_EventOracleJail) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventOracleSlash)
+		x := input.Message.Interface().(*EventOracleJail)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -852,19 +831,14 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.AmountDenom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if x.EligibleBlocks != 0 {
+			n += 1 + runtime.Sov(uint64(x.EligibleBlocks))
 		}
-		l = len(x.Amount)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if x.AttendedBlocks != 0 {
+			n += 1 + runtime.Sov(uint64(x.AttendedBlocks))
 		}
-		if x.MissCount != 0 {
-			n += 1 + runtime.Sov(uint64(x.MissCount))
-		}
-		if x.SlashWindow != 0 {
-			n += 1 + runtime.Sov(uint64(x.SlashWindow))
+		if x.AttendanceWindow != 0 {
+			n += 1 + runtime.Sov(uint64(x.AttendanceWindow))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -876,7 +850,7 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleSlash)
+		x := input.Message.Interface().(*EventOracleJail)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -895,29 +869,20 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.SlashWindow != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.SlashWindow))
-			i--
-			dAtA[i] = 0x28
-		}
-		if x.MissCount != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.MissCount))
+		if x.AttendanceWindow != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.AttendanceWindow))
 			i--
 			dAtA[i] = 0x20
 		}
-		if len(x.Amount) > 0 {
-			i -= len(x.Amount)
-			copy(dAtA[i:], x.Amount)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Amount)))
+		if x.AttendedBlocks != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.AttendedBlocks))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x18
 		}
-		if len(x.AmountDenom) > 0 {
-			i -= len(x.AmountDenom)
-			copy(dAtA[i:], x.AmountDenom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AmountDenom)))
+		if x.EligibleBlocks != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EligibleBlocks))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x10
 		}
 		if len(x.Validator) > 0 {
 			i -= len(x.Validator)
@@ -937,7 +902,7 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleSlash)
+		x := input.Message.Interface().(*EventOracleJail)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -969,10 +934,10 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleSlash: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleJail: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleSlash: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleJail: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1008,10 +973,10 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 				x.Validator = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AmountDenom", wireType)
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EligibleBlocks", wireType)
 				}
-				var stringLen uint64
+				x.EligibleBlocks = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1021,29 +986,16 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					x.EligibleBlocks |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.AmountDenom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AttendedBlocks", wireType)
 				}
-				var stringLen uint64
+				x.AttendedBlocks = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1053,29 +1005,16 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					x.AttendedBlocks |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Amount = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MissCount", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AttendanceWindow", wireType)
 				}
-				x.MissCount = 0
+				x.AttendanceWindow = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1085,26 +1024,7 @@ func (x *fastReflection_EventOracleSlash) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.MissCount |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 5:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SlashWindow", wireType)
-				}
-				x.SlashWindow = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.SlashWindow |= uint64(b&0x7F) << shift
+					x.AttendanceWindow |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1759,21 +1679,21 @@ func (x *EventExchangeRateUpdate) GetExchangeRate() string {
 	return ""
 }
 
-// EventOracleSlash is emitted after a validator is slashed for Oracle misses.
-type EventOracleSlash struct {
+// EventOracleJail is emitted after a validator is jailed for insufficient
+// oracle attendance over one attendance window.
+type EventOracleJail struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Validator   string `protobuf:"bytes,1,opt,name=validator,proto3" json:"validator,omitempty"`
-	AmountDenom string `protobuf:"bytes,2,opt,name=amount_denom,json=amountDenom,proto3" json:"amount_denom,omitempty"`
-	Amount      string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	MissCount   uint64 `protobuf:"varint,4,opt,name=miss_count,json=missCount,proto3" json:"miss_count,omitempty"`
-	SlashWindow uint64 `protobuf:"varint,5,opt,name=slash_window,json=slashWindow,proto3" json:"slash_window,omitempty"`
+	Validator        string `protobuf:"bytes,1,opt,name=validator,proto3" json:"validator,omitempty"`
+	EligibleBlocks   uint64 `protobuf:"varint,2,opt,name=eligible_blocks,json=eligibleBlocks,proto3" json:"eligible_blocks,omitempty"`
+	AttendedBlocks   uint64 `protobuf:"varint,3,opt,name=attended_blocks,json=attendedBlocks,proto3" json:"attended_blocks,omitempty"`
+	AttendanceWindow uint64 `protobuf:"varint,4,opt,name=attendance_window,json=attendanceWindow,proto3" json:"attendance_window,omitempty"`
 }
 
-func (x *EventOracleSlash) Reset() {
-	*x = EventOracleSlash{}
+func (x *EventOracleJail) Reset() {
+	*x = EventOracleJail{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_event_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1781,48 +1701,41 @@ func (x *EventOracleSlash) Reset() {
 	}
 }
 
-func (x *EventOracleSlash) String() string {
+func (x *EventOracleJail) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventOracleSlash) ProtoMessage() {}
+func (*EventOracleJail) ProtoMessage() {}
 
-// Deprecated: Use EventOracleSlash.ProtoReflect.Descriptor instead.
-func (*EventOracleSlash) Descriptor() ([]byte, []int) {
+// Deprecated: Use EventOracleJail.ProtoReflect.Descriptor instead.
+func (*EventOracleJail) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EventOracleSlash) GetValidator() string {
+func (x *EventOracleJail) GetValidator() string {
 	if x != nil {
 		return x.Validator
 	}
 	return ""
 }
 
-func (x *EventOracleSlash) GetAmountDenom() string {
+func (x *EventOracleJail) GetEligibleBlocks() uint64 {
 	if x != nil {
-		return x.AmountDenom
-	}
-	return ""
-}
-
-func (x *EventOracleSlash) GetAmount() string {
-	if x != nil {
-		return x.Amount
-	}
-	return ""
-}
-
-func (x *EventOracleSlash) GetMissCount() uint64 {
-	if x != nil {
-		return x.MissCount
+		return x.EligibleBlocks
 	}
 	return 0
 }
 
-func (x *EventOracleSlash) GetSlashWindow() uint64 {
+func (x *EventOracleJail) GetAttendedBlocks() uint64 {
 	if x != nil {
-		return x.SlashWindow
+		return x.AttendedBlocks
+	}
+	return 0
+}
+
+func (x *EventOracleJail) GetAttendanceWindow() uint64 {
+	if x != nil {
+		return x.AttendanceWindow
 	}
 	return 0
 }
@@ -1891,47 +1804,44 @@ var file_ark_oracle_v1_event_proto_rawDesc = []byte{
 	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
 	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x0c, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x22, 0x90, 0x02,
-	0x0a, 0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x53, 0x6c, 0x61,
-	0x73, 0x68, 0x12, 0x3f, 0x0a, 0x09, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
-	0x74, 0x6f, 0x72, 0x12, 0x21, 0x0a, 0x0c, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x6d, 0x6f, 0x75, 0x6e,
-	0x74, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x48, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
-	0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
-	0x12, 0x24, 0x0a, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x6d, 0x69, 0x73,
-	0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x28, 0x0a, 0x0c, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f,
-	0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77,
-	0x22, 0xc0, 0x01, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
-	0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x12, 0x3f, 0x0a, 0x09, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
-	0x74, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x76, 0x61,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x6a, 0x0a, 0x07, 0x72, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43,
-	0x6f, 0x69, 0x6e, 0x42, 0x35, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e,
-	0x43, 0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x72, 0x65, 0x77, 0x61,
-	0x72, 0x64, 0x73, 0x42, 0x95, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74,
-	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69,
-	0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4f, 0x58, 0xaa, 0x02, 0x0d,
-	0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d,
-	0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19,
-	0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
-	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a,
-	0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x0c, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x22, 0xe6, 0x01,
+	0x0a, 0x0f, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x4a, 0x61, 0x69,
+	0x6c, 0x12, 0x3f, 0x0a, 0x09, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
+	0x6f, 0x72, 0x12, 0x2e, 0x0a, 0x0f, 0x65, 0x6c, 0x69, 0x67, 0x69, 0x62, 0x6c, 0x65, 0x5f, 0x62,
+	0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0e, 0x65, 0x6c, 0x69, 0x67, 0x69, 0x62, 0x6c, 0x65, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x73, 0x12, 0x2e, 0x0a, 0x0f, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x5f, 0x62,
+	0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0e, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x73, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65,
+	0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65,
+	0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x22, 0xc0, 0x01, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x12, 0x3f, 0x0a, 0x09,
+	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69,
+	0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x09, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x6a, 0x0a,
+	0x07, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x35, 0xc8, 0xde, 0x1f, 0x00, 0xaa,
+	0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f,
+	0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x07, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x42, 0x95, 0x01, 0x0a, 0x11, 0x63, 0x6f,
+	0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42,
+	0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61,
+	0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c,
+	0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03,
+	0x41, 0x4f, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
+	0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1949,7 +1859,7 @@ func file_ark_oracle_v1_event_proto_rawDescGZIP() []byte {
 var file_ark_oracle_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_ark_oracle_v1_event_proto_goTypes = []interface{}{
 	(*EventExchangeRateUpdate)(nil), // 0: ark.oracle.v1.EventExchangeRateUpdate
-	(*EventOracleSlash)(nil),        // 1: ark.oracle.v1.EventOracleSlash
+	(*EventOracleJail)(nil),         // 1: ark.oracle.v1.EventOracleJail
 	(*EventOracleReward)(nil),       // 2: ark.oracle.v1.EventOracleReward
 	(*v1beta1.Coin)(nil),            // 3: cosmos.base.v1beta1.Coin
 }
@@ -1981,7 +1891,7 @@ func file_ark_oracle_v1_event_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_event_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventOracleSlash); i {
+			switch v := v.(*EventOracleJail); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -135,11 +135,11 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
 		{Denom: chain.USDBaseDenom},
 		{Denom: chain.SDRBaseDenom},
 	}, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.USDBaseDenom,
 		chain.SDRBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyNewDec(2),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
@@ -187,9 +187,9 @@ func (s *KeeperTestSuite) TestBuildTaxCapsRejectsPositiveConversionThatTruncates
 		{Denom: chain.USDBaseDenom},
 		{Denom: chain.SDRBaseDenom},
 	}, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(), chain.USDBaseDenom, chain.SDRBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyNewDec(2),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)

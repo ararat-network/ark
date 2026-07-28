@@ -47,10 +47,10 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
-					RpcMethod: "MissCount",
-					Use:       "miss [validator]",
-					Short:     "Query the oracle miss count for a validator",
-					Example:   fmt.Sprintf("%s query oracle miss arkvaloper1...", version.AppName),
+					RpcMethod: "Attendance",
+					Use:       "attendance [validator]",
+					Short:     "Query a validator's oracle attendance counters",
+					Example:   fmt.Sprintf("%s query oracle attendance arkvaloper1...", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "validator_addr"},
 					},

@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	math "cosmossdk.io/math"
 	types "github.com/cosmos/cosmos-sdk/types"
 	types0 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types1 "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -44,21 +43,6 @@ func (m *MockStakingKeeper) EXPECT() *MockStakingKeeperMockRecorder {
 	return m.recorder
 }
 
-// BondDenom mocks base method.
-func (m *MockStakingKeeper) BondDenom(ctx context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BondDenom", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BondDenom indicates an expected call of BondDenom.
-func (mr *MockStakingKeeperMockRecorder) BondDenom(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BondDenom", reflect.TypeOf((*MockStakingKeeper)(nil).BondDenom), ctx)
-}
-
 // Jail mocks base method.
 func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) error {
 	m.ctrl.T.Helper()
@@ -71,35 +55,6 @@ func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) e
 func (mr *MockStakingKeeperMockRecorder) Jail(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Jail", reflect.TypeOf((*MockStakingKeeper)(nil).Jail), arg0, arg1)
-}
-
-// PowerReduction mocks base method.
-func (m *MockStakingKeeper) PowerReduction(ctx context.Context) math.Int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PowerReduction", ctx)
-	ret0, _ := ret[0].(math.Int)
-	return ret0
-}
-
-// PowerReduction indicates an expected call of PowerReduction.
-func (mr *MockStakingKeeperMockRecorder) PowerReduction(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PowerReduction", reflect.TypeOf((*MockStakingKeeper)(nil).PowerReduction), ctx)
-}
-
-// Slash mocks base method.
-func (m *MockStakingKeeper) Slash(arg0 context.Context, arg1 types.ConsAddress, arg2, arg3 int64, arg4 math.LegacyDec) (math.Int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Slash", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].(math.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Slash indicates an expected call of Slash.
-func (mr *MockStakingKeeperMockRecorder) Slash(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Slash", reflect.TypeOf((*MockStakingKeeper)(nil).Slash), arg0, arg1, arg2, arg3, arg4)
 }
 
 // Validator mocks base method.

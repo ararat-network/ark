@@ -137,8 +137,8 @@ func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWei
 	return &types.QueryRewardWeightResponse{RewardWeight: rewardWeight}, nil
 }
 
-// MissCount queries a validator's oracle miss count.
-func (q queryServer) MissCount(ctx context.Context, req *types.QueryMissCountRequest) (*types.QueryMissCountResponse, error) {
+// Attendance queries a validator's in-progress oracle attendance counters.
+func (q queryServer) Attendance(ctx context.Context, req *types.QueryAttendanceRequest) (*types.QueryAttendanceResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -147,10 +147,10 @@ func (q queryServer) MissCount(ctx context.Context, req *types.QueryMissCountReq
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid validator address %q: %v", req.ValidatorAddr, err)
 	}
-	missCount, err := q.k.MissCount.Get(ctx, valAddr)
+	attendance, err := q.k.Attendance.Get(ctx, valAddr)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return nil, status.Errorf(codes.Internal, "getting miss count for validator %s: %v", valAddr, err)
+		return nil, status.Errorf(codes.Internal, "getting attendance for validator %s: %v", valAddr, err)
 	}
 
-	return &types.QueryMissCountResponse{MissCount: missCount}, nil
+	return &types.QueryAttendanceResponse{Attendance: attendance}, nil
 }

@@ -202,24 +202,24 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetRateSnapshot mocks base method.
-func (m *MockOracleKeeper) GetRateSnapshot(ctx context.Context, denoms ...string) (types.RateSnapshot, error) {
+// GetRateSet mocks base method.
+func (m *MockOracleKeeper) GetRateSet(ctx context.Context, denoms ...string) (types.RateSet, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx}
 	for _, a := range denoms {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetRateSnapshot", varargs...)
-	ret0, _ := ret[0].(types.RateSnapshot)
+	ret := m.ctrl.Call(m, "GetRateSet", varargs...)
+	ret0, _ := ret[0].(types.RateSet)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRateSnapshot indicates an expected call of GetRateSnapshot.
-func (mr *MockOracleKeeperMockRecorder) GetRateSnapshot(ctx any, denoms ...any) *gomock.Call {
+// GetRateSet indicates an expected call of GetRateSet.
+func (mr *MockOracleKeeperMockRecorder) GetRateSet(ctx any, denoms ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx}, denoms...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSnapshot", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSnapshot), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSet", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSet), varargs...)
 }
 
 // GetTobinTaxes mocks base method.

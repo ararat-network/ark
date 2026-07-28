@@ -21,9 +21,10 @@ const (
 	rewardBandKey               = "reward_band"
 	rewardWindowKey             = "reward_window"
 	rewardDistributionWindowKey = "reward_distribution_window"
-	slashFractionKey            = "slash_fraction"
-	slashWindowKey              = "slash_window"
-	minValidPerWindowKey        = "min_valid_per_window"
+	attendanceWindowKey         = "attendance_window"
+	minAttendancePerWindowKey   = "min_attendance_per_window"
+
+	functioningBlockThresholdKey = "functioning_block_threshold"
 )
 
 // GenVoteThreshold randomised VoteThreshold
@@ -46,19 +47,20 @@ func GenRewardDistributionWindow(r *rand.Rand) uint64 {
 	return uint64(100 + r.Intn(100000))
 }
 
-// GenSlashFraction randomised SlashFraction
-func GenSlashFraction(r *rand.Rand) math.LegacyDec {
-	return math.LegacyZeroDec().Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
-}
-
-// GenSlashWindow randomised SlashWindow
-func GenSlashWindow(r *rand.Rand) uint64 {
+// GenAttendanceWindow randomised AttendanceWindow
+func GenAttendanceWindow(r *rand.Rand) uint64 {
 	return uint64(100 + r.Intn(100000))
 }
 
-// GenMinValidPerWindow randomised MinValidPerWindow
-func GenMinValidPerWindow(r *rand.Rand) math.LegacyDec {
+// GenMinAttendancePerWindow randomised MinAttendancePerWindow
+func GenMinAttendancePerWindow(r *rand.Rand) math.LegacyDec {
 	return math.LegacyZeroDec().Add(math.LegacyNewDecWithPrec(int64(r.Intn(500)), 3))
+}
+
+// GenFunctioningBlockThreshold randomised FunctioningBlockThreshold across its
+// full legal range of [50%, 100%].
+func GenFunctioningBlockThreshold(r *rand.Rand) math.LegacyDec {
+	return types.MinFunctioningBlockThreshold.Add(math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3))
 }
 
 // RandomisedGenState generates a random GenesisState for oracle
@@ -87,22 +89,22 @@ func RandomisedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { rewardDistributionWindow = GenRewardDistributionWindow(r) },
 	)
 
-	var slashFraction math.LegacyDec
+	var attendanceWindow uint64
 	simState.AppParams.GetOrGenerate(
-		slashFractionKey, &slashFraction, simState.Rand,
-		func(r *rand.Rand) { slashFraction = GenSlashFraction(r) },
+		attendanceWindowKey, &attendanceWindow, simState.Rand,
+		func(r *rand.Rand) { attendanceWindow = GenAttendanceWindow(r) },
 	)
 
-	var slashWindow uint64
+	var minAttendancePerWindow math.LegacyDec
 	simState.AppParams.GetOrGenerate(
-		slashWindowKey, &slashWindow, simState.Rand,
-		func(r *rand.Rand) { slashWindow = GenSlashWindow(r) },
+		minAttendancePerWindowKey, &minAttendancePerWindow, simState.Rand,
+		func(r *rand.Rand) { minAttendancePerWindow = GenMinAttendancePerWindow(r) },
 	)
 
-	var minValidPerWindow math.LegacyDec
+	var functioningBlockThreshold math.LegacyDec
 	simState.AppParams.GetOrGenerate(
-		minValidPerWindowKey, &minValidPerWindow, simState.Rand,
-		func(r *rand.Rand) { minValidPerWindow = GenMinValidPerWindow(r) },
+		functioningBlockThresholdKey, &functioningBlockThreshold, simState.Rand,
+		func(r *rand.Rand) { functioningBlockThreshold = GenFunctioningBlockThreshold(r) },
 	)
 
 	params := types.Params{
@@ -116,17 +118,17 @@ func RandomisedGenState(simState *module.SimulationState) {
 			{Denom: chain.SDRBaseDenom, TobinTax: types.DefaultTobinTax},
 			{Denom: chain.USDBaseDenom, TobinTax: types.DefaultTobinTax},
 		},
-		SlashFraction:      slashFraction,
-		SlashWindow:        slashWindow,
-		MinValidPerWindow:  minValidPerWindow,
-		MaxExchangeRateAge: types.DefaultMaxExchangeRateAge,
+		AttendanceWindow:          attendanceWindow,
+		MinAttendancePerWindow:    minAttendancePerWindow,
+		MaxExchangeRateAge:        types.DefaultMaxExchangeRateAge,
+		FunctioningBlockThreshold: functioningBlockThreshold,
 	}
 	oracleGenesis := types.NewGenesisState(
 		params,
 		types.NewAccounting(params),
 		[]types.ExchangeRate{},
 		[]types.RewardWeight{},
-		[]types.MissCount{},
+		[]types.AttendanceRecord{},
 		types.NewVoteTargets(params),
 	)
 

@@ -214,7 +214,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 		expectedSwap  sdk.Coin
 		expectedDelta math.LegacyDec
 		expectedMint  sdk.Coin
-		setupTreasury func(oracletypes.RateSnapshot) *gomock.Call
+		setupTreasury func(oracletypes.RateSet) *gomock.Call
 	}{
 		{
 			name:          "stablecoin to noah",
@@ -223,7 +223,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			expectedSwap:  sdk.NewInt64Coin(chain.NoahBaseDenom, 80),
 			expectedDelta: math.LegacyNewDec(100),
 			expectedMint:  sdk.NewInt64Coin(chain.NoahBaseDenom, 60),
-			setupTreasury: func(rates oracletypes.RateSnapshot) *gomock.Call {
+			setupTreasury: func(rates oracletypes.RateSet) *gomock.Call {
 				return s.treasuryKeeper.EXPECT().DrawRedemptionBuffer(
 					s.ctx,
 					sdk.NewInt64Coin(chain.USDBaseDenom, 100),
@@ -239,7 +239,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			expectedSwap:  sdk.NewInt64Coin("ausd", 80),
 			expectedDelta: math.LegacyNewDec(-80),
 			expectedMint:  sdk.NewInt64Coin("ausd", 80),
-			setupTreasury: func(rates oracletypes.RateSnapshot) *gomock.Call {
+			setupTreasury: func(rates oracletypes.RateSet) *gomock.Call {
 				return s.treasuryKeeper.EXPECT().RouteExpansion(
 					s.ctx,
 					sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
@@ -262,12 +262,12 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 		s.Run(tc.name, func() {
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 			trader := sdk.AccAddress([]byte("trader_______________"))
-			rates := oracletypes.RateSnapshot{
+			rates := oracletypes.RateSet{
 				"ausd":              math.LegacyOneDec(),
 				chain.SDRBaseDenom:  math.LegacyOneDec(),
 				chain.NoahBaseDenom: math.LegacyOneDec(),
 			}
-			s.oracleKeeper.EXPECT().GetRateSnapshot(
+			s.oracleKeeper.EXPECT().GetRateSet(
 				s.ctx,
 				tc.offerCoin.Denom,
 				chain.SDRBaseDenom,
@@ -316,11 +316,11 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 	injectedErr := errors.New("injected settlement failure")
 	stableOffer := sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)
 	stableOutput := sdk.NewInt64Coin(chain.KRWBaseDenom, 1_296_750_000)
-	stableRates := oracletypes.RateSnapshot{
+	stableRates := oracletypes.RateSet{
 		chain.USDBaseDenom: math.LegacyOneDec(),
 		chain.KRWBaseDenom: math.LegacyNewDec(1300),
 	}
-	nativeRates := oracletypes.RateSnapshot{
+	nativeRates := oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 		chain.SDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -430,7 +430,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 			offerCoin: sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 			askDenom:  chain.USDBaseDenom,
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(
+				s.oracleKeeper.EXPECT().GetRateSet(
 					s.ctx,
 					chain.NoahBaseDenom,
 					chain.SDRBaseDenom,
@@ -454,7 +454,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 			offerCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 			askDenom:  chain.NoahBaseDenom,
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(
+				s.oracleKeeper.EXPECT().GetRateSet(
 					s.ctx,
 					chain.USDBaseDenom,
 					chain.SDRBaseDenom,
@@ -501,8 +501,8 @@ func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
 	offerCoin := sdk.NewInt64Coin("ausd", 1000000)
 	minimumReceive := sdk.NewInt64Coin("akrw", 1296750001)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
+		Return(oracletypes.RateSet{
 			"ausd": math.LegacyOneDec(),
 			"akrw": math.LegacyNewDec(1300),
 		}, nil)
@@ -560,7 +560,7 @@ func (s *KeeperTestSuite) TestMsgSwap_QuoteErrorIncludesContext() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "afoo").
+			s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "afoo").
 				Return(nil, oracletypes.ErrUnknownDenom)
 
 			var err error
@@ -769,11 +769,11 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsAppliesLiveDenomAndCurveChanges() {
 	applied := sdk.NewDecCoin(chain.USDBaseDenom, math.NewInt(200))
 	s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), chain.USDBaseDenom).
 		Return(math.LegacyZeroDec(), nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyNewDec(2),
 	}, nil)
@@ -835,7 +835,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDenomChangeFailuresPreserveState() 
 			setup: func() {
 				s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), chain.USDBaseDenom).
 					Return(math.LegacyZeroDec(), nil)
-				s.oracleKeeper.EXPECT().GetRateSnapshot(
+				s.oracleKeeper.EXPECT().GetRateSet(
 					gomock.Any(),
 					chain.SDRBaseDenom,
 					chain.USDBaseDenom,
@@ -950,7 +950,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRescaleOverflowPreservesState() {
 }
 
 func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
-	s.expectStableToStableQuote(oracletypes.RateSnapshot{
+	s.expectStableToStableQuote(oracletypes.RateSet{
 		"ausd": math.LegacyOneDec(),
 		"akrw": math.LegacyNewDec(1300),
 	})
@@ -964,8 +964,8 @@ func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver
 	)
 }
 
-func (s *KeeperTestSuite) expectStableToStableQuote(rates oracletypes.RateSnapshot) {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").Return(rates, nil)
+func (s *KeeperTestSuite) expectStableToStableQuote(rates oracletypes.RateSet) {
+	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").Return(rates, nil)
 	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
 		{Denom: "ausd", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
 		{Denom: "akrw", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},

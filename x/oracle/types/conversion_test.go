@@ -14,8 +14,8 @@ import (
 	"ark/x/oracle/types"
 )
 
-func TestRateSnapshotConvert(t *testing.T) {
-	rates := types.RateSnapshot{
+func TestRateSetConvert(t *testing.T) {
+	rates := types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDec(2),
 		chain.KRWBaseDenom:  math.LegacyNewDec(1300),
@@ -81,10 +81,10 @@ func TestRateSnapshotConvert(t *testing.T) {
 	}
 }
 
-func TestRateSnapshotConvertLargeRepresentableAmount(t *testing.T) {
+func TestRateSetConvertLargeRepresentableAmount(t *testing.T) {
 	largeAmount := new(big.Int).Lsh(big.NewInt(1), 200)
 	offerCoin := sdk.NewDecCoinFromCoin(sdk.NewCoin("ausd", math.NewIntFromBigInt(largeAmount)))
-	rates := types.RateSnapshot{
+	rates := types.RateSet{
 		"ausd": math.LegacyOneDec(),
 		"akrw": math.LegacyOneDec(),
 	}
@@ -94,7 +94,7 @@ func TestRateSnapshotConvertLargeRepresentableAmount(t *testing.T) {
 	require.True(t, offerCoin.Amount.Equal(actual.Amount))
 }
 
-func TestRateSnapshotConvertRangeErrors(t *testing.T) {
+func TestRateSetConvertRangeErrors(t *testing.T) {
 	max := maxLegacyDec()
 	outOfRangeRaw := max.BigInt()
 	outOfRangeRaw.Add(outOfRangeRaw, big.NewInt(1))
@@ -102,13 +102,13 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		rates     types.RateSnapshot
+		rates     types.RateSet
 		offerCoin sdk.DecCoin
 		askDenom  string
 	}{
 		{
 			name: "offer amount is nil",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyOneDec(),
 			},
 			offerCoin: sdk.DecCoin{Denom: "ausd", Amount: math.LegacyDec{}},
@@ -116,7 +116,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "offer amount is out of range",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyOneDec(),
 			},
 			offerCoin: sdk.NewDecCoinFromDec("ausd", outOfRange),
@@ -124,7 +124,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "offer rate is out of range",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": outOfRange,
 				"akrw": math.LegacyOneDec(),
 			},
@@ -133,7 +133,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "offer rate is nil",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyDec{},
 				"akrw": math.LegacyOneDec(),
 			},
@@ -142,7 +142,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "offer rate is zero",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyZeroDec(),
 				"akrw": math.LegacyOneDec(),
 			},
@@ -151,7 +151,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "ask rate is out of range",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyOneDec(),
 				"akrw": outOfRange,
 			},
@@ -160,7 +160,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "intermediate multiplication overflows",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyNewDec(2),
 				"akrw": math.LegacyNewDec(2),
 			},
@@ -169,7 +169,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "quotient overflows",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacySmallestDec(),
 				"akrw": math.LegacyOneDec(),
 			},
@@ -178,7 +178,7 @@ func TestRateSnapshotConvertRangeErrors(t *testing.T) {
 		},
 		{
 			name: "conversion underflows to zero",
-			rates: types.RateSnapshot{
+			rates: types.RateSet{
 				"ausd": math.LegacyOneDec(),
 				"akrw": math.LegacySmallestDec(),
 			},

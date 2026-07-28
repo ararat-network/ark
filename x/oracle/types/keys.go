@@ -14,7 +14,7 @@ var (
 	ParamsKey       = collections.NewPrefix(0)
 	ExchangeRateKey = collections.NewPrefix(1)
 	RewardWeightKey = collections.NewPrefix(2)
-	MissCountKey    = collections.NewPrefix(3)
+	AttendanceKey   = collections.NewPrefix(3)
 	VoteTargetsKey  = collections.NewPrefix(4)
 	AccountingKey   = collections.NewPrefix(5)
 )

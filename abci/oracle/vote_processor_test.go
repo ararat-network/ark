@@ -100,8 +100,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), false).Return(nil)
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), false).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), true, true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), true, true).Return(nil)
 				return [][]byte{commitBz}
 			},
 			expectedPrices: map[string]math.LegacyDec{
@@ -109,7 +109,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 			},
 		},
 		{
-			name: "failed quorum target remains accountable for missed votes",
+			name: "failed quorum target is unpriced without costing attendance",
 			req: &cometabci.RequestFinalizeBlock{
 				Height:            3,
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
@@ -143,8 +143,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(10), false).Return(nil)
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(10), true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(10), true, true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(10), true, true).Return(nil)
 				return [][]byte{commitBz}
 			},
 			expectedPrices: map[string]math.LegacyDec{
@@ -152,7 +152,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid payload does not contribute target unavailability power",
+			name: "invalid and empty reports leave the block non-functioning",
 			req: &cometabci.RequestFinalizeBlock{
 				Height:            3,
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 3)},
@@ -164,7 +164,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				}
 				params := oracletypes.DefaultParams()
 				params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
-				unavailableBz := abcitestutil.MustEncodeVoteExtension(t, vetypes.OracleVoteExtension{
+				emptyReportBz := abcitestutil.MustEncodeVoteExtension(t, vetypes.OracleVoteExtension{
 					TargetVersion: voteTargets.Version,
 				})
 				positiveBz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
@@ -173,21 +173,23 @@ func TestProcessVoteExtensions(t *testing.T) {
 				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
 					Votes: []cometabci.ExtendedVoteInfo{
 						abcitestutil.NewCommitExtendedVoteInfo(val1, 40, []byte("not-zlib")),
-						abcitestutil.NewCommitExtendedVoteInfo(val2, 30, unavailableBz),
+						abcitestutil.NewCommitExtendedVoteInfo(val2, 30, emptyReportBz),
 						abcitestutil.NewCommitExtendedVoteInfo(val3, 30, positiveBz),
 					},
 				})
 				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
 				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(voteTargets, nil)
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.ZeroInt(), true).Return(nil)
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), true).Return(nil)
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val3, math.ZeroInt(), false).Return(nil)
+				// Only val3 participates, so 30 of 100 power leaves the block
+				// below the functioning threshold and nobody is graded.
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.ZeroInt(), false, false).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), false, false).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val3, math.ZeroInt(), false, true).Return(nil)
 				return [][]byte{commitBz}
 			},
-			expectedPrices: map[string]math.LegacyDec{},
+			expectedPrices: nil,
 		},
 		{
-			name: "invalid payload is classified as a missed report",
+			name: "invalid payload is graded eligible without participation",
 			req: &cometabci.RequestFinalizeBlock{
 				Height:            3,
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
@@ -217,8 +219,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 						require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 						return nil
 					})
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(67), false).Return(nil)
-				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(67), true, true).Return(nil)
+				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), true, false).Return(nil)
 				return [][]byte{commitBz}
 			},
 			expectedPrices: map[string]math.LegacyDec{

@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,9 +27,10 @@ const benchmarkValidatorCount = 100
 type accountingBenchmarkCase struct {
 	name             string
 	rewardWeight     math.Int
-	missed           bool
+	eligible         bool
+	participated     bool
 	seedRewardWeight bool
-	seedMissCount    bool
+	seedAttendance   bool
 }
 
 type accountingBenchmarkVoter struct {
@@ -75,26 +77,8 @@ func (accountingBenchmarkStakingKeeper) Validator(
 	panic("unexpected Validator call in accounting benchmark")
 }
 
-func (accountingBenchmarkStakingKeeper) Slash(
-	context.Context,
-	sdk.ConsAddress,
-	int64,
-	int64,
-	math.LegacyDec,
-) (math.Int, error) {
-	panic("unexpected Slash call in accounting benchmark")
-}
-
 func (accountingBenchmarkStakingKeeper) Jail(context.Context, sdk.ConsAddress) error {
 	panic("unexpected Jail call in accounting benchmark")
-}
-
-func (accountingBenchmarkStakingKeeper) PowerReduction(context.Context) math.Int {
-	panic("unexpected PowerReduction call in accounting benchmark")
-}
-
-func (accountingBenchmarkStakingKeeper) BondDenom(context.Context) (string, error) {
-	panic("unexpected BondDenom call in accounting benchmark")
 }
 
 func BenchmarkRecordVoteAccounting(b *testing.B) {
@@ -105,16 +89,18 @@ func BenchmarkRecordVoteAccounting(b *testing.B) {
 			seedRewardWeight: true,
 		},
 		{
-			name:             "reward_and_miss",
+			name:             "reward_and_attendance",
 			rewardWeight:     math.NewInt(7),
-			missed:           true,
+			eligible:         true,
+			participated:     true,
 			seedRewardWeight: true,
-			seedMissCount:    true,
+			seedAttendance:   true,
 		},
 		{
 			name:         "first_write",
 			rewardWeight: math.NewInt(8),
-			missed:       true,
+			eligible:     true,
+			participated: true,
 		},
 		{
 			name:         "empty_update",
@@ -123,7 +109,7 @@ func BenchmarkRecordVoteAccounting(b *testing.B) {
 	}
 
 	for _, benchmarkCase := range cases {
-		b.Run("validators_100/"+benchmarkCase.name, func(b *testing.B) {
+		b.Run(fmt.Sprintf("validators_%d/%s", benchmarkValidatorCount, benchmarkCase.name), func(b *testing.B) {
 			benchmarkRecordVoteAccounting(b, benchmarkCase)
 		})
 	}
@@ -174,8 +160,11 @@ func benchmarkRecordVoteAccounting(b *testing.B, benchmarkCase accountingBenchma
 				b.Fatal(err)
 			}
 		}
-		if benchmarkCase.seedMissCount {
-			if err := oracleKeeper.MissCount.Set(baseCtx, voter.valAddr, 1_000); err != nil {
+		if benchmarkCase.seedAttendance {
+			if err := oracleKeeper.Attendance.Set(baseCtx, voter.valAddr, types.Attendance{
+				EligibleBlocks: 1_000,
+				AttendedBlocks: 1_000,
+			}); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -194,7 +183,8 @@ func benchmarkRecordVoteAccounting(b *testing.B, benchmarkCase accountingBenchma
 				ctx,
 				voter.consAddr,
 				benchmarkCase.rewardWeight,
-				benchmarkCase.missed,
+				benchmarkCase.eligible,
+				benchmarkCase.participated,
 			); err != nil {
 				b.Fatal(err)
 			}

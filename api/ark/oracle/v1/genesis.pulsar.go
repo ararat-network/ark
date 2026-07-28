@@ -121,7 +121,7 @@ func (x *_GenesisState_3_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_4_list)(nil)
 
 type _GenesisState_4_list struct {
-	list *[]*MissCount
+	list *[]*AttendanceRecord
 }
 
 func (x *_GenesisState_4_list) Len() int {
@@ -137,18 +137,18 @@ func (x *_GenesisState_4_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_4_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*MissCount)
+	concreteValue := valueUnwrapped.Interface().(*AttendanceRecord)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_4_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*MissCount)
+	concreteValue := valueUnwrapped.Interface().(*AttendanceRecord)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_4_list) AppendMutable() protoreflect.Value {
-	v := new(MissCount)
+	v := new(AttendanceRecord)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -161,7 +161,7 @@ func (x *_GenesisState_4_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_4_list) NewElement() protoreflect.Value {
-	v := new(MissCount)
+	v := new(AttendanceRecord)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -170,13 +170,13 @@ func (x *_GenesisState_4_list) IsValid() bool {
 }
 
 var (
-	md_GenesisState                protoreflect.MessageDescriptor
-	fd_GenesisState_params         protoreflect.FieldDescriptor
-	fd_GenesisState_exchange_rates protoreflect.FieldDescriptor
-	fd_GenesisState_reward_weights protoreflect.FieldDescriptor
-	fd_GenesisState_miss_counts    protoreflect.FieldDescriptor
-	fd_GenesisState_vote_targets   protoreflect.FieldDescriptor
-	fd_GenesisState_accounting     protoreflect.FieldDescriptor
+	md_GenesisState                    protoreflect.MessageDescriptor
+	fd_GenesisState_params             protoreflect.FieldDescriptor
+	fd_GenesisState_exchange_rates     protoreflect.FieldDescriptor
+	fd_GenesisState_reward_weights     protoreflect.FieldDescriptor
+	fd_GenesisState_attendance_records protoreflect.FieldDescriptor
+	fd_GenesisState_vote_targets       protoreflect.FieldDescriptor
+	fd_GenesisState_accounting         protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -185,7 +185,7 @@ func init() {
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_exchange_rates = md_GenesisState.Fields().ByName("exchange_rates")
 	fd_GenesisState_reward_weights = md_GenesisState.Fields().ByName("reward_weights")
-	fd_GenesisState_miss_counts = md_GenesisState.Fields().ByName("miss_counts")
+	fd_GenesisState_attendance_records = md_GenesisState.Fields().ByName("attendance_records")
 	fd_GenesisState_vote_targets = md_GenesisState.Fields().ByName("vote_targets")
 	fd_GenesisState_accounting = md_GenesisState.Fields().ByName("accounting")
 }
@@ -273,9 +273,9 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.MissCounts) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.MissCounts})
-		if !f(fd_GenesisState_miss_counts, value) {
+	if len(x.AttendanceRecords) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.AttendanceRecords})
+		if !f(fd_GenesisState_attendance_records, value) {
 			return
 		}
 	}
@@ -312,8 +312,8 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return len(x.ExchangeRates) != 0
 	case "ark.oracle.v1.GenesisState.reward_weights":
 		return len(x.RewardWeights) != 0
-	case "ark.oracle.v1.GenesisState.miss_counts":
-		return len(x.MissCounts) != 0
+	case "ark.oracle.v1.GenesisState.attendance_records":
+		return len(x.AttendanceRecords) != 0
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		return x.VoteTargets != nil
 	case "ark.oracle.v1.GenesisState.accounting":
@@ -340,8 +340,8 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.ExchangeRates = nil
 	case "ark.oracle.v1.GenesisState.reward_weights":
 		x.RewardWeights = nil
-	case "ark.oracle.v1.GenesisState.miss_counts":
-		x.MissCounts = nil
+	case "ark.oracle.v1.GenesisState.attendance_records":
+		x.AttendanceRecords = nil
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		x.VoteTargets = nil
 	case "ark.oracle.v1.GenesisState.accounting":
@@ -377,11 +377,11 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		}
 		listValue := &_GenesisState_3_list{list: &x.RewardWeights}
 		return protoreflect.ValueOfList(listValue)
-	case "ark.oracle.v1.GenesisState.miss_counts":
-		if len(x.MissCounts) == 0 {
+	case "ark.oracle.v1.GenesisState.attendance_records":
+		if len(x.AttendanceRecords) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_4_list{})
 		}
-		listValue := &_GenesisState_4_list{list: &x.MissCounts}
+		listValue := &_GenesisState_4_list{list: &x.AttendanceRecords}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		value := x.VoteTargets
@@ -419,10 +419,10 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		lv := value.List()
 		clv := lv.(*_GenesisState_3_list)
 		x.RewardWeights = *clv.list
-	case "ark.oracle.v1.GenesisState.miss_counts":
+	case "ark.oracle.v1.GenesisState.attendance_records":
 		lv := value.List()
 		clv := lv.(*_GenesisState_4_list)
-		x.MissCounts = *clv.list
+		x.AttendanceRecords = *clv.list
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		x.VoteTargets = value.Message().Interface().(*VoteTargets)
 	case "ark.oracle.v1.GenesisState.accounting":
@@ -464,11 +464,11 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		}
 		value := &_GenesisState_3_list{list: &x.RewardWeights}
 		return protoreflect.ValueOfList(value)
-	case "ark.oracle.v1.GenesisState.miss_counts":
-		if x.MissCounts == nil {
-			x.MissCounts = []*MissCount{}
+	case "ark.oracle.v1.GenesisState.attendance_records":
+		if x.AttendanceRecords == nil {
+			x.AttendanceRecords = []*AttendanceRecord{}
 		}
-		value := &_GenesisState_4_list{list: &x.MissCounts}
+		value := &_GenesisState_4_list{list: &x.AttendanceRecords}
 		return protoreflect.ValueOfList(value)
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		if x.VoteTargets == nil {
@@ -502,8 +502,8 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.oracle.v1.GenesisState.reward_weights":
 		list := []*RewardWeight{}
 		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
-	case "ark.oracle.v1.GenesisState.miss_counts":
-		list := []*MissCount{}
+	case "ark.oracle.v1.GenesisState.attendance_records":
+		list := []*AttendanceRecord{}
 		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
 	case "ark.oracle.v1.GenesisState.vote_targets":
 		m := new(VoteTargets)
@@ -596,8 +596,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.MissCounts) > 0 {
-			for _, e := range x.MissCounts {
+		if len(x.AttendanceRecords) > 0 {
+			for _, e := range x.AttendanceRecords {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -667,9 +667,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x2a
 		}
-		if len(x.MissCounts) > 0 {
-			for iNdEx := len(x.MissCounts) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.MissCounts[iNdEx])
+		if len(x.AttendanceRecords) > 0 {
+			for iNdEx := len(x.AttendanceRecords) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.AttendanceRecords[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -884,7 +884,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MissCounts", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AttendanceRecords", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -911,8 +911,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.MissCounts = append(x.MissCounts, &MissCount{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MissCounts[len(x.MissCounts)-1]); err != nil {
+				x.AttendanceRecords = append(x.AttendanceRecords, &AttendanceRecord{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.AttendanceRecords[len(x.AttendanceRecords)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1024,12 +1024,12 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_Accounting                            protoreflect.MessageDescriptor
-	fd_Accounting_reward_window              protoreflect.FieldDescriptor
-	fd_Accounting_reward_distribution_window protoreflect.FieldDescriptor
-	fd_Accounting_reward_window_start_height protoreflect.FieldDescriptor
-	fd_Accounting_slash_window               protoreflect.FieldDescriptor
-	fd_Accounting_slash_window_start_height  protoreflect.FieldDescriptor
+	md_Accounting                                protoreflect.MessageDescriptor
+	fd_Accounting_reward_window                  protoreflect.FieldDescriptor
+	fd_Accounting_reward_distribution_window     protoreflect.FieldDescriptor
+	fd_Accounting_reward_window_start_height     protoreflect.FieldDescriptor
+	fd_Accounting_attendance_window              protoreflect.FieldDescriptor
+	fd_Accounting_attendance_window_start_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1038,8 +1038,8 @@ func init() {
 	fd_Accounting_reward_window = md_Accounting.Fields().ByName("reward_window")
 	fd_Accounting_reward_distribution_window = md_Accounting.Fields().ByName("reward_distribution_window")
 	fd_Accounting_reward_window_start_height = md_Accounting.Fields().ByName("reward_window_start_height")
-	fd_Accounting_slash_window = md_Accounting.Fields().ByName("slash_window")
-	fd_Accounting_slash_window_start_height = md_Accounting.Fields().ByName("slash_window_start_height")
+	fd_Accounting_attendance_window = md_Accounting.Fields().ByName("attendance_window")
+	fd_Accounting_attendance_window_start_height = md_Accounting.Fields().ByName("attendance_window_start_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_Accounting)(nil)
@@ -1125,15 +1125,15 @@ func (x *fastReflection_Accounting) Range(f func(protoreflect.FieldDescriptor, p
 			return
 		}
 	}
-	if x.SlashWindow != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.SlashWindow)
-		if !f(fd_Accounting_slash_window, value) {
+	if x.AttendanceWindow != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.AttendanceWindow)
+		if !f(fd_Accounting_attendance_window, value) {
 			return
 		}
 	}
-	if x.SlashWindowStartHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.SlashWindowStartHeight)
-		if !f(fd_Accounting_slash_window_start_height, value) {
+	if x.AttendanceWindowStartHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.AttendanceWindowStartHeight)
+		if !f(fd_Accounting_attendance_window_start_height, value) {
 			return
 		}
 	}
@@ -1158,10 +1158,10 @@ func (x *fastReflection_Accounting) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.RewardDistributionWindow != uint64(0)
 	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		return x.RewardWindowStartHeight != uint64(0)
-	case "ark.oracle.v1.Accounting.slash_window":
-		return x.SlashWindow != uint64(0)
-	case "ark.oracle.v1.Accounting.slash_window_start_height":
-		return x.SlashWindowStartHeight != uint64(0)
+	case "ark.oracle.v1.Accounting.attendance_window":
+		return x.AttendanceWindow != uint64(0)
+	case "ark.oracle.v1.Accounting.attendance_window_start_height":
+		return x.AttendanceWindowStartHeight != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
@@ -1184,10 +1184,10 @@ func (x *fastReflection_Accounting) Clear(fd protoreflect.FieldDescriptor) {
 		x.RewardDistributionWindow = uint64(0)
 	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		x.RewardWindowStartHeight = uint64(0)
-	case "ark.oracle.v1.Accounting.slash_window":
-		x.SlashWindow = uint64(0)
-	case "ark.oracle.v1.Accounting.slash_window_start_height":
-		x.SlashWindowStartHeight = uint64(0)
+	case "ark.oracle.v1.Accounting.attendance_window":
+		x.AttendanceWindow = uint64(0)
+	case "ark.oracle.v1.Accounting.attendance_window_start_height":
+		x.AttendanceWindowStartHeight = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
@@ -1213,11 +1213,11 @@ func (x *fastReflection_Accounting) Get(descriptor protoreflect.FieldDescriptor)
 	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		value := x.RewardWindowStartHeight
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.Accounting.slash_window":
-		value := x.SlashWindow
+	case "ark.oracle.v1.Accounting.attendance_window":
+		value := x.AttendanceWindow
 		return protoreflect.ValueOfUint64(value)
-	case "ark.oracle.v1.Accounting.slash_window_start_height":
-		value := x.SlashWindowStartHeight
+	case "ark.oracle.v1.Accounting.attendance_window_start_height":
+		value := x.AttendanceWindowStartHeight
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -1245,10 +1245,10 @@ func (x *fastReflection_Accounting) Set(fd protoreflect.FieldDescriptor, value p
 		x.RewardDistributionWindow = value.Uint()
 	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		x.RewardWindowStartHeight = value.Uint()
-	case "ark.oracle.v1.Accounting.slash_window":
-		x.SlashWindow = value.Uint()
-	case "ark.oracle.v1.Accounting.slash_window_start_height":
-		x.SlashWindowStartHeight = value.Uint()
+	case "ark.oracle.v1.Accounting.attendance_window":
+		x.AttendanceWindow = value.Uint()
+	case "ark.oracle.v1.Accounting.attendance_window_start_height":
+		x.AttendanceWindowStartHeight = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
@@ -1275,10 +1275,10 @@ func (x *fastReflection_Accounting) Mutable(fd protoreflect.FieldDescriptor) pro
 		panic(fmt.Errorf("field reward_distribution_window of message ark.oracle.v1.Accounting is not mutable"))
 	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		panic(fmt.Errorf("field reward_window_start_height of message ark.oracle.v1.Accounting is not mutable"))
-	case "ark.oracle.v1.Accounting.slash_window":
-		panic(fmt.Errorf("field slash_window of message ark.oracle.v1.Accounting is not mutable"))
-	case "ark.oracle.v1.Accounting.slash_window_start_height":
-		panic(fmt.Errorf("field slash_window_start_height of message ark.oracle.v1.Accounting is not mutable"))
+	case "ark.oracle.v1.Accounting.attendance_window":
+		panic(fmt.Errorf("field attendance_window of message ark.oracle.v1.Accounting is not mutable"))
+	case "ark.oracle.v1.Accounting.attendance_window_start_height":
+		panic(fmt.Errorf("field attendance_window_start_height of message ark.oracle.v1.Accounting is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.Accounting"))
@@ -1298,9 +1298,9 @@ func (x *fastReflection_Accounting) NewField(fd protoreflect.FieldDescriptor) pr
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.oracle.v1.Accounting.reward_window_start_height":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.Accounting.slash_window":
+	case "ark.oracle.v1.Accounting.attendance_window":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.oracle.v1.Accounting.slash_window_start_height":
+	case "ark.oracle.v1.Accounting.attendance_window_start_height":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -1380,11 +1380,11 @@ func (x *fastReflection_Accounting) ProtoMethods() *protoiface.Methods {
 		if x.RewardWindowStartHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.RewardWindowStartHeight))
 		}
-		if x.SlashWindow != 0 {
-			n += 1 + runtime.Sov(uint64(x.SlashWindow))
+		if x.AttendanceWindow != 0 {
+			n += 1 + runtime.Sov(uint64(x.AttendanceWindow))
 		}
-		if x.SlashWindowStartHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.SlashWindowStartHeight))
+		if x.AttendanceWindowStartHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.AttendanceWindowStartHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1415,13 +1415,13 @@ func (x *fastReflection_Accounting) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.SlashWindowStartHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.SlashWindowStartHeight))
+		if x.AttendanceWindowStartHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.AttendanceWindowStartHeight))
 			i--
 			dAtA[i] = 0x28
 		}
-		if x.SlashWindow != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.SlashWindow))
+		if x.AttendanceWindow != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.AttendanceWindow))
 			i--
 			dAtA[i] = 0x20
 		}
@@ -1548,9 +1548,9 @@ func (x *fastReflection_Accounting) ProtoMethods() *protoiface.Methods {
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SlashWindow", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AttendanceWindow", wireType)
 				}
-				x.SlashWindow = 0
+				x.AttendanceWindow = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1560,16 +1560,16 @@ func (x *fastReflection_Accounting) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.SlashWindow |= uint64(b&0x7F) << shift
+					x.AttendanceWindow |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
 			case 5:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SlashWindowStartHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AttendanceWindowStartHeight", wireType)
 				}
-				x.SlashWindowStartHeight = 0
+				x.AttendanceWindowStartHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1579,7 +1579,7 @@ func (x *fastReflection_Accounting) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.SlashWindowStartHeight |= uint64(b&0x7F) << shift
+					x.AttendanceWindowStartHeight |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -2715,27 +2715,27 @@ func (x *fastReflection_RewardWeight) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MissCount                   protoreflect.MessageDescriptor
-	fd_MissCount_validator_address protoreflect.FieldDescriptor
-	fd_MissCount_miss_count        protoreflect.FieldDescriptor
+	md_AttendanceRecord                   protoreflect.MessageDescriptor
+	fd_AttendanceRecord_validator_address protoreflect.FieldDescriptor
+	fd_AttendanceRecord_attendance        protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_genesis_proto_init()
-	md_MissCount = File_ark_oracle_v1_genesis_proto.Messages().ByName("MissCount")
-	fd_MissCount_validator_address = md_MissCount.Fields().ByName("validator_address")
-	fd_MissCount_miss_count = md_MissCount.Fields().ByName("miss_count")
+	md_AttendanceRecord = File_ark_oracle_v1_genesis_proto.Messages().ByName("AttendanceRecord")
+	fd_AttendanceRecord_validator_address = md_AttendanceRecord.Fields().ByName("validator_address")
+	fd_AttendanceRecord_attendance = md_AttendanceRecord.Fields().ByName("attendance")
 }
 
-var _ protoreflect.Message = (*fastReflection_MissCount)(nil)
+var _ protoreflect.Message = (*fastReflection_AttendanceRecord)(nil)
 
-type fastReflection_MissCount MissCount
+type fastReflection_AttendanceRecord AttendanceRecord
 
-func (x *MissCount) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MissCount)(x)
+func (x *AttendanceRecord) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_AttendanceRecord)(x)
 }
 
-func (x *MissCount) slowProtoReflect() protoreflect.Message {
+func (x *AttendanceRecord) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_genesis_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2747,43 +2747,43 @@ func (x *MissCount) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MissCount_messageType fastReflection_MissCount_messageType
-var _ protoreflect.MessageType = fastReflection_MissCount_messageType{}
+var _fastReflection_AttendanceRecord_messageType fastReflection_AttendanceRecord_messageType
+var _ protoreflect.MessageType = fastReflection_AttendanceRecord_messageType{}
 
-type fastReflection_MissCount_messageType struct{}
+type fastReflection_AttendanceRecord_messageType struct{}
 
-func (x fastReflection_MissCount_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MissCount)(nil)
+func (x fastReflection_AttendanceRecord_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_AttendanceRecord)(nil)
 }
-func (x fastReflection_MissCount_messageType) New() protoreflect.Message {
-	return new(fastReflection_MissCount)
+func (x fastReflection_AttendanceRecord_messageType) New() protoreflect.Message {
+	return new(fastReflection_AttendanceRecord)
 }
-func (x fastReflection_MissCount_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MissCount
+func (x fastReflection_AttendanceRecord_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_AttendanceRecord
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MissCount) Descriptor() protoreflect.MessageDescriptor {
-	return md_MissCount
+func (x *fastReflection_AttendanceRecord) Descriptor() protoreflect.MessageDescriptor {
+	return md_AttendanceRecord
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MissCount) Type() protoreflect.MessageType {
-	return _fastReflection_MissCount_messageType
+func (x *fastReflection_AttendanceRecord) Type() protoreflect.MessageType {
+	return _fastReflection_AttendanceRecord_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MissCount) New() protoreflect.Message {
-	return new(fastReflection_MissCount)
+func (x *fastReflection_AttendanceRecord) New() protoreflect.Message {
+	return new(fastReflection_AttendanceRecord)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MissCount) Interface() protoreflect.ProtoMessage {
-	return (*MissCount)(x)
+func (x *fastReflection_AttendanceRecord) Interface() protoreflect.ProtoMessage {
+	return (*AttendanceRecord)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2791,16 +2791,16 @@ func (x *fastReflection_MissCount) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MissCount) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_AttendanceRecord) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.ValidatorAddress != "" {
 		value := protoreflect.ValueOfString(x.ValidatorAddress)
-		if !f(fd_MissCount_validator_address, value) {
+		if !f(fd_AttendanceRecord_validator_address, value) {
 			return
 		}
 	}
-	if x.MissCount != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.MissCount)
-		if !f(fd_MissCount_miss_count, value) {
+	if x.Attendance != nil {
+		value := protoreflect.ValueOfMessage(x.Attendance.ProtoReflect())
+		if !f(fd_AttendanceRecord_attendance, value) {
 			return
 		}
 	}
@@ -2817,17 +2817,17 @@ func (x *fastReflection_MissCount) Range(f func(protoreflect.FieldDescriptor, pr
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MissCount) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_AttendanceRecord) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.MissCount.validator_address":
+	case "ark.oracle.v1.AttendanceRecord.validator_address":
 		return x.ValidatorAddress != ""
-	case "ark.oracle.v1.MissCount.miss_count":
-		return x.MissCount != uint64(0)
+	case "ark.oracle.v1.AttendanceRecord.attendance":
+		return x.Attendance != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MissCount"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AttendanceRecord"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.MissCount does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.AttendanceRecord does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2837,17 +2837,17 @@ func (x *fastReflection_MissCount) Has(fd protoreflect.FieldDescriptor) bool {
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MissCount) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_AttendanceRecord) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.MissCount.validator_address":
+	case "ark.oracle.v1.AttendanceRecord.validator_address":
 		x.ValidatorAddress = ""
-	case "ark.oracle.v1.MissCount.miss_count":
-		x.MissCount = uint64(0)
+	case "ark.oracle.v1.AttendanceRecord.attendance":
+		x.Attendance = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MissCount"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AttendanceRecord"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.MissCount does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.AttendanceRecord does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2857,19 +2857,19 @@ func (x *fastReflection_MissCount) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MissCount) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_AttendanceRecord) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.MissCount.validator_address":
+	case "ark.oracle.v1.AttendanceRecord.validator_address":
 		value := x.ValidatorAddress
 		return protoreflect.ValueOfString(value)
-	case "ark.oracle.v1.MissCount.miss_count":
-		value := x.MissCount
-		return protoreflect.ValueOfUint64(value)
+	case "ark.oracle.v1.AttendanceRecord.attendance":
+		value := x.Attendance
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MissCount"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AttendanceRecord"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.MissCount does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.AttendanceRecord does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2883,17 +2883,17 @@ func (x *fastReflection_MissCount) Get(descriptor protoreflect.FieldDescriptor) 
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MissCount) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_AttendanceRecord) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.MissCount.validator_address":
+	case "ark.oracle.v1.AttendanceRecord.validator_address":
 		x.ValidatorAddress = value.Interface().(string)
-	case "ark.oracle.v1.MissCount.miss_count":
-		x.MissCount = value.Uint()
+	case "ark.oracle.v1.AttendanceRecord.attendance":
+		x.Attendance = value.Message().Interface().(*Attendance)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MissCount"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AttendanceRecord"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.MissCount does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.AttendanceRecord does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2907,44 +2907,48 @@ func (x *fastReflection_MissCount) Set(fd protoreflect.FieldDescriptor, value pr
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MissCount) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_AttendanceRecord) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.MissCount.validator_address":
-		panic(fmt.Errorf("field validator_address of message ark.oracle.v1.MissCount is not mutable"))
-	case "ark.oracle.v1.MissCount.miss_count":
-		panic(fmt.Errorf("field miss_count of message ark.oracle.v1.MissCount is not mutable"))
+	case "ark.oracle.v1.AttendanceRecord.attendance":
+		if x.Attendance == nil {
+			x.Attendance = new(Attendance)
+		}
+		return protoreflect.ValueOfMessage(x.Attendance.ProtoReflect())
+	case "ark.oracle.v1.AttendanceRecord.validator_address":
+		panic(fmt.Errorf("field validator_address of message ark.oracle.v1.AttendanceRecord is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MissCount"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AttendanceRecord"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.MissCount does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.AttendanceRecord does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MissCount) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_AttendanceRecord) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.MissCount.validator_address":
+	case "ark.oracle.v1.AttendanceRecord.validator_address":
 		return protoreflect.ValueOfString("")
-	case "ark.oracle.v1.MissCount.miss_count":
-		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.oracle.v1.AttendanceRecord.attendance":
+		m := new(Attendance)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MissCount"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.AttendanceRecord"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.MissCount does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.AttendanceRecord does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MissCount) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_AttendanceRecord) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.MissCount", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.AttendanceRecord", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2952,7 +2956,7 @@ func (x *fastReflection_MissCount) WhichOneof(d protoreflect.OneofDescriptor) pr
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MissCount) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_AttendanceRecord) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2963,7 +2967,7 @@ func (x *fastReflection_MissCount) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MissCount) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_AttendanceRecord) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2975,7 +2979,7 @@ func (x *fastReflection_MissCount) SetUnknown(fields protoreflect.RawFields) {
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MissCount) IsValid() bool {
+func (x *fastReflection_AttendanceRecord) IsValid() bool {
 	return x != nil
 }
 
@@ -2985,9 +2989,9 @@ func (x *fastReflection_MissCount) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_AttendanceRecord) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MissCount)
+		x := input.Message.Interface().(*AttendanceRecord)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3003,8 +3007,9 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.MissCount != 0 {
-			n += 1 + runtime.Sov(uint64(x.MissCount))
+		if x.Attendance != nil {
+			l = options.Size(x.Attendance)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -3016,7 +3021,7 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MissCount)
+		x := input.Message.Interface().(*AttendanceRecord)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3035,10 +3040,19 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.MissCount != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.MissCount))
+		if x.Attendance != nil {
+			encoded, err := options.Marshal(x.Attendance)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x10
+			dAtA[i] = 0x12
 		}
 		if len(x.ValidatorAddress) > 0 {
 			i -= len(x.ValidatorAddress)
@@ -3058,7 +3072,7 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MissCount)
+		x := input.Message.Interface().(*AttendanceRecord)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3090,10 +3104,10 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MissCount: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AttendanceRecord: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MissCount: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: AttendanceRecord: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -3129,10 +3143,10 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 				x.ValidatorAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MissCount", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Attendance", wireType)
 				}
-				x.MissCount = 0
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -3142,11 +3156,28 @@ func (x *fastReflection_MissCount) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.MissCount |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Attendance == nil {
+					x.Attendance = &Attendance{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Attendance); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -3201,12 +3232,12 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params        *Params         `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	ExchangeRates []*ExchangeRate `protobuf:"bytes,2,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
-	RewardWeights []*RewardWeight `protobuf:"bytes,3,rep,name=reward_weights,json=rewardWeights,proto3" json:"reward_weights,omitempty"`
-	MissCounts    []*MissCount    `protobuf:"bytes,4,rep,name=miss_counts,json=missCounts,proto3" json:"miss_counts,omitempty"`
-	VoteTargets   *VoteTargets    `protobuf:"bytes,5,opt,name=vote_targets,json=voteTargets,proto3" json:"vote_targets,omitempty"`
-	Accounting    *Accounting     `protobuf:"bytes,6,opt,name=accounting,proto3" json:"accounting,omitempty"`
+	Params            *Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	ExchangeRates     []*ExchangeRate     `protobuf:"bytes,2,rep,name=exchange_rates,json=exchangeRates,proto3" json:"exchange_rates,omitempty"`
+	RewardWeights     []*RewardWeight     `protobuf:"bytes,3,rep,name=reward_weights,json=rewardWeights,proto3" json:"reward_weights,omitempty"`
+	AttendanceRecords []*AttendanceRecord `protobuf:"bytes,4,rep,name=attendance_records,json=attendanceRecords,proto3" json:"attendance_records,omitempty"`
+	VoteTargets       *VoteTargets        `protobuf:"bytes,5,opt,name=vote_targets,json=voteTargets,proto3" json:"vote_targets,omitempty"`
+	Accounting        *Accounting         `protobuf:"bytes,6,opt,name=accounting,proto3" json:"accounting,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -3250,9 +3281,9 @@ func (x *GenesisState) GetRewardWeights() []*RewardWeight {
 	return nil
 }
 
-func (x *GenesisState) GetMissCounts() []*MissCount {
+func (x *GenesisState) GetAttendanceRecords() []*AttendanceRecord {
 	if x != nil {
-		return x.MissCounts
+		return x.AttendanceRecords
 	}
 	return nil
 }
@@ -3271,18 +3302,18 @@ func (x *GenesisState) GetAccounting() *Accounting {
 	return nil
 }
 
-// Accounting defines the active reward and slashing periods. Params may
+// Accounting defines the active reward and attendance periods. Params may
 // contain newly approved windows while accounting finishes the current period.
 type Accounting struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	RewardWindow             uint64 `protobuf:"varint,1,opt,name=reward_window,json=rewardWindow,proto3" json:"reward_window,omitempty"`
-	RewardDistributionWindow uint64 `protobuf:"varint,2,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
-	RewardWindowStartHeight  uint64 `protobuf:"varint,3,opt,name=reward_window_start_height,json=rewardWindowStartHeight,proto3" json:"reward_window_start_height,omitempty"`
-	SlashWindow              uint64 `protobuf:"varint,4,opt,name=slash_window,json=slashWindow,proto3" json:"slash_window,omitempty"`
-	SlashWindowStartHeight   uint64 `protobuf:"varint,5,opt,name=slash_window_start_height,json=slashWindowStartHeight,proto3" json:"slash_window_start_height,omitempty"`
+	RewardWindow                uint64 `protobuf:"varint,1,opt,name=reward_window,json=rewardWindow,proto3" json:"reward_window,omitempty"`
+	RewardDistributionWindow    uint64 `protobuf:"varint,2,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
+	RewardWindowStartHeight     uint64 `protobuf:"varint,3,opt,name=reward_window_start_height,json=rewardWindowStartHeight,proto3" json:"reward_window_start_height,omitempty"`
+	AttendanceWindow            uint64 `protobuf:"varint,4,opt,name=attendance_window,json=attendanceWindow,proto3" json:"attendance_window,omitempty"`
+	AttendanceWindowStartHeight uint64 `protobuf:"varint,5,opt,name=attendance_window_start_height,json=attendanceWindowStartHeight,proto3" json:"attendance_window_start_height,omitempty"`
 }
 
 func (x *Accounting) Reset() {
@@ -3326,16 +3357,16 @@ func (x *Accounting) GetRewardWindowStartHeight() uint64 {
 	return 0
 }
 
-func (x *Accounting) GetSlashWindow() uint64 {
+func (x *Accounting) GetAttendanceWindow() uint64 {
 	if x != nil {
-		return x.SlashWindow
+		return x.AttendanceWindow
 	}
 	return 0
 }
 
-func (x *Accounting) GetSlashWindowStartHeight() uint64 {
+func (x *Accounting) GetAttendanceWindowStartHeight() uint64 {
 	if x != nil {
-		return x.SlashWindowStartHeight
+		return x.AttendanceWindowStartHeight
 	}
 	return 0
 }
@@ -3449,19 +3480,19 @@ func (x *RewardWeight) GetRewardWeight() string {
 	return ""
 }
 
-// MissCount defines a miss count and validator address pair used in
-// oracle module's genesis state
-type MissCount struct {
+// AttendanceRecord pairs a validator address with its in-progress attendance
+// counters for genesis import/export.
+type AttendanceRecord struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ValidatorAddress string `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
-	MissCount        uint64 `protobuf:"varint,2,opt,name=miss_count,json=missCount,proto3" json:"miss_count,omitempty"`
+	ValidatorAddress string      `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
+	Attendance       *Attendance `protobuf:"bytes,2,opt,name=attendance,proto3" json:"attendance,omitempty"`
 }
 
-func (x *MissCount) Reset() {
-	*x = MissCount{}
+func (x *AttendanceRecord) Reset() {
+	*x = AttendanceRecord{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_genesis_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3469,29 +3500,29 @@ func (x *MissCount) Reset() {
 	}
 }
 
-func (x *MissCount) String() string {
+func (x *AttendanceRecord) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MissCount) ProtoMessage() {}
+func (*AttendanceRecord) ProtoMessage() {}
 
-// Deprecated: Use MissCount.ProtoReflect.Descriptor instead.
-func (*MissCount) Descriptor() ([]byte, []int) {
+// Deprecated: Use AttendanceRecord.ProtoReflect.Descriptor instead.
+func (*AttendanceRecord) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_genesis_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *MissCount) GetValidatorAddress() string {
+func (x *AttendanceRecord) GetValidatorAddress() string {
 	if x != nil {
 		return x.ValidatorAddress
 	}
 	return ""
 }
 
-func (x *MissCount) GetMissCount() uint64 {
+func (x *AttendanceRecord) GetAttendance() *Attendance {
 	if x != nil {
-		return x.MissCount
+		return x.Attendance
 	}
-	return 0
+	return nil
 }
 
 var File_ark_oracle_v1_genesis_proto protoreflect.FileDescriptor
@@ -3507,7 +3538,7 @@ var file_ark_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f,
 	0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69,
-	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbc, 0x03,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xd1, 0x03,
 	0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x38,
 	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50,
@@ -3522,81 +3553,86 @@ var file_ark_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
 	0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x09, 0xc8, 0xde,
 	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x12, 0x44, 0x0a, 0x0b, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x63,
-	0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x69, 0x73, 0x73,
-	0x43, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x48, 0x0a, 0x0c,
-	0x76, 0x6f, 0x74, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x18, 0x05, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x42, 0x09,
-	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x76, 0x6f, 0x74, 0x65, 0x54,
-	0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x44, 0x0a, 0x0a, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
-	0x74, 0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x61, 0x72, 0x6b,
-	0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75,
-	0x6e, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x0a, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x22, 0x8a, 0x02, 0x0a,
-	0x0a, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x23, 0x0a, 0x0d, 0x72,
-	0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77,
-	0x12, 0x3c, 0x0a, 0x1a, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x72,
-	0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x04, 0x52, 0x18, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x44, 0x69, 0x73, 0x74,
-	0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x3b,
-	0x0a, 0x1a, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f,
-	0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x17, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77,
-	0x53, 0x74, 0x61, 0x72, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x73,
-	0x6c, 0x61, 0x73, 0x68, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x0b, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x39,
-	0x0a, 0x19, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x73,
-	0x74, 0x61, 0x72, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x16, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x53, 0x74,
-	0x61, 0x72, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xe2, 0x01, 0x0a, 0x0c, 0x45, 0x78,
-	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x12, 0x4a, 0x0a, 0x04, 0x72, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
-	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
-	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
-	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x72, 0x61, 0x74, 0x65, 0x12, 0x4d, 0x0a, 0x0f,
-	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d,
-	0x70, 0x42, 0x08, 0xc8, 0xde, 0x1f, 0x00, 0x90, 0xdf, 0x1f, 0x01, 0x52, 0x0e, 0x62, 0x6c, 0x6f,
-	0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x12, 0x21, 0x0a, 0x0c, 0x62,
-	0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xb5,
-	0x01, 0x0a, 0x0c, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12,
-	0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76,
-	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
-	0x55, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
-	0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64,
-	0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x7a, 0x0a, 0x09, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f,
-	0x75, 0x6e, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
-	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21,
-	0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64,
-	0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e,
-	0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e,
-	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75,
-	0x6e, 0x74, 0x42, 0x97, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69,
-	0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70,
-	0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4f, 0x58, 0xaa, 0x02,
-	0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02,
-	0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02,
-	0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47,
-	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b,
-	0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x12, 0x59, 0x0a, 0x12, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64,
+	0x61, 0x6e, 0x63, 0x65, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x04, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x63,
+	0x6f, 0x72, 0x64, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11,
+	0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
+	0x73, 0x12, 0x48, 0x0a, 0x0c, 0x76, 0x6f, 0x74, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74,
+	0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72,
+	0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67,
+	0x65, 0x74, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b,
+	0x76, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x44, 0x0a, 0x0a, 0x61,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e,
+	0x67, 0x22, 0x9e, 0x02, 0x0a, 0x0a, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67,
+	0x12, 0x23, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f,
+	0x77, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57,
+	0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x3c, 0x0a, 0x1a, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f,
+	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x77, 0x69, 0x6e,
+	0x64, 0x6f, 0x77, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x18, 0x72, 0x65, 0x77, 0x61, 0x72,
+	0x64, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x57, 0x69, 0x6e,
+	0x64, 0x6f, 0x77, 0x12, 0x3b, 0x0a, 0x1a, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69,
+	0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x17, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57,
+	0x69, 0x6e, 0x64, 0x6f, 0x77, 0x53, 0x74, 0x61, 0x72, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x12, 0x2b, 0x0a, 0x11, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x77,
+	0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x61, 0x74, 0x74,
+	0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x43, 0x0a,
+	0x1e, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x77, 0x69, 0x6e, 0x64,
+	0x6f, 0x77, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
+	0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x1b, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63,
+	0x65, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x53, 0x74, 0x61, 0x72, 0x74, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x22, 0xe2, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52,
+	0x61, 0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4a, 0x0a, 0x04, 0x72, 0x61, 0x74,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x04, 0x72, 0x61, 0x74, 0x65, 0x12, 0x4d, 0x0a, 0x0f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x74,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x42, 0x08, 0xc8, 0xde, 0x1f, 0x00,
+	0x90, 0xdf, 0x1f, 0x01, 0x52, 0x0e, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x74, 0x61, 0x6d, 0x70, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63,
+	0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xb5, 0x01, 0x0a, 0x0c, 0x52, 0x65, 0x77, 0x61,
+	0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69,
+	0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
+	0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x55, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61,
+	0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4,
+	0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22,
+	0xa8, 0x01, 0x0a, 0x10, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65,
+	0x63, 0x6f, 0x72, 0x64, 0x12, 0x4e, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
+	0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x21, 0xd2, 0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69,
+	0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x12, 0x44, 0x0a, 0x0a, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e,
+	0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f,
+	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61,
+	0x6e, 0x63, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a,
+	0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x97, 0x01, 0x0a, 0x11, 0x63,
+	0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31,
+	0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
+	0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72,
+	0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31,
+	0xa2, 0x02, 0x03, 0x41, 0x4f, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3617,24 +3653,26 @@ var file_ark_oracle_v1_genesis_proto_goTypes = []interface{}{
 	(*Accounting)(nil),            // 1: ark.oracle.v1.Accounting
 	(*ExchangeRate)(nil),          // 2: ark.oracle.v1.ExchangeRate
 	(*RewardWeight)(nil),          // 3: ark.oracle.v1.RewardWeight
-	(*MissCount)(nil),             // 4: ark.oracle.v1.MissCount
+	(*AttendanceRecord)(nil),      // 4: ark.oracle.v1.AttendanceRecord
 	(*Params)(nil),                // 5: ark.oracle.v1.Params
 	(*VoteTargets)(nil),           // 6: ark.oracle.v1.VoteTargets
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(*Attendance)(nil),            // 8: ark.oracle.v1.Attendance
 }
 var file_ark_oracle_v1_genesis_proto_depIdxs = []int32{
 	5, // 0: ark.oracle.v1.GenesisState.params:type_name -> ark.oracle.v1.Params
 	2, // 1: ark.oracle.v1.GenesisState.exchange_rates:type_name -> ark.oracle.v1.ExchangeRate
 	3, // 2: ark.oracle.v1.GenesisState.reward_weights:type_name -> ark.oracle.v1.RewardWeight
-	4, // 3: ark.oracle.v1.GenesisState.miss_counts:type_name -> ark.oracle.v1.MissCount
+	4, // 3: ark.oracle.v1.GenesisState.attendance_records:type_name -> ark.oracle.v1.AttendanceRecord
 	6, // 4: ark.oracle.v1.GenesisState.vote_targets:type_name -> ark.oracle.v1.VoteTargets
 	1, // 5: ark.oracle.v1.GenesisState.accounting:type_name -> ark.oracle.v1.Accounting
 	7, // 6: ark.oracle.v1.ExchangeRate.block_timestamp:type_name -> google.protobuf.Timestamp
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	8, // 7: ark.oracle.v1.AttendanceRecord.attendance:type_name -> ark.oracle.v1.Attendance
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_ark_oracle_v1_genesis_proto_init() }
@@ -3693,7 +3731,7 @@ func file_ark_oracle_v1_genesis_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_genesis_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MissCount); i {
+			switch v := v.(*AttendanceRecord); i {
 			case 0:
 				return &v.state
 			case 1:

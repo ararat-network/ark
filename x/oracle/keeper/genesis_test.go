@@ -46,9 +46,9 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 						{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
 						{ValidatorAddress: valAddr2.String(), RewardWeight: math.ZeroInt()},
 					},
-					MissCounts: []types.MissCount{
-						{ValidatorAddress: valAddr1.String(), MissCount: 5},
-						{ValidatorAddress: valAddr2.String(), MissCount: 0},
+					AttendanceRecords: []types.AttendanceRecord{
+						{ValidatorAddress: valAddr1.String(), Attendance: types.Attendance{EligibleBlocks: 5, AttendedBlocks: 3}},
+						{ValidatorAddress: valAddr2.String(), Attendance: types.Attendance{EligibleBlocks: 0, AttendedBlocks: 0}},
 					},
 					VoteTargets: types.VoteTargets{
 						Denoms: []string{
@@ -83,15 +83,15 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			expectAccountingOld: true,
 		},
 		{
-			name: "invalid validator address in miss count",
+			name: "invalid validator address in attendance record",
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
-				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: "invalid", MissCount: 5},
+				gs.AttendanceRecords = []types.AttendanceRecord{
+					{ValidatorAddress: "invalid", Attendance: types.Attendance{EligibleBlocks: 5}},
 				}
 				return gs
 			},
-			expectErr: "invalid oracle genesis state: miss count validator address is invalid",
+			expectErr: "invalid oracle genesis state: attendance record validator address is invalid",
 		},
 		{
 			name:      "nil genesis returns error",
@@ -190,9 +190,8 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	s.Require().True(expected.Params.RewardBand.Equal(params.RewardBand))
 	s.Require().Equal(expected.Params.RewardWindow, params.RewardWindow)
 	s.Require().Equal(expected.Params.RewardDistributionWindow, params.RewardDistributionWindow)
-	s.Require().Equal(expected.Params.SlashWindow, params.SlashWindow)
-	s.Require().True(expected.Params.SlashFraction.Equal(params.SlashFraction))
-	s.Require().True(expected.Params.MinValidPerWindow.Equal(params.MinValidPerWindow))
+	s.Require().Equal(expected.Params.AttendanceWindow, params.AttendanceWindow)
+	s.Require().True(expected.Params.MinAttendancePerWindow.Equal(params.MinAttendancePerWindow))
 	s.Require().Equal(expected.Params.MaxExchangeRateAge, params.MaxExchangeRateAge)
 	s.Require().Len(params.TobinTaxes, len(expected.Params.TobinTaxes))
 	for i, item := range expected.Params.TobinTaxes {
@@ -239,22 +238,22 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().True(item.RewardWeight.Equal(rewardWeight))
 	}
 
-	// Miss counts are keyed by validator address.
-	missCountCount := 0
-	err = s.keeper.MissCount.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ uint64) (bool, error) {
-		missCountCount++
+	// Attendance records are keyed by validator address.
+	attendanceCount := 0
+	err = s.keeper.Attendance.Walk(s.ctx, nil, func(_ sdk.ValAddress, _ types.Attendance) (bool, error) {
+		attendanceCount++
 		return false, nil
 	})
 	s.Require().NoError(err)
-	s.Require().Len(expected.MissCounts, missCountCount)
+	s.Require().Len(expected.AttendanceRecords, attendanceCount)
 
-	for _, item := range expected.MissCounts {
+	for _, item := range expected.AttendanceRecords {
 		valAddr, err := sdk.ValAddressFromBech32(item.ValidatorAddress)
 		s.Require().NoError(err)
 
-		missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr)
+		attendance, err := s.keeper.Attendance.Get(s.ctx, valAddr)
 		s.Require().NoError(err)
-		s.Require().Equal(item.MissCount, missCount)
+		s.Require().Equal(item.Attendance, attendance)
 	}
 
 	// Tobin taxes are read directly from params.
@@ -274,11 +273,11 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	expected := &types.GenesisState{
 		Params: params,
 		Accounting: types.Accounting{
-			RewardWindow:             10,
-			RewardDistributionWindow: 100,
-			RewardWindowStartHeight:  7,
-			SlashWindow:              20,
-			SlashWindowStartHeight:   11,
+			RewardWindow:                10,
+			RewardDistributionWindow:    100,
+			RewardWindowStartHeight:     7,
+			AttendanceWindow:            20,
+			AttendanceWindowStartHeight: 11,
 		},
 		ExchangeRates: []types.ExchangeRate{
 			{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
@@ -288,9 +287,9 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
 			{ValidatorAddress: valAddr2.String(), RewardWeight: math.ZeroInt()},
 		},
-		MissCounts: []types.MissCount{
-			{ValidatorAddress: valAddr1.String(), MissCount: 5},
-			{ValidatorAddress: valAddr2.String(), MissCount: 0},
+		AttendanceRecords: []types.AttendanceRecord{
+			{ValidatorAddress: valAddr1.String(), Attendance: types.Attendance{EligibleBlocks: 5, AttendedBlocks: 3}},
+			{ValidatorAddress: valAddr2.String(), Attendance: types.Attendance{EligibleBlocks: 0, AttendedBlocks: 0}},
 		},
 		VoteTargets: types.VoteTargets{Denoms: []string{
 			chain.KRWBaseDenom,
@@ -311,11 +310,11 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr, item.RewardWeight))
 	}
-	for _, item := range expected.MissCounts {
+	for _, item := range expected.AttendanceRecords {
 		valAddr, err := sdk.ValAddressFromBech32(item.ValidatorAddress)
 		s.Require().NoError(err)
 
-		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr, item.MissCount))
+		s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr, item.Attendance))
 	}
 	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, expected.VoteTargets))
 
@@ -328,9 +327,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	s.Require().True(expected.Params.RewardBand.Equal(gs.Params.RewardBand))
 	s.Require().Equal(expected.Params.RewardWindow, gs.Params.RewardWindow)
 	s.Require().Equal(expected.Params.RewardDistributionWindow, gs.Params.RewardDistributionWindow)
-	s.Require().Equal(expected.Params.SlashWindow, gs.Params.SlashWindow)
-	s.Require().True(expected.Params.SlashFraction.Equal(gs.Params.SlashFraction))
-	s.Require().True(expected.Params.MinValidPerWindow.Equal(gs.Params.MinValidPerWindow))
+	s.Require().Equal(expected.Params.AttendanceWindow, gs.Params.AttendanceWindow)
+	s.Require().True(expected.Params.MinAttendancePerWindow.Equal(gs.Params.MinAttendancePerWindow))
 	s.Require().Equal(expected.Params.MaxExchangeRateAge, gs.Params.MaxExchangeRateAge)
 	s.Require().Equal(expected.Params.TobinTaxes, gs.Params.TobinTaxes)
 	s.Require().Equal(expected.VoteTargets, gs.VoteTargets)
@@ -359,13 +357,13 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		s.Require().True(item.RewardWeight.Equal(rewardWeights[item.ValidatorAddress]))
 	}
 
-	// Miss counts are exported by validator address.
-	s.Require().Len(gs.MissCounts, len(expected.MissCounts))
-	missCounts := make(map[string]uint64)
-	for _, item := range gs.MissCounts {
-		missCounts[item.ValidatorAddress] = item.MissCount
+	// Attendance records are exported by validator address.
+	s.Require().Len(gs.AttendanceRecords, len(expected.AttendanceRecords))
+	attendanceRecords := make(map[string]types.Attendance)
+	for _, item := range gs.AttendanceRecords {
+		attendanceRecords[item.ValidatorAddress] = item.Attendance
 	}
-	for _, item := range expected.MissCounts {
-		s.Require().Equal(item.MissCount, missCounts[item.ValidatorAddress])
+	for _, item := range expected.AttendanceRecords {
+		s.Require().Equal(item.Attendance, attendanceRecords[item.ValidatorAddress])
 	}
 }

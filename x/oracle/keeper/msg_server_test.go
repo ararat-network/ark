@@ -23,9 +23,9 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		params := types.DefaultParams()
 		params.RewardWindow = 100
 		params.RewardDistributionWindow = 1_000
-		params.SlashWindow = 200
+		params.AttendanceWindow = 200
 		s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(7)))
-		s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, 3))
+		s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{EligibleBlocks: 3, AttendedBlocks: 1}))
 
 		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 			Authority: authority,
@@ -41,14 +41,14 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().NoError(err)
 		s.Require().Equal(types.DefaultRewardWindow, accounting.RewardWindow)
 		s.Require().Equal(types.DefaultRewardDistributionWindow, accounting.RewardDistributionWindow)
-		s.Require().Equal(types.DefaultSlashWindow, accounting.SlashWindow)
+		s.Require().Equal(types.DefaultAttendanceWindow, accounting.AttendanceWindow)
 
 		rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx, valAddr1)
 		s.Require().NoError(err)
 		s.Require().True(math.NewInt(7).Equal(rewardWeight))
-		missCount, err := s.keeper.MissCount.Get(s.ctx, valAddr1)
+		attendance, err := s.keeper.Attendance.Get(s.ctx, valAddr1)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(3), missCount)
+		s.Require().Equal(types.Attendance{EligibleBlocks: 3, AttendedBlocks: 1}, attendance)
 	})
 
 	s.Run("rejects invalid authority", func() {

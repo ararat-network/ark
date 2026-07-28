@@ -43,11 +43,11 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "accounting reward distribution window must be greater than or equal to reward window",
 		},
 		{
-			name: "accounting slash window must be positive",
+			name: "accounting attendance window must be positive",
 			mutate: func(gs *types.GenesisState) {
-				gs.Accounting.SlashWindow = 0
+				gs.Accounting.AttendanceWindow = 0
 			},
-			expectErr: "accounting slash window must be greater than zero",
+			expectErr: "accounting attendance window must be greater than zero",
 		},
 		// ExchangeRates
 		{
@@ -204,53 +204,74 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "reward weight validator address is invalid",
 		},
-		// MissCounts
+		// AttendanceRecords
 		{
-			name: "miss counter empty validator address",
+			name: "attendance record empty validator address",
 			mutate: func(gs *types.GenesisState) {
-				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: "", MissCount: 1},
+				gs.AttendanceRecords = []types.AttendanceRecord{
+					{ValidatorAddress: "", Attendance: types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1}},
 				}
 			},
-			expectErr: "miss count validator address must not be empty",
+			expectErr: "attendance record validator address must not be empty",
 		},
 		{
-			name: "sorted miss counters are valid",
+			name: "sorted attendance records are valid",
 			mutate: func(gs *types.GenesisState) {
-				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: validatorAddress, MissCount: 1},
-					{ValidatorAddress: otherValidatorAddress, MissCount: 2},
+				gs.AttendanceRecords = []types.AttendanceRecord{
+					{ValidatorAddress: validatorAddress, Attendance: types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1}},
+					{ValidatorAddress: otherValidatorAddress, Attendance: types.Attendance{EligibleBlocks: 2, AttendedBlocks: 2}},
 				}
 			},
 		},
 		{
-			name: "unsorted miss counters",
+			name: "unsorted attendance records",
 			mutate: func(gs *types.GenesisState) {
-				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: otherValidatorAddress, MissCount: 1},
-					{ValidatorAddress: validatorAddress, MissCount: 2},
+				gs.AttendanceRecords = []types.AttendanceRecord{
+					{ValidatorAddress: otherValidatorAddress, Attendance: types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1}},
+					{ValidatorAddress: validatorAddress, Attendance: types.Attendance{EligibleBlocks: 2, AttendedBlocks: 2}},
 				}
 			},
-			expectErr: "genesis miss counts must be sorted by unique validator address",
+			expectErr: "genesis attendance records must be sorted by unique validator address",
 		},
 		{
-			name: "duplicate miss counter",
+			name: "duplicate attendance record",
 			mutate: func(gs *types.GenesisState) {
-				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: validatorAddress, MissCount: 1},
-					{ValidatorAddress: validatorAddress, MissCount: 2},
+				gs.AttendanceRecords = []types.AttendanceRecord{
+					{ValidatorAddress: validatorAddress, Attendance: types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1}},
+					{ValidatorAddress: validatorAddress, Attendance: types.Attendance{EligibleBlocks: 2, AttendedBlocks: 2}},
 				}
 			},
-			expectErr: "genesis miss counts must be sorted by unique validator address",
+			expectErr: "genesis attendance records must be sorted by unique validator address",
 		},
 		{
-			name: "miss count invalid validator address",
+			name: "attendance record invalid validator address",
 			mutate: func(gs *types.GenesisState) {
-				gs.MissCounts = []types.MissCount{
-					{ValidatorAddress: "not-a-validator-address", MissCount: 1},
+				gs.AttendanceRecords = []types.AttendanceRecord{
+					{ValidatorAddress: "not-a-validator-address", Attendance: types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1}},
 				}
 			},
-			expectErr: "miss count validator address is invalid",
+			expectErr: "attendance record validator address is invalid",
+		},
+		{
+			name: "attended above eligible",
+			mutate: func(gs *types.GenesisState) {
+				gs.AttendanceRecords = []types.AttendanceRecord{{
+					ValidatorAddress: validatorAddress,
+					Attendance:       types.Attendance{EligibleBlocks: 1, AttendedBlocks: 2},
+				}}
+			},
+			expectErr: "attendance record attended blocks 2 exceed eligible blocks 1",
+		},
+		{
+			name: "eligible above attendance window",
+			mutate: func(gs *types.GenesisState) {
+				gs.AttendanceRecords = []types.AttendanceRecord{{
+					ValidatorAddress: validatorAddress,
+					Attendance:       types.Attendance{EligibleBlocks: gs.Accounting.AttendanceWindow + 1, AttendedBlocks: 0},
+				}}
+			},
+			expectErr: fmt.Sprintf("attendance record eligible blocks %d exceed attendance window %d",
+				types.DefaultAttendanceWindow+1, types.DefaultAttendanceWindow),
 		},
 		// VoteTargets
 		{
@@ -331,8 +352,8 @@ func TestValidateGenesis(t *testing.T) {
 					[]types.RewardWeight{
 						{ValidatorAddress: validatorAddress, RewardWeight: math.NewInt(1)},
 					},
-					[]types.MissCount{
-						{ValidatorAddress: otherValidatorAddress, MissCount: 0},
+					[]types.AttendanceRecord{
+						{ValidatorAddress: otherValidatorAddress, Attendance: types.Attendance{}},
 					},
 					types.VoteTargets{
 						Denoms:  []string{"ausd"},

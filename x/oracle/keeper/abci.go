@@ -11,7 +11,7 @@ import (
 	"ark/x/oracle/types"
 )
 
-// EndBlocker settles periodic oracle rewards and slashing.
+// EndBlocker settles periodic oracle rewards and attendance.
 func (k Keeper) EndBlocker(ctx context.Context) error {
 	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
 
@@ -44,19 +44,19 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 		}
 	}
 
-	if chain.IsPeriodLastBlockFrom(ctx, accounting.SlashWindowStartHeight, accounting.SlashWindow) {
-		if err := k.SettleSlash(ctx, accounting.SlashWindow); err != nil {
+	if chain.IsPeriodLastBlockFrom(ctx, accounting.AttendanceWindowStartHeight, accounting.AttendanceWindow) {
+		if err := k.SettleAttendance(ctx, accounting.AttendanceWindow); err != nil {
 			return err
 		}
 
-		// Clear miss counts after slash settlement.
-		if err := k.MissCount.Clear(ctx, nil); err != nil {
-			return fmt.Errorf("clearing miss counts: %w", err)
+		// Clear attendance records after settlement.
+		if err := k.Attendance.Clear(ctx, nil); err != nil {
+			return fmt.Errorf("clearing attendance records: %w", err)
 		}
 
-		if accounting.SlashWindow != params.SlashWindow {
-			accounting.SlashWindow = params.SlashWindow
-			accounting.SlashWindowStartHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()) + 1
+		if accounting.AttendanceWindow != params.AttendanceWindow {
+			accounting.AttendanceWindow = params.AttendanceWindow
+			accounting.AttendanceWindowStartHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()) + 1
 			accountingChanged = true
 		}
 	}

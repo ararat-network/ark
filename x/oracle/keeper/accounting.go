@@ -16,17 +16,28 @@ import (
 	"ark/x/oracle/types"
 )
 
-// RecordVoteAccounting records reward weight and miss status for the validator
-// resolved from a consensus address. If the validator no longer resolves,
-// accounting is skipped.
-func (k Keeper) RecordVoteAccounting(ctx context.Context, consAddr sdk.ConsAddress, rewardWeight math.Int, missed bool) error {
+// RecordVoteAccounting records reward weight and attendance for the validator
+// resolved from a consensus address. eligible is true when the block reached
+// the functioning threshold with this validator in the commit; participated
+// is true when the validator submitted a valid report containing at least
+// one positive rate. Participation on a non-functioning (ineligible) block is
+// deliberately ignored rather than rejected: attendance is only ever credited
+// on functioning blocks. If the validator no longer resolves, accounting is
+// skipped.
+func (k Keeper) RecordVoteAccounting(
+	ctx context.Context,
+	consAddr sdk.ConsAddress,
+	rewardWeight math.Int,
+	eligible bool,
+	participated bool,
+) error {
 	if rewardWeight.IsNil() {
 		return errors.New("reward weight must be set")
 	}
 	if rewardWeight.IsNegative() {
 		return fmt.Errorf("reward weight must not be negative: %s", rewardWeight)
 	}
-	if rewardWeight.IsZero() && !missed {
+	if rewardWeight.IsZero() && !eligible {
 		return nil
 	}
 
@@ -46,7 +57,6 @@ func (k Keeper) RecordVoteAccounting(ctx context.Context, consAddr sdk.ConsAddre
 		return fmt.Errorf("parsing validator operator address %q: %w", validator.GetOperator(), err)
 	}
 
-	updatedRewardWeight := math.ZeroInt()
 	if rewardWeight.IsPositive() {
 		currentRewardWeight, err := k.RewardWeight.Get(ctx, valAddr)
 		if err != nil {
@@ -55,26 +65,22 @@ func (k Keeper) RecordVoteAccounting(ctx context.Context, consAddr sdk.ConsAddre
 			}
 			currentRewardWeight = math.ZeroInt()
 		}
-		updatedRewardWeight = currentRewardWeight.Add(rewardWeight)
+		if err := k.RewardWeight.Set(ctx, valAddr, currentRewardWeight.Add(rewardWeight)); err != nil {
+			return fmt.Errorf("setting reward weight for validator %s: %w", valAddr, err)
+		}
 	}
 
-	var updatedMissCount uint64
-	if missed {
-		currentMissCount, err := k.MissCount.Get(ctx, valAddr)
+	if eligible {
+		attendance, err := k.Attendance.Get(ctx, valAddr)
 		if err != nil && !errors.Is(err, collections.ErrNotFound) {
-			return fmt.Errorf("getting miss count: %w", err)
+			return fmt.Errorf("getting attendance: %w", err)
 		}
-		updatedMissCount = currentMissCount + 1
-	}
-
-	if rewardWeight.IsPositive() {
-		if err := k.RewardWeight.Set(ctx, valAddr, updatedRewardWeight); err != nil {
-			return fmt.Errorf("setting reward weight for validator %s: %w", validator, err)
+		attendance.EligibleBlocks++
+		if participated {
+			attendance.AttendedBlocks++
 		}
-	}
-	if missed {
-		if err := k.MissCount.Set(ctx, valAddr, updatedMissCount); err != nil {
-			return fmt.Errorf("setting miss count for validator %s: %w", validator, err)
+		if err := k.Attendance.Set(ctx, valAddr, attendance); err != nil {
+			return fmt.Errorf("setting attendance for validator %s: %w", valAddr, err)
 		}
 	}
 
@@ -209,75 +215,68 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 	return nil
 }
 
-// SettleSlash slashes validators below the minimum valid vote rate.
-func (k Keeper) SettleSlash(ctx context.Context, slashWindowBlocks uint64) error {
+// SettleAttendance jails validators whose attended share of eligible blocks
+// fell below the minimum attendance ratio. It never slashes stake: attendance
+// is set hygiene, not a safety fault. A zero MinAttendancePerWindow disables
+// jailing entirely — a deliberate governance off-switch.
+//
+// Every record is judged, however few eligible blocks it holds. MinAttendance-
+// PerWindow is the whole grace: a ratio is scale-free, so a validator present
+// for part of a window is held to the same share of the blocks it was actually
+// present for, and an eligible-block floor on top would silently soften the
+// ratio governance set. Fleet-wide outages are already absorbed upstream —
+// non-functioning blocks increment neither counter — so a sparse record means
+// the validator was absent while the fleet worked, which is exactly the signal
+// this settlement exists to act on. A record with EligibleBlocks == 0 (only
+// reachable by genesis import) passes on its own: required = ratio × 0 = 0.
+func (k Keeper) SettleAttendance(ctx context.Context, attendanceWindowBlocks uint64) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	height := sdkCtx.BlockHeight()
-	distributionHeight := height - sdk.ValidatorUpdateDelay - 1
 
+	// attendanceWindowBlocks is the window carried over in deferred accounting
+	// state from when the window opened, so the jail event reports the window its
+	// counters actually accumulated under. MinAttendancePerWindow is read live,
+	// so a governance change to the ratio applies at this settlement.
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
-
-	powerReduction := k.stakingKeeper.PowerReduction(ctx)
-	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
-	if err != nil {
-		return fmt.Errorf("getting bond denom for oracle slash event: %w", err)
+	if params.MinAttendancePerWindow.IsZero() {
+		return nil
 	}
-	slashWindow := math.LegacyNewDecFromInt(math.NewIntFromUint64(slashWindowBlocks))
-	if err := k.MissCount.Walk(ctx, nil, func(valAddr sdk.ValAddress, missCount uint64) (bool, error) {
-		// Cap missed votes at the slash window.
-		if missCount > slashWindowBlocks {
-			missCount = slashWindowBlocks
+
+	return k.Attendance.Walk(ctx, nil, func(valAddr sdk.ValAddress, attendance types.Attendance) (bool, error) {
+		attended := math.LegacyNewDecFromInt(math.NewIntFromUint64(attendance.AttendedBlocks))
+		required := params.MinAttendancePerWindow.MulInt(math.NewIntFromUint64(attendance.EligibleBlocks))
+		if attended.GTE(required) {
+			return false, nil
 		}
 
-		// validVoteRate = (slashWindow - missCount) / slashWindow.
-		validVoteRate := slashWindow.
-			Sub(math.LegacyNewDecFromInt(math.NewIntFromUint64(missCount))).
-			Quo(slashWindow)
-
-		// Slash and jail validators below the minimum valid vote rate.
-		if validVoteRate.LT(params.MinValidPerWindow) {
-			validator, err := k.stakingKeeper.Validator(ctx, valAddr)
-			if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
-				k.Logger(ctx).Debug("skipping oracle slash for missing validator", "validator", valAddr.String())
-				return false, nil
-			}
-			if err != nil {
-				return true, fmt.Errorf("getting validator %s: %w", valAddr, err)
-			}
-			if validator == nil || validator.IsUnbonded() {
-				return false, nil
-			}
-			consAddr, err := validator.GetConsAddr()
-			if err != nil {
-				return true, fmt.Errorf("getting consensus address for validator %s: %w", valAddr, err)
-			}
-			consensusPower := sdk.TokensToConsensusPower(validator.GetTokens(), powerReduction)
-			slashAmount, err := k.stakingKeeper.Slash(ctx, consAddr, distributionHeight, consensusPower, params.SlashFraction)
-			if err != nil {
-				return true, fmt.Errorf("failed to slash validator %s: %w", valAddr, err)
-			} else if !validator.IsJailed() {
-				if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
-					return true, fmt.Errorf("slashed validator %s, but failed to jail: %w", valAddr, err)
-				}
-			}
-			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventOracleSlash{
-				Validator:   valAddr.String(),
-				AmountDenom: bondDenom,
-				Amount:      slashAmount,
-				MissCount:   missCount,
-				SlashWindow: slashWindowBlocks,
-			}); err != nil {
-				return true, fmt.Errorf("emitting Oracle slash event for %s: %w", valAddr, err)
-			}
+		validator, err := k.stakingKeeper.Validator(ctx, valAddr)
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			k.Logger(ctx).Debug("skipping oracle jail for missing validator", "validator", valAddr.String())
+			return false, nil
 		}
-
+		if err != nil {
+			return true, fmt.Errorf("getting validator %s: %w", valAddr, err)
+		}
+		if validator == nil || validator.IsUnbonded() || validator.IsJailed() {
+			return false, nil
+		}
+		consAddr, err := validator.GetConsAddr()
+		if err != nil {
+			return true, fmt.Errorf("getting consensus address for validator %s: %w", valAddr, err)
+		}
+		if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
+			return true, fmt.Errorf("jailing validator %s for oracle attendance: %w", valAddr, err)
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventOracleJail{
+			Validator:        valAddr.String(),
+			EligibleBlocks:   attendance.EligibleBlocks,
+			AttendedBlocks:   attendance.AttendedBlocks,
+			AttendanceWindow: attendanceWindowBlocks,
+		}); err != nil {
+			return true, fmt.Errorf("emitting oracle jail event: %w", err)
+		}
 		return false, nil
-	}); err != nil {
-		return fmt.Errorf("iterating miss counter: %w", err)
-	}
-
-	return nil
+	})
 }

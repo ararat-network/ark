@@ -176,8 +176,7 @@ func benchmarkAggregationInput(
 				Address: address,
 				Power:   1,
 			},
-			ValidReport: true,
-			Rates:       rates,
+			Rates: rates,
 		}
 	}
 

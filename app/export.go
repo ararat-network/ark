@@ -270,13 +270,9 @@ func (app *ArkApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []
 		panic(fmt.Errorf("error while resetting reward weights: %w", err))
 	}
 
-	if err := app.OracleKeeper.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, _ uint64) (bool, error) {
-		if err := app.OracleKeeper.MissCount.Set(ctx, operator, 0); err != nil {
-			return false, err
-		}
-		return false, nil
-	}); err != nil {
-		panic(fmt.Errorf("error while resetting miss counts: %w", err))
+	// Clear attendance records so the next attendance window starts fresh.
+	if err := app.OracleKeeper.Attendance.Clear(ctx, nil); err != nil {
+		panic(fmt.Errorf("error while clearing attendance records: %w", err))
 	}
 
 	/* Handle market state. */

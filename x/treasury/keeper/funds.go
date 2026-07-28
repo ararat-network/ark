@@ -34,7 +34,7 @@ func (k Keeper) RouteExpansion(
 	ctx context.Context,
 	grossOffer sdk.Coin,
 	stableOutput sdk.Coin,
-	quoteRates oracletypes.RateSnapshot,
+	quoteRates oracletypes.RateSet,
 ) (types.ExpansionAllocation, error) {
 	if err := validatePositiveNoahCoin(grossOffer); err != nil {
 		return types.ExpansionAllocation{}, fmt.Errorf("invalid gross offer: %w", err)
@@ -158,7 +158,7 @@ func (k Keeper) DrawRedemptionBuffer(
 	ctx context.Context,
 	redeemedStable sdk.Coin,
 	noahOutput math.Int,
-	quoteRates oracletypes.RateSnapshot,
+	quoteRates oracletypes.RateSet,
 ) (types.BufferDraw, error) {
 	if err := redeemedStable.Validate(); err != nil {
 		return types.BufferDraw{}, fmt.Errorf("invalid redeemed stable coin: %w", err)

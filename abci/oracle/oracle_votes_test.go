@@ -302,17 +302,15 @@ func TestGetOracleVotes(t *testing.T) {
 		votes, err := oracle.GetOracleVotes(voteExtensionCodec, [][]byte{commitBz}, targets, 6)
 		require.NoError(t, err)
 		require.Len(t, votes, 6)
-		require.True(t, votes[0].ValidReport)
 		require.Len(t, votes[0].Rates, 1)
 		require.Zero(t, votes[0].Rates[0].TargetIndex)
 		require.True(t, math.LegacyNewDec(100).Equal(votes[0].Rates[0].Value))
 		for _, vote := range votes[1:] {
-			require.False(t, vote.ValidReport)
 			require.Nil(t, vote.Rates)
 		}
 	})
 
-	t.Run("valid empty report remains distinguishable from missing extension", func(t *testing.T) {
+	t.Run("valid empty report is equivalent to a missing extension", func(t *testing.T) {
 		validEmptyBz := abcitestutil.MustEncodeVoteExtension(t, vetypes.OracleVoteExtension{
 			TargetVersion: targets.Version,
 		})
@@ -326,11 +324,8 @@ func TestGetOracleVotes(t *testing.T) {
 		votes, err := oracle.GetOracleVotes(voteExtensionCodec, [][]byte{commitBz}, targets, 2)
 		require.NoError(t, err)
 		require.Len(t, votes, 2)
-		require.True(t, votes[0].ValidReport)
-		require.NotNil(t, votes[0].Rates)
 		require.Empty(t, votes[0].Rates)
-		require.False(t, votes[1].ValidReport)
-		require.Nil(t, votes[1].Rates)
+		require.Empty(t, votes[1].Rates)
 	})
 
 	t.Run("extended commit decode error remains fatal", func(t *testing.T) {

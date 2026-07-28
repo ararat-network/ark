@@ -64,7 +64,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "missing oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "unknown").
+				s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "unknown").
 					Return(nil, oracletypes.ErrUnknownDenom)
 			},
 			req: &types.QuerySwapRequest{
@@ -77,7 +77,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		{
 			name: "stale oracle price returns failed precondition",
 			setup: func() {
-				s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
+				s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 					Return(nil, oracletypes.ErrStaleExchangeRate)
 			},
 			req: &types.QuerySwapRequest{
@@ -107,8 +107,8 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	largeAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 200))
 	offerCoin := sdk.NewCoin("ausd", largeAmount)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
+		Return(oracletypes.RateSet{
 			"ausd":             math.LegacyOneDec(),
 			chain.SDRBaseDenom: math.LegacyOneDec(),
 			"akrw":             math.LegacyOneDec(),
@@ -130,8 +130,8 @@ func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentab
 	offerAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
 	offerCoin := sdk.NewCoin("ausd", offerAmount)
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
+		Return(oracletypes.RateSet{
 			"ausd":             math.LegacyOneDec(),
 			chain.SDRBaseDenom: math.LegacyNewDec(2),
 			"akrw":             math.LegacyOneDec(),
@@ -252,8 +252,8 @@ func (s *KeeperTestSuite) TestQueryArkPoolDelta() {
 }
 
 func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(s.ctx, "ausd", "akrw").
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
+		Return(oracletypes.RateSet{
 			"ausd":             offerRate,
 			chain.SDRBaseDenom: math.LegacyOneDec(),
 			"akrw":             askRate,

@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -22,6 +23,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
 	chain "ark/pkg/chain"
@@ -125,8 +127,26 @@ func (s *KeeperTestSuite) SetupSubTest() {
 var (
 	valAddr1            = sdk.ValAddress([]byte("validator1___________"))
 	valAddr2            = sdk.ValAddress([]byte("validator2___________"))
+	valAddr3            = sdk.ValAddress([]byte("validator3___________"))
 	oracleTestBlockTime = time.Date(2026, 7, 12, 12, 0, 0, 0, time.UTC)
 )
+
+// newBondedValidator builds a bonded validator fixture with operator address
+// valAddr and returns it alongside its derived consensus address. Callers
+// that need a different bond status or jailed flag mutate the returned
+// (local, by-value) validator before arming a mock expectation with it.
+func (s *KeeperTestSuite) newBondedValidator(valAddr sdk.ValAddress) (sdk.ConsAddress, stakingtypes.Validator) {
+	s.T().Helper()
+
+	pubKey := ed25519.GenPrivKey().PubKey()
+	validator, err := stakingtypes.NewValidator(valAddr.String(), pubKey, stakingtypes.Description{})
+	s.Require().NoError(err)
+	validator.Status = stakingtypes.Bonded
+	consAddr, err := validator.GetConsAddr()
+	s.Require().NoError(err)
+
+	return consAddr, validator
+}
 
 func newStoredExchangeRate(denom string, rate math.LegacyDec) types.ExchangeRate {
 	return types.ExchangeRate{Denom: denom, Rate: rate, BlockTimestamp: oracleTestBlockTime}
@@ -179,7 +199,7 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 	}
 }
 
-func (s *KeeperTestSuite) TestGetRateSnapshot() {
+func (s *KeeperTestSuite) TestGetRateSet() {
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
 		Denom:          chain.USDBaseDenom,
 		Rate:           math.LegacyOneDec(),
@@ -191,7 +211,7 @@ func (s *KeeperTestSuite) TestGetRateSnapshot() {
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
 
-	rates, err := s.keeper.GetRateSnapshot(
+	rates, err := s.keeper.GetRateSet(
 		s.ctx,
 		chain.USDBaseDenom,
 		chain.SDRBaseDenom,
@@ -204,15 +224,15 @@ func (s *KeeperTestSuite) TestGetRateSnapshot() {
 	s.Require().True(rates[chain.NoahBaseDenom].Equal(math.LegacyOneDec()))
 }
 
-func (s *KeeperTestSuite) TestGetRateSnapshotReturnsNoahIdentityByDefault() {
-	rates, err := s.keeper.GetRateSnapshot(s.ctx)
+func (s *KeeperTestSuite) TestGetRateSetReturnsNoahIdentityByDefault() {
+	rates, err := s.keeper.GetRateSet(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(types.RateSnapshot{
+	s.Require().Equal(types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, rates)
 }
 
-func (s *KeeperTestSuite) TestGetRateSnapshotRejectsElapsedTimeStaleness() {
+func (s *KeeperTestSuite) TestGetRateSetRejectsElapsedTimeStaleness() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	params.MaxExchangeRateAge = time.Minute
@@ -223,7 +243,7 @@ func (s *KeeperTestSuite) TestGetRateSnapshotRejectsElapsedTimeStaleness() {
 		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
 	}))
 
-	_, err = s.keeper.GetRateSnapshot(s.ctx, chain.USDBaseDenom)
+	_, err = s.keeper.GetRateSet(s.ctx, chain.USDBaseDenom)
 	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
 }
 

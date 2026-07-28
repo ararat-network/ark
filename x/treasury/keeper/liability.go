@@ -20,12 +20,7 @@ var liabilitySnapshotKey = []byte{0x01}
 // Market has successfully applied its burn and mint. It deliberately does not
 // build a snapshot when none exists; a later valuation will read current Bank
 // supply directly.
-func (k Keeper) RecordSupplyChange(
-	ctx context.Context,
-	burned sdk.Coin,
-	minted sdk.Coin,
-	rates oracletypes.RateSnapshot,
-) error {
+func (k Keeper) RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted sdk.Coin, rates oracletypes.RateSet) error {
 	if err := burned.Validate(); err != nil {
 		return fmt.Errorf("invalid burned coin: %w", err)
 	}
@@ -68,10 +63,10 @@ func (k Keeper) RecordSupplyChange(
 func (k Keeper) nominalLiabilityValue(
 	ctx context.Context,
 	tobinTaxes []oracletypes.TobinTax,
-	rates oracletypes.RateSnapshot,
+	rates oracletypes.RateSet,
 ) (math.LegacyDec, bool, error) {
 	if rates == nil {
-		rates = oracletypes.RateSnapshot{}
+		rates = oracletypes.RateSet{}
 	}
 	coins := make([]sdk.Coin, 0, len(tobinTaxes))
 	needed := make([]string, 0, len(tobinTaxes))
@@ -85,7 +80,7 @@ func (k Keeper) nominalLiabilityValue(
 		}
 	}
 	if len(needed) > 0 {
-		captured, err := k.oracleKeeper.GetRateSnapshot(ctx, needed...)
+		captured, err := k.oracleKeeper.GetRateSet(ctx, needed...)
 		if err != nil {
 			if isValuationUnavailable(err) {
 				return math.LegacyZeroDec(), false, nil
@@ -125,7 +120,7 @@ func (k Keeper) nominalLiabilityValue(
 func (k Keeper) cachedLiabilityValue(
 	ctx context.Context,
 	tobinTaxes []oracletypes.TobinTax,
-	rates oracletypes.RateSnapshot,
+	rates oracletypes.RateSet,
 ) (math.LegacyDec, bool, error) {
 	liability, found, err := k.loadLiabilitySnapshot(ctx)
 	if err != nil {
@@ -148,7 +143,7 @@ func (k Keeper) cachedLiabilityValue(
 	return liability, true, nil
 }
 
-func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSnapshot) (math.LegacyDec, error) {
+func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSet) (math.LegacyDec, error) {
 	if coin.Denom == chain.NoahBaseDenom || coin.Amount.IsZero() {
 		return math.LegacyZeroDec(), nil
 	}

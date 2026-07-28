@@ -11,26 +11,33 @@ import (
 
 // aggregationResult contains the internal output of one complete oracle aggregation.
 type aggregationResult struct {
+	// prices is nil until at least one target reaches price quorum.
 	prices map[string]math.LegacyDec
 	scores []validatorScore
+	// functioningBlock is true when participating power reached the attendance
+	// threshold, making the block eligible for every commit validator.
+	functioningBlock bool
 }
 
-// validatorScore directs oracle rewards and miss accounting to a validator.
+// validatorScore directs oracle rewards and attendance accounting to a validator.
 type validatorScore struct {
 	recipient       sdk.ConsAddress
 	votingPower     int64
 	rewardedTargets int64
 	rewardWeight    math.Int
-	missed          bool
+	// participated is true when the vote carried at least one positive rate;
+	// abstentions, omissions, and invalid reports do not participate.
+	participated bool
 }
 
 // aggregateOracleVotes groups submitted oracle rates by supported denom,
 // selects a reference denom from the denoms that meet raw and overlap quorum,
-// computes weighted-median exchange rates, and returns validator accounting.
+// computes weighted-median exchange rates, and returns validator accounting:
+// per-validator reward weight and participation, plus the fleet-wide
+// functioningBlock flag that gates attendance eligibility.
 // targetDenoms must be in canonical lexical order.
 func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms []string) aggregationResult {
 	result := aggregationResult{
-		prices: map[string]math.LegacyDec{},
 		scores: make([]validatorScore, len(votes)),
 	}
 
@@ -39,40 +46,54 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		// Proposal validation matched this voting power against DecidedLastCommit.
 		totalPower += vote.Validator.Power
 
-		recipient := sdk.ConsAddress(vote.Validator.Address)
 		result.scores[validatorIndex] = validatorScore{
-			recipient:    recipient,
+			recipient:    sdk.ConsAddress(vote.Validator.Address),
 			votingPower:  vote.Validator.Power,
 			rewardWeight: math.ZeroInt(),
 		}
 	}
 	if len(targetDenoms) == 0 {
+		// No targets means no vote can ever carry a valid rate, so no validator
+		// is ever marked participated: the block is never functioning, and
+		// nobody accrues attendance eligibility this block.
 		return result
 	}
 
-	// Count first so each ballot can allocate exactly enough space for its
-	// positive reports without geometric slice growth. Reported power includes
-	// every submitted value so non-positive rates cannot masquerade as target
-	// unavailability.
+	// This pass computes three outputs in one iteration over votes: it counts
+	// positive reports per target so each ballot can allocate exactly enough
+	// space without geometric slice growth, it marks each validator that
+	// submitted at least one positive rate as participated, and it sums
+	// participating power across the fleet for the functioning-block check
+	// below.
 	positiveRateCounts := make([]int, len(targetDenoms))
-	reportedPowers := make([]int64, len(targetDenoms))
-	var validReportPower int64
+	var participatingPower int64
 	for validatorIndex, vote := range votes {
-		if !vote.ValidReport {
-			result.scores[validatorIndex].missed = true
-			continue
-		}
-		validReportPower += vote.Validator.Power
+		participated := false
 		for _, submittedRate := range vote.Rates {
-			targetIndex := submittedRate.TargetIndex
-			reportedPowers[targetIndex] += vote.Validator.Power
 			if !submittedRate.Value.IsPositive() {
-				result.scores[validatorIndex].missed = true
 				continue
 			}
-			positiveRateCounts[targetIndex]++
+			participated = true
+			positiveRateCounts[submittedRate.TargetIndex]++
+		}
+		if participated {
+			result.scores[validatorIndex].participated = true
+			participatingPower += vote.Validator.Power
 		}
 	}
+	// A powerless commit never prices targets and is never functioning. This
+	// return sits after the participation pass so zero-power reporters still
+	// carry their participated flags.
+	if totalPower <= 0 {
+		return result
+	}
+	// Attendance is only graded on functioning blocks, so correlated outages
+	// judge no one. The threshold is floored at a majority by param validation:
+	// no block is ever graded that a majority of commit power could not price.
+	result.functioningBlock = participatingPower >= params.FunctioningBlockThreshold.
+		MulInt64(totalPower).
+		Ceil().
+		TruncateInt64()
 
 	ballots := make([]ballot, len(targetDenoms))
 	for targetIndex, voteCount := range positiveRateCounts {
@@ -82,14 +103,10 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		}
 	}
 	for validatorIndex, vote := range votes {
-		if !vote.ValidReport {
-			continue
-		}
 		for _, submittedRate := range vote.Rates {
 			rate := submittedRate.Value
 
-			// Non-positive submissions were classified as misses in the counting
-			// pass and do not contribute to ballots.
+			// Abstentions do not contribute to ballots.
 			if !rate.IsPositive() {
 				continue
 			}
@@ -102,52 +119,17 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		}
 	}
 
+	thresholdPower := params.VoteThreshold.
+		MulInt64(totalPower).
+		Ceil().
+		TruncateInt64()
 	passingTargets := make([]int, 0, len(ballots))
-	unavailableTargets := make([]bool, len(targetDenoms))
-	unavailableTargetCount := 0
-	var thresholdPower int64
-	if totalPower > 0 {
-		thresholdPower = params.VoteThreshold.
-			MulInt64(totalPower).
-			Ceil().
-			TruncateInt64()
-
-		for targetIndex := range ballots {
-			// A configured price quorum takes precedence. Under the default
-			// two-thirds threshold, price and unavailability cannot both reach
-			// quorum because their voting-power sets are disjoint.
-			if ballots[targetIndex].power >= thresholdPower {
-				passingTargets = append(passingTargets, targetIndex)
-				continue
-			}
-			unavailablePower := validReportPower - reportedPowers[targetIndex]
-			if unavailablePower >= thresholdPower {
-				unavailableTargets[targetIndex] = true
-				unavailableTargetCount++
-			}
+	for targetIndex := range ballots {
+		if ballots[targetIndex].power >= thresholdPower {
+			passingTargets = append(passingTargets, targetIndex)
 		}
 	}
-
-	// Omission from a valid report is an unavailability vote. It avoids a miss
-	// only when valid omissions reach quorum for that target. Invalid reports
-	// were already marked missed and never contribute availability power.
-	requiredReportCount := len(targetDenoms) - unavailableTargetCount
-	for validatorIndex, vote := range votes {
-		if !vote.ValidReport {
-			continue
-		}
-		reportedRequiredCount := 0
-		for _, submittedRate := range vote.Rates {
-			if !unavailableTargets[submittedRate.TargetIndex] {
-				reportedRequiredCount++
-			}
-		}
-		if reportedRequiredCount != requiredReportCount {
-			result.scores[validatorIndex].missed = true
-		}
-	}
-
-	if totalPower <= 0 || len(passingTargets) == 0 {
+	if len(passingTargets) == 0 {
 		return result
 	}
 
@@ -163,8 +145,8 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 	return result
 }
 
-// computePricesAndScores applies fixed-band reward and miss accounting to the
-// already evaluated selected-reference tallies.
+// computePricesAndScores applies fixed-band reward accounting to the already
+// evaluated selected-reference tallies.
 func computePricesAndScores(
 	tallies []pricedTally,
 	targetDenoms []string,
@@ -190,8 +172,6 @@ func computePricesAndScores(
 		for _, vote := range tally.votes {
 			if vote.rate.GTE(lowerBound) && vote.rate.LTE(upperBound) {
 				scores[vote.validator].rewardedTargets++
-			} else {
-				scores[vote.validator].missed = true
 			}
 		}
 

@@ -28,6 +28,6 @@ type BankKeeper interface {
 // OracleKeeper defines the immutable pricing and native-stable registry
 // functionality required by Treasury.
 type OracleKeeper interface {
-	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
+	GetRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
 	GetTobinTaxes(ctx context.Context) ([]oracletypes.TobinTax, error)
 }

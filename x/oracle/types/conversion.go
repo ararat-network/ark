@@ -10,11 +10,11 @@ import (
 	"ark/pkg/decimal"
 )
 
-// RateSnapshot is an in-memory set of oracle rates used for one conversion flow.
-type RateSnapshot map[string]math.LegacyDec
+// RateSet is an in-memory set of oracle rates used for one conversion flow.
+type RateSet map[string]math.LegacyDec
 
 // Convert converts an offer coin into the ask denom using the captured rates.
-func (r RateSnapshot) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
+func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
 	if offerCoin.Amount.IsNil() {
 		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not set", offerCoin.Denom)
 	}

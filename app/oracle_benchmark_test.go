@@ -47,11 +47,11 @@ type oracleBenchmarkFixture struct {
 }
 
 type processVoteExtensionsBenchmarkCase struct {
-	name        string
-	targetCount int
-	reportCount int
-	missEvery   int
-	allMissed   bool
+	name         string
+	targetCount  int
+	reportCount  int
+	partialEvery int
+	allAbsent    bool
 }
 
 type oracleSettlementBenchmarkCase struct {
@@ -59,11 +59,11 @@ type oracleSettlementBenchmarkCase struct {
 	height               int64
 	rewardWindow         uint64
 	rewardDistribution   uint64
-	slashWindow          uint64
+	attendanceWindow     uint64
 	rewardDenomCount     int
 	rewardValidatorCount int
-	missValidatorCount   int
-	slashEligible        bool
+	absentValidatorCount int
+	jailEligible         bool
 }
 
 func BenchmarkOracleProcessVoteExtensions(b *testing.B) {
@@ -75,8 +75,8 @@ func BenchmarkOracleProcessVoteExtensions(b *testing.B) {
 
 	cases := []processVoteExtensionsBenchmarkCase{
 		{name: "targets_8/reports_8/all_valid", targetCount: 8},
-		{name: "targets_8/reports_8/ten_percent_missed", targetCount: 8, missEvery: 10},
-		{name: "targets_8/reports_0/all_missed", targetCount: 8, allMissed: true},
+		{name: "targets_8/reports_8/ten_percent_partial", targetCount: 8, partialEvery: 10},
+		{name: "targets_8/reports_0/all_absent", targetCount: 8, allAbsent: true},
 		{name: "targets_256/reports_8/all_partial", targetCount: oracletypes.MaxVoteTargets, reportCount: 8},
 		{name: "targets_256/reports_256/all_valid", targetCount: oracletypes.MaxVoteTargets},
 	}
@@ -109,7 +109,12 @@ func benchmarkProcessVoteExtensions(
 		if err := fixture.app.OracleKeeper.RewardWeight.Set(baseCtx, valAddr, math.NewInt(1_000_000)); err != nil {
 			b.Fatal(err)
 		}
-		if err := fixture.app.OracleKeeper.MissCount.Set(baseCtx, valAddr, 1_000); err != nil {
+		// A validator with this much accumulated reward weight has a long
+		// history of actually participating, so model it as fully attended.
+		if err := fixture.app.OracleKeeper.Attendance.Set(baseCtx, valAddr, oracletypes.Attendance{
+			EligibleBlocks: 1_000,
+			AttendedBlocks: 1_000,
+		}); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -147,14 +152,14 @@ func BenchmarkOracleSettlement(b *testing.B) {
 			height:             4,
 			rewardWindow:       10,
 			rewardDistribution: 100,
-			slashWindow:        20,
+			attendanceWindow:   20,
 		},
 		{
 			name:                 "reward/validators_100/denoms_1",
 			height:               9,
 			rewardWindow:         10,
 			rewardDistribution:   100,
-			slashWindow:          20,
+			attendanceWindow:     20,
 			rewardDenomCount:     1,
 			rewardValidatorCount: oracleBenchmarkValidatorCount,
 		},
@@ -163,37 +168,37 @@ func BenchmarkOracleSettlement(b *testing.B) {
 			height:               9,
 			rewardWindow:         10,
 			rewardDistribution:   100,
-			slashWindow:          20,
+			attendanceWindow:     20,
 			rewardDenomCount:     8,
 			rewardValidatorCount: oracleBenchmarkValidatorCount,
 		},
 		{
-			name:               "slash/miss_records_10/eligible_0",
-			height:             19,
-			rewardWindow:       30,
-			rewardDistribution: 100,
-			slashWindow:        20,
-			missValidatorCount: 10,
+			name:                 "attendance/records_10/jailed_0",
+			height:               19,
+			rewardWindow:         30,
+			rewardDistribution:   100,
+			attendanceWindow:     20,
+			absentValidatorCount: 10,
 		},
 		{
-			name:               "slash/miss_records_100/eligible_100",
-			height:             19,
-			rewardWindow:       30,
-			rewardDistribution: 100,
-			slashWindow:        20,
-			missValidatorCount: oracleBenchmarkValidatorCount,
-			slashEligible:      true,
+			name:                 "attendance/records_100/jailed_100",
+			height:               19,
+			rewardWindow:         30,
+			rewardDistribution:   100,
+			attendanceWindow:     20,
+			absentValidatorCount: oracleBenchmarkValidatorCount,
+			jailEligible:         true,
 		},
 		{
 			name:                 "combined/validators_100/denoms_8",
 			height:               9,
 			rewardWindow:         10,
 			rewardDistribution:   100,
-			slashWindow:          10,
+			attendanceWindow:     10,
 			rewardDenomCount:     8,
 			rewardValidatorCount: oracleBenchmarkValidatorCount,
-			missValidatorCount:   oracleBenchmarkValidatorCount,
-			slashEligible:        true,
+			absentValidatorCount: oracleBenchmarkValidatorCount,
+			jailEligible:         true,
 		},
 	}
 
@@ -228,7 +233,7 @@ func benchmarkOracleSettlement(b *testing.B, benchmarkCase oracleSettlementBench
 	}
 	params.RewardWindow = benchmarkCase.rewardWindow
 	params.RewardDistributionWindow = benchmarkCase.rewardDistribution
-	params.SlashWindow = benchmarkCase.slashWindow
+	params.AttendanceWindow = benchmarkCase.attendanceWindow
 	if err := fixture.app.OracleKeeper.Params.Set(baseCtx, params); err != nil {
 		b.Fatal(err)
 	}
@@ -241,12 +246,19 @@ func benchmarkOracleSettlement(b *testing.B, benchmarkCase oracleSettlementBench
 			b.Fatal(err)
 		}
 	}
-	for _, valAddr := range fixture.valAddrs[:benchmarkCase.missValidatorCount] {
-		missCount := uint64(1)
-		if benchmarkCase.slashEligible {
-			missCount = benchmarkCase.slashWindow
+	for _, valAddr := range fixture.valAddrs[:benchmarkCase.absentValidatorCount] {
+		// Every seeded validator was eligible for the whole window. A
+		// jail-eligible case attends none of it; the others attend all but one
+		// block, which stays far above the minimum attendance ratio.
+		absentBlocks := uint64(1)
+		if benchmarkCase.jailEligible {
+			absentBlocks = benchmarkCase.attendanceWindow
 		}
-		if err := fixture.app.OracleKeeper.MissCount.Set(baseCtx, valAddr, missCount); err != nil {
+		attendance := oracletypes.Attendance{
+			EligibleBlocks: benchmarkCase.attendanceWindow,
+			AttendedBlocks: benchmarkCase.attendanceWindow - absentBlocks,
+		}
+		if err := fixture.app.OracleKeeper.Attendance.Set(baseCtx, valAddr, attendance); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -263,7 +275,7 @@ func benchmarkOracleSettlement(b *testing.B, benchmarkCase oracleSettlementBench
 
 	b.ReportAllocs()
 	b.ReportMetric(float64(benchmarkCase.rewardValidatorCount), "reward_validators/op")
-	b.ReportMetric(float64(benchmarkCase.missValidatorCount), "miss_records/op")
+	b.ReportMetric(float64(benchmarkCase.absentValidatorCount), "attendance_records/op")
 	b.ReportMetric(float64(benchmarkCase.rewardDenomCount), "reward_denoms/op")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -504,9 +516,9 @@ func benchmarkExtendedCommit(
 	for i, consAddr := range consAddrs {
 		voteExtension := fullVoteExtension
 		switch {
-		case benchmarkCase.allMissed:
+		case benchmarkCase.allAbsent:
 			voteExtension = nil
-		case benchmarkCase.missEvery > 0 && i%benchmarkCase.missEvery == 0:
+		case benchmarkCase.partialEvery > 0 && i%benchmarkCase.partialEvery == 0:
 			voteExtension = partialVoteExtension
 		}
 		votes[i] = cometabci.ExtendedVoteInfo{

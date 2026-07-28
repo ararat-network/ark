@@ -19,19 +19,14 @@ message EventExchangeRateUpdate {
   ];
 }
 
-// EventOracleSlash is emitted after a validator is slashed for Oracle misses.
-message EventOracleSlash {
+// EventOracleJail is emitted after a validator is jailed for insufficient
+// oracle attendance over one attendance window.
+message EventOracleJail {
   string validator = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  string amount_denom = 2;
-  string amount = 3 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  uint64 miss_count = 4 [ (amino.dont_omitempty) = true ];
-  uint64 slash_window = 5 [ (amino.dont_omitempty) = true ];
+  uint64 eligible_blocks = 2 [ (amino.dont_omitempty) = true ];
+  uint64 attended_blocks = 3 [ (amino.dont_omitempty) = true ];
+  uint64 attendance_window = 4 [ (amino.dont_omitempty) = true ];
 }
 
 // EventOracleReward is emitted after a validator's Oracle rewards are funded.

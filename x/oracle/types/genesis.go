@@ -19,26 +19,26 @@ func NewGenesisState(
 	accounting Accounting,
 	exchangeRates []ExchangeRate,
 	rewardWeights []RewardWeight,
-	missCounts []MissCount,
+	attendanceRecords []AttendanceRecord,
 	voteTargets VoteTargets,
 ) *GenesisState {
 	return &GenesisState{
-		Params:        params,
-		Accounting:    accounting,
-		ExchangeRates: exchangeRates,
-		RewardWeights: rewardWeights,
-		MissCounts:    missCounts,
-		VoteTargets:   voteTargets,
+		Params:            params,
+		Accounting:        accounting,
+		ExchangeRates:     exchangeRates,
+		RewardWeights:     rewardWeights,
+		AttendanceRecords: attendanceRecords,
+		VoteTargets:       voteTargets,
 	}
 }
 
-// NewAccounting starts reward and slash accounting from genesis using
+// NewAccounting starts reward and attendance accounting from genesis using
 // the supplied active parameter windows.
 func NewAccounting(params Params) Accounting {
 	return Accounting{
 		RewardWindow:             params.RewardWindow,
 		RewardDistributionWindow: params.RewardDistributionWindow,
-		SlashWindow:              params.SlashWindow,
+		AttendanceWindow:         params.AttendanceWindow,
 	}
 }
 
@@ -50,7 +50,7 @@ func DefaultGenesisState() *GenesisState {
 		NewAccounting(params),
 		[]ExchangeRate{},
 		[]RewardWeight{},
-		[]MissCount{},
+		[]AttendanceRecord{},
 		NewVoteTargets(params),
 	)
 }
@@ -63,8 +63,8 @@ func (gs GenesisState) Validate() error {
 	if gs.Accounting.RewardDistributionWindow < gs.Accounting.RewardWindow {
 		return errors.New("accounting reward distribution window must be greater than or equal to reward window")
 	}
-	if gs.Accounting.SlashWindow == 0 {
-		return errors.New("accounting slash window must be greater than zero")
+	if gs.Accounting.AttendanceWindow == 0 {
+		return errors.New("accounting attendance window must be greater than zero")
 	}
 
 	// ExchangeRates: ordered unique Ark-native base denoms and positive rates
@@ -108,20 +108,36 @@ func (gs GenesisState) Validate() error {
 		previousValidatorAddress = validatorAddress
 	}
 
-	// MissCounts: ordered unique validator-address storage keys
+	// AttendanceRecords: ordered unique validator-address storage keys and
+	// internally consistent counters.
 	previousValidatorAddress = nil
-	for i, mc := range gs.MissCounts {
-		if len(mc.ValidatorAddress) == 0 {
-			return errors.New("miss count validator address must not be empty")
+	for i, record := range gs.AttendanceRecords {
+		if len(record.ValidatorAddress) == 0 {
+			return errors.New("attendance record validator address must not be empty")
 		}
-		validatorAddress, err := sdk.ValAddressFromBech32(mc.ValidatorAddress)
+		validatorAddress, err := sdk.ValAddressFromBech32(record.ValidatorAddress)
 		if err != nil {
-			return fmt.Errorf("miss count validator address is invalid: %s", mc.ValidatorAddress)
+			return fmt.Errorf("attendance record validator address is invalid: %s", record.ValidatorAddress)
 		}
 		if i > 0 && bytes.Compare(validatorAddress, previousValidatorAddress) <= 0 {
-			return errors.New("genesis miss counts must be sorted by unique validator address")
+			return errors.New("genesis attendance records must be sorted by unique validator address")
 		}
 		previousValidatorAddress = validatorAddress
+
+		if record.Attendance.AttendedBlocks > record.Attendance.EligibleBlocks {
+			return fmt.Errorf(
+				"attendance record attended blocks %d exceed eligible blocks %d",
+				record.Attendance.AttendedBlocks,
+				record.Attendance.EligibleBlocks,
+			)
+		}
+		if record.Attendance.EligibleBlocks > gs.Accounting.AttendanceWindow {
+			return fmt.Errorf(
+				"attendance record eligible blocks %d exceed attendance window %d",
+				record.Attendance.EligibleBlocks,
+				gs.Accounting.AttendanceWindow,
+			)
+		}
 	}
 
 	if err := gs.VoteTargets.Validate(); err != nil {

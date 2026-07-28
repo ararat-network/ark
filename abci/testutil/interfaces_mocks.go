@@ -90,17 +90,17 @@ func (mr *MockOracleKeeperMockRecorder) GetVoteTargets(ctx, voteHeight any) *gom
 }
 
 // RecordVoteAccounting mocks base method.
-func (m *MockOracleKeeper) RecordVoteAccounting(ctx context.Context, validator types1.ConsAddress, rewardWeight math.Int, missed bool) error {
+func (m *MockOracleKeeper) RecordVoteAccounting(ctx context.Context, validator types1.ConsAddress, rewardWeight math.Int, eligible, participated bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordVoteAccounting", ctx, validator, rewardWeight, missed)
+	ret := m.ctrl.Call(m, "RecordVoteAccounting", ctx, validator, rewardWeight, eligible, participated)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecordVoteAccounting indicates an expected call of RecordVoteAccounting.
-func (mr *MockOracleKeeperMockRecorder) RecordVoteAccounting(ctx, validator, rewardWeight, missed any) *gomock.Call {
+func (mr *MockOracleKeeperMockRecorder) RecordVoteAccounting(ctx, validator, rewardWeight, eligible, participated any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVoteAccounting", reflect.TypeOf((*MockOracleKeeper)(nil).RecordVoteAccounting), ctx, validator, rewardWeight, missed)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVoteAccounting", reflect.TypeOf((*MockOracleKeeper)(nil).RecordVoteAccounting), ctx, validator, rewardWeight, eligible, participated)
 }
 
 // SetExchangeRateWithEvent mocks base method.

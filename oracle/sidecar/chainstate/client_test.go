@@ -122,7 +122,7 @@ func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 			Interval: time.Hour,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
-		WithLogger(log.NewLogger(logs)),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
 	)
 	require.NoError(t, err)
 
@@ -146,7 +146,7 @@ func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 			Interval: time.Hour,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
-		WithLogger(log.NewLogger(logs)),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
 	)
 	require.NoError(t, err)
 
@@ -241,7 +241,7 @@ func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 			Interval: time.Millisecond,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
-		WithLogger(log.NewLogger(logs)),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
 	)
 	require.NoError(t, err)
 
@@ -396,7 +396,7 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 			Interval: 75 * time.Millisecond,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
-		WithLogger(log.NewLogger(logs)),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
 	)
 	require.NoError(t, err)
 

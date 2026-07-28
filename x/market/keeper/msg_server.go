@@ -62,7 +62,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 			}
 			return nil, fmt.Errorf("checking base pool denom %s in oracle: %w", msg.Params.BasePool.Denom, err)
 		}
-		rates, err := m.k.oracleKeeper.GetRateSnapshot(
+		rates, err := m.k.oracleKeeper.GetRateSet(
 			ctx,
 			currentParams.BasePool.Denom,
 			msg.Params.BasePool.Denom,

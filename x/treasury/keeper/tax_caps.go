@@ -93,7 +93,7 @@ func (k Keeper) buildTaxCapsFromSnapshot(
 	for i, tax := range tobinTaxes {
 		denoms[i] = tax.Denom
 	}
-	rates, err := k.oracleKeeper.GetRateSnapshot(ctx, denoms...)
+	rates, err := k.oracleKeeper.GetRateSet(ctx, denoms...)
 	if err != nil {
 		return nil, fmt.Errorf("capturing tax-cap rates: %w", err)
 	}

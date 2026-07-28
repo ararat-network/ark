@@ -39,7 +39,7 @@ type Keeper struct {
 	Accounting   collections.Item[types.Accounting]
 	ExchangeRate collections.Map[string, types.ExchangeRate]
 	RewardWeight collections.Map[sdk.ValAddress, math.Int]
-	MissCount    collections.Map[sdk.ValAddress, uint64]
+	Attendance   collections.Map[sdk.ValAddress, types.Attendance]
 	VoteTargets  collections.Item[types.VoteTargets]
 }
 
@@ -100,12 +100,12 @@ func NewKeeper(
 			sdk.ValAddressKey,
 			sdk.IntValue,
 		),
-		MissCount: collections.NewMap(
+		Attendance: collections.NewMap(
 			sb,
-			types.MissCountKey,
-			"miss_count",
+			types.AttendanceKey,
+			"attendance",
 			sdk.ValAddressKey,
-			collections.Uint64Value,
+			codec.CollValue[types.Attendance](cdc),
 		),
 		VoteTargets: collections.NewItem(
 			sb,

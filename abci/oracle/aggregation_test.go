@@ -19,7 +19,7 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-func TestAggregateOracleVotesRecognizesUnavailableTargetQuorum(t *testing.T) {
+func TestAggregateOracleVotesLeavesOmittedTargetUnpriced(t *testing.T) {
 	votes := []testVote{
 		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{
 			"ausd": math.LegacyNewDec(100),
@@ -30,10 +30,7 @@ func TestAggregateOracleVotesRecognizesUnavailableTargetQuorum(t *testing.T) {
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"ausd": math.LegacyZeroDec(),
-		"akrw": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"ausd", "akrw"}
 
 	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
@@ -44,99 +41,27 @@ func TestAggregateOracleVotesRecognizesUnavailableTargetQuorum(t *testing.T) {
 
 	for _, vote := range votes {
 		require.True(t, math.NewInt(vote.power).Equal(keeper.scoreWeights[vote.validator.String()]))
-		require.Zero(t, keeper.missCounts[vote.validator.String()])
+		require.Equal(t, uint64(1), keeper.eligibleCounts[vote.validator.String()])
+		require.Equal(t, uint64(1), keeper.attendedCounts[vote.validator.String()])
 	}
 }
 
-func TestAggregateOracleVotesUsesCeilingForUnavailableTargetThreshold(t *testing.T) {
+func TestAggregateOracleVotesDoesNotPunishFailedQuorumVotes(t *testing.T) {
 	testCases := []struct {
-		name                 string
-		unavailablePower     int64
-		reportPower          int64
-		expectedOmissionMiss uint64
-	}{
-		{
-			name:                 "rounded omission support below threshold fails",
-			unavailablePower:     5,
-			reportPower:          5,
-			expectedOmissionMiss: 1,
-		},
-		{
-			name:             "omission support at ceiling threshold passes",
-			unavailablePower: 6,
-			reportPower:      4,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			unavailableVoter := []byte{1}
-			reportingVoter := []byte{2}
-			votes := []testVote{
-				newTestVote(unavailableVoter, tc.unavailablePower, map[string]math.LegacyDec{}),
-				newTestVote(reportingVoter, tc.reportPower, map[string]math.LegacyDec{
-					"ausd": math.LegacyNewDec(100),
-				}),
-			}
-			params := oracletypes.DefaultParams()
-			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
-			voteTargets := map[string]math.LegacyDec{
-				"ausd": math.LegacyZeroDec(),
-			}
-
-			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
-
-			require.NoError(t, err)
-			require.NotContains(t, prices, "ausd")
-			require.Equal(t, tc.expectedOmissionMiss, keeper.missCounts[sdk.ConsAddress(unavailableVoter).String()])
-			require.Zero(t, keeper.missCounts[sdk.ConsAddress(reportingVoter).String()])
-		})
-	}
-}
-
-func TestAggregateOracleVotesPriceQuorumPrecedesUnavailableQuorum(t *testing.T) {
-	positiveVoter := []byte{1}
-	unavailableVoter := []byte{2}
-	votes := []testVote{
-		newTestVote(positiveVoter, 50, map[string]math.LegacyDec{
-			"ausd": math.LegacyNewDec(100),
-		}),
-		newTestVote(unavailableVoter, 50, map[string]math.LegacyDec{}),
-	}
-	params := oracletypes.DefaultParams()
-	params.VoteThreshold = oracletypes.MinVoteThreshold
-	voteTargets := map[string]math.LegacyDec{
-		"ausd": math.LegacyZeroDec(),
-	}
-
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
-
-	require.NoError(t, err)
-	require.True(t, math.LegacyNewDec(100).Equal(prices["ausd"]))
-	require.True(t, math.NewInt(50).Equal(keeper.scoreWeights[sdk.ConsAddress(positiveVoter).String()]))
-	require.Zero(t, keeper.missCounts[sdk.ConsAddress(positiveVoter).String()])
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(unavailableVoter).String()])
-}
-
-func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
-	testCases := []struct {
-		name       string
-		rate       math.LegacyDec
-		expectMiss bool
+		name string
+		rate math.LegacyDec
 	}{
 		{
 			name: "positive rate",
 			rate: math.LegacyNewDec(1000),
 		},
 		{
-			name:       "zero rate",
-			rate:       math.LegacyZeroDec(),
-			expectMiss: true,
+			name: "zero rate abstention",
+			rate: math.LegacyZeroDec(),
 		},
 		{
-			name:       "negative rate",
-			rate:       math.LegacyNewDec(-1),
-			expectMiss: true,
+			name: "negative rate abstention",
+			rate: math.LegacyNewDec(-1),
 		},
 	}
 
@@ -155,22 +80,17 @@ func TestAggregateOracleVotesKeepsFailedQuorumTargetAccountable(t *testing.T) {
 			}
 			params := oracletypes.DefaultParams()
 			params.VoteThreshold = math.LegacyNewDecWithPrec(75, 2)
-			voteTargets := map[string]math.LegacyDec{
-				"ausd": math.LegacyZeroDec(),
-				"akrw": math.LegacyZeroDec(),
-			}
+			voteTargets := []string{"ausd", "akrw"}
 
 			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "ausd")
 			require.NotContains(t, prices, "akrw")
-			if tc.expectMiss {
-				require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(voterWithFailedQuorumDenom).String()])
-			} else {
-				require.Zero(t, keeper.missCounts[sdk.ConsAddress(voterWithFailedQuorumDenom).String()])
-			}
-			require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(voterMissingFailedQuorumDenom).String()])
+			// Both voters price ausd, so the failed akrw quorum costs neither of
+			// them attendance.
+			require.Equal(t, uint64(1), keeper.attendedCounts[consKey(voterWithFailedQuorumDenom)])
+			require.Equal(t, uint64(1), keeper.attendedCounts[consKey(voterMissingFailedQuorumDenom)])
 		})
 	}
 }
@@ -188,10 +108,7 @@ func TestAggregateOracleVotesSkipsCrossRateDenomWithoutReferenceOverlap(t *testi
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"akrw": math.LegacyZeroDec(),
-		"ausd": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"akrw", "ausd"}
 
 	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
@@ -219,11 +136,7 @@ func TestAggregateOracleVotesChoosesReferenceWithBestOverlapCoverage(t *testing.
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"ausd": math.LegacyZeroDec(),
-		"akrw": math.LegacyZeroDec(),
-		"asdr": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"ausd", "akrw", "asdr"}
 
 	_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
@@ -248,10 +161,7 @@ func TestAggregateOracleVotesSkipsCrossRateDenomBelowOverlapQuorum(t *testing.T)
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"ausd": math.LegacyZeroDec(),
-		"akrw": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"ausd", "akrw"}
 
 	_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
@@ -260,17 +170,17 @@ func TestAggregateOracleVotesSkipsCrossRateDenomBelowOverlapQuorum(t *testing.T)
 	require.NotContains(t, prices, "akrw")
 }
 
-func TestAggregateOracleVotesPenalizesNonPositiveTargetRates(t *testing.T) {
+func TestAggregateOracleVotesRecordsSoleTargetAbstentionAsEligibleOnly(t *testing.T) {
 	testCases := []struct {
 		name string
 		rate math.LegacyDec
 	}{
 		{
-			name: "zero rate",
+			name: "zero rate on the only target",
 			rate: math.LegacyZeroDec(),
 		},
 		{
-			name: "negative rate",
+			name: "negative rate on the only target",
 			rate: math.LegacyNewDec(-1),
 		},
 	}
@@ -278,76 +188,71 @@ func TestAggregateOracleVotesPenalizesNonPositiveTargetRates(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			positiveVoter := []byte{1}
-			nonPositiveVoter := []byte{2}
+			abstainingVoter := []byte{2}
 			votes := []testVote{
 				newTestVote(positiveVoter, 10, map[string]math.LegacyDec{
 					"ausd": math.LegacyNewDec(100),
 				}),
-				newTestVote(nonPositiveVoter, 10, map[string]math.LegacyDec{
+				newTestVote(abstainingVoter, 10, map[string]math.LegacyDec{
 					"ausd": tc.rate,
 				}),
 			}
 			params := oracletypes.DefaultParams()
 			params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-			voteTargets := map[string]math.LegacyDec{
-				"ausd": math.LegacyZeroDec(),
-			}
+			voteTargets := []string{"ausd"}
 
 			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "ausd")
-			require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[sdk.ConsAddress(positiveVoter).String()]))
-			require.True(t, keeper.scoreWeights[sdk.ConsAddress(nonPositiveVoter).String()].IsZero())
-			require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(nonPositiveVoter).String()])
+			require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[consKey(positiveVoter)]))
+			require.True(t, keeper.scoreWeights[consKey(abstainingVoter)].IsZero())
+			require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(abstainingVoter)])
+			require.Zero(t, keeper.attendedCounts[consKey(abstainingVoter)])
+			require.Equal(t, uint64(1), keeper.attendedCounts[consKey(positiveVoter)])
 		})
 	}
 }
 
-func TestAggregateOracleVotesDoesNotTreatNonPositiveRateAsUnavailable(t *testing.T) {
-	nonPositiveVoter := []byte{1}
-	unavailableVoter := []byte{2}
-	positiveVoter := []byte{3}
-	votes := []testVote{
-		newTestVote(nonPositiveVoter, 40, map[string]math.LegacyDec{
-			"akrw": math.LegacyZeroDec(),
-			"ausd": math.LegacyNewDec(100),
-		}),
-		newTestVote(unavailableVoter, 30, map[string]math.LegacyDec{
-			"ausd": math.LegacyNewDec(100),
-		}),
-		newTestVote(positiveVoter, 30, map[string]math.LegacyDec{
-			"akrw": math.LegacyNewDec(1000),
-			"ausd": math.LegacyNewDec(100),
-		}),
-	}
-	params := oracletypes.DefaultParams()
-	params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"akrw": math.LegacyZeroDec(),
-		"ausd": math.LegacyZeroDec(),
-	}
-
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
-
-	require.NoError(t, err)
-	require.NotContains(t, prices, "akrw")
-	require.Contains(t, prices, "ausd")
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(nonPositiveVoter).String()])
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(unavailableVoter).String()])
-	require.Zero(t, keeper.missCounts[sdk.ConsAddress(positiveVoter).String()])
-}
-
-func TestAggregateOracleVotesCountsAtMostOneMissForMultipleNonPositiveTargets(t *testing.T) {
+func TestAggregateOracleVotesRecordsEveryTargetAbstentionAsEligibleOnly(t *testing.T) {
 	honestVoter := []byte{1}
-	nonPositiveVoter := []byte{2}
+	abstainingVoter := []byte{2}
 	votes := []testVote{
 		newTestVote(honestVoter, 10, map[string]math.LegacyDec{
 			"akrw": math.LegacyNewDec(1000),
 			"asdr": math.LegacyNewDec(2),
 			"ausd": math.LegacyNewDec(100),
 		}),
-		newTestVote(nonPositiveVoter, 10, map[string]math.LegacyDec{
+		newTestVote(abstainingVoter, 10, map[string]math.LegacyDec{
+			"akrw": math.LegacyZeroDec(),
+			"asdr": math.LegacyNewDec(-1),
+			"ausd": math.LegacyZeroDec(),
+		}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+	voteTargets := []string{"akrw", "asdr", "ausd"}
+
+	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.True(t, math.NewInt(30).Equal(keeper.scoreWeights[consKey(honestVoter)]))
+	require.True(t, keeper.scoreWeights[consKey(abstainingVoter)].IsZero())
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(abstainingVoter)])
+	require.Zero(t, keeper.attendedCounts[consKey(abstainingVoter)])
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(honestVoter)])
+}
+
+func TestAggregateOracleVotesCountsPartialAbstentionAsAttended(t *testing.T) {
+	honestVoter := []byte{1}
+	abstainingVoter := []byte{2}
+	votes := []testVote{
+		newTestVote(honestVoter, 10, map[string]math.LegacyDec{
+			"akrw": math.LegacyNewDec(1000),
+			"asdr": math.LegacyNewDec(2),
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newTestVote(abstainingVoter, 10, map[string]math.LegacyDec{
 			"akrw": math.LegacyZeroDec(),
 			"asdr": math.LegacyNewDec(-1),
 			"ausd": math.LegacyNewDec(100),
@@ -355,61 +260,77 @@ func TestAggregateOracleVotesCountsAtMostOneMissForMultipleNonPositiveTargets(t 
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := map[string]math.LegacyDec{
-		"akrw": math.LegacyZeroDec(),
-		"asdr": math.LegacyZeroDec(),
-		"ausd": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"akrw", "asdr", "ausd"}
 
-	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(nonPositiveVoter).String()])
+	require.Contains(t, prices, "ausd")
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(abstainingVoter)])
+	require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[consKey(abstainingVoter)]))
+	require.True(t, math.NewInt(30).Equal(keeper.scoreWeights[consKey(honestVoter)]))
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(honestVoter)])
 }
 
-func TestAggregateOracleVotesPenalizesPositiveOutOfBandTargetRates(t *testing.T) {
-	testCases := []struct {
-		name      string
-		outOfBand math.LegacyDec
-	}{
-		{
-			name:      "positive out of band rate",
-			outOfBand: math.LegacyNewDec(1000),
-		},
+func TestAggregateOracleVotesExcludesAbstentionFromPriceQuorum(t *testing.T) {
+	abstainingVoter := []byte{1}
+	positiveVoter := []byte{2}
+	votes := []testVote{
+		newTestVote(abstainingVoter, 40, map[string]math.LegacyDec{
+			"akrw": math.LegacyNewDec(1000),
+			"ausd": math.LegacyZeroDec(),
+		}),
+		newTestVote(positiveVoter, 60, map[string]math.LegacyDec{
+			"akrw": math.LegacyNewDec(1000),
+			"ausd": math.LegacyNewDec(100),
+		}),
 	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
+	voteTargets := []string{"akrw", "ausd"}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			inBandVoter1 := []byte{1}
-			inBandVoter2 := []byte{2}
-			outOfBandVoter := []byte{3}
-			votes := []testVote{
-				newTestVote(inBandVoter1, 10, map[string]math.LegacyDec{
-					"ausd": math.LegacyNewDec(100),
-				}),
-				newTestVote(inBandVoter2, 10, map[string]math.LegacyDec{
-					"ausd": math.LegacyNewDec(100),
-				}),
-				newTestVote(outOfBandVoter, 10, map[string]math.LegacyDec{
-					"ausd": tc.outOfBand,
-				}),
-			}
-			params := oracletypes.DefaultParams()
-			params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-			voteTargets := map[string]math.LegacyDec{
-				"ausd": math.LegacyZeroDec(),
-			}
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
-			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	require.NoError(t, err)
+	// The abstaining 40 power adds no ballot power, so ausd's 60 positive power
+	// stays below the 67 quorum and publishes no price.
+	require.NotContains(t, prices, "ausd")
+	require.Contains(t, prices, "akrw")
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(abstainingVoter)])
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(positiveVoter)])
+	require.True(t, math.NewInt(40).Equal(keeper.scoreWeights[consKey(abstainingVoter)]))
+	require.True(t, math.NewInt(60).Equal(keeper.scoreWeights[consKey(positiveVoter)]))
+}
 
-			require.NoError(t, err)
-			require.True(t, math.LegacyNewDec(100).Equal(prices["ausd"]))
-			require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[sdk.ConsAddress(inBandVoter1).String()]))
-			require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[sdk.ConsAddress(inBandVoter2).String()]))
-			require.True(t, keeper.scoreWeights[sdk.ConsAddress(outOfBandVoter).String()].IsZero())
-			require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(outOfBandVoter).String()])
-		})
+func TestAggregateOracleVotesGivesOutOfBandVotesNoRewardWeight(t *testing.T) {
+	inBandVoter1 := []byte{1}
+	inBandVoter2 := []byte{2}
+	outOfBandVoter := []byte{3}
+	votes := []testVote{
+		newTestVote(inBandVoter1, 10, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newTestVote(inBandVoter2, 10, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newTestVote(outOfBandVoter, 10, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(1000),
+		}),
 	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+	voteTargets := []string{"ausd"}
+
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.True(t, math.LegacyNewDec(100).Equal(prices["ausd"]))
+	require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[consKey(inBandVoter1)]))
+	require.True(t, math.NewInt(10).Equal(keeper.scoreWeights[consKey(inBandVoter2)]))
+	require.True(t, keeper.scoreWeights[consKey(outOfBandVoter)].IsZero())
+	// An out-of-band price still participates: it earns nothing but is not an
+	// attendance failure.
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(outOfBandVoter)])
 }
 
 func TestAggregateOracleVotesUsesCeilingForVoteThreshold(t *testing.T) {
@@ -443,9 +364,7 @@ func TestAggregateOracleVotesUsesCeilingForVoteThreshold(t *testing.T) {
 			}
 			params := oracletypes.DefaultParams()
 			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
-			voteTargets := map[string]math.LegacyDec{
-				"ausd": math.LegacyZeroDec(),
-			}
+			voteTargets := []string{"ausd"}
 
 			_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
@@ -503,10 +422,7 @@ func TestAggregateOracleVotesUsesCeilingForOverlapThreshold(t *testing.T) {
 			}
 			params := oracletypes.DefaultParams()
 			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
-			voteTargets := map[string]math.LegacyDec{
-				"aaaa": math.LegacyZeroDec(),
-				"azzz": math.LegacyZeroDec(),
-			}
+			voteTargets := []string{"aaaa", "azzz"}
 
 			_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
@@ -536,10 +452,7 @@ func TestAggregateOracleVotesUsesMedianOfValidatorCrossRates(t *testing.T) {
 			"azzz": math.LegacyNewDec(101),
 		}),
 	}
-	voteTargets := map[string]math.LegacyDec{
-		"aaaa": math.LegacyZeroDec(),
-		"azzz": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"aaaa", "azzz"}
 
 	keeper, prices, err := applyOracleVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
 
@@ -548,12 +461,9 @@ func TestAggregateOracleVotesUsesMedianOfValidatorCrossRates(t *testing.T) {
 	// Per-validator aaaa/azzz ratios are 1, 10, and 1, so their median is 1.
 	// This deliberately differs from median(aaaa)/median(azzz) = 100/10.
 	require.True(t, math.LegacyNewDec(100).Equal(prices["azzz"]))
-	require.True(t, math.NewInt(1).Equal(keeper.scoreWeights[sdk.ConsAddress([]byte{1}).String()]))
-	require.True(t, math.NewInt(1).Equal(keeper.scoreWeights[sdk.ConsAddress([]byte{2}).String()]))
-	require.True(t, math.NewInt(2).Equal(keeper.scoreWeights[sdk.ConsAddress([]byte{3}).String()]))
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress([]byte{1}).String()])
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress([]byte{2}).String()])
-	require.Zero(t, keeper.missCounts[sdk.ConsAddress([]byte{3}).String()])
+	require.True(t, math.NewInt(1).Equal(keeper.scoreWeights[consKey([]byte{1})]))
+	require.True(t, math.NewInt(1).Equal(keeper.scoreWeights[consKey([]byte{2})]))
+	require.True(t, math.NewInt(2).Equal(keeper.scoreWeights[consKey([]byte{3})]))
 }
 
 func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing.T) {
@@ -569,19 +479,16 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 			"azzz": math.LegacySmallestDec(),
 		}),
 	}
-	voteTargets := map[string]math.LegacyDec{
-		"aaaa": math.LegacyZeroDec(),
-		"azzz": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"aaaa", "azzz"}
 
 	keeper, prices, err := applyOracleVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.LegacyNewDec(100).Equal(prices["aaaa"]))
 	require.True(t, math.LegacyNewDec(10).Equal(prices["azzz"]))
-	require.True(t, math.NewInt(180).Equal(keeper.scoreWeights[sdk.ConsAddress(honestVoter).String()]))
-	require.True(t, keeper.scoreWeights[sdk.ConsAddress(extremeVoter).String()].IsZero())
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(extremeVoter).String()])
+	require.True(t, math.NewInt(180).Equal(keeper.scoreWeights[consKey(honestVoter)]))
+	require.True(t, keeper.scoreWeights[consKey(extremeVoter)].IsZero())
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(extremeVoter)])
 }
 
 func TestApplyOracleVoteExtensionsUsesDeterministicWriteOrder(t *testing.T) {
@@ -602,20 +509,16 @@ func TestApplyOracleVoteExtensionsUsesDeterministicWriteOrder(t *testing.T) {
 			"azzz": math.LegacyNewDec(10),
 		}),
 	}
-	voteTargets := map[string]math.LegacyDec{
-		"azzz": math.LegacyZeroDec(),
-		"aaaa": math.LegacyZeroDec(),
-		"ammm": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"azzz", "aaaa", "ammm"}
 
 	keeper, _, err := applyOracleVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
 
 	require.NoError(t, err)
 	require.Equal(t, []string{"aaaa", "ammm", "azzz"}, keeper.exchangeRateOrder)
 	require.Equal(t, []string{
-		sdk.ConsAddress([]byte{3}).String(),
-		sdk.ConsAddress([]byte{1}).String(),
-		sdk.ConsAddress([]byte{2}).String(),
+		consKey([]byte{3}),
+		consKey([]byte{1}),
+		consKey([]byte{2}),
 	}, keeper.scoreOrder)
 }
 
@@ -639,26 +542,201 @@ func TestAggregateOracleVotesFixedBandSkipsExtremeNonPositiveRate(t *testing.T) 
 		}),
 	}
 	params := oracletypes.DefaultParams()
-	voteTargets := map[string]math.LegacyDec{
-		"ausd": math.LegacyZeroDec(),
-	}
+	voteTargets := []string{"ausd"}
 
 	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.LegacyNewDec(100).Equal(prices["ausd"]))
-	require.True(t, math.NewInt(40).Equal(keeper.scoreWeights[sdk.ConsAddress(inBandVoter1).String()]))
-	require.True(t, math.NewInt(40).Equal(keeper.scoreWeights[sdk.ConsAddress(inBandVoter2).String()]))
-	require.True(t, keeper.scoreWeights[sdk.ConsAddress(outOfBandVoter).String()].IsZero())
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(outOfBandVoter).String()])
-	require.True(t, keeper.scoreWeights[sdk.ConsAddress(nonPositiveVoter).String()].IsZero())
-	require.Equal(t, uint64(1), keeper.missCounts[sdk.ConsAddress(nonPositiveVoter).String()])
+	require.True(t, math.NewInt(40).Equal(keeper.scoreWeights[consKey(inBandVoter1)]))
+	require.True(t, math.NewInt(40).Equal(keeper.scoreWeights[consKey(inBandVoter2)]))
+	require.True(t, keeper.scoreWeights[consKey(outOfBandVoter)].IsZero())
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(outOfBandVoter)])
+	require.True(t, keeper.scoreWeights[consKey(nonPositiveVoter)].IsZero())
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(nonPositiveVoter)])
+	require.Zero(t, keeper.attendedCounts[consKey(nonPositiveVoter)])
+}
+
+func TestAggregateOracleVotesMarksNonFunctioningBlockIneligible(t *testing.T) {
+	participant := []byte{1}
+	absentee := []byte{2}
+	votes := []testVote{
+		newTestVote(participant, 40, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+			"akrw": math.LegacyNewDec(1000),
+		}),
+		newTestVote(absentee, 60, map[string]math.LegacyDec{}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	voteTargets := []string{"ausd", "akrw"}
+
+	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	// The participant prices two targets but contributes its 40 power once, so
+	// participating power stays below the 1/2 functioning threshold of 100.
+	require.Len(t, keeper.scoreOrder, 2)
+	require.Zero(t, keeper.eligibleCounts[consKey(participant)])
+	require.Zero(t, keeper.eligibleCounts[consKey(absentee)])
+}
+
+func TestAggregateOracleVotesTreatsExactlyHalfParticipatingPowerAsFunctioning(t *testing.T) {
+	participant := []byte{1}
+	absentee := []byte{2}
+	votes := []testVote{
+		newTestVote(participant, 10, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newAbsentTestVote(absentee, 10),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	voteTargets := []string{"ausd"}
+
+	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	// Participating power is exactly half of total commit power, which the
+	// default functioning threshold includes.
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(participant)])
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(participant)])
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(absentee)])
+	require.Zero(t, keeper.attendedCounts[consKey(absentee)])
+}
+
+func TestAggregateOracleVotesAppliesFunctioningBlockThreshold(t *testing.T) {
+	participant := []byte{1}
+	absentee := []byte{2}
+	voteTargets := []string{"ausd"}
+
+	tests := []struct {
+		name        string
+		threshold   math.LegacyDec
+		functioning bool
+	}{
+		{
+			name:        "default majority threshold grades the block",
+			threshold:   oracletypes.DefaultFunctioningBlockThreshold,
+			functioning: true,
+		},
+		{
+			name:        "raised threshold spares a fleet below it",
+			threshold:   math.LegacyNewDecWithPrec(60, 2),
+			functioning: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Participating power is 11 of 20. The price quorum is met either
+			// way, so only the functioning threshold moves between cases.
+			votes := []testVote{
+				newTestVote(participant, 11, map[string]math.LegacyDec{
+					"ausd": math.LegacyNewDec(100),
+				}),
+				newAbsentTestVote(absentee, 9),
+			}
+			params := oracletypes.DefaultParams()
+			params.VoteThreshold = oracletypes.MinVoteThreshold
+			params.FunctioningBlockThreshold = tc.threshold
+
+			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+			require.NoError(t, err)
+			require.Len(t, prices, 1)
+			if !tc.functioning {
+				require.Zero(t, keeper.eligibleCounts[consKey(participant)])
+				require.Zero(t, keeper.eligibleCounts[consKey(absentee)])
+				return
+			}
+			require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(participant)])
+			require.Equal(t, uint64(1), keeper.attendedCounts[consKey(participant)])
+			require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(absentee)])
+			require.Zero(t, keeper.attendedCounts[consKey(absentee)])
+		})
+	}
+}
+
+func TestAggregateOracleVotesTreatsZeroTotalPowerAsNotFunctioning(t *testing.T) {
+	pricingVoter := []byte{1}
+	absentee := []byte{2}
+	votes := []testVote{
+		newTestVote(pricingVoter, 0, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newAbsentTestVote(absentee, 0),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	voteTargets := []string{"ausd"}
+
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.Empty(t, prices)
+	// Zero participating power satisfies the multiplied comparison on its own,
+	// so only the powerless-commit early return keeps the block from grading
+	// attendance.
+	require.Len(t, keeper.scoreOrder, 2)
+	require.Zero(t, keeper.eligibleCounts[consKey(pricingVoter)])
+	require.Zero(t, keeper.eligibleCounts[consKey(absentee)])
+}
+
+func TestAggregateOracleVotesRecordsEmptyReportAsEligibleOnly(t *testing.T) {
+	participant := []byte{1}
+	emptyReporter := []byte{2}
+	votes := []testVote{
+		newTestVote(participant, 60, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newTestVote(emptyReporter, 40, map[string]math.LegacyDec{}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	voteTargets := []string{"ausd"}
+
+	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.Contains(t, prices, "ausd")
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(participant)])
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(participant)])
+	// A valid report carrying no rates is graded like any other non-participant
+	// on a functioning block.
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(emptyReporter)])
+	require.Zero(t, keeper.attendedCounts[consKey(emptyReporter)])
+}
+
+func TestAggregateOracleVotesGradesInvalidReportsEligibleOnFunctioningBlocks(t *testing.T) {
+	participant := []byte{1}
+	invalidVoter := []byte{2}
+	votes := []testVote{
+		newTestVote(participant, 60, map[string]math.LegacyDec{
+			"ausd": math.LegacyNewDec(100),
+		}),
+		newAbsentTestVote(invalidVoter, 40),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	voteTargets := []string{"ausd"}
+
+	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(participant)])
+	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(participant)])
+	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(invalidVoter)])
+	require.Zero(t, keeper.attendedCounts[consKey(invalidVoter)])
 }
 
 type testVote struct {
 	validator sdk.ConsAddress
 	power     int64
 	rates     map[string]math.LegacyDec
+	// absent carries no vote extension at all, which aggregation sees as an
+	// invalid report rather than an empty one.
+	absent bool
 }
 
 func newTestVote(address []byte, power int64, rates map[string]math.LegacyDec) testVote {
@@ -669,19 +747,36 @@ func newTestVote(address []byte, power int64, rates map[string]math.LegacyDec) t
 	}
 }
 
+func newAbsentTestVote(address []byte, power int64) testVote {
+	return testVote{
+		validator: sdk.ConsAddress(address),
+		power:     power,
+		absent:    true,
+	}
+}
+
+// consKey returns the recording keeper's map key for a raw validator address.
+func consKey(address []byte) string {
+	return sdk.ConsAddress(address).String()
+}
+
 func applyOracleVoteExtensions(
 	t *testing.T,
 	votes []testVote,
 	params oracletypes.Params,
-	voteTargets map[string]math.LegacyDec,
+	voteTargets []string,
 ) (*recordingOracleKeeper, map[string]math.LegacyDec, error) {
 	t.Helper()
 	voteExtensionCodec := codec.NewVoteExtensionCodec()
 
 	extendedVotes := make([]cometabci.ExtendedVoteInfo, 0, len(votes))
 	for _, vote := range votes {
-		voteExtension, err := voteExtensionCodec.Encode(abcitestutil.NewOracleVoteExtension(t, vote.rates))
-		require.NoError(t, err)
+		var voteExtension []byte
+		if !vote.absent {
+			encoded, err := voteExtensionCodec.Encode(abcitestutil.NewOracleVoteExtension(t, vote.rates))
+			require.NoError(t, err)
+			voteExtension = encoded
+		}
 		extendedVotes = append(extendedVotes, abcitestutil.NewExtendedVoteInfo(vote.validator, vote.power, voteExtension))
 	}
 
@@ -710,22 +805,23 @@ type recordingOracleKeeper struct {
 	exchangeRateOrder []string
 	scoreWeights      map[string]math.Int
 	scoreOrder        []string
-	missCounts        map[string]uint64
+	eligibleCounts    map[string]uint64
+	attendedCounts    map[string]uint64
 }
 
-func newRecordingOracleKeeper(params oracletypes.Params, voteTargets map[string]math.LegacyDec) *recordingOracleKeeper {
-	denoms := make([]string, 0, len(voteTargets))
-	for denom := range voteTargets {
-		denoms = append(denoms, denom)
-	}
+// newRecordingOracleKeeper sorts voteTargets so callers may list them in any
+// order; aggregation requires canonical lexical order.
+func newRecordingOracleKeeper(params oracletypes.Params, voteTargets []string) *recordingOracleKeeper {
+	denoms := slices.Clone(voteTargets)
 	slices.Sort(denoms)
 
 	return &recordingOracleKeeper{
-		params:       params,
-		voteTargets:  denoms,
-		exchangeRate: make(map[string]math.LegacyDec),
-		scoreWeights: make(map[string]math.Int),
-		missCounts:   make(map[string]uint64),
+		params:         params,
+		voteTargets:    denoms,
+		exchangeRate:   make(map[string]math.LegacyDec),
+		scoreWeights:   make(map[string]math.Int),
+		eligibleCounts: make(map[string]uint64),
+		attendedCounts: make(map[string]uint64),
 	}
 }
 
@@ -739,11 +835,14 @@ func (k *recordingOracleKeeper) SetExchangeRateWithEvent(_ context.Context, exch
 	return nil
 }
 
+// RecordVoteAccounting mirrors the keeper's composition: attendance is credited
+// only when an eligible block is also participated in.
 func (k *recordingOracleKeeper) RecordVoteAccounting(
 	_ context.Context,
 	validator sdk.ConsAddress,
 	scoreWeight math.Int,
-	missed bool,
+	eligible bool,
+	participated bool,
 ) error {
 	validatorKey := validator.String()
 	currentWeight, ok := k.scoreWeights[validatorKey]
@@ -752,8 +851,11 @@ func (k *recordingOracleKeeper) RecordVoteAccounting(
 	}
 	k.scoreWeights[validatorKey] = currentWeight.Add(scoreWeight)
 	k.scoreOrder = append(k.scoreOrder, validatorKey)
-	if missed {
-		k.missCounts[validator.String()]++
+	if eligible {
+		k.eligibleCounts[validatorKey]++
+		if participated {
+			k.attendedCounts[validatorKey]++
+		}
 	}
 	return nil
 }

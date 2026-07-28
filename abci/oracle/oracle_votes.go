@@ -30,14 +30,10 @@ type Vote struct {
 	// for this commit.
 	Validator cometabci.Validator
 
-	// ValidReport is true when the validator submitted a non-empty vote
-	// extension that decoded and matched the expected vote-target epoch. A valid
-	// report may omit rates to signal that those targets are unavailable.
-	ValidReport bool
-
 	// Rates contains validated domain rates keyed by canonical target index.
-	// Non-positive values are retained so aggregation can classify them as
-	// misses. It is nil when ValidReport is false.
+	// Non-positive values are retained as abstentions: they never enter ballots
+	// and do not count as participation. It is nil when the validator was
+	// absent or submitted an invalid payload.
 	Rates []VoteRate
 }
 
@@ -117,9 +113,11 @@ func ValidateVoteExtension(
 }
 
 // GetOracleVotes decodes the injected extended commit info from the proposal
-// and returns one Vote per validator entry. Invalid individual payloads are
-// classified as empty reports so they remain accountable without making block
-// finalisation fail. Extended-commit envelope errors remain fatal.
+// and returns one Vote per validator entry. Invalid individual payloads yield
+// nil Rates and are treated like empty reports: the validator still counts
+// toward total commit power and accrues attendance eligibility on functioning
+// blocks, without making block finalisation fail. Extended-commit envelope
+// errors remain fatal.
 func GetOracleVotes(
 	voteExtensionCodec *codec.VoteExtensionCodec,
 	proposal [][]byte,
@@ -150,7 +148,6 @@ func GetOracleVotes(
 		if err != nil {
 			continue
 		}
-		votes[i].ValidReport = true
 		votes[i].Rates = rates
 	}
 

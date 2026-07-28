@@ -258,33 +258,33 @@ func (s *KeeperTestSuite) TestQueryRewardWeight() {
 	}
 }
 
-func (s *KeeperTestSuite) TestQueryMissCount() {
+func (s *KeeperTestSuite) TestQueryAttendance() {
 	tests := []struct {
 		name      string
 		setup     func()
-		req       *types.QueryMissCountRequest
+		req       *types.QueryAttendanceRequest
 		code      codes.Code
-		expect    uint64
+		expect    types.Attendance
 		expectErr bool
 	}{
 		{
 			name:      "invalid validator rejected",
-			req:       &types.QueryMissCountRequest{ValidatorAddr: "invalid"},
+			req:       &types.QueryAttendanceRequest{ValidatorAddr: "invalid"},
 			code:      codes.InvalidArgument,
 			expectErr: true,
 		},
 		{
-			name: "stored counter returned",
+			name: "stored attendance returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.MissCount.Set(s.ctx, valAddr1, 9))
+				s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{EligibleBlocks: 9, AttendedBlocks: 7}))
 			},
-			req:    &types.QueryMissCountRequest{ValidatorAddr: valAddr1.String()},
-			expect: 9,
+			req:    &types.QueryAttendanceRequest{ValidatorAddr: valAddr1.String()},
+			expect: types.Attendance{EligibleBlocks: 9, AttendedBlocks: 7},
 		},
 		{
-			name:   "missing counter returns zero",
-			req:    &types.QueryMissCountRequest{ValidatorAddr: valAddr2.String()},
-			expect: 0,
+			name:   "missing attendance returns zero value",
+			req:    &types.QueryAttendanceRequest{ValidatorAddr: valAddr2.String()},
+			expect: types.Attendance{},
 		},
 	}
 
@@ -294,7 +294,7 @@ func (s *KeeperTestSuite) TestQueryMissCount() {
 				tc.setup()
 			}
 
-			resp, err := s.queryClient.MissCount(s.ctx, tc.req)
+			resp, err := s.queryClient.Attendance(s.ctx, tc.req)
 			if tc.expectErr {
 				s.Require().Error(err)
 				s.Require().Equal(tc.code, status.Code(err))
@@ -302,7 +302,7 @@ func (s *KeeperTestSuite) TestQueryMissCount() {
 			}
 
 			s.Require().NoError(err)
-			s.Require().Equal(tc.expect, resp.MissCount)
+			s.Require().Equal(tc.expect, resp.Attendance)
 		})
 	}
 }

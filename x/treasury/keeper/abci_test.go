@@ -42,8 +42,8 @@ func (s *KeeperTestSuite) TestBeginBlockerReusesTobinTaxesForStableFeeValuation(
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.ZeroInt()))
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 5)))
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.SDRBaseDenom).Return(
-		oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.SDRBaseDenom).Return(
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.SDRBaseDenom:  math.LegacyOneDec(),
 		},
@@ -66,11 +66,11 @@ func (s *KeeperTestSuite) TestBeginBlockerRefreshesMismatchedCaps() {
 		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
@@ -127,7 +127,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnavailableTaxCapRates() {
 		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil).Times(3)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -160,7 +160,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnrepresentableTaxCapConversion()
 		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -184,11 +184,11 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsTaxCapConversionThatTruncatesToZe
 		{Denom: chain.USDBaseDenom},
 	}
 	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyNewDec(2),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)

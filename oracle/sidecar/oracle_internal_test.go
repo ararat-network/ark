@@ -20,7 +20,7 @@ func TestNewOracleDefaultsNilLogger(t *testing.T) {
 
 func TestOracleAndServerDeriveComponentLoggers(t *testing.T) {
 	logs := new(bytes.Buffer)
-	rootLogger := log.NewLogger(logs)
+	rootLogger := log.NewLogger(logs, log.ColorOption(false))
 	cfg := testInternalRuntimeConfig()
 
 	oracle, err := NewOracle(Config{Runtime: cfg}, rootLogger)

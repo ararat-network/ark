@@ -23,9 +23,9 @@ func MsgUpdateParamsFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgUp
 		params.RewardBand = GenRewardBand(r.Rand)
 		params.RewardWindow = GenRewardWindow(r.Rand)
 		params.RewardDistributionWindow = GenRewardDistributionWindow(r.Rand)
-		params.SlashFraction = GenSlashFraction(r.Rand)
-		params.SlashWindow = GenSlashWindow(r.Rand)
-		params.MinValidPerWindow = GenMinValidPerWindow(r.Rand)
+		params.AttendanceWindow = GenAttendanceWindow(r.Rand)
+		params.MinAttendancePerWindow = GenMinAttendancePerWindow(r.Rand)
+		params.FunctioningBlockThreshold = GenFunctioningBlockThreshold(r.Rand)
 
 		return nil, &types.MsgUpdateParams{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),

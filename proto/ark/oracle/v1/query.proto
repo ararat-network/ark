@@ -54,11 +54,11 @@ service Query {
         "/ark/oracle/v1/validators/{validator_addr}/reward_weight";
   }
 
-  // MissCount returns oracle miss count of a validator
-  rpc MissCount(QueryMissCountRequest) returns (QueryMissCountResponse) {
+  // Attendance returns a validator's in-progress oracle attendance counters.
+  rpc Attendance(QueryAttendanceRequest) returns (QueryAttendanceResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get =
-        "/ark/oracle/v1/validators/{validator_addr}/miss";
+        "/ark/oracle/v1/validators/{validator_addr}/attendance";
   }
 
   // Params queries all parameters.
@@ -169,19 +169,19 @@ message QueryRewardWeightResponse {
   ];
 }
 
-// QueryMissCountRequest is the request type for the Query/MissCount RPC
+// QueryAttendanceRequest is the request type for the Query/Attendance RPC
 // method.
-message QueryMissCountRequest {
+message QueryAttendanceRequest {
   // validator defines the validator address to query for.
   string validator_addr = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
 }
 
-// QueryMissCountResponse is response type for the
-// Query/MissCount RPC method.
-message QueryMissCountResponse {
-  // miss_count defines the oracle miss counter of a validator
-  uint64 miss_count = 1;
+// QueryAttendanceResponse is response type for the Query/Attendance RPC
+// method.
+message QueryAttendanceResponse {
+  Attendance attendance = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.

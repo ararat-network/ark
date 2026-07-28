@@ -43,7 +43,7 @@ func TestManagedProviderStopDoesNotLogIntentionalExit(t *testing.T) {
 	)
 	require.NoError(t, err)
 	managed := &managedProvider{provider: provider}
-	oracle := &Runtime{logger: log.NewLogger(logs)}
+	oracle := &Runtime{logger: log.NewLogger(logs, log.ColorOption(false))}
 
 	oracle.updateMu.Lock()
 	managed.start(context.Background(), nil, oracle.logger)
@@ -75,7 +75,7 @@ func TestManagedProviderStartLogsUnexpectedExit(t *testing.T) {
 	)
 	require.NoError(t, err)
 	managed := &managedProvider{provider: provider}
-	oracle := &Runtime{logger: log.NewLogger(logs)}
+	oracle := &Runtime{logger: log.NewLogger(logs, log.ColorOption(false))}
 
 	oracle.updateMu.Lock()
 	managed.start(context.Background(), nil, oracle.logger)

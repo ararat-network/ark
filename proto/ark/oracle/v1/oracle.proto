@@ -32,15 +32,11 @@ message Params {
   uint64 reward_distribution_window = 4;
   repeated TobinTax tobin_taxes = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string slash_fraction = 6 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  // Window changes take effect after the active slash period settles.
-  uint64 slash_window = 7;
-  string min_valid_per_window = 8 [
+  // Window changes take effect after the active attendance period settles.
+  uint64 attendance_window = 6;
+  // min_attendance_per_window is the minimum attended/eligible ratio over one
+  // attendance window before a validator is jailed. Zero disables jailing.
+  string min_attendance_per_window = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -48,9 +44,20 @@ message Params {
   ];
   // max_exchange_rate_age is the maximum elapsed block time since an exchange
   // rate was last written before it is considered stale.
-  google.protobuf.Duration max_exchange_rate_age = 9 [
+  google.protobuf.Duration max_exchange_rate_age = 8 [
     (gogoproto.nullable) = false,
     (gogoproto.stdduration) = true,
+    (amino.dont_omitempty) = true
+  ];
+  // functioning_block_threshold is the minimum share of total commit power that
+  // must participate before a block grades attendance. Must be at least 50
+  // percent: governance may only make grading more forgiving, never harsher,
+  // because a threshold below a majority grades blocks that a majority could
+  // not price and turns a correlated outage into mass jailing.
+  string functioning_block_threshold = 9 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 }
@@ -82,4 +89,14 @@ message PendingVoteTargets {
   repeated string denoms = 1;
   uint64 version = 2;
   int64 activation_vote_height = 3;
+}
+
+// Attendance counts a validator's functioning-block presence within the
+// active attendance window. A block is eligible for a validator when it was in
+// the commit and fleet participating power reached the functioning threshold;
+// it is attended when the validator also submitted a valid report containing
+// at least one positive rate.
+message Attendance {
+  uint64 eligible_blocks = 1;
+  uint64 attended_blocks = 2;
 }

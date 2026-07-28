@@ -24,8 +24,8 @@ func (s *KeeperTestSuite) TestSwapQuote_RecursiveSwap() {
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", "akrw").
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", "akrw").
+		Return(oracletypes.RateSet{
 			"ausd": math.LegacyOneDec(),
 			"akrw": math.LegacyNewDec(1300),
 		}, nil).AnyTimes()
@@ -80,8 +80,8 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTax() {
 
 func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTaxErrors() {
 	oracleErr := errors.New("oracle unavailable")
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", "akrw").
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", "akrw").
+		Return(oracletypes.RateSet{
 			"ausd": math.LegacyOneDec(),
 			"akrw": math.LegacyNewDec(1300),
 		}, nil).AnyTimes()
@@ -128,8 +128,8 @@ func (s *KeeperTestSuite) TestSwapQuote_ArkToArk_TobinTaxErrors() {
 
 func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 	// Unit rates (1:1:1) with a small base pool so CP spread is significant.
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.SDRBaseDenom:  math.LegacyOneDec(),
@@ -189,8 +189,8 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 func (s *KeeperTestSuite) TestSwapQuote_SpreadNeverBelowMinSpread() {
 	// With small offers into the default large pool (1e12), CP spread ≈ 0.
 	// The minimum stability spread (2%) should always be the floor.
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
+		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.SDRBaseDenom:  math.LegacyOneDec(),
@@ -212,12 +212,12 @@ func (s *KeeperTestSuite) TestSwapQuote_SpreadNeverBelowMinSpread() {
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_NegativeRawSpreadUsesMinimumSpread() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		"ausd",
 		chain.SDRBaseDenom,
 		chain.NoahBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		"ausd":              math.LegacyOneDec(),
 		chain.SDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -248,12 +248,12 @@ func (s *KeeperTestSuite) TestSwapQuote_ExtremeNegativeRawSpreadUsesMinimumWitho
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, arkPoolDelta))
 
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.USDBaseDenom,
 		chain.SDRBaseDenom,
 		chain.NoahBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 		chain.SDRBaseDenom:  math.LegacySmallestDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -269,8 +269,8 @@ func (s *KeeperTestSuite) TestSwapQuote_ExtremeNegativeRawSpreadUsesMinimumWitho
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_PoolImbalanceIncreasesSpread() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
-		Return(oracletypes.RateSnapshot{
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
+		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
 			chain.NoahBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 			chain.SDRBaseDenom:  math.LegacyNewDecWithPrec(17, 1),

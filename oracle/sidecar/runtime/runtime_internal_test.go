@@ -192,7 +192,7 @@ func TestNewRuntimeDerivesComponentLogger(t *testing.T) {
 
 	oracle, err := NewRuntime(
 		testRuntimeLoggerConfig(),
-		WithLogger(log.NewLogger(logs)),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
 		WithProviderFactory(func(
 			_ providers.Config,
 			markets providertypes.Markets,
@@ -227,7 +227,7 @@ func TestNewRuntimePassesLoggerToChainStateClient(t *testing.T) {
 	cfg := testRuntimeLoggerConfig()
 	oracle, err := NewRuntime(
 		cfg,
-		WithLogger(log.NewLogger(logs)),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
 		WithProviderFactory(func(
 			_ providers.Config,
 			markets providertypes.Markets,

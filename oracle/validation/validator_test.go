@@ -33,7 +33,7 @@ func TestNewValidatorDerivesComponentLogger(t *testing.T) {
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
 			Return(nil, context.DeadlineExceeded),
 	)
-	validator, err := NewValidator(log.NewLogger(logs), client, voteTargetClient, validConfig())
+	validator, err := NewValidator(log.NewLogger(logs, log.ColorOption(false)), client, voteTargetClient, validConfig())
 	require.NoError(t, err)
 
 	_, _ = validator.Run(context.Background())

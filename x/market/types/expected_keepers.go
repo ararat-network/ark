@@ -28,7 +28,7 @@ type BankKeeper interface {
 
 // OracleKeeper defines expected oracle keeper
 type OracleKeeper interface {
-	GetRateSnapshot(ctx context.Context, denoms ...string) (oracletypes.RateSnapshot, error)
+	GetRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
 	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
 	GetTobinTaxes(ctx context.Context) ([]oracletypes.TobinTax, error)
 
@@ -39,7 +39,7 @@ type OracleKeeper interface {
 // TreasuryKeeper defines the allocation and liability accounting required by
 // Market settlement.
 type TreasuryKeeper interface {
-	RouteExpansion(ctx context.Context, grossOffer sdk.Coin, stableOutput sdk.Coin, quoteRates oracletypes.RateSnapshot) (treasurytypes.ExpansionAllocation, error)
-	DrawRedemptionBuffer(ctx context.Context, redeemedStable sdk.Coin, noahOutput math.Int, quoteRates oracletypes.RateSnapshot) (treasurytypes.BufferDraw, error)
-	RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted sdk.Coin, quoteRates oracletypes.RateSnapshot) error
+	RouteExpansion(ctx context.Context, grossOffer sdk.Coin, stableOutput sdk.Coin, quoteRates oracletypes.RateSet) (treasurytypes.ExpansionAllocation, error)
+	DrawRedemptionBuffer(ctx context.Context, redeemedStable sdk.Coin, noahOutput math.Int, quoteRates oracletypes.RateSet) (treasurytypes.BufferDraw, error)
+	RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted sdk.Coin, quoteRates oracletypes.RateSet) error
 }

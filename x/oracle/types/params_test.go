@@ -97,51 +97,73 @@ func TestParamsValidate(t *testing.T) {
 			name:   "reward distribution window equal to reward window",
 			mutate: func(p *types.Params) { p.RewardDistributionWindow = p.RewardWindow },
 		},
-		// SlashFraction
+		// AttendanceWindow
 		{
-			name:      "slash fraction missing",
-			mutate:    func(p *types.Params) { p.SlashFraction = math.LegacyDec{} },
-			expectErr: "SlashFraction must be set",
+			name:      "attendance window zero",
+			mutate:    func(p *types.Params) { p.AttendanceWindow = 0 },
+			expectErr: "AttendanceWindow must be > 0",
 		},
 		{
-			name:      "slash fraction negative",
-			mutate:    func(p *types.Params) { p.SlashFraction = math.LegacyNewDec(-1) },
-			expectErr: "SlashFraction must be between [0, 1]",
+			name:   "attendance window at one",
+			mutate: func(p *types.Params) { p.AttendanceWindow = 1 },
+		},
+		// MinAttendancePerWindow
+		{
+			name:      "min attendance per window missing",
+			mutate:    func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyDec{} },
+			expectErr: "MinAttendancePerWindow must be set",
 		},
 		{
-			name:      "slash fraction above one",
-			mutate:    func(p *types.Params) { p.SlashFraction = math.LegacyNewDecWithPrec(101, 2) },
-			expectErr: "SlashFraction must be between [0, 1]",
+			name:      "min attendance per window negative",
+			mutate:    func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyNewDec(-1) },
+			expectErr: "MinAttendancePerWindow must be between [0, 1]",
 		},
 		{
-			name:   "slash fraction at zero",
-			mutate: func(p *types.Params) { p.SlashFraction = math.LegacyZeroDec() },
-		},
-		// SlashWindow
-		{
-			name:      "slash window zero",
-			mutate:    func(p *types.Params) { p.SlashWindow = 0 },
-			expectErr: "SlashWindow must be > 0",
-		},
-		// MinValidPerWindow
-		{
-			name:      "min valid per window missing",
-			mutate:    func(p *types.Params) { p.MinValidPerWindow = math.LegacyDec{} },
-			expectErr: "MinValidPerWindow must be set",
+			name:      "min attendance per window above one",
+			mutate:    func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyNewDecWithPrec(101, 2) },
+			expectErr: "MinAttendancePerWindow must be between [0, 1]",
 		},
 		{
-			name:      "min valid per window negative",
-			mutate:    func(p *types.Params) { p.MinValidPerWindow = math.LegacyNewDec(-1) },
-			expectErr: "MinValidPerWindow must be between [0, 1]",
+			name:   "min attendance per window at zero",
+			mutate: func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyZeroDec() },
 		},
 		{
-			name:      "min valid per window above one",
-			mutate:    func(p *types.Params) { p.MinValidPerWindow = math.LegacyNewDecWithPrec(101, 2) },
-			expectErr: "MinValidPerWindow must be between [0, 1]",
+			name:   "min attendance per window at one",
+			mutate: func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyOneDec() },
+		},
+		// FunctioningBlockThreshold
+		{
+			name:      "functioning block threshold missing",
+			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyDec{} },
+			expectErr: "FunctioningBlockThreshold must be set",
 		},
 		{
-			name:   "min valid per window at zero",
-			mutate: func(p *types.Params) { p.MinValidPerWindow = math.LegacyZeroDec() },
+			name:      "functioning block threshold below 50%",
+			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDecWithPrec(49, 2) },
+			expectErr: "FunctioningBlockThreshold must be at least 50 percent",
+		},
+		{
+			name:      "functioning block threshold zero",
+			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyZeroDec() },
+			expectErr: "FunctioningBlockThreshold must be at least 50 percent",
+		},
+		{
+			name:      "functioning block threshold negative",
+			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDec(-1) },
+			expectErr: "FunctioningBlockThreshold must be at least 50 percent",
+		},
+		{
+			name:   "functioning block threshold at 50%",
+			mutate: func(p *types.Params) { p.FunctioningBlockThreshold = types.MinFunctioningBlockThreshold },
+		},
+		{
+			name:   "functioning block threshold at 100%",
+			mutate: func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyOneDec() },
+		},
+		{
+			name:      "functioning block threshold above 100%",
+			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDecWithPrec(101, 2) },
+			expectErr: "FunctioningBlockThreshold must not exceed 100 percent",
 		},
 		// MaxExchangeRateAge
 		{

@@ -75,7 +75,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 				s.ctx,
 				test.grossOffer,
 				test.stableOutput,
-				oracletypes.RateSnapshot{},
+				oracletypes.RateSet{},
 			)
 			s.Require().ErrorContains(err, test.wantErr)
 		})
@@ -91,7 +91,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFailsBeforeTransferWhenOutputRateUna
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
-		oracletypes.RateSnapshot{chain.NoahBaseDenom: math.LegacyOneDec()},
+		oracletypes.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()},
 	)
 	s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
 }
@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsOutputValueAboveGrossOffer() 
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 101),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
@@ -122,8 +122,8 @@ func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.KRWBaseDenom).
-		Return(oracletypes.RateSnapshot{chain.KRWBaseDenom: math.LegacyOneDec()}, nil)
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
+		Return(oracletypes.RateSet{chain.KRWBaseDenom: math.LegacyOneDec()}, nil)
 	for _, moduleName := range []string{
 		types.RedemptionBufferName,
 		types.StrategicReserveName,
@@ -136,7 +136,7 @@ func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
 		).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 	}
 
-	quoteRates := oracletypes.RateSnapshot{
+	quoteRates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
@@ -189,7 +189,7 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
@@ -244,7 +244,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 20),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 101),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyNewDec(10),
 		},
@@ -265,7 +265,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.KRWBaseDenom).
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
 		Return(nil, oracletypes.ErrStaleExchangeRate)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
@@ -276,7 +276,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
@@ -309,7 +309,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyOneDec(),
 			chain.KRWBaseDenom:  math.LegacyOneDec(),
@@ -380,7 +380,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 				s.ctx,
 				sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 				sdk.NewInt64Coin(chain.USDBaseDenom, 100),
-				oracletypes.RateSnapshot{
+				oracletypes.RateSet{
 					chain.NoahBaseDenom: math.LegacyOneDec(),
 					chain.USDBaseDenom:  math.LegacyOneDec(),
 				},
@@ -408,7 +408,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(10),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyNewDec(2),
 		},
@@ -528,7 +528,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 				s.ctx,
 				sdk.NewInt64Coin(chain.USDBaseDenom, test.redeemed),
 				math.NewInt(test.noahOutput),
-				oracletypes.RateSnapshot{
+				oracletypes.RateSet{
 					chain.NoahBaseDenom: math.LegacyOneDec(),
 					chain.USDBaseDenom:  math.LegacyOneDec(),
 				},
@@ -554,7 +554,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiab
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 		math.NewInt(11),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},
@@ -571,7 +571,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregate
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100))
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(), chain.KRWBaseDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
 
@@ -579,7 +579,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregate
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(20),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom:  math.LegacyOneDec(),
 		},

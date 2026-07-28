@@ -21,7 +21,7 @@ func TestRunReturnsChainStateClientError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := oracletestutil.NewMockChainStateClient(ctrl)
 	client.EXPECT().Run(gomock.Any()).Return(runErr)
-	oracle := newClientLifecycleRuntime(client, log.NewLogger(logs))
+	oracle := newClientLifecycleRuntime(client, log.NewLogger(logs, log.ColorOption(false)))
 
 	err := oracle.Run(context.Background())
 
@@ -53,7 +53,7 @@ func TestRunDoesNotLogIntentionalChainStateClientCancellation(t *testing.T) {
 			<-ctx.Done()
 			return ctx.Err()
 		})
-	oracle := newClientLifecycleRuntime(client, log.NewLogger(logs))
+	oracle := newClientLifecycleRuntime(client, log.NewLogger(logs, log.ColorOption(false)))
 	require.False(t, oracle.IsRunning())
 
 	ctx, cancel := context.WithCancel(context.Background())

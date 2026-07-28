@@ -16,5 +16,5 @@ vote extensions are enabled, applies oracle prices from the extended commit info
 ## Boundaries
 
 This package should stay focused on the ABCI lifecycle hook. Oracle policy belongs in `abci/oracle`: decoding proposal
-bytes, aggregating rates, choosing the reference denom, writing exchange rates, and updating validator score/miss
-accounting.
+bytes, aggregating rates, choosing the reference denom, writing exchange rates, and updating validator reward and
+attendance accounting.

@@ -47,9 +47,11 @@ func TestRandomisedGenState(t *testing.T) {
 	require.False(t, oracleGenesis.Params.RewardBand.IsNegative())
 	require.True(t, oracleGenesis.Params.RewardWindow > 0)
 	require.True(t, oracleGenesis.Params.RewardDistributionWindow >= 100)
-	require.False(t, oracleGenesis.Params.SlashFraction.IsNegative())
-	require.True(t, oracleGenesis.Params.SlashWindow >= 100)
-	require.False(t, oracleGenesis.Params.MinValidPerWindow.IsNegative())
+	require.True(t, oracleGenesis.Params.AttendanceWindow >= 100)
+	require.True(t, oracleGenesis.Params.MinAttendancePerWindow.GTE(math.LegacyZeroDec()))
+	require.True(t, oracleGenesis.Params.MinAttendancePerWindow.LTE(math.LegacyOneDec()))
+	require.True(t, oracleGenesis.Params.FunctioningBlockThreshold.GTE(types.MinFunctioningBlockThreshold))
+	require.True(t, oracleGenesis.Params.FunctioningBlockThreshold.LTE(math.LegacyOneDec()))
 	require.NotEmpty(t, oracleGenesis.Params.TobinTaxes)
 }
 

@@ -5202,25 +5202,25 @@ func (x *fastReflection_QueryRewardWeightResponse) ProtoMethods() *protoiface.Me
 }
 
 var (
-	md_QueryMissCountRequest                protoreflect.MessageDescriptor
-	fd_QueryMissCountRequest_validator_addr protoreflect.FieldDescriptor
+	md_QueryAttendanceRequest                protoreflect.MessageDescriptor
+	fd_QueryAttendanceRequest_validator_addr protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_query_proto_init()
-	md_QueryMissCountRequest = File_ark_oracle_v1_query_proto.Messages().ByName("QueryMissCountRequest")
-	fd_QueryMissCountRequest_validator_addr = md_QueryMissCountRequest.Fields().ByName("validator_addr")
+	md_QueryAttendanceRequest = File_ark_oracle_v1_query_proto.Messages().ByName("QueryAttendanceRequest")
+	fd_QueryAttendanceRequest_validator_addr = md_QueryAttendanceRequest.Fields().ByName("validator_addr")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryMissCountRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAttendanceRequest)(nil)
 
-type fastReflection_QueryMissCountRequest QueryMissCountRequest
+type fastReflection_QueryAttendanceRequest QueryAttendanceRequest
 
-func (x *QueryMissCountRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryMissCountRequest)(x)
+func (x *QueryAttendanceRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAttendanceRequest)(x)
 }
 
-func (x *QueryMissCountRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryAttendanceRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_query_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5232,43 +5232,43 @@ func (x *QueryMissCountRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryMissCountRequest_messageType fastReflection_QueryMissCountRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryMissCountRequest_messageType{}
+var _fastReflection_QueryAttendanceRequest_messageType fastReflection_QueryAttendanceRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAttendanceRequest_messageType{}
 
-type fastReflection_QueryMissCountRequest_messageType struct{}
+type fastReflection_QueryAttendanceRequest_messageType struct{}
 
-func (x fastReflection_QueryMissCountRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryMissCountRequest)(nil)
+func (x fastReflection_QueryAttendanceRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAttendanceRequest)(nil)
 }
-func (x fastReflection_QueryMissCountRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryMissCountRequest)
+func (x fastReflection_QueryAttendanceRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAttendanceRequest)
 }
-func (x fastReflection_QueryMissCountRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMissCountRequest
+func (x fastReflection_QueryAttendanceRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAttendanceRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryMissCountRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMissCountRequest
+func (x *fastReflection_QueryAttendanceRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAttendanceRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryMissCountRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryMissCountRequest_messageType
+func (x *fastReflection_QueryAttendanceRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAttendanceRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryMissCountRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryMissCountRequest)
+func (x *fastReflection_QueryAttendanceRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryAttendanceRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryMissCountRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryMissCountRequest)(x)
+func (x *fastReflection_QueryAttendanceRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryAttendanceRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -5276,10 +5276,10 @@ func (x *fastReflection_QueryMissCountRequest) Interface() protoreflect.ProtoMes
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryMissCountRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryAttendanceRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.ValidatorAddr != "" {
 		value := protoreflect.ValueOfString(x.ValidatorAddr)
-		if !f(fd_QueryMissCountRequest_validator_addr, value) {
+		if !f(fd_QueryAttendanceRequest_validator_addr, value) {
 			return
 		}
 	}
@@ -5296,15 +5296,15 @@ func (x *fastReflection_QueryMissCountRequest) Range(f func(protoreflect.FieldDe
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryMissCountRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAttendanceRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountRequest.validator_addr":
+	case "ark.oracle.v1.QueryAttendanceRequest.validator_addr":
 		return x.ValidatorAddr != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5314,15 +5314,15 @@ func (x *fastReflection_QueryMissCountRequest) Has(fd protoreflect.FieldDescript
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAttendanceRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountRequest.validator_addr":
+	case "ark.oracle.v1.QueryAttendanceRequest.validator_addr":
 		x.ValidatorAddr = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5332,16 +5332,16 @@ func (x *fastReflection_QueryMissCountRequest) Clear(fd protoreflect.FieldDescri
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryMissCountRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAttendanceRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.QueryMissCountRequest.validator_addr":
+	case "ark.oracle.v1.QueryAttendanceRequest.validator_addr":
 		value := x.ValidatorAddr
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -5355,15 +5355,15 @@ func (x *fastReflection_QueryMissCountRequest) Get(descriptor protoreflect.Field
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAttendanceRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountRequest.validator_addr":
+	case "ark.oracle.v1.QueryAttendanceRequest.validator_addr":
 		x.ValidatorAddr = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5377,40 +5377,40 @@ func (x *fastReflection_QueryMissCountRequest) Set(fd protoreflect.FieldDescript
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAttendanceRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountRequest.validator_addr":
-		panic(fmt.Errorf("field validator_addr of message ark.oracle.v1.QueryMissCountRequest is not mutable"))
+	case "ark.oracle.v1.QueryAttendanceRequest.validator_addr":
+		panic(fmt.Errorf("field validator_addr of message ark.oracle.v1.QueryAttendanceRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryMissCountRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAttendanceRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountRequest.validator_addr":
+	case "ark.oracle.v1.QueryAttendanceRequest.validator_addr":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryMissCountRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAttendanceRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.QueryMissCountRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.QueryAttendanceRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -5418,7 +5418,7 @@ func (x *fastReflection_QueryMissCountRequest) WhichOneof(d protoreflect.OneofDe
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryMissCountRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAttendanceRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -5429,7 +5429,7 @@ func (x *fastReflection_QueryMissCountRequest) GetUnknown() protoreflect.RawFiel
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAttendanceRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -5441,7 +5441,7 @@ func (x *fastReflection_QueryMissCountRequest) SetUnknown(fields protoreflect.Ra
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryMissCountRequest) IsValid() bool {
+func (x *fastReflection_QueryAttendanceRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -5451,9 +5451,9 @@ func (x *fastReflection_QueryMissCountRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryMissCountRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAttendanceRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryMissCountRequest)
+		x := input.Message.Interface().(*QueryAttendanceRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5479,7 +5479,7 @@ func (x *fastReflection_QueryMissCountRequest) ProtoMethods() *protoiface.Method
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMissCountRequest)
+		x := input.Message.Interface().(*QueryAttendanceRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5516,7 +5516,7 @@ func (x *fastReflection_QueryMissCountRequest) ProtoMethods() *protoiface.Method
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMissCountRequest)
+		x := input.Message.Interface().(*QueryAttendanceRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5548,10 +5548,10 @@ func (x *fastReflection_QueryMissCountRequest) ProtoMethods() *protoiface.Method
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMissCountRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAttendanceRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMissCountRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAttendanceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -5622,25 +5622,25 @@ func (x *fastReflection_QueryMissCountRequest) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_QueryMissCountResponse            protoreflect.MessageDescriptor
-	fd_QueryMissCountResponse_miss_count protoreflect.FieldDescriptor
+	md_QueryAttendanceResponse            protoreflect.MessageDescriptor
+	fd_QueryAttendanceResponse_attendance protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_oracle_v1_query_proto_init()
-	md_QueryMissCountResponse = File_ark_oracle_v1_query_proto.Messages().ByName("QueryMissCountResponse")
-	fd_QueryMissCountResponse_miss_count = md_QueryMissCountResponse.Fields().ByName("miss_count")
+	md_QueryAttendanceResponse = File_ark_oracle_v1_query_proto.Messages().ByName("QueryAttendanceResponse")
+	fd_QueryAttendanceResponse_attendance = md_QueryAttendanceResponse.Fields().ByName("attendance")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryMissCountResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAttendanceResponse)(nil)
 
-type fastReflection_QueryMissCountResponse QueryMissCountResponse
+type fastReflection_QueryAttendanceResponse QueryAttendanceResponse
 
-func (x *QueryMissCountResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryMissCountResponse)(x)
+func (x *QueryAttendanceResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAttendanceResponse)(x)
 }
 
-func (x *QueryMissCountResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryAttendanceResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_oracle_v1_query_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5652,43 +5652,43 @@ func (x *QueryMissCountResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryMissCountResponse_messageType fastReflection_QueryMissCountResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryMissCountResponse_messageType{}
+var _fastReflection_QueryAttendanceResponse_messageType fastReflection_QueryAttendanceResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAttendanceResponse_messageType{}
 
-type fastReflection_QueryMissCountResponse_messageType struct{}
+type fastReflection_QueryAttendanceResponse_messageType struct{}
 
-func (x fastReflection_QueryMissCountResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryMissCountResponse)(nil)
+func (x fastReflection_QueryAttendanceResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAttendanceResponse)(nil)
 }
-func (x fastReflection_QueryMissCountResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryMissCountResponse)
+func (x fastReflection_QueryAttendanceResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAttendanceResponse)
 }
-func (x fastReflection_QueryMissCountResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMissCountResponse
+func (x fastReflection_QueryAttendanceResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAttendanceResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryMissCountResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMissCountResponse
+func (x *fastReflection_QueryAttendanceResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAttendanceResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryMissCountResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryMissCountResponse_messageType
+func (x *fastReflection_QueryAttendanceResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAttendanceResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryMissCountResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryMissCountResponse)
+func (x *fastReflection_QueryAttendanceResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryAttendanceResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryMissCountResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryMissCountResponse)(x)
+func (x *fastReflection_QueryAttendanceResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryAttendanceResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -5696,10 +5696,10 @@ func (x *fastReflection_QueryMissCountResponse) Interface() protoreflect.ProtoMe
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryMissCountResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.MissCount != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.MissCount)
-		if !f(fd_QueryMissCountResponse_miss_count, value) {
+func (x *fastReflection_QueryAttendanceResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Attendance != nil {
+		value := protoreflect.ValueOfMessage(x.Attendance.ProtoReflect())
+		if !f(fd_QueryAttendanceResponse_attendance, value) {
 			return
 		}
 	}
@@ -5716,15 +5716,15 @@ func (x *fastReflection_QueryMissCountResponse) Range(f func(protoreflect.FieldD
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryMissCountResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAttendanceResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountResponse.miss_count":
-		return x.MissCount != uint64(0)
+	case "ark.oracle.v1.QueryAttendanceResponse.attendance":
+		return x.Attendance != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5734,15 +5734,15 @@ func (x *fastReflection_QueryMissCountResponse) Has(fd protoreflect.FieldDescrip
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAttendanceResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountResponse.miss_count":
-		x.MissCount = uint64(0)
+	case "ark.oracle.v1.QueryAttendanceResponse.attendance":
+		x.Attendance = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5752,16 +5752,16 @@ func (x *fastReflection_QueryMissCountResponse) Clear(fd protoreflect.FieldDescr
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryMissCountResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAttendanceResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.oracle.v1.QueryMissCountResponse.miss_count":
-		value := x.MissCount
-		return protoreflect.ValueOfUint64(value)
+	case "ark.oracle.v1.QueryAttendanceResponse.attendance":
+		value := x.Attendance
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -5775,15 +5775,15 @@ func (x *fastReflection_QueryMissCountResponse) Get(descriptor protoreflect.Fiel
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAttendanceResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountResponse.miss_count":
-		x.MissCount = value.Uint()
+	case "ark.oracle.v1.QueryAttendanceResponse.attendance":
+		x.Attendance = value.Message().Interface().(*Attendance)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5797,40 +5797,44 @@ func (x *fastReflection_QueryMissCountResponse) Set(fd protoreflect.FieldDescrip
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAttendanceResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountResponse.miss_count":
-		panic(fmt.Errorf("field miss_count of message ark.oracle.v1.QueryMissCountResponse is not mutable"))
+	case "ark.oracle.v1.QueryAttendanceResponse.attendance":
+		if x.Attendance == nil {
+			x.Attendance = new(Attendance)
+		}
+		return protoreflect.ValueOfMessage(x.Attendance.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryMissCountResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAttendanceResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.oracle.v1.QueryMissCountResponse.miss_count":
-		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.oracle.v1.QueryAttendanceResponse.attendance":
+		m := new(Attendance)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryMissCountResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.QueryAttendanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.oracle.v1.QueryMissCountResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.oracle.v1.QueryAttendanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryMissCountResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAttendanceResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.QueryMissCountResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.QueryAttendanceResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -5838,7 +5842,7 @@ func (x *fastReflection_QueryMissCountResponse) WhichOneof(d protoreflect.OneofD
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryMissCountResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAttendanceResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -5849,7 +5853,7 @@ func (x *fastReflection_QueryMissCountResponse) GetUnknown() protoreflect.RawFie
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMissCountResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAttendanceResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -5861,7 +5865,7 @@ func (x *fastReflection_QueryMissCountResponse) SetUnknown(fields protoreflect.R
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryMissCountResponse) IsValid() bool {
+func (x *fastReflection_QueryAttendanceResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -5871,9 +5875,9 @@ func (x *fastReflection_QueryMissCountResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAttendanceResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryMissCountResponse)
+		x := input.Message.Interface().(*QueryAttendanceResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5885,8 +5889,9 @@ func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Metho
 		var n int
 		var l int
 		_ = l
-		if x.MissCount != 0 {
-			n += 1 + runtime.Sov(uint64(x.MissCount))
+		if x.Attendance != nil {
+			l = options.Size(x.Attendance)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -5898,7 +5903,7 @@ func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Metho
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMissCountResponse)
+		x := input.Message.Interface().(*QueryAttendanceResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5917,10 +5922,19 @@ func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Metho
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.MissCount != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.MissCount))
+		if x.Attendance != nil {
+			encoded, err := options.Marshal(x.Attendance)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x8
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -5933,7 +5947,7 @@ func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Metho
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMissCountResponse)
+		x := input.Message.Interface().(*QueryAttendanceResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5965,17 +5979,17 @@ func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Metho
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMissCountResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAttendanceResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMissCountResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAttendanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MissCount", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Attendance", wireType)
 				}
-				x.MissCount = 0
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -5985,11 +5999,28 @@ func (x *fastReflection_QueryMissCountResponse) ProtoMethods() *protoiface.Metho
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.MissCount |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Attendance == nil {
+					x.Attendance = &Attendance{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Attendance); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -7274,9 +7305,9 @@ func (x *QueryRewardWeightResponse) GetRewardWeight() string {
 	return ""
 }
 
-// QueryMissCountRequest is the request type for the Query/MissCount RPC
+// QueryAttendanceRequest is the request type for the Query/Attendance RPC
 // method.
-type QueryMissCountRequest struct {
+type QueryAttendanceRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -7285,8 +7316,8 @@ type QueryMissCountRequest struct {
 	ValidatorAddr string `protobuf:"bytes,1,opt,name=validator_addr,json=validatorAddr,proto3" json:"validator_addr,omitempty"`
 }
 
-func (x *QueryMissCountRequest) Reset() {
-	*x = QueryMissCountRequest{}
+func (x *QueryAttendanceRequest) Reset() {
+	*x = QueryAttendanceRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_query_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -7294,37 +7325,36 @@ func (x *QueryMissCountRequest) Reset() {
 	}
 }
 
-func (x *QueryMissCountRequest) String() string {
+func (x *QueryAttendanceRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryMissCountRequest) ProtoMessage() {}
+func (*QueryAttendanceRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryMissCountRequest.ProtoReflect.Descriptor instead.
-func (*QueryMissCountRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAttendanceRequest.ProtoReflect.Descriptor instead.
+func (*QueryAttendanceRequest) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_query_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *QueryMissCountRequest) GetValidatorAddr() string {
+func (x *QueryAttendanceRequest) GetValidatorAddr() string {
 	if x != nil {
 		return x.ValidatorAddr
 	}
 	return ""
 }
 
-// QueryMissCountResponse is response type for the
-// Query/MissCount RPC method.
-type QueryMissCountResponse struct {
+// QueryAttendanceResponse is response type for the Query/Attendance RPC
+// method.
+type QueryAttendanceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// miss_count defines the oracle miss counter of a validator
-	MissCount uint64 `protobuf:"varint,1,opt,name=miss_count,json=missCount,proto3" json:"miss_count,omitempty"`
+	Attendance *Attendance `protobuf:"bytes,1,opt,name=attendance,proto3" json:"attendance,omitempty"`
 }
 
-func (x *QueryMissCountResponse) Reset() {
-	*x = QueryMissCountResponse{}
+func (x *QueryAttendanceResponse) Reset() {
+	*x = QueryAttendanceResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_oracle_v1_query_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -7332,22 +7362,22 @@ func (x *QueryMissCountResponse) Reset() {
 	}
 }
 
-func (x *QueryMissCountResponse) String() string {
+func (x *QueryAttendanceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryMissCountResponse) ProtoMessage() {}
+func (*QueryAttendanceResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryMissCountResponse.ProtoReflect.Descriptor instead.
-func (*QueryMissCountResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAttendanceResponse.ProtoReflect.Descriptor instead.
+func (*QueryAttendanceResponse) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_query_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *QueryMissCountResponse) GetMissCount() uint64 {
+func (x *QueryAttendanceResponse) GetAttendance() *Attendance {
 	if x != nil {
-		return x.MissCount
+		return x.Attendance
 	}
-	return 0
+	return nil
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -7496,108 +7526,111 @@ var file_ark_oracle_v1_query_proto_rawDesc = []byte{
 	0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
 	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
 	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x72,
-	0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x61, 0x0a, 0x15, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x12, 0x48, 0x0a, 0x0e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
-	0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2, 0xb4,
-	0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
-	0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x0d, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x22, 0x37,
-	0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x73, 0x73,
-	0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x69,
-	0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x4f, 0x0a,
-	0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f,
-	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x32, 0xa6,
-	0x09, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x9b, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x63,
-	0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45,
-	0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
+	0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x62, 0x0a, 0x16, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x48, 0x0a, 0x0e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
+	0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x21, 0xd2,
+	0xb4, 0x2d, 0x1d, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x0d, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x22,
+	0x5f, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e,
+	0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x0a, 0x61, 0x74,
+	0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41,
+	0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65,
+	0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x4f, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50,
+	0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38, 0x0a,
+	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x32, 0xaf, 0x09, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x12, 0x9b, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61,
+	0x74, 0x65, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
 	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x38, 0x88, 0xe7,
-	0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2d, 0x12, 0x2b, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73,
-	0x2f, 0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x2f, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x12, 0x97, 0x01, 0x0a, 0x0d, 0x45, 0x78, 0x63, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78,
-	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
-	0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x31, 0x88,
-	0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x26, 0x12, 0x24, 0x2f, 0x61, 0x72, 0x6b,
-	0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x73, 0x2f, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x73,
-	0x12, 0x8b, 0x01, 0x0a, 0x08, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x23, 0x2e,
+	0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x38, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x2d, 0x12, 0x2b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f,
+	0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x2f, 0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x7d, 0x2f, 0x65, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x12,
+	0x97, 0x01, 0x0a, 0x0d, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65,
+	0x73, 0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52,
+	0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x31, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4,
+	0x93, 0x02, 0x26, 0x12, 0x24, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x2f, 0x65, 0x78, 0x63, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x73, 0x12, 0x8b, 0x01, 0x0a, 0x08, 0x54, 0x6f,
+	0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x34, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x29, 0x12, 0x27,
+	0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x64,
+	0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x2f, 0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x2f, 0x74, 0x6f,
+	0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x12, 0x8b, 0x01, 0x0a, 0x0a, 0x54, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61,
+	0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x34, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82,
-	0xd3, 0xe4, 0x93, 0x02, 0x29, 0x12, 0x27, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x2f, 0x7b, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x7d, 0x2f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x12, 0x8b,
-	0x01, 0x0a, 0x0a, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x12, 0x25, 0x2e,
+	0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f,
+	0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x2f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f,
+	0x74, 0x61, 0x78, 0x65, 0x73, 0x12, 0x8f, 0x01, 0x0a, 0x0b, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61,
+	0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63,
+	0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x54,
+	0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x65, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54,
-	0x61, 0x78, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7,
-	0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73,
-	0x2f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x65, 0x73, 0x12, 0x8f, 0x01, 0x0a,
-	0x0b, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x26, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x88,
-	0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x61, 0x72, 0x6b,
-	0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x73, 0x2f, 0x76, 0x6f, 0x74, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0xa8,
-	0x01, 0x0a, 0x0c, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f,
+	0x65, 0x72, 0x79, 0x56, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4,
+	0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x2f, 0x76, 0x6f, 0x74, 0x65, 0x5f,
+	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0xa8, 0x01, 0x0a, 0x0c, 0x52, 0x65, 0x77, 0x61,
+	0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f,
 	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65,
-	0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x45, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x3a, 0x12,
-	0x38, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f,
-	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x2f, 0x7b, 0x76, 0x61, 0x6c, 0x69,
-	0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x2f, 0x72, 0x65, 0x77, 0x61,
-	0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x96, 0x01, 0x0a, 0x09, 0x4d, 0x69,
-	0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x69, 0x73,
-	0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x4d, 0x69, 0x73, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x3c, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02,
-	0x31, 0x12, 0x2f, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76,
-	0x31, 0x2f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x2f, 0x7b, 0x76, 0x61,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x2f, 0x6d, 0x69,
-	0x73, 0x73, 0x12, 0x73, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x21, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x17,
-	0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31,
-	0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x95, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f,
-	0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4f,
-	0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56,
-	0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56,
-	0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56,
-	0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f,
-	0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x45, 0x88, 0xe7, 0xb0,
+	0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x3a, 0x12, 0x38, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f,
+	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
+	0x6f, 0x72, 0x73, 0x2f, 0x7b, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61,
+	0x64, 0x64, 0x72, 0x7d, 0x2f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x12, 0x9f, 0x01, 0x0a, 0x0a, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63,
+	0x65, 0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x74, 0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f,
+	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x74,
+	0x74, 0x65, 0x6e, 0x64, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x42, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x37, 0x12, 0x35, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x2f, 0x7b, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x2f, 0x61, 0x74, 0x74, 0x65, 0x6e, 0x64,
+	0x61, 0x6e, 0x63, 0x65, 0x12, 0x73, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x21,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x17, 0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f,
+	0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x95, 0x01, 0x0a, 0x11, 0x63, 0x6f,
+	0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42,
+	0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61,
+	0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c,
+	0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03,
+	0x41, 0x4f, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
+	0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -7626,41 +7659,43 @@ var file_ark_oracle_v1_query_proto_goTypes = []interface{}{
 	(*QueryVoteTargetsResponse)(nil),   // 9: ark.oracle.v1.QueryVoteTargetsResponse
 	(*QueryRewardWeightRequest)(nil),   // 10: ark.oracle.v1.QueryRewardWeightRequest
 	(*QueryRewardWeightResponse)(nil),  // 11: ark.oracle.v1.QueryRewardWeightResponse
-	(*QueryMissCountRequest)(nil),      // 12: ark.oracle.v1.QueryMissCountRequest
-	(*QueryMissCountResponse)(nil),     // 13: ark.oracle.v1.QueryMissCountResponse
+	(*QueryAttendanceRequest)(nil),     // 12: ark.oracle.v1.QueryAttendanceRequest
+	(*QueryAttendanceResponse)(nil),    // 13: ark.oracle.v1.QueryAttendanceResponse
 	(*QueryParamsRequest)(nil),         // 14: ark.oracle.v1.QueryParamsRequest
 	(*QueryParamsResponse)(nil),        // 15: ark.oracle.v1.QueryParamsResponse
 	(*v1beta1.DecCoin)(nil),            // 16: cosmos.base.v1beta1.DecCoin
 	(*TobinTax)(nil),                   // 17: ark.oracle.v1.TobinTax
 	(*PendingVoteTargets)(nil),         // 18: ark.oracle.v1.PendingVoteTargets
-	(*Params)(nil),                     // 19: ark.oracle.v1.Params
+	(*Attendance)(nil),                 // 19: ark.oracle.v1.Attendance
+	(*Params)(nil),                     // 20: ark.oracle.v1.Params
 }
 var file_ark_oracle_v1_query_proto_depIdxs = []int32{
 	16, // 0: ark.oracle.v1.QueryExchangeRatesResponse.exchange_rates:type_name -> cosmos.base.v1beta1.DecCoin
 	17, // 1: ark.oracle.v1.QueryTobinTaxesResponse.tobin_taxes:type_name -> ark.oracle.v1.TobinTax
 	18, // 2: ark.oracle.v1.QueryVoteTargetsResponse.pending:type_name -> ark.oracle.v1.PendingVoteTargets
-	19, // 3: ark.oracle.v1.QueryParamsResponse.params:type_name -> ark.oracle.v1.Params
-	0,  // 4: ark.oracle.v1.Query.ExchangeRate:input_type -> ark.oracle.v1.QueryExchangeRateRequest
-	2,  // 5: ark.oracle.v1.Query.ExchangeRates:input_type -> ark.oracle.v1.QueryExchangeRatesRequest
-	4,  // 6: ark.oracle.v1.Query.TobinTax:input_type -> ark.oracle.v1.QueryTobinTaxRequest
-	6,  // 7: ark.oracle.v1.Query.TobinTaxes:input_type -> ark.oracle.v1.QueryTobinTaxesRequest
-	8,  // 8: ark.oracle.v1.Query.VoteTargets:input_type -> ark.oracle.v1.QueryVoteTargetsRequest
-	10, // 9: ark.oracle.v1.Query.RewardWeight:input_type -> ark.oracle.v1.QueryRewardWeightRequest
-	12, // 10: ark.oracle.v1.Query.MissCount:input_type -> ark.oracle.v1.QueryMissCountRequest
-	14, // 11: ark.oracle.v1.Query.Params:input_type -> ark.oracle.v1.QueryParamsRequest
-	1,  // 12: ark.oracle.v1.Query.ExchangeRate:output_type -> ark.oracle.v1.QueryExchangeRateResponse
-	3,  // 13: ark.oracle.v1.Query.ExchangeRates:output_type -> ark.oracle.v1.QueryExchangeRatesResponse
-	5,  // 14: ark.oracle.v1.Query.TobinTax:output_type -> ark.oracle.v1.QueryTobinTaxResponse
-	7,  // 15: ark.oracle.v1.Query.TobinTaxes:output_type -> ark.oracle.v1.QueryTobinTaxesResponse
-	9,  // 16: ark.oracle.v1.Query.VoteTargets:output_type -> ark.oracle.v1.QueryVoteTargetsResponse
-	11, // 17: ark.oracle.v1.Query.RewardWeight:output_type -> ark.oracle.v1.QueryRewardWeightResponse
-	13, // 18: ark.oracle.v1.Query.MissCount:output_type -> ark.oracle.v1.QueryMissCountResponse
-	15, // 19: ark.oracle.v1.Query.Params:output_type -> ark.oracle.v1.QueryParamsResponse
-	12, // [12:20] is the sub-list for method output_type
-	4,  // [4:12] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	19, // 3: ark.oracle.v1.QueryAttendanceResponse.attendance:type_name -> ark.oracle.v1.Attendance
+	20, // 4: ark.oracle.v1.QueryParamsResponse.params:type_name -> ark.oracle.v1.Params
+	0,  // 5: ark.oracle.v1.Query.ExchangeRate:input_type -> ark.oracle.v1.QueryExchangeRateRequest
+	2,  // 6: ark.oracle.v1.Query.ExchangeRates:input_type -> ark.oracle.v1.QueryExchangeRatesRequest
+	4,  // 7: ark.oracle.v1.Query.TobinTax:input_type -> ark.oracle.v1.QueryTobinTaxRequest
+	6,  // 8: ark.oracle.v1.Query.TobinTaxes:input_type -> ark.oracle.v1.QueryTobinTaxesRequest
+	8,  // 9: ark.oracle.v1.Query.VoteTargets:input_type -> ark.oracle.v1.QueryVoteTargetsRequest
+	10, // 10: ark.oracle.v1.Query.RewardWeight:input_type -> ark.oracle.v1.QueryRewardWeightRequest
+	12, // 11: ark.oracle.v1.Query.Attendance:input_type -> ark.oracle.v1.QueryAttendanceRequest
+	14, // 12: ark.oracle.v1.Query.Params:input_type -> ark.oracle.v1.QueryParamsRequest
+	1,  // 13: ark.oracle.v1.Query.ExchangeRate:output_type -> ark.oracle.v1.QueryExchangeRateResponse
+	3,  // 14: ark.oracle.v1.Query.ExchangeRates:output_type -> ark.oracle.v1.QueryExchangeRatesResponse
+	5,  // 15: ark.oracle.v1.Query.TobinTax:output_type -> ark.oracle.v1.QueryTobinTaxResponse
+	7,  // 16: ark.oracle.v1.Query.TobinTaxes:output_type -> ark.oracle.v1.QueryTobinTaxesResponse
+	9,  // 17: ark.oracle.v1.Query.VoteTargets:output_type -> ark.oracle.v1.QueryVoteTargetsResponse
+	11, // 18: ark.oracle.v1.Query.RewardWeight:output_type -> ark.oracle.v1.QueryRewardWeightResponse
+	13, // 19: ark.oracle.v1.Query.Attendance:output_type -> ark.oracle.v1.QueryAttendanceResponse
+	15, // 20: ark.oracle.v1.Query.Params:output_type -> ark.oracle.v1.QueryParamsResponse
+	13, // [13:21] is the sub-list for method output_type
+	5,  // [5:13] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_ark_oracle_v1_query_proto_init() }
@@ -7815,7 +7850,7 @@ func file_ark_oracle_v1_query_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_query_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMissCountRequest); i {
+			switch v := v.(*QueryAttendanceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -7827,7 +7862,7 @@ func file_ark_oracle_v1_query_proto_init() {
 			}
 		}
 		file_ark_oracle_v1_query_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMissCountResponse); i {
+			switch v := v.(*QueryAttendanceResponse); i {
 			case 0:
 				return &v.state
 			case 1:

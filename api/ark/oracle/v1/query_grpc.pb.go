@@ -25,7 +25,7 @@ const (
 	Query_TobinTaxes_FullMethodName    = "/ark.oracle.v1.Query/TobinTaxes"
 	Query_VoteTargets_FullMethodName   = "/ark.oracle.v1.Query/VoteTargets"
 	Query_RewardWeight_FullMethodName  = "/ark.oracle.v1.Query/RewardWeight"
-	Query_MissCount_FullMethodName     = "/ark.oracle.v1.Query/MissCount"
+	Query_Attendance_FullMethodName    = "/ark.oracle.v1.Query/Attendance"
 	Query_Params_FullMethodName        = "/ark.oracle.v1.Query/Params"
 )
 
@@ -47,8 +47,8 @@ type QueryClient interface {
 	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
 	// RewardWeight returns a validator's accumulated oracle reward weight.
 	RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error)
-	// MissCount returns oracle miss count of a validator
-	MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error)
+	// Attendance returns a validator's in-progress oracle attendance counters.
+	Attendance(ctx context.Context, in *QueryAttendanceRequest, opts ...grpc.CallOption) (*QueryAttendanceResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 }
@@ -121,10 +121,10 @@ func (c *queryClient) RewardWeight(ctx context.Context, in *QueryRewardWeightReq
 	return out, nil
 }
 
-func (c *queryClient) MissCount(ctx context.Context, in *QueryMissCountRequest, opts ...grpc.CallOption) (*QueryMissCountResponse, error) {
+func (c *queryClient) Attendance(ctx context.Context, in *QueryAttendanceRequest, opts ...grpc.CallOption) (*QueryAttendanceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryMissCountResponse)
-	err := c.cc.Invoke(ctx, Query_MissCount_FullMethodName, in, out, cOpts...)
+	out := new(QueryAttendanceResponse)
+	err := c.cc.Invoke(ctx, Query_Attendance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +159,8 @@ type QueryServer interface {
 	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
 	// RewardWeight returns a validator's accumulated oracle reward weight.
 	RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error)
-	// MissCount returns oracle miss count of a validator
-	MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error)
+	// Attendance returns a validator's in-progress oracle attendance counters.
+	Attendance(context.Context, *QueryAttendanceRequest) (*QueryAttendanceResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	mustEmbedUnimplementedQueryServer()
@@ -191,8 +191,8 @@ func (UnimplementedQueryServer) VoteTargets(context.Context, *QueryVoteTargetsRe
 func (UnimplementedQueryServer) RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RewardWeight not implemented")
 }
-func (UnimplementedQueryServer) MissCount(context.Context, *QueryMissCountRequest) (*QueryMissCountResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method MissCount not implemented")
+func (UnimplementedQueryServer) Attendance(context.Context, *QueryAttendanceRequest) (*QueryAttendanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Attendance not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
@@ -326,20 +326,20 @@ func _Query_RewardWeight_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_MissCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryMissCountRequest)
+func _Query_Attendance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAttendanceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).MissCount(ctx, in)
+		return srv.(QueryServer).Attendance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_MissCount_FullMethodName,
+		FullMethod: Query_Attendance_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).MissCount(ctx, req.(*QueryMissCountRequest))
+		return srv.(QueryServer).Attendance(ctx, req.(*QueryAttendanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -394,8 +394,8 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_RewardWeight_Handler,
 		},
 		{
-			MethodName: "MissCount",
-			Handler:    _Query_MissCount_Handler,
+			MethodName: "Attendance",
+			Handler:    _Query_Attendance_Handler,
 		},
 		{
 			MethodName: "Params",

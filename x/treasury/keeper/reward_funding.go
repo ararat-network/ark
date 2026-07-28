@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
 	"cosmossdk.io/math"
 
@@ -45,12 +44,12 @@ func (k Keeper) updateRewardFunding(ctx context.Context, configuredDenoms map[st
 	if funding.ValuationComplete {
 		validatorRewards := k.bankKeeper.GetAllBalances(
 			ctx,
-			authtypes.NewModuleAddress(authtypes.FeeCollectorName),
+			k.accountKeeper.GetModuleAddress(authtypes.FeeCollectorName),
 		)
 		if !validatorRewards.IsZero() {
 			validatorFeeValue, _, valueErr := k.valueRewardCoins(ctx, validatorRewards, configuredDenoms)
 			if valueErr != nil {
-				if !isValuationUnavailable(valueErr) && !errors.Is(valueErr, decimal.ErrOutOfRange) {
+				if !isSkippableValuation(valueErr) {
 					return types.RewardFundingState{}, fmt.Errorf("valuing validator fees: %w", valueErr)
 				}
 				funding.ValuationComplete = false
@@ -82,7 +81,7 @@ func (k Keeper) updateRewardFunding(ctx context.Context, configuredDenoms map[st
 func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFundingState, configuredDenoms map[string]struct{}) error {
 	stabilityTax := k.bankKeeper.GetAllBalances(
 		ctx,
-		authtypes.NewModuleAddress(types.StabilityTaxCollectorName),
+		k.accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName),
 	)
 	if !funding.ValuationComplete {
 		return k.sendStabilityTaxToOracle(
@@ -101,10 +100,11 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 
 	stabilityTaxValue, rates, err := k.valueRewardCoins(ctx, stabilityTax, configuredDenoms)
 	if err != nil {
-		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
+		err = fmt.Errorf("valuing stability tax: %w", err)
+		if isSkippableValuation(err) {
 			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), err.Error())
 		}
-		return fmt.Errorf("valuing stability tax: %w", err)
+		return err
 	}
 
 	validatorGap := shortfall(validatorTarget, funding.ValidatorFeeValue)
@@ -118,19 +118,19 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 
 	validatorTaxValue, err := valueRewards(validatorTax, rates)
 	if err != nil {
-		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
-			detail := fmt.Errorf("valuing validator stability tax: %w", err).Error()
-			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), detail)
+		err = fmt.Errorf("valuing validator stability tax: %w", err)
+		if isSkippableValuation(err) {
+			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), err.Error())
 		}
-		return fmt.Errorf("valuing validator stability tax: %w", err)
+		return err
 	}
 	oracleOrganic, err := valueRewards(oracleTax, rates)
 	if err != nil {
-		if isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange) {
-			detail := fmt.Errorf("valuing Oracle stability tax: %w", err).Error()
-			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), detail)
+		err = fmt.Errorf("valuing Oracle stability tax: %w", err)
+		if isSkippableValuation(err) {
+			return k.sendStabilityTaxToOracle(ctx, stabilityTax, eventSkipReason(err), err.Error())
 		}
-		return fmt.Errorf("valuing Oracle stability tax: %w", err)
+		return err
 	}
 	validatorOrganic, err := funding.ValidatorFeeValue.SafeAdd(validatorTaxValue)
 	if err != nil {
@@ -228,13 +228,13 @@ func (k Keeper) allocateStabilityTax(ctx context.Context, validator, oracle sdk.
 	return nil
 }
 
-func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins, configuredDenoms map[string]struct{}) (math.Int, oracletypes.RateSnapshot, error) {
+func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins, configuredDenoms map[string]struct{}) (math.Int, oracletypes.RateSet, error) {
 	if rewards.IsZero() {
-		rates, err := k.oracleKeeper.GetRateSnapshot(ctx)
+		rates, err := k.oracleKeeper.GetRateSet(ctx)
 		return math.ZeroInt(), rates, err
 	}
 	if len(rewards) == 1 && rewards[0].Denom == chain.NoahBaseDenom {
-		return rewards[0].Amount, oracletypes.RateSnapshot{
+		return rewards[0].Amount, oracletypes.RateSet{
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 		}, nil
 	}
@@ -248,9 +248,8 @@ func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins, configu
 			denoms = append(denoms, coin.Denom)
 		}
 	}
-	slices.Sort(denoms)
 
-	rates, err := k.oracleKeeper.GetRateSnapshot(ctx, denoms...)
+	rates, err := k.oracleKeeper.GetRateSet(ctx, denoms...)
 	if err != nil {
 		return math.Int{}, nil, err
 	}
@@ -261,7 +260,7 @@ func (k Keeper) valueRewardCoins(ctx context.Context, rewards sdk.Coins, configu
 	return value, rates, nil
 }
 
-func valueRewards(rewards sdk.Coins, rates oracletypes.RateSnapshot) (math.Int, error) {
+func valueRewards(rewards sdk.Coins, rates oracletypes.RateSet) (math.Int, error) {
 	value := math.LegacyZeroDec()
 	for _, coin := range rewards {
 		if _, ok := rates[coin.Denom]; !ok {
@@ -286,7 +285,7 @@ func shortfall(target, actual math.Int) math.Int {
 	return target.Sub(actual)
 }
 
-func allocateValidatorTax(tax sdk.Coins, rates oracletypes.RateSnapshot, validatorValue, totalValue math.Int) sdk.Coins {
+func allocateValidatorTax(tax sdk.Coins, rates oracletypes.RateSet, validatorValue, totalValue math.Int) sdk.Coins {
 	if !validatorValue.IsPositive() || !totalValue.IsPositive() {
 		return sdk.NewCoins()
 	}
@@ -309,6 +308,10 @@ func isValuationUnavailable(err error) bool {
 		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||
 		errors.Is(err, oracletypes.ErrInvalidExchangeRate) ||
 		errors.Is(err, oracletypes.ErrConversionOutOfRange)
+}
+
+func isSkippableValuation(err error) bool {
+	return isValuationUnavailable(err) || errors.Is(err, decimal.ErrOutOfRange)
 }
 
 func eventSkipReason(err error) types.EventSkipReason {

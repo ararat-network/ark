@@ -14,7 +14,7 @@ import (
 // Default parameter values
 const (
 	DefaultRewardWindow             = chain.BlocksPerWeek // window for a week
-	DefaultSlashWindow              = chain.BlocksPerWeek // window for a week
+	DefaultAttendanceWindow         = chain.BlocksPerWeek // window for a week
 	DefaultRewardDistributionWindow = chain.BlocksPerYear // window for a year
 	DefaultMaxExchangeRateAge       = time.Minute
 )
@@ -35,22 +35,41 @@ var (
 		{Denom: chain.SDRBaseDenom, TobinTax: DefaultTobinTax},
 		{Denom: chain.USDBaseDenom, TobinTax: DefaultTobinTax},
 	}
-	DefaultSlashFraction     = math.LegacyNewDecWithPrec(1, 4) // 0.01%
-	DefaultMinValidPerWindow = math.LegacyNewDecWithPrec(5, 2) // 5%
+	// DefaultMinAttendancePerWindow is deliberately lenient, and the week-long
+	// DefaultAttendanceWindow above is part of the same choice: together they are
+	// the defence against correlated jailing when a target-set change outpaces
+	// sidecar rollouts. A dark validator passes by attending only the final
+	// ratio-share of the window, so the recovery span is (1 - ratio) × window —
+	// most of a week with these defaults. Tightening either parameter shrinks
+	// that span and must be weighed against rollout lag, not just individual
+	// hygiene.
+	DefaultMinAttendancePerWindow = math.LegacyNewDecWithPrec(5, 2) // 5%
+	// MinFunctioningBlockThreshold floors FunctioningBlockThreshold at a
+	// majority. A block grades attendance only once participating power reaches
+	// the threshold, so a dark coalition holding more than the remaining share
+	// switches grading off entirely; flooring at a majority forces that
+	// coalition to be a majority itself. Going lower buys nothing back: the
+	// deadman would start charging validators for blocks a majority of the
+	// fleet could not price, which is the correlated-outage mass jailing the
+	// design exists to prevent. Governance may only raise this, trading
+	// sensitivity for forgiveness; MinAttendancePerWindow = 0 remains the
+	// direct way to switch jailing off.
+	MinFunctioningBlockThreshold     = math.LegacyNewDecWithPrec(50, 2) // 50%
+	DefaultFunctioningBlockThreshold = MinFunctioningBlockThreshold
 )
 
 // DefaultParams creates default oracle module parameters
 func DefaultParams() Params {
 	return Params{
-		VoteThreshold:            DefaultVoteThreshold,
-		RewardBand:               DefaultRewardBand,
-		RewardWindow:             DefaultRewardWindow,
-		RewardDistributionWindow: DefaultRewardDistributionWindow,
-		TobinTaxes:               slices.Clone(DefaultTobinTaxes),
-		SlashFraction:            DefaultSlashFraction,
-		SlashWindow:              DefaultSlashWindow,
-		MinValidPerWindow:        DefaultMinValidPerWindow,
-		MaxExchangeRateAge:       DefaultMaxExchangeRateAge,
+		VoteThreshold:             DefaultVoteThreshold,
+		RewardBand:                DefaultRewardBand,
+		RewardWindow:              DefaultRewardWindow,
+		RewardDistributionWindow:  DefaultRewardDistributionWindow,
+		TobinTaxes:                slices.Clone(DefaultTobinTaxes),
+		AttendanceWindow:          DefaultAttendanceWindow,
+		MinAttendancePerWindow:    DefaultMinAttendancePerWindow,
+		MaxExchangeRateAge:        DefaultMaxExchangeRateAge,
+		FunctioningBlockThreshold: DefaultFunctioningBlockThreshold,
 	}
 }
 
@@ -77,20 +96,23 @@ func (p Params) Validate() error {
 	if p.RewardDistributionWindow < p.RewardWindow {
 		return errors.New("oracle parameter RewardDistributionWindow must be greater than or equal with RewardWindow")
 	}
-	if p.SlashFraction.IsNil() {
-		return errors.New("oracle parameter SlashFraction must be set")
+	if p.AttendanceWindow == 0 {
+		return fmt.Errorf("oracle parameter AttendanceWindow must be > 0, is %d", p.AttendanceWindow)
 	}
-	if p.SlashFraction.GT(math.LegacyOneDec()) || p.SlashFraction.IsNegative() {
-		return errors.New("oracle parameter SlashFraction must be between [0, 1]")
+	if p.MinAttendancePerWindow.IsNil() {
+		return errors.New("oracle parameter MinAttendancePerWindow must be set")
 	}
-	if p.SlashWindow == 0 {
-		return fmt.Errorf("oracle parameter SlashWindow must be > 0, is %d", p.SlashWindow)
+	if p.MinAttendancePerWindow.GT(math.LegacyOneDec()) || p.MinAttendancePerWindow.IsNegative() {
+		return errors.New("oracle parameter MinAttendancePerWindow must be between [0, 1]")
 	}
-	if p.MinValidPerWindow.IsNil() {
-		return errors.New("oracle parameter MinValidPerWindow must be set")
+	if p.FunctioningBlockThreshold.IsNil() {
+		return errors.New("oracle parameter FunctioningBlockThreshold must be set")
 	}
-	if p.MinValidPerWindow.GT(math.LegacyOneDec()) || p.MinValidPerWindow.IsNegative() {
-		return errors.New("oracle parameter MinValidPerWindow must be between [0, 1]")
+	if p.FunctioningBlockThreshold.LT(MinFunctioningBlockThreshold) {
+		return errors.New("oracle parameter FunctioningBlockThreshold must be at least 50 percent")
+	}
+	if p.FunctioningBlockThreshold.GT(math.LegacyOneDec()) {
+		return errors.New("oracle parameter FunctioningBlockThreshold must not exceed 100 percent")
 	}
 	if p.MaxExchangeRateAge <= 0 {
 		return errors.New("oracle parameter MaxExchangeRateAge must be greater than zero")

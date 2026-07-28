@@ -105,8 +105,8 @@ func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 	s.expectTaxCapsMatch()
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 200)))
 	s.expectStabilityTaxBalance(sdk.NewCoins())
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any()).
-		Return(oracletypes.RateSnapshot{chain.NoahBaseDenom: math.LegacyOneDec()}, nil)
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any()).
+		Return(oracletypes.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()}, nil)
 	s.expectSubsidyBalance(20)
 
 	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
@@ -210,11 +210,11 @@ func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRounds
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 2),
 	)
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.KRWBaseDenom,
 		chain.SDRBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.SDRBaseDenom:  math.LegacyOneDec(),
 		chain.KRWBaseDenom:  math.LegacyOneDec(),
@@ -258,7 +258,7 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingMarksWindowIncompleteWhenFeeVal
 	s.setBlockHeight(2)
 	validatorFees := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 4))
 	s.expectValidatorFees(validatorFees)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
@@ -328,7 +328,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefaultsTaxToOracleWhenTaxValua
 	funding := rewardFunding(0, 1, 1, 0, true)
 	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
@@ -467,16 +467,16 @@ func (s *KeeperTestSuite) expectSubsidyBalance(amount int64) {
 }
 
 func (s *KeeperTestSuite) expectUnconfiguredRewardValuation() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
-	).Return(oracletypes.RateSnapshot{chain.NoahBaseDenom: math.LegacyOneDec()}, nil)
+	).Return(oracletypes.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()}, nil)
 }
 
 func (s *KeeperTestSuite) expectNoahAndSDRRewardValuation() {
-	s.oracleKeeper.EXPECT().GetRateSnapshot(
+	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
-	).Return(oracletypes.RateSnapshot{
+	).Return(oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.SDRBaseDenom:  math.LegacyOneDec(),
 	}, nil)

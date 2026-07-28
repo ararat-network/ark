@@ -17,7 +17,7 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-func TestAggregateOracleVotesWithNoTargetsDoesNotRecordMisses(t *testing.T) {
+func TestAggregateOracleVotesWithNoTargetsIsNotFunctioning(t *testing.T) {
 	votes := []Vote{
 		{Validator: cometabci.Validator{Address: []byte("validator1"), Power: 10}},
 		{Validator: cometabci.Validator{Address: []byte("validator2"), Power: 20}},
@@ -26,10 +26,11 @@ func TestAggregateOracleVotesWithNoTargetsDoesNotRecordMisses(t *testing.T) {
 	result := aggregateOracleVotes(votes, oracletypes.DefaultParams(), []string{})
 
 	require.Empty(t, result.prices)
+	require.False(t, result.functioningBlock)
 	require.Len(t, result.scores, len(votes))
 	for _, score := range result.scores {
 		require.True(t, score.rewardWeight.IsZero())
-		require.False(t, score.missed)
+		require.False(t, score.participated)
 	}
 }
 
@@ -251,10 +252,8 @@ func TestComputePricesAndScoresRewardBand(t *testing.T) {
 			require.Equal(t, tc.expectedPrice, prices["ausd"])
 			if tc.rewarded {
 				require.True(t, math.OneInt().Equal(scores[0].rewardWeight))
-				require.False(t, scores[0].missed)
 			} else {
 				require.True(t, scores[0].rewardWeight.IsZero())
-				require.True(t, scores[0].missed)
 			}
 		})
 	}
@@ -281,7 +280,6 @@ func TestComputePricesAndScoresSkipsUnrepresentableRewardBand(t *testing.T) {
 
 	require.Empty(t, prices)
 	require.True(t, scores[0].rewardWeight.IsZero())
-	require.False(t, scores[0].missed)
 }
 
 func TestReferenceScoreBetterThan(t *testing.T) {

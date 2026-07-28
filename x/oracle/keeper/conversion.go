@@ -12,9 +12,9 @@ import (
 	"ark/x/oracle/types"
 )
 
-// GetRateSnapshot returns fresh rates for the requested denoms. Every result
+// GetRateSet returns fresh rates for the requested denoms. Every result
 // includes the NOAH identity rate and is scoped to the current execution context.
-func (k Keeper) GetRateSnapshot(ctx context.Context, denoms ...string) (types.RateSnapshot, error) {
+func (k Keeper) GetRateSet(ctx context.Context, denoms ...string) (types.RateSet, error) {
 	uniqueDenoms := make([]string, 0, len(denoms))
 	seen := map[string]struct{}{chain.NoahBaseDenom: {}}
 	for _, denom := range denoms {
@@ -25,7 +25,7 @@ func (k Keeper) GetRateSnapshot(ctx context.Context, denoms ...string) (types.Ra
 		uniqueDenoms = append(uniqueDenoms, denom)
 	}
 
-	rates := make(types.RateSnapshot, len(uniqueDenoms)+1)
+	rates := make(types.RateSet, len(uniqueDenoms)+1)
 	rates[chain.NoahBaseDenom] = math.LegacyOneDec()
 	if len(uniqueDenoms) == 0 {
 		return rates, nil

@@ -135,8 +135,8 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 			require.True(t, math.LegacyNewDec(100).Equal(exchangeRate.Rate))
 			return nil
 		})
-	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), false).Return(nil)
-	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), false).Return(nil)
+	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), true, true).Return(nil)
+	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), true, true).Return(nil)
 	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
 
 	lastCommit := cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)}

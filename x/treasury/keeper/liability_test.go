@@ -27,7 +27,7 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotReusesScanAndTracksSupplyChanges(
 		chain.NoahBaseDenom,
 	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
 
-	rates := oracletypes.RateSnapshot{
+	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 		chain.KRWBaseDenom:  math.LegacyOneDec(),
@@ -68,10 +68,10 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotDoesNotCacheIncompleteValuation()
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(2)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(2)
-	s.oracleKeeper.EXPECT().GetRateSnapshot(gomock.Any(), chain.KRWBaseDenom).
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
 		Return(nil, oracletypes.ErrStaleExchangeRate).Times(2)
 
-	rates := oracletypes.RateSnapshot{
+	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
@@ -112,7 +112,7 @@ func (s *KeeperTestSuite) TestLiabilitySnapshotResetsAtBlockCommit() {
 		chain.NoahBaseDenom,
 	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
 
-	rates := oracletypes.RateSnapshot{
+	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
@@ -138,7 +138,7 @@ func (s *KeeperTestSuite) TestRecordSupplyChangeWithoutSnapshotIsNoOp() {
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 9),
-		oracletypes.RateSnapshot{
+		oracletypes.RateSet{
 			chain.USDBaseDenom: math.LegacyOneDec(),
 			chain.KRWBaseDenom: math.LegacyOneDec(),
 		},

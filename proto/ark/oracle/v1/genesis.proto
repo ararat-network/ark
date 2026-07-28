@@ -17,7 +17,7 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated RewardWeight reward_weights = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated MissCount miss_counts = 4
+  repeated AttendanceRecord attendance_records = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   VoteTargets vote_targets = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
@@ -25,14 +25,14 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// Accounting defines the active reward and slashing periods. Params may
+// Accounting defines the active reward and attendance periods. Params may
 // contain newly approved windows while accounting finishes the current period.
 message Accounting {
   uint64 reward_window = 1;
   uint64 reward_distribution_window = 2;
   uint64 reward_window_start_height = 3;
-  uint64 slash_window = 4;
-  uint64 slash_window_start_height = 5;
+  uint64 attendance_window = 4;
+  uint64 attendance_window_start_height = 5;
 }
 
 // ExchangeRate - struct to store interpreted exchange rates data to store
@@ -67,10 +67,11 @@ message RewardWeight {
   ];
 }
 
-// MissCount defines a miss count and validator address pair used in
-// oracle module's genesis state
-message MissCount {
+// AttendanceRecord pairs a validator address with its in-progress attendance
+// counters for genesis import/export.
+message AttendanceRecord {
   string validator_address = 1
       [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  uint64 miss_count = 2;
+  Attendance attendance = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

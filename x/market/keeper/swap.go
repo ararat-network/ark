@@ -26,7 +26,7 @@ type swapQuote struct {
 	baseOfferDecCoin sdk.DecCoin
 	arkPoolDelta     math.LegacyDec
 	basePool         sdk.DecCoin
-	rates            oracletypes.RateSnapshot
+	rates            oracletypes.RateSet
 }
 
 func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom string) (swapQuote, error) {
@@ -49,7 +49,7 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 
 	if offerCoin.Denom != chain.NoahBaseDenom && askDenom != chain.NoahBaseDenom {
 		// Stablecoin-to-stablecoin swaps use only the larger Tobin tax.
-		rates, err := k.oracleKeeper.GetRateSnapshot(ctx, offerCoin.Denom, askDenom)
+		rates, err := k.oracleKeeper.GetRateSet(ctx, offerCoin.Denom, askDenom)
 		if err != nil {
 			return swapQuote{}, marketRateError(err)
 		}
@@ -90,7 +90,7 @@ func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom stri
 		if err != nil {
 			return swapQuote{}, fmt.Errorf("getting ArkPoolDelta: %w", err)
 		}
-		rates, err := k.oracleKeeper.GetRateSnapshot(
+		rates, err := k.oracleKeeper.GetRateSet(
 			ctx,
 			offerCoin.Denom,
 			params.BasePool.Denom,

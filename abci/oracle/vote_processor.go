@@ -75,9 +75,15 @@ func ProcessVoteExtensions(
 		}
 	}
 
-	// Update scores in oracle.
+	// Update rewards and attendance in oracle.
 	for _, score := range result.scores {
-		if err := oracleKeeper.RecordVoteAccounting(ctx, score.recipient, score.rewardWeight, score.missed); err != nil {
+		if err := oracleKeeper.RecordVoteAccounting(
+			ctx,
+			score.recipient,
+			score.rewardWeight,
+			result.functioningBlock,
+			score.participated,
+		); err != nil {
 			return nil, fmt.Errorf(
 				"%w: record vote accounting for %s: %w",
 				arkabcitypes.ErrOracleKeeper,

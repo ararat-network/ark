@@ -59,14 +59,13 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	for _, mc := range data.MissCounts {
-		operator, err := sdk.ValAddressFromBech32(mc.ValidatorAddress)
+	for _, record := range data.AttendanceRecords {
+		operator, err := sdk.ValAddressFromBech32(record.ValidatorAddress)
 		if err != nil {
-			return fmt.Errorf("parsing miss count validator address %q: %w", mc.ValidatorAddress, err)
+			return fmt.Errorf("parsing attendance validator address %q: %w", record.ValidatorAddress, err)
 		}
-
-		if err := k.MissCount.Set(ctx, operator, mc.MissCount); err != nil {
-			return fmt.Errorf("setting genesis miss counter for validator %s: %w", operator, err)
+		if err := k.Attendance.Set(ctx, operator, record.Attendance); err != nil {
+			return fmt.Errorf("setting genesis attendance for validator %s: %w", operator, err)
 		}
 	}
 
@@ -120,15 +119,15 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("iterating reward weights: %w", err)
 	}
 
-	missCounts := []types.MissCount{}
-	if err := k.MissCount.Walk(ctx, nil, func(operator sdk.ValAddress, missCount uint64) (bool, error) {
-		missCounts = append(missCounts, types.MissCount{
+	attendanceRecords := []types.AttendanceRecord{}
+	if err := k.Attendance.Walk(ctx, nil, func(operator sdk.ValAddress, attendance types.Attendance) (bool, error) {
+		attendanceRecords = append(attendanceRecords, types.AttendanceRecord{
 			ValidatorAddress: operator.String(),
-			MissCount:        missCount,
+			Attendance:       attendance,
 		})
 		return false, nil
 	}); err != nil {
-		return nil, fmt.Errorf("iterating miss counts: %w", err)
+		return nil, fmt.Errorf("iterating attendance records: %w", err)
 	}
 
 	voteTargets, err := k.VoteTargets.Get(ctx)
@@ -141,7 +140,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		accounting,
 		exchangeRates,
 		rewardWeights,
-		missCounts,
+		attendanceRecords,
 		voteTargets,
 	), nil
 }

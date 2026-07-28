@@ -18,7 +18,7 @@ import (
 type OracleKeeper interface {
 	GetParams(ctx context.Context) (oracletypes.Params, error)
 	SetExchangeRateWithEvent(ctx context.Context, exchangeRate oracletypes.ExchangeRate) error
-	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, rewardWeight math.Int, missed bool) error
+	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, rewardWeight math.Int, eligible bool, participated bool) error
 	GetVoteTargets(ctx context.Context, voteHeight int64) (oracletypes.VoteTargetSet, error)
 	AdvanceVoteTargets(ctx context.Context) error
 }

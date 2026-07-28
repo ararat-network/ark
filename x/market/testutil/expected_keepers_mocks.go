@@ -191,24 +191,24 @@ func (mr *MockOracleKeeperMockRecorder) GetExchangeRates(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRates", reflect.TypeOf((*MockOracleKeeper)(nil).GetExchangeRates), ctx)
 }
 
-// GetRateSnapshot mocks base method.
-func (m *MockOracleKeeper) GetRateSnapshot(ctx context.Context, denoms ...string) (types.RateSnapshot, error) {
+// GetRateSet mocks base method.
+func (m *MockOracleKeeper) GetRateSet(ctx context.Context, denoms ...string) (types.RateSet, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx}
 	for _, a := range denoms {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetRateSnapshot", varargs...)
-	ret0, _ := ret[0].(types.RateSnapshot)
+	ret := m.ctrl.Call(m, "GetRateSet", varargs...)
+	ret0, _ := ret[0].(types.RateSet)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRateSnapshot indicates an expected call of GetRateSnapshot.
-func (mr *MockOracleKeeperMockRecorder) GetRateSnapshot(ctx any, denoms ...any) *gomock.Call {
+// GetRateSet indicates an expected call of GetRateSet.
+func (mr *MockOracleKeeperMockRecorder) GetRateSet(ctx any, denoms ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx}, denoms...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSnapshot", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSnapshot), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSet", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSet), varargs...)
 }
 
 // GetTobinTax mocks base method.
@@ -266,7 +266,7 @@ func (m *MockTreasuryKeeper) EXPECT() *MockTreasuryKeeperMockRecorder {
 }
 
 // DrawRedemptionBuffer mocks base method.
-func (m *MockTreasuryKeeper) DrawRedemptionBuffer(ctx context.Context, redeemedStable types1.Coin, noahOutput math.Int, quoteRates types.RateSnapshot) (types0.BufferDraw, error) {
+func (m *MockTreasuryKeeper) DrawRedemptionBuffer(ctx context.Context, redeemedStable types1.Coin, noahOutput math.Int, quoteRates types.RateSet) (types0.BufferDraw, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DrawRedemptionBuffer", ctx, redeemedStable, noahOutput, quoteRates)
 	ret0, _ := ret[0].(types0.BufferDraw)
@@ -281,7 +281,7 @@ func (mr *MockTreasuryKeeperMockRecorder) DrawRedemptionBuffer(ctx, redeemedStab
 }
 
 // RecordSupplyChange mocks base method.
-func (m *MockTreasuryKeeper) RecordSupplyChange(ctx context.Context, burned, minted types1.Coin, quoteRates types.RateSnapshot) error {
+func (m *MockTreasuryKeeper) RecordSupplyChange(ctx context.Context, burned, minted types1.Coin, quoteRates types.RateSet) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecordSupplyChange", ctx, burned, minted, quoteRates)
 	ret0, _ := ret[0].(error)
@@ -295,7 +295,7 @@ func (mr *MockTreasuryKeeperMockRecorder) RecordSupplyChange(ctx, burned, minted
 }
 
 // RouteExpansion mocks base method.
-func (m *MockTreasuryKeeper) RouteExpansion(ctx context.Context, grossOffer, stableOutput types1.Coin, quoteRates types.RateSnapshot) (types0.ExpansionAllocation, error) {
+func (m *MockTreasuryKeeper) RouteExpansion(ctx context.Context, grossOffer, stableOutput types1.Coin, quoteRates types.RateSet) (types0.ExpansionAllocation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RouteExpansion", ctx, grossOffer, stableOutput, quoteRates)
 	ret0, _ := ret[0].(types0.ExpansionAllocation)
