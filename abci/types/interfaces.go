@@ -23,6 +23,11 @@ type OracleKeeper interface {
 	AdvanceVoteTargets(ctx context.Context) error
 }
 
+// TreasuryKeeper exposes the treasury state primed during preblock processing.
+type TreasuryKeeper interface {
+	PrimeLiabilitySnapshot(ctx context.Context) error
+}
+
 // OracleClient fetches prices for the vote-extension handler.
 type OracleClient interface {
 	Prices(ctx context.Context, in *transporttypes.OraclePricesRequest, opts ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error)

@@ -166,6 +166,10 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 		trader,
 		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, initialStableSupply)),
 	))
+	// The mint above stands in for supply that existed before this block. It
+	// bypasses Market, so it never reaches RecordSupplyChange; re-prime the
+	// block snapshot the way the preblocker would have at a real block start.
+	require.NoError(t, arkApp.TreasuryKeeper.PrimeLiabilitySnapshot(ctx))
 
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
 	expansion, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
@@ -476,6 +480,10 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: ctx.BlockTime(),
 	}))
+	// The mint above bypasses Market and so never reaches RecordSupplyChange.
+	// Re-prime once its rate is available, as the preblocker would at a real
+	// block start, so the draw values the new supply.
+	require.NoError(t, arkApp.TreasuryKeeper.PrimeLiabilitySnapshot(ctx))
 	draw, err := arkApp.TreasuryKeeper.DrawRedemptionBuffer(
 		ctx,
 		sdk.NewInt64Coin(chain.SDRBaseDenom, 1),

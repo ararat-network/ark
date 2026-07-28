@@ -29,6 +29,7 @@ func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {
 	fake := &fakeModule{name: "fake"}
 	handler := preblock.NewHandler(
 		abcitestutil.NewMockOracleKeeper(ctrl),
+		abcitestutil.NewMockTreasuryKeeper(ctrl),
 		codec.NewVoteExtensionCodec(),
 	)
 
@@ -44,6 +45,7 @@ func TestWrappedPreBlockerWrapsModuleManagerError(t *testing.T) {
 	fake := &fakeModule{name: "fake", err: moduleErr}
 	handler := preblock.NewHandler(
 		abcitestutil.NewMockOracleKeeper(ctrl),
+		abcitestutil.NewMockTreasuryKeeper(ctrl),
 		codec.NewVoteExtensionCodec(),
 	)
 
@@ -64,8 +66,11 @@ func TestWrappedPreBlockerSkipsVoteExtensionsWithoutPreviousCommit(t *testing.T)
 	}
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
 	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil)
 	handler := preblock.NewHandler(
 		keeper,
+		treasuryKeeper,
 		codec.NewVoteExtensionCodec(),
 	)
 
@@ -85,8 +90,11 @@ func TestWrappedPreBlockerWrapsAdvanceVoteTargetsError(t *testing.T) {
 	advanceErr := errors.New("advance failed")
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
 	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(advanceErr)
+	// No PrimeLiabilitySnapshot expectation: the strict mock asserts priming is
+	// not reached when vote-target advancement fails.
 	handler := preblock.NewHandler(
 		keeper,
+		abcitestutil.NewMockTreasuryKeeper(ctrl),
 		codec.NewVoteExtensionCodec(),
 	)
 
@@ -109,8 +117,11 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 		Version: oracletypes.InitialVoteTargetVersion,
 		Denoms:  []string{"ausd"},
 	}
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil)
 	handler := preblock.NewHandler(
 		keeper,
+		treasuryKeeper,
 		codec.NewVoteExtensionCodec(),
 	)
 	val1 := sdk.ConsAddress("validator1")
@@ -151,6 +162,51 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	)
 
 	require.NoError(t, err)
+}
+
+func TestWrappedPreBlockerPrimesTreasuryLiability(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	gomock.InOrder(
+		oracleKeeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil),
+		treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil),
+	)
+	handler := preblock.NewHandler(
+		oracleKeeper,
+		treasuryKeeper,
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith())(
+		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
+		&cometabci.RequestFinalizeBlock{Height: 1},
+	)
+
+	require.NoError(t, err)
+}
+
+func TestWrappedPreBlockerWrapsTreasuryPrimeError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	oracleKeeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	primeErr := errors.New("prime failed")
+	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(primeErr)
+	handler := preblock.NewHandler(
+		oracleKeeper,
+		treasuryKeeper,
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith())(
+		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
+		&cometabci.RequestFinalizeBlock{Height: 1},
+	)
+
+	require.ErrorIs(t, err, arkabcitypes.ErrTreasuryKeeper)
+	require.ErrorIs(t, err, primeErr)
+	require.Contains(t, err.Error(), "prime liability snapshot for height 1")
 }
 
 type fakeModule struct {

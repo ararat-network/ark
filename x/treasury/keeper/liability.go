@@ -98,8 +98,20 @@ func (k Keeper) PrimeLiabilitySnapshot(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Priming is authoritative for the block, so it clears whichever key it is
+	// not about to write. Without this a snapshot left by an earlier prime
+	// would outrank a later unavailable result, because valuation reads the
+	// snapshot first.
+	store := k.transientStoreService.OpenTransientStore(ctx)
 	if !complete {
+		if err := store.Delete(liabilitySnapshotKey); err != nil {
+			return fmt.Errorf("clearing cached liability: %w", err)
+		}
 		return k.markLiabilityUnavailable(ctx)
+	}
+	if err := store.Delete(liabilityUnavailableKey); err != nil {
+		return fmt.Errorf("clearing liability unavailability marker: %w", err)
 	}
 	return k.storeLiabilitySnapshot(ctx, liability)
 }

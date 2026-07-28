@@ -73,6 +73,11 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				trader,
 				sdk.NewCoins(test.offerCoin),
 			))
+			// The mint above stands in for supply that existed before this
+			// block. It bypasses Market, so it never reaches
+			// RecordSupplyChange; re-prime the block snapshot the way the
+			// preblocker would have at a real block start.
+			require.NoError(t, arkApp.TreasuryKeeper.PrimeLiabilitySnapshot(ctx))
 
 			treasuryQuery := treasurykeeper.NewQueryServerImpl(arkApp.TreasuryKeeper)
 			before := captureMarketSettlementState(t, arkApp, ctx, trader, treasuryQuery)

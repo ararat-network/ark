@@ -108,6 +108,13 @@ func runPhase3AIntegrationRedemption(
 		))
 	}
 
+	// The mints above stand in for supply that existed before this block. They
+	// bypass Market, so they never reach RecordSupplyChange; re-prime the block
+	// snapshot the way the preblocker would have at a real block start. In the
+	// incomplete case this is what records the missing KRW rate as an
+	// unavailable valuation for the whole block.
+	require.NoError(t, arkApp.TreasuryKeeper.PrimeLiabilitySnapshot(ctx))
+
 	bufferSeed := math.NewInt(250_000_000_000)
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,

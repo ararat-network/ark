@@ -55,6 +55,7 @@ func newOracleRuntime(app *ArkApp, appOpts servertypes.AppOptions, logger log.Lo
 	)
 	preBlockHandler := preblock.NewHandler(
 		app.OracleKeeper,
+		app.TreasuryKeeper,
 		voteExtensionCodec,
 	)
 

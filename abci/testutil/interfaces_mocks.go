@@ -117,6 +117,44 @@ func (mr *MockOracleKeeperMockRecorder) SetExchangeRateWithEvent(ctx, exchangeRa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRateWithEvent", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRateWithEvent), ctx, exchangeRate)
 }
 
+// MockTreasuryKeeper is a mock of TreasuryKeeper interface.
+type MockTreasuryKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTreasuryKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockTreasuryKeeperMockRecorder is the mock recorder for MockTreasuryKeeper.
+type MockTreasuryKeeperMockRecorder struct {
+	mock *MockTreasuryKeeper
+}
+
+// NewMockTreasuryKeeper creates a new mock instance.
+func NewMockTreasuryKeeper(ctrl *gomock.Controller) *MockTreasuryKeeper {
+	mock := &MockTreasuryKeeper{ctrl: ctrl}
+	mock.recorder = &MockTreasuryKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTreasuryKeeper) EXPECT() *MockTreasuryKeeperMockRecorder {
+	return m.recorder
+}
+
+// PrimeLiabilitySnapshot mocks base method.
+func (m *MockTreasuryKeeper) PrimeLiabilitySnapshot(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrimeLiabilitySnapshot", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PrimeLiabilitySnapshot indicates an expected call of PrimeLiabilitySnapshot.
+func (mr *MockTreasuryKeeperMockRecorder) PrimeLiabilitySnapshot(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimeLiabilitySnapshot", reflect.TypeOf((*MockTreasuryKeeper)(nil).PrimeLiabilitySnapshot), ctx)
+}
+
 // MockOracleClient is a mock of OracleClient interface.
 type MockOracleClient struct {
 	ctrl     *gomock.Controller

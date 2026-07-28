@@ -199,6 +199,44 @@ func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotMarksUnavailableValuation() 
 	s.Require().True(draw.BufferPaid.IsZero())
 }
 
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotOverridesEarlierPrime() {
+	tobinTaxes := []oracletypes.TobinTax{{Denom: chain.USDBaseDenom}}
+	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(tobinTaxes, nil).Times(3)
+	gomock.InOrder(
+		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+			Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1),
+		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+			Return(sdk.NewInt64Coin(chain.USDBaseDenom, 200)).Times(1),
+	)
+	gomock.InOrder(
+		s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom).
+			Return(oracletypes.RateSet{
+				chain.NoahBaseDenom: math.LegacyOneDec(),
+				chain.USDBaseDenom:  math.LegacyOneDec(),
+			}, nil).Times(1),
+		s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom).
+			Return(nil, oracletypes.ErrStaleExchangeRate).Times(1),
+	)
+
+	// A complete prime stores a snapshot; a later prime that cannot value the
+	// same denom must retract it rather than leave the stale value winning.
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().False(draw.ValuationComplete)
+	s.Require().True(draw.BufferPaid.IsZero())
+}
+
 func (s *KeeperTestSuite) TestLiabilityValuationGasIsPositionIndependent() {
 	tobinTaxes := []oracletypes.TobinTax{
 		{Denom: chain.USDBaseDenom},
