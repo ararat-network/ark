@@ -87,17 +87,18 @@ handler and genesis): a named denom must satisfy the former live-lock
 acquisition rules — `oracle_required`, status ACTIVE or non-finalized
 ISSUANCE_HALTED, active Oracle-target phase.
 
-`MsgSetReference{authority, reference}` (governance-gated) replaces both
-consumer-owned fallback configurations. When it changes a non-empty
-`reference_denom`, the handler invokes the rebase executors (below)
-atomically; fallback-only updates do not rebase. First-time configuration
-(empty → set) does not rebase.
+`MsgSetReference{authority, reference_denom, fallback_denom}` (governance-
+gated, flat fields for autocli) replaces both consumer-owned fallback
+configurations. When it changes a non-empty `reference_denom`, the handler
+invokes the rebase executors (below) atomically; fallback-only updates do not
+rebase. First-time configuration (empty → set) does not rebase.
 
 `EventReferenceUpdated{reference_denom, fallback_denom}` is emitted on every
 `Reference` write, from both the msg handler and suspension promotion.
 
 A `Reference` query RPC (`module_query_safe`) exposes the item. Genesis
-imports and exports it; an empty registry may carry an empty reference.
+imports and exports it; an empty registry may carry an empty reference. The
+default genesis sets the SDR reference with the USD fallback.
 
 ### Rebase executors
 
@@ -170,25 +171,36 @@ materialized OracleTargets.Denoms`. Implementation iterates the materialized
 target set (sorted, ≤ `MaxOracleTargets`) with one asset read per denom —
 deterministic, sorted output for free.
 
-The target-set intersection exists for the wind-down case: an ISSUANCE_HALTED
-asset whose target removal has activated stops receiving prices while its
-status is unchanged. Status alone would keep it in membership unpriced
-forever, and one unpriced member poisons Treasury's whole cap rebuild into a
-permanent skip (`x/treasury/keeper/tax_caps.go:33-45`). The intersection
-drops the denom at exactly the height its prices stop. During the two-block
-Removing window the denom stays a member (prices still flow); a targeted
-PENDING asset is excluded by status; an ACTIVE asset always has target
-membership by lifecycle invariant, so the intersection only ever filters
-wind-down.
+The status conjunct reuses `Asset.IsPriceable()` (`x/asset/types/asset.go:122`),
+which is exactly this predicate. The target-set intersection is
+defense-in-depth, not a behavioural filter: batch promotion auto-retires a
+PENDING or ISSUANCE_HALTED asset the moment its removal activates
+(`x/asset/keeper/oracle_targets.go:298-302`), so under current lifecycle
+rules a priceable-status asset is always targeted — an invariant the genesis
+validator states explicitly (`x/asset/types/genesis.go`,
+`validateAssetTargetState`). The intersection makes the view locally correct
+by construction instead of resting on that distributed invariant: a member
+without prices poisons Treasury's whole cap rebuild into a permanent skip
+(`x/treasury/keeper/tax_caps.go:33-45`), so the view must never be able to
+name an untargeted denom, even under a future lifecycle bug. During the
+two-block Removing window the denom stays a member (prices still flow); a
+targeted PENDING asset is excluded by status.
 
 `PricedLiveVersion collections.Item[uint64]` is the membership epoch: bumped
-by any write that changes `PricedLiveDenoms` output. Sites: `activateAsset`
-(entry), `suspendAsset` (exit), recovery completion (re-entry), and
-target-transition promotion affecting a live-status asset (wind-down exit;
-addition promotion for a recovered live asset). Over-bumping is explicitly
-allowed — a spurious consumer rebuild is harmless; under-bumping is the bug
-class. Tests assert the property, not an op list: any transition changing the
-view's output bumps the version.
+by any write that changes `PricedLiveDenoms` output. Every status write
+funnels through three sites — `setAssetStatus` (`x/asset/keeper/assets.go:55`),
+the `CompleteLifecycle` write loop (`x/asset/keeper/lifecycle_completion.go:31`),
+and the `activateOracleTargetBatch` write loop
+(`x/asset/keeper/oracle_targets.go:382`) — and each has the before/after pair
+in hand, so the bump is one shared helper called at those three sites when
+`before.IsPriceable() != after.IsPriceable()`. Targets-driven membership
+exits always coincide with a live-boundary status write (removal promotion
+retires the asset in the same batch), so status-boundary bumps are complete.
+Over-bumping is explicitly allowed — a spurious consumer rebuild is harmless;
+under-bumping is the bug class. Tests assert the property, not an op list:
+any transition changing the view's output bumps the version. The epoch is
+exported and imported through genesis so consumer comparisons survive
+export-restart round-trips.
 
 Consumers (later, at activation) compare a stored last-applied version each
 BeginBlocker instead of structural mismatch scans — event-driven refresh
@@ -249,8 +261,9 @@ Types (plain table-driven functions, mutate pattern from defaults):
 Keeper (suite):
 
 - Priced-live view: status × target-phase matrix, including targeted PENDING
-  (excluded), Removing window (included), post-removal ISSUANCE_HALTED
-  (excluded), sorted determinism.
+  (excluded), Removing window (included), suspended and retired (excluded),
+  a live-status asset absent from targets (excluded — the defensive case),
+  sorted determinism.
 - Epoch property: for every lifecycle transition and promotion path, if
   `PricedLiveDenoms` output changes, the version bumped.
 - `MsgSetReference`: authority check, first set, fallback-only update (no
