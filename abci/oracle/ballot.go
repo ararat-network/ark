@@ -17,6 +17,8 @@ type tallyVote struct {
 
 // A ballot caches positive reports both in tally order and by dense validator
 // index. A nil rate means that validator did not submit a positive report.
+// Every ballot in a tally sizes rates to the full validator count, so
+// cross-ballot methods index another ballot's rates without bounds checks.
 type ballot struct {
 	votes []tallyVote
 	rates []math.LegacyDec
@@ -65,8 +67,7 @@ func (b ballot) overlapPower(other ballot) int64 {
 
 	var power int64
 	for _, vote := range b.votes {
-		otherRate := other.rates[vote.validator]
-		if !otherRate.IsNil() {
+		if !other.rates[vote.validator].IsNil() {
 			power += vote.power
 		}
 	}
@@ -80,9 +81,6 @@ func (b ballot) overlapPower(other ballot) int64 {
 func (b ballot) appendCrossRates(reference ballot, dst []tallyVote) ([]tallyVote, int64) {
 	var power int64
 	for _, vote := range b.votes {
-		if vote.validator >= len(reference.rates) {
-			continue
-		}
 		referenceRate := reference.rates[vote.validator]
 		if referenceRate.IsNil() {
 			continue

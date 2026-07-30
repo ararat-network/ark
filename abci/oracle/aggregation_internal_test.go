@@ -46,23 +46,23 @@ func TestBallotAdd(t *testing.T) {
 }
 
 func TestBallotOverlapPower(t *testing.T) {
-	left := makeBallot(
+	left := makeBallot(4,
 		tallyVote{validator: 1, rate: math.LegacyNewDec(100), power: 20},
 		tallyVote{validator: 2, rate: math.LegacyNewDec(200), power: 30},
 	)
-	right := makeBallot(
+	right := makeBallot(4,
 		tallyVote{validator: 1, rate: math.LegacyNewDec(1000), power: 20},
 		tallyVote{validator: 3, rate: math.LegacyNewDec(3000), power: 40},
 	)
 
 	require.Equal(t, int64(20), left.overlapPower(right))
 
-	left = makeBallot(tallyVote{
+	left = makeBallot(2, tallyVote{
 		validator: 1,
 		rate:      math.LegacySmallestDec(),
 		power:     20,
 	})
-	right = makeBallot(tallyVote{
+	right = makeBallot(2, tallyVote{
 		validator: 1,
 		rate:      math.LegacyNewDec(3),
 		power:     20,
@@ -73,11 +73,11 @@ func TestBallotOverlapPower(t *testing.T) {
 }
 
 func TestBallotCrossRate(t *testing.T) {
-	reference := makeBallot(
+	reference := makeBallot(4,
 		tallyVote{validator: 1, rate: math.LegacyNewDec(1600), power: 100},
 		tallyVote{validator: 2, rate: math.LegacyNewDec(2100), power: 200},
 	)
-	target := makeBallot(
+	target := makeBallot(4,
 		tallyVote{validator: 1, rate: math.LegacyNewDec(100), power: 100},
 		tallyVote{validator: 2, rate: math.LegacyNewDec(300), power: 200},
 		tallyVote{validator: 3, rate: math.LegacyNewDec(500), power: 300},
@@ -95,12 +95,12 @@ func TestBallotCrossRate(t *testing.T) {
 }
 
 func TestBallotCrossRateUsesLegacyDecPrecision(t *testing.T) {
-	reference := makeBallot(tallyVote{
+	reference := makeBallot(1, tallyVote{
 		validator: 0,
 		rate:      math.LegacyOneDec(),
 		power:     1,
 	})
-	target := makeBallot(tallyVote{
+	target := makeBallot(1, tallyVote{
 		validator: 0,
 		rate:      math.LegacyNewDec(3),
 		power:     1,
@@ -133,12 +133,12 @@ func TestBallotCrossRateSkipsInvalidQuotients(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			reference := makeBallot(tallyVote{
+			reference := makeBallot(1, tallyVote{
 				validator: 0,
 				rate:      tc.referenceRate,
 				power:     10,
 			})
-			target := makeBallot(tallyVote{
+			target := makeBallot(1, tallyVote{
 				validator: 0,
 				rate:      tc.targetRate,
 				power:     10,
@@ -421,13 +421,13 @@ func TestScoreReferencesMatchesPairwise(t *testing.T) {
 }
 
 func TestScoreReferencesSupportsLegalMaximumPower(t *testing.T) {
-	const targetCount = oracletypes.MaxVoteTargets
+	const targetCount = oracletypes.MaxFeeds
 
 	passing := make([]int, targetCount)
 	ballots := make([]ballot, targetCount)
 	for targetIndex := range targetCount {
 		passing[targetIndex] = targetIndex
-		ballots[targetIndex] = makeBallot(tallyVote{
+		ballots[targetIndex] = makeBallot(1, tallyVote{
 			validator: 0,
 			rate:      math.LegacyOneDec(),
 			power:     cmttypes.MaxTotalVotingPower,
@@ -447,7 +447,7 @@ func TestScoreReferencesSupportsLegalMaximumPower(t *testing.T) {
 }
 
 func TestScoreReferencesSupportsMaximumPowerWithMixedSupport(t *testing.T) {
-	const targetCount = oracletypes.MaxVoteTargets
+	const targetCount = oracletypes.MaxFeeds
 
 	halfPower := cmttypes.MaxTotalVotingPower / 2
 	passing := make([]int, targetCount)
@@ -455,7 +455,7 @@ func TestScoreReferencesSupportsMaximumPowerWithMixedSupport(t *testing.T) {
 	for targetIndex := range targetCount {
 		passing[targetIndex] = targetIndex
 		if targetIndex%2 == 0 {
-			ballots[targetIndex] = makeBallot(
+			ballots[targetIndex] = makeBallot(2,
 				tallyVote{validator: 0, rate: math.LegacyOneDec(), power: halfPower},
 				tallyVote{
 					validator: 1,
@@ -465,7 +465,7 @@ func TestScoreReferencesSupportsMaximumPowerWithMixedSupport(t *testing.T) {
 			)
 			continue
 		}
-		ballots[targetIndex] = makeBallot(tallyVote{
+		ballots[targetIndex] = makeBallot(2, tallyVote{
 			validator: 0,
 			rate:      math.LegacyOneDec(),
 			power:     halfPower,
@@ -487,15 +487,15 @@ func TestScoreReferencesSupportsMaximumPowerWithMixedSupport(t *testing.T) {
 
 func TestSelectReferenceUniformFastPathMatchesPairwiseFallback(t *testing.T) {
 	ballots := []ballot{
-		makeBallot(
+		makeBallot(2,
 			tallyVote{validator: 0, rate: math.LegacyNewDec(100), power: 40},
 			tallyVote{validator: 1, rate: math.LegacyNewDec(110), power: 60},
 		),
-		makeBallot(
+		makeBallot(2,
 			tallyVote{validator: 0, rate: math.LegacyNewDec(200), power: 40},
 			tallyVote{validator: 1, rate: math.LegacyNewDec(220), power: 60},
 		),
-		makeBallot(
+		makeBallot(2,
 			tallyVote{validator: 0, rate: math.LegacyNewDec(400), power: 40},
 			tallyVote{validator: 1, rate: math.LegacyNewDec(440), power: 60},
 		),
@@ -515,12 +515,12 @@ func TestSelectReferenceUniformFastPathMatchesPairwiseFallback(t *testing.T) {
 func TestSelectReferenceComputesCrossRate(t *testing.T) {
 	targetRate := math.LegacyNewDec(4)
 	ballots := []ballot{
-		makeBallot(tallyVote{
+		makeBallot(2, tallyVote{
 			validator: 1,
 			rate:      math.LegacyOneDec(),
 			power:     10,
 		}),
-		makeBallot(tallyVote{
+		makeBallot(2, tallyVote{
 			validator: 1,
 			rate:      targetRate,
 			power:     10,
@@ -545,7 +545,7 @@ func TestSelectReferenceSkipsUnrepresentableFinalPrice(t *testing.T) {
 		big.NewInt(1),
 	))
 	ballots := []ballot{
-		makeBallot(
+		makeBallot(2,
 			tallyVote{
 				validator: 0,
 				rate:      nearMax,
@@ -557,7 +557,7 @@ func TestSelectReferenceSkipsUnrepresentableFinalPrice(t *testing.T) {
 				power:     34,
 			},
 		),
-		makeBallot(tallyVote{
+		makeBallot(2, tallyVote{
 			validator: 1,
 			rate:      math.LegacyNewDec(4),
 			power:     34,
@@ -571,7 +571,7 @@ func TestSelectReferenceSkipsUnrepresentableFinalPrice(t *testing.T) {
 }
 
 func TestComputePricesAndScoresSupportsLegalMaximumPowerAcrossTargets(t *testing.T) {
-	const targetCount = oracletypes.MaxVoteTargets
+	const targetCount = oracletypes.MaxFeeds
 
 	scores := []validatorScore{{
 		votingPower:  cmttypes.MaxTotalVotingPower,
@@ -607,14 +607,10 @@ func TestComputePricesAndScoresSupportsLegalMaximumPowerAcrossTargets(t *testing
 	require.True(t, expectedWeight.Equal(scores[0].rewardWeight))
 }
 
-func makeBallot(votes ...tallyVote) ballot {
-	validatorCount := 0
-	for _, vote := range votes {
-		if vote.validator >= validatorCount {
-			validatorCount = vote.validator + 1
-		}
-	}
-
+// makeBallot builds a ballot over validatorCount validators, matching the
+// production invariant that every ballot in a tally shares the same rates
+// width.
+func makeBallot(validatorCount int, votes ...tallyVote) ballot {
 	b := ballot{rates: make([]math.LegacyDec, validatorCount)}
 	for _, vote := range votes {
 		b.add(vote)
