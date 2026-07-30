@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
-	"math/big"
 	"math/rand"
 	"strings"
 	"testing"
@@ -16,9 +15,8 @@ import (
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	vetypes "ark/abci/voteextension/types"
+	chain "ark/pkg/chain"
 	arkencoding "ark/pkg/encoding"
 	oracletypes "ark/x/oracle/types"
 )
@@ -30,7 +28,7 @@ func TestVoteExtensionCodec(t *testing.T) {
 			"akrw": []byte("2"),
 			"ausd": []byte("1"),
 		},
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+		TargetVersion: oracletypes.InitialFeedVersion,
 	}
 
 	encoded, err := codec.Encode(voteExtension)
@@ -148,26 +146,31 @@ func TestExtendedCommitCodecRejectsExcessVotesOnEncode(t *testing.T) {
 func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 	t.Run("256-target vote extension", func(t *testing.T) {
 		codec := NewVoteExtensionCodec()
-		maxRateRaw := new(big.Int).Lsh(big.NewInt(1), 256)
-		maxRateRaw.Mul(maxRateRaw, big.NewInt(1_000_000_000_000_000_000))
-		maxRateRaw.Sub(maxRateRaw, big.NewInt(1))
-		rate, err := arkencoding.EncodeLegacyDec(
-			math.LegacyNewDecFromBigIntWithPrec(maxRateRaw, math.LegacyPrecision),
+		// The widest rate a vote may carry: MaxEncodedVoteRateBytes decimal
+		// digits of raw price*10^18.
+		maxRate, err := arkencoding.EncodeLegacyDec(
+			math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 21)),
 		)
 		require.NoError(t, err)
+		require.Len(t, maxRate, oracletypes.MaxEncodedVoteRateBytes)
 
 		voteExtension := vetypes.OracleVoteExtension{
-			Rates: make(map[string][]byte, oracletypes.MaxVoteTargets),
+			Rates:         make(map[string][]byte, oracletypes.MaxFeeds),
+			TargetVersion: oracletypes.InitialFeedVersion,
 		}
-		for targetIndex := range oracletypes.MaxVoteTargets {
-			denom := fmt.Sprintf("a%03d%s", targetIndex, strings.Repeat("a", 124))
-			require.NoError(t, sdk.ValidateDenom(denom))
-			voteExtension.Rates[denom] = rate
+		for targetIndex := range oracletypes.MaxFeeds {
+			denom := fmt.Sprintf("a%015d", targetIndex)
+			require.Len(t, denom, chain.MaxPricedDenomBytes)
+			require.NoError(t, chain.ValidatePricedDenom(denom))
+			voteExtension.Rates[denom] = maxRate
 		}
 
 		decoded, err := voteExtension.Marshal()
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(decoded), maxVoteExtensionDecodedBytes)
+		// The derived limit is tight: the maximal valid payload leaves
+		// headroom only for the version varint width.
+		require.Greater(t, len(decoded), maxVoteExtensionDecodedBytes-versionFieldMaxBytes)
 
 		encoded, err := codec.Encode(voteExtension)
 		require.NoError(t, err)
@@ -221,6 +224,26 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 func TestVoteExtensionCodecRejectsOversizedWirePayload(t *testing.T) {
 	_, err := NewVoteExtensionCodec().Decode(make([]byte, maxVoteExtensionWireBytes+1))
 	require.ErrorContains(t, err, "compressed vote extension")
+}
+
+func TestVoteExtensionCodecRejectsDuplicateKeyPadding(t *testing.T) {
+	entry, err := (&vetypes.OracleVoteExtension{
+		Rates: map[string][]byte{"ausd": []byte("1")},
+	}).Marshal()
+	require.NoError(t, err)
+
+	// Concatenated map entries decode to one small valid map, so duplicate
+	// keys are pure wire padding; the decoded limit must stop them.
+	padded := bytes.Repeat(entry, maxVoteExtensionDecodedBytes/len(entry)+1)
+
+	var compressed bytes.Buffer
+	writer := zlib.NewWriter(&compressed)
+	_, err = writer.Write(padded)
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
+
+	_, err = NewVoteExtensionCodec().Decode(compressed.Bytes())
+	require.ErrorContains(t, err, "decompressed output size")
 }
 
 func TestVoteExtensionCodecBoundsDecompressedOutput(t *testing.T) {

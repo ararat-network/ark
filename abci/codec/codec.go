@@ -13,11 +13,38 @@ import (
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	vetypes "ark/abci/voteextension/types"
+	chain "ark/pkg/chain"
+	oracletypes "ark/x/oracle/types"
 )
 
+// The vote-extension byte limits derive from the domain bounds, so the codec
+// admits exactly the payloads validation could accept and padding of any kind
+// gains nothing: duplicate-key wire entries no longer fit under the decoded
+// limit, and deflate stored-block padding no longer fits under the wire limit.
+// Every constant below is consensus-relevant through VerifyVoteExtension
+// acceptance and moves in lockstep with the domain bounds it derives from.
 const (
-	maxVoteExtensionWireBytes    = 64 << 10
-	maxVoteExtensionDecodedBytes = 128 << 10
+	// rateEntryFramingBytes is the protobuf framing around one Rates map
+	// entry: entry tag+length, key tag+length, and value tag+length, each one
+	// byte while entries stay under 128 bytes.
+	rateEntryFramingBytes = 6
+	// versionFieldMaxBytes is the target-version field tag plus a maximal
+	// uvarint64.
+	versionFieldMaxBytes = 11
+
+	maxVoteExtensionDecodedBytes = oracletypes.MaxFeeds*
+		(chain.MaxPricedDenomBytes+oracletypes.MaxEncodedVoteRateBytes+rateEntryFramingBytes) +
+		versionFieldMaxBytes
+
+	// zlibEnvelopeBytes is the zlib header plus the Adler-32 trailer;
+	// zlibStoredBlockBytes is the header of one stored (uncompressed) deflate
+	// block, the least compact encoding zlib can legally emit.
+	zlibEnvelopeBytes    = 6
+	zlibStoredBlockBytes = 5
+	zlibStoredBlockLimit = 65535
+
+	maxVoteExtensionWireBytes = maxVoteExtensionDecodedBytes + zlibEnvelopeBytes +
+		zlibStoredBlockBytes*(maxVoteExtensionDecodedBytes/zlibStoredBlockLimit+1)
 )
 
 type resettableZlibReader interface {

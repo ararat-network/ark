@@ -20,7 +20,7 @@ func BenchmarkVoteExtensionCodec(b *testing.B) {
 	const validatorCount = 100
 	codec := NewVoteExtensionCodec()
 
-	targetCounts := []int{len(oracletypes.DefaultTobinTaxes), oracletypes.MaxVoteTargets}
+	targetCounts := []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds}
 	fixtures := make(map[int]vetypes.OracleVoteExtension, len(targetCounts))
 	encodedFixtures := make(map[int][]byte, len(targetCounts))
 	for _, targetCount := range targetCounts {
@@ -92,6 +92,6 @@ func benchmarkCodecVoteExtension(b *testing.B, targetCount int) vetypes.OracleVo
 
 	return vetypes.OracleVoteExtension{
 		Rates:         rates,
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+		TargetVersion: oracletypes.InitialFeedVersion,
 	}
 }
