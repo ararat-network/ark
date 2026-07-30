@@ -45,18 +45,33 @@ func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
 	return m.recorder
 }
 
-// AdvanceVoteTargets mocks base method.
-func (m *MockOracleKeeper) AdvanceVoteTargets(ctx context.Context) error {
+// AdvanceFeeds mocks base method.
+func (m *MockOracleKeeper) AdvanceFeeds(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AdvanceVoteTargets", ctx)
+	ret := m.ctrl.Call(m, "AdvanceFeeds", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AdvanceVoteTargets indicates an expected call of AdvanceVoteTargets.
-func (mr *MockOracleKeeperMockRecorder) AdvanceVoteTargets(ctx any) *gomock.Call {
+// AdvanceFeeds indicates an expected call of AdvanceFeeds.
+func (mr *MockOracleKeeperMockRecorder) AdvanceFeeds(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AdvanceVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).AdvanceVoteTargets), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AdvanceFeeds", reflect.TypeOf((*MockOracleKeeper)(nil).AdvanceFeeds), ctx)
+}
+
+// GetFeeds mocks base method.
+func (m *MockOracleKeeper) GetFeeds(ctx context.Context, voteHeight int64) (types0.FeedSet, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFeeds", ctx, voteHeight)
+	ret0, _ := ret[0].(types0.FeedSet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFeeds indicates an expected call of GetFeeds.
+func (mr *MockOracleKeeperMockRecorder) GetFeeds(ctx, voteHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeeds", reflect.TypeOf((*MockOracleKeeper)(nil).GetFeeds), ctx, voteHeight)
 }
 
 // GetParams mocks base method.
@@ -72,21 +87,6 @@ func (m *MockOracleKeeper) GetParams(ctx context.Context) (types0.Params, error)
 func (mr *MockOracleKeeperMockRecorder) GetParams(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParams", reflect.TypeOf((*MockOracleKeeper)(nil).GetParams), ctx)
-}
-
-// GetVoteTargets mocks base method.
-func (m *MockOracleKeeper) GetVoteTargets(ctx context.Context, voteHeight int64) (types0.VoteTargetSet, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVoteTargets", ctx, voteHeight)
-	ret0, _ := ret[0].(types0.VoteTargetSet)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVoteTargets indicates an expected call of GetVoteTargets.
-func (mr *MockOracleKeeperMockRecorder) GetVoteTargets(ctx, voteHeight any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVoteTargets", reflect.TypeOf((*MockOracleKeeper)(nil).GetVoteTargets), ctx, voteHeight)
 }
 
 // RecordVoteAccounting mocks base method.
@@ -115,6 +115,44 @@ func (m *MockOracleKeeper) SetExchangeRateWithEvent(ctx context.Context, exchang
 func (mr *MockOracleKeeperMockRecorder) SetExchangeRateWithEvent(ctx, exchangeRate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRateWithEvent", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRateWithEvent), ctx, exchangeRate)
+}
+
+// MockAssetKeeper is a mock of AssetKeeper interface.
+type MockAssetKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockAssetKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockAssetKeeperMockRecorder is the mock recorder for MockAssetKeeper.
+type MockAssetKeeperMockRecorder struct {
+	mock *MockAssetKeeper
+}
+
+// NewMockAssetKeeper creates a new mock instance.
+func NewMockAssetKeeper(ctrl *gomock.Controller) *MockAssetKeeper {
+	mock := &MockAssetKeeper{ctrl: ctrl}
+	mock.recorder = &MockAssetKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockAssetKeeper) EXPECT() *MockAssetKeeperMockRecorder {
+	return m.recorder
+}
+
+// CompleteLifecycle mocks base method.
+func (m *MockAssetKeeper) CompleteLifecycle(ctx context.Context, updatedRates types0.RateSet) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompleteLifecycle", ctx, updatedRates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CompleteLifecycle indicates an expected call of CompleteLifecycle.
+func (mr *MockAssetKeeperMockRecorder) CompleteLifecycle(ctx, updatedRates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteLifecycle", reflect.TypeOf((*MockAssetKeeper)(nil).CompleteLifecycle), ctx, updatedRates)
 }
 
 // MockTreasuryKeeper is a mock of TreasuryKeeper interface.

@@ -60,7 +60,7 @@ func NewOracleVoteExtension(t *testing.T, rates map[string]math.LegacyDec) vetyp
 
 	return vetypes.OracleVoteExtension{
 		Rates:         encodedRates,
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+		TargetVersion: oracletypes.InitialFeedVersion,
 	}
 }
 
