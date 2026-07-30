@@ -29,6 +29,7 @@ func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {
 	fake := &fakeModule{name: "fake"}
 	handler := preblock.NewHandler(
 		abcitestutil.NewMockOracleKeeper(ctrl),
+		abcitestutil.NewMockAssetKeeper(ctrl),
 		abcitestutil.NewMockTreasuryKeeper(ctrl),
 		codec.NewVoteExtensionCodec(),
 	)
@@ -45,6 +46,7 @@ func TestWrappedPreBlockerWrapsModuleManagerError(t *testing.T) {
 	fake := &fakeModule{name: "fake", err: moduleErr}
 	handler := preblock.NewHandler(
 		abcitestutil.NewMockOracleKeeper(ctrl),
+		abcitestutil.NewMockAssetKeeper(ctrl),
 		abcitestutil.NewMockTreasuryKeeper(ctrl),
 		codec.NewVoteExtensionCodec(),
 	)
@@ -65,11 +67,15 @@ func TestWrappedPreBlockerSkipsVoteExtensionsWithoutPreviousCommit(t *testing.T)
 		response: preBlockResponse{consensusParamsChanged: true},
 	}
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
-	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
+	keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil)
+	// No CompleteLifecycle expectation: nothing aggregated, so the strict mock
+	// asserts the completions hook is skipped entirely.
+	assetKeeper := abcitestutil.NewMockAssetKeeper(ctrl)
 	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
 	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil)
 	handler := preblock.NewHandler(
 		keeper,
+		assetKeeper,
 		treasuryKeeper,
 		codec.NewVoteExtensionCodec(),
 	)
@@ -85,15 +91,16 @@ func TestWrappedPreBlockerSkipsVoteExtensionsWithoutPreviousCommit(t *testing.T)
 	require.Equal(t, 1, fake.called)
 }
 
-func TestWrappedPreBlockerWrapsAdvanceVoteTargetsError(t *testing.T) {
+func TestWrappedPreBlockerWrapsAdvanceFeedsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	advanceErr := errors.New("advance failed")
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
-	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(advanceErr)
+	keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(advanceErr)
 	// No PrimeLiabilitySnapshot expectation: the strict mock asserts priming is
 	// not reached when vote-target advancement fails.
 	handler := preblock.NewHandler(
 		keeper,
+		abcitestutil.NewMockAssetKeeper(ctrl),
 		abcitestutil.NewMockTreasuryKeeper(ctrl),
 		codec.NewVoteExtensionCodec(),
 	)
@@ -105,7 +112,7 @@ func TestWrappedPreBlockerWrapsAdvanceVoteTargetsError(t *testing.T) {
 
 	require.ErrorIs(t, err, arkabcitypes.ErrOracleKeeper)
 	require.ErrorIs(t, err, advanceErr)
-	require.Contains(t, err.Error(), "advance vote targets for height 1")
+	require.Contains(t, err.Error(), "advance feeds for height 1")
 }
 
 func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsEnabled(t *testing.T) {
@@ -113,14 +120,17 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := oracletypes.VoteTargetSet{
-		Version: oracletypes.InitialVoteTargetVersion,
+	voteTargets := oracletypes.FeedSet{
+		Version: oracletypes.InitialFeedVersion,
 		Denoms:  []string{"ausd"},
 	}
+	assetKeeper := abcitestutil.NewMockAssetKeeper(ctrl)
+	assetKeeper.EXPECT().CompleteLifecycle(gomock.Any(), gomock.Any()).Return(nil)
 	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
 	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil)
 	handler := preblock.NewHandler(
 		keeper,
+		assetKeeper,
 		treasuryKeeper,
 		codec.NewVoteExtensionCodec(),
 	)
@@ -138,7 +148,7 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 		},
 	})
 	keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
-	keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(100)).Return(voteTargets, nil)
+	keeper.EXPECT().GetFeeds(gomock.Any(), int64(100)).Return(voteTargets, nil)
 	keeper.EXPECT().
 		SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
@@ -148,7 +158,7 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 		})
 	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.NewInt(1), true, true).Return(nil)
 	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), true, true).Return(nil)
-	keeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
+	keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil)
 
 	lastCommit := cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)}
 	_, err := handler.WrappedPreBlocker(managerWith())(
@@ -164,16 +174,101 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	require.NoError(t, err)
 }
 
+// TestWrappedPreBlockerCompletesLifecycleWithAggregatedRates pins where the
+// completions hook sits: after feed promotion, before liability priming, and
+// seeing exactly the rates this block aggregated.
+func TestWrappedPreBlockerCompletesLifecycleWithAggregatedRates(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	assetKeeper := abcitestutil.NewMockAssetKeeper(ctrl)
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	gomock.InOrder(
+		keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil),
+		assetKeeper.EXPECT().
+			CompleteLifecycle(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, rates oracletypes.RateSet) error {
+				require.Len(t, rates, 1)
+				require.True(t, math.LegacyNewDec(100).Equal(rates["ausd"]))
+				return nil
+			}),
+		treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil),
+	)
+	ctx, req := aggregatingBlock(t, keeper)
+	handler := preblock.NewHandler(
+		keeper,
+		assetKeeper,
+		treasuryKeeper,
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith())(ctx, req)
+
+	require.NoError(t, err)
+}
+
+// TestWrappedPreBlockerSkipsCompletionsWithoutAggregatedRates covers the block
+// that aggregates nothing: completions ride on consensus evidence produced in
+// this block, so with no evidence there is nothing to consider.
+func TestWrappedPreBlockerSkipsCompletionsWithoutAggregatedRates(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil)
+	// No CompleteLifecycle expectation: the strict mock fails the test if the
+	// hook runs at all.
+	assetKeeper := abcitestutil.NewMockAssetKeeper(ctrl)
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil)
+	handler := preblock.NewHandler(
+		keeper,
+		assetKeeper,
+		treasuryKeeper,
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith())(
+		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
+		&cometabci.RequestFinalizeBlock{Height: 1},
+	)
+
+	require.NoError(t, err)
+}
+
+func TestWrappedPreBlockerWrapsCompleteLifecycleError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	completionErr := errors.New("completion failed")
+	keeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil)
+	assetKeeper := abcitestutil.NewMockAssetKeeper(ctrl)
+	assetKeeper.EXPECT().CompleteLifecycle(gomock.Any(), gomock.Any()).Return(completionErr)
+	// No PrimeLiabilitySnapshot expectation: a failed completion halts the block
+	// like every other preblock failure.
+	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
+	ctx, req := aggregatingBlock(t, keeper)
+	handler := preblock.NewHandler(
+		keeper,
+		assetKeeper,
+		treasuryKeeper,
+		codec.NewVoteExtensionCodec(),
+	)
+
+	_, err := handler.WrappedPreBlocker(managerWith())(ctx, req)
+
+	require.ErrorIs(t, err, arkabcitypes.ErrAssetKeeper)
+	require.ErrorIs(t, err, completionErr)
+	require.Contains(t, err.Error(), "complete asset lifecycle for height 101")
+}
+
 func TestWrappedPreBlockerPrimesTreasuryLiability(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
 	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
 	gomock.InOrder(
-		oracleKeeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil),
+		oracleKeeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil),
 		treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil),
 	)
 	handler := preblock.NewHandler(
 		oracleKeeper,
+		abcitestutil.NewMockAssetKeeper(ctrl),
 		treasuryKeeper,
 		codec.NewVoteExtensionCodec(),
 	)
@@ -189,12 +284,13 @@ func TestWrappedPreBlockerPrimesTreasuryLiability(t *testing.T) {
 func TestWrappedPreBlockerWrapsTreasuryPrimeError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
-	oracleKeeper.EXPECT().AdvanceVoteTargets(gomock.Any()).Return(nil)
+	oracleKeeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil)
 	treasuryKeeper := abcitestutil.NewMockTreasuryKeeper(ctrl)
 	primeErr := errors.New("prime failed")
 	treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(primeErr)
 	handler := preblock.NewHandler(
 		oracleKeeper,
+		abcitestutil.NewMockAssetKeeper(ctrl),
 		treasuryKeeper,
 		codec.NewVoteExtensionCodec(),
 	)
@@ -207,6 +303,57 @@ func TestWrappedPreBlockerWrapsTreasuryPrimeError(t *testing.T) {
 	require.ErrorIs(t, err, arkabcitypes.ErrTreasuryKeeper)
 	require.ErrorIs(t, err, primeErr)
 	require.Contains(t, err.Error(), "prime liability snapshot for height 1")
+}
+
+// aggregatingBlock sets up the oracle expectations for a block where two
+// validators agree on one rate, and returns the context and request that drive
+// it.
+func aggregatingBlock(
+	t *testing.T,
+	keeper *abcitestutil.MockOracleKeeper,
+) (sdk.Context, *cometabci.RequestFinalizeBlock) {
+	t.Helper()
+
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
+	feeds := oracletypes.FeedSet{
+		Version: oracletypes.InitialFeedVersion,
+		Denoms:  []string{"ausd"},
+	}
+	voteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
+		"ausd": math.LegacyNewDec(100),
+	})
+	commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
+		Votes: []cometabci.ExtendedVoteInfo{
+			abcitestutil.NewExtendedVoteInfo(
+				sdk.ConsAddress("validator1"),
+				1,
+				abcitestutil.MustEncodeVoteExtension(t, voteExtension),
+			),
+			abcitestutil.NewExtendedVoteInfo(
+				sdk.ConsAddress("validator2"),
+				1,
+				abcitestutil.MustEncodeVoteExtension(t, voteExtension),
+			),
+		},
+	})
+	keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
+	keeper.EXPECT().GetFeeds(gomock.Any(), int64(100)).Return(feeds, nil)
+	keeper.EXPECT().SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).Return(nil)
+	keeper.EXPECT().
+		RecordVoteAccounting(gomock.Any(), gomock.Any(), math.NewInt(1), true, true).
+		Times(2).
+		Return(nil)
+
+	lastCommit := cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)}
+
+	return abcitestutil.NewSDKContext(101, 1, sdk.ExecModeFinalize).
+			WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, lastCommit)),
+		&cometabci.RequestFinalizeBlock{
+			Height:            101,
+			Txs:               [][]byte{commitBz},
+			DecidedLastCommit: lastCommit,
+		}
 }
 
 type fakeModule struct {

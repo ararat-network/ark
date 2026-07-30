@@ -18,6 +18,7 @@ import (
 	oraclemetrics "ark/abci/oracle/metrics"
 	arkabcitypes "ark/abci/types"
 	"ark/abci/voteextension"
+	oracletypes "ark/x/oracle/types"
 )
 
 // Handler is responsible for aggregating oracle data from each
@@ -26,6 +27,10 @@ import (
 type Handler struct {
 	// oracleKeeper provides the oracle state used during preblock processing.
 	oracleKeeper arkabcitypes.OracleKeeper
+
+	// assetKeeper completes asset lifecycle transitions that were waiting on a
+	// price for their feed.
+	assetKeeper arkabcitypes.AssetKeeper
 
 	// treasuryKeeper primes block-local treasury valuations once oracle prices
 	// for the block are final.
@@ -39,11 +44,13 @@ type Handler struct {
 // is responsible for writing oracle data included in vote extensions to state.
 func NewHandler(
 	oracleKeeper arkabcitypes.OracleKeeper,
+	assetKeeper arkabcitypes.AssetKeeper,
 	treasuryKeeper arkabcitypes.TreasuryKeeper,
 	voteExtensionCodec *codec.VoteExtensionCodec,
 ) *Handler {
 	return &Handler{
 		oracleKeeper:   oracleKeeper,
+		assetKeeper:    assetKeeper,
 		treasuryKeeper: treasuryKeeper,
 		codec:          voteExtensionCodec,
 	}
@@ -54,23 +61,16 @@ func NewHandler(
 // writing the oracle data to the store.
 func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
-		if req == nil {
-			return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", arkabcitypes.ErrNilRequest, arkmetrics.PreBlock)
-		}
-
-		// call module manager's PreBlocker first in case there is changes made on upgrades
-		// that can modify state and lead to serialisation/deserialisation issues
-		response, err = mm.PreBlock(ctx)
-		if err != nil {
-			return response, fmt.Errorf("%w for %s: %w", arkabcitypes.ErrWrappedHandler, arkmetrics.PreBlock, err)
-		}
-
 		start := time.Now()
-		var prices map[string]math.LegacyDec
+		var (
+			prices                 map[string]math.LegacyDec
+			wrappedPreBlockLatency time.Duration
+		)
 		defer func() {
-			// only measure latency in Finalise
+			// only measure latency in Finalise, excluding the wrapped module
+			// manager preblockers
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
-				latency := time.Since(start)
+				latency := time.Since(start) - wrappedPreBlockLatency
 				arkmetrics.RecordLatencyAndStatus(latency, preblockStatus(err), arkmetrics.PreBlock)
 
 				// Record prices only if they were written successfully.
@@ -83,25 +83,58 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			}
 		}()
 
+		if req == nil {
+			return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", arkabcitypes.ErrNilRequest, arkmetrics.PreBlock)
+		}
+
+		// call module manager's PreBlocker first in case there is changes made on upgrades
+		// that can modify state and lead to serialisation/deserialisation issues
+		wrappedStart := time.Now()
+		response, err = mm.PreBlock(ctx)
+		wrappedPreBlockLatency = time.Since(wrappedStart)
+		if err != nil {
+			return response, fmt.Errorf("%w for %s: %w", arkabcitypes.ErrWrappedHandler, arkmetrics.PreBlock, err)
+		}
+
 		if voteextension.VoteExtensionsAvailable(ctx) {
-			// Decode vote extensions and apply prices to state.
+			// Decode vote extensions and apply prices to state. This must run
+			// before AdvanceFeeds: the injected votes were signed for height
+			// req.Height-1 and validate against the feed epoch
+			// AtHeight(req.Height-1), which an advance due at req.Height folds
+			// away. Advancing first would reject every report with a version
+			// mismatch exactly at an activation height. This ordering is a
+			// consensus invariant, not an implementation detail.
 			prices, err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, h.codec, req)
 			if err != nil {
 				return response, err
 			}
 		}
 
-		err = h.oracleKeeper.AdvanceVoteTargets(ctx)
+		err = h.oracleKeeper.AdvanceFeeds(ctx)
 		if err != nil {
 			return response, fmt.Errorf(
-				"%w: advance vote targets for height %d: %w",
+				"%w: advance feeds for height %d: %w",
 				arkabcitypes.ErrOracleKeeper,
 				req.Height,
 				err,
 			)
 		}
 
-		// Prices and vote targets for the block are final here; prime the
+		// Completions consume only rates aggregated in this block: activation
+		// and recovery ride on consensus evidence produced after governance
+		// requested them, never on the tail of the freshness window.
+		if len(prices) > 0 {
+			if err = h.assetKeeper.CompleteLifecycle(ctx, oracletypes.RateSet(prices)); err != nil {
+				return response, fmt.Errorf(
+					"%w: complete asset lifecycle for height %d: %w",
+					arkabcitypes.ErrAssetKeeper,
+					req.Height,
+					err,
+				)
+			}
+		}
+
+		// Prices and feeds for the block are final here; prime the
 		// treasury liability snapshot so transactions never rescan.
 		if err = h.treasuryKeeper.PrimeLiabilitySnapshot(ctx); err != nil {
 			return response, fmt.Errorf(
@@ -120,12 +153,20 @@ func preblockStatus(err error) arkmetrics.Status {
 	switch {
 	case err == nil:
 		return arkmetrics.StatusSuccess
+	case errors.Is(err, arkabcitypes.ErrNilRequest):
+		return arkmetrics.StatusNilRequest
+	case errors.Is(err, arkabcitypes.ErrWrappedHandler):
+		return arkmetrics.StatusWrappedHandler
 	case errors.Is(err, arkabcitypes.ErrOracleKeeper):
 		return arkmetrics.StatusOracleKeeper
 	case errors.Is(err, arkabcitypes.ErrCodec):
 		return arkmetrics.StatusCodec
 	case errors.Is(err, arkabcitypes.ErrMissingCommitInfo):
 		return arkmetrics.StatusMissingCommitInfo
+	case errors.Is(err, arkabcitypes.ErrAssetKeeper):
+		return arkmetrics.StatusAssetKeeper
+	case errors.Is(err, arkabcitypes.ErrTreasuryKeeper):
+		return arkmetrics.StatusTreasuryKeeper
 	default:
 		return arkmetrics.StatusFailure
 	}
