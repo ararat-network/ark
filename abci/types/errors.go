@@ -15,4 +15,6 @@ var (
 	ErrOracleKeeper = errors.New("oracle keeper error")
 	// ErrTreasuryKeeper identifies a treasury keeper state access or mutation failure.
 	ErrTreasuryKeeper = errors.New("treasury keeper error")
+	// ErrAssetKeeper identifies an asset keeper state access or mutation failure.
+	ErrAssetKeeper = errors.New("asset keeper error")
 )

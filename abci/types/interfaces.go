@@ -19,8 +19,14 @@ type OracleKeeper interface {
 	GetParams(ctx context.Context) (oracletypes.Params, error)
 	SetExchangeRateWithEvent(ctx context.Context, exchangeRate oracletypes.ExchangeRate) error
 	RecordVoteAccounting(ctx context.Context, validator sdk.ConsAddress, rewardWeight math.Int, eligible bool, participated bool) error
-	GetVoteTargets(ctx context.Context, voteHeight int64) (oracletypes.VoteTargetSet, error)
-	AdvanceVoteTargets(ctx context.Context) error
+	GetFeeds(ctx context.Context, voteHeight int64) (oracletypes.FeedSet, error)
+	AdvanceFeeds(ctx context.Context) error
+}
+
+// AssetKeeper exposes the one asset-side hook the preblock drives: lifecycle
+// completions made eligible by rates aggregated in this block.
+type AssetKeeper interface {
+	CompleteLifecycle(ctx context.Context, updatedRates oracletypes.RateSet) error
 }
 
 // TreasuryKeeper exposes the treasury state primed during preblock processing.
