@@ -6,9 +6,10 @@ extension data, aggregates validator reports, writes exchange rates, and updates
 ## Vote Extraction
 
 `GetOracleVotes` reads the encoded extended commit info from the first injected proposal transaction, validates and
-decodes each validator vote extension into domain rates, and returns one `Vote` per validator entry. Empty, undecodable,
-and semantically invalid vote extensions become invalid oracle reports; their validator still counts toward total commit
-power and still accrues attendance eligibility on a functioning block. The authenticated extended commit itself is never
+decodes each validator vote extension into domain rates, and returns one `Vote` per validator entry. Empty vote
+extensions become empty reports; undecodable and semantically invalid payloads become invalid reports. Consensus grades
+both exactly like an absent report — the validator still counts toward total commit power and still accrues attendance
+eligibility on a functioning block — while telemetry keeps empty and invalid reports distinguishable. The authenticated extended commit itself is never
 rewritten. A decoded, target-version-matched extension is marked as a valid report even when it contains only a subset of
 the canonical targets.
 
@@ -42,9 +43,22 @@ separate unavailability signal exists, so an omitted target and an abstained tar
 
 ### Participation And Attendance
 
-There is no per-block fault accounting. A validator *participates* in a block when its valid report carries at least one
-positive rate. Abstentions, omissions, empty reports, and invalid reports do not participate: they earn nothing, and
-they are not penalised for the block either.
+There is no per-block fault accounting. A validator *participates* in a block when its valid report prices enough
+distinct targets with positive rates to reach the participation floor:
+
+```text
+required rates = max(1, ceil(participation_threshold * canonical targets))
+```
+
+Abstentions, omissions, empty reports, and invalid reports never count toward the floor. Non-participation is not itself
+penalised for the block, and reward scoring stays independent of it: a below-floor report still earns band-gated rewards
+for the targets it does price.
+
+`participation_threshold` is capped at 50% and defaults to 20%; zero restores the single-positive-rate floor. The cap is
+the boundary between a deadman switch and a coverage mandate: coverage misses correlate through shared providers, so a
+floor above half the target set would let a split-fleet provider gap grade the affected half absent while the healthy
+half keeps blocks functioning. Coverage pressure belongs to band-gated rewards; the floor exists so that a hardcoded
+token rate does not count as running an oracle.
 
 A block is *functioning* when participating power reaches `functioning_block_threshold` of total commit power:
 
@@ -55,12 +69,14 @@ functioning block = total commit power > 0 and
 
 Every commit validator of a functioning block accrues one eligible attendance unit, and participants also accrue one
 attended unit. Grading only functioning blocks is what makes correlated outages judge no one: when most of the fleet
-cannot price anything, the block grades nobody rather than penalising everybody. The explicit positive-power guard keeps
+cannot price anything, the block grades nobody rather than penalising everybody. Below-floor reports contribute no
+participating power, so the same protection covers coverage collapses: a fleet-wide provider gap that drags most power
+under the floor turns grading off instead of grading everyone absent. The explicit positive-power guard keeps
 a zero-power commit from trivially satisfying a zero threshold product.
 
 The threshold is a governance parameter floored at 50% and defaulted to it. The floor is the load-bearing half: a dark
 coalition holding more than the remaining share switches grading off entirely, so flooring at a majority forces that
-coalition to be a majority itself, and no block is ever graded that a majority could not price. Governance may only
+coalition to be a majority itself, and no block is ever graded that a majority could not participate in. Governance may only
 raise the threshold, trading deadman sensitivity for forgiveness of a partially degraded fleet — useful when a chronic
 minority outage would otherwise grade every block against the same operators. It is deliberately not
 `vote_threshold`: reusing the price-quorum parameter would let a coalition of `1 - vote_threshold` disable attendance
@@ -77,8 +93,10 @@ outages need no such floor, because non-functioning blocks never reach the recor
 sparse record is evidence the validator was absent while the fleet worked, not evidence that grading is unsafe.
 
 Newly activated targets get no special grading: attendance is unconditional per window, by decision. Rollout slack comes
-from layers that already exist — the sidecar prices scheduled targets throughout their pending window, pricing any one
-target keeps a validator attended, a majority unable to price grades nobody, and the windowed ratio leaves a lagging
+from layers that already exist — the sidecar prices scheduled targets throughout their pending window, pricing the
+surviving targets keeps a validator above the participation floor unless one activation batch more than doubles the
+target set (the worst case at the 50% threshold cap; the 20% default tolerates a 5x expansion), a majority unable to
+participate grades nobody, and the windowed ratio leaves a lagging
 operator most of a window to ship provider support. The deliberately accepted residual is a validator pricing nothing
 for the better part of a window while a majority prices: it is jailed at settlement, which also restores quorum by
 shrinking total power toward the capable share.
@@ -136,9 +154,9 @@ absolute(tally ratio - median ratio) <= median ratio * RewardBand / 2
 ```
 
 The implementation materialises the lower and upper `LegacyDec` endpoints with checked arithmetic and compares each rate
-with them. A positive out-of-band report simply earns no reward target; it still counts as participation. Targets that
-fail raw quorum, usable overlap quorum, final price conversion, or reward-band construction are not accuracy-scored,
-and reporting them still counts as participation.
+with them. A positive out-of-band report simply earns no reward target; it still counts toward the participation floor.
+Targets that fail raw quorum, usable overlap quorum, final price conversion, or reward-band construction are not
+accuracy-scored, and reporting them still counts toward the participation floor.
 
 Each validator accumulates a count of rewarded targets. After all tallies are scored, its reward weight is computed once:
 
@@ -182,7 +200,7 @@ algorithm or capacity are measured together.
 
 `ProcessVoteExtensions` coordinates the preblock oracle write and returns the consensus prices applied to state:
 
-1. Load the vote-target epoch for the previous height.
+1. Load the feed epoch for the previous height.
 2. Decode and validate proposal vote data with `GetOracleVotes` against that epoch.
 3. Load oracle params and aggregate rates and validator scores.
 4. Write exchange rates with events in lexical denom order.
@@ -192,8 +210,11 @@ The preblock package calls this function with its oracle keeper and handles the 
 
 ## Encoding Boundary
 
-`oracle_votes.go` enforces vote-extension rate cardinality and target membership before decoding each bounded
-`LegacyDec` value through `pkg/encoding`.
+`oracle_votes.go` enforces vote-extension rate cardinality, target membership, and the vote-rate size bound before
+decoding each `LegacyDec` value through `pkg/encoding`. Vote rates are prices, so `MaxEncodedVoteRateBytes` sits far
+below the state-level encoding bound, and the codec's wire and decoded limits derive from it: the codec admits exactly
+the payloads this validation could accept, so wire padding — oversized rates, duplicate map keys, stored-block zlib —
+buys an attacker nothing.
 
 ## Internal Values
 

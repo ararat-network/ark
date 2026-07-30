@@ -9,10 +9,11 @@ block proposals, and the preblock hook aggregates those reports before transacti
 - `voteextension/` owns `ExtendVote` and `VerifyVoteExtension` handlers.
 - `proposals/` owns `PrepareProposal` and `ProcessProposal` wrappers that carry extended commit info through proposal
   bytes.
-- `preblock/` owns the SDK preblock hook that calls module preblockers, applies oracle prices, advances vote targets, and
-  records preblock metrics.
+- `preblock/` owns the SDK preblock hook that calls module preblockers, applies oracle prices, advances due feed
+  transitions, and records preblock metrics.
 - `oracle/` owns vote extraction, payload validation, aggregation, validator scoring, and price application.
-- `codec/` owns byte-bounded compressed vote extensions and cardinality-bounded raw extended commits.
+- `codec/` owns compressed vote extensions, byte-bounded by limits derived from oracle feed capacity, and
+  cardinality-bounded raw extended commits.
 - `metrics/` and `oracle/metrics/` own package-level ABCI and oracle metrics.
 - `types/` contains the narrow keeper/client interfaces and shared ABCI error types.
 - `testutil/` contains reusable ABCI test fixtures and generated mocks.
@@ -27,7 +28,7 @@ block proposals, and the preblock hook aggregates those reports before transacti
    vote extensions are enabled.
 4. `proposals.Handler.ProcessProposalHandler` validates the injected extended commit info before accepting the proposal.
 5. `preblock.Handler` decodes the injected commit info, aggregates oracle votes, writes exchange rates, updates
-   validator accounting, and advances pending vote targets before block transactions run.
+   validator accounting, and advances pending feed transitions before block transactions run.
 
 ## Ownership Rules
 
