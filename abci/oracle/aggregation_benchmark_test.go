@@ -26,12 +26,12 @@ func BenchmarkAggregateOracleVotes(b *testing.B) {
 		{name: "targets_8/reports_8", targetCount: 8, reportCount: 8},
 		{
 			name:        "targets_256/reports_256",
-			targetCount: oracletypes.MaxVoteTargets,
-			reportCount: oracletypes.MaxVoteTargets,
+			targetCount: oracletypes.MaxFeeds,
+			reportCount: oracletypes.MaxFeeds,
 		},
 		{
 			name:        "targets_256/reports_8",
-			targetCount: oracletypes.MaxVoteTargets,
+			targetCount: oracletypes.MaxFeeds,
 			reportCount: 8,
 		},
 	}
@@ -70,18 +70,18 @@ func BenchmarkSelectReference(b *testing.B) {
 		{name: "targets_8/identical_support", targetCount: 8, supportPatterns: 1},
 		{
 			name:            "targets_256/identical_support",
-			targetCount:     oracletypes.MaxVoteTargets,
+			targetCount:     oracletypes.MaxFeeds,
 			supportPatterns: 1,
 		},
 		{
 			name:            "targets_256/two_support_patterns",
-			targetCount:     oracletypes.MaxVoteTargets,
+			targetCount:     oracletypes.MaxFeeds,
 			supportPatterns: 2,
 		},
 		{
 			name:            "targets_256/distinct_support",
-			targetCount:     oracletypes.MaxVoteTargets,
-			supportPatterns: oracletypes.MaxVoteTargets,
+			targetCount:     oracletypes.MaxFeeds,
+			supportPatterns: oracletypes.MaxFeeds,
 		},
 	}
 

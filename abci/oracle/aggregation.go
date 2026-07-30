@@ -25,8 +25,9 @@ type validatorScore struct {
 	votingPower     int64
 	rewardedTargets int64
 	rewardWeight    math.Int
-	// participated is true when the vote carried at least one positive rate;
-	// abstentions, omissions, and invalid reports do not participate.
+	// participated is true when the vote carried positive rates for at least
+	// the participation-threshold share of the target set; abstentions,
+	// omissions, and invalid reports never count toward that floor.
 	participated bool
 }
 
@@ -59,24 +60,40 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		return result
 	}
 
+	// requiredPositiveRates is the participation floor: how many distinct
+	// targets a report must price before it counts as participation. Rates are
+	// unique per target by decode validation, so counting rates counts targets.
+	// The floor of one keeps a zero threshold exactly the single-positive-rate
+	// rule, and the threshold cap of one half by param validation keeps the
+	// floor a deadman switch rather than a coverage mandate.
+	requiredPositiveRates := params.ParticipationThreshold.
+		MulInt64(int64(len(targetDenoms))).
+		Ceil().
+		TruncateInt64()
+	if requiredPositiveRates < 1 {
+		requiredPositiveRates = 1
+	}
+
 	// This pass computes three outputs in one iteration over votes: it counts
 	// positive reports per target so each ballot can allocate exactly enough
-	// space without geometric slice growth, it marks each validator that
-	// submitted at least one positive rate as participated, and it sums
-	// participating power across the fleet for the functioning-block check
-	// below.
+	// space without geometric slice growth, it marks each validator whose
+	// positive-rate count reaches the participation floor as participated, and
+	// it sums participating power across the fleet for the functioning-block
+	// check below. Below-floor reports must stay out of participating power:
+	// that coupling is what lets a fleet-wide coverage collapse switch grading
+	// off instead of jailing the affected validators.
 	positiveRateCounts := make([]int, len(targetDenoms))
 	var participatingPower int64
 	for validatorIndex, vote := range votes {
-		participated := false
+		var positiveRates int64
 		for _, submittedRate := range vote.Rates {
 			if !submittedRate.Value.IsPositive() {
 				continue
 			}
-			participated = true
+			positiveRates++
 			positiveRateCounts[submittedRate.TargetIndex]++
 		}
-		if participated {
+		if positiveRates >= requiredPositiveRates {
 			result.scores[validatorIndex].participated = true
 			participatingPower += vote.Validator.Power
 		}
@@ -89,7 +106,8 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 	}
 	// Attendance is only graded on functioning blocks, so correlated outages
 	// judge no one. The threshold is floored at a majority by param validation:
-	// no block is ever graded that a majority of commit power could not price.
+	// no block is ever graded that a majority of commit power could not
+	// participate in.
 	result.functioningBlock = participatingPower >= params.FunctioningBlockThreshold.
 		MulInt64(totalPower).
 		Ceil().
@@ -157,6 +175,11 @@ func computePricesAndScores(
 	prices := make(map[string]math.LegacyDec, len(tallies))
 
 	for _, tally := range tallies {
+		// Every tally price was already validated by reference selection, so it
+		// publishes unconditionally: unrepresentable reward-band bounds skip only
+		// this target's reward accounting, never its price.
+		prices[targetDenoms[tally.targetIndex]] = tally.price
+
 		rewardSpread, err := decimal.Mul(tally.median, halfRewardBand)
 		if err != nil {
 			continue
@@ -174,8 +197,6 @@ func computePricesAndScores(
 				scores[vote.validator].rewardedTargets++
 			}
 		}
-
-		prices[targetDenoms[tally.targetIndex]] = tally.price
 	}
 	// Every tally vote for a validator carries the same proposal-validated
 	// voting power, so repeated reward additions are exactly one multiplication.

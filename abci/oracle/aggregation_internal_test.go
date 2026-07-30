@@ -259,7 +259,7 @@ func TestComputePricesAndScoresRewardBand(t *testing.T) {
 	}
 }
 
-func TestComputePricesAndScoresSkipsUnrepresentableRewardBand(t *testing.T) {
+func TestComputePricesAndScoresPublishesPriceWhenRewardBandUnrepresentable(t *testing.T) {
 	nearMax := math.LegacyNewDecFromBigInt(new(big.Int).Sub(
 		new(big.Int).Lsh(big.NewInt(1), 256),
 		big.NewInt(1),
@@ -278,7 +278,8 @@ func TestComputePricesAndScoresSkipsUnrepresentableRewardBand(t *testing.T) {
 		scores,
 	)
 
-	require.Empty(t, prices)
+	require.Len(t, prices, 1)
+	require.True(t, nearMax.Equal(prices["ausd"]))
 	require.True(t, scores[0].rewardWeight.IsZero())
 }
 

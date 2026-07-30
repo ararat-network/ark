@@ -3,6 +3,7 @@ package oracle_test
 import (
 	"context"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,7 @@ func TestAggregateOracleVotesLeavesOmittedTargetUnpriced(t *testing.T) {
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"ausd", "akrw"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Contains(t, prices, "ausd")
@@ -82,7 +83,7 @@ func TestAggregateOracleVotesDoesNotPunishFailedQuorumVotes(t *testing.T) {
 			params.VoteThreshold = math.LegacyNewDecWithPrec(75, 2)
 			voteTargets := []string{"ausd", "akrw"}
 
-			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+			keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "ausd")
@@ -110,7 +111,7 @@ func TestAggregateOracleVotesSkipsCrossRateDenomWithoutReferenceOverlap(t *testi
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"akrw", "ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Contains(t, prices, "akrw")
@@ -138,7 +139,7 @@ func TestAggregateOracleVotesChoosesReferenceWithBestOverlapCoverage(t *testing.
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"ausd", "akrw", "asdr"}
 
-	_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	_, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.NotContains(t, prices, "ausd")
@@ -163,7 +164,7 @@ func TestAggregateOracleVotesSkipsCrossRateDenomBelowOverlapQuorum(t *testing.T)
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"ausd", "akrw"}
 
-	_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	_, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Contains(t, prices, "ausd")
@@ -201,7 +202,7 @@ func TestAggregateOracleVotesRecordsSoleTargetAbstentionAsEligibleOnly(t *testin
 			params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 			voteTargets := []string{"ausd"}
 
-			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+			keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "ausd")
@@ -233,7 +234,7 @@ func TestAggregateOracleVotesRecordsEveryTargetAbstentionAsEligibleOnly(t *testi
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"akrw", "asdr", "ausd"}
 
-	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, _, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.NewInt(30).Equal(keeper.scoreWeights[consKey(honestVoter)]))
@@ -262,7 +263,7 @@ func TestAggregateOracleVotesCountsPartialAbstentionAsAttended(t *testing.T) {
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"akrw", "asdr", "ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Contains(t, prices, "ausd")
@@ -289,7 +290,7 @@ func TestAggregateOracleVotesExcludesAbstentionFromPriceQuorum(t *testing.T) {
 	params.VoteThreshold = math.LegacyNewDecWithPrec(67, 2)
 	voteTargets := []string{"akrw", "ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	// The abstaining 40 power adds no ballot power, so ausd's 60 positive power
@@ -321,7 +322,7 @@ func TestAggregateOracleVotesGivesOutOfBandVotesNoRewardWeight(t *testing.T) {
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
 	voteTargets := []string{"ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.LegacyNewDec(100).Equal(prices["ausd"]))
@@ -366,7 +367,7 @@ func TestAggregateOracleVotesUsesCeilingForVoteThreshold(t *testing.T) {
 			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
 			voteTargets := []string{"ausd"}
 
-			_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+			_, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			if tc.expectsPrice {
@@ -424,7 +425,7 @@ func TestAggregateOracleVotesUsesCeilingForOverlapThreshold(t *testing.T) {
 			params.VoteThreshold = math.LegacyNewDecWithPrec(51, 2)
 			voteTargets := []string{"aaaa", "azzz"}
 
-			_, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+			_, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Contains(t, prices, "aaaa")
@@ -454,7 +455,7 @@ func TestAggregateOracleVotesUsesMedianOfValidatorCrossRates(t *testing.T) {
 	}
 	voteTargets := []string{"aaaa", "azzz"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.LegacyNewDec(100).Equal(prices["aaaa"]))
@@ -475,13 +476,19 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 			"azzz": math.LegacyNewDec(10),
 		}),
 		newTestVote(extremeVoter, 10, map[string]math.LegacyDec{
-			"aaaa": math.LegacyMustNewDecFromStr("1000000000000000000000000000000000000000000000000000000000000"),
-			"azzz": math.LegacySmallestDec(),
+			// Vote rates are bounded to MaxEncodedVoteRateBytes, so no
+			// transported pair can overflow a cross-rate quotient; the
+			// reachable unrepresentable case is a quotient that rounds to
+			// zero: the smallest reference report over the largest
+			// permitted target report. The overflow arm stays covered by
+			// the ballot-level cross-rate tests.
+			"aaaa": math.LegacySmallestDec(),
+			"azzz": math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 21)),
 		}),
 	}
 	voteTargets := []string{"aaaa", "azzz"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.LegacyNewDec(100).Equal(prices["aaaa"]))
@@ -491,7 +498,7 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(extremeVoter)])
 }
 
-func TestApplyOracleVoteExtensionsUsesDeterministicWriteOrder(t *testing.T) {
+func TestProcessVoteExtensionsUsesDeterministicWriteOrder(t *testing.T) {
 	votes := []testVote{
 		newTestVote([]byte{3}, 1, map[string]math.LegacyDec{
 			"azzz": math.LegacyNewDec(10),
@@ -511,7 +518,7 @@ func TestApplyOracleVoteExtensionsUsesDeterministicWriteOrder(t *testing.T) {
 	}
 	voteTargets := []string{"azzz", "aaaa", "ammm"}
 
-	keeper, _, err := applyOracleVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
+	keeper, _, err := processVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
 
 	require.NoError(t, err)
 	require.Equal(t, []string{"aaaa", "ammm", "azzz"}, keeper.exchangeRateOrder)
@@ -544,7 +551,7 @@ func TestAggregateOracleVotesFixedBandSkipsExtremeNonPositiveRate(t *testing.T) 
 	params := oracletypes.DefaultParams()
 	voteTargets := []string{"ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.True(t, math.LegacyNewDec(100).Equal(prices["ausd"]))
@@ -571,7 +578,7 @@ func TestAggregateOracleVotesMarksNonFunctioningBlockIneligible(t *testing.T) {
 	params.VoteThreshold = oracletypes.MinVoteThreshold
 	voteTargets := []string{"ausd", "akrw"}
 
-	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, _, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	// The participant prices two targets but contributes its 40 power once, so
@@ -594,7 +601,7 @@ func TestAggregateOracleVotesTreatsExactlyHalfParticipatingPowerAsFunctioning(t 
 	params.VoteThreshold = oracletypes.MinVoteThreshold
 	voteTargets := []string{"ausd"}
 
-	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, _, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	// Participating power is exactly half of total commit power, which the
@@ -641,7 +648,7 @@ func TestAggregateOracleVotesAppliesFunctioningBlockThreshold(t *testing.T) {
 			params.VoteThreshold = oracletypes.MinVoteThreshold
 			params.FunctioningBlockThreshold = tc.threshold
 
-			keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+			keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 			require.NoError(t, err)
 			require.Len(t, prices, 1)
@@ -658,6 +665,123 @@ func TestAggregateOracleVotesAppliesFunctioningBlockThreshold(t *testing.T) {
 	}
 }
 
+func TestAggregateOracleVotesAppliesParticipationThreshold(t *testing.T) {
+	anchor := []byte{1}
+	reporter := []byte{2}
+
+	tests := []struct {
+		name        string
+		threshold   math.LegacyDec
+		voteTargets []string
+		rates       map[string]math.LegacyDec
+		attended    bool
+	}{
+		{
+			name:        "zero threshold keeps the single-rate floor",
+			threshold:   math.LegacyZeroDec(),
+			voteTargets: []string{"aaaa", "abbb", "accc", "addd"},
+			rates:       map[string]math.LegacyDec{"aaaa": math.LegacyNewDec(100)},
+			attended:    true,
+		},
+		{
+			name:        "report below the floor is eligible only",
+			threshold:   oracletypes.MaxParticipationThreshold,
+			voteTargets: []string{"aaaa", "abbb", "accc", "addd"},
+			rates:       map[string]math.LegacyDec{"aaaa": math.LegacyNewDec(100)},
+			attended:    false,
+		},
+		{
+			name:        "report at the floor participates",
+			threshold:   oracletypes.MaxParticipationThreshold,
+			voteTargets: []string{"aaaa", "abbb", "accc", "addd"},
+			rates: map[string]math.LegacyDec{
+				"aaaa": math.LegacyNewDec(100),
+				"abbb": math.LegacyNewDec(100),
+			},
+			attended: true,
+		},
+		{
+			name:        "abstentions do not count toward the floor",
+			threshold:   oracletypes.MaxParticipationThreshold,
+			voteTargets: []string{"aaaa", "abbb", "accc", "addd"},
+			rates: map[string]math.LegacyDec{
+				"aaaa": math.LegacyNewDec(100),
+				"abbb": math.LegacyZeroDec(),
+				"accc": math.LegacyZeroDec(),
+			},
+			attended: false,
+		},
+		{
+			name:        "half threshold over three targets ceils to two",
+			threshold:   oracletypes.MaxParticipationThreshold,
+			voteTargets: []string{"aaaa", "abbb", "accc"},
+			rates:       map[string]math.LegacyDec{"aaaa": math.LegacyNewDec(100)},
+			attended:    false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// The anchor prices every target with majority power, so the block
+			// is functioning in every case and only the reporter's attendance
+			// moves with the threshold.
+			anchorRates := make(map[string]math.LegacyDec, len(tc.voteTargets))
+			for _, denom := range tc.voteTargets {
+				anchorRates[denom] = math.LegacyNewDec(100)
+			}
+			votes := []testVote{
+				newTestVote(anchor, 60, anchorRates),
+				newTestVote(reporter, 40, tc.rates),
+			}
+			params := oracletypes.DefaultParams()
+			params.VoteThreshold = oracletypes.MinVoteThreshold
+			params.ParticipationThreshold = tc.threshold
+
+			keeper, _, err := processVoteExtensions(t, votes, params, tc.voteTargets)
+
+			require.NoError(t, err)
+			require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(anchor)])
+			require.Equal(t, uint64(1), keeper.attendedCounts[consKey(anchor)])
+			require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(reporter)])
+			if tc.attended {
+				require.Equal(t, uint64(1), keeper.attendedCounts[consKey(reporter)])
+			} else {
+				require.Zero(t, keeper.attendedCounts[consKey(reporter)])
+			}
+		})
+	}
+}
+
+func TestAggregateOracleVotesExcludesBelowFloorPowerFromFunctioningGate(t *testing.T) {
+	fullVoter := []byte{1}
+	sparseMajority := []byte{2}
+	voteTargets := []string{"aaaa", "abbb", "accc", "addd"}
+	votes := []testVote{
+		newTestVote(fullVoter, 40, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(100),
+			"abbb": math.LegacyNewDec(100),
+			"accc": math.LegacyNewDec(100),
+			"addd": math.LegacyNewDec(100),
+		}),
+		newTestVote(sparseMajority, 60, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(100),
+		}),
+	}
+	params := oracletypes.DefaultParams()
+	params.VoteThreshold = oracletypes.MinVoteThreshold
+	params.ParticipationThreshold = oracletypes.MaxParticipationThreshold
+
+	keeper, _, err := processVoteExtensions(t, votes, params, voteTargets)
+
+	require.NoError(t, err)
+	// The sparse majority is below the participation floor, so its power must
+	// not keep the block functioning: participating power is 40 of 100 and
+	// nobody is graded. Counting below-floor power would instead grade every
+	// correlated coverage collapse as individual absence.
+	require.Zero(t, keeper.eligibleCounts[consKey(fullVoter)])
+	require.Zero(t, keeper.eligibleCounts[consKey(sparseMajority)])
+}
+
 func TestAggregateOracleVotesTreatsZeroTotalPowerAsNotFunctioning(t *testing.T) {
 	pricingVoter := []byte{1}
 	absentee := []byte{2}
@@ -671,7 +795,7 @@ func TestAggregateOracleVotesTreatsZeroTotalPowerAsNotFunctioning(t *testing.T) 
 	params.VoteThreshold = oracletypes.MinVoteThreshold
 	voteTargets := []string{"ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Empty(t, prices)
@@ -696,7 +820,7 @@ func TestAggregateOracleVotesRecordsEmptyReportAsEligibleOnly(t *testing.T) {
 	params.VoteThreshold = oracletypes.MinVoteThreshold
 	voteTargets := []string{"ausd"}
 
-	keeper, prices, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Contains(t, prices, "ausd")
@@ -721,7 +845,7 @@ func TestAggregateOracleVotesGradesInvalidReportsEligibleOnFunctioningBlocks(t *
 	params.VoteThreshold = oracletypes.MinVoteThreshold
 	voteTargets := []string{"ausd"}
 
-	keeper, _, err := applyOracleVoteExtensions(t, votes, params, voteTargets)
+	keeper, _, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), keeper.eligibleCounts[consKey(participant)])
@@ -760,7 +884,7 @@ func consKey(address []byte) string {
 	return sdk.ConsAddress(address).String()
 }
 
-func applyOracleVoteExtensions(
+func processVoteExtensions(
 	t *testing.T,
 	votes []testVote,
 	params oracletypes.Params,
@@ -860,13 +984,13 @@ func (k *recordingOracleKeeper) RecordVoteAccounting(
 	return nil
 }
 
-func (k *recordingOracleKeeper) GetVoteTargets(context.Context, int64) (oracletypes.VoteTargetSet, error) {
-	return oracletypes.VoteTargetSet{
-		Version: oracletypes.InitialVoteTargetVersion,
+func (k *recordingOracleKeeper) GetFeeds(context.Context, int64) (oracletypes.FeedSet, error) {
+	return oracletypes.FeedSet{
+		Version: oracletypes.InitialFeedVersion,
 		Denoms:  slices.Clone(k.voteTargets),
 	}, nil
 }
 
-func (k *recordingOracleKeeper) AdvanceVoteTargets(context.Context) error {
+func (k *recordingOracleKeeper) AdvanceFeeds(context.Context) error {
 	return nil
 }
