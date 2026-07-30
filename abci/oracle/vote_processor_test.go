@@ -27,7 +27,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 	val1 := sdk.ConsAddress("validator1")
 	val2 := sdk.ConsAddress("validator2")
 	val3 := sdk.ConsAddress("validator3")
-	voteTargetsErr := errors.New("vote targets unavailable")
+	feedsErr := errors.New("feeds unavailable")
 
 	testCases := []struct {
 		name            string
@@ -39,15 +39,15 @@ func TestProcessVoteExtensions(t *testing.T) {
 		expectedCause   error
 	}{
 		{
-			name: "vote target lookup preserves keeper category and cause",
+			name: "feed lookup preserves keeper category and cause",
 			req: &cometabci.RequestFinalizeBlock{
 				Height: 3,
 			},
 			expectErr:       true,
 			expectedErrorIs: arkabci.ErrOracleKeeper,
-			expectedCause:   voteTargetsErr,
+			expectedCause:   feedsErr,
 			setup: func(_ *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
-				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(oracletypes.VoteTargetSet{}, voteTargetsErr)
+				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(oracletypes.FeedSet{}, feedsErr)
 				return nil
 			},
 		},
@@ -60,8 +60,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 			expectErr:       true,
 			expectedErrorIs: arkabci.ErrMissingCommitInfo,
 			setup: func(_ *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
-				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(oracletypes.VoteTargetSet{
-					Version: oracletypes.InitialVoteTargetVersion,
+				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(oracletypes.FeedSet{
+					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},
 				}, nil)
 				return nil
@@ -74,8 +74,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
-				voteTargets := oracletypes.VoteTargetSet{
-					Version: oracletypes.InitialVoteTargetVersion,
+				voteTargets := oracletypes.FeedSet{
+					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},
 				}
 				params := oracletypes.DefaultParams()
@@ -92,7 +92,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 					},
 				})
 				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
-				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(voteTargets, nil)
+				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(voteTargets, nil)
 				keeper.EXPECT().
 					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
@@ -115,8 +115,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
-				voteTargets := oracletypes.VoteTargetSet{
-					Version: oracletypes.InitialVoteTargetVersion,
+				voteTargets := oracletypes.FeedSet{
+					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"akrw", "ausd"},
 				}
 				params := oracletypes.DefaultParams()
@@ -135,7 +135,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 					},
 				})
 				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
-				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(voteTargets, nil)
+				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(voteTargets, nil)
 				keeper.EXPECT().
 					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
@@ -158,8 +158,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 3)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
-				voteTargets := oracletypes.VoteTargetSet{
-					Version: oracletypes.InitialVoteTargetVersion,
+				voteTargets := oracletypes.FeedSet{
+					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},
 				}
 				params := oracletypes.DefaultParams()
@@ -178,7 +178,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 					},
 				})
 				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
-				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(voteTargets, nil)
+				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(voteTargets, nil)
 				// Only val3 participates, so 30 of 100 power leaves the block
 				// below the functioning threshold and nobody is graded.
 				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val1, math.ZeroInt(), false, false).Return(nil)
@@ -195,8 +195,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
-				voteTargets := oracletypes.VoteTargetSet{
-					Version: oracletypes.InitialVoteTargetVersion,
+				voteTargets := oracletypes.FeedSet{
+					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},
 				}
 				params := oracletypes.DefaultParams()
@@ -211,7 +211,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 					},
 				})
 				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)
-				keeper.EXPECT().GetVoteTargets(gomock.Any(), int64(2)).Return(voteTargets, nil)
+				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(voteTargets, nil)
 				keeper.EXPECT().
 					SetExchangeRateWithEvent(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, exchangeRate oracletypes.ExchangeRate) error {
@@ -236,8 +236,9 @@ func TestProcessVoteExtensions(t *testing.T) {
 			if tc.setup != nil {
 				tc.req.Txs = tc.setup(t, keeper)
 			}
+			// Finalise mode also exercises the vote-report telemetry path.
 			prices, err := oracle.ProcessVoteExtensions(
-				abcitestutil.NewSDKContext(3, 0),
+				abcitestutil.NewSDKContext(3, 0, sdk.ExecModeFinalize),
 				keeper,
 				voteExtensionCodec,
 				tc.req,

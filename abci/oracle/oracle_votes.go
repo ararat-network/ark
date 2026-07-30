@@ -35,21 +35,43 @@ type Vote struct {
 	// and do not count as participation. It is nil when the validator was
 	// absent or submitted an invalid payload.
 	Rates []VoteRate
+
+	// Invalid is true when the validator attached a payload that failed
+	// decoding or domain validation. Aggregation grades an invalid report
+	// exactly like an absent one; the flag feeds telemetry only and must never
+	// influence consensus state.
+	Invalid bool
+}
+
+// DecodeVoteRate decodes one vote-extension rate under the oracle's vote-rate
+// size policy. Vote extensions carry prices, so a much shorter encoding than
+// the state-level LegacyDec bound is accepted; the tighter bound is what keeps
+// the derived vote-extension capacity limits small.
+func DecodeVoteRate(bz []byte) (math.LegacyDec, error) {
+	if len(bz) > oracletypes.MaxEncodedVoteRateBytes {
+		return math.LegacyDec{}, fmt.Errorf(
+			"encoded oracle vote rate length %d exceeds maximum %d",
+			len(bz),
+			oracletypes.MaxEncodedVoteRateBytes,
+		)
+	}
+
+	return arkencoding.DecodeLegacyDec(bz)
 }
 
 // ParseVoteExtension converts transport rate bytes into domain rates.
 func ParseVoteExtension(voteExtension vetypes.OracleVoteExtension) (map[string]math.LegacyDec, error) {
-	if len(voteExtension.Rates) > oracletypes.MaxVoteTargets {
+	if len(voteExtension.Rates) > oracletypes.MaxFeeds {
 		return nil, fmt.Errorf(
 			"number of oracle vote extension rates %d exceeds maximum %d",
 			len(voteExtension.Rates),
-			oracletypes.MaxVoteTargets,
+			oracletypes.MaxFeeds,
 		)
 	}
 
 	rates := make(map[string]math.LegacyDec, len(voteExtension.Rates))
 	for denom, rawRate := range voteExtension.Rates {
-		rate, err := arkencoding.DecodeLegacyDec(rawRate)
+		rate, err := DecodeVoteRate(rawRate)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"invalid oracle vote extension rate for denom %s: %w",
@@ -68,37 +90,37 @@ func ParseVoteExtension(voteExtension vetypes.OracleVoteExtension) (map[string]m
 // keyed by canonical target index.
 func ValidateVoteExtension(
 	voteExtension vetypes.OracleVoteExtension,
-	targets oracletypes.VoteTargetSet,
+	feeds oracletypes.FeedSet,
 ) ([]VoteRate, error) {
-	if targets.Version == 0 {
+	if feeds.Version == 0 {
 		return nil, errors.New("expected vote-target version must be positive")
 	}
-	if voteExtension.TargetVersion != targets.Version {
+	if voteExtension.TargetVersion != feeds.Version {
 		return nil, fmt.Errorf(
 			"oracle vote extension target version %d does not match expected version %d",
 			voteExtension.TargetVersion,
-			targets.Version,
+			feeds.Version,
 		)
 	}
-	if len(voteExtension.Rates) > oracletypes.MaxVoteTargets {
+	if len(voteExtension.Rates) > oracletypes.MaxFeeds {
 		return nil, fmt.Errorf(
 			"number of oracle vote extension rates %d exceeds maximum %d",
 			len(voteExtension.Rates),
-			oracletypes.MaxVoteTargets,
+			oracletypes.MaxFeeds,
 		)
 	}
 
 	rates := make([]VoteRate, 0, len(voteExtension.Rates))
 	for denom, rawRate := range voteExtension.Rates {
-		targetIndex, found := slices.BinarySearch(targets.Denoms, denom)
+		targetIndex, found := slices.BinarySearch(feeds.Denoms, denom)
 		if !found {
 			return nil, fmt.Errorf(
 				"oracle vote extension target %s is not in expected targets %v",
 				denom,
-				targets.Denoms,
+				feeds.Denoms,
 			)
 		}
-		rate, err := arkencoding.DecodeLegacyDec(rawRate)
+		rate, err := DecodeVoteRate(rawRate)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"invalid oracle vote extension rate for denom %s: %w",
@@ -116,12 +138,13 @@ func ValidateVoteExtension(
 // and returns one Vote per validator entry. Invalid individual payloads yield
 // nil Rates and are treated like empty reports: the validator still counts
 // toward total commit power and accrues attendance eligibility on functioning
-// blocks, without making block finalisation fail. Extended-commit envelope
+// blocks, without making block finalisation fail. They are flagged Invalid so
+// telemetry can separate them from plain absences. Extended-commit envelope
 // errors remain fatal.
 func GetOracleVotes(
 	voteExtensionCodec *codec.VoteExtensionCodec,
 	proposal [][]byte,
-	targets oracletypes.VoteTargetSet,
+	feeds oracletypes.FeedSet,
 	maxVotes int,
 ) ([]Vote, error) {
 	if len(proposal) < arkabci.NumInjectedTxs {
@@ -142,10 +165,12 @@ func GetOracleVotes(
 
 		voteExtension, err := voteExtensionCodec.Decode(voteInfo.VoteExtension)
 		if err != nil {
+			votes[i].Invalid = true
 			continue
 		}
-		rates, err := ValidateVoteExtension(voteExtension, targets)
+		rates, err := ValidateVoteExtension(voteExtension, feeds)
 		if err != nil {
+			votes[i].Invalid = true
 			continue
 		}
 		votes[i].Rates = rates

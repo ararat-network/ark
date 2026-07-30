@@ -3,6 +3,7 @@ package oracle_test
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,6 +33,11 @@ func TestParseVoteExtension(t *testing.T) {
 	zeroRate := abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())
 	negativeRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(-1))
 	alternateRate := append([]byte{'+'}, validRate...)
+	// The widest permitted rate: MaxEncodedVoteRateBytes decimal digits of
+	// raw price*10^18.
+	maxSizeValue := math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 21))
+	maxSizeRate := abcitestutil.MustEncodeRate(t, maxSizeValue)
+	require.Len(t, maxSizeRate, oracletypes.MaxEncodedVoteRateBytes)
 
 	tests := []struct {
 		name        string
@@ -43,7 +49,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "complete report",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"akrw": validRate, "ausd": validRate},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expected: map[string]math.LegacyDec{
 				"akrw": math.LegacyNewDec(100),
@@ -54,7 +60,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "empty report",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expected: map[string]math.LegacyDec{},
 		},
@@ -62,7 +68,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "zero rate",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": zeroRate},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expected: map[string]math.LegacyDec{"ausd": math.LegacyZeroDec()},
 		},
@@ -70,7 +76,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "negative rate",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": negativeRate},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expected: map[string]math.LegacyDec{"ausd": math.LegacyNewDec(-1)},
 		},
@@ -78,7 +84,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "alternate integer representation",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": alternateRate},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expected: map[string]math.LegacyDec{"ausd": math.LegacyNewDec(100)},
 		},
@@ -86,7 +92,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "nil rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": nil},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
 		},
@@ -94,7 +100,7 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "empty rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": {}},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
 		},
@@ -102,23 +108,31 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "malformed rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": []byte("not-a-rate")},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
 		},
 		{
+			name: "longest permitted rate",
+			voteExt: vetypes.OracleVoteExtension{
+				Rates:         map[string][]byte{"ausd": maxSizeRate},
+				TargetVersion: oracletypes.InitialFeedVersion,
+			},
+			expected: map[string]math.LegacyDec{"ausd": maxSizeValue},
+		},
+		{
 			name: "oversized rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"ausd": make([]byte, arkencoding.MaxEncodedLegacyDecBytes+1)},
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				Rates:         map[string][]byte{"ausd": make([]byte, oracletypes.MaxEncodedVoteRateBytes+1)},
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expectedErr: "exceeds maximum",
 		},
 		{
 			name: "too many rates",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         makeRateMap(t, oracletypes.MaxVoteTargets+1),
-				TargetVersion: oracletypes.InitialVoteTargetVersion,
+				Rates:         makeRateMap(t, oracletypes.MaxFeeds+1),
+				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expectedErr: "exceeds maximum",
 		},
@@ -145,15 +159,15 @@ func TestParseVoteExtension(t *testing.T) {
 
 func TestValidateVoteExtension(t *testing.T) {
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
-	targets := oracletypes.VoteTargetSet{
-		Version: oracletypes.InitialVoteTargetVersion,
+	targets := oracletypes.FeedSet{
+		Version: oracletypes.InitialFeedVersion,
 		Denoms:  []string{"akrw", "ausd"},
 	}
 
 	tests := []struct {
 		name          string
 		voteExtension vetypes.OracleVoteExtension
-		targets       oracletypes.VoteTargetSet
+		targets       oracletypes.FeedSet
 		expectedErr   string
 	}{
 		{
@@ -197,6 +211,33 @@ func TestValidateVoteExtension(t *testing.T) {
 			expectedErr: "invalid oracle vote extension rate",
 		},
 		{
+			name: "rate at the size bound",
+			voteExtension: vetypes.OracleVoteExtension{
+				TargetVersion: targets.Version,
+				Rates: map[string][]byte{
+					"ausd": abcitestutil.MustEncodeRate(
+						t,
+						math.LegacyMustNewDecFromStr("1"+strings.Repeat("0", 21)),
+					),
+				},
+			},
+			targets: targets,
+		},
+		{
+			name: "rate above the size bound",
+			voteExtension: vetypes.OracleVoteExtension{
+				TargetVersion: targets.Version,
+				Rates: map[string][]byte{
+					"ausd": abcitestutil.MustEncodeRate(
+						t,
+						math.LegacyMustNewDecFromStr("1"+strings.Repeat("0", 22)),
+					),
+				},
+			},
+			targets:     targets,
+			expectedErr: "exceeds maximum",
+		},
+		{
 			name: "unexpected target",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
@@ -227,7 +268,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
 			},
-			targets: oracletypes.VoteTargetSet{
+			targets: oracletypes.FeedSet{
 				Denoms: targets.Denoms,
 			},
 			expectedErr: "expected vote-target version must be positive",
@@ -275,8 +316,8 @@ func TestGetOracleVotes(t *testing.T) {
 	unexpectedTargetVoteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 		"akrw": math.LegacyNewDec(100),
 	})
-	targets := oracletypes.VoteTargetSet{
-		Version: oracletypes.InitialVoteTargetVersion,
+	targets := oracletypes.FeedSet{
+		Version: oracletypes.InitialFeedVersion,
 		Denoms:  []string{"ausd"},
 	}
 
@@ -305,9 +346,16 @@ func TestGetOracleVotes(t *testing.T) {
 		require.Len(t, votes[0].Rates, 1)
 		require.Zero(t, votes[0].Rates[0].TargetIndex)
 		require.True(t, math.LegacyNewDec(100).Equal(votes[0].Rates[0].Value))
+		require.False(t, votes[0].Invalid)
 		for _, vote := range votes[1:] {
 			require.Nil(t, vote.Rates)
 		}
+		// The absent validator is the only nil-rates entry not flagged invalid.
+		require.True(t, votes[1].Invalid)
+		require.True(t, votes[2].Invalid)
+		require.False(t, votes[3].Invalid)
+		require.True(t, votes[4].Invalid)
+		require.True(t, votes[5].Invalid)
 	})
 
 	t.Run("valid empty report is equivalent to a missing extension", func(t *testing.T) {
@@ -326,6 +374,8 @@ func TestGetOracleVotes(t *testing.T) {
 		require.Len(t, votes, 2)
 		require.Empty(t, votes[0].Rates)
 		require.Empty(t, votes[1].Rates)
+		require.False(t, votes[0].Invalid)
+		require.False(t, votes[1].Invalid)
 	})
 
 	t.Run("extended commit decode error remains fatal", func(t *testing.T) {
@@ -336,12 +386,12 @@ func TestGetOracleVotes(t *testing.T) {
 
 func BenchmarkVoteExtension(b *testing.B) {
 	voteExtension := vetypes.OracleVoteExtension{
-		Rates:         makeRateMap(b, oracletypes.MaxVoteTargets),
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+		Rates:         makeRateMap(b, oracletypes.MaxFeeds),
+		TargetVersion: oracletypes.InitialFeedVersion,
 	}
-	targets := oracletypes.VoteTargetSet{
-		Version: oracletypes.InitialVoteTargetVersion,
-		Denoms:  makeTargetDenoms(oracletypes.MaxVoteTargets),
+	targets := oracletypes.FeedSet{
+		Version: oracletypes.InitialFeedVersion,
+		Denoms:  makeTargetDenoms(oracletypes.MaxFeeds),
 	}
 
 	b.Run("parse", func(b *testing.B) {
@@ -374,8 +424,8 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 		reportCount int
 	}{
 		{targetCount: 8, reportCount: 8},
-		{targetCount: oracletypes.MaxVoteTargets, reportCount: 8},
-		{targetCount: oracletypes.MaxVoteTargets, reportCount: oracletypes.MaxVoteTargets},
+		{targetCount: oracletypes.MaxFeeds, reportCount: 8},
+		{targetCount: oracletypes.MaxFeeds, reportCount: oracletypes.MaxFeeds},
 	}
 	for _, benchmarkCase := range cases {
 		b.Run(fmt.Sprintf(
@@ -383,8 +433,8 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 			benchmarkCase.targetCount,
 			benchmarkCase.reportCount,
 		), func(b *testing.B) {
-			targets := oracletypes.VoteTargetSet{
-				Version: oracletypes.InitialVoteTargetVersion,
+			targets := oracletypes.FeedSet{
+				Version: oracletypes.InitialFeedVersion,
 				Denoms:  makeTargetDenoms(benchmarkCase.targetCount),
 			}
 			voteExtension := vetypes.OracleVoteExtension{

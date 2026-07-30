@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	abcicodec "ark/abci/codec"
+	oraclemetrics "ark/abci/oracle/metrics"
 	arkabcitypes "ark/abci/types"
 	oracletypes "ark/x/oracle/types"
 )
@@ -24,10 +25,10 @@ func ProcessVoteExtensions(
 	req *cometabci.RequestFinalizeBlock,
 ) (map[string]math.LegacyDec, error) {
 	voteHeight := req.Height - 1
-	voteTargets, err := oracleKeeper.GetVoteTargets(ctx, voteHeight)
+	feeds, err := oracleKeeper.GetFeeds(ctx, voteHeight)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: get vote targets for height %d: %w",
+			"%w: get feeds for height %d: %w",
 			arkabcitypes.ErrOracleKeeper,
 			voteHeight,
 			err,
@@ -37,10 +38,11 @@ func ProcessVoteExtensions(
 	// If vote extensions have been enabled, the extended commit info - which
 	// contains the vote extensions - must be included in the request.
 	expectedVotes := len(req.DecidedLastCommit.Votes)
-	votes, err := GetOracleVotes(voteExtensionCodec, req.Txs, voteTargets, expectedVotes)
+	votes, err := GetOracleVotes(voteExtensionCodec, req.Txs, feeds, expectedVotes)
 	if err != nil {
 		return nil, fmt.Errorf("get oracle votes for block %d: %w", req.Height, err)
 	}
+	recordVoteReportTelemetry(ctx, votes)
 
 	params, err := oracleKeeper.GetParams(ctx)
 	if err != nil {
@@ -52,9 +54,9 @@ func ProcessVoteExtensions(
 		)
 	}
 	// Aggregate all oracle vote extensions into a single set of prices.
-	result := aggregateOracleVotes(votes, params, voteTargets.Denoms)
+	result := aggregateOracleVotes(votes, params, feeds.Denoms)
 
-	for _, denom := range voteTargets.Denoms {
+	for _, denom := range feeds.Denoms {
 		price, ok := result.prices[denom]
 		if !ok {
 			continue
@@ -94,4 +96,34 @@ func ProcessVoteExtensions(
 	}
 
 	return result.prices, nil
+}
+
+// recordVoteReportTelemetry classifies decoded reports for operators, keeping
+// invalid payloads distinguishable from plain absences. Telemetry only:
+// consensus never reads these signals, and only the canonical finalise
+// execution records them.
+func recordVoteReportTelemetry(ctx sdk.Context, votes []Vote) {
+	if ctx.ExecMode() != sdk.ExecModeFinalize {
+		return
+	}
+
+	logger := ctx.Logger()
+	var valid, empty, invalid int64
+	for _, vote := range votes {
+		switch {
+		case vote.Invalid:
+			invalid++
+			if logger != nil {
+				logger.Debug(
+					"oracle vote extension payload is invalid",
+					"validator", sdk.ConsAddress(vote.Validator.Address).String(),
+				)
+			}
+		case vote.Rates == nil:
+			empty++
+		default:
+			valid++
+		}
+	}
+	oraclemetrics.CountVoteReports(valid, empty, invalid)
 }
