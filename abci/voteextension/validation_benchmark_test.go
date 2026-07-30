@@ -52,7 +52,7 @@ func BenchmarkValidateExtendedCommit(b *testing.B) {
 			},
 		},
 	}
-	targetCounts := []int{len(oracletypes.DefaultTobinTaxes), oracletypes.MaxVoteTargets}
+	targetCounts := []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds}
 	extensions := make(map[int][]byte, len(targetCounts))
 	for _, targetCount := range targetCounts {
 		extensions[targetCount] = benchmarkVoteExtension(b, voteExtensionCodec, targetCount)
@@ -101,7 +101,7 @@ func benchmarkVoteExtension(b *testing.B, voteExtensionCodec *codec.VoteExtensio
 
 	extension, err := voteExtensionCodec.Encode(vetypes.OracleVoteExtension{
 		Rates:         rates,
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+		TargetVersion: oracletypes.InitialFeedVersion,
 	})
 	if err != nil {
 		b.Fatal(err)
