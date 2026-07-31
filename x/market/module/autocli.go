@@ -156,8 +156,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "CommitteeSetTobinTax",
 					Use:       "committee-set-tobin-tax [denom] [tobin-tax]",
-					Short:     "Raise a per-denomination Tobin rate as the conversion committee",
-					Long:      "Create or replace one Tobin override at or above the denomination's current effective rate, up to the mandate's cap. The committee only raises; lowering or removing an override is a governance proposal. The expected term must match the live appointment.",
+					Short:     "Set a per-denomination Tobin rate as the conversion committee",
+					Long:      "Create or replace one Tobin override inside the band the mandate delegates: at least the chain-wide default rate and at most the mandate's cap. Going below the default is a governance proposal, as is removing an override. The expected term must match the live appointment.",
 					Example:   fmt.Sprintf("%s tx market committee-set-tobin-tax amnt 0.02", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},
