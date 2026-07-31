@@ -40,8 +40,8 @@ func TestRecordOracleResponse(t *testing.T) {
 
 	responses := metricFamily(t, families, "ark_oracle_responses_total")
 	require.Len(t, responses.Metric, 2)
-	require.Equal(t, float64(1), counterValue(t, responses, "Success"))
-	require.Equal(t, float64(1), counterValue(t, responses, "Failure"))
+	require.Equal(t, float64(1), counterValue(t, responses, "success"))
+	require.Equal(t, float64(1), counterValue(t, responses, "failure"))
 
 	duration := metricFamily(t, families, "ark_oracle_response_duration_milliseconds")
 	require.Len(t, duration.Metric, 1)

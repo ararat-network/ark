@@ -51,7 +51,7 @@ func RecordOracleResponse(duration time.Duration, err error) {
 
 func responseStatus(err error) string {
 	if err == nil {
-		return "Success"
+		return "success"
 	}
-	return "Failure"
+	return "failure"
 }
