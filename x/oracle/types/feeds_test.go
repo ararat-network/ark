@@ -88,7 +88,7 @@ func TestValidatePricedDenom(t *testing.T) {
 	}
 }
 
-func TestNewFeedsCanonicalisesFeedIDs(t *testing.T) {
+func TestNewFeedsCanonicalisesDenoms(t *testing.T) {
 	input := []string{"ausd", "agold"}
 
 	feeds := types.NewFeeds(input)
@@ -107,13 +107,13 @@ func TestFeedsAtHeight(t *testing.T) {
 		transitions []types.FeedTransition
 		voteHeight  int64
 		wantVersion uint64
-		wantFeedIDs []string
+		wantDenoms  []string
 	}{
 		{
 			name:        "no transitions",
 			voteHeight:  100,
 			wantVersion: 4,
-			wantFeedIDs: []string{"agold", "ausd"},
+			wantDenoms:  []string{"agold", "ausd"},
 		},
 		{
 			name: "before activation",
@@ -122,7 +122,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			},
 			voteHeight:  19,
 			wantVersion: 4,
-			wantFeedIDs: []string{"agold", "ausd"},
+			wantDenoms:  []string{"agold", "ausd"},
 		},
 		{
 			name: "at activation",
@@ -131,7 +131,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			},
 			voteHeight:  20,
 			wantVersion: 5,
-			wantFeedIDs: []string{"agold", "asilver", "ausd"},
+			wantDenoms:  []string{"agold", "asilver", "ausd"},
 		},
 		{
 			name: "removal at activation",
@@ -140,7 +140,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			},
 			voteHeight:  20,
 			wantVersion: 5,
-			wantFeedIDs: []string{"ausd"},
+			wantDenoms:  []string{"ausd"},
 		},
 		{
 			name: "two records one batch bump version once",
@@ -150,7 +150,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			},
 			voteHeight:  20,
 			wantVersion: 5,
-			wantFeedIDs: []string{"asilver", "ausd"},
+			wantDenoms:  []string{"asilver", "ausd"},
 		},
 		{
 			name: "consecutive heights bump version twice",
@@ -160,7 +160,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			},
 			voteHeight:  21,
 			wantVersion: 6,
-			wantFeedIDs: []string{"agold", "asilver", "ausd", "azinc"},
+			wantDenoms:  []string{"agold", "asilver", "ausd", "azinc"},
 		},
 		{
 			name: "later batch excluded at earlier height",
@@ -170,7 +170,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			},
 			voteHeight:  20,
 			wantVersion: 5,
-			wantFeedIDs: []string{"agold", "asilver", "ausd"},
+			wantDenoms:  []string{"agold", "asilver", "ausd"},
 		},
 	}
 
@@ -185,7 +185,7 @@ func TestFeedsAtHeight(t *testing.T) {
 			got := feeds.AtHeight(tt.voteHeight)
 
 			require.Equal(t, tt.wantVersion, got.Version)
-			require.Equal(t, tt.wantFeedIDs, got.Denoms)
+			require.Equal(t, tt.wantDenoms, got.Denoms)
 		})
 	}
 }
@@ -292,7 +292,7 @@ func TestFeedsValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "valid denom-shaped feed ids",
+			name: "valid feed denoms",
 			mutate: func(feeds *types.Feeds) {
 				feeds.Denoms = []string{"aeur", "ausd"}
 			},
@@ -352,21 +352,21 @@ func TestFeedsValidate(t *testing.T) {
 			expectErr: "must be sorted by unique denom",
 		},
 		{
-			name: "invalid active feed id",
+			name: "invalid active feed denom",
 			mutate: func(feeds *types.Feeds) {
 				feeds.Denoms = []string{"aGOLD"}
 			},
 			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "reserved active feed id",
+			name: "reserved active feed denom",
 			mutate: func(feeds *types.Feeds) {
 				feeds.Denoms = []string{chain.NoahBaseDenom}
 			},
 			expectErr: "is the numeraire and is never priced",
 		},
 		{
-			name: "invalid transition feed id",
+			name: "invalid transition feed denom",
 			mutate: func(feeds *types.Feeds) {
 				feeds.Transitions = []types.FeedTransition{
 					{Denom: "SILVER", Direction: add, ActivationVoteHeight: 10},
@@ -375,7 +375,7 @@ func TestFeedsValidate(t *testing.T) {
 			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "reserved transition feed id",
+			name: "reserved transition feed denom",
 			mutate: func(feeds *types.Feeds) {
 				feeds.Transitions = []types.FeedTransition{
 					{Denom: chain.NoahBaseDenom, Direction: add, ActivationVoteHeight: 10},
@@ -422,7 +422,7 @@ func TestFeedsValidate(t *testing.T) {
 			expectErr: "must be sorted by activation height and denom",
 		},
 		{
-			name: "unsorted transitions by feed id within a batch",
+			name: "unsorted transitions by feed denom within a batch",
 			mutate: func(feeds *types.Feeds) {
 				feeds.Transitions = []types.FeedTransition{
 					{Denom: "azinc", Direction: add, ActivationVoteHeight: 10},

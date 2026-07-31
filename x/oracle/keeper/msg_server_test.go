@@ -133,7 +133,7 @@ func (s *KeeperTestSuite) TestAddFeed() {
 		s.Require().Error(err)
 	})
 
-	s.Run("rejects an invalid feed id", func() {
+	s.Run("rejects an invalid feed denom", func() {
 		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
 
 		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{

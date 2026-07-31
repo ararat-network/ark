@@ -81,7 +81,7 @@ func (s *KeeperTestSuite) TestFeedPhaseReadsRegistry() {
 	}
 }
 
-func (s *KeeperTestSuite) TestScheduleFeedTransitionRejectsInvalidFeedID() {
+func (s *KeeperTestSuite) TestScheduleFeedTransitionRejectsInvalidDenom() {
 	s.seedFeeds(feedUSD)
 
 	s.Require().ErrorContains(
