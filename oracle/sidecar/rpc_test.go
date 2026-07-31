@@ -78,7 +78,7 @@ func TestPricesOmitsMissingFeeds(t *testing.T) {
 
 	require.Empty(t, response.Prices)
 	require.False(t, response.Timestamp.IsZero())
-	require.Equal(t, version.Version, response.Version)
+	require.Equal(t, Version(), response.Version)
 }
 
 func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {

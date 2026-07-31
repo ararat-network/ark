@@ -3,11 +3,12 @@ package cmd
 import (
 	"bytes"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cosmos/cosmos-sdk/version"
+	"ark/oracle/sidecar"
 )
 
 func TestRootCmdWithoutArgsShowsHelp(t *testing.T) {
@@ -105,5 +106,6 @@ func TestNewVersionCmdPrintsVersion(t *testing.T) {
 	err := cmd.Execute()
 
 	require.NoError(t, err)
-	require.Equal(t, version.Version+"\n", out.String())
+	require.Equal(t, sidecar.Version()+"\n", out.String())
+	require.NotEmpty(t, strings.TrimSpace(out.String()))
 }

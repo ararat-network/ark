@@ -11,8 +11,6 @@ import (
 
 	"cosmossdk.io/math"
 
-	"github.com/cosmos/cosmos-sdk/version"
-
 	sidecarinternal "ark/oracle/sidecar/internal"
 	sidecartypes "ark/oracle/sidecar/types"
 	"ark/oracle/types"
@@ -52,7 +50,7 @@ func (o *Oracle) Prices(ctx context.Context, req *types.OraclePricesRequest) (*t
 	return &types.OraclePricesResponse{
 		Prices:    prices,
 		Timestamp: snapshot.Timestamp,
-		Version:   version.Version,
+		Version:   Version(),
 	}, nil
 }
 
@@ -87,7 +85,7 @@ func toReqPrices(prices sidecartypes.FeedPrices) (map[string][]byte, error) {
 
 // Version returns the version of the oracle server.
 func (o *Oracle) Version(_ context.Context, _ *types.OracleVersionRequest) (*types.OracleVersionResponse, error) {
-	return &types.OracleVersionResponse{Version: version.Version}, nil
+	return &types.OracleVersionResponse{Version: Version()}, nil
 }
 
 // recoverUnaryPanic is the RPC boundary middleware.

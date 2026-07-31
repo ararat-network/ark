@@ -16,8 +16,6 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"github.com/cosmos/cosmos-sdk/version"
-
 	transporttypes "ark/oracle/types"
 )
 
@@ -360,11 +358,11 @@ func TestServerServesInitialCommittedSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, response)
 	require.True(t, response.Timestamp.IsZero())
-	require.Equal(t, version.Version, response.Version)
+	require.Equal(t, Version(), response.Version)
 
 	versionResponse, err := client.Version(context.Background(), &transporttypes.OracleVersionRequest{})
 	require.NoError(t, err)
-	require.Equal(t, version.Version, versionResponse.Version)
+	require.Equal(t, Version(), versionResponse.Version)
 
 	cancel()
 	requireOracleStopped(t, errCh)

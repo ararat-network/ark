@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cosmos/cosmos-sdk/version"
+	"ark/oracle/sidecar"
 )
 
 const (
@@ -62,7 +62,7 @@ func newVersionCmd() *cobra.Command {
 		Short: "Print the version of the oracle.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, _ []string) {
-			fmt.Fprintln(cmd.OutOrStdout(), version.Version)
+			fmt.Fprintln(cmd.OutOrStdout(), sidecar.Version())
 		},
 	}
 }
