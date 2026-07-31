@@ -11,6 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	chain "ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
@@ -137,6 +138,7 @@ func RandomisedGenState(simState *module.SimulationState) {
 		[]types.AttendanceRecord{},
 		types.NewAccounting(params),
 		types.DefaultFeeds(),
+		chain.SDRBaseDenom,
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

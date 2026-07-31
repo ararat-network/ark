@@ -70,6 +70,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 						{ProtoField: "denom"},
 					},
 				},
+				{
+					RpcMethod: "ReferenceDenom",
+					Use:       "reference-denom",
+					Short:     "Query the protocol reference denomination",
+					Example:   fmt.Sprintf("%s query oracle reference-denom", version.AppName),
+				},
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
@@ -83,6 +89,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					GovProposal: true,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "params"},
+					},
+				},
+				{
+					RpcMethod:   "SetReferenceDenom",
+					Use:         "set-reference-denom-proposal [reference-denom]",
+					Short:       "Submit a proposal to re-point the protocol reference denomination",
+					Example:     fmt.Sprintf("%s tx oracle set-reference-denom-proposal asdr", version.AppName),
+					GovProposal: true,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "reference_denom"},
 					},
 				},
 			},
