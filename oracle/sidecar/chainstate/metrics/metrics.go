@@ -20,14 +20,14 @@ func init() {
 
 	refreshes, err = meter.Int64Counter(
 		"ark.oracle.chainstate.refreshes",
-		metric.WithDescription("Number of chain state vote-target refresh attempts"),
+		metric.WithDescription("Number of chain state feed refresh attempts"),
 	)
 	if err != nil {
 		panic(err)
 	}
 }
 
-// RecordRefresh records one chainstate vote-target refresh attempt.
+// RecordRefresh records one chainstate feed refresh attempt.
 func RecordRefresh(ctx context.Context, status string) {
 	refreshes.Add(
 		ctx,

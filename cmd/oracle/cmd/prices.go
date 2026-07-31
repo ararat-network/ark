@@ -177,12 +177,12 @@ func writePricesTable(w io.Writer, view pricesView) error {
 		return fmt.Errorf("writing oracle price header: %w", err)
 	}
 
-	denoms := make([]string, 0, len(view.Prices))
+	feeds := make([]string, 0, len(view.Prices))
 	for denom := range view.Prices {
-		denoms = append(denoms, denom)
+		feeds = append(feeds, denom)
 	}
-	sort.Strings(denoms)
-	for _, denom := range denoms {
+	sort.Strings(feeds)
+	for _, denom := range feeds {
 		if _, err := fmt.Fprintf(tw, "%s\t%s\n", denom, view.Prices[denom]); err != nil {
 			return fmt.Errorf("writing oracle price %q: %w", denom, err)
 		}

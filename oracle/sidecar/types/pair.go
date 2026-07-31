@@ -24,10 +24,10 @@ func NewPair(base, quote string) (Pair, error) {
 	return pair, nil
 }
 
-// FromDenom converts a canonical a-prefixed vote-target denom into its
-// corresponding NOAH/QUOTE pair.
+// FromDenom converts a canonical a-prefixed feed denom into its corresponding
+// NOAH/QUOTE pair.
 func FromDenom(denom string) (Pair, error) {
-	if err := chain.ValidateNativeBaseDenom(denom); err != nil {
+	if err := chain.ValidatePricedDenom(denom); err != nil {
 		return "", err
 	}
 
@@ -98,8 +98,8 @@ func (p Pair) Quote() string {
 	return quote
 }
 
-// VoteTargetDenom returns the public vote-target denom represented by the pair quote.
-func (p Pair) VoteTargetDenom() string {
+// Denom returns the public feed denom represented by the pair quote.
+func (p Pair) Denom() string {
 	return "a" + strings.ToLower(p.Quote())
 }
 

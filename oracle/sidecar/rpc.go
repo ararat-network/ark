@@ -19,7 +19,7 @@ import (
 	"ark/pkg/encoding"
 )
 
-// Prices returns the runtime's latest cached denom prices.
+// Prices returns the runtime's latest cached feed prices.
 //
 // This RPC does not fetch providers. It snapshots runtime cache state, projects
 // it into the generated transport shape, and leaves ongoing fetch work to the
@@ -56,10 +56,10 @@ func (o *Oracle) Prices(ctx context.Context, req *types.OraclePricesRequest) (*t
 	}, nil
 }
 
-// toReqPrices encodes public denom prices into the generated transport payload.
-// Runtime already projects pair prices to active denoms, so this conversion
-// accepts denom-keyed prices and rejects nil values at the RPC boundary.
-func toReqPrices(prices sidecartypes.DenomPrices) (map[string][]byte, error) {
+// toReqPrices encodes public feed prices into the generated transport payload.
+// Runtime already projects pair prices to active feeds, so this conversion
+// accepts feed-keyed prices and rejects nil values at the RPC boundary.
+func toReqPrices(prices sidecartypes.FeedPrices) (map[string][]byte, error) {
 	result := make(map[string][]byte, len(prices))
 
 	for ticker, price := range prices {

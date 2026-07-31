@@ -11,7 +11,7 @@ import (
 	"cosmossdk.io/log/v2"
 )
 
-// Client polls the chain's oracle query service for vote-target denoms and
+// Client polls the chain's oracle query service for the active feed set and
 // serves the latest successful snapshot to the sidecar runtime.
 type Client struct {
 	logger      log.Logger
@@ -22,10 +22,10 @@ type Client struct {
 	// Config is mutable through Update and read by the polling loop.
 	cfg Config
 
-	// Cached chain state. targets is the last successful snapshot, including an
+	// Cached chain state. feeds is the last successful snapshot, including an
 	// authoritative empty snapshot. hasSnapshot distinguishes that state from a
 	// client that has not completed any successful query yet.
-	targets     []string
+	feeds       []string
 	hasSnapshot bool
 }
 
@@ -50,13 +50,13 @@ func NewClient(cfg Config, opts ...Option) (*Client, error) {
 	if c.logger == nil {
 		return nil, errors.New("logger is nil")
 	}
-	c.logger = c.logger.With("chain_state_client", "vote_targets")
+	c.logger = c.logger.With("chain_state_client", "feeds")
 
 	return c, nil
 }
 
 // Run blocks on the poll loop and cleans up lifecycle state before returning.
-// Callers should run it in the owning lifecycle and use VoteTargets to read the
+// Callers should run it in the owning lifecycle and use Feeds to read the
 // cached snapshot.
 func (c *Client) Run(ctx context.Context) error {
 	if ctx == nil {
@@ -97,21 +97,21 @@ func (c *Client) Update(cfg Config) {
 	c.cfg = cfg
 	c.mut.Unlock()
 
-	c.logger.Info("updated chain state vote-target client config")
+	c.logger.Info("updated chain state feed client config")
 }
 
-// VoteTargets returns a copy of the latest successful vote-target snapshot. It
-// returns an error until the first successful snapshot is cached; later refresh
-// failures preserve the last successful snapshot, including an empty one.
-func (c *Client) VoteTargets() ([]string, error) {
+// Feeds returns a copy of the latest successful feed snapshot. It returns an
+// error until the first successful snapshot is cached; later refresh failures
+// preserve the last successful snapshot, including an empty one.
+func (c *Client) Feeds() ([]string, error) {
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 
 	if !c.hasSnapshot {
-		return nil, errors.New("no vote targets fetched yet")
+		return nil, errors.New("no feeds fetched yet")
 	}
 
-	return append([]string{}, c.targets...), nil
+	return append([]string{}, c.feeds...), nil
 }
 
 // getConfig returns a copy of the current polling config under the client lock.

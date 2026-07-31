@@ -63,24 +63,24 @@ func TestFromDenom(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name:  "converts canonical vote target",
+			name:  "converts canonical feed denom",
 			denom: "ausd",
 			want:  "NOAH/USD",
 		},
 		{
-			name:    "rejects uppercase vote target",
+			name:    "rejects uppercase feed denom",
 			denom:   "aUSD",
-			wantErr: "canonical lowercase Ark-native base denom",
+			wantErr: "Ark-native base denom matching",
 		},
 		{
 			name:    "rejects path denom",
 			denom:   "afoo/bar",
-			wantErr: "without path separators",
+			wantErr: "Ark-native base denom matching",
 		},
 		{
 			name:    "rejects surrounding whitespace",
 			denom:   " ausd ",
-			wantErr: "Ark-native base denom beginning with a",
+			wantErr: "Ark-native base denom matching",
 		},
 	}
 
@@ -227,7 +227,7 @@ func TestPairComponents(t *testing.T) {
 	}
 }
 
-func TestPairVoteTargetDenom(t *testing.T) {
+func TestPairDenom(t *testing.T) {
 	tests := []struct {
 		name string
 		pair Pair
@@ -239,7 +239,7 @@ func TestPairVoteTargetDenom(t *testing.T) {
 			want: "ausd",
 		},
 		{
-			name: "preserves terra sdr vote target spelling",
+			name: "preserves terra sdr feed denom spelling",
 			pair: "USDT/SDR",
 			want: "asdr",
 		},
@@ -247,8 +247,8 @@ func TestPairVoteTargetDenom(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.pair.VoteTargetDenom(); got != tt.want {
-				t.Fatalf("VoteTargetDenom() = %q, want %q", got, tt.want)
+			if got := tt.pair.Denom(); got != tt.want {
+				t.Fatalf("Denom() = %q, want %q", got, tt.want)
 			}
 		})
 	}

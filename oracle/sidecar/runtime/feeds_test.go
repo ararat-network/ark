@@ -13,25 +13,25 @@ import (
 	oracletestutil "ark/oracle/sidecar/runtime/testutil"
 )
 
-func TestRunUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
+func TestRunUsesFeedsWhenRefreshSucceeds(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsClient.EXPECT().
+		Feeds().
 		Return([]string{"ausd"}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"akrw"}
+	cfg.FallbackFeeds = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -46,25 +46,25 @@ func TestRunUsesVoteTargetsWhenRefreshSucceeds(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-func TestRunUsesAuthoritativeEmptyVoteTargets(t *testing.T) {
+func TestRunUsesAuthoritativeEmptyFeeds(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsClient.EXPECT().
+		Feeds().
 		Return([]string{}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"akrw"}
+	cfg.FallbackFeeds = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -81,25 +81,25 @@ func TestRunUsesAuthoritativeEmptyVoteTargets(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-func TestRunDoesNotRestartProviderWhenVoteTargetsAreUnchanged(t *testing.T) {
+func TestRunDoesNotRestartProviderWhenFeedsAreUnchanged(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRun(mp.fetcher, started)
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsClient.EXPECT().
+		Feeds().
 		Return([]string{"ausd"}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ausd"}
+	cfg.FallbackFeeds = []string{"ausd"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -113,7 +113,7 @@ func TestRunDoesNotRestartProviderWhenVoteTargetsAreUnchanged(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-func TestRunRestartsStoppedProviderWhenVoteTargetsChangeMarkets(t *testing.T) {
+func TestRunRestartsStoppedProviderWhenFeedsChangeMarkets(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	firstStarted := make(chan struct{})
@@ -126,20 +126,20 @@ func TestRunRestartsStoppedProviderWhenVoteTargetsChangeMarkets(t *testing.T) {
 		[]providertypes.Ticker{"NOAHUSD"},
 		[]providertypes.Ticker{"NOAHKRW"},
 	)
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsClient.EXPECT().
+		Feeds().
 		Return([]string{"akrw"}, nil).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ausd"}
+	cfg.FallbackFeeds = []string{"ausd"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -153,25 +153,25 @@ func TestRunRestartsStoppedProviderWhenVoteTargetsChangeMarkets(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-func TestRunUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
+func TestRunUsesFallbackFeedsWhenFeedsFailBeforeSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsClient.EXPECT().
+		Feeds().
 		Return(nil, errors.New("node unavailable")).
 		AnyTimes()
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"akrw"}
+	cfg.FallbackFeeds = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -186,17 +186,17 @@ func TestRunUsesFallbackDenomsWhenVoteTargetsFailBeforeSuccess(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
+func TestRunKeepsLastFeedsAfterRefreshFailure(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
 	calls := 0
 	callCh := make(chan int, 2)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient.EXPECT().
+		Feeds().
 		DoAndReturn(func() ([]string, error) {
 			calls++
 			select {
@@ -212,11 +212,11 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"akrw"}
+	cfg.FallbackFeeds = []string{"akrw"}
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -252,6 +252,6 @@ func requireCallNumber(t *testing.T, calls <-chan int, want int) {
 	case got := <-calls:
 		require.Equal(t, want, got)
 	case <-time.After(time.Second):
-		t.Fatalf("vote-target call %d did not occur", want)
+		t.Fatalf("feed call %d did not occur", want)
 	}
 }

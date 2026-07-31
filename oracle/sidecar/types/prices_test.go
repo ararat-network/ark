@@ -48,39 +48,39 @@ func TestParsePriceBoundsLegacyDecMagnitude(t *testing.T) {
 	}
 }
 
-func TestPricesByDenomProjectsPairPricesToVoteTargets(t *testing.T) {
+func TestPricesByFeedProjectsPairPricesToFeeds(t *testing.T) {
 	prices := Prices{
 		"USDT/USD": big.NewFloat(1.23),
 		"USDT/KRW": big.NewFloat(1300),
 		"USDT/JPY": big.NewFloat(160),
 	}
 
-	got := PricesByDenom(prices, []string{"ausd", "akrw"})
+	got := PricesByFeed(prices, []string{"ausd", "akrw"})
 
 	if len(got) != 2 {
-		t.Fatalf("PricesByDenom() len = %d, want 2", len(got))
+		t.Fatalf("PricesByFeed() len = %d, want 2", len(got))
 	}
 	if got["ausd"].Cmp(big.NewFloat(1.23)) != 0 {
-		t.Fatalf("PricesByDenom()[ausd] = %s, want 1.23", got["ausd"].Text('f', -1))
+		t.Fatalf("PricesByFeed()[ausd] = %s, want 1.23", got["ausd"].Text('f', -1))
 	}
 	if got["akrw"].Cmp(big.NewFloat(1300)) != 0 {
-		t.Fatalf("PricesByDenom()[akrw] = %s, want 1300", got["akrw"].Text('f', -1))
+		t.Fatalf("PricesByFeed()[akrw] = %s, want 1300", got["akrw"].Text('f', -1))
 	}
 	if _, ok := got["ajpy"]; ok {
-		t.Fatal("PricesByDenom() included non-target ajpy")
+		t.Fatal("PricesByFeed() included non-target ajpy")
 	}
 }
 
-func TestPricesByDenomReturnsDeepCopy(t *testing.T) {
+func TestPricesByFeedReturnsDeepCopy(t *testing.T) {
 	prices := Prices{
 		"USDT/USD": big.NewFloat(1.23),
 	}
 
-	got := PricesByDenom(prices, []string{"ausd"})
+	got := PricesByFeed(prices, []string{"ausd"})
 	got["ausd"].SetFloat64(9.99)
 
-	got = PricesByDenom(prices, []string{"ausd"})
+	got = PricesByFeed(prices, []string{"ausd"})
 	if got["ausd"].Cmp(big.NewFloat(1.23)) != 0 {
-		t.Fatalf("PricesByDenom() = %s, want 1.23", got["ausd"].Text('f', -1))
+		t.Fatalf("PricesByFeed() = %s, want 1.23", got["ausd"].Text('f', -1))
 	}
 }

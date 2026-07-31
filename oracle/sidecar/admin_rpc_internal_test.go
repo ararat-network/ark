@@ -28,7 +28,7 @@ import (
 func TestOracleReloadConfigLoadsConstructionPath(t *testing.T) {
 	initialCfg := newTestRuntimeConfig()
 	reloadedCfg := initialCfg.Clone()
-	reloadedCfg.FallbackDenoms = []string{"akrw"}
+	reloadedCfg.FallbackFeeds = []string{"akrw"}
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
@@ -64,7 +64,7 @@ func TestOracleReloadConfigPreservesRuntimeAfterInvalidFile(t *testing.T) {
 func TestAdminServiceReloadsConfigOverGRPC(t *testing.T) {
 	initialCfg := newTestRuntimeConfig()
 	reloadedCfg := initialCfg.Clone()
-	reloadedCfg.FallbackDenoms = []string{"akrw"}
+	reloadedCfg.FallbackFeeds = []string{"akrw"}
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
@@ -139,7 +139,7 @@ func newReloadTestOracle(t *testing.T, cfg runtime.Config, configPath string) *O
 			"NOAH/USD": mustBigFloat(t, "1.25"),
 			"NOAH/KRW": mustBigFloat(t, "1300"),
 		}),
-		unavailableVoteTargetsClient{},
+		unavailableFeedsClient{},
 		ProcessConfig{
 			ServerAddress:     "127.0.0.1:0",
 			RuntimeConfigPath: configPath,
@@ -147,17 +147,17 @@ func newReloadTestOracle(t *testing.T, cfg runtime.Config, configPath string) *O
 	)
 }
 
-type unavailableVoteTargetsClient struct{}
+type unavailableFeedsClient struct{}
 
-func (unavailableVoteTargetsClient) Run(ctx context.Context) error {
+func (unavailableFeedsClient) Run(ctx context.Context) error {
 	<-ctx.Done()
 	return ctx.Err()
 }
 
-func (unavailableVoteTargetsClient) Update(chainstate.Config) {}
+func (unavailableFeedsClient) Update(chainstate.Config) {}
 
-func (unavailableVoteTargetsClient) VoteTargets() ([]string, error) {
-	return nil, errors.New("vote targets unavailable")
+func (unavailableFeedsClient) Feeds() ([]string, error) {
+	return nil, errors.New("feeds unavailable")
 }
 
 func writeRuntimeConfig(t *testing.T, cfg any) string {

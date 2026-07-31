@@ -326,7 +326,7 @@ func TestServerServesInitialCommittedSnapshot(t *testing.T) {
 		t,
 		cfg,
 		newServerTestFetcher(nil),
-		newStaticChainStateClient(cfg.FallbackDenoms),
+		newStaticChainStateClient(cfg.FallbackFeeds),
 		ProcessConfig{ServerAddress: "127.0.0.1:0"},
 	)
 	startTestRuntime(t, oracle)

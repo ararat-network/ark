@@ -100,7 +100,7 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 		shortCfg.Name: shortCfg,
 	})
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ausd"}
+	cfg.FallbackFeeds = []string{"ausd"}
 
 	oracle, err := runtime.NewRuntime(
 		cfg,
@@ -129,7 +129,7 @@ func TestRunUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T) {
 
 	cfg := testRuntimeConfigWithUnknownProvider()
 	cfg.UpdateInterval = 5 * time.Millisecond
-	cfg.FallbackDenoms = []string{"ausd"}
+	cfg.FallbackFeeds = []string{"ausd"}
 	cfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
 		Pair:       "NOAH/USD",
 		Price:      "0.25",
@@ -156,7 +156,7 @@ func TestRunUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-func TestRunRecordsMissingPriceMetricsFromFallbackDenoms(t *testing.T) {
+func TestRunRecordsMissingPriceMetricsFromFallbackFeeds(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
@@ -215,25 +215,25 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 		}).
 		AnyTimes()
 
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsStarted := make(chan struct{})
-	allowVoteTargets := make(chan struct{})
-	var voteTargetsStartedOnce sync.Once
-	var unblockVoteTargetsOnce sync.Once
-	unblockVoteTargets := func() {
-		unblockVoteTargetsOnce.Do(func() {
-			close(allowVoteTargets)
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsStarted := make(chan struct{})
+	allowFeeds := make(chan struct{})
+	var feedsStartedOnce sync.Once
+	var unblockFeedsOnce sync.Once
+	unblockFeeds := func() {
+		unblockFeedsOnce.Do(func() {
+			close(allowFeeds)
 		})
 	}
-	defer unblockVoteTargets()
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	defer unblockFeeds()
+	feedsClient.EXPECT().
+		Feeds().
 		DoAndReturn(func() ([]string, error) {
-			voteTargetsStartedOnce.Do(func() {
-				close(voteTargetsStarted)
+			feedsStartedOnce.Do(func() {
+				close(feedsStarted)
 			})
-			<-allowVoteTargets
+			<-allowFeeds
 			return []string{"ausd"}, nil
 		}).
 		AnyTimes()
@@ -243,13 +243,13 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 	oracle, err := runtime.NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		runtime.WithChainStateClient(voteTargetsClient),
+		runtime.WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
 	errCh, cancel := startOracle(t, oracle)
 	defer cancel()
-	requireSignal(t, voteTargetsStarted, "price tick did not start")
+	requireSignal(t, feedsStarted, "price tick did not start")
 
 	newCfg := cfg
 	newCfg.Resolver = testResolverConfig("ausd", "direct", "NOAH/USD")
@@ -266,7 +266,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 	case <-time.After(20 * time.Millisecond):
 	}
 
-	unblockVoteTargets()
+	unblockFeeds()
 	select {
 	case err := <-updateErrCh:
 		require.NoError(t, err)

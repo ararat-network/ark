@@ -10,11 +10,11 @@ import (
 
 var errChainStateClientExited = errors.New("chain state client exited without error")
 
-// ChainStateClient fetches the current on-chain oracle vote targets.
+// ChainStateClient fetches the current on-chain oracle feeds.
 type ChainStateClient interface {
 	Run(context.Context) error
 	Update(chainstate.Config)
-	VoteTargets() ([]string, error)
+	Feeds() ([]string, error)
 }
 
 // startClient runs the runtime-owned chainstate client behind a panic boundary.

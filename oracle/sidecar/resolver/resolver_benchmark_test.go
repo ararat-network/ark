@@ -49,30 +49,30 @@ func BenchmarkResolvePricesWithPrometheus(b *testing.B) {
 func benchmarkResolvePrices(b *testing.B) {
 	testCases := []struct {
 		name          string
-		targetCount   int
+		feedCount     int
 		providerCount int
 		bootstrapLeg  bool
 	}{
 		{
-			name:          "direct/targets=8/providers=1",
-			targetCount:   8,
+			name:          "direct/feeds=8/providers=1",
+			feedCount:     8,
 			providerCount: 1,
 		},
 		{
-			name:          "bootstrap_route/targets=8/providers=1",
-			targetCount:   8,
-			providerCount: 1,
-			bootstrapLeg:  true,
-		},
-		{
-			name:          "bootstrap_route/targets=256/providers=1",
-			targetCount:   256,
+			name:          "bootstrap_route/feeds=8/providers=1",
+			feedCount:     8,
 			providerCount: 1,
 			bootstrapLeg:  true,
 		},
 		{
-			name:          "bootstrap_route/targets=256/providers=16",
-			targetCount:   256,
+			name:          "bootstrap_route/feeds=256/providers=1",
+			feedCount:     256,
+			providerCount: 1,
+			bootstrapLeg:  true,
+		},
+		{
+			name:          "bootstrap_route/feeds=256/providers=16",
+			feedCount:     256,
 			providerCount: 16,
 			bootstrapLeg:  true,
 		},
@@ -80,8 +80,8 @@ func benchmarkResolvePrices(b *testing.B) {
 
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
-			cfg, providerPrices, denoms, now := benchmarkResolverInput(
-				tc.targetCount,
+			cfg, providerPrices, feeds, now := benchmarkResolverInput(
+				tc.feedCount,
 				tc.providerCount,
 				tc.bootstrapLeg,
 			)
@@ -92,24 +92,24 @@ func benchmarkResolvePrices(b *testing.B) {
 
 			var prices types.Prices
 			for i := 0; i < b.N; i++ {
-				prices = resolver.ResolvePrices(ctx, cfg, providerPrices, denoms, now)
+				prices = resolver.ResolvePrices(ctx, cfg, providerPrices, feeds, now)
 			}
 
-			if len(prices) != tc.targetCount {
-				b.Fatalf("got %d prices, want %d", len(prices), tc.targetCount)
+			if len(prices) != tc.feedCount {
+				b.Fatalf("got %d prices, want %d", len(prices), tc.feedCount)
 			}
 		})
 	}
 }
 
 func benchmarkResolverInput(
-	targetCount int,
+	feedCount int,
 	providerCount int,
 	bootstrapLeg bool,
 ) (resolver.Config, map[string]types.Prices, []string, time.Time) {
 	now := time.Date(2026, time.July, 22, 0, 0, 0, 0, time.UTC)
 	cfg := resolver.Config{
-		Routes: make(map[string][]resolver.Route, targetCount),
+		Routes: make(map[string][]resolver.Route, feedCount),
 	}
 	if bootstrapLeg {
 		cfg.BootstrapPrices = []resolver.BootstrapPrice{
@@ -121,12 +121,12 @@ func benchmarkResolverInput(
 		}
 	}
 
-	denoms := make([]string, targetCount)
-	pairs := make([]types.Pair, targetCount)
-	for i := 0; i < targetCount; i++ {
+	feeds := make([]string, feedCount)
+	pairs := make([]types.Pair, feedCount)
+	for i := 0; i < feedCount; i++ {
 		denom := fmt.Sprintf("uasset%03d", i)
 		quote := fmt.Sprintf("ASSET%03d", i)
-		denoms[i] = denom
+		feeds[i] = denom
 
 		if bootstrapLeg {
 			pair := types.Pair("USD/" + quote)
@@ -145,7 +145,7 @@ func benchmarkResolverInput(
 
 	providerPrices := make(map[string]types.Prices, providerCount)
 	for providerIndex := 0; providerIndex < providerCount; providerIndex++ {
-		prices := make(types.Prices, targetCount)
+		prices := make(types.Prices, feedCount)
 		for targetIndex, pair := range pairs {
 			price := new(big.Float).
 				SetPrec(types.PricePrecisionBits).
@@ -155,5 +155,5 @@ func benchmarkResolverInput(
 		providerPrices[fmt.Sprintf("provider-%02d", providerIndex)] = prices
 	}
 
-	return cfg, providerPrices, denoms, now
+	return cfg, providerPrices, feeds, now
 }

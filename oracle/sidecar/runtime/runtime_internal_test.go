@@ -28,7 +28,7 @@ func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {
 		wantTickers []providertypes.Ticker
 	}{
 		{
-			name:        "filters markets to fallback denoms",
+			name:        "filters markets to fallback feeds",
 			fallback:    []string{"ausd"},
 			wantTickers: []providertypes.Ticker{"NOAHUSD"},
 		},
@@ -54,7 +54,7 @@ func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {
 			require.NoError(t, err)
 
 			cfg := testRuntimeLoggerConfig()
-			cfg.FallbackDenoms = tc.fallback
+			cfg.FallbackFeeds = tc.fallback
 			oracle, err := NewRuntime(
 				cfg,
 				WithProviderFactory(func(
@@ -78,9 +78,9 @@ func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {
 func TestGetPriceSnapshotReturnsExactCommittedGeneration(t *testing.T) {
 	timestamp := time.Now().UTC()
 	oracle := &Runtime{
-		denoms: []string{"akrw"},
+		feeds: []string{"akrw"},
 		priceSnapshot: oracletypes.PriceSnapshot{
-			Prices: oracletypes.DenomPrices{
+			Prices: oracletypes.FeedPrices{
 				"ausd": big.NewFloat(1.25),
 			},
 			Timestamp: timestamp,
@@ -132,12 +132,12 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	cfg.FallbackDenoms[0] = "akrw"
+	cfg.FallbackFeeds[0] = "akrw"
 	constructionProviderCfg := cfg.Providers["logger-test"]
 	constructionProviderCfg.Markets[0].Symbol = "MUTATED"
 	cfg.Resolver.Routes["ausd"][0].Pairs[0] = "NOAH/KRW"
 	cfg.Resolver.BootstrapPrices[0].Price = "99"
-	require.Equal(t, []string{"ausd"}, oracle.denoms)
+	require.Equal(t, []string{"ausd"}, oracle.feeds)
 	require.Equal(t, providertypes.Ticker("NOAHUSD"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
 	require.Equal(t, oracletypes.Pair("NOAH/USD"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
 	require.Equal(t, "0.25", oracle.cfg.Resolver.BootstrapPrices[0].Price)
@@ -146,7 +146,7 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	nextProviderCfg := nextCfg.Providers["logger-test"]
 	nextProviderCfg.Markets = providertypes.Markets{{Pair: "NOAH/KRW", Symbol: "NOAHKRW"}}
 	nextCfg.Providers["logger-test"] = nextProviderCfg
-	nextCfg.FallbackDenoms = []string{"akrw"}
+	nextCfg.FallbackFeeds = []string{"akrw"}
 	nextCfg.Resolver.Routes = map[string][]resolver.Route{
 		"akrw": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/KRW"}}},
 	}
@@ -157,12 +157,12 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	}}
 	require.NoError(t, oracle.Update(nextCfg))
 
-	nextCfg.FallbackDenoms[0] = "ausd"
+	nextCfg.FallbackFeeds[0] = "ausd"
 	nextProviderCfg = nextCfg.Providers["logger-test"]
 	nextProviderCfg.Markets[0].Symbol = "MUTATED"
 	nextCfg.Resolver.Routes["akrw"][0].Pairs[0] = "NOAH/USD"
 	nextCfg.Resolver.BootstrapPrices[0].Price = "99"
-	require.Equal(t, []string{"akrw"}, oracle.denoms)
+	require.Equal(t, []string{"akrw"}, oracle.feeds)
 	require.Equal(t, []providertypes.Ticker{"NOAHKRW"}, provider.GetTickers())
 	require.Equal(t, providertypes.Ticker("NOAHKRW"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
 	require.Equal(t, oracletypes.Pair("NOAH/KRW"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
@@ -241,7 +241,7 @@ func TestNewRuntimePassesLoggerToChainStateClient(t *testing.T) {
 	nextCfg := cfg.Clone()
 	nextCfg.Client.Interval += time.Second
 	require.NoError(t, oracle.Update(nextCfg))
-	require.Contains(t, logs.String(), "updated chain state vote-target client config")
+	require.Contains(t, logs.String(), "updated chain state feed client config")
 }
 
 func testRuntimeLoggerConfig() Config {
@@ -266,10 +266,10 @@ func testRuntimeLoggerConfig() Config {
 			providerCfg.Name: providerCfg,
 		},
 		Client: chainstate.Config{
-			Address:  "passthrough:///vote-targets",
+			Address:  "passthrough:///feeds",
 			Timeout:  time.Second,
 			Interval: time.Second,
 		},
-		FallbackDenoms: []string{"ausd"},
+		FallbackFeeds: []string{"ausd"},
 	}
 }

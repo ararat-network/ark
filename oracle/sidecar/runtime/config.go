@@ -14,8 +14,8 @@ import (
 )
 
 // Config defines the price runtime configuration. The runtime is configured
-// with price providers and a fallback denom set used until on-chain vote
-// targets are available.
+// with price providers and a fallback feed set used until the on-chain feed
+// registry is available.
 //
 // Config values are treated as immutable after being passed to the runtime. Build
 // a replacement config instead of mutating nested maps or slices in place.
@@ -27,16 +27,16 @@ type Config struct {
 	// Providers is the set of providers that the oracle will fetch prices from, keyed by provider name.
 	Providers map[string]providers.Config `json:"providers"`
 
-	// Resolver configures how provider pair prices are resolved into final vote-target denom prices.
+	// Resolver configures how provider pair prices are resolved into final feed prices.
 	Resolver resolver.Config `json:"resolver"`
 
-	// Client configures the chainstate vote-target query client.
+	// Client configures the chainstate feed query client.
 	Client chainstate.Config `json:"client"`
 
-	// FallbackDenoms is used until vote-target polling produces its first on-chain
+	// FallbackFeeds is used until feed polling produces its first on-chain
 	// snapshot. Later polling failures preserve the last on-chain snapshot instead
 	// of returning to these defaults.
-	FallbackDenoms []string `json:"fallbackDenoms"`
+	FallbackFeeds []string `json:"fallbackFeeds"`
 }
 
 // Clone returns a runtime-owned copy of c, including nested maps and slices.
@@ -52,7 +52,7 @@ func (c Config) Clone() Config {
 		}
 	}
 	cloned.Resolver = c.Resolver.Clone()
-	cloned.FallbackDenoms = append([]string(nil), c.FallbackDenoms...)
+	cloned.FallbackFeeds = append([]string(nil), c.FallbackFeeds...)
 
 	return cloned
 }
@@ -79,25 +79,25 @@ func (c *Config) Validate() error {
 	if err := c.Client.Validate(); err != nil {
 		return fmt.Errorf("client config is invalid: %w", err)
 	}
-	if len(c.FallbackDenoms) == 0 {
-		return errors.New("oracle denoms fallback cannot be empty")
+	if len(c.FallbackFeeds) == 0 {
+		return errors.New("oracle feeds fallback cannot be empty")
 	}
-	if len(c.FallbackDenoms) > oracletypes.MaxVoteTargets {
+	if len(c.FallbackFeeds) > oracletypes.MaxFeeds {
 		return fmt.Errorf(
-			"oracle fallback denom count %d exceeds maximum vote targets %d",
-			len(c.FallbackDenoms),
-			oracletypes.MaxVoteTargets,
+			"oracle fallback feed count %d exceeds maximum feeds %d",
+			len(c.FallbackFeeds),
+			oracletypes.MaxFeeds,
 		)
 	}
-	fallbackDenoms := make(map[string]struct{}, len(c.FallbackDenoms))
-	for _, denom := range c.FallbackDenoms {
-		if err := chain.ValidateNativeBaseDenom(denom); err != nil {
-			return fmt.Errorf("invalid fallback denom %q: %w", denom, err)
+	fallbackFeeds := make(map[string]struct{}, len(c.FallbackFeeds))
+	for _, denom := range c.FallbackFeeds {
+		if err := chain.ValidatePricedDenom(denom); err != nil {
+			return fmt.Errorf("invalid fallback feed %q: %w", denom, err)
 		}
-		if _, ok := fallbackDenoms[denom]; ok {
-			return fmt.Errorf("duplicate fallback denom %q", denom)
+		if _, ok := fallbackFeeds[denom]; ok {
+			return fmt.Errorf("duplicate fallback feed %q", denom)
 		}
-		fallbackDenoms[denom] = struct{}{}
+		fallbackFeeds[denom] = struct{}{}
 	}
 
 	return nil

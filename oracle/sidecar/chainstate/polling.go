@@ -35,7 +35,7 @@ func (c *Client) runOnce(ctx context.Context) (err error) {
 	return c.poll(ctx, cfg.Address, cfg.Interval, query)
 }
 
-// poll refreshes vote targets immediately and then at the configured interval.
+// poll refreshes feeds immediately and then at the configured interval.
 // Config changes are observed on ticks. Address updates end this connection so
 // Run can reconnect with fresh config.
 func (c *Client) poll(
@@ -56,11 +56,11 @@ func (c *Client) poll(
 		case <-ticker.C:
 			nextCfg := c.getConfig()
 			if nextCfg.Address != address {
-				c.logger.Info("reconnecting chain state vote-target client after address update")
+				c.logger.Info("reconnecting chain state feed client after address update")
 				return nil
 			}
 			if nextCfg.Interval != interval {
-				c.logger.Debug("updated chain state vote-target poll interval")
+				c.logger.Debug("updated chain state feed poll interval")
 				ticker.Reset(nextCfg.Interval)
 				interval = nextCfg.Interval
 			}
@@ -70,59 +70,64 @@ func (c *Client) poll(
 }
 
 // refresh commits successful snapshots. Query failures log a warning and
-// preserve the previous snapshot so the runtime can keep using last-known vote
-// targets with operator-visible refresh errors.
+// preserve the previous snapshot so the runtime can keep using the last-known
+// feed set with operator-visible refresh errors.
 func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
-	targets, err := c.queryVoteTargets(ctx, query)
+	feeds, err := c.queryFeeds(ctx, query)
 	if err != nil {
 		chainstatemetrics.RecordRefresh(ctx, "error")
-		c.logger.Warn("failed to refresh chain state vote targets", "error", err)
+		c.logger.Warn("failed to refresh chain state feeds", "error", err)
 		return
 	}
 
 	c.mut.Lock()
-	c.targets = targets
+	c.feeds = feeds
 	c.hasSnapshot = true
 	c.mut.Unlock()
 
 	chainstatemetrics.RecordRefresh(ctx, "success")
 }
 
-// queryVoteTargets performs one oracle query and combines active and pending
-// targets before the caller stores them as the cached snapshot.
-func (c *Client) queryVoteTargets(ctx context.Context, query oracletypes.QueryClient) ([]string, error) {
+// queryFeeds performs one oracle query and unions the active feeds with every
+// scheduled addition before the caller stores them as the cached snapshot.
+// Warming an addition through its activation delay is what lets a capable fleet
+// price a new feed from its first active block; scheduled removals are excluded
+// because the feed is still active and already in the union.
+func (c *Client) queryFeeds(ctx context.Context, query oracletypes.QueryClient) ([]string, error) {
 	cfg := c.getConfig()
 	ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
 
-	resp, err := query.VoteTargets(ctx, &oracletypes.QueryVoteTargetsRequest{})
+	resp, err := query.Feeds(ctx, &oracletypes.QueryFeedsRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("query oracle vote targets: %w", err)
+		return nil, fmt.Errorf("query oracle feeds: %w", err)
 	}
 	if resp == nil {
-		return nil, errors.New("oracle vote targets response is nil")
+		return nil, errors.New("oracle feeds response is nil")
 	}
-	if len(resp.VoteTargets) > oracletypes.MaxVoteTargets {
+	if len(resp.Feeds.Denoms) > oracletypes.MaxFeeds {
 		return nil, fmt.Errorf(
-			"active vote target count %d exceeds maximum %d",
-			len(resp.VoteTargets),
-			oracletypes.MaxVoteTargets,
+			"active feed count %d exceeds maximum %d",
+			len(resp.Feeds.Denoms),
+			oracletypes.MaxFeeds,
 		)
 	}
-	if resp.Pending != nil && len(resp.Pending.Denoms) > oracletypes.MaxVoteTargets {
+	if len(resp.Feeds.Transitions) > oracletypes.MaxFeeds {
 		return nil, fmt.Errorf(
-			"pending vote target count %d exceeds maximum %d",
-			len(resp.Pending.Denoms),
-			oracletypes.MaxVoteTargets,
+			"scheduled feed transition count %d exceeds maximum %d",
+			len(resp.Feeds.Transitions),
+			oracletypes.MaxFeeds,
 		)
 	}
 
-	denoms := resp.VoteTargets
-	if resp.Pending != nil {
-		denoms = append(denoms, resp.Pending.Denoms...)
+	feeds := slices.Clone(resp.Feeds.Denoms)
+	for _, transition := range resp.Feeds.Transitions {
+		if transition.Direction == oracletypes.FeedDirection_FEED_DIRECTION_ADD {
+			feeds = append(feeds, transition.Denom)
+		}
 	}
-	slices.Sort(denoms)
-	return slices.Compact(denoms), nil
+	slices.Sort(feeds)
+	return slices.Compact(feeds), nil
 }
 
 // waitForRetry sleeps until the next retry or cancellation.

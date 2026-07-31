@@ -41,6 +41,21 @@ func (m *MockChainStateClient) EXPECT() *MockChainStateClientMockRecorder {
 	return m.recorder
 }
 
+// Feeds mocks base method.
+func (m *MockChainStateClient) Feeds() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Feeds")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Feeds indicates an expected call of Feeds.
+func (mr *MockChainStateClientMockRecorder) Feeds() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Feeds", reflect.TypeOf((*MockChainStateClient)(nil).Feeds))
+}
+
 // Run mocks base method.
 func (m *MockChainStateClient) Run(arg0 context.Context) error {
 	m.ctrl.T.Helper()
@@ -65,19 +80,4 @@ func (m *MockChainStateClient) Update(arg0 chainstate.Config) {
 func (mr *MockChainStateClientMockRecorder) Update(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChainStateClient)(nil).Update), arg0)
-}
-
-// VoteTargets mocks base method.
-func (m *MockChainStateClient) VoteTargets() ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VoteTargets")
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// VoteTargets indicates an expected call of VoteTargets.
-func (mr *MockChainStateClientMockRecorder) VoteTargets() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteTargets", reflect.TypeOf((*MockChainStateClient)(nil).VoteTargets))
 }

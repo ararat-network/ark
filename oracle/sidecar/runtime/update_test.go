@@ -22,7 +22,7 @@ func TestUpdateConfigAppliesUpdateIntervalWithoutRestart(t *testing.T) {
 		"unknown": testUnknownAPIProviderConfig("unknown", testMarkets()),
 	})
 	cfg.UpdateInterval = time.Hour
-	cfg.FallbackDenoms = []string{"ausd"}
+	cfg.FallbackFeeds = []string{"ausd"}
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	started := make(chan struct{})
@@ -104,16 +104,16 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 		}).
 		Times(2)
 
-	voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-	expectVoteTargetsLifecycle(voteTargetsClient)
-	voteTargetsClient.EXPECT().
-		VoteTargets().
+	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	feedsClient.EXPECT().
+		Feeds().
 		Return([]string{"ausd", "akrw"}, nil).
 		AnyTimes()
 	oracle, err := NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		WithChainStateClient(voteTargetsClient),
+		WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -158,7 +158,7 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 	require.ErrorContains(t, err, "resolver denom \"akrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"NOAH/KRW\"")
 }
 
-func TestUpdateConfigUpdatesVoteTargetsClientConfig(t *testing.T) {
+func TestUpdateConfigUpdatesFeedsClientConfig(t *testing.T) {
 	cfg := testOracleConfig(map[string]providers.Config{
 		"unknown": testUnknownAPIProviderConfig("unknown", testMarkets()),
 	})
@@ -167,19 +167,19 @@ func TestUpdateConfigUpdatesVoteTargetsClientConfig(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
-	voteTargetsClient, voteTargetsRecorder := newRecordingChainStateClient(t, ctrl)
+	feedsClient, feedsRecorder := newRecordingChainStateClient(t, ctrl)
 	oracle, err := NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		WithChainStateClient(voteTargetsClient),
+		WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
 	require.NoError(t, oracle.Update(newCfg))
-	require.Equal(t, []chainstate.Config{newCfg.Client}, voteTargetsRecorder.updateConfigs())
+	require.Equal(t, []chainstate.Config{newCfg.Client}, feedsRecorder.updateConfigs())
 }
 
-func TestUpdateConfigRefreshesFallbackDenomsWhenNoVoteTargetsHaveLoaded(t *testing.T) {
+func TestUpdateConfigRefreshesFallbackFeedsWhenNoFeedsHaveLoaded(t *testing.T) {
 	providerCfg := testUnknownAPIProviderConfig("unknown", testMarkets())
 	cfg := testOracleConfig(map[string]providers.Config{
 		"unknown": providerCfg,
@@ -194,7 +194,7 @@ func TestUpdateConfigRefreshesFallbackDenomsWhenNoVoteTargetsHaveLoaded(t *testi
 	require.NoError(t, err)
 
 	newCfg := cfg
-	newCfg.FallbackDenoms = []string{"ausd"}
+	newCfg.FallbackFeeds = []string{"ausd"}
 
 	require.NoError(t, oracle.Update(newCfg))
 	require.Equal(t, []providertypes.Ticker{"NOAHUSD"}, mp.provider.GetTickers())

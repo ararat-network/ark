@@ -13,22 +13,22 @@ import (
 // ResolvePrices returns final pair prices for one complete provider snapshot. It
 // builds provider medians for the required route pairs after normalising
 // reciprocal observations, then uses active bootstrap prices only for route
-// pairs without provider samples. It resolves only requested denoms. Configured
+// pairs without provider samples. It resolves only requested feeds. Configured
 // routes are averaged; missing or empty routes use the direct NOAH/QUOTE path.
 func ResolvePrices(
 	ctx context.Context,
 	cfg Config,
 	providerPrices map[string]types.Prices,
-	denoms []string,
+	feeds []string,
 	now time.Time,
 ) types.Prices {
 	recordProviderPrices(ctx, providerPrices)
 
 	medianPrices := make(types.Prices)
 	resolvedPairs := make(map[types.Pair]struct{})
-	voteTargets := make(map[types.Pair][]*big.Float)
+	routePrices := make(map[types.Pair][]*big.Float)
 
-	for _, denom := range denoms {
+	for _, denom := range feeds {
 		output, routes, ok := cfg.RoutesForDenom(denom)
 		if !ok {
 			continue
@@ -58,14 +58,14 @@ func ResolvePrices(
 			if !ok {
 				continue
 			}
-			voteTargets[output] = append(voteTargets[output], finalPrice)
+			routePrices[output] = append(routePrices[output], finalPrice)
 			floatPrice, _ := finalPrice.Float64()
 			oraclemetrics.RecordRoutePrice(ctx, output.String(), route.Name, floatPrice)
 		}
 	}
 
 	finalPrices := make(types.Prices)
-	for pair, prices := range voteTargets {
+	for pair, prices := range routePrices {
 		if len(prices) == 0 {
 			continue
 		}

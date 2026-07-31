@@ -81,7 +81,7 @@ func newRecordingChainStateClient(
 		Do(recorder.recordUpdate).
 		AnyTimes()
 	client.EXPECT().
-		VoteTargets().
+		Feeds().
 		Return([]string{"ausd"}, nil).
 		AnyTimes()
 
@@ -98,7 +98,7 @@ func newPassthroughChainStateClient(
 	return client
 }
 
-func expectVoteTargetsLifecycle(client *oracletestutil.MockChainStateClient) {
+func expectFeedsLifecycle(client *oracletestutil.MockChainStateClient) {
 	client.EXPECT().
 		Run(gomock.Any()).
 		DoAndReturn(func(ctx context.Context) error {
@@ -329,11 +329,11 @@ func testOracleConfig(providerCfgs map[string]providers.Config) Config {
 		UpdateInterval: time.Second,
 		Providers:      providerCfgs,
 		Client: chainstate.Config{
-			Address:  "passthrough:///vote-targets",
+			Address:  "passthrough:///feeds",
 			Timeout:  time.Second,
 			Interval: time.Second,
 		},
-		FallbackDenoms: []string{"ausd", "akrw"},
+		FallbackFeeds: []string{"ausd", "akrw"},
 	}
 }
 

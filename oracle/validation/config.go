@@ -14,7 +14,7 @@ const (
 	DefaultMaxResponseAge               = time.Minute
 	DefaultMaxFutureSkew                = 5 * time.Second
 	DefaultRequestTimeout               = 5 * time.Second
-	DefaultDenomRefreshInterval         = 5 * time.Second
+	DefaultFeedRefreshInterval          = 5 * time.Second
 )
 
 // Config configures a validation run against the public oracle price API.
@@ -25,7 +25,7 @@ type Config struct {
 	ValidationPeriod time.Duration
 	// NumChecks is the number of price API checks to run over ValidationPeriod.
 	NumChecks int
-	// RequiredPriceLivenessPercent is the minimum successful response percentage per denom.
+	// RequiredPriceLivenessPercent is the minimum successful response percentage per feed.
 	RequiredPriceLivenessPercent float64
 	// MaxResponseAge is the maximum accepted age of a price API response timestamp.
 	MaxResponseAge time.Duration
@@ -33,8 +33,8 @@ type Config struct {
 	MaxFutureSkew time.Duration
 	// RequestTimeout bounds each individual price API check.
 	RequestTimeout time.Duration
-	// DenomRefreshInterval is how often to refresh active denoms from the chain.
-	DenomRefreshInterval time.Duration
+	// FeedRefreshInterval is how often to refresh the active feed set from the chain.
+	FeedRefreshInterval time.Duration
 }
 
 // DefaultConfig returns a validation config with default timings and thresholds.
@@ -47,7 +47,7 @@ func DefaultConfig() Config {
 		MaxResponseAge:               DefaultMaxResponseAge,
 		MaxFutureSkew:                DefaultMaxFutureSkew,
 		RequestTimeout:               DefaultRequestTimeout,
-		DenomRefreshInterval:         DefaultDenomRefreshInterval,
+		FeedRefreshInterval:          DefaultFeedRefreshInterval,
 	}
 }
 
@@ -79,8 +79,8 @@ func (c Config) Validate() error {
 	if c.RequestTimeout <= 0 {
 		return errors.New("request timeout must be greater than zero")
 	}
-	if c.DenomRefreshInterval <= 0 {
-		return errors.New("denom refresh interval must be greater than zero")
+	if c.FeedRefreshInterval <= 0 {
+		return errors.New("feed refresh interval must be greater than zero")
 	}
 
 	return nil

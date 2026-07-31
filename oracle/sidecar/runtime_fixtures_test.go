@@ -80,11 +80,11 @@ func (*serverTestFetcher) Type() base.TransportType {
 }
 
 type staticChainStateClient struct {
-	denoms []string
+	feeds []string
 }
 
-func newStaticChainStateClient(denoms []string) *staticChainStateClient {
-	return &staticChainStateClient{denoms: append([]string(nil), denoms...)}
+func newStaticChainStateClient(feeds []string) *staticChainStateClient {
+	return &staticChainStateClient{feeds: append([]string(nil), feeds...)}
 }
 
 func (*staticChainStateClient) Run(ctx context.Context) error {
@@ -94,11 +94,11 @@ func (*staticChainStateClient) Run(ctx context.Context) error {
 
 func (*staticChainStateClient) Update(chainstate.Config) {}
 
-func (c *staticChainStateClient) VoteTargets() ([]string, error) {
-	return append([]string(nil), c.denoms...), nil
+func (c *staticChainStateClient) Feeds() ([]string, error) {
+	return append([]string(nil), c.feeds...), nil
 }
 
-type blockingVoteTargetsClient struct {
+type blockingFeedsClient struct {
 	*staticChainStateClient
 
 	calls       atomic.Int64
@@ -108,25 +108,25 @@ type blockingVoteTargetsClient struct {
 	releaseOnce sync.Once
 }
 
-func newBlockingVoteTargetsClient(denoms []string) *blockingVoteTargetsClient {
-	return &blockingVoteTargetsClient{
-		staticChainStateClient: newStaticChainStateClient(denoms),
+func newBlockingFeedsClient(feeds []string) *blockingFeedsClient {
+	return &blockingFeedsClient{
+		staticChainStateClient: newStaticChainStateClient(feeds),
 		blocked:                make(chan struct{}),
 		releaseCh:              make(chan struct{}),
 	}
 }
 
-func (c *blockingVoteTargetsClient) VoteTargets() ([]string, error) {
+func (c *blockingFeedsClient) Feeds() ([]string, error) {
 	if c.calls.Add(1) == 2 {
 		c.blockedOnce.Do(func() {
 			close(c.blocked)
 		})
 		<-c.releaseCh
 	}
-	return c.staticChainStateClient.VoteTargets()
+	return c.staticChainStateClient.Feeds()
 }
 
-func (c *blockingVoteTargetsClient) release() {
+func (c *blockingFeedsClient) release() {
 	c.releaseOnce.Do(func() {
 		close(c.releaseCh)
 	})
@@ -140,7 +140,7 @@ func newTestOracle(t *testing.T, prices oracletypes.Prices) *Oracle {
 		t,
 		cfg,
 		newServerTestFetcher(prices),
-		newStaticChainStateClient(cfg.FallbackDenoms),
+		newStaticChainStateClient(cfg.FallbackFeeds),
 		ProcessConfig{ServerAddress: "127.0.0.1:0"},
 	)
 }
@@ -205,11 +205,11 @@ func newTestRuntimeConfig() runtimepkg.Config {
 			},
 		},
 		Client: chainstate.Config{
-			Address:  "passthrough:///vote-targets",
+			Address:  "passthrough:///feeds",
 			Timeout:  time.Second,
 			Interval: time.Hour,
 		},
-		FallbackDenoms: []string{"ausd", "akrw"},
+		FallbackFeeds: []string{"ausd", "akrw"},
 	}
 }
 
@@ -234,7 +234,7 @@ func testInternalRuntimeConfig() runtimepkg.Config {
 			Timeout:  time.Second,
 			Interval: time.Second,
 		},
-		FallbackDenoms: []string{"ausd"},
+		FallbackFeeds: []string{"ausd"},
 	}
 }
 

@@ -28,9 +28,9 @@ import (
 
 const bufSize = 1024 * 1024
 
-func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
+func TestRunPollsImmediatelyAndCachesFeeds(t *testing.T) {
 	source := []string{"akrw", "ausd"}
-	query := newFakeQueryServer(targetResult(source))
+	query := newFakeQueryServer(feedResult(source))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -44,24 +44,26 @@ func TestRunPollsImmediatelyAndCachesVoteTargets(t *testing.T) {
 	requireEventuallyTargets(t, client, []string{"akrw", "ausd"})
 
 	source[0] = "amutated"
-	got, err := client.VoteTargets()
+	got, err := client.Feeds()
 	require.NoError(t, err)
 	require.Equal(t, []string{"akrw", "ausd"}, got)
 
 	got[0] = "amodified"
-	got, err = client.VoteTargets()
+	got, err = client.Feeds()
 	require.NoError(t, err)
 	require.Equal(t, []string{"akrw", "ausd"}, got)
 }
 
-func TestRunCachesPendingTargetsForProviderWarmup(t *testing.T) {
+func TestRunCachesScheduledAdditionsForProviderWarmup(t *testing.T) {
 	query := newFakeQueryServer(queryResult{
-		targets: []string{"ausd"},
-		version: oracletypes.InitialVoteTargetVersion,
-		pending: &oracletypes.PendingVoteTargets{
-			Denoms:               []string{"aaud", "ausd"},
-			Version:              oracletypes.InitialVoteTargetVersion + 1,
-			ActivationVoteHeight: 10,
+		feeds:   []string{"ausd"},
+		version: oracletypes.InitialFeedVersion,
+		transitions: []oracletypes.FeedTransition{
+			{
+				Denom:                "aaud",
+				Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
+				ActivationVoteHeight: 10,
+			},
 		},
 	})
 	client := newTestClient(t, query, Config{
@@ -78,7 +80,7 @@ func TestRunCachesPendingTargetsForProviderWarmup(t *testing.T) {
 }
 
 func TestRunBlocksUntilContextCancellation(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{"ausd"}))
+	query := newFakeQueryServer(feedResult([]string{"ausd"}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -111,9 +113,9 @@ func TestRunBlocksUntilContextCancellation(t *testing.T) {
 	}
 }
 
-func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
+func TestRunLogsLifecycleAndInitialFeeds(t *testing.T) {
 	logs := &lockedBuffer{}
-	query := newFakeQueryServer(targetResult([]string{"akrw", "ausd"}))
+	query := newFakeQueryServer(feedResult([]string{"akrw", "ausd"}))
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
 		Config{
@@ -135,7 +137,7 @@ func TestRunLogsLifecycleAndInitialVoteTargets(t *testing.T) {
 	require.Contains(t, output, "starting chain state client")
 }
 
-func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
+func TestFeedsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 	logs := &lockedBuffer{}
 	query := newFakeQueryServer(queryResult{err: errors.New("node unavailable")})
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
@@ -155,16 +157,16 @@ func TestVoteTargetsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 
 	query.waitForCalls(t, 1)
 	require.Eventually(t, func() bool {
-		return strings.Contains(logs.String(), "failed to refresh chain state vote targets")
+		return strings.Contains(logs.String(), "failed to refresh chain state feeds")
 	}, time.Second, time.Millisecond)
 
-	got, err := client.VoteTargets()
-	require.EqualError(t, err, "no vote targets fetched yet")
+	got, err := client.Feeds()
+	require.EqualError(t, err, "no feeds fetched yet")
 	require.Nil(t, got)
 }
 
-func TestRunCachesAuthoritativeEmptyVoteTargets(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{}))
+func TestRunCachesAuthoritativeEmptyFeeds(t *testing.T) {
+	query := newFakeQueryServer(feedResult([]string{}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -178,10 +180,10 @@ func TestRunCachesAuthoritativeEmptyVoteTargets(t *testing.T) {
 	requireEventuallyTargets(t, client, []string{})
 }
 
-func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
+func TestRunReplacesNonEmptyFeedsWithEmptySnapshot(t *testing.T) {
 	query := newFakeQueryServer(
-		targetResult([]string{"ausd"}),
-		targetResult([]string{}),
+		feedResult([]string{"ausd"}),
+		feedResult([]string{}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -198,14 +200,14 @@ func TestRunReplacesNonEmptyVoteTargetsWithEmptySnapshot(t *testing.T) {
 	requireEventuallyTargets(t, client, []string{})
 	query.waitForCalls(t, 3)
 
-	got, err := client.VoteTargets()
+	got, err := client.Feeds()
 	require.NoError(t, err)
 	require.Empty(t, got)
 }
 
-func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
+func TestRunKeepsLastFeedsAfterRefreshFailure(t *testing.T) {
 	query := newFakeQueryServer(
-		targetResult([]string{"ausd"}),
+		feedResult([]string{"ausd"}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -221,17 +223,17 @@ func TestRunKeepsLastVoteTargetsAfterRefreshFailure(t *testing.T) {
 	requireEventuallyTargets(t, client, []string{"ausd"})
 	query.waitForCalls(t, 2)
 
-	got, err := client.VoteTargets()
+	got, err := client.Feeds()
 	require.NoError(t, err)
 	require.Equal(t, []string{"ausd"}, got)
 }
 
-func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
+func TestRunLogsRefreshFailureWhileKeepingLastFeeds(t *testing.T) {
 	logs := &lockedBuffer{}
 	query := newFakeQueryServer(
-		targetResult([]string{"ausd"}),
+		feedResult([]string{"ausd"}),
 		queryResult{err: errors.New("node unavailable")},
-		targetResult([]string{"akrw", "ausd"}),
+		feedResult([]string{"akrw", "ausd"}),
 	)
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
@@ -255,11 +257,11 @@ func TestRunLogsRefreshFailureWhileKeepingLastVoteTargets(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		output := logs.String()
-		return strings.Contains(output, "failed to refresh chain state vote targets") &&
+		return strings.Contains(output, "failed to refresh chain state feeds") &&
 			strings.Contains(output, "node unavailable")
 	}, time.Second, time.Millisecond)
 
-	got, err := client.VoteTargets()
+	got, err := client.Feeds()
 	require.NoError(t, err)
 	require.Equal(t, []string{"akrw", "ausd"}, got)
 }
@@ -276,7 +278,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	otel.SetMeterProvider(provider)
 
 	query := newFakeQueryServer(
-		targetResult([]string{"akrw", "ausd"}),
+		feedResult([]string{"akrw", "ausd"}),
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
@@ -308,7 +310,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 }
 
 func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{"ausd"}))
+	query := newFakeQueryServer(feedResult([]string{"ausd"}))
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
 		Timeout:  time.Second,
@@ -325,7 +327,7 @@ func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
 }
 
 func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
-	query := newFakeQueryServer(targetResult([]string{"ausd"}))
+	query := newFakeQueryServer(feedResult([]string{"ausd"}))
 	originalInterval := 75 * time.Millisecond
 	client := newTestClient(t, query, Config{
 		Address:  "passthrough:///bufnet",
@@ -349,8 +351,8 @@ func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
 }
 
 func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
-	firstQuery := newFakeQueryServer(targetResult([]string{"ausd"}))
-	secondQuery := newFakeQueryServer(targetResult([]string{"akrw"}))
+	firstQuery := newFakeQueryServer(feedResult([]string{"ausd"}))
+	secondQuery := newFakeQueryServer(feedResult([]string{"akrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 	originalInterval := 75 * time.Millisecond
@@ -384,8 +386,8 @@ func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 
 func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	logs := &lockedBuffer{}
-	firstQuery := newFakeQueryServer(targetResult([]string{"ausd"}))
-	secondQuery := newFakeQueryServer(targetResult([]string{"akrw"}))
+	firstQuery := newFakeQueryServer(feedResult([]string{"ausd"}))
+	secondQuery := newFakeQueryServer(feedResult([]string{"akrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 
@@ -417,14 +419,14 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		output := logs.String()
-		return strings.Contains(output, "updated chain state vote-target client config") &&
-			strings.Contains(output, "reconnecting chain state vote-target client after address update")
+		return strings.Contains(output, "updated chain state feed client config") &&
+			strings.Contains(output, "reconnecting chain state feed client after address update")
 	}, time.Second, time.Millisecond)
 }
 
-func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *testing.T) {
-	firstQuery := newBlockingQueryServer(targetResult([]string{"ausd"}))
-	secondQuery := newBlockingQueryServer(targetResult([]string{"akrw"}))
+func TestUpdateConfigAllowsStaleFeedsFromPreviousAddressUntilNextPoll(t *testing.T) {
+	firstQuery := newBlockingQueryServer(feedResult([]string{"ausd"}))
+	secondQuery := newBlockingQueryServer(feedResult([]string{"akrw"}))
 	firstEndpoint := newTestQueryEndpoint(t, "first", firstQuery)
 	secondEndpoint := newTestQueryEndpoint(t, "second", secondQuery)
 	originalInterval := 75 * time.Millisecond
@@ -454,7 +456,7 @@ func TestUpdateConfigAllowsStaleVoteTargetsFromPreviousAddressUntilNextPoll(t *t
 
 	secondQuery.requireNoCalls(t, originalInterval/3)
 	secondQuery.waitForCalls(t, 1)
-	got, err := client.VoteTargets()
+	got, err := client.Feeds()
 	require.NoError(t, err)
 	require.Equal(t, []string{"ausd"}, got)
 
@@ -483,16 +485,16 @@ func TestNewClientRejectsMissingAddress(t *testing.T) {
 }
 
 type queryResult struct {
-	targets []string
-	version uint64
-	pending *oracletypes.PendingVoteTargets
-	err     error
+	feeds       []string
+	version     uint64
+	transitions []oracletypes.FeedTransition
+	err         error
 }
 
-func targetResult(targets []string) queryResult {
+func feedResult(feeds []string) queryResult {
 	return queryResult{
-		targets: targets,
-		version: oracletypes.InitialVoteTargetVersion,
+		feeds:   feeds,
+		version: oracletypes.InitialFeedVersion,
 	}
 }
 
@@ -513,10 +515,10 @@ func newBlockingQueryServer(result queryResult) *blockingQueryServer {
 	}
 }
 
-func (b *blockingQueryServer) VoteTargets(
+func (b *blockingQueryServer) Feeds(
 	ctx context.Context,
-	_ *oracletypes.QueryVoteTargetsRequest,
-) (*oracletypes.QueryVoteTargetsResponse, error) {
+	_ *oracletypes.QueryFeedsRequest,
+) (*oracletypes.QueryFeedsResponse, error) {
 	b.calls <- struct{}{}
 	select {
 	case <-ctx.Done():
@@ -527,10 +529,12 @@ func (b *blockingQueryServer) VoteTargets(
 	if b.result.err != nil {
 		return nil, b.result.err
 	}
-	return &oracletypes.QueryVoteTargetsResponse{
-		VoteTargets:   b.result.targets,
-		TargetVersion: b.result.version,
-		Pending:       b.result.pending,
+	return &oracletypes.QueryFeedsResponse{
+		Feeds: oracletypes.Feeds{
+			Denoms:      b.result.feeds,
+			Version:     b.result.version,
+			Transitions: b.result.transitions,
+		},
 	}, nil
 }
 
@@ -540,7 +544,7 @@ func (b *blockingQueryServer) waitForCalls(t *testing.T, want int) {
 		select {
 		case <-b.calls:
 		case <-time.After(time.Second):
-			t.Fatalf("timed out waiting for vote-target query call %d", want)
+			t.Fatalf("timed out waiting for feed query call %d", want)
 		}
 	}
 }
@@ -549,7 +553,7 @@ func (b *blockingQueryServer) requireNoCalls(t *testing.T, duration time.Duratio
 	t.Helper()
 	select {
 	case <-b.calls:
-		t.Fatal("unexpected vote-target query call")
+		t.Fatal("unexpected feed query call")
 	case <-time.After(duration):
 	}
 }
@@ -575,10 +579,10 @@ func newFakeQueryServer(results ...queryResult) *fakeQueryServer {
 	}
 }
 
-func (f *fakeQueryServer) VoteTargets(
+func (f *fakeQueryServer) Feeds(
 	_ context.Context,
-	_ *oracletypes.QueryVoteTargetsRequest,
-) (*oracletypes.QueryVoteTargetsResponse, error) {
+	_ *oracletypes.QueryFeedsRequest,
+) (*oracletypes.QueryFeedsResponse, error) {
 	f.mut.Lock()
 	defer f.mut.Unlock()
 
@@ -593,10 +597,12 @@ func (f *fakeQueryServer) VoteTargets(
 		return nil, result.err
 	}
 
-	return &oracletypes.QueryVoteTargetsResponse{
-		VoteTargets:   result.targets,
-		TargetVersion: result.version,
-		Pending:       result.pending,
+	return &oracletypes.QueryFeedsResponse{
+		Feeds: oracletypes.Feeds{
+			Denoms:      result.feeds,
+			Version:     result.version,
+			Transitions: result.transitions,
+		},
 	}, nil
 }
 
@@ -606,7 +612,7 @@ func (f *fakeQueryServer) waitForCalls(t *testing.T, want int) {
 		select {
 		case <-f.calls:
 		case <-time.After(time.Second):
-			t.Fatalf("timed out waiting for vote-target query call %d", want)
+			t.Fatalf("timed out waiting for feed query call %d", want)
 		}
 	}
 }
@@ -615,7 +621,7 @@ func (f *fakeQueryServer) requireNoCalls(t *testing.T, duration time.Duration) {
 	t.Helper()
 	select {
 	case <-f.calls:
-		t.Fatal("unexpected vote-target query call")
+		t.Fatal("unexpected feed query call")
 	case <-time.After(duration):
 	}
 }
@@ -676,7 +682,7 @@ func dialTestQueryEndpoints(endpoints ...testQueryEndpoint) func(context.Context
 
 type pollingClient interface {
 	Run(context.Context) error
-	VoteTargets() ([]string, error)
+	Feeds() ([]string, error)
 }
 
 func startClient(t *testing.T, client pollingClient) context.CancelFunc {
@@ -706,14 +712,14 @@ func stopClient(cancel context.CancelFunc, _ pollingClient) {
 func requireEventuallyTargets(
 	t *testing.T,
 	client interface {
-		VoteTargets() ([]string, error)
+		Feeds() ([]string, error)
 	},
 	want []string,
 ) {
 	t.Helper()
 
 	require.Eventually(t, func() bool {
-		got, err := client.VoteTargets()
+		got, err := client.Feeds()
 		return err == nil && reflect.DeepEqual(want, got)
 	}, time.Second, time.Millisecond)
 }

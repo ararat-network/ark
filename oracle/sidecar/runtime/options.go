@@ -29,7 +29,7 @@ func WithProviderFactory(factory func(
 	}
 }
 
-// WithChainStateClient sets the client used to fetch on-chain oracle vote targets.
+// WithChainStateClient sets the client used to fetch the on-chain oracle feed set.
 func WithChainStateClient(client ChainStateClient) Option {
 	return func(r *Runtime) {
 		r.client = client

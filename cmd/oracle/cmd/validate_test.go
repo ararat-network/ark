@@ -33,7 +33,7 @@ func TestValidateCmdOwnsValidationFlags(t *testing.T) {
 	require.Equal(t, defaults.MaxResponseAge.String(), cmd.Flags().Lookup(flagMaxResponseAge).DefValue)
 	require.Equal(t, defaults.MaxFutureSkew.String(), cmd.Flags().Lookup(flagMaxFutureSkew).DefValue)
 	require.Equal(t, defaults.RequestTimeout.String(), cmd.Flags().Lookup(flagRequestTimeout).DefValue)
-	require.Equal(t, defaults.DenomRefreshInterval.String(), cmd.Flags().Lookup(flagDenomRefreshInterval).DefValue)
+	require.Equal(t, defaults.FeedRefreshInterval.String(), cmd.Flags().Lookup(flagFeedRefreshInterval).DefValue)
 	require.Equal(t, "1000", cmd.Flags().Lookup(flagNumChecks).DefValue)
 	require.Equal(t, "99", cmd.Flags().Lookup(flagRequiredPriceLivenessPercent).DefValue)
 }
@@ -73,11 +73,11 @@ func TestValidateCmdPrintsDisabledState(t *testing.T) {
 	err := writeValidationOutcome(
 		out,
 		nil,
-		fmt.Errorf("load initial active denoms: %w", validation.ErrNoActiveVoteTargets),
+		fmt.Errorf("load initial active feeds: %w", validation.ErrNoActiveFeeds),
 	)
 
 	require.NoError(t, err)
-	require.Equal(t, "oracle validation skipped: no active vote targets (oracle voting disabled)\n", out.String())
+	require.Equal(t, "oracle validation skipped: no active feeds (oracle voting disabled)\n", out.String())
 }
 
 func TestRunValidationUsesExternalRPCs(t *testing.T) {
@@ -102,7 +102,7 @@ func TestRunValidationUsesExternalRPCs(t *testing.T) {
 	cfg.BurnInPeriod = 0
 	cfg.ValidationPeriod = 10 * time.Millisecond
 	cfg.NumChecks = 1
-	cfg.DenomRefreshInterval = time.Hour
+	cfg.FeedRefreshInterval = time.Hour
 	cfg.RequestTimeout = 100 * time.Millisecond
 	results, err := runValidation(
 		context.Background(),
@@ -182,12 +182,15 @@ type validationQueryServer struct {
 	called bool
 }
 
-func (s *validationQueryServer) VoteTargets(
+func (s *validationQueryServer) Feeds(
 	context.Context,
-	*oracletypes.QueryVoteTargetsRequest,
-) (*oracletypes.QueryVoteTargetsResponse, error) {
+	*oracletypes.QueryFeedsRequest,
+) (*oracletypes.QueryFeedsResponse, error) {
 	s.called = true
-	return &oracletypes.QueryVoteTargetsResponse{
-		VoteTargets: append([]string(nil), s.denoms...),
+	return &oracletypes.QueryFeedsResponse{
+		Feeds: oracletypes.Feeds{
+			Denoms:  append([]string(nil), s.denoms...),
+			Version: oracletypes.InitialFeedVersion,
+		},
 	}, nil
 }

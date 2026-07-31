@@ -136,7 +136,7 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	}).GetCounter().GetValue())
 }
 
-func TestResolvePricesAveragesConfiguredRoutePricesForVoteTarget(t *testing.T) {
+func TestResolvePricesAveragesConfiguredRoutePricesForFeed(t *testing.T) {
 	cfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
 			"akrw": {

@@ -58,20 +58,20 @@ func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
 
 func TestConfigValidateRejectsNonCanonicalFallbackDenom(t *testing.T) {
 	cfg := testRuntimeConfigWithUnknownProvider()
-	cfg.FallbackDenoms = []string{"aUSD"}
+	cfg.FallbackFeeds = []string{"aUSD"}
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, "canonical lowercase Ark-native base denom")
+	require.ErrorContains(t, err, "Ark-native base denom matching")
 }
 
-func TestConfigValidateRejectsTooManyFallbackDenoms(t *testing.T) {
+func TestConfigValidateRejectsTooManyFallbackFeeds(t *testing.T) {
 	cfg := testRuntimeConfigWithUnknownProvider()
-	cfg.FallbackDenoms = make([]string, oracletypes.MaxVoteTargets+1)
+	cfg.FallbackFeeds = make([]string, oracletypes.MaxFeeds+1)
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, "fallback denom count")
+	require.ErrorContains(t, err, "fallback feed count")
 	require.ErrorContains(t, err, "exceeds maximum")
 }
 
@@ -102,7 +102,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 			wantPrices:        map[string]*big.Float{},
 		},
 		{
-			name: "returns only resolved active denoms",
+			name: "returns only resolved active feeds",
 			setup: func(t *testing.T) (*Runtime, func()) {
 				t.Helper()
 
@@ -127,10 +127,10 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 						return ctx.Err()
 					})
 
-				voteTargetsClient := oracletestutil.NewMockChainStateClient(ctrl)
-				expectVoteTargetsLifecycle(voteTargetsClient)
-				voteTargetsClient.EXPECT().
-					VoteTargets().
+				feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+				expectFeedsLifecycle(feedsClient)
+				feedsClient.EXPECT().
+					Feeds().
 					Return([]string{"ausd", "akrw"}, nil).
 					AnyTimes()
 
@@ -139,7 +139,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 				oracle, err := NewRuntime(
 					cfg,
 					withInitialProviders(mp.provider),
-					WithChainStateClient(voteTargetsClient),
+					WithChainStateClient(feedsClient),
 				)
 				require.NoError(t, err)
 

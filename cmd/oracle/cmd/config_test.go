@@ -123,7 +123,7 @@ func validOracleConfigJSON() string {
 			"timeout": "2s",
 			"interval": "5s"
 		},
-		"fallbackDenoms": ["ausd"]
+		"fallbackFeeds": ["ausd"]
 	}`
 }
 

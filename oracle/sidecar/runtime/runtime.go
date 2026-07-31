@@ -17,12 +17,12 @@ import (
 // Runtime runs price providers and exposes aggregated price state.
 type Runtime struct {
 	// updateMu serialises config updates, price aggregation ticks,
-	// vote-target market retargeting, and provider lifecycle transitions.
+	// feed market retargeting, and provider lifecycle transitions.
 	// If both locks are needed, take updateMu before mut.
 	updateMu sync.Mutex
 
 	// mut guards the mutable runtime state below: cfg, mainCtx, mainCancel,
-	// priceSnapshot, denoms, and denomsFromVoteTargets.
+	// priceSnapshot, feeds, and feedsFromChain.
 	mut sync.RWMutex
 
 	logger log.Logger
@@ -50,13 +50,13 @@ type Runtime struct {
 	// Price aggregation state guarded by mut.
 	priceSnapshot types.PriceSnapshot
 
-	// Vote-target state guarded by mut. denoms is the effective denom snapshot
-	// used for provider market filtering, price output, and missing-price metrics.
-	denoms []string
+	// Feed state guarded by mut. feeds is the effective feed-denom snapshot used
+	// for provider market filtering, price output, and missing-price metrics.
+	feeds []string
 
-	// denomsFromVoteTargets is false while denoms comes from fallback config;
-	// once true, vote-target refresh failures preserve the last on-chain snapshot.
-	denomsFromVoteTargets bool
+	// feedsFromChain is false while feeds comes from fallback config; once true,
+	// feed refresh failures preserve the last on-chain snapshot.
+	feedsFromChain bool
 }
 
 // NewRuntime clones and validates cfg, constructs the configured providers and
@@ -87,10 +87,10 @@ func NewRuntime(cfg Config, opts ...Option) (*Runtime, error) {
 		return nil, errors.New("provider factory is nil")
 	}
 	r.logger = r.logger.With("component", "runtime")
-	if len(r.cfg.FallbackDenoms) != 0 {
-		r.denoms = append([]string(nil), r.cfg.FallbackDenoms...)
+	if len(r.cfg.FallbackFeeds) != 0 {
+		r.feeds = append([]string(nil), r.cfg.FallbackFeeds...)
 	}
-	pairs := r.cfg.Resolver.MarketPairs(r.denoms)
+	pairs := r.cfg.Resolver.MarketPairs(r.feeds)
 	for _, providerCfg := range r.cfg.Providers {
 		managed, err := r.newManagedProvider(providerCfg, providerCfg.Markets.FilterPairs(pairs))
 		if err != nil {

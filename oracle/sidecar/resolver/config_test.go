@@ -12,15 +12,15 @@ import (
 
 func TestConfigMarketPairs(t *testing.T) {
 	testCases := []struct {
-		name   string
-		cfg    resolver.Config
-		denoms []string
-		want   map[types.Pair]struct{}
+		name  string
+		cfg   resolver.Config
+		feeds []string
+		want  map[types.Pair]struct{}
 	}{
 		{
-			name:   "nil routes includes active direct pairs and inverses",
-			cfg:    resolver.Config{},
-			denoms: []string{"ausd"},
+			name:  "nil routes includes active direct pairs and inverses",
+			cfg:   resolver.Config{},
+			feeds: []string{"ausd"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -31,7 +31,7 @@ func TestConfigMarketPairs(t *testing.T) {
 			cfg: resolver.Config{
 				Routes: map[string][]resolver.Route{},
 			},
-			denoms: []string{"ausd"},
+			feeds: []string{"ausd"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -49,7 +49,7 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
-			denoms: []string{"akrw"},
+			feeds: []string{"akrw"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -69,14 +69,14 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
-			denoms: []string{"ausd"},
+			feeds: []string{"ausd"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
 			},
 		},
 		{
-			name: "adds default direct pairs for denoms without configured routes",
+			name: "adds default direct pairs for feeds without configured routes",
 			cfg: resolver.Config{
 				Routes: map[string][]resolver.Route{
 					"akrw": {
@@ -87,7 +87,7 @@ func TestConfigMarketPairs(t *testing.T) {
 					},
 				},
 			},
-			denoms: []string{"ausd", "akrw"},
+			feeds: []string{"ausd", "akrw"},
 			want: map[types.Pair]struct{}{
 				"NOAH/USD": {},
 				"USD/NOAH": {},
@@ -99,7 +99,7 @@ func TestConfigMarketPairs(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.want, tc.cfg.MarketPairs(tc.denoms))
+			require.Equal(t, tc.want, tc.cfg.MarketPairs(tc.feeds))
 		})
 	}
 }
@@ -123,7 +123,7 @@ func TestConfigValidateRejectsNonCanonicalDenomWithEmptyRoutes(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, "canonical lowercase Ark-native base denom")
+	require.ErrorContains(t, err, "Ark-native base denom matching")
 }
 
 func TestConfigValidateBootstrapPrices(t *testing.T) {

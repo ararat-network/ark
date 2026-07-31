@@ -10,19 +10,19 @@ import (
 	"ark/oracle/sidecar/types"
 )
 
-// updatePriceSnapshot serialises vote-target sync, provider cache reads,
-// resolution, and snapshot commit with config and lifecycle transitions under
-// updateMu. Missing denoms remain absent from the committed snapshot.
+// updatePriceSnapshot serialises feed sync, provider cache reads, resolution,
+// and snapshot commit with config and lifecycle transitions under updateMu.
+// Missing feeds remain absent from the committed snapshot.
 func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	r.logger.Debug("updating price snapshot")
 
 	r.updateMu.Lock()
 	defer r.updateMu.Unlock()
 
-	r.syncVoteTargetsLocked()
+	r.syncFeedsLocked()
 
 	r.mut.RLock()
-	denoms := append([]string(nil), r.denoms...)
+	feeds := append([]string(nil), r.feeds...)
 	resolverCfg := r.cfg.Resolver
 	maxPriceAges := make(map[string]time.Duration, len(r.cfg.Providers))
 	for name, providerCfg := range r.cfg.Providers {
@@ -41,9 +41,9 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	}
 	r.logger.Debug("collected cached provider prices")
 
-	resolvedPrices := resolver.ResolvePrices(ctx, resolverCfg, providerPrices, denoms, now)
-	prices := types.PricesByDenom(resolvedPrices, denoms)
-	r.recordMissingPrices(ctx, denoms, prices)
+	resolvedPrices := resolver.ResolvePrices(ctx, resolverCfg, providerPrices, feeds, now)
+	prices := types.PricesByFeed(resolvedPrices, feeds)
+	r.recordMissingPrices(ctx, feeds, prices)
 	r.commitPriceSnapshot(prices, now)
 	oraclemetrics.RecordOracleTick(ctx)
 }
@@ -109,15 +109,15 @@ func (r *Runtime) freshProviderPrices(
 	return freshPrices
 }
 
-// recordMissingPrices records expected denoms missing from the latest aggregate
+// recordMissingPrices records expected feeds missing from the latest aggregate
 // prices.
-func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string, prices types.DenomPrices) {
-	if len(denoms) == 0 {
+func (r *Runtime) recordMissingPrices(ctx context.Context, feeds []string, prices types.FeedPrices) {
+	if len(feeds) == 0 {
 		return
 	}
 
-	missing := make([]string, 0, len(denoms))
-	for _, denom := range denoms {
+	missing := make([]string, 0, len(feeds))
+	for _, denom := range feeds {
 		if _, ok := prices[denom]; !ok {
 			missing = append(missing, denom)
 		}
@@ -125,8 +125,8 @@ func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string, pric
 
 	if len(missing) > 0 {
 		r.logger.Warn(
-			"oracle missing prices for active vote targets",
-			"denoms", missing,
+			"oracle missing prices for active feeds",
+			"feeds", missing,
 			"count", len(missing),
 		)
 	}
@@ -136,7 +136,7 @@ func (r *Runtime) recordMissingPrices(ctx context.Context, denoms []string, pric
 
 // commitPriceSnapshot stores a runtime-owned price snapshot from one aggregation
 // tick. The caller must not mutate prices after commit.
-func (r *Runtime) commitPriceSnapshot(prices types.DenomPrices, timestamp time.Time) {
+func (r *Runtime) commitPriceSnapshot(prices types.FeedPrices, timestamp time.Time) {
 	r.mut.Lock()
 	defer r.mut.Unlock()
 

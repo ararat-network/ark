@@ -11,8 +11,8 @@ import (
 // Prices is the oracle-internal price map keyed by canonical BASE/QUOTE pairs.
 type Prices map[Pair]*big.Float
 
-// DenomPrices is the public/API-facing price map keyed by vote-target denom.
-type DenomPrices map[string]*big.Float
+// FeedPrices is the public/API-facing price map keyed by feed denom.
+type FeedPrices map[string]*big.Float
 
 // PricePrecisionBits is the precision used for provider prices and resolver
 // arithmetic. It comfortably exceeds the 18 decimal places serialised at the
@@ -24,8 +24,8 @@ const PricePrecisionBits uint = 256
 const maxLegacyDecExponent = 256
 
 // Clone returns a deep copy of p.
-func (p DenomPrices) Clone() DenomPrices {
-	copied := make(DenomPrices, len(p))
+func (p FeedPrices) Clone() FeedPrices {
+	copied := make(FeedPrices, len(p))
 	for denom, price := range p {
 		if price == nil {
 			copied[denom] = nil
@@ -38,19 +38,19 @@ func (p DenomPrices) Clone() DenomPrices {
 
 // PriceSnapshot is a committed public price view from one runtime aggregation.
 type PriceSnapshot struct {
-	// Prices contains the resolved denom-keyed public values committed by the
-	// tick. Denoms without a usable price are absent.
-	Prices DenomPrices
+	// Prices contains the resolved feed-keyed public values committed by the
+	// tick. Feeds without a usable price are absent.
+	Prices FeedPrices
 	// Timestamp is the aggregation time shared by every price in Prices.
 	Timestamp time.Time
 }
 
-// PricesByDenom projects internal pair prices to public vote-target denom prices.
-func PricesByDenom(prices Prices, denoms []string) DenomPrices {
-	result := make(DenomPrices, len(prices))
-	targets := make(map[string]struct{}, len(denoms))
-	for _, denom := range denoms {
-		targets[denom] = struct{}{}
+// PricesByFeed projects internal pair prices to public feed prices.
+func PricesByFeed(prices Prices, feeds []string) FeedPrices {
+	result := make(FeedPrices, len(prices))
+	active := make(map[string]struct{}, len(feeds))
+	for _, denom := range feeds {
+		active[denom] = struct{}{}
 	}
 
 	for pair, price := range prices {
@@ -58,9 +58,9 @@ func PricesByDenom(prices Prices, denoms []string) DenomPrices {
 			continue
 		}
 
-		denom := pair.VoteTargetDenom()
-		if len(targets) != 0 {
-			if _, ok := targets[denom]; !ok {
+		denom := pair.Denom()
+		if len(active) != 0 {
+			if _, ok := active[denom]; !ok {
 				continue
 			}
 		}

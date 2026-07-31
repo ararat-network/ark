@@ -14,16 +14,16 @@ func (r *Runtime) Update(cfg Config) error {
 
 	r.mut.RLock()
 	oldCfg := r.cfg
-	oldDenoms := append([]string(nil), r.denoms...)
-	nextDenoms := append([]string(nil), oldDenoms...)
-	if !r.denomsFromVoteTargets {
-		nextDenoms = append([]string(nil), nextCfg.FallbackDenoms...)
+	oldFeeds := append([]string(nil), r.feeds...)
+	nextFeeds := append([]string(nil), oldFeeds...)
+	if !r.feedsFromChain {
+		nextFeeds = append([]string(nil), nextCfg.FallbackFeeds...)
 	}
 	mainCtx := r.mainCtx
 	mainCancel := r.mainCancel
 	r.mut.RUnlock()
 
-	plan, err := r.planProviders(oldCfg, nextCfg, oldDenoms, nextDenoms)
+	plan, err := r.planProviders(oldCfg, nextCfg, oldFeeds, nextFeeds)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (r *Runtime) Update(cfg Config) error {
 
 	r.mut.Lock()
 	r.cfg = nextCfg
-	r.denoms = append([]string(nil), nextDenoms...)
+	r.feeds = append([]string(nil), nextFeeds...)
 	r.mut.Unlock()
 
 	if clientChanged {
@@ -77,15 +77,15 @@ type providerPlan struct {
 func (r *Runtime) planProviders(
 	oldCfg Config,
 	newCfg Config,
-	oldDenoms []string,
-	newDenoms []string,
+	oldFeeds []string,
+	newFeeds []string,
 ) (providerPlan, error) {
 	plan := providerPlan{
 		next: make(map[string]*managedProvider, len(newCfg.Providers)),
 	}
 
-	oldPairs := oldCfg.Resolver.MarketPairs(oldDenoms)
-	newPairs := newCfg.Resolver.MarketPairs(newDenoms)
+	oldPairs := oldCfg.Resolver.MarketPairs(oldFeeds)
+	newPairs := newCfg.Resolver.MarketPairs(newFeeds)
 	for name, newProviderCfg := range newCfg.Providers {
 		current, exists := r.providers[name]
 		newMarkets := newProviderCfg.Markets.FilterPairs(newPairs)

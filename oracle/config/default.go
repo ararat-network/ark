@@ -19,9 +19,9 @@ const (
 
 	// DefaultClientAddress is the default on-chain oracle query endpoint.
 	DefaultClientAddress = "127.0.0.1:9090"
-	// DefaultClientTimeout bounds each default vote-target query.
+	// DefaultClientTimeout bounds each default feed query.
 	DefaultClientTimeout = 2 * time.Second
-	// DefaultClientInterval is the default vote-target polling cadence.
+	// DefaultClientInterval is the default feed polling cadence.
 	DefaultClientInterval = 5 * time.Second
 )
 
@@ -84,7 +84,7 @@ func Default() runtime.Config {
 			Timeout:  DefaultClientTimeout,
 			Interval: DefaultClientInterval,
 		},
-		FallbackDenoms: []string{
+		FallbackFeeds: []string{
 			chain.USDBaseDenom,
 			chain.KRWBaseDenom,
 			chain.SDRBaseDenom,

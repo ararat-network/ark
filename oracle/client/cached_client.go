@@ -19,7 +19,7 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-const maxPriceSnapshotEntries = 2 * oracletypes.MaxVoteTargets
+const maxPriceSnapshotEntries = 2 * oracletypes.MaxFeeds
 
 // Client polls the sidecar and serves its latest fresh price
 // snapshot to node-side callers without performing network I/O on the request

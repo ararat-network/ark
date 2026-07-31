@@ -23,11 +23,11 @@ func TestRunStartsAndStopsChainStateClient(t *testing.T) {
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRun(mp.fetcher, started)
 
-	voteTargetsClient, voteTargetsRecorder := newRecordingChainStateClient(t, ctrl)
+	feedsClient, feedsRecorder := newRecordingChainStateClient(t, ctrl)
 	oracle, err := NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
-		WithChainStateClient(voteTargetsClient),
+		WithChainStateClient(feedsClient),
 	)
 	require.NoError(t, err)
 
@@ -38,11 +38,11 @@ func TestRunStartsAndStopsChainStateClient(t *testing.T) {
 	}()
 	requireOracleStarted(t, oracle)
 	requireProviderStarted(t, started)
-	voteTargetsRecorder.requireStarted(t)
+	feedsRecorder.requireStarted(t)
 
 	cancel()
 	requireOracleStopped(t, errCh)
-	require.True(t, voteTargetsRecorder.stopped())
+	require.True(t, feedsRecorder.stopped())
 }
 
 func TestRunShutdownWaitsForConcurrentConfigUpdateProviderStops(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 )
 
 // Config defines optional routes for resolving provider pair medians into
-// vote-target pair prices.
+// feed pair prices.
 type Config struct {
-	// Routes maps vote-target denoms to alternate resolution paths. Missing or
+	// Routes maps feed denoms to alternate resolution paths. Missing or
 	// empty entries use the canonical direct NOAH/QUOTE route.
 	Routes map[string][]Route `json:"routes"`
 
@@ -22,7 +22,7 @@ type Config struct {
 	BootstrapPrices []BootstrapPrice `json:"bootstrapPrices"`
 }
 
-// Route is one named path from NOAH to a vote-target quote denom.
+// Route is one named path from NOAH to a feed quote denom.
 type Route struct {
 	// Name identifies this path in per-route metrics.
 	Name string `json:"name"`
@@ -64,12 +64,12 @@ func (c Config) Clone() Config {
 	return cloned
 }
 
-// MarketPairs returns provider market pairs required to resolve active denoms,
-// including inverse pairs that can satisfy the same steps. Denoms without
+// MarketPairs returns provider market pairs required to resolve the active feed set,
+// including inverse pairs that can satisfy the same steps. Feeds without
 // configured routes use the default direct NOAH/QUOTE path.
-func (c Config) MarketPairs(denoms []string) map[types.Pair]struct{} {
+func (c Config) MarketPairs(feeds []string) map[types.Pair]struct{} {
 	pairs := make(map[types.Pair]struct{})
-	for _, denom := range denoms {
+	for _, denom := range feeds {
 		_, routes, ok := c.RoutesForDenom(denom)
 		if !ok {
 			continue
@@ -105,7 +105,7 @@ func (c Config) RoutesForDenom(denom string) (types.Pair, []Route, bool) {
 }
 
 // Validate checks bootstrap prices and resolver routes at config-update time. A
-// nil or empty Routes map uses default direct routes for active denoms. A denom
+// nil or empty Routes map uses default direct routes for active feeds. A feed
 // present in Routes with an empty route list also uses the default direct route.
 // Non-empty routes must define valid paths to their canonical NOAH/QUOTE outputs.
 func (c Config) Validate() error {
@@ -137,7 +137,7 @@ func (c Config) Validate() error {
 	}
 
 	for denom, routes := range c.Routes {
-		if err := chain.ValidateNativeBaseDenom(denom); err != nil {
+		if err := chain.ValidatePricedDenom(denom); err != nil {
 			return fmt.Errorf("invalid resolver denom %q: %w", denom, err)
 		}
 		if len(routes) == 0 {

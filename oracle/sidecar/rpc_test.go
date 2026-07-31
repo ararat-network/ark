@@ -70,7 +70,7 @@ func TestPrices(t *testing.T) {
 	require.Equal(t, math.LegacyMustNewDecFromStr("42.25"), decodePrice(t, response.Prices["akrw"]))
 }
 
-func TestPricesOmitsMissingVoteTargets(t *testing.T) {
+func TestPricesOmitsMissingFeeds(t *testing.T) {
 	oracle := newTestOracle(t, oracletypes.Prices{})
 	startTestRuntime(t, oracle)
 
@@ -84,7 +84,7 @@ func TestPricesOmitsMissingVoteTargets(t *testing.T) {
 func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 	cfg := newTestRuntimeConfig()
 	cfg.UpdateInterval = time.Millisecond
-	client := newBlockingVoteTargetsClient(cfg.FallbackDenoms)
+	client := newBlockingFeedsClient(cfg.FallbackFeeds)
 	t.Cleanup(client.release)
 	oracle := newTestOracleFromRuntime(
 		t,
@@ -117,7 +117,7 @@ func TestPricesReturnsContextErrorBeforeSnapshotRead(t *testing.T) {
 		t,
 		cfg,
 		newServerTestFetcher(nil),
-		newStaticChainStateClient(cfg.FallbackDenoms),
+		newStaticChainStateClient(cfg.FallbackFeeds),
 		ProcessConfig{ServerAddress: "127.0.0.1:0"},
 	)
 	startTestRuntime(t, oracle)
@@ -133,17 +133,17 @@ func TestPricesReturnsContextErrorBeforeSnapshotRead(t *testing.T) {
 func TestToReqPrices(t *testing.T) {
 	tests := []struct {
 		name   string
-		prices oracletypes.DenomPrices
+		prices oracletypes.FeedPrices
 		want   map[string]math.LegacyDec
 	}{
 		{
 			name:   "empty prices",
-			prices: oracletypes.DenomPrices{},
+			prices: oracletypes.FeedPrices{},
 			want:   map[string]math.LegacyDec{},
 		},
 		{
 			name: "multiple prices",
-			prices: oracletypes.DenomPrices{
+			prices: oracletypes.FeedPrices{
 				"ausd": mustBigFloat(t, "123.456"),
 				"akrw": mustBigFloat(t, "42.25"),
 			},
@@ -170,7 +170,7 @@ func TestToReqPrices(t *testing.T) {
 }
 
 func TestToReqPricesRejectsNilPrice(t *testing.T) {
-	got, err := toReqPrices(oracletypes.DenomPrices{
+	got, err := toReqPrices(oracletypes.FeedPrices{
 		"ausd": nil,
 	})
 
@@ -182,7 +182,7 @@ func TestToReqPricesRejectsOutOfRangePriceBeforeFormatting(t *testing.T) {
 	tooLarge := new(big.Float).SetPrec(oracletypes.PricePrecisionBits)
 	tooLarge.SetInt(new(big.Int).Lsh(big.NewInt(1), 256))
 
-	got, err := toReqPrices(oracletypes.DenomPrices{"ausd": tooLarge})
+	got, err := toReqPrices(oracletypes.FeedPrices{"ausd": tooLarge})
 
 	require.Nil(t, got)
 	require.ErrorContains(t, err, "magnitude exceeds LegacyDec range")

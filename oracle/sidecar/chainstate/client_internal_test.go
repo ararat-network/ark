@@ -70,7 +70,7 @@ func TestRunPropagatesPollPanic(t *testing.T) {
 			...grpc.CallOption,
 		) error {
 			<-allowPanic
-			panic("vote target query panic")
+			panic("feed query panic")
 		})),
 	)
 	require.NoError(t, err)
@@ -89,14 +89,14 @@ func TestRunPropagatesPollPanic(t *testing.T) {
 
 	select {
 	case recovered := <-recoveredCh:
-		require.Equal(t, "vote target query panic", recovered)
+		require.Equal(t, "feed query panic", recovered)
 	case <-time.After(time.Second):
 		cancel()
 		t.Fatal("chain state client did not propagate panic")
 	}
 }
 
-func TestQueryVoteTargetsRejectsOversizedEpochs(t *testing.T) {
+func TestQueryFeedsRejectsOversizedEpochs(t *testing.T) {
 	client, err := NewClient(Config{
 		Address:  "passthrough:///unused",
 		Timeout:  time.Second,
@@ -106,32 +106,34 @@ func TestQueryVoteTargetsRejectsOversizedEpochs(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		response *oracletypes.QueryVoteTargetsResponse
+		response *oracletypes.QueryFeedsResponse
 		wantErr  string
 	}{
 		{
 			name: "active",
-			response: &oracletypes.QueryVoteTargetsResponse{
-				VoteTargets: make([]string, oracletypes.MaxVoteTargets+1),
-			},
-			wantErr: "active vote target count",
-		},
-		{
-			name: "pending",
-			response: &oracletypes.QueryVoteTargetsResponse{
-				Pending: &oracletypes.PendingVoteTargets{
-					Denoms: make([]string, oracletypes.MaxVoteTargets+1),
+			response: &oracletypes.QueryFeedsResponse{
+				Feeds: oracletypes.Feeds{
+					Denoms: make([]string, oracletypes.MaxFeeds+1),
 				},
 			},
-			wantErr: "pending vote target count",
+			wantErr: "active feed count",
+		},
+		{
+			name: "scheduled transitions",
+			response: &oracletypes.QueryFeedsResponse{
+				Feeds: oracletypes.Feeds{
+					Transitions: make([]oracletypes.FeedTransition, oracletypes.MaxFeeds+1),
+				},
+			},
+			wantErr: "scheduled feed transition count",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			query := voteTargetQueryClient{response: tt.response}
+			query := feedQueryClient{response: tt.response}
 
-			_, err := client.queryVoteTargets(context.Background(), query)
+			_, err := client.queryFeeds(context.Background(), query)
 
 			require.ErrorContains(t, err, tt.wantErr)
 			require.ErrorContains(t, err, "exceeds maximum")
@@ -139,15 +141,15 @@ func TestQueryVoteTargetsRejectsOversizedEpochs(t *testing.T) {
 	}
 }
 
-type voteTargetQueryClient struct {
+type feedQueryClient struct {
 	oracletypes.QueryClient
-	response *oracletypes.QueryVoteTargetsResponse
+	response *oracletypes.QueryFeedsResponse
 }
 
-func (c voteTargetQueryClient) VoteTargets(
+func (c feedQueryClient) Feeds(
 	context.Context,
-	*oracletypes.QueryVoteTargetsRequest,
+	*oracletypes.QueryFeedsRequest,
 	...grpc.CallOption,
-) (*oracletypes.QueryVoteTargetsResponse, error) {
+) (*oracletypes.QueryFeedsResponse, error) {
 	return c.response, nil
 }

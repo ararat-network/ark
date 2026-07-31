@@ -75,7 +75,7 @@ func init() {
 
 	missingPrices, err = meter.Int64Counter(
 		"ark.oracle.missing.prices",
-		metric.WithDescription("Number of standalone oracle aggregation ticks missing a denom price"),
+		metric.WithDescription("Number of standalone oracle aggregation ticks missing a feed price"),
 	)
 	if err != nil {
 		panic(err)
@@ -152,7 +152,7 @@ func RecordBootstrapPriceUse(ctx context.Context, pair string) {
 	)
 }
 
-// RecordMissingPrice records an active denom missing from a price snapshot.
+// RecordMissingPrice records an active feed missing from a price snapshot.
 func RecordMissingPrice(ctx context.Context, denom string) {
 	missingPrices.Add(
 		ctx,
@@ -161,9 +161,9 @@ func RecordMissingPrice(ctx context.Context, denom string) {
 	)
 }
 
-// RecordMissingPrices records every active denom missing from an aggregation tick.
-func RecordMissingPrices(ctx context.Context, denoms []string) {
-	for _, denom := range denoms {
+// RecordMissingPrices records every active feed missing from an aggregation tick.
+func RecordMissingPrices(ctx context.Context, feeds []string) {
+	for _, denom := range feeds {
 		RecordMissingPrice(ctx, denom)
 	}
 }

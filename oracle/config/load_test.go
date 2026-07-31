@@ -23,7 +23,7 @@ func TestLoadDecodesDurationStrings(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1500*time.Millisecond, cfg.UpdateInterval)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
-	require.Equal(t, []string{"ausd"}, cfg.FallbackDenoms)
+	require.Equal(t, []string{"ausd"}, cfg.FallbackFeeds)
 	require.Equal(t, []resolver.BootstrapPrice{{
 		Pair:       "NOAH/USD",
 		Price:      "0.25",
@@ -36,7 +36,7 @@ func TestDefaultIsValid(t *testing.T) {
 
 	require.NoError(t, cfg.Validate())
 	require.NotEmpty(t, cfg.Providers)
-	require.NotEmpty(t, cfg.FallbackDenoms)
+	require.NotEmpty(t, cfg.FallbackFeeds)
 	require.Equal(t, DefaultClientInterval, cfg.Client.Interval)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.NotNil(t, cfg.Resolver.BootstrapPrices)
@@ -86,7 +86,7 @@ func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
 		},
 	}
 
-	for _, denom := range cfg.FallbackDenoms {
+	for _, denom := range cfg.FallbackFeeds {
 		routes, ok := cfg.Resolver.Routes[denom]
 		require.True(t, ok, "missing default resolver route for %s", denom)
 		require.Equal(t, []resolver.Route{expectedRoutes[denom]}, routes)
@@ -165,5 +165,5 @@ const validConfigJSON = `{
     "timeout": "2s",
     "interval": "5s"
   },
-  "fallbackDenoms": ["ausd"]
+  "fallbackFeeds": ["ausd"]
 }`

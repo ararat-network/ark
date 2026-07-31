@@ -32,7 +32,7 @@ const (
 	flagMaxResponseAge               = "max-response-age"
 	flagMaxFutureSkew                = "max-future-skew"
 	flagRequestTimeout               = "request-timeout"
-	flagDenomRefreshInterval         = "denom-refresh-interval"
+	flagFeedRefreshInterval          = "feed-refresh-interval"
 )
 
 type validateOptions struct {
@@ -65,7 +65,7 @@ func newValidateCmd() *cobra.Command {
 
 	flags := validateCmd.Flags()
 	flags.StringVar(&options.oracleAddress, flagOracleAddress, options.oracleAddress, "Running oracle gRPC address.")
-	flags.StringVar(&options.chainAddress, flagChainAddress, options.chainAddress, "Chain gRPC address used to query vote targets.")
+	flags.StringVar(&options.chainAddress, flagChainAddress, options.chainAddress, "Chain gRPC address used to query the oracle feed set.")
 	flags.DurationVar(&options.cfg.BurnInPeriod, flagBurnInPeriod, options.cfg.BurnInPeriod, "Time to wait before validation begins.")
 	flags.DurationVar(&options.cfg.ValidationPeriod, flagValidationPeriod, options.cfg.ValidationPeriod, "Duration over which prices are sampled.")
 	flags.IntVar(&options.cfg.NumChecks, flagNumChecks, options.cfg.NumChecks, "Number of price checks to run.")
@@ -73,16 +73,16 @@ func newValidateCmd() *cobra.Command {
 		&options.cfg.RequiredPriceLivenessPercent,
 		flagRequiredPriceLivenessPercent,
 		options.cfg.RequiredPriceLivenessPercent,
-		"Minimum required price liveness percentage per denom.",
+		"Minimum required price liveness percentage per feed.",
 	)
 	flags.DurationVar(&options.cfg.MaxResponseAge, flagMaxResponseAge, options.cfg.MaxResponseAge, "Maximum accepted age of an oracle price response.")
 	flags.DurationVar(&options.cfg.MaxFutureSkew, flagMaxFutureSkew, options.cfg.MaxFutureSkew, "Maximum accepted future skew of an oracle price response.")
 	flags.DurationVar(&options.cfg.RequestTimeout, flagRequestTimeout, options.cfg.RequestTimeout, "Timeout for each validation RPC.")
 	flags.DurationVar(
-		&options.cfg.DenomRefreshInterval,
-		flagDenomRefreshInterval,
-		options.cfg.DenomRefreshInterval,
-		"Interval at which active vote targets are refreshed.",
+		&options.cfg.FeedRefreshInterval,
+		flagFeedRefreshInterval,
+		options.cfg.FeedRefreshInterval,
+		"Interval at which the active feed set is refreshed.",
 	)
 
 	return validateCmd
@@ -95,24 +95,24 @@ func writeValidationOutcome(
 	results validation.LivenessResults,
 	validationErr error,
 ) error {
-	if errors.Is(validationErr, validation.ErrNoActiveVoteTargets) {
-		if _, err := fmt.Fprintln(w, "oracle validation skipped: no active vote targets (oracle voting disabled)"); err != nil {
+	if errors.Is(validationErr, validation.ErrNoActiveFeeds) {
+		if _, err := fmt.Fprintln(w, "oracle validation skipped: no active feeds (oracle voting disabled)"); err != nil {
 			return fmt.Errorf("writing disabled oracle validation result: %w", err)
 		}
 		return nil
 	}
 
 	if len(results) > 0 {
-		denoms := make([]string, 0, len(results))
+		feeds := make([]string, 0, len(results))
 		for denom := range results {
-			denoms = append(denoms, denom)
+			feeds = append(feeds, denom)
 		}
-		sort.Strings(denoms)
+		sort.Strings(feeds)
 
 		if _, err := fmt.Fprintln(w, "oracle validation results:"); err != nil {
 			return errors.Join(validationErr, fmt.Errorf("writing validation results: %w", err))
 		}
-		for _, denom := range denoms {
+		for _, denom := range feeds {
 			if _, err := fmt.Fprintf(w, "%s: %.2f%%\n", denom, results[denom]); err != nil {
 				return errors.Join(validationErr, fmt.Errorf("writing validation result for %s: %w", denom, err))
 			}
