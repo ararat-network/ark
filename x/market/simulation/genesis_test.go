@@ -57,7 +57,7 @@ func TestRandomisedGenState(t *testing.T) {
 		),
 	)
 	require.True(t, marketGenesis.ConversionPolicy.PoolRecoveryPeriod > 0)
-	require.True(t, marketGenesis.Params.MinStabilitySpread.GT(math.LegacyZeroDec()))
+	require.True(t, marketGenesis.ConversionPolicy.MinStabilitySpread.GT(math.LegacyZeroDec()))
 	require.True(t, marketGenesis.ArkPoolDelta.IsZero())
 	// Simulation never appoints a committee, and the generated genesis must be
 	// launchable as produced.
