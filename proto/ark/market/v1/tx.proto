@@ -53,11 +53,11 @@ service Msg {
   rpc CommitteeUpdatePolicy(MsgCommitteeUpdatePolicy)
       returns (MsgCommitteeUpdatePolicyResponse) {}
 
-  // CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
-  // override as the conversion committee, at or above the current effective
-  // rate and at most the mandate's cap.
-  rpc CommitteeRaiseTobinTax(MsgCommitteeRaiseTobinTax)
-      returns (MsgCommitteeRaiseTobinTaxResponse) {}
+  // CommitteeSetTobinTax creates or replaces one per-denomination Tobin
+  // override as the conversion committee, inside the band the mandate
+  // delegates.
+  rpc CommitteeSetTobinTax(MsgCommitteeSetTobinTax)
+      returns (MsgCommitteeSetTobinTaxResponse) {}
 }
 
 // MsgSwap represents a message to swap coin to another denom.
@@ -121,10 +121,10 @@ message MsgUpdateParams {
 
   // params defines the x/market parameters to update.
   //
-  // NOTE: All parameters must be supplied. Conversion capacity is not here:
-  // pool depth and the recovery period are committee-delegable, so they move
-  // through MsgUpdatePolicy and never through this whole-object
-  // replacement.
+  // NOTE: All parameters must be supplied. The conversion dials are not here:
+  // pool depth, the recovery period, and the stability-spread floor are
+  // committee-delegable, so they move through MsgUpdatePolicy and never through
+  // this whole-object replacement.
   Params params = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
@@ -215,8 +215,12 @@ message MsgSetConversionMandate {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   ConversionPolicy maximum_policy = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // max_tobin_tax caps committee Tobin raises for this appointment. Zero
-  // delegates no Tobin power.
+  // max_tobin_tax is the upper edge of the committee's Tobin band for this
+  // appointment; the lower edge is Params.default_tobin_tax. An enabled
+  // appointment states the cap explicitly like every other bound — zero, not
+  // omission, is how a capacity-only committee is spelled. (On the wire the
+  // two are the same bytes; the distinction binds genesis files and direct
+  // callers.)
   string max_tobin_tax = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -265,18 +269,20 @@ message MsgCommitteeUpdatePolicy {
 // MsgCommitteeUpdatePolicy.
 message MsgCommitteeUpdatePolicyResponse {}
 
-// MsgCommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
-// override as the conversion committee. The committee only raises: the new
-// rate must be at least the denomination's current effective rate and at most
-// the mandate's max_tobin_tax, so the delegated power widens the
-// oracle-staleness buffer and never narrows it. Lowering or removing an
-// override stays governance-only. The verb is "raise" rather than "set" for
-// exactly that asymmetry — and the raise spelling also fits amino's
-// 39-character registration cap, which a CommitteeSetTobinTaxOverride
-// spelling would not.
-message MsgCommitteeRaiseTobinTax {
+// MsgCommitteeSetTobinTax creates or replaces one per-denomination Tobin
+// override as the conversion committee. The new rate must fall in
+// [Params.default_tobin_tax, mandate.max_tobin_tax] — a band with a
+// governance-owned edge at each end, the same shape as the policy corridor —
+// so the committee may widen a denomination's oracle-staleness buffer during an
+// incident and narrow it again once the incident passes, without either edge
+// moving.
+//
+// Only governance may take a denomination below the default or return it to
+// tracking the default, through MsgSetTobinTaxOverride and
+// MsgRemoveTobinTaxOverride.
+message MsgCommitteeSetTobinTax {
   option (cosmos.msg.v1.signer) = "committee";
-  option (amino.name) = "ark/x/market/MsgCommitteeRaiseTobinTax";
+  option (amino.name) = "ark/x/market/MsgCommitteeSetTobinTax";
 
   string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
@@ -289,6 +295,6 @@ message MsgCommitteeRaiseTobinTax {
   ];
 }
 
-// MsgCommitteeRaiseTobinTaxResponse is the response type for
-// MsgCommitteeRaiseTobinTax.
-message MsgCommitteeRaiseTobinTaxResponse {}
+// MsgCommitteeSetTobinTaxResponse is the response type for
+// MsgCommitteeSetTobinTax.
+message MsgCommitteeSetTobinTaxResponse {}
