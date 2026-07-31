@@ -197,6 +197,21 @@ func (mr *MockOracleKeeperMockRecorder) GetRateSet(ctx any, denoms ...any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSet", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSet), varargs...)
 }
 
+// GetReferenceDenom mocks base method.
+func (m *MockOracleKeeper) GetReferenceDenom(ctx context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferenceDenom", ctx)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferenceDenom indicates an expected call of GetReferenceDenom.
+func (mr *MockOracleKeeperMockRecorder) GetReferenceDenom(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferenceDenom", reflect.TypeOf((*MockOracleKeeper)(nil).GetReferenceDenom), ctx)
+}
+
 // MockAssetKeeper is a mock of AssetKeeper interface.
 type MockAssetKeeper struct {
 	ctrl     *gomock.Controller
@@ -250,21 +265,6 @@ func (m *MockAssetKeeper) GetAsset(ctx context.Context, denom string) (types.Ass
 func (mr *MockAssetKeeperMockRecorder) GetAsset(ctx, denom any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockAssetKeeper)(nil).GetAsset), ctx, denom)
-}
-
-// GetReference mocks base method.
-func (m *MockAssetKeeper) GetReference(ctx context.Context) (types.ReferenceState, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReference", ctx)
-	ret0, _ := ret[0].(types.ReferenceState)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetReference indicates an expected call of GetReference.
-func (mr *MockAssetKeeperMockRecorder) GetReference(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReference", reflect.TypeOf((*MockAssetKeeper)(nil).GetReference), ctx)
 }
 
 // PricedLiveDenoms mocks base method.

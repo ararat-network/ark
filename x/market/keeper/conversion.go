@@ -29,14 +29,14 @@ func (k Keeper) applyConversionPolicy(ctx context.Context, policy types.Conversi
 	if err != nil {
 		return fmt.Errorf("getting conversion policy: %w", err)
 	}
-	// The pool is denominated in the protocol reference, which x/asset owns, so
-	// its unit moves only through MsgSetReference and RebaseBasePool. Accepting
+	// The pool is denominated in the protocol reference, which x/oracle owns, so
+	// its unit moves only through MsgSetReferenceDenom and RebaseBasePool. Accepting
 	// a denomination here would let Market re-anchor behind the reference's
 	// back and leave Treasury's cap expressed in a different unit.
 	if policy.BasePool.Denom != current.BasePool.Denom {
 		return sdkerrors.Wrapf(
 			errortypes.ErrInvalidRequest,
-			"base pool denom is set by the protocol reference: re-point it with MsgSetReference, not %s",
+			"base pool denom is set by the protocol reference: re-point it with MsgSetReferenceDenom, not %s",
 			policy.BasePool.Denom,
 		)
 	}

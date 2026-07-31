@@ -16,25 +16,8 @@ import (
 )
 
 // RebaseBasePool re-denominates the virtual pool when governance re-points the
-// protocol reference. It implements the asset module's MarketReferenceKeeper,
-// and MsgSetReference is its only caller.
-//
-// The pool's depth is a claim about how much conversion the protocol will
-// absorb before the spread widens, and that claim is expressed in reference
-// units — so moving the reference has to carry the depth across at the current
-// rate rather than leave a number that now means something else. The delta
-// scales with it so the effective pools keep their ratio: a re-denomination is
-// a change of unit, not a change of monetary stance.
-//
-// The rates are handed in by x/asset, which reads the pair once for both
-// executors — the incoming fresh, the outgoing raw at any stored age — so
-// Market never decides freshness policy for a governance action it does not
-// own.
-//
-// x/asset owns the destination, so a `from` that disagrees with Market's own
-// pool denomination means the two modules disagree about what unit the pool is
-// in. That halts the proposal rather than silently re-anchoring: the wrong
-// answer here mis-sizes every subsequent swap.
+// protocol reference. It implements the oracle module's MarketReferenceDenomKeeper,
+// and MsgSetReferenceDenom is its only caller.
 func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	capacity, err := k.ConversionPolicy.Get(ctx)
 	if err != nil {
@@ -74,11 +57,6 @@ func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rate
 		)
 	}
 
-	// The conversion mandate is deliberately untouched. Its corridor is
-	// denominated in the unit governance approved it in, so a rebase strands the
-	// appointment until governance re-appoints with bounds in the new unit:
-	// converting a delegation at one instant's rate would produce bounds no
-	// proposal ever contained.
 	updated := capacity
 	updated.BasePool = rebased
 	if err := k.ConversionPolicy.Set(ctx, updated); err != nil {
@@ -87,14 +65,7 @@ func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rate
 	if err := k.ArkPoolDelta.Set(ctx, newDelta); err != nil {
 		return fmt.Errorf("setting rebased ArkPoolDelta: %w", err)
 	}
-	// Whether this re-point stranded the conversion mandate is deliberately not
-	// reported from here. Governance re-points and re-appoints in one proposal,
-	// and this executor runs while that proposal is only half applied — the
-	// re-appointment is a later message in the same transaction — so every
-	// predicate available at this point calls the correct path stranded. A
-	// warning that fires on the intended flow is the one that gets ignored on
-	// the flow that matters. ConversionMandate answers the question instead, from
-	// a vantage point where the whole proposal has landed.
+
 	return sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventPoolUpdated{
 		OldBasePoolDenom:  capacity.BasePool.Denom,
 		OldBasePoolAmount: capacity.BasePool.Amount,

@@ -24,23 +24,23 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 
 	// The virtual pool prices conversion in the protocol reference unit, so a
 	// market genesis whose pool disagrees with the configured reference is not
-	// a launchable configuration. x/asset imports before x/market, so the
-	// reference is already in state here.
-	reference, err := k.assetKeeper.GetReference(ctx)
+	// a launchable configuration. x/oracle imports before x/market, so the
+	// reference denom is already in state here.
+	referenceDenom, err := k.oracleKeeper.GetReferenceDenom(ctx)
 	if err != nil {
 		return fmt.Errorf("getting protocol reference: %w", err)
 	}
-	if reference.ReferenceDenom == "" {
+	if referenceDenom == "" {
 		return fmt.Errorf(
 			"base pool denom %s requires a configured protocol reference",
 			data.ConversionPolicy.BasePool.Denom,
 		)
 	}
-	if reference.ReferenceDenom != data.ConversionPolicy.BasePool.Denom {
+	if referenceDenom != data.ConversionPolicy.BasePool.Denom {
 		return fmt.Errorf(
 			"base pool denom %s must be the protocol reference %s",
 			data.ConversionPolicy.BasePool.Denom,
-			reference.ReferenceDenom,
+			referenceDenom,
 		)
 	}
 	// Governance already holds the unbounded conversion path, so an appointment

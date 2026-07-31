@@ -8,7 +8,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"ark/pkg/chain"
-	assettypes "ark/x/asset/types"
 	"ark/x/market/types"
 )
 
@@ -16,8 +15,8 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	genesis := types.DefaultGenesisState()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.assetKeeper.EXPECT().GetReference(s.ctx).
-		Return(assettypes.ReferenceState{ReferenceDenom: chain.SDRBaseDenom}, nil)
+	s.oracleKeeper.EXPECT().GetReferenceDenom(s.ctx).
+		Return(chain.SDRBaseDenom, nil)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
@@ -72,7 +71,7 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 	tests := []struct {
 		name          string
 		basePoolDenom string
-		reference     assettypes.ReferenceState
+		reference     string
 		referenceErr  error
 		expectErr     string
 		errorIs       error
@@ -80,14 +79,14 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 		{
 			name:          "base pool disagrees with the reference",
 			basePoolDenom: chain.USDBaseDenom,
-			reference:     assettypes.ReferenceState{ReferenceDenom: chain.SDRBaseDenom},
+			reference:     chain.SDRBaseDenom,
 			expectErr:     "base pool denom ausd must be the protocol reference asdr",
 		},
 		{
 			// An empty reference means no launch has configured one, so there is
 			// nothing for the pool to agree with rather than a disagreement.
 			name:      "reference has never been configured",
-			reference: assettypes.ReferenceState{},
+			reference: "",
 			expectErr: "requires a configured protocol reference",
 		},
 		{
@@ -108,7 +107,7 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 
 			s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).
 				Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-			s.assetKeeper.EXPECT().GetReference(s.ctx).Return(tc.reference, tc.referenceErr)
+			s.oracleKeeper.EXPECT().GetReferenceDenom(s.ctx).Return(tc.reference, tc.referenceErr)
 
 			err := s.keeper.InitGenesis(s.ctx, genesis)
 			s.Require().ErrorContains(err, tc.expectErr)
