@@ -26,26 +26,32 @@ type FeedReferentGuard interface {
 }
 
 // SetFeedReferentGuards registers the complete removal-guard set. App wiring
-// owns the set and it holds exactly the consumers that exist: today x/asset,
-// which answers for both the registry and the protocol reference; basket and
-// reserve guards join with their specs. One entry per consumer, not per claim,
+// owns the set and it holds exactly the foreign consumers that exist: today
+// x/asset, which answers for the registry; basket and reserve guards join with
+// their specs. The protocol reference is not a guard — it is oracle's own state
+// and FeedReferents checks it directly. One entry per consumer, not per claim,
 // because a consumer knows its own reasons. Consumers depend on x/oracle, so
 // the reverse edge is injected at wiring rather than imported.
 func (k *Keeper) SetFeedReferentGuards(guards ...FeedReferentGuard) {
 	k.feedReferentGuards = guards
 }
 
-// FeedReferents collects every consumer claim on a feed. It is the single
-// source of truth for both the removal check and Query/FeedReferents, so what
-// operators inspect is exactly what governance is judged against.
+// FeedReferents collects every claim on a feed. It is the single source of
+// truth for both the removal check and Query/FeedReferents, so what operators
+// inspect is exactly what governance is judged against.
 //
 // A denom with no feed is ErrFeedNotFound rather than an empty claim list.
-// There is nothing for a consumer to hold a claim on, so asking the guards is
-// pointless work, and an empty answer would read as "safe to remove" for what
-// is really a typo or an already-removed feed. Adding and Removing both count
-// as existing: an asset awaiting activation legitimately pins a feed that has
-// not activated yet, and the referents of an in-flight removal are worth being
-// able to ask for.
+// There is nothing to hold a claim on, so asking the guards is pointless work,
+// and an empty answer would read as "safe to remove" for what is really a typo
+// or an already-removed feed. Adding and Removing both count as existing: an
+// asset awaiting activation legitimately pins a feed that has not activated
+// yet, and the referents of an in-flight removal are worth being able to ask
+// for.
+//
+// The protocol reference is oracle's own claim rather than a registered guard,
+// and it is reported first because it is the strongest: Market's pool and
+// Treasury's cap are denominated in that unit continuously, so removing its
+// feed would leave both priced against something the chain no longer observes.
 func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]types.FeedReferent, error) {
 	phase, err := k.FeedPhase(ctx, denom)
 	if err != nil {
@@ -56,6 +62,17 @@ func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]types.FeedRe
 	}
 
 	var referents []types.FeedReferent
+	referenceDenom, err := k.GetReferenceDenom(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if referenceDenom == denom {
+		referents = append(referents, types.FeedReferent{
+			Consumer: types.ModuleName,
+			Referent: "protocol reference denom",
+		})
+	}
+
 	for _, guard := range k.feedReferentGuards {
 		claims, err := guard.FeedReferents(ctx, denom)
 		if err != nil {

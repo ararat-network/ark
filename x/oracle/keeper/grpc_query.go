@@ -105,6 +105,16 @@ func (q queryServer) FeedReferents(ctx context.Context, req *types.QueryFeedRefe
 	return &types.QueryFeedReferentsResponse{Referents: referents}, nil
 }
 
+// ReferenceDenom queries the denomination whose feed is the protocol reference.
+func (q queryServer) ReferenceDenom(ctx context.Context, _ *types.QueryReferenceDenomRequest) (*types.QueryReferenceDenomResponse, error) {
+	referenceDenom, err := q.k.GetReferenceDenom(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting protocol reference: %v", err)
+	}
+
+	return &types.QueryReferenceDenomResponse{ReferenceDenom: referenceDenom}, nil
+}
+
 // RewardWeight queries a validator's oracle reward weight.
 func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWeightRequest) (*types.QueryRewardWeightResponse, error) {
 	if req == nil {

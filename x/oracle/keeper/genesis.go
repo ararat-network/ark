@@ -102,6 +102,19 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("setting feeds: %w", err)
 	}
 
+	// The reference denom names a feed, so its existence is a keeper-level rule
+	// rather than a GenesisState one: it is checked against the registry just
+	// imported. Freshness is not checked here on purpose — a genesis reference denom
+	// is legitimate before the chain has aggregated a single rate.
+	if data.ReferenceDenom != "" {
+		if err := k.requireReferenceDenomEligible(ctx, data.ReferenceDenom); err != nil {
+			return fmt.Errorf("invalid genesis reference denom: %w", err)
+		}
+	}
+	if err := k.ReferenceDenom.Set(ctx, data.ReferenceDenom); err != nil {
+		return fmt.Errorf("setting genesis protocol reference: %w", err)
+	}
+
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
@@ -160,6 +173,11 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("getting feeds: %w", err)
 	}
 
+	referenceDenom, err := k.GetReferenceDenom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return types.NewGenesisState(
 		params,
 		exchangeRates,
@@ -167,5 +185,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		attendanceRecords,
 		accounting,
 		feeds,
+		referenceDenom,
 	), nil
 }

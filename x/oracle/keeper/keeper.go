@@ -32,6 +32,14 @@ type Keeper struct {
 	distrKeeper   types.DistributionKeeper
 	stakingKeeper types.StakingKeeper
 
+	// Market and Treasury already depend on x/oracle, so their reference
+	// rebase executors are injected after construction to avoid a dependency
+	// cycle. These are the only oracle-to-consumer edges and exist solely to
+	// re-denominate consumer reference-unit state atomically with a reference
+	// move.
+	marketReferenceKeeper   types.MarketReferenceDenomKeeper
+	treasuryReferenceKeeper types.TreasuryReferenceDenomKeeper
+
 	Schema       collections.Schema
 	Params       collections.Item[types.Params]
 	Accounting   collections.Item[types.Accounting]
@@ -39,6 +47,10 @@ type Keeper struct {
 	RewardWeight collections.Map[sdk.ValAddress, math.Int]
 	Attendance   collections.Map[sdk.ValAddress, types.Attendance]
 	Feeds        collections.Item[types.Feeds]
+	// Reference holds the denomination whose feed prices Market's base pool and
+	// denominates Treasury's reference tax cap. It names a feed, not necessarily
+	// a listed asset, and a configured reference is re-pointed, never cleared.
+	ReferenceDenom collections.Item[string]
 
 	// feedReferentGuards answer, at removal time, whether a consumer still
 	// depends on a feed. They derive from the consumer's own state; nothing is
@@ -116,6 +128,12 @@ func NewKeeper(
 			"feeds",
 			codec.CollValue[types.Feeds](cdc),
 		),
+		ReferenceDenom: collections.NewItem(
+			sb,
+			types.ReferenceDenomKey,
+			"reference_denom",
+			collections.StringValue,
+		),
 	}
 
 	schema, err := sb.Build()
@@ -125,6 +143,18 @@ func NewKeeper(
 	k.Schema = schema
 
 	return k
+}
+
+// SetReferenceDenomConsumers injects the Market and Treasury rebase executors run
+// whenever governance re-points the protocol reference, which is the only way
+// it moves. It must be called once during application wiring, after both
+// consumer keepers exist.
+func (k *Keeper) SetReferenceDenomConsumers(
+	marketKeeper types.MarketReferenceDenomKeeper,
+	treasuryKeeper types.TreasuryReferenceDenomKeeper,
+) {
+	k.marketReferenceKeeper = marketKeeper
+	k.treasuryReferenceKeeper = treasuryKeeper
 }
 
 // Logger returns a module-specific logger.

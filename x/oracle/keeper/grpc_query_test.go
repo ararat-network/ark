@@ -246,6 +246,44 @@ func (s *KeeperTestSuite) TestQueryFeedReferents() {
 	}
 }
 
+// TestQueryReferenceDenom routes through the query client rather than calling
+// the server method directly, so the RPC name stays pinned to the proto: a
+// method named anything else falls through to UnimplementedQueryServer and the
+// interface assertion still compiles.
+func (s *KeeperTestSuite) TestQueryReferenceDenom() {
+	tests := []struct {
+		name   string
+		setup  func()
+		expect string
+	}{
+		{
+			// Empty is the honest answer before governance has ever configured
+			// a reference, not an error.
+			name: "unconfigured reference returns empty",
+		},
+		{
+			name: "configured reference returned",
+			setup: func() {
+				s.Require().NoError(s.keeper.ReferenceDenom.Set(s.ctx, chain.SDRBaseDenom))
+			},
+			expect: chain.SDRBaseDenom,
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.Require().NoError(s.keeper.ReferenceDenom.Remove(s.ctx))
+			if tc.setup != nil {
+				tc.setup()
+			}
+
+			resp, err := s.queryClient.ReferenceDenom(s.ctx, &types.QueryReferenceDenomRequest{})
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expect, resp.ReferenceDenom)
+		})
+	}
+}
+
 func (s *KeeperTestSuite) TestQueryRewardWeight() {
 	tests := []struct {
 		name      string

@@ -10,11 +10,12 @@
 package testutil
 
 import (
+	types "ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
-	types "github.com/cosmos/cosmos-sdk/types"
-	types0 "github.com/cosmos/cosmos-sdk/x/staking/types"
+	types0 "github.com/cosmos/cosmos-sdk/types"
+	types1 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -43,7 +44,7 @@ func (m *MockStakingKeeper) EXPECT() *MockStakingKeeperMockRecorder {
 }
 
 // Jail mocks base method.
-func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types.ConsAddress) error {
+func (m *MockStakingKeeper) Jail(arg0 context.Context, arg1 types0.ConsAddress) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Jail", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -57,10 +58,10 @@ func (mr *MockStakingKeeperMockRecorder) Jail(arg0, arg1 any) *gomock.Call {
 }
 
 // Validator mocks base method.
-func (m *MockStakingKeeper) Validator(ctx context.Context, address types.ValAddress) (types0.ValidatorI, error) {
+func (m *MockStakingKeeper) Validator(ctx context.Context, address types0.ValAddress) (types1.ValidatorI, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validator", ctx, address)
-	ret0, _ := ret[0].(types0.ValidatorI)
+	ret0, _ := ret[0].(types1.ValidatorI)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,10 +73,10 @@ func (mr *MockStakingKeeperMockRecorder) Validator(ctx, address any) *gomock.Cal
 }
 
 // ValidatorByConsAddr mocks base method.
-func (m *MockStakingKeeper) ValidatorByConsAddr(arg0 context.Context, arg1 types.ConsAddress) (types0.ValidatorI, error) {
+func (m *MockStakingKeeper) ValidatorByConsAddr(arg0 context.Context, arg1 types0.ConsAddress) (types1.ValidatorI, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidatorByConsAddr", arg0, arg1)
-	ret0, _ := ret[0].(types0.ValidatorI)
+	ret0, _ := ret[0].(types1.ValidatorI)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -111,7 +112,7 @@ func (m *MockDistributionKeeper) EXPECT() *MockDistributionKeeperMockRecorder {
 }
 
 // AllocateTokensToValidator mocks base method.
-func (m *MockDistributionKeeper) AllocateTokensToValidator(ctx context.Context, val types0.ValidatorI, tokens types.DecCoins) error {
+func (m *MockDistributionKeeper) AllocateTokensToValidator(ctx context.Context, val types1.ValidatorI, tokens types0.DecCoins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllocateTokensToValidator", ctx, val, tokens)
 	ret0, _ := ret[0].(error)
@@ -149,10 +150,10 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // GetModuleAccount mocks base method.
-func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types.ModuleAccountI {
+func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types0.ModuleAccountI {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAccount", ctx, moduleName)
-	ret0, _ := ret[0].(types.ModuleAccountI)
+	ret0, _ := ret[0].(types0.ModuleAccountI)
 	return ret0
 }
 
@@ -163,10 +164,10 @@ func (mr *MockAccountKeeperMockRecorder) GetModuleAccount(ctx, moduleName any) *
 }
 
 // GetModuleAddress mocks base method.
-func (m *MockAccountKeeper) GetModuleAddress(name string) types.AccAddress {
+func (m *MockAccountKeeper) GetModuleAddress(name string) types0.AccAddress {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAddress", name)
-	ret0, _ := ret[0].(types.AccAddress)
+	ret0, _ := ret[0].(types0.AccAddress)
 	return ret0
 }
 
@@ -201,10 +202,10 @@ func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 }
 
 // GetAllBalances mocks base method.
-func (m *MockBankKeeper) GetAllBalances(ctx context.Context, addr types.AccAddress) types.Coins {
+func (m *MockBankKeeper) GetAllBalances(ctx context.Context, addr types0.AccAddress) types0.Coins {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllBalances", ctx, addr)
-	ret0, _ := ret[0].(types.Coins)
+	ret0, _ := ret[0].(types0.Coins)
 	return ret0
 }
 
@@ -215,7 +216,7 @@ func (mr *MockBankKeeperMockRecorder) GetAllBalances(ctx, addr any) *gomock.Call
 }
 
 // SendCoinsFromModuleToModule mocks base method.
-func (m *MockBankKeeper) SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt types.Coins) error {
+func (m *MockBankKeeper) SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt types0.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCoinsFromModuleToModule", ctx, senderModule, recipientModule, amt)
 	ret0, _ := ret[0].(error)
@@ -226,4 +227,80 @@ func (m *MockBankKeeper) SendCoinsFromModuleToModule(ctx context.Context, sender
 func (mr *MockBankKeeperMockRecorder) SendCoinsFromModuleToModule(ctx, senderModule, recipientModule, amt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsFromModuleToModule", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsFromModuleToModule), ctx, senderModule, recipientModule, amt)
+}
+
+// MockMarketReferenceDenomKeeper is a mock of MarketReferenceDenomKeeper interface.
+type MockMarketReferenceDenomKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockMarketReferenceDenomKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockMarketReferenceDenomKeeperMockRecorder is the mock recorder for MockMarketReferenceDenomKeeper.
+type MockMarketReferenceDenomKeeperMockRecorder struct {
+	mock *MockMarketReferenceDenomKeeper
+}
+
+// NewMockMarketReferenceDenomKeeper creates a new mock instance.
+func NewMockMarketReferenceDenomKeeper(ctrl *gomock.Controller) *MockMarketReferenceDenomKeeper {
+	mock := &MockMarketReferenceDenomKeeper{ctrl: ctrl}
+	mock.recorder = &MockMarketReferenceDenomKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMarketReferenceDenomKeeper) EXPECT() *MockMarketReferenceDenomKeeperMockRecorder {
+	return m.recorder
+}
+
+// RebaseBasePool mocks base method.
+func (m *MockMarketReferenceDenomKeeper) RebaseBasePool(ctx context.Context, from, to string, rates types.RateSet) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RebaseBasePool", ctx, from, to, rates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RebaseBasePool indicates an expected call of RebaseBasePool.
+func (mr *MockMarketReferenceDenomKeeperMockRecorder) RebaseBasePool(ctx, from, to, rates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseBasePool", reflect.TypeOf((*MockMarketReferenceDenomKeeper)(nil).RebaseBasePool), ctx, from, to, rates)
+}
+
+// MockTreasuryReferenceDenomKeeper is a mock of TreasuryReferenceDenomKeeper interface.
+type MockTreasuryReferenceDenomKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTreasuryReferenceDenomKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockTreasuryReferenceDenomKeeperMockRecorder is the mock recorder for MockTreasuryReferenceDenomKeeper.
+type MockTreasuryReferenceDenomKeeperMockRecorder struct {
+	mock *MockTreasuryReferenceDenomKeeper
+}
+
+// NewMockTreasuryReferenceDenomKeeper creates a new mock instance.
+func NewMockTreasuryReferenceDenomKeeper(ctrl *gomock.Controller) *MockTreasuryReferenceDenomKeeper {
+	mock := &MockTreasuryReferenceDenomKeeper{ctrl: ctrl}
+	mock.recorder = &MockTreasuryReferenceDenomKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTreasuryReferenceDenomKeeper) EXPECT() *MockTreasuryReferenceDenomKeeperMockRecorder {
+	return m.recorder
+}
+
+// RebaseTaxCap mocks base method.
+func (m *MockTreasuryReferenceDenomKeeper) RebaseTaxCap(ctx context.Context, from, to string, rates types.RateSet) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RebaseTaxCap", ctx, from, to, rates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RebaseTaxCap indicates an expected call of RebaseTaxCap.
+func (mr *MockTreasuryReferenceDenomKeeperMockRecorder) RebaseTaxCap(ctx, from, to, rates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseTaxCap", reflect.TypeOf((*MockTreasuryReferenceDenomKeeper)(nil).RebaseTaxCap), ctx, from, to, rates)
 }

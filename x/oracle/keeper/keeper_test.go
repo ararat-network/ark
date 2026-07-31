@@ -43,6 +43,9 @@ type KeeperTestSuite struct {
 	bankKeeper    *testutil.MockBankKeeper
 	distrKeeper   *testutil.MockDistributionKeeper
 	stakingKeeper *testutil.MockStakingKeeper
+
+	marketReferenceDenom   *testutil.MockMarketReferenceDenomKeeper
+	treasuryReferenceDenom *testutil.MockTreasuryReferenceDenomKeeper
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -96,6 +99,8 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 	s.distrKeeper = testutil.NewMockDistributionKeeper(ctrl)
 	s.stakingKeeper = testutil.NewMockStakingKeeper(ctrl)
+	s.marketReferenceDenom = testutil.NewMockMarketReferenceDenomKeeper(ctrl)
+	s.treasuryReferenceDenom = testutil.NewMockTreasuryReferenceDenomKeeper(ctrl)
 
 	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
 	s.accountKeeper.EXPECT().GetModuleAddress("distribution").Return(sdk.AccAddress{2})
@@ -110,6 +115,8 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.distrKeeper,
 		s.stakingKeeper,
 	)
+
+	s.keeper.SetReferenceDenomConsumers(s.marketReferenceDenom, s.treasuryReferenceDenom)
 
 	params := types.DefaultParams()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
@@ -345,10 +352,10 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidFeed() {
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 }
 
-// TestSetExchangeRateWithEventAcceptsNonDenomFeed covers the reason feed ids
-// are opaque: a commodity feed is priced like any other and must not be
-// rejected for failing to look like an Ark-native denomination.
-func (s *KeeperTestSuite) TestSetExchangeRateWithEventAcceptsNonDenomFeed() {
+// TestSetExchangeRateWithEventAcceptsUnlistedDenom covers the reason feed
+// denoms are not checked against the asset registry: a commodity feed is priced
+// like any other, and its denom may run ahead of being listed as an asset.
+func (s *KeeperTestSuite) TestSetExchangeRateWithEventAcceptsUnlistedDenom() {
 	s.Require().NoError(s.keeper.SetExchangeRateWithEvent(
 		s.ctx,
 		newStoredExchangeRate("agold", math.LegacyNewDec(2000)),

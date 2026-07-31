@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"ark/x/oracle/types"
 )
@@ -59,6 +63,35 @@ func (m msgServer) AddFeed(ctx context.Context, msg *types.MsgAddFeed) (*types.M
 	}
 
 	return &types.MsgAddFeedResponse{}, nil
+}
+
+// SetReferenceDenom re-points the protocol reference unit.
+func (m msgServer) SetReferenceDenom(ctx context.Context, msg *types.MsgSetReferenceDenom) (*types.MsgSetReferenceDenomResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
+		return nil, err
+	}
+
+	// An unset decimal round-trips through amino JSON as zero, so absent and
+	// zero have to mean the same thing: convert at the stored rate. A rate of
+	// zero could not mean anything else, since nothing can be converted out of
+	// a unit worth nothing.
+	outgoingRate := msg.OutgoingRate
+	if !outgoingRate.IsNil() && outgoingRate.IsZero() {
+		outgoingRate = math.LegacyDec{}
+	}
+	if !outgoingRate.IsNil() && !outgoingRate.IsPositive() {
+		return nil, sdkerrors.Wrapf(
+			errortypes.ErrInvalidRequest,
+			"outgoing reference denom rate must be positive, is %s",
+			outgoingRate,
+		)
+	}
+	if err := m.k.SetReferenceDenom(ctx, msg.ReferenceDenom, outgoingRate); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgSetReferenceDenomResponse{}, nil
 }
 
 // RemoveFeed schedules one feed removal once no consumer still references it.
