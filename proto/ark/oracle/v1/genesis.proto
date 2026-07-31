@@ -24,6 +24,12 @@ message GenesisState {
   // feeds seeds the active feed set and scheduled transitions.
   Feeds feeds = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // reference_denom keys the feed whose unit prices Market's base pool and
+  // denominates Treasury's reference tax cap. It names a feed, not necessarily
+  // a listed asset: both consumers read a rate, so an asset sharing the
+  // denomination may suspend while the feed keeps pricing. Empty only before
+  // first configuration; a configured reference is re-pointed, never cleared.
+  string reference_denom = 7 [ (amino.dont_omitempty) = true ];
 }
 
 // Accounting defines the active reward and attendance periods. Params may

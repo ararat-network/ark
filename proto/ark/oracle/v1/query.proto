@@ -46,6 +46,14 @@ service Query {
     option (google.api.http).get = "/ark/oracle/v1/feeds/{denom}/referents";
   }
 
+  // ReferenceDenom returns the denomination whose feed is the shared protocol
+  // reference unit.
+  rpc ReferenceDenom(QueryReferenceDenomRequest)
+      returns (QueryReferenceDenomResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/reference_denom";
+  }
+
   // RewardWeight returns a validator's accumulated oracle reward weight.
   rpc RewardWeight(QueryRewardWeightRequest)
       returns (QueryRewardWeightResponse) {
@@ -128,6 +136,18 @@ message QueryFeedReferentsResponse {
   // times claims per consumer.
   repeated FeedReferent referents = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryReferenceDenomRequest is the request type for the Query/ReferenceDenom
+// RPC method.
+message QueryReferenceDenomRequest {}
+
+// QueryReferenceDenomResponse is the response type for the
+// Query/ReferenceDenom RPC method.
+message QueryReferenceDenomResponse {
+  // reference_denom keys the feed serving as the protocol reference. Empty
+  // only before governance has ever configured one.
+  string reference_denom = 1;
 }
 
 // QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC

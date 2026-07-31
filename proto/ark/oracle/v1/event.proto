@@ -46,6 +46,10 @@ message EventFeedsActivated {
   repeated string removed_denoms = 3;
 }
 
+// EventReferenceDenomUpdated is emitted after every protocol reference denom
+// write.
+message EventReferenceDenomUpdated { string reference_denom = 1; }
+
 // EventOracleReward is emitted after a validator's Oracle rewards are funded.
 message EventOracleReward {
   string validator = 1

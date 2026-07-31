@@ -23,6 +23,11 @@ service Msg {
   // RemoveFeed schedules the removal of one price feed from the active feed
   // set.
   rpc RemoveFeed(MsgRemoveFeed) returns (MsgRemoveFeedResponse) {}
+
+  // SetReferenceDenom re-points the shared protocol reference denomination,
+  // rebasing consumer reference-unit state when it changes.
+  rpc SetReferenceDenom(MsgSetReferenceDenom)
+      returns (MsgSetReferenceDenomResponse) {}
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -76,3 +81,41 @@ message MsgRemoveFeed {
 // MsgRemoveFeedResponse defines the response structure for executing a
 // MsgRemoveFeed message.
 message MsgRemoveFeedResponse {}
+
+// MsgSetReferenceDenom re-points the shared protocol reference denomination.
+// Changing a non-empty reference denom rebases Market and Treasury
+// reference-unit state atomically in the same transaction. Clearing a
+// configured reference denom is rejected: consumers hold state denominated in
+// it.
+message MsgSetReferenceDenom {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/oracle/MsgSetReferenceDenom";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // reference_denom keys the feed the reference unit is priced from.
+  string reference_denom = 2;
+  // outgoing_rate overrides the rate the outgoing reference denom is converted
+  // out of, in units of that denomination per one NOAH — the same orientation
+  // as every oracle rate. Absent means price the outgoing denomination like any
+  // other, under the ordinary freshness rule, which is the ordinary path for
+  // adopting a better reference while both feeds are healthy.
+  //
+  // Two situations need it, and both are the emergency this message exists
+  // for. A reference denom the chain has never priced cannot be converted out
+  // of at all, which leaves the pool denominated in a unit no swap can read and
+  // no proposal can move. And a reference denom whose feed has failed carries
+  // only a last-observed rate the freshness rule now rejects, so the rebase has
+  // nothing to convert at. Supplying the rate drops the outgoing denomination
+  // from the priced set entirely rather than filling in behind a failed read:
+  // the conversion becomes something governance states and votes on, instead
+  // of a number inherited from a feed nobody trusts.
+  string outgoing_rate = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgSetReferenceDenomResponse is the response type for MsgSetReferenceDenom.
+message MsgSetReferenceDenomResponse {}
