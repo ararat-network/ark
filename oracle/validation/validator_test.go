@@ -143,10 +143,67 @@ func TestRunTracksRotatedActiveDenoms(t *testing.T) {
 	results, err := validator.Run(context.Background())
 
 	require.NoError(t, err)
-	require.Equal(t, LivenessResults{
-		"ausd": 100,
-		"akrw": 100,
-	}, results)
+	require.Equal(t, LivenessResults{"akrw": 100}, results)
+	require.NotContains(t, results, "ausd")
+}
+
+func TestRunDropsAccountingForRemovedFeeds(t *testing.T) {
+	now := time.Now().UTC()
+	ctrl := gomock.NewController(t)
+	client := validationtestutil.NewMockPriceClient(ctrl)
+	feedClient := validationtestutil.NewMockFeedClient(ctrl)
+	gomock.InOrder(
+		expectFeeds(feedClient, []string{"akrw", "ausd"}, nil),
+		client.EXPECT().
+			Prices(gomock.Any(), gomock.Any(), waitForReady()).
+			Return(pricesResponse(t, now, "ausd", "akrw"), nil),
+		// The removal window: akrw's on-chain removal has activated and the
+		// sidecar has stopped pricing it, but the checker has not refreshed yet.
+		client.EXPECT().
+			Prices(gomock.Any(), gomock.Any(), waitForReady()).
+			Return(pricesResponse(t, now, "ausd"), nil),
+		expectFeeds(feedClient, []string{"ausd"}, nil),
+		client.EXPECT().
+			Prices(gomock.Any(), gomock.Any(), waitForReady()).
+			Return(pricesResponse(t, now, "ausd"), nil),
+	)
+	cfg := validConfig()
+	cfg.ValidationPeriod = 30 * time.Millisecond
+	cfg.NumChecks = 3
+	cfg.FeedRefreshInterval = 25 * time.Millisecond
+	validator, err := NewValidator(log.NewNopLogger(), client, feedClient, cfg)
+	require.NoError(t, err)
+
+	results, err := validator.Run(context.Background())
+
+	require.NoError(t, err)
+	require.Equal(t, LivenessResults{"ausd": 100}, results)
+	require.NotContains(t, results, "akrw")
+}
+
+func TestRunEndsSkippedWhenFeedsEmptyMidRun(t *testing.T) {
+	now := time.Now().UTC()
+	ctrl := gomock.NewController(t)
+	client := validationtestutil.NewMockPriceClient(ctrl)
+	feedClient := validationtestutil.NewMockFeedClient(ctrl)
+	gomock.InOrder(
+		expectFeeds(feedClient, []string{"ausd"}, nil),
+		client.EXPECT().
+			Prices(gomock.Any(), gomock.Any(), waitForReady()).
+			Return(pricesResponse(t, now, "ausd"), nil),
+		expectFeeds(feedClient, []string{}, nil),
+	)
+	cfg := validConfig()
+	cfg.ValidationPeriod = 20 * time.Millisecond
+	cfg.NumChecks = 2
+	cfg.FeedRefreshInterval = 15 * time.Millisecond
+	validator, err := NewValidator(log.NewNopLogger(), client, feedClient, cfg)
+	require.NoError(t, err)
+
+	results, err := validator.Run(context.Background())
+
+	require.Nil(t, results)
+	require.ErrorIs(t, err, ErrNoActiveFeeds)
 }
 
 func TestRunRequiresInitialActiveFeeds(t *testing.T) {

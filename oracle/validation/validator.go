@@ -50,6 +50,8 @@ func NewValidator(
 }
 
 // Run samples the price API and returns liveness percentages for active feeds.
+// Feeds that leave the active set mid-run are dropped from the results, and an
+// authoritative empty feed set ends the run with ErrNoActiveFeeds.
 func (v *Validator) Run(ctx context.Context) (LivenessResults, error) {
 	if err := wait(ctx, v.cfg.BurnInPeriod); err != nil {
 		return nil, err
@@ -79,13 +81,20 @@ func (v *Validator) Run(ctx context.Context) (LivenessResults, error) {
 		elapsed += checkInterval
 		if elapsed >= nextFeedRefresh {
 			refreshedFeeds, refreshErr := v.loadActiveFeeds(ctx, requestTimeout)
-			if refreshErr != nil {
-				if err := ctx.Err(); err != nil {
-					return nil, err
-				}
-				v.logger.Warn("failed to refresh active feeds; using last known feeds", "err", refreshErr)
-			} else {
+			switch {
+			case refreshErr == nil:
+				v.dropRemovedFeeds(refreshedFeeds, checkCounts, missingCounts)
 				activeFeeds = refreshedFeeds
+			case ctx.Err() != nil:
+				return nil, ctx.Err()
+			case errors.Is(refreshErr, ErrNoActiveFeeds):
+				// The chain now publishes an authoritative empty feed set. The
+				// deployment gate's target is gone, so the run ends as skipped
+				// instead of charging every feed missing against an oracle that
+				// was deliberately disabled.
+				return nil, fmt.Errorf("refresh active feeds: %w", refreshErr)
+			default:
+				v.logger.Warn("failed to refresh active feeds; using last known feeds", "err", refreshErr)
 			}
 			nextFeedRefresh = elapsed + v.cfg.FeedRefreshInterval
 		}
@@ -121,6 +130,33 @@ func (v *Validator) Run(ctx context.Context) (LivenessResults, error) {
 	}
 
 	return results, nil
+}
+
+// dropRemovedFeeds deletes liveness accounting for feeds that left the active
+// set. A removed feed is no longer part of what the deployment must serve, so
+// keeping its frozen counters — including misses charged between the on-chain
+// removal activating and this refresh observing it — would judge the
+// deployment against a stale requirement.
+func (v *Validator) dropRemovedFeeds(activeFeeds []string, checkCounts, missingCounts map[string]int) {
+	active := make(map[string]struct{}, len(activeFeeds))
+	for _, denom := range activeFeeds {
+		active[denom] = struct{}{}
+	}
+
+	for denom := range checkCounts {
+		if _, ok := active[denom]; ok {
+			continue
+		}
+
+		v.logger.Info(
+			"feed left the active set; dropping its liveness accounting",
+			"denom", denom,
+			"checks", checkCounts[denom],
+			"missing", missingCounts[denom],
+		)
+		delete(checkCounts, denom)
+		delete(missingCounts, denom)
+	}
 }
 
 func wait(ctx context.Context, d time.Duration) error {
