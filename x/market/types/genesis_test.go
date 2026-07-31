@@ -112,6 +112,7 @@ func TestValidateGenesisState(t *testing.T) {
 				bound := types.ConversionPolicy{
 					BasePool:           sdk.NewDecCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1)),
 					PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod,
+					MinStabilitySpread: types.DefaultMinStabilitySpread,
 				}
 				gs.ConversionMandate = types.NewDisabledConversionMandate(1)
 				gs.ConversionMandate.Committee = authtypes.NewModuleAddress("capacity").String()

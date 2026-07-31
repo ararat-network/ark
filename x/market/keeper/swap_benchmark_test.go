@@ -161,9 +161,3 @@ func (benchmarkAssetKeeper) ActiveSettlementPlan(
 func (benchmarkAssetKeeper) PricedLiveDenoms(context.Context) ([]string, error) {
 	return nil, nil
 }
-
-func (benchmarkAssetKeeper) GetReference(
-	context.Context,
-) (assettypes.ReferenceState, error) {
-	return assettypes.ReferenceState{}, nil
-}

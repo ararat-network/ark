@@ -12,41 +12,38 @@ import (
 	"ark/pkg/decimal"
 )
 
-// Default capacity values
+// Default conversion values
 const (
 	DefaultPoolRecoveryPeriod = chain.BlocksPerDay // 14,400
 )
 
-var DefaultBasePool = sdk.NewDecCoin(
-	chain.SDRBaseDenom,
-	chain.NativeBaseAmount(1_000_000),
-) // 1,000,000 SDR = 1,000,000,000,000,000,000,000,000 asdr
+var (
+	DefaultBasePool = sdk.NewDecCoin(
+		chain.SDRBaseDenom,
+		chain.NativeBaseAmount(1_000_000),
+	) // 1,000,000 SDR = 1,000,000,000,000,000,000,000,000 asdr
+	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
+)
 
-// DefaultConversionPolicy returns the launch conversion-capacity pair.
+// DefaultConversionPolicy returns the launch conversion dials.
 func DefaultConversionPolicy() ConversionPolicy {
 	return ConversionPolicy{
 		BasePool:           DefaultBasePool,
 		PoolRecoveryPeriod: DefaultPoolRecoveryPeriod,
+		MinStabilitySpread: DefaultMinStabilitySpread,
 	}
 }
 
-// ZeroConversionPolicy returns the canonical zero pair a disabled mandate carries
-// as both bounds.
-//
-// It is deliberately not DefaultConversionPolicy: Treasury can use its launch
-// policy as the disabled sentinel because every Treasury lever legitimately
-// starts at zero, whereas a market pool must always be positive. Zero is
-// therefore unmistakably "no delegation" here, and it is the one capacity value
-// Validate rejects.
+// ZeroConversionPolicy returns the canonical zero policy a disabled mandate
+// carries as both bounds.
 func ZeroConversionPolicy() ConversionPolicy {
-	return ConversionPolicy{BasePool: sdk.DecCoin{Amount: math.LegacyZeroDec()}}
+	return ConversionPolicy{
+		BasePool:           sdk.DecCoin{Amount: math.LegacyZeroDec()},
+		MinStabilitySpread: math.LegacyZeroDec(),
+	}
 }
 
-// Validate checks one complete live capacity pair.
-//
-// Depth must be positive and its square representable for the same reasons the
-// params check enforced before capacity moved out: a zero depth cannot be
-// scaled from when depth changes, and the constant product is depth squared.
+// Validate checks one complete live conversion policy.
 func (policy ConversionPolicy) Validate() error {
 	if policy.BasePool.Amount.IsNil() {
 		return errors.New("base pool amount must be set")
@@ -63,13 +60,22 @@ func (policy ConversionPolicy) Validate() error {
 	if policy.PoolRecoveryPeriod == 0 {
 		return fmt.Errorf("pool recovery period must be positive, is %d", policy.PoolRecoveryPeriod)
 	}
+	if policy.MinStabilitySpread.IsNil() {
+		return errors.New("min stability spread must be set")
+	}
+	if policy.MinStabilitySpread.IsNegative() || policy.MinStabilitySpread.GT(math.LegacyOneDec()) {
+		return fmt.Errorf(
+			"min stability spread must be in [0, 1], is %s",
+			policy.MinStabilitySpread,
+		)
+	}
 
 	return nil
 }
 
-// Equal reports whether two capacity pairs carry the same unit, depth, and
-// recovery period. A nil depth is tolerated so the disabled sentinel and a
-// genesis-supplied empty policy compare without panicking.
+// Equal reports whether two policies carry the same unit, depth, recovery
+// period, and spread floor. Nil decimals are tolerated so the disabled sentinel
+// and a genesis-supplied empty policy compare without panicking.
 func (policy ConversionPolicy) Equal(other ConversionPolicy) bool {
 	if policy.PoolRecoveryPeriod != other.PoolRecoveryPeriod {
 		return false
@@ -77,19 +83,30 @@ func (policy ConversionPolicy) Equal(other ConversionPolicy) bool {
 	if policy.BasePool.Denom != other.BasePool.Denom {
 		return false
 	}
-	if policy.BasePool.Amount.IsNil() || other.BasePool.Amount.IsNil() {
-		return policy.BasePool.Amount.IsNil() == other.BasePool.Amount.IsNil()
+	if !equalOrBothNil(policy.BasePool.Amount, other.BasePool.Amount) {
+		return false
 	}
 
-	return policy.BasePool.Amount.Equal(other.BasePool.Amount)
+	return equalOrBothNil(policy.MinStabilitySpread, other.MinStabilitySpread)
 }
 
-// IsZero reports whether the pair carries no unit, no depth, and no recovery
-// period. An unset depth counts as zero, so a mandate whose bounds arrived as
-// empty JSON objects is still recognised as the disabled sentinel rather than
-// panicking on a nil decimal.
+// equalOrBothNil compares two decimals that may be unset, treating a nil pair as
+// equal rather than panicking on the comparison.
+func equalOrBothNil(a, b math.LegacyDec) bool {
+	if a.IsNil() || b.IsNil() {
+		return a.IsNil() == b.IsNil()
+	}
+
+	return a.Equal(b)
+}
+
+// IsZero reports whether the policy carries no unit, no depth, no recovery
+// period, and no spread floor.
 func (policy ConversionPolicy) IsZero() bool {
 	if policy.BasePool.Denom != "" || policy.PoolRecoveryPeriod != 0 {
+		return false
+	}
+	if !policy.MinStabilitySpread.IsNil() && !policy.MinStabilitySpread.IsZero() {
 		return false
 	}
 

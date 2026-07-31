@@ -83,6 +83,42 @@ func TestValidateConversionPolicy(t *testing.T) {
 				policy.PoolRecoveryPeriod = 1
 			},
 		},
+		{
+			name: "nil min stability spread",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.MinStabilitySpread = math.LegacyDec{}
+			},
+			expectErr: "min stability spread must be set",
+		},
+		{
+			name: "negative min stability spread",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.MinStabilitySpread = math.LegacyNewDec(-1)
+			},
+			expectErr: "min stability spread must be in [0, 1]",
+		},
+		{
+			name: "min stability spread greater than 1",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.MinStabilitySpread = math.LegacyNewDecWithPrec(101, 2)
+			},
+			expectErr: "min stability spread must be in [0, 1]",
+		},
+		{
+			// Zero leaves the constant product alone to price every conversion.
+			name: "zero min stability spread is valid",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.MinStabilitySpread = math.LegacyZeroDec()
+			},
+		},
+		{
+			// Unlike a Tobin rate, a floor of one is a deliberate halt on NOAH-pair
+			// conversion rather than a refusal dressed as a fee.
+			name: "min stability spread of one is valid",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.MinStabilitySpread = math.LegacyOneDec()
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -107,6 +143,7 @@ func TestDefaultConversionPolicyValues(t *testing.T) {
 		math.LegacyNewDecFromInt(chain.NativeBaseAmount(1_000_000)).Equal(policy.BasePool.Amount),
 	)
 	require.Equal(t, uint64(chain.BlocksPerDay), policy.PoolRecoveryPeriod)
+	require.True(t, math.LegacyNewDecWithPrec(2, 2).Equal(policy.MinStabilitySpread))
 }
 
 // TestZeroConversionPolicyIsNotLaunchable pins why the disabled mandate sentinel
@@ -147,6 +184,12 @@ func TestConversionPolicyIsZero(t *testing.T) {
 			policy: types.ConversionPolicy{PoolRecoveryPeriod: 1},
 		},
 		{
+			// A floor alone is still a delegation, so it must not read as the
+			// disabled sentinel.
+			name:   "spread floor only",
+			policy: types.ConversionPolicy{MinStabilitySpread: math.LegacyNewDecWithPrec(1, 2)},
+		},
+		{
 			name:   "default",
 			policy: types.DefaultConversionPolicy(),
 		},
@@ -171,10 +214,14 @@ func TestConversionPolicyEqual(t *testing.T) {
 	slower := base
 	slower.PoolRecoveryPeriod = base.PoolRecoveryPeriod + 1
 
+	pricier := base
+	pricier.MinStabilitySpread = base.MinStabilitySpread.Add(math.LegacyNewDecWithPrec(1, 2))
+
 	require.True(t, base.Equal(types.DefaultConversionPolicy()))
 	require.False(t, base.Equal(deeper))
 	require.False(t, base.Equal(relabelled))
 	require.False(t, base.Equal(slower))
+	require.False(t, base.Equal(pricier))
 	// Nil amounts compare without panicking, in both directions.
 	require.True(t, types.ConversionPolicy{}.Equal(types.ConversionPolicy{}))
 	require.False(t, types.ConversionPolicy{}.Equal(types.ZeroConversionPolicy()))

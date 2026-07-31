@@ -257,11 +257,9 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 			chain.SDRBaseDenom:  math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
-	params := types.DefaultParams()
-	params.MinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	capacity := types.DefaultConversionPolicy()
 	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+	capacity.MinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
 	tests := []struct {

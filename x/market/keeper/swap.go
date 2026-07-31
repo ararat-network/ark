@@ -179,12 +179,10 @@ func (k Keeper) quoteStablePair(ctx context.Context, offerDecCoin sdk.DecCoin, a
 //
 // The spread is what the trade costs the pool: the offer is expressed in
 // base-pool units, run through the constant product, and the shortfall against
-// a frictionless fill becomes the spread, floored at MinStabilitySpread.
+// a frictionless fill becomes the spread, floored at the policy's
+// MinStabilitySpread. Depth, recovery, and that floor are one policy object, so
+// pricing a NOAH pair reads conversion state and nothing else.
 func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, askDenom string) (swapQuote, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return swapQuote{}, fmt.Errorf("getting params: %w", err)
-	}
 	capacity, err := k.ConversionPolicy.Get(ctx)
 	if err != nil {
 		return swapQuote{}, fmt.Errorf("getting conversion policy: %w", err)
@@ -239,10 +237,10 @@ func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, ask
 	remainingAskPool := pools.ConstantProduct.Quo(updatedOfferPool)
 	askBaseAmount := askPool.Sub(remainingAskPool)
 
-	spread := params.MinStabilitySpread
+	spread := capacity.MinStabilitySpread
 	if askBaseAmount.LT(baseOfferAmount) {
 		rawSpread := baseOfferAmount.Sub(askBaseAmount).Quo(baseOfferAmount)
-		spread = math.LegacyMaxDec(params.MinStabilitySpread, rawSpread)
+		spread = math.LegacyMaxDec(capacity.MinStabilitySpread, rawSpread)
 	}
 
 	swapCoin, postFeeDecCoin, swapFee, err := applySpread(grossDecCoin, spread)

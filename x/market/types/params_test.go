@@ -50,27 +50,6 @@ func TestValidateParams(t *testing.T) {
 				p.DefaultTobinTax = math.LegacyZeroDec()
 			},
 		},
-		{
-			name: "nil min stability spread",
-			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyDec{}
-			},
-			expectErr: "min stability spread must be set",
-		},
-		{
-			name: "negative min stability spread",
-			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyNewDec(-1)
-			},
-			expectErr: "min stability spread must be in [0, 1]",
-		},
-		{
-			name: "min stability spread greater than 1",
-			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyNewDecWithPrec(101, 2)
-			},
-			expectErr: "min stability spread must be in [0, 1]",
-		},
 	}
 
 	for _, tc := range tests {
