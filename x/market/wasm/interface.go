@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"ark/pkg/chain"
 	"ark/x/market/keeper"
 	"ark/x/market/types"
 	wasm "ark/x/wasm/exported"
@@ -60,8 +61,8 @@ func (MsgParser) ParseCustom(contractAddr sdk.AccAddress, data json.RawMessage) 
 		return sdkMsg.Swap, nil
 	} else if sdkMsg.SwapSend != nil {
 		sdkMsg.SwapSend.FromAddress = contractAddr.String()
-		if _, err := sdk.AccAddressFromBech32(sdkMsg.SwapSend.ToAddress); err != nil {
-			return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "Invalid to address (%s)", err)
+		if _, err := chain.ParseCanonicalAccountAddress("to address", sdkMsg.SwapSend.ToAddress); err != nil {
+			return nil, sdkerrors.Wrap(errortypes.ErrInvalidAddress, err.Error())
 		}
 		if sdkMsg.SwapSend.OfferCoin.Amount.LTE(math.ZeroInt()) || sdkMsg.SwapSend.OfferCoin.Amount.BigInt().BitLen() > 100 {
 			return nil, sdkerrors.Wrap(errortypes.ErrInvalidCoins, sdkMsg.SwapSend.OfferCoin.String())

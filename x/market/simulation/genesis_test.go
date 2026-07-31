@@ -43,22 +43,26 @@ func TestRandomisedGenState(t *testing.T) {
 	var marketGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &marketGenesis)
 
-	require.Equal(t, chain.SDRBaseDenom, marketGenesis.Params.BasePool.Denom)
+	require.Equal(t, chain.SDRBaseDenom, marketGenesis.ConversionPolicy.BasePool.Denom)
 	require.True(
 		t,
-		marketGenesis.Params.BasePool.Amount.GTE(
+		marketGenesis.ConversionPolicy.BasePool.Amount.GTE(
 			math.LegacyNewDecFromInt(chain.NativeBaseAmount(50_000_000)),
 		),
 	)
 	require.True(
 		t,
-		marketGenesis.Params.BasePool.Amount.LT(
+		marketGenesis.ConversionPolicy.BasePool.Amount.LT(
 			math.LegacyNewDecFromInt(chain.NativeBaseAmount(50_010_000)),
 		),
 	)
-	require.True(t, marketGenesis.Params.PoolRecoveryPeriod > 0)
+	require.True(t, marketGenesis.ConversionPolicy.PoolRecoveryPeriod > 0)
 	require.True(t, marketGenesis.Params.MinStabilitySpread.GT(math.LegacyZeroDec()))
 	require.True(t, marketGenesis.ArkPoolDelta.IsZero())
+	// Simulation never appoints a committee, and the generated genesis must be
+	// launchable as produced.
+	require.True(t, marketGenesis.ConversionMandate.IsDisabled())
+	require.NoError(t, marketGenesis.Validate())
 }
 
 func TestRandomisedGenState_InvalidSimState(t *testing.T) {

@@ -17,6 +17,7 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 // ProposalMsgsX returns msgs used for governance proposals for simulations.
 func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
+	reg.Add(weights.Get("msg_update_policy", 100), simulation.MsgUpdatePolicyFactory())
 }
 
 // RegisterStoreDecoder registers a decoder for market module's types

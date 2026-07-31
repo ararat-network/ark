@@ -85,14 +85,30 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		r := testData.Rand()
 		params := types.Params{
-			BasePool:           GenBasePool(r.Rand),
-			PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
 			MinStabilitySpread: GenMinSpread(r.Rand),
+			DefaultTobinTax:    types.DefaultTobinTax,
 		}
 
 		return nil, &types.MsgUpdateParams{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
 			Params:    params,
+		}
+	}
+}
+
+// MsgUpdatePolicyFactory generates random MsgUpdatePolicy
+// transactions. Only the depth and recovery period are randomised: the
+// denomination must stay the live pool unit, which only MsgSetReference moves.
+func MsgUpdatePolicyFactory() simsx.SimMsgFactoryFn[*types.MsgUpdatePolicy] {
+	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdatePolicy) {
+		r := testData.Rand()
+
+		return nil, &types.MsgUpdatePolicy{
+			Authority: testData.ModuleAccountAddress(reporter, "gov"),
+			Policy: types.ConversionPolicy{
+				BasePool:           GenBasePool(r.Rand),
+				PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
+			},
 		}
 	}
 }

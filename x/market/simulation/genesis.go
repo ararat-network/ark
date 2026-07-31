@@ -67,15 +67,22 @@ func RandomisedGenState(simState *module.SimulationState) {
 	)
 
 	marketGenesis := types.NewGenesisState(
-		math.LegacyZeroDec(),
 		types.Params{
+			MinStabilitySpread: minStabilitySpread,
+			DefaultTobinTax:    types.DefaultTobinTax,
+		},
+		math.LegacyZeroDec(),
+		nil,
+		types.ConversionPolicy{
 			BasePool:           basePool,
 			PoolRecoveryPeriod: poolRecoveryPeriod,
-			MinStabilitySpread: minStabilitySpread,
 		},
+		// Simulation never appoints a committee: the conversion fast path is a
+		// governance act, not a randomised one.
+		types.DefaultConversionMandate(),
 	)
 
-	bz, err := json.MarshalIndent(&marketGenesis.Params, "", " ")
+	bz, err := json.MarshalIndent(marketGenesis, "", " ")
 	if err != nil {
 		panic(err)
 	}

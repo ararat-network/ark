@@ -36,6 +36,7 @@ type ModuleInputs struct {
 	BankKeeper     types.BankKeeper
 	OracleKeeper   types.OracleKeeper
 	TreasuryKeeper types.TreasuryKeeper
+	AssetKeeper    types.AssetKeeper
 }
 
 type ModuleOutputs struct {
@@ -54,6 +55,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.OracleKeeper,
 		in.TreasuryKeeper,
+		in.AssetKeeper,
 	)
 
 	m := NewAppModule(k)

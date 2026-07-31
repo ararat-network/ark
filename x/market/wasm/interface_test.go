@@ -8,8 +8,10 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/errors"
 
+	markettypes "ark/x/market/types"
 	wasmexported "ark/x/wasm/exported"
 )
 
@@ -42,4 +44,35 @@ func TestMsgParserParseCustom(t *testing.T) {
 			require.ErrorContains(t, err, tc.errText)
 		})
 	}
+}
+
+// TestMsgParserAcceptsClassicShapedSwap pins the compatibility the optional
+// minimum bought: Classic contracts emit swap JSON with no minimum_receive
+// key at all, which decodes to the zero coin — the "accept market execution"
+// spelling — and must parse rather than force ported contracts to fabricate
+// a dust floor.
+func TestMsgParserAcceptsClassicShapedSwap(t *testing.T) {
+	contract := sdk.AccAddress([]byte("contract____________"))
+	recipient := sdk.AccAddress([]byte("recipient___________"))
+
+	swapMsg, err := MsgParser{}.ParseCustom(contract, json.RawMessage(
+		`{"swap":{"offer_coin":{"denom":"ausd","amount":"1000000"},"ask_denom":"akrw"}}`,
+	))
+	require.NoError(t, err)
+	swap, ok := swapMsg.(*markettypes.MsgSwap)
+	require.True(t, ok)
+	require.Equal(t, contract.String(), swap.Trader)
+	require.True(t, swap.MinimumReceive.Amount.IsNil())
+	require.Empty(t, swap.MinimumReceive.Denom)
+
+	swapSendMsg, err := MsgParser{}.ParseCustom(contract, json.RawMessage(
+		`{"swap_send":{"to_address":"`+recipient.String()+
+			`","offer_coin":{"denom":"ausd","amount":"1000000"},"ask_denom":"akrw"}}`,
+	))
+	require.NoError(t, err)
+	swapSend, ok := swapSendMsg.(*markettypes.MsgSwapSend)
+	require.True(t, ok)
+	require.Equal(t, contract.String(), swapSend.FromAddress)
+	require.True(t, swapSend.MinimumReceive.Amount.IsNil())
+	require.Empty(t, swapSend.MinimumReceive.Denom)
 }
