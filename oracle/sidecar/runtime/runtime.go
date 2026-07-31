@@ -47,6 +47,11 @@ type Runtime struct {
 	// Provider map membership is guarded by updateMu.
 	providers map[string]*managedProvider
 
+	// feedReadFailed is guarded by updateMu and makes feed-read logging
+	// edge-triggered. The chainstate client already reports each underlying poll
+	// failure, so the runtime reports only transitions in its own feed state.
+	feedReadFailed bool
+
 	// Price aggregation state guarded by mut.
 	priceSnapshot types.PriceSnapshot
 

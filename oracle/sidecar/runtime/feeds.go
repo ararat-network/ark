@@ -7,12 +7,26 @@ import "slices"
 func (r *Runtime) syncFeedsLocked() {
 	r.mut.RLock()
 	client := r.client
+	fromChain := r.feedsFromChain
 	r.mut.RUnlock()
 
 	feeds, err := client.Feeds()
 	if err != nil {
-		r.logger.Warn("failed to read feeds; using current feeds", "err", err)
+		// Aggregation continues on the feeds already in hand, so report the
+		// substitution once rather than on every tick of a chain outage.
+		if !r.feedReadFailed {
+			r.feedReadFailed = true
+			if fromChain {
+				r.logger.Warn("failed to read feeds; using last on-chain feeds", "err", err)
+			} else {
+				r.logger.Warn("failed to read feeds; using configured fallback feeds", "err", err)
+			}
+		}
 		return
+	}
+	if r.feedReadFailed {
+		r.feedReadFailed = false
+		r.logger.Info("feed reads recovered")
 	}
 
 	r.mut.RLock()
