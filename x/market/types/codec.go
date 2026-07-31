@@ -12,7 +12,14 @@ import (
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgSwap{}, "ark/x/market/MsgSwap")
 	legacy.RegisterAminoMsg(cdc, &MsgSwapSend{}, "ark/x/market/MsgSwapSend")
+	legacy.RegisterAminoMsg(cdc, &MsgSettle{}, "ark/x/market/MsgSettle")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/market/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgSetTobinTaxOverride{}, "ark/x/market/MsgSetTobinTaxOverride")
+	legacy.RegisterAminoMsg(cdc, &MsgRemoveTobinTaxOverride{}, "ark/x/market/MsgRemoveTobinTaxOverride")
+	legacy.RegisterAminoMsg(cdc, &MsgSetConversionMandate{}, "ark/x/market/MsgSetConversionMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/x/market/MsgUpdatePolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/x/market/MsgCommitteeUpdatePolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeRaiseTobinTax{}, "ark/x/market/MsgCommitteeRaiseTobinTax")
 
 	cdc.RegisterConcrete(Params{}, "ark/x/market/Params", nil)
 }
@@ -23,7 +30,14 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgSwap{},
 		&MsgSwapSend{},
+		&MsgSettle{},
 		&MsgUpdateParams{},
+		&MsgSetTobinTaxOverride{},
+		&MsgRemoveTobinTaxOverride{},
+		&MsgSetConversionMandate{},
+		&MsgUpdatePolicy{},
+		&MsgCommitteeUpdatePolicy{},
+		&MsgCommitteeRaiseTobinTax{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

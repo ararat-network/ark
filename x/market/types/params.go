@@ -5,58 +5,46 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	chain "ark/pkg/chain"
-	"ark/pkg/decimal"
-)
-
-// Default parameter values
-const (
-	DefaultPoolRecoveryPeriod = chain.BlocksPerDay // 14,400
 )
 
 // Default parameter values
 var (
-	DefaultBasePool = sdk.NewDecCoin(
-		chain.SDRBaseDenom,
-		chain.NativeBaseAmount(1_000_000),
-	) // 1,000,000 SDR = 1,000,000,000,000,000,000,000,000 asdr
-	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
+	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)  // 2%
+	DefaultTobinTax           = math.LegacyNewDecWithPrec(25, 4) // 0.25%
 )
 
 // DefaultParams creates default market module parameters
 func DefaultParams() Params {
 	return Params{
-		BasePool:           DefaultBasePool,
-		PoolRecoveryPeriod: DefaultPoolRecoveryPeriod,
 		MinStabilitySpread: DefaultMinStabilitySpread,
+		DefaultTobinTax:    DefaultTobinTax,
 	}
+}
+
+// ValidateTobinTax checks one Tobin rate, the default or an override. The
+// upper bound is exclusive: a rate of one would consume the entire conversion
+// output, which is a refusal to convert expressed as a fee rather than a fee.
+func ValidateTobinTax(tobinTax math.LegacyDec) error {
+	if tobinTax.IsNil() {
+		return errors.New("tobin tax must be set")
+	}
+	if tobinTax.IsNegative() || tobinTax.GTE(math.LegacyOneDec()) {
+		return fmt.Errorf("tobin tax must be in [0, 1), is %s", tobinTax)
+	}
+
+	return nil
 }
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	if p.BasePool.Amount.IsNil() {
-		return errors.New("base pool amount must be set")
-	}
-	if err := p.BasePool.Validate(); err != nil {
-		return fmt.Errorf("invalid base pool: %w", err)
-	}
-	if !p.BasePool.IsPositive() {
-		return fmt.Errorf("base pool must be positive, is %s", p.BasePool)
-	}
-	if _, err := decimal.Mul(p.BasePool.Amount, p.BasePool.Amount); err != nil {
-		return fmt.Errorf("base pool square must be representable: %w", err)
-	}
-	if p.PoolRecoveryPeriod == 0 {
-		return fmt.Errorf("pool recovery period must be positive, is %d", p.PoolRecoveryPeriod)
-	}
 	if p.MinStabilitySpread.IsNil() {
 		return errors.New("min stability spread must be set")
 	}
 	if p.MinStabilitySpread.IsNegative() || p.MinStabilitySpread.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("min stability spread must be in [0, 1], is %s", p.MinStabilitySpread)
+	}
+	if err := ValidateTobinTax(p.DefaultTobinTax); err != nil {
+		return fmt.Errorf("invalid default tobin tax: %w", err)
 	}
 	return nil
 }

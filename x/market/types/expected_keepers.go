@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
 	treasurytypes "ark/x/treasury/types"
 )
@@ -26,14 +27,22 @@ type BankKeeper interface {
 	MintCoins(ctx context.Context, name string, amt sdk.Coins) error
 }
 
-// OracleKeeper defines expected oracle keeper
+// OracleKeeper defines expected oracle keeper. Market reads rates and nothing
+// else: conversion policy is Market's own, and eligibility is the asset
+// registry's.
 type OracleKeeper interface {
 	GetRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
-	GetTobinTax(ctx context.Context, denom string) (tobinTax math.LegacyDec, err error)
-	GetTobinTaxes(ctx context.Context) ([]oracletypes.TobinTax, error)
+}
 
-	// only used for simulation
-	GetExchangeRates(ctx context.Context) (sdk.DecCoins, error)
+// AssetKeeper defines the lifecycle authority Market derives eligibility from.
+// Market stores rate policy only — never a membership set — so every question
+// about whether a denomination may be offered, asked, or settled is answered
+// here.
+type AssetKeeper interface {
+	GetAsset(ctx context.Context, denom string) (assettypes.Asset, error)
+	ActiveSettlementPlan(ctx context.Context, denom string) (assettypes.SettlementPlan, bool, error)
+	PricedLiveDenoms(ctx context.Context) ([]string, error)
+	GetReference(ctx context.Context) (assettypes.ReferenceState, error)
 }
 
 // TreasuryKeeper defines the allocation and liability accounting required by

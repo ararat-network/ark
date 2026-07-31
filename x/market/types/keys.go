@@ -11,6 +11,9 @@ const (
 
 // Keys for market store
 var (
-	ParamsKey       = collections.NewPrefix(0)
-	ArkPoolDeltaKey = collections.NewPrefix(1)
+	ParamsKey            = collections.NewPrefix(0)
+	ArkPoolDeltaKey      = collections.NewPrefix(1)
+	TobinTaxOverridesKey = collections.NewPrefix(2)
+	ConversionPolicyKey  = collections.NewPrefix(3)
+	ConversionMandateKey = collections.NewPrefix(4)
 )

@@ -1,15 +1,13 @@
 package types_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	chain "ark/pkg/chain"
 	"ark/x/market/types"
 )
 
@@ -24,49 +22,33 @@ func TestValidateParams(t *testing.T) {
 			mutate: func(p *types.Params) {},
 		},
 		{
-			name: "nil base pool",
+			name: "nil default tobin tax",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.DecCoin{}
+				p.DefaultTobinTax = math.LegacyDec{}
 			},
-			expectErr: "base pool amount must be set",
+			expectErr: "tobin tax must be set",
 		},
 		{
-			name: "nil base pool amount with valid denom",
+			name: "negative default tobin tax",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.DecCoin{Denom: chain.SDRBaseDenom}
+				p.DefaultTobinTax = math.LegacyNewDecWithPrec(-1, 4)
 			},
-			expectErr: "base pool amount must be set",
+			expectErr: "tobin tax must be in [0, 1)",
 		},
 		{
-			name: "zero base pool",
+			// A rate of one consumes the whole output, which is a refusal to
+			// convert dressed as a fee.
+			name: "default tobin tax of one",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.NewDecCoin(chain.SDRBaseDenom, math.ZeroInt())
+				p.DefaultTobinTax = math.LegacyOneDec()
 			},
-			expectErr: "base pool must be positive",
+			expectErr: "tobin tax must be in [0, 1)",
 		},
 		{
-			name: "negative base pool",
+			name: "zero default tobin tax is valid",
 			mutate: func(p *types.Params) {
-				p.BasePool = sdk.DecCoin{
-					Denom:  chain.SDRBaseDenom,
-					Amount: math.LegacyNewDec(-1),
-				}
+				p.DefaultTobinTax = math.LegacyZeroDec()
 			},
-			expectErr: "invalid base pool",
-		},
-		{
-			name: "base pool square is out of range",
-			mutate: func(p *types.Params) {
-				p.BasePool = sdk.NewDecCoinFromDec(chain.SDRBaseDenom, maxLegacyDec())
-			},
-			expectErr: "base pool square must be representable",
-		},
-		{
-			name: "zero pool recovery period",
-			mutate: func(p *types.Params) {
-				p.PoolRecoveryPeriod = 0
-			},
-			expectErr: "pool recovery period must be positive",
 		},
 		{
 			name: "nil min stability spread",
@@ -106,11 +88,14 @@ func TestValidateParams(t *testing.T) {
 	}
 }
 
-func TestDefaultBasePoolUsesNativeDisplayScale(t *testing.T) {
-	require.Equal(t, chain.SDRBaseDenom, types.DefaultBasePool.Denom)
-	require.True(
-		t,
-		math.LegacyNewDecFromInt(chain.NativeBaseAmount(1_000_000)).
-			Equal(types.DefaultBasePool.Amount),
-	)
+// TestParamsCarryNoCapacity pins the split: conversion capacity is delegable
+// and must not ride along in the whole-object params replacement, where a
+// proposal drafted from a stale copy could revert a committee's resize.
+func TestParamsCarryNoCapacity(t *testing.T) {
+	fields := reflect.TypeOf(types.DefaultParams())
+	for i := range fields.NumField() {
+		name := fields.Field(i).Name
+		require.NotEqual(t, "BasePool", name)
+		require.NotEqual(t, "PoolRecoveryPeriod", name)
+	}
 }
