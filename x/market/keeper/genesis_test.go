@@ -8,15 +8,16 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"ark/pkg/chain"
+	assettypes "ark/x/asset/types"
 	"ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
 	genesis := types.DefaultGenesisState()
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.SDRBaseDenom).Return(math.LegacyZeroDec(), nil)
+	s.assetKeeper.EXPECT().GetReference(s.ctx).
+		Return(assettypes.ReferenceState{ReferenceDenom: chain.SDRBaseDenom}, nil)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
@@ -30,11 +31,26 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 	s.Require().NoError(err)
 	s.Require().True(delta.Equal(genesis.ArkPoolDelta))
 
+	// Overrides are governance judgment that cannot be re-derived, so genesis is
+	// the only thing carrying them across an export and import cycle.
+	s.Require().NotEmpty(genesis.TobinTaxOverrides)
+	for _, override := range genesis.TobinTaxOverrides {
+		stored, getErr := s.keeper.TobinTaxOverrides.Get(s.ctx, override.Denom)
+		s.Require().NoError(getErr)
+		s.Require().True(override.TobinTax.Equal(stored),
+			"expected %s for %s, got %s", override.TobinTax, override.Denom, stored)
+	}
+
 	// Export and verify round-trip
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(genesis.ArkPoolDelta.Equal(exported.ArkPoolDelta))
 	s.Require().Equal(genesis.Params, exported.Params)
+	s.Require().Len(exported.TobinTaxOverrides, len(genesis.TobinTaxOverrides))
+	for i, override := range genesis.TobinTaxOverrides {
+		s.Require().Equal(override.Denom, exported.TobinTaxOverrides[i].Denom)
+		s.Require().True(override.TobinTax.Equal(exported.TobinTaxOverrides[i].TobinTax))
+	}
 }
 
 func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
@@ -46,40 +62,71 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 	s.Require().ErrorContains(err, "module account has not been set")
 }
 
-func (s *KeeperTestSuite) TestInitGenesis_UnknownBasePoolDenom() {
-	genesis := types.DefaultGenesisState()
-	genesis.Params.BasePool.Denom = "afoo"
-	genesis.ArkPoolDelta = math.LegacyOneDec()
+// TestInitGenesis_ReferenceMismatchPreservesState covers the reference agreement
+// InitGenesis insists on. The virtual pool prices conversion in the protocol
+// reference unit, so a pool denominated in anything else is not a launchable
+// configuration — and x/asset imports first, which is what makes the reference
+// readable here at all.
+func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
+	referenceErr := errors.New("asset reference unavailable")
+	tests := []struct {
+		name          string
+		basePoolDenom string
+		reference     assettypes.ReferenceState
+		referenceErr  error
+		expectErr     string
+		errorIs       error
+	}{
+		{
+			name:          "base pool disagrees with the reference",
+			basePoolDenom: chain.USDBaseDenom,
+			reference:     assettypes.ReferenceState{ReferenceDenom: chain.SDRBaseDenom},
+			expectErr:     "base pool denom ausd must be the protocol reference asdr",
+		},
+		{
+			// An empty reference means no launch has configured one, so there is
+			// nothing for the pool to agree with rather than a disagreement.
+			name:      "reference has never been configured",
+			reference: assettypes.ReferenceState{},
+			expectErr: "requires a configured protocol reference",
+		},
+		{
+			name:         "reference lookup fails",
+			referenceErr: referenceErr,
+			expectErr:    "getting protocol reference",
+			errorIs:      referenceErr,
+		},
+	}
 
-	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, "afoo").Return(math.LegacyZeroDec(), oracletypes.ErrUnknownDenom)
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
-	s.Require().ErrorContains(err, "base pool denom afoo is not configured in oracle")
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			genesis := types.DefaultGenesisState()
+			if tc.basePoolDenom != "" {
+				genesis.ConversionPolicy.BasePool.Denom = tc.basePoolDenom
+			}
+			genesis.ArkPoolDelta = math.LegacyOneDec()
 
-	params, getErr := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(getErr)
-	s.Require().Equal(types.DefaultParams(), params)
-	delta, getErr := s.keeper.ArkPoolDelta.Get(s.ctx)
-	s.Require().NoError(getErr)
-	s.Require().True(delta.IsZero())
-}
+			s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).
+				Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
+			s.assetKeeper.EXPECT().GetReference(s.ctx).Return(tc.reference, tc.referenceErr)
 
-func (s *KeeperTestSuite) TestInitGenesis_OracleLookupFailure() {
-	genesis := types.DefaultGenesisState()
-	genesis.ArkPoolDelta = math.LegacyOneDec()
-	oracleErr := errors.New("oracle params unavailable")
+			err := s.keeper.InitGenesis(s.ctx, genesis)
+			s.Require().ErrorContains(err, tc.expectErr)
+			if tc.errorIs != nil {
+				s.Require().ErrorIs(err, tc.errorIs)
+			}
 
-	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
-	s.oracleKeeper.EXPECT().GetTobinTax(s.ctx, chain.SDRBaseDenom).Return(math.LegacyZeroDec(), oracleErr)
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorIs(err, oracleErr)
-	s.Require().ErrorContains(err, "checking base pool denom asdr in oracle")
-
-	params, getErr := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(getErr)
-	s.Require().Equal(types.DefaultParams(), params)
-	delta, getErr := s.keeper.ArkPoolDelta.Get(s.ctx)
-	s.Require().NoError(getErr)
-	s.Require().True(delta.IsZero())
+			// Genesis writes nothing until the reference agrees, so the state the
+			// suite seeded is still intact.
+			params, getErr := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(getErr)
+			s.Require().Equal(types.DefaultParams(), params)
+			delta, getErr := s.keeper.ArkPoolDelta.Get(s.ctx)
+			s.Require().NoError(getErr)
+			s.Require().True(delta.IsZero())
+			overrides, getErr := s.keeper.GetTobinTaxOverrides(s.ctx)
+			s.Require().NoError(getErr)
+			s.Require().Empty(overrides)
+		})
+	}
 }

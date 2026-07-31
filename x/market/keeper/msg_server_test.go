@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"errors"
 	"math/big"
+	"strings"
 
 	"go.uber.org/mock/gomock"
 
@@ -34,7 +35,7 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 			name:      "empty address",
 			msg:       &types.MsgSwap{},
 			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "invalid trader address",
+			errMsg:    "trader is invalid",
 		},
 		{
 			name: "malformed address",
@@ -42,7 +43,15 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 				Trader: "address",
 			},
 			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "invalid trader address",
+			errMsg:    "trader is invalid",
+		},
+		{
+			name: "non-canonical address",
+			msg: &types.MsgSwap{
+				Trader: strings.ToUpper(trader),
+			},
+			expectErr: errortypes.ErrInvalidAddress,
+			errMsg:    "trader must be a canonical account address",
 		},
 		{
 			name: "recursive swap",
@@ -82,16 +91,6 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 			},
 			expectErr: errortypes.ErrInvalidCoins,
 			errMsg:    "invalid coins",
-		},
-		{
-			name: "missing minimum receive",
-			msg: &types.MsgSwap{
-				Trader:    trader,
-				OfferCoin: sdk.NewInt64Coin("ausd", 1000),
-				AskDenom:  "akrw",
-			},
-			expectErr: errortypes.ErrInvalidCoins,
-			errMsg:    "invalid minimum receive",
 		},
 		{
 			name: "zero minimum receive",
@@ -140,7 +139,7 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 			name:      "empty from address",
 			msg:       &types.MsgSwapSend{},
 			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "invalid from address",
+			errMsg:    "from address is invalid",
 		},
 		{
 			name: "malformed from address",
@@ -148,7 +147,7 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 				FromAddress: "invalid",
 			},
 			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "invalid from address",
+			errMsg:    "from address is invalid",
 		},
 		{
 			name: "empty to address",
@@ -156,7 +155,7 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 				FromAddress: fromAddr.String(),
 			},
 			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "invalid to address",
+			errMsg:    "to address is invalid",
 		},
 		{
 			name: "malformed to address",
@@ -165,7 +164,16 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 				ToAddress:   "invalid",
 			},
 			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "invalid to address",
+			errMsg:    "to address is invalid",
+		},
+		{
+			name: "non-canonical to address",
+			msg: &types.MsgSwapSend{
+				FromAddress: fromAddr.String(),
+				ToAddress:   strings.ToUpper(fromAddr.String()),
+			},
+			expectErr: errortypes.ErrInvalidAddress,
+			errMsg:    "to address must be a canonical account address",
 		},
 	}
 
@@ -202,10 +210,47 @@ func (s *KeeperTestSuite) TestMsgSwapSend_Success() {
 	s.requireSwapEvent(fromAddr.String(), toAddr.String(), offerCoin, res.SwapCoin, res.SwapFee)
 }
 
+// TestMsgSwapOmittedMinimumReceiveAcceptsMarketExecution pins the optionality:
+// the zero coin is the one spelling of "no floor", and a swap carrying it
+// executes at whatever the quote produced.
+func (s *KeeperTestSuite) TestMsgSwapOmittedMinimumReceiveAcceptsMarketExecution() {
+	trader := sdk.AccAddress([]byte("addr________________"))
+	offerCoin := sdk.NewCoin("ausd", math.NewInt(1000000))
+	expectedSwapCoin := sdk.NewCoin("akrw", math.NewInt(1296750000))
+
+	s.setupArkToArkSwapMocks(trader, trader, offerCoin, expectedSwapCoin)
+
+	res, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+		Trader:    trader.String(),
+		OfferCoin: offerCoin,
+		AskDenom:  "akrw",
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(expectedSwapCoin, res.SwapCoin)
+}
+
+func (s *KeeperTestSuite) TestMsgSwapSendOmittedMinimumReceiveAcceptsMarketExecution() {
+	fromAddr := sdk.AccAddress([]byte("from________________"))
+	toAddr := sdk.AccAddress([]byte("to__________________"))
+	offerCoin := sdk.NewCoin("ausd", math.NewInt(1000000))
+	expectedSwapCoin := sdk.NewCoin("akrw", math.NewInt(1296750000))
+
+	s.setupArkToArkSwapMocks(fromAddr, toAddr, offerCoin, expectedSwapCoin)
+
+	res, err := s.msgServer.SwapSend(s.ctx, &types.MsgSwapSend{
+		FromAddress: fromAddr.String(),
+		ToAddress:   toAddr.String(),
+		OfferCoin:   offerCoin,
+		AskDenom:    "akrw",
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(expectedSwapCoin, res.SwapCoin)
+}
+
 func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
-	params := types.DefaultParams()
-	params.BasePool = sdrBasePool(math.LegacyNewDec(400))
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	capacity := types.DefaultConversionPolicy()
+	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
 	tests := []struct {
 		name          string
@@ -477,11 +522,11 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			params := types.DefaultParams()
+			capacity := types.DefaultConversionPolicy()
 			if test.offerCoin.Denom == chain.NoahBaseDenom || test.askDenom == chain.NoahBaseDenom {
-				params.BasePool = sdrBasePool(math.LegacyNewDec(400))
+				capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
 			}
-			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 			test.setup()
 
@@ -506,10 +551,6 @@ func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
 			"ausd": math.LegacyOneDec(),
 			"akrw": math.LegacyNewDec(1300),
 		}, nil)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: "ausd", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
-		{Denom: "akrw", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
-	}, nil)
 
 	beforeDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 	s.Require().NoError(err)
@@ -582,35 +623,25 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	consensusAuthority := authtypes.NewModuleAddress("consensus").String()
 
+	// Every case starts from the default params and bends one field, so the
+	// submitted message is always valid apart from the thing under test — the
+	// default Tobin rate included, since an unset one now fails validation on its
+	// own.
 	tests := []struct {
 		name        string
 		setup       func()
-		msg         *types.MsgUpdateParams
+		authority   string
+		mutate      func(*types.Params)
 		expectErr   string
 		expectErrIs error
 	}{
 		{
-			name: "valid params",
-			msg: &types.MsgUpdateParams{
-				Authority: authority,
-				Params: types.Params{
-					BasePool:           sdrBasePool(math.LegacyNewDec(2000000000000)),
-					PoolRecoveryPeriod: 28800,
-					MinStabilitySpread: math.LegacyNewDecWithPrec(5, 2),
-				},
+			name:      "valid params",
+			authority: authority,
+			mutate: func(p *types.Params) {
+				p.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
+				p.DefaultTobinTax = math.LegacyNewDecWithPrec(5, 3)
 			},
-		},
-		{
-			name: "zero base pool",
-			msg: &types.MsgUpdateParams{
-				Authority: authority,
-				Params: types.Params{
-					BasePool:           sdrBasePool(math.LegacyZeroDec()),
-					PoolRecoveryPeriod: 14400,
-					MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
-				},
-			},
-			expectErr: "base pool must be positive",
 		},
 		{
 			name: "consensus params authority overrides keeper authority",
@@ -619,74 +650,48 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 					Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
 				})
 			},
-			msg: &types.MsgUpdateParams{
-				Authority: consensusAuthority,
-				Params: types.Params{
-					BasePool:           sdrBasePool(math.LegacyNewDec(3000000000000)),
-					PoolRecoveryPeriod: 28800,
-					MinStabilitySpread: math.LegacyNewDecWithPrec(5, 2),
-				},
+			authority: consensusAuthority,
+			mutate: func(p *types.Params) {
+				p.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
 			},
 		},
 		{
-			name: "invalid authority",
-			msg: &types.MsgUpdateParams{
-				Authority: "invalid_authority",
-				Params:    types.DefaultParams(),
-			},
+			name:        "invalid authority",
+			authority:   "invalid_authority",
 			expectErr:   "invalid authority",
 			expectErrIs: errortypes.ErrUnauthorized,
 		},
 		{
-			name: "negative base pool",
-			msg: &types.MsgUpdateParams{
-				Authority: authority,
-				Params: types.Params{
-					BasePool: sdk.DecCoin{
-						Denom:  chain.SDRBaseDenom,
-						Amount: math.LegacyNewDec(-1),
-					},
-					PoolRecoveryPeriod: 14400,
-					MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
-				},
-			},
-			expectErr: "invalid base pool",
-		},
-		{
-			name: "zero recovery period",
-			msg: &types.MsgUpdateParams{
-				Authority: authority,
-				Params: types.Params{
-					BasePool:           sdrBasePool(math.LegacyNewDec(1000000000000)),
-					PoolRecoveryPeriod: 0,
-					MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
-				},
-			},
-			expectErr: "pool recovery period must be positive",
-		},
-		{
-			name: "negative min stability spread",
-			msg: &types.MsgUpdateParams{
-				Authority: authority,
-				Params: types.Params{
-					BasePool:           sdrBasePool(math.LegacyNewDec(1000000000000)),
-					PoolRecoveryPeriod: 14400,
-					MinStabilitySpread: math.LegacyNewDec(-1),
-				},
+			name:      "negative min stability spread",
+			authority: authority,
+			mutate: func(p *types.Params) {
+				p.MinStabilitySpread = math.LegacyNewDec(-1)
 			},
 			expectErr: "min stability spread must be in [0, 1]",
 		},
 		{
-			name: "min stability spread greater than 1",
-			msg: &types.MsgUpdateParams{
-				Authority: authority,
-				Params: types.Params{
-					BasePool:           sdrBasePool(math.LegacyNewDec(1000000000000)),
-					PoolRecoveryPeriod: 14400,
-					MinStabilitySpread: math.LegacyNewDecWithPrec(11, 1), // 1.1
-				},
+			name:      "min stability spread greater than 1",
+			authority: authority,
+			mutate: func(p *types.Params) {
+				p.MinStabilitySpread = math.LegacyNewDecWithPrec(11, 1) // 1.1
 			},
 			expectErr: "min stability spread must be in [0, 1]",
+		},
+		{
+			name:      "unset default tobin tax",
+			authority: authority,
+			mutate: func(p *types.Params) {
+				p.DefaultTobinTax = math.LegacyDec{}
+			},
+			expectErr: "tobin tax must be set",
+		},
+		{
+			name:      "default tobin tax of one",
+			authority: authority,
+			mutate: func(p *types.Params) {
+				p.DefaultTobinTax = math.LegacyOneDec()
+			},
+			expectErr: "tobin tax must be in [0, 1)",
 		},
 	}
 
@@ -697,8 +702,15 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			if tc.setup != nil {
 				tc.setup()
 			}
+			params := types.DefaultParams()
+			if tc.mutate != nil {
+				tc.mutate(&params)
+			}
 
-			_, err := s.msgServer.UpdateParams(s.ctx, tc.msg)
+			_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+				Authority: tc.authority,
+				Params:    params,
+			})
 			if tc.expectErr != "" {
 				s.Require().Error(err)
 				s.Require().ErrorContains(err, tc.expectErr)
@@ -708,245 +720,12 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			} else {
 				s.Require().NoError(err)
 
-				params, err := s.keeper.Params.Get(s.ctx)
+				stored, err := s.keeper.Params.Get(s.ctx)
 				s.Require().NoError(err)
-				s.Require().Equal(tc.msg.Params, params)
+				s.Require().Equal(params, stored)
 			}
 		})
 	}
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsRescalesSameDenomDelta() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	tests := []struct {
-		name          string
-		oldDelta      math.LegacyDec
-		expectedDelta math.LegacyDec
-	}{
-		{name: "positive delta", oldDelta: math.LegacyNewDec(25), expectedDelta: math.LegacyNewDec(50)},
-		{name: "negative delta", oldDelta: math.LegacyNewDec(-25), expectedDelta: math.LegacyNewDec(-50)},
-		{name: "zero delta", oldDelta: math.LegacyZeroDec(), expectedDelta: math.LegacyZeroDec()},
-	}
-
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			current := types.DefaultParams()
-			current.BasePool = sdrBasePool(math.LegacyNewDec(100))
-			s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, test.oldDelta))
-
-			updated := current
-			updated.BasePool = sdrBasePool(math.LegacyNewDec(200))
-			_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-				Authority: authority,
-				Params:    updated,
-			})
-			s.Require().NoError(err)
-
-			storedParams, err := s.keeper.Params.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().Equal(updated, storedParams)
-			storedDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().True(test.expectedDelta.Equal(storedDelta))
-
-			s.requirePoolUpdateEvent(current.BasePool, updated.BasePool, test.oldDelta, test.expectedDelta)
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsAppliesLiveDenomAndCurveChanges() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	current := types.DefaultParams()
-	current.BasePool = sdrBasePool(math.LegacyNewDec(100))
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(25)))
-
-	submitted := current
-	submitted.BasePool = sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacySmallestDec())
-	submitted.PoolRecoveryPeriod++
-	submitted.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
-	applied := sdk.NewDecCoin(chain.USDBaseDenom, math.NewInt(200))
-	s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), chain.USDBaseDenom).
-		Return(math.LegacyZeroDec(), nil)
-	s.oracleKeeper.EXPECT().GetRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom: math.LegacyNewDec(2),
-	}, nil)
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: authority,
-		Params:    submitted,
-	})
-	s.Require().NoError(err)
-
-	storedParams, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	expectedParams := submitted
-	expectedParams.BasePool = applied
-	s.Require().Equal(expectedParams, storedParams)
-	storedDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().True(math.LegacyNewDec(50).Equal(storedDelta))
-
-	s.requirePoolUpdateEvent(
-		current.BasePool,
-		applied,
-		math.LegacyNewDec(25),
-		math.LegacyNewDec(50),
-	)
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsDenomChangeFailuresPreserveState() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	oracleInternalErr := errors.New("oracle params unavailable")
-	tests := []struct {
-		name       string
-		setup      func()
-		expectErr  string
-		errorIs    error
-		errorIsNot error
-	}{
-		{
-			name: "denomination is not configured in oracle",
-			setup: func() {
-				s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), chain.USDBaseDenom).
-					Return(math.LegacyDec{}, oracletypes.ErrUnknownDenom)
-			},
-			expectErr: "is not configured in oracle",
-			errorIs:   errortypes.ErrInvalidRequest,
-		},
-		{
-			name: "oracle configuration lookup fails internally",
-			setup: func() {
-				s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), chain.USDBaseDenom).
-					Return(math.LegacyDec{}, oracleInternalErr)
-			},
-			expectErr:  "checking base pool denom ausd in oracle",
-			errorIs:    oracleInternalErr,
-			errorIsNot: errortypes.ErrInvalidRequest,
-		},
-		{
-			name: "rate snapshot is stale",
-			setup: func() {
-				s.oracleKeeper.EXPECT().GetTobinTax(gomock.Any(), chain.USDBaseDenom).
-					Return(math.LegacyZeroDec(), nil)
-				s.oracleKeeper.EXPECT().GetRateSet(
-					gomock.Any(),
-					chain.SDRBaseDenom,
-					chain.USDBaseDenom,
-				).Return(nil, oracletypes.ErrStaleExchangeRate)
-			},
-			expectErr: oracletypes.ErrStaleExchangeRate.Error(),
-			errorIs:   oracletypes.ErrStaleExchangeRate,
-		},
-	}
-
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			current := types.DefaultParams()
-			current.BasePool = sdrBasePool(math.LegacyNewDec(100))
-			oldDelta := math.LegacyNewDec(25)
-			s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
-			submitted := current
-			submitted.BasePool = sdk.NewDecCoin(chain.USDBaseDenom, math.NewInt(200))
-			if test.setup != nil {
-				test.setup()
-			}
-			eventsBefore := len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
-
-			_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-				Authority: authority,
-				Params:    submitted,
-			})
-			s.Require().ErrorContains(err, test.expectErr)
-			if test.errorIs != nil {
-				s.Require().ErrorIs(err, test.errorIs)
-			}
-			if test.errorIsNot != nil {
-				s.Require().NotErrorIs(err, test.errorIsNot)
-			}
-			storedParams, err := s.keeper.Params.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().Equal(current, storedParams)
-			storedDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().True(oldDelta.Equal(storedDelta))
-			s.Require().Len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events(), eventsBefore)
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsNonPositiveEffectivePool() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	before := types.DefaultParams()
-	before.BasePool = sdrBasePool(math.LegacyNewDec(100))
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, before))
-	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(-200)))
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: authority,
-		Params: types.Params{
-			BasePool:           sdrBasePool(math.LegacyNewDec(200)),
-			PoolRecoveryPeriod: 14400,
-			MinStabilitySpread: math.LegacyNewDecWithPrec(2, 2),
-		},
-	})
-	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
-	s.Require().ErrorContains(err, "effective ark pool must be positive")
-
-	after, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(before, after)
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsUnrepresentableEffectivePool() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	before, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, maxLegacyDecForKeeperTest()))
-
-	s.Require().NotPanics(func() {
-		_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-			Authority: authority,
-			Params:    types.DefaultParams(),
-		})
-	})
-	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
-	s.Require().ErrorContains(err, "effective ark pool")
-
-	after, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(before, after)
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsRescaleOverflowPreservesState() {
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	before := types.DefaultParams()
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, before))
-	oldDelta := maxLegacyDecForKeeperTest()
-	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
-
-	updated := before
-	updated.BasePool.Amount = updated.BasePool.Amount.MulInt64(2)
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: authority,
-		Params:    updated,
-	})
-	s.Require().ErrorIs(err, types.ErrArithmeticOutOfRange)
-	s.Require().ErrorContains(err, "rescaling ark pool delta")
-
-	after, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(before, after)
-	storedDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().True(oldDelta.Equal(storedDelta))
 }
 
 func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
@@ -964,12 +743,11 @@ func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver
 	)
 }
 
+// expectStableToStableQuote stubs the one rate read a stable pair makes. Neither
+// leg carries an override, so the pair's spread is the 0.25% default the
+// expected amounts here are calculated from.
 func (s *KeeperTestSuite) expectStableToStableQuote(rates oracletypes.RateSet) {
 	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").Return(rates, nil)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{
-		{Denom: "ausd", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
-		{Denom: "akrw", TobinTax: math.LegacyMustNewDecFromStr("0.0025")},
-	}, nil)
 }
 
 func maxLegacyDecForKeeperTest() math.LegacyDec {

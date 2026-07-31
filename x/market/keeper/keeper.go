@@ -24,10 +24,25 @@ type Keeper struct {
 	bankKeeper     types.BankKeeper
 	oracleKeeper   types.OracleKeeper
 	treasuryKeeper types.TreasuryKeeper
+	assetKeeper    types.AssetKeeper
 
 	Schema       collections.Schema
 	Params       collections.Item[types.Params]
 	ArkPoolDelta collections.Item[math.LegacyDec]
+
+	// TobinTaxOverrides holds the sparse per-denomination exceptions to
+	// Params.DefaultTobinTax. Absence means the default applies, so an asset
+	// needs no entry to be convertible.
+	TobinTaxOverrides collections.Map[string, math.LegacyDec]
+
+	// ConversionPolicy holds the live conversion-capacity pair. It is separate
+	// from Params because it is committee-delegable: a whole-object params
+	// replacement must not be able to revert an emergency resize.
+	ConversionPolicy collections.Item[types.ConversionPolicy]
+
+	// ConversionMandate holds the governed committee appointment over
+	// ConversionPolicy, disabled unless governance has appointed one.
+	ConversionMandate collections.Item[types.ConversionMandate]
 }
 
 // NewKeeper creates a new market Keeper instance.
@@ -39,6 +54,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 	treasuryKeeper types.TreasuryKeeper,
+	assetKeeper types.AssetKeeper,
 ) *Keeper {
 	// ensure market module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
@@ -54,6 +70,7 @@ func NewKeeper(
 		bankKeeper:     bankKeeper,
 		oracleKeeper:   oracleKeeper,
 		treasuryKeeper: treasuryKeeper,
+		assetKeeper:    assetKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,
@@ -65,6 +82,25 @@ func NewKeeper(
 			types.ArkPoolDeltaKey,
 			"ark_pool_delta",
 			sdk.LegacyDecValue,
+		),
+		TobinTaxOverrides: collections.NewMap(
+			sb,
+			types.TobinTaxOverridesKey,
+			"tobin_tax_overrides",
+			collections.StringKey,
+			sdk.LegacyDecValue,
+		),
+		ConversionPolicy: collections.NewItem(
+			sb,
+			types.ConversionPolicyKey,
+			"capacity_policy",
+			codec.CollValue[types.ConversionPolicy](cdc),
+		),
+		ConversionMandate: collections.NewItem(
+			sb,
+			types.ConversionMandateKey,
+			"capacity_mandate",
+			codec.CollValue[types.ConversionMandate](cdc),
 		),
 	}
 
@@ -93,11 +129,11 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 		return nil
 	}
 
-	params, err := k.Params.Get(ctx)
+	capacity, err := k.ConversionPolicy.Get(ctx)
 	if err != nil {
 		return err
 	}
-	poolRecoveryPeriod := math.NewIntFromUint64(params.PoolRecoveryPeriod)
+	poolRecoveryPeriod := math.NewIntFromUint64(capacity.PoolRecoveryPeriod)
 	poolRegressionAmt := poolDelta.QuoInt(poolRecoveryPeriod)
 	if poolRegressionAmt.IsZero() {
 		return nil
@@ -113,17 +149,10 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 	return nil
 }
 
-// GetActiveDenoms returns active oracle denoms for market simulation.
+// GetActiveDenoms returns the convertible denominations for market simulation.
+// It reads the asset registry rather than the rate store: a rate exists for
+// every active feed, including feeds whose asset is suspended or not yet
+// listed, and simulation should only offer swaps a real trader could make.
 func (k Keeper) GetActiveDenoms(ctx context.Context) ([]string, error) {
-	exchangeRates, err := k.oracleKeeper.GetExchangeRates(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	denoms := make([]string, len(exchangeRates))
-	for i, exchangeRate := range exchangeRates {
-		denoms[i] = exchangeRate.Denom
-	}
-
-	return denoms, nil
+	return k.assetKeeper.PricedLiveDenoms(ctx)
 }

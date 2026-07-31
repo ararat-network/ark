@@ -21,6 +21,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/gogoproto/proto"
 
+	assettypes "ark/x/asset/types"
 	"ark/x/market/keeper"
 	"ark/x/market/testutil"
 	"ark/x/market/types"
@@ -37,6 +38,13 @@ type KeeperTestSuite struct {
 	bankKeeper     *testutil.MockBankKeeper
 	oracleKeeper   *testutil.MockOracleKeeper
 	treasuryKeeper *testutil.MockTreasuryKeeper
+	assetKeeper    *testutil.MockAssetKeeper
+
+	// assetStatuses overrides the lifecycle status the asset mock reports per
+	// denomination. Denominations default to ACTIVE, which is the state every
+	// pre-existing swap test assumes; a test that cares about the gate names
+	// only the denomination it is bending.
+	assetStatuses map[string]assettypes.AssetStatus
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -60,6 +68,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	bankKeeper := testutil.NewMockBankKeeper(ctrl)
 	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
 	treasuryKeeper := testutil.NewMockTreasuryKeeper(ctrl)
+	assetKeeper := testutil.NewMockAssetKeeper(ctrl)
 
 	// Required by NewKeeper's panic guard
 	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
@@ -72,16 +81,36 @@ func (s *KeeperTestSuite) SetupTest() {
 		bankKeeper,
 		oracleKeeper,
 		treasuryKeeper,
+		assetKeeper,
 	)
 
 	s.accountKeeper = accountKeeper
 	s.bankKeeper = bankKeeper
 	s.oracleKeeper = oracleKeeper
 	s.treasuryKeeper = treasuryKeeper
+	s.assetKeeper = assetKeeper
+
+	s.assetStatuses = map[string]assettypes.AssetStatus{}
+	assetKeeper.EXPECT().
+		GetAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (assettypes.Asset, error) {
+			status, overridden := s.assetStatuses[denom]
+			if !overridden {
+				status = assettypes.AssetStatus_ASSET_STATUS_ACTIVE
+			}
+			if status == assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED {
+				return assettypes.Asset{}, assettypes.ErrAssetNotFound.Wrap(denom)
+			}
+
+			return assettypes.Asset{Denom: denom, Status: status, Version: 1}, nil
+		}).
+		AnyTimes()
 
 	// Set default state
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
+	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, types.DefaultConversionPolicy()))
+	s.Require().NoError(s.keeper.ConversionMandate.Set(s.ctx, types.DefaultConversionMandate()))
 
 	// Wire gRPC query client
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
@@ -140,9 +169,9 @@ func (s *KeeperTestSuite) TestReplenishPools() {
 			err := s.keeper.ArkPoolDelta.Set(s.ctx, tc.initialDelta)
 			s.Require().NoError(err)
 
-			p := types.DefaultParams()
-			p.PoolRecoveryPeriod = tc.recoveryPeriod
-			err = s.keeper.Params.Set(s.ctx, p)
+			capacity := types.DefaultConversionPolicy()
+			capacity.PoolRecoveryPeriod = tc.recoveryPeriod
+			err = s.keeper.ConversionPolicy.Set(s.ctx, capacity)
 			s.Require().NoError(err)
 
 			err = s.keeper.ReplenishPools(s.ctx)
@@ -155,8 +184,8 @@ func (s *KeeperTestSuite) TestReplenishPools() {
 	}
 }
 
-func (s *KeeperTestSuite) TestReplenishPoolsZeroDeltaSkipsParams() {
-	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
+func (s *KeeperTestSuite) TestReplenishPoolsZeroDeltaSkipsCapacityRead() {
+	s.Require().NoError(s.keeper.ConversionPolicy.Remove(s.ctx))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
 	s.Require().NoError(s.keeper.ReplenishPools(s.ctx))

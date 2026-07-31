@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"go.uber.org/mock/gomock"
 
+	assettypes "ark/x/asset/types"
 	markettestutil "ark/x/market/testutil"
 	markettypes "ark/x/market/types"
 	oraclekeeper "ark/x/oracle/keeper"
@@ -28,10 +30,17 @@ import (
 
 var benchmarkSwapQuote swapQuote
 
+// BenchmarkStableToStableQuote varies how many denominations Oracle prices and
+// expects the result to be flat. A quote costs a point lookup per leg on both
+// sides — Market's spread and Oracle's rate — plus one fixed-size params read,
+// so nothing in the path walks the registry. The axis is kept precisely to
+// catch a regression that reintroduces registry-scaled work: it was real until
+// the Tobin list was deleted from Oracle's params, when every quote paid to
+// decode a record that grew with the priced set.
 func BenchmarkStableToStableQuote(b *testing.B) {
-	for _, targetCount := range []int{len(oracletypes.DefaultTobinTaxes), oracletypes.MaxVoteTargets} {
-		b.Run(fmt.Sprintf("targets_%d", targetCount), func(b *testing.B) {
-			keeper, ctx, offerCoin, askDenom := benchmarkMarketKeeper(b, targetCount)
+	for _, pricedCount := range []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds} {
+		b.Run(fmt.Sprintf("priced_denoms_%d", pricedCount), func(b *testing.B) {
+			keeper, ctx, offerCoin, askDenom := benchmarkMarketKeeper(b, pricedCount)
 			if _, err := keeper.quoteSwap(ctx, offerCoin, askDenom); err != nil {
 				b.Fatal(err)
 			}
@@ -51,7 +60,7 @@ func BenchmarkStableToStableQuote(b *testing.B) {
 
 func benchmarkMarketKeeper(
 	b *testing.B,
-	targetCount int,
+	pricedCount int,
 ) (*Keeper, sdk.Context, sdk.Coin, string) {
 	b.Helper()
 
@@ -89,21 +98,17 @@ func benchmarkMarketKeeper(
 		oracletestutil.NewMockStakingKeeper(ctrl),
 	)
 
-	tobinTaxes := make([]oracletypes.TobinTax, targetCount)
-	for i := range targetCount {
-		tobinTaxes[i] = oracletypes.TobinTax{
-			Denom:    fmt.Sprintf("uasset%03d", i),
-			TobinTax: oracletypes.DefaultTobinTax,
-		}
-	}
-	oracleParams := oracletypes.DefaultParams()
-	oracleParams.TobinTaxes = tobinTaxes
-	if err := oracleKeeper.Params.Set(ctx, oracleParams); err != nil {
+	if err := oracleKeeper.Params.Set(ctx, oracletypes.DefaultParams()); err != nil {
 		b.Fatal(err)
 	}
-	for _, denom := range []string{tobinTaxes[0].Denom, tobinTaxes[1].Denom} {
-		if err := oracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
+
+	// The registry is the stored rate set, so price every denomination in it.
+	// The two the quote actually converts between are the first two.
+	pricedDenoms := make([]string, pricedCount)
+	for i := range pricedCount {
+		pricedDenoms[i] = fmt.Sprintf("uasset%03d", i)
+		if err := oracleKeeper.ExchangeRate.Set(ctx, pricedDenoms[i], oracletypes.ExchangeRate{
+			Denom:          pricedDenoms[i],
 			Rate:           math.LegacyOneDec(),
 			BlockTimestamp: sdk.UnwrapSDKContext(ctx).BlockTime(),
 		}); err != nil {
@@ -122,6 +127,7 @@ func benchmarkMarketKeeper(
 		markettestutil.NewMockBankKeeper(ctrl),
 		oracleKeeper,
 		markettestutil.NewMockTreasuryKeeper(ctrl),
+		benchmarkAssetKeeper{},
 	)
 	if err := keeper.Params.Set(ctx, markettypes.DefaultParams()); err != nil {
 		b.Fatal(err)
@@ -130,5 +136,34 @@ func benchmarkMarketKeeper(
 		b.Fatal(err)
 	}
 
-	return keeper, ctx, sdk.NewInt64Coin(tobinTaxes[0].Denom, 1_000_000), tobinTaxes[1].Denom
+	return keeper, ctx, sdk.NewInt64Coin(pricedDenoms[0], 1_000_000), pricedDenoms[1]
+}
+
+// benchmarkAssetKeeper reports every denomination ACTIVE so the benchmark
+// measures the conversion path rather than the lifecycle gate.
+type benchmarkAssetKeeper struct{}
+
+func (benchmarkAssetKeeper) GetAsset(_ context.Context, denom string) (assettypes.Asset, error) {
+	return assettypes.Asset{
+		Denom:   denom,
+		Status:  assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
+		Version: 1,
+	}, nil
+}
+
+func (benchmarkAssetKeeper) ActiveSettlementPlan(
+	context.Context,
+	string,
+) (assettypes.SettlementPlan, bool, error) {
+	return assettypes.SettlementPlan{}, false, nil
+}
+
+func (benchmarkAssetKeeper) PricedLiveDenoms(context.Context) ([]string, error) {
+	return nil, nil
+}
+
+func (benchmarkAssetKeeper) GetReference(
+	context.Context,
+) (assettypes.ReferenceState, error) {
+	return assettypes.ReferenceState{}, nil
 }
