@@ -140,6 +140,167 @@ func TestEnvelopeNextTerm(t *testing.T) {
 	require.ErrorContains(t, err, "term cannot advance")
 }
 
+func TestNext(t *testing.T) {
+	tests := []struct {
+		name             string
+		current          func() mandate.Envelope
+		committee        string
+		activationHeight uint64
+		expiryHeight     uint64
+		expect           mandate.Envelope
+		expectErr        string
+	}{
+		{
+			name:             "configured successor advances the term",
+			current:          validEnvelope,
+			committee:        testCommittee(),
+			activationHeight: 30,
+			expiryHeight:     40,
+			expect: mandate.Envelope{
+				Term:             2,
+				Committee:        testCommittee(),
+				ActivationHeight: 30,
+				ExpiryHeight:     40,
+			},
+		},
+		{
+			name:             "empty committee disables at the advanced term",
+			current:          validEnvelope,
+			committee:        "",
+			activationHeight: 30,
+			expiryHeight:     40,
+			expect:           mandate.Disabled(2),
+		},
+		{
+			name:      "disabled predecessor still advances the term",
+			current:   func() mandate.Envelope { return mandate.Disabled(7) },
+			committee: testCommittee(),
+			expect: mandate.Envelope{
+				Term:      8,
+				Committee: testCommittee(),
+			},
+		},
+		{
+			name:      "term exhaustion fails closed",
+			current:   func() mandate.Envelope { return mandate.Disabled(math.MaxUint64) },
+			committee: testCommittee(),
+			expectErr: "term cannot advance",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			envelope, err := mandate.Next(
+				testCase.current(),
+				testCase.committee,
+				testCase.activationHeight,
+				testCase.expiryHeight,
+			)
+			if testCase.expectErr != "" {
+				require.ErrorContains(t, err, testCase.expectErr)
+				require.Equal(t, mandate.Envelope{}, envelope)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, testCase.expect, envelope)
+		})
+	}
+}
+
+func TestEnvelopeAuthorise(t *testing.T) {
+	tests := []struct {
+		name         string
+		envelope     func() mandate.Envelope
+		signer       string
+		expectedTerm uint64
+		height       uint64
+		expectErr    string
+	}{
+		{
+			name:         "active window and exact term",
+			envelope:     validEnvelope,
+			signer:       testCommittee(),
+			expectedTerm: 1,
+			height:       10,
+		},
+		{
+			name:         "last active height",
+			envelope:     validEnvelope,
+			signer:       testCommittee(),
+			expectedTerm: 1,
+			height:       19,
+		},
+		{
+			name:         "disabled envelope",
+			envelope:     func() mandate.Envelope { return mandate.Disabled(3) },
+			signer:       testCommittee(),
+			expectedTerm: 3,
+			height:       10,
+			expectErr:    "signer is not the exact appointed committee",
+		},
+		{
+			name:         "disabled envelope rejects its own empty committee",
+			envelope:     func() mandate.Envelope { return mandate.Disabled(3) },
+			signer:       "",
+			expectedTerm: 3,
+			height:       10,
+			expectErr:    "signer is not the exact appointed committee",
+		},
+		{
+			name:         "wrong signer",
+			envelope:     validEnvelope,
+			signer:       authtypes.NewModuleAddress("impostor").String(),
+			expectedTerm: 1,
+			height:       10,
+			expectErr:    "signer is not the exact appointed committee",
+		},
+		{
+			name:         "stale term",
+			envelope:     validEnvelope,
+			signer:       testCommittee(),
+			expectedTerm: 0,
+			height:       10,
+			expectErr:    "term mismatch: expected 1, got 0",
+		},
+		{
+			name:         "stale term reported before inactive window",
+			envelope:     validEnvelope,
+			signer:       testCommittee(),
+			expectedTerm: 2,
+			height:       25,
+			expectErr:    "term mismatch: expected 1, got 2",
+		},
+		{
+			name:         "before activation",
+			envelope:     validEnvelope,
+			signer:       testCommittee(),
+			expectedTerm: 1,
+			height:       9,
+			expectErr:    "mandate is not active: window is [10, 20)",
+		},
+		{
+			name:         "at expiry",
+			envelope:     validEnvelope,
+			signer:       testCommittee(),
+			expectedTerm: 1,
+			height:       20,
+			expectErr:    "mandate is not active: window is [10, 20)",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.envelope().Authorise(tc.signer, tc.expectedTerm, tc.height)
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
+}
+
 func TestEnvelopeRequireTerm(t *testing.T) {
 	envelope := validEnvelope()
 	require.NoError(t, envelope.RequireTerm(1))

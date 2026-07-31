@@ -65,11 +65,62 @@ func (e Envelope) NextTerm() (uint64, error) {
 	return e.Term + 1, nil
 }
 
+// Next derives the successor appointment envelope from the current one: the
+// canonical disabled envelope when committee is empty, otherwise the complete
+// appointment at the advanced term. Every replacement advances the term, so a
+// disablement retains its successor term too.
+//
+// Next owns derivation only. Judgment of the assembled appointment stays with
+// the embedding mandate, whose Validate is the single guardian for every entry
+// point — genesis import reaches state without passing here — and which names
+// itself when wrapping envelope errors. Callers must validate the mandate they
+// assemble around this envelope.
+func Next(current Envelope, committee string, activationHeight uint64, expiryHeight uint64) (Envelope, error) {
+	term, err := current.NextTerm()
+	if err != nil {
+		return Envelope{}, err
+	}
+	if committee == "" {
+		return Disabled(term), nil
+	}
+
+	return Envelope{
+		Term:             term,
+		Committee:        committee,
+		ActivationHeight: activationHeight,
+		ExpiryHeight:     expiryHeight,
+	}, nil
+}
+
 // RequireTerm checks the exact term a committee message must carry. Term is
 // the staleness guard for every committee action.
 func (e Envelope) RequireTerm(expected uint64) error {
 	if expected != e.Term {
 		return fmt.Errorf("term mismatch: expected %d, got %d", e.Term, expected)
+	}
+
+	return nil
+}
+
+// Authorise checks one committee action against the appointment: the exact
+// signer, the exact term, then the active window. Term precedes window so a
+// stale committee transaction reports the staleness that produced it rather
+// than whichever window it straddles. Everything beyond the appointment —
+// usage bounds, policy corridors, status preconditions — stays with the
+// embedding mandate, which names itself when wrapping these errors.
+func (e Envelope) Authorise(signer string, expectedTerm uint64, height uint64) error {
+	if e.IsDisabled() || signer != e.Committee {
+		return errors.New("signer is not the exact appointed committee")
+	}
+	if err := e.RequireTerm(expectedTerm); err != nil {
+		return err
+	}
+	if !e.IsActive(height) {
+		return fmt.Errorf(
+			"mandate is not active: window is [%d, %d)",
+			e.ActivationHeight,
+			e.ExpiryHeight,
+		)
 	}
 
 	return nil
