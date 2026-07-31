@@ -13,6 +13,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/oracle/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgAddFeed{}, "ark/x/oracle/MsgAddFeed")
 	legacy.RegisterAminoMsg(cdc, &MsgRemoveFeed{}, "ark/x/oracle/MsgRemoveFeed")
+	legacy.RegisterAminoMsg(cdc, &MsgSetReferenceDenom{}, "ark/x/oracle/MsgSetReferenceDenom")
 
 	cdc.RegisterConcrete(Params{}, "ark/x/oracle/Params", nil)
 }
@@ -24,6 +25,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgUpdateParams{},
 		&MsgAddFeed{},
 		&MsgRemoveFeed{},
+		&MsgSetReferenceDenom{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

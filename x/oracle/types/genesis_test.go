@@ -275,21 +275,21 @@ func TestValidateGenesis(t *testing.T) {
 		},
 		// Feeds
 		{
-			name: "feed id must be a valid symbol",
+			name: "feed denom must be a valid symbol",
 			mutate: func(gs *types.GenesisState) {
 				gs.Feeds.Denoms = []string{"a"}
 			},
 			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "feed id must be lowercase",
+			name: "feed denom must be lowercase",
 			mutate: func(gs *types.GenesisState) {
 				gs.Feeds.Denoms = []string{"aUSD"}
 			},
 			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "feed id cannot contain path separators",
+			name: "feed denom cannot contain path separators",
 			mutate: func(gs *types.GenesisState) {
 				gs.Feeds.Denoms = []string{"afoo/bar"}
 			},
@@ -319,13 +319,13 @@ func TestValidateGenesis(t *testing.T) {
 		{
 			name: "maximum feeds is valid",
 			mutate: func(gs *types.GenesisState) {
-				gs.Feeds.Denoms = makeTestFeedIDs(types.MaxFeeds)
+				gs.Feeds.Denoms = makeTestDenoms(types.MaxFeeds)
 			},
 		},
 		{
 			name: "too many feeds",
 			mutate: func(gs *types.GenesisState) {
-				gs.Feeds.Denoms = makeTestFeedIDs(types.MaxFeeds + 1)
+				gs.Feeds.Denoms = makeTestDenoms(types.MaxFeeds + 1)
 			},
 			expectErr: "exceeds maximum feeds",
 		},
@@ -370,6 +370,7 @@ func TestValidateGenesis(t *testing.T) {
 						Denoms:  []string{"ausd"},
 						Version: types.InitialFeedVersion,
 					},
+					"ausd",
 				)
 			},
 		},
@@ -390,7 +391,7 @@ func TestValidateGenesis(t *testing.T) {
 	}
 }
 
-func makeTestFeedIDs(count int) []string {
+func makeTestDenoms(count int) []string {
 	denoms := make([]string, count)
 	for i := range count {
 		denoms[i] = fmt.Sprintf("a%03d", i)

@@ -11,10 +11,11 @@ const (
 
 // Keys for oracle store
 var (
-	ParamsKey       = collections.NewPrefix(0)
-	ExchangeRateKey = collections.NewPrefix(1)
-	RewardWeightKey = collections.NewPrefix(2)
-	AttendanceKey   = collections.NewPrefix(3)
-	AccountingKey   = collections.NewPrefix(4)
-	FeedsKey        = collections.NewPrefix(5)
+	ParamsKey         = collections.NewPrefix(0)
+	ExchangeRateKey   = collections.NewPrefix(1)
+	RewardWeightKey   = collections.NewPrefix(2)
+	AttendanceKey     = collections.NewPrefix(3)
+	AccountingKey     = collections.NewPrefix(4)
+	FeedsKey          = collections.NewPrefix(5)
+	ReferenceDenomKey = collections.NewPrefix(6)
 )

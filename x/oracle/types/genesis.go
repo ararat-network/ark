@@ -21,6 +21,7 @@ func NewGenesisState(
 	attendanceRecords []AttendanceRecord,
 	accounting Accounting,
 	feeds Feeds,
+	referenceDenom string,
 ) *GenesisState {
 	return &GenesisState{
 		Params:            params,
@@ -29,6 +30,7 @@ func NewGenesisState(
 		AttendanceRecords: attendanceRecords,
 		Accounting:        accounting,
 		Feeds:             feeds,
+		ReferenceDenom:    referenceDenom,
 	}
 }
 
@@ -52,6 +54,7 @@ func DefaultGenesisState() *GenesisState {
 		[]AttendanceRecord{},
 		NewAccounting(params),
 		DefaultFeeds(),
+		chain.SDRBaseDenom,
 	)
 }
 
@@ -169,6 +172,15 @@ func (gs GenesisState) Validate() error {
 	for _, er := range gs.ExchangeRates {
 		if _, found := slices.BinarySearch(gs.Feeds.Denoms, er.Denom); !found {
 			return fmt.Errorf("exchange rate %s is not an active feed", er.Denom)
+		}
+	}
+
+	// The reference identity is a feed key; that it is an Active feed is a
+	// keeper-level check against the imported registry. Empty is legitimate
+	// before governance has ever configured one.
+	if gs.ReferenceDenom != "" {
+		if err := chain.ValidatePricedDenom(gs.ReferenceDenom); err != nil {
+			return fmt.Errorf("reference %w", err)
 		}
 	}
 
