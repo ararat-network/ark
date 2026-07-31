@@ -10,25 +10,25 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
+	chain "ark/pkg/chain"
 )
 
 // NewGenesisState creates a new GenesisState object
 func NewGenesisState(
 	params Params,
-	accounting Accounting,
 	exchangeRates []ExchangeRate,
 	rewardWeights []RewardWeight,
 	attendanceRecords []AttendanceRecord,
-	voteTargets VoteTargets,
+	accounting Accounting,
+	feeds Feeds,
 ) *GenesisState {
 	return &GenesisState{
 		Params:            params,
-		Accounting:        accounting,
 		ExchangeRates:     exchangeRates,
 		RewardWeights:     rewardWeights,
 		AttendanceRecords: attendanceRecords,
-		VoteTargets:       voteTargets,
+		Accounting:        accounting,
+		Feeds:             feeds,
 	}
 }
 
@@ -47,12 +47,33 @@ func DefaultGenesisState() *GenesisState {
 	params := DefaultParams()
 	return NewGenesisState(
 		params,
-		NewAccounting(params),
 		[]ExchangeRate{},
 		[]RewardWeight{},
 		[]AttendanceRecord{},
-		NewVoteTargets(params),
+		NewAccounting(params),
+		DefaultFeeds(),
 	)
+}
+
+// DefaultFeedDenoms is the launch feed set, sorted unique as Feeds requires. A
+// feed is keyed by the denomination it prices, so naming the launch feeds after
+// their denominations keeps rate-store keys stable. This list was derived from
+// the oracle Tobin-tax parameter until that parameter was deleted; membership
+// itself has lived behind the asset registry since the feed decoupling.
+var DefaultFeedDenoms = []string{
+	chain.CNYBaseDenom,
+	chain.EURBaseDenom,
+	chain.GBPBaseDenom,
+	chain.JPYBaseDenom,
+	chain.KRWBaseDenom,
+	chain.MNTBaseDenom,
+	chain.SDRBaseDenom,
+	chain.USDBaseDenom,
+}
+
+// DefaultFeeds seeds the launch feed set.
+func DefaultFeeds() Feeds {
+	return NewFeeds(DefaultFeedDenoms)
 }
 
 // Validate validates the oracle genesis state
@@ -67,9 +88,11 @@ func (gs GenesisState) Validate() error {
 		return errors.New("accounting attendance window must be greater than zero")
 	}
 
-	// ExchangeRates: ordered unique Ark-native base denoms and positive rates
+	// ExchangeRates: ordered unique feed keys and positive rates. A rate may
+	// exist for a denomination no asset is listed under, because a feed can be
+	// priced ahead of listing.
 	for i, er := range gs.ExchangeRates {
-		if err := chain.ValidateNativeBaseDenom(er.Denom); err != nil {
+		if err := chain.ValidatePricedDenom(er.Denom); err != nil {
 			return fmt.Errorf("exchange rate %w", err)
 		}
 		if er.Rate.IsNil() {
@@ -140,26 +163,17 @@ func (gs GenesisState) Validate() error {
 		}
 	}
 
-	if err := gs.VoteTargets.Validate(); err != nil {
+	if err := gs.Feeds.Validate(); err != nil {
 		return err
 	}
-	voteTargets := gs.VoteTargets
 	for _, er := range gs.ExchangeRates {
-		if _, found := slices.BinarySearch(voteTargets.Denoms, er.Denom); !found {
-			return fmt.Errorf("exchange rate denom %s is not a vote target", er.Denom)
+		if _, found := slices.BinarySearch(gs.Feeds.Denoms, er.Denom); !found {
+			return fmt.Errorf("exchange rate %s is not an active feed", er.Denom)
 		}
 	}
 
 	if err := gs.Params.Validate(); err != nil {
 		return err
-	}
-	desiredDenoms := VoteTargetDenoms(gs.Params)
-	stagedDenoms := voteTargets.Denoms
-	if voteTargets.Pending != nil {
-		stagedDenoms = voteTargets.Pending.Denoms
-	}
-	if !slices.Equal(desiredDenoms, stagedDenoms) {
-		return errors.New("oracle params denoms must match the active or pending vote targets")
 	}
 
 	return nil

@@ -11,6 +11,8 @@ import (
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/oracle/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgAddFeed{}, "ark/x/oracle/MsgAddFeed")
+	legacy.RegisterAminoMsg(cdc, &MsgRemoveFeed{}, "ark/x/oracle/MsgRemoveFeed")
 
 	cdc.RegisterConcrete(Params{}, "ark/x/oracle/Params", nil)
 }
@@ -20,6 +22,8 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
+		&MsgAddFeed{},
+		&MsgRemoveFeed{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

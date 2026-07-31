@@ -57,7 +57,7 @@ func TestValidateGenesis(t *testing.T) {
 					{Denom: "", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "exchange rate denom must be an Ark-native base denom beginning with a",
+			expectErr: "exchange rate denom must be an Ark-native base denom matching",
 		},
 		{
 			name: "exchange rate denom must be canonical lowercase",
@@ -66,7 +66,7 @@ func TestValidateGenesis(t *testing.T) {
 					{Denom: "aUSD", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "canonical lowercase Ark-native base denom",
+			expectErr: "exchange rate denom must be an Ark-native base denom matching",
 		},
 		{
 			name: "exchange rate not positive",
@@ -130,13 +130,13 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "genesis exchange rates must be sorted by unique denom",
 		},
 		{
-			name: "exchange rate denom must be a vote target",
+			name: "exchange rate denom must be an active feed",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
 					{Denom: "afoo", Rate: math.LegacyOneDec()},
 				}
 			},
-			expectErr: "exchange rate denom afoo is not a vote target",
+			expectErr: "exchange rate afoo is not an active feed",
 		},
 		// RewardWeights
 		{
@@ -273,79 +273,89 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: fmt.Sprintf("attendance record eligible blocks %d exceed attendance window %d",
 				types.DefaultAttendanceWindow+1, types.DefaultAttendanceWindow),
 		},
-		// VoteTargets
+		// Feeds
 		{
-			name: "vote target denom must be an Ark-native base denom",
+			name: "feed id must be a valid symbol",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"a"}
+				gs.Feeds.Denoms = []string{"a"}
 			},
-			expectErr: "active vote targets denom must be an Ark-native base denom beginning with a: a",
+			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "vote target denom must be canonical lowercase",
+			name: "feed id must be lowercase",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"aUSD"}
+				gs.Feeds.Denoms = []string{"aUSD"}
 			},
-			expectErr: "canonical lowercase Ark-native base denom",
+			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "vote target denom cannot contain path separators",
+			name: "feed id cannot contain path separators",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"afoo/bar"}
+				gs.Feeds.Denoms = []string{"afoo/bar"}
 			},
-			expectErr: "canonical lowercase Ark-native base denom",
+			expectErr: "must be an Ark-native base denom matching",
 		},
 		{
-			name: "native denom cannot be configured as a vote target",
+			name: "numeraire cannot be configured as a feed",
 			mutate: func(gs *types.GenesisState) {
-				gs.Params.TobinTaxes = []types.TobinTax{{
-					Denom:    chain.NoahBaseDenom,
-					TobinTax: math.LegacyNewDecWithPrec(25, 4),
+				gs.Feeds.Denoms = []string{chain.NoahBaseDenom}
+			},
+			expectErr: "is the numeraire and is never priced",
+		},
+		{
+			name: "duplicate feed",
+			mutate: func(gs *types.GenesisState) {
+				gs.Feeds.Denoms = []string{"ausd", "ausd"}
+			},
+			expectErr: "must be sorted by unique denom",
+		},
+		{
+			name: "feeds must be sorted",
+			mutate: func(gs *types.GenesisState) {
+				gs.Feeds.Denoms = []string{"ausd", "akrw"}
+			},
+			expectErr: "must be sorted by unique denom",
+		},
+		{
+			name: "maximum feeds is valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.Feeds.Denoms = makeTestFeedIDs(types.MaxFeeds)
+			},
+		},
+		{
+			name: "too many feeds",
+			mutate: func(gs *types.GenesisState) {
+				gs.Feeds.Denoms = makeTestFeedIDs(types.MaxFeeds + 1)
+			},
+			expectErr: "exceeds maximum feeds",
+		},
+		{
+			name: "addition in flight is valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.Feeds.Transitions = []types.FeedTransition{{
+					Denom:                "agold",
+					Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
+					ActivationVoteHeight: 10,
 				}}
-				gs.VoteTargets = types.NewVoteTargets(gs.Params)
-			},
-			expectErr: "active vote targets must not contain native denom anoah",
-		},
-		{
-			name: "duplicate vote target",
-			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"ausd", "ausd"}
-			},
-			expectErr: "active vote targets contains duplicate denom ausd",
-		},
-		{
-			name: "vote targets must be sorted",
-			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = []string{"ausd", "akrw"}
-			},
-			expectErr: "active vote targets must be sorted",
-		},
-		{
-			name: "maximum vote targets is valid",
-			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = makeTestVoteTargets(types.MaxVoteTargets)
-				gs.Params.TobinTaxes = tobinTaxesForDenoms(gs.VoteTargets.Denoms)
 			},
 		},
 		{
-			name: "too many vote targets",
+			name: "removal in flight is valid",
 			mutate: func(gs *types.GenesisState) {
-				gs.VoteTargets.Denoms = makeTestVoteTargets(types.MaxVoteTargets + 1)
+				gs.Feeds.Transitions = []types.FeedTransition{{
+					Denom:                gs.Feeds.Denoms[0],
+					Direction:            types.FeedDirection_FEED_DIRECTION_REMOVE,
+					ActivationVoteHeight: 10,
+				}}
 			},
-			expectErr: "exceeds maximum vote targets",
 		},
 		// Valid custom genesis
 		{
 			name: "custom valid genesis",
 			mutate: func(gs *types.GenesisState) {
 				params := types.DefaultParams()
-				params.TobinTaxes = []types.TobinTax{{
-					Denom:    "ausd",
-					TobinTax: math.LegacyZeroDec(),
-				}}
 				*gs = *types.NewGenesisState(
 					params,
-					types.NewAccounting(params),
 					[]types.ExchangeRate{
 						{Denom: "ausd", Rate: math.LegacyOneDec()},
 					},
@@ -355,9 +365,10 @@ func TestValidateGenesis(t *testing.T) {
 					[]types.AttendanceRecord{
 						{ValidatorAddress: otherValidatorAddress, Attendance: types.Attendance{}},
 					},
-					types.VoteTargets{
+					types.NewAccounting(params),
+					types.Feeds{
 						Denoms:  []string{"ausd"},
-						Version: types.InitialVoteTargetVersion,
+						Version: types.InitialFeedVersion,
 					},
 				)
 			},
@@ -379,18 +390,10 @@ func TestValidateGenesis(t *testing.T) {
 	}
 }
 
-func makeTestVoteTargets(count int) []string {
+func makeTestFeedIDs(count int) []string {
 	denoms := make([]string, count)
 	for i := range count {
 		denoms[i] = fmt.Sprintf("a%03d", i)
 	}
 	return denoms
-}
-
-func tobinTaxesForDenoms(denoms []string) []types.TobinTax {
-	tobinTaxes := make([]types.TobinTax, len(denoms))
-	for i, denom := range denoms {
-		tobinTaxes[i] = types.TobinTax{Denom: denom, TobinTax: math.LegacyZeroDec()}
-	}
-	return tobinTaxes
 }

@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"cosmossdk.io/math"
@@ -24,17 +23,6 @@ var (
 	MinVoteThreshold     = math.LegacyNewDecWithPrec(50, 2)                     // 50%
 	DefaultVoteThreshold = math.LegacyMustNewDecFromStr("0.666666666666666667") // > 2/3
 	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)                      // 2% (-1, 1)
-	DefaultTobinTax      = math.LegacyNewDecWithPrec(25, 4)                     // 0.25%
-	DefaultTobinTaxes    = []TobinTax{
-		{Denom: chain.CNYBaseDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.EURBaseDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.GBPBaseDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.JPYBaseDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.KRWBaseDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.MNTBaseDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
-		{Denom: chain.SDRBaseDenom, TobinTax: DefaultTobinTax},
-		{Denom: chain.USDBaseDenom, TobinTax: DefaultTobinTax},
-	}
 	// DefaultMinAttendancePerWindow is deliberately lenient, and the week-long
 	// DefaultAttendanceWindow above is part of the same choice: together they are
 	// the defence against correlated jailing when a target-set change outpaces
@@ -56,6 +44,20 @@ var (
 	// direct way to switch jailing off.
 	MinFunctioningBlockThreshold     = math.LegacyNewDecWithPrec(50, 2) // 50%
 	DefaultFunctioningBlockThreshold = MinFunctioningBlockThreshold
+	// MaxParticipationThreshold caps ParticipationThreshold at half the target
+	// set. The parameter is a deadman floor — the share of targets a report
+	// must price before it counts as participation at all — not a coverage
+	// mandate: coverage misses correlate through shared providers, so above a
+	// majority of targets the floor would let a split-fleet provider gap jail
+	// the affected half while the healthy half keeps blocks functioning.
+	// Coverage pressure belongs to per-target reward weight. Zero restores the
+	// single-positive-rate floor.
+	MaxParticipationThreshold = math.LegacyNewDecWithPrec(50, 2) // 50%
+	// DefaultParticipationThreshold asks a participating report to price a
+	// fifth of the target set: low enough that no live sidecar with a partial
+	// provider gap is at risk, high enough that a hardcoded token rate no
+	// longer counts as running an oracle.
+	DefaultParticipationThreshold = math.LegacyNewDecWithPrec(20, 2) // 20%
 )
 
 // DefaultParams creates default oracle module parameters
@@ -65,11 +67,11 @@ func DefaultParams() Params {
 		RewardBand:                DefaultRewardBand,
 		RewardWindow:              DefaultRewardWindow,
 		RewardDistributionWindow:  DefaultRewardDistributionWindow,
-		TobinTaxes:                slices.Clone(DefaultTobinTaxes),
 		AttendanceWindow:          DefaultAttendanceWindow,
 		MinAttendancePerWindow:    DefaultMinAttendancePerWindow,
 		MaxExchangeRateAge:        DefaultMaxExchangeRateAge,
 		FunctioningBlockThreshold: DefaultFunctioningBlockThreshold,
+		ParticipationThreshold:    DefaultParticipationThreshold,
 	}
 }
 
@@ -114,33 +116,17 @@ func (p Params) Validate() error {
 	if p.FunctioningBlockThreshold.GT(math.LegacyOneDec()) {
 		return errors.New("oracle parameter FunctioningBlockThreshold must not exceed 100 percent")
 	}
+	if p.ParticipationThreshold.IsNil() {
+		return errors.New("oracle parameter ParticipationThreshold must be set")
+	}
+	if p.ParticipationThreshold.IsNegative() {
+		return errors.New("oracle parameter ParticipationThreshold must not be negative")
+	}
+	if p.ParticipationThreshold.GT(MaxParticipationThreshold) {
+		return errors.New("oracle parameter ParticipationThreshold must not exceed 50 percent")
+	}
 	if p.MaxExchangeRateAge <= 0 {
 		return errors.New("oracle parameter MaxExchangeRateAge must be greater than zero")
-	}
-	if len(p.TobinTaxes) > MaxVoteTargets {
-		return fmt.Errorf(
-			"oracle parameter TobinTaxes count %d exceeds maximum vote targets %d",
-			len(p.TobinTaxes),
-			MaxVoteTargets,
-		)
-	}
-	for i, tobinTax := range p.TobinTaxes {
-		if tobinTax.TobinTax.IsNil() {
-			return fmt.Errorf("oracle parameter TobinTaxes must have TobinTax set for denom %s", tobinTax.Denom)
-		}
-		if tobinTax.TobinTax.GT(math.LegacyOneDec()) || tobinTax.TobinTax.IsNegative() {
-			return errors.New("oracle parameter TobinTaxes must have TobinTax between [0, 1]")
-		}
-
-		if err := chain.ValidateNativeBaseDenom(tobinTax.Denom); err != nil {
-			return fmt.Errorf("oracle parameter TobinTaxes %w", err)
-		}
-		if tobinTax.Denom == chain.NoahBaseDenom {
-			return fmt.Errorf("oracle parameter TobinTaxes must not contain native denom %s", tobinTax.Denom)
-		}
-		if i > 0 && tobinTax.Denom <= p.TobinTaxes[i-1].Denom {
-			return errors.New("oracle parameter TobinTaxes must be sorted by unique denom")
-		}
 	}
 
 	return nil

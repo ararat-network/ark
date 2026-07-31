@@ -1,7 +1,6 @@
 package types_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
@@ -165,6 +163,30 @@ func TestParamsValidate(t *testing.T) {
 			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDecWithPrec(101, 2) },
 			expectErr: "FunctioningBlockThreshold must not exceed 100 percent",
 		},
+		// ParticipationThreshold
+		{
+			name:      "participation threshold missing",
+			mutate:    func(p *types.Params) { p.ParticipationThreshold = math.LegacyDec{} },
+			expectErr: "ParticipationThreshold must be set",
+		},
+		{
+			name:      "participation threshold negative",
+			mutate:    func(p *types.Params) { p.ParticipationThreshold = math.LegacyNewDecWithPrec(-1, 2) },
+			expectErr: "ParticipationThreshold must not be negative",
+		},
+		{
+			name:      "participation threshold above 50%",
+			mutate:    func(p *types.Params) { p.ParticipationThreshold = math.LegacyNewDecWithPrec(501, 3) },
+			expectErr: "ParticipationThreshold must not exceed 50 percent",
+		},
+		{
+			name:   "participation threshold at zero",
+			mutate: func(p *types.Params) { p.ParticipationThreshold = math.LegacyZeroDec() },
+		},
+		{
+			name:   "participation threshold at 50%",
+			mutate: func(p *types.Params) { p.ParticipationThreshold = types.MaxParticipationThreshold },
+		},
 		// MaxExchangeRateAge
 		{
 			name:      "max exchange rate age zero",
@@ -175,104 +197,6 @@ func TestParamsValidate(t *testing.T) {
 			name:      "max exchange rate age negative",
 			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = -time.Second },
 			expectErr: "MaxExchangeRateAge must be greater than zero",
-		},
-		// TobinTaxes
-		{
-			name: "tobin tax missing",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "ausd", TobinTax: math.LegacyDec{}}}
-			},
-			expectErr: "TobinTaxes must have TobinTax set",
-		},
-		{
-			name: "tobin tax empty denom",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
-			},
-			expectErr: "TobinTaxes denom must be an Ark-native base denom beginning with a",
-		},
-		{
-			name: "tobin tax denom must be canonical lowercase",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "aUSD", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
-			},
-			expectErr: "canonical lowercase Ark-native base denom",
-		},
-		{
-			name: "tobin tax denom cannot contain path separators",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "afoo/bar", TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
-			},
-			expectErr: "canonical lowercase Ark-native base denom",
-		},
-		{
-			name: "tobin tax native denom",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: chain.NoahBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)}}
-			},
-			expectErr: "TobinTaxes must not contain native denom anoah",
-		},
-		{
-			name: "tobin tax negative",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "ausd", TobinTax: math.LegacyNewDec(-1)}}
-			},
-			expectErr: "TobinTaxes must have TobinTax between [0, 1]",
-		},
-		{
-			name: "tobin tax above one",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(101, 2)}}
-			},
-			expectErr: "TobinTaxes must have TobinTax between [0, 1]",
-		},
-		{
-			name: "empty tobin taxes is valid",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{}
-			},
-		},
-		{
-			name: "maximum vote targets is valid",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets)
-			},
-		},
-		{
-			name: "too many vote targets",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = makeTestTobinTaxes(types.MaxVoteTargets + 1)
-			},
-			expectErr: "exceeds maximum vote targets",
-		},
-		{
-			name: "sorted tobin taxes are valid",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{
-					{Denom: "akrw", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-				}
-			},
-		},
-		{
-			name: "unsorted tobin taxes",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{
-					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					{Denom: "akrw", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-				}
-			},
-			expectErr: "TobinTaxes must be sorted by unique denom",
-		},
-		{
-			name: "duplicate tobin tax denom",
-			mutate: func(p *types.Params) {
-				p.TobinTaxes = []types.TobinTax{
-					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					{Denom: "ausd", TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-				}
-			},
-			expectErr: "TobinTaxes must be sorted by unique denom",
 		},
 	}
 
@@ -294,23 +218,14 @@ func TestParamsValidate(t *testing.T) {
 	}
 }
 
-func TestDefaultParamsClonesTobinTaxes(t *testing.T) {
-	params := types.DefaultParams()
-	params.TobinTaxes[0].Denom = "amutated"
+// TestDefaultFeedsClonesDenoms pins that a caller mutating the returned feed
+// set cannot reach through into the package-level launch list.
+func TestDefaultFeedsClonesDenoms(t *testing.T) {
+	feeds := types.DefaultFeeds()
+	require.NotEmpty(t, feeds.Denoms)
+	feeds.Denoms[0] = "amutated"
 
-	fresh := types.DefaultParams()
-	require.Equal(t, types.DefaultTobinTaxes, fresh.TobinTaxes)
-	require.NotEqual(t, params.TobinTaxes[0].Denom, fresh.TobinTaxes[0].Denom)
-}
-
-func makeTestTobinTaxes(count int) []types.TobinTax {
-	tobinTaxes := make([]types.TobinTax, count)
-	for i := range count {
-		tobinTaxes[i] = types.TobinTax{
-			Denom:    fmt.Sprintf("a%03d", i),
-			TobinTax: math.LegacyNewDecWithPrec(25, 4),
-		}
-	}
-
-	return tobinTaxes
+	fresh := types.DefaultFeeds()
+	require.Equal(t, types.DefaultFeedDenoms, fresh.Denoms)
+	require.NotEqual(t, feeds.Denoms[0], fresh.Denoms[0])
 }

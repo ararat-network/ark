@@ -3,7 +3,7 @@ package types
 import "cosmossdk.io/collections"
 
 const (
-	// ModuleName is the name of the market module
+	// ModuleName is the name of the oracle module
 	ModuleName = "oracle"
 	// StoreKey is the string store representation
 	StoreKey = ModuleName
@@ -15,6 +15,6 @@ var (
 	ExchangeRateKey = collections.NewPrefix(1)
 	RewardWeightKey = collections.NewPrefix(2)
 	AttendanceKey   = collections.NewPrefix(3)
-	VoteTargetsKey  = collections.NewPrefix(4)
-	AccountingKey   = collections.NewPrefix(5)
+	AccountingKey   = collections.NewPrefix(4)
+	FeedsKey        = collections.NewPrefix(5)
 )
