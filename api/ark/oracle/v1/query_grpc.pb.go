@@ -21,9 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Query_ExchangeRate_FullMethodName  = "/ark.oracle.v1.Query/ExchangeRate"
 	Query_ExchangeRates_FullMethodName = "/ark.oracle.v1.Query/ExchangeRates"
-	Query_TobinTax_FullMethodName      = "/ark.oracle.v1.Query/TobinTax"
-	Query_TobinTaxes_FullMethodName    = "/ark.oracle.v1.Query/TobinTaxes"
-	Query_VoteTargets_FullMethodName   = "/ark.oracle.v1.Query/VoteTargets"
+	Query_Feeds_FullMethodName         = "/ark.oracle.v1.Query/Feeds"
+	Query_FeedReferents_FullMethodName = "/ark.oracle.v1.Query/FeedReferents"
 	Query_RewardWeight_FullMethodName  = "/ark.oracle.v1.Query/RewardWeight"
 	Query_Attendance_FullMethodName    = "/ark.oracle.v1.Query/Attendance"
 	Query_Params_FullMethodName        = "/ark.oracle.v1.Query/Params"
@@ -39,12 +38,16 @@ type QueryClient interface {
 	ExchangeRate(ctx context.Context, in *QueryExchangeRateRequest, opts ...grpc.CallOption) (*QueryExchangeRateResponse, error)
 	// ExchangeRates returns exchange rates of all denoms
 	ExchangeRates(ctx context.Context, in *QueryExchangeRatesRequest, opts ...grpc.CallOption) (*QueryExchangeRatesResponse, error)
-	// TobinTax returns tobin tax of a denom
-	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
-	// TobinTaxes returns tobin taxes of all denoms
-	TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest, opts ...grpc.CallOption) (*QueryTobinTaxesResponse, error)
-	// VoteTargets returns all vote target denoms
-	VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error)
+	// Feeds returns the active feed set and scheduled transitions.
+	Feeds(ctx context.Context, in *QueryFeedsRequest, opts ...grpc.CallOption) (*QueryFeedsResponse, error)
+	// FeedReferents returns every consumer claim currently pinning a feed, as
+	// MsgRemoveFeed would see them. Returns NotFound for a denom with no active
+	// or in-flight feed.
+	//
+	// Deliberately not module_query_safe: referent descriptions are consumer-
+	// owned prose for operators, and whitelisting them for wasm and ICQ would
+	// make rewording a claim a state-machine-breaking change.
+	FeedReferents(ctx context.Context, in *QueryFeedReferentsRequest, opts ...grpc.CallOption) (*QueryFeedReferentsResponse, error)
 	// RewardWeight returns a validator's accumulated oracle reward weight.
 	RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error)
 	// Attendance returns a validator's in-progress oracle attendance counters.
@@ -81,30 +84,20 @@ func (c *queryClient) ExchangeRates(ctx context.Context, in *QueryExchangeRatesR
 	return out, nil
 }
 
-func (c *queryClient) TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error) {
+func (c *queryClient) Feeds(ctx context.Context, in *QueryFeedsRequest, opts ...grpc.CallOption) (*QueryFeedsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryTobinTaxResponse)
-	err := c.cc.Invoke(ctx, Query_TobinTax_FullMethodName, in, out, cOpts...)
+	out := new(QueryFeedsResponse)
+	err := c.cc.Invoke(ctx, Query_Feeds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) TobinTaxes(ctx context.Context, in *QueryTobinTaxesRequest, opts ...grpc.CallOption) (*QueryTobinTaxesResponse, error) {
+func (c *queryClient) FeedReferents(ctx context.Context, in *QueryFeedReferentsRequest, opts ...grpc.CallOption) (*QueryFeedReferentsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryTobinTaxesResponse)
-	err := c.cc.Invoke(ctx, Query_TobinTaxes_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) VoteTargets(ctx context.Context, in *QueryVoteTargetsRequest, opts ...grpc.CallOption) (*QueryVoteTargetsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryVoteTargetsResponse)
-	err := c.cc.Invoke(ctx, Query_VoteTargets_FullMethodName, in, out, cOpts...)
+	out := new(QueryFeedReferentsResponse)
+	err := c.cc.Invoke(ctx, Query_FeedReferents_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,12 +144,16 @@ type QueryServer interface {
 	ExchangeRate(context.Context, *QueryExchangeRateRequest) (*QueryExchangeRateResponse, error)
 	// ExchangeRates returns exchange rates of all denoms
 	ExchangeRates(context.Context, *QueryExchangeRatesRequest) (*QueryExchangeRatesResponse, error)
-	// TobinTax returns tobin tax of a denom
-	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
-	// TobinTaxes returns tobin taxes of all denoms
-	TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error)
-	// VoteTargets returns all vote target denoms
-	VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error)
+	// Feeds returns the active feed set and scheduled transitions.
+	Feeds(context.Context, *QueryFeedsRequest) (*QueryFeedsResponse, error)
+	// FeedReferents returns every consumer claim currently pinning a feed, as
+	// MsgRemoveFeed would see them. Returns NotFound for a denom with no active
+	// or in-flight feed.
+	//
+	// Deliberately not module_query_safe: referent descriptions are consumer-
+	// owned prose for operators, and whitelisting them for wasm and ICQ would
+	// make rewording a claim a state-machine-breaking change.
+	FeedReferents(context.Context, *QueryFeedReferentsRequest) (*QueryFeedReferentsResponse, error)
 	// RewardWeight returns a validator's accumulated oracle reward weight.
 	RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error)
 	// Attendance returns a validator's in-progress oracle attendance counters.
@@ -179,14 +176,11 @@ func (UnimplementedQueryServer) ExchangeRate(context.Context, *QueryExchangeRate
 func (UnimplementedQueryServer) ExchangeRates(context.Context, *QueryExchangeRatesRequest) (*QueryExchangeRatesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExchangeRates not implemented")
 }
-func (UnimplementedQueryServer) TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method TobinTax not implemented")
+func (UnimplementedQueryServer) Feeds(context.Context, *QueryFeedsRequest) (*QueryFeedsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Feeds not implemented")
 }
-func (UnimplementedQueryServer) TobinTaxes(context.Context, *QueryTobinTaxesRequest) (*QueryTobinTaxesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method TobinTaxes not implemented")
-}
-func (UnimplementedQueryServer) VoteTargets(context.Context, *QueryVoteTargetsRequest) (*QueryVoteTargetsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method VoteTargets not implemented")
+func (UnimplementedQueryServer) FeedReferents(context.Context, *QueryFeedReferentsRequest) (*QueryFeedReferentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FeedReferents not implemented")
 }
 func (UnimplementedQueryServer) RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RewardWeight not implemented")
@@ -254,56 +248,38 @@ func _Query_ExchangeRates_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTobinTaxRequest)
+func _Query_Feeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryFeedsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TobinTax(ctx, in)
+		return srv.(QueryServer).Feeds(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_TobinTax_FullMethodName,
+		FullMethod: Query_Feeds_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TobinTax(ctx, req.(*QueryTobinTaxRequest))
+		return srv.(QueryServer).Feeds(ctx, req.(*QueryFeedsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TobinTaxes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTobinTaxesRequest)
+func _Query_FeedReferents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryFeedReferentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TobinTaxes(ctx, in)
+		return srv.(QueryServer).FeedReferents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_TobinTaxes_FullMethodName,
+		FullMethod: Query_FeedReferents_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TobinTaxes(ctx, req.(*QueryTobinTaxesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_VoteTargets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryVoteTargetsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).VoteTargets(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_VoteTargets_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).VoteTargets(ctx, req.(*QueryVoteTargetsRequest))
+		return srv.(QueryServer).FeedReferents(ctx, req.(*QueryFeedReferentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -378,16 +354,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_ExchangeRates_Handler,
 		},
 		{
-			MethodName: "TobinTax",
-			Handler:    _Query_TobinTax_Handler,
+			MethodName: "Feeds",
+			Handler:    _Query_Feeds_Handler,
 		},
 		{
-			MethodName: "TobinTaxes",
-			Handler:    _Query_TobinTaxes_Handler,
-		},
-		{
-			MethodName: "VoteTargets",
-			Handler:    _Query_VoteTargets_Handler,
+			MethodName: "FeedReferents",
+			Handler:    _Query_FeedReferents_Handler,
 		},
 		{
 			MethodName: "RewardWeight",

@@ -30,6 +30,40 @@ var _ = time.Kitchen
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// FeedDirection identifies whether a transition adds or removes a feed.
+type FeedDirection int32
+
+const (
+	// FEED_DIRECTION_UNSPECIFIED is not a valid persisted direction.
+	FeedDirection_FEED_DIRECTION_UNSPECIFIED FeedDirection = 0
+	// FEED_DIRECTION_ADD schedules a feed to join the active set at its
+	// activation height.
+	FeedDirection_FEED_DIRECTION_ADD FeedDirection = 1
+	// FEED_DIRECTION_REMOVE schedules a feed to leave the active set at its
+	// activation height.
+	FeedDirection_FEED_DIRECTION_REMOVE FeedDirection = 2
+)
+
+var FeedDirection_name = map[int32]string{
+	0: "FEED_DIRECTION_UNSPECIFIED",
+	1: "FEED_DIRECTION_ADD",
+	2: "FEED_DIRECTION_REMOVE",
+}
+
+var FeedDirection_value = map[string]int32{
+	"FEED_DIRECTION_UNSPECIFIED": 0,
+	"FEED_DIRECTION_ADD":         1,
+	"FEED_DIRECTION_REMOVE":      2,
+}
+
+func (x FeedDirection) String() string {
+	return proto.EnumName(FeedDirection_name, int32(x))
+}
+
+func (FeedDirection) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_5bf1cbe85fbb10c3, []int{0}
+}
+
 // Params defines the parameters for the oracle module.
 type Params struct {
 	VoteThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=vote_threshold,json=voteThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"vote_threshold"`
@@ -38,22 +72,29 @@ type Params struct {
 	RewardWindow uint64 `protobuf:"varint,3,opt,name=reward_window,json=rewardWindow,proto3" json:"reward_window,omitempty"`
 	// Distribution window changes take effect with reward window accounting at
 	// the end of the active reward period.
-	RewardDistributionWindow uint64     `protobuf:"varint,4,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
-	TobinTaxes               []TobinTax `protobuf:"bytes,5,rep,name=tobin_taxes,json=tobinTaxes,proto3" json:"tobin_taxes"`
+	RewardDistributionWindow uint64 `protobuf:"varint,4,opt,name=reward_distribution_window,json=rewardDistributionWindow,proto3" json:"reward_distribution_window,omitempty"`
 	// Window changes take effect after the active attendance period settles.
-	AttendanceWindow uint64 `protobuf:"varint,6,opt,name=attendance_window,json=attendanceWindow,proto3" json:"attendance_window,omitempty"`
+	AttendanceWindow uint64 `protobuf:"varint,5,opt,name=attendance_window,json=attendanceWindow,proto3" json:"attendance_window,omitempty"`
 	// min_attendance_per_window is the minimum attended/eligible ratio over one
 	// attendance window before a validator is jailed. Zero disables jailing.
-	MinAttendancePerWindow cosmossdk_io_math.LegacyDec `protobuf:"bytes,7,opt,name=min_attendance_per_window,json=minAttendancePerWindow,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_attendance_per_window"`
+	MinAttendancePerWindow cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=min_attendance_per_window,json=minAttendancePerWindow,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_attendance_per_window"`
 	// max_exchange_rate_age is the maximum elapsed block time since an exchange
 	// rate was last written before it is considered stale.
-	MaxExchangeRateAge time.Duration `protobuf:"bytes,8,opt,name=max_exchange_rate_age,json=maxExchangeRateAge,proto3,stdduration" json:"max_exchange_rate_age"`
+	MaxExchangeRateAge time.Duration `protobuf:"bytes,7,opt,name=max_exchange_rate_age,json=maxExchangeRateAge,proto3,stdduration" json:"max_exchange_rate_age"`
 	// functioning_block_threshold is the minimum share of total commit power that
 	// must participate before a block grades attendance. Must be at least 50
 	// percent: governance may only make grading more forgiving, never harsher,
 	// because a threshold below a majority grades blocks that a majority could
 	// not price and turns a correlated outage into mass jailing.
-	FunctioningBlockThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,9,opt,name=functioning_block_threshold,json=functioningBlockThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"functioning_block_threshold"`
+	FunctioningBlockThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,8,opt,name=functioning_block_threshold,json=functioningBlockThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"functioning_block_threshold"`
+	// participation_threshold is the minimum share of the vote-height target set
+	// a report must price with positive rates before it counts as participation,
+	// for both attendance and the functioning-block gate. Zero keeps the floor
+	// of a single positive rate. Capped at 50 percent: attendance is a deadman
+	// switch, and above a majority of targets it would become a coverage mandate
+	// that turns shared-provider gaps into correlated jailing; coverage pressure
+	// belongs to per-target rewards.
+	ParticipationThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,9,opt,name=participation_threshold,json=participationThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"participation_threshold"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -103,13 +144,6 @@ func (m *Params) GetRewardDistributionWindow() uint64 {
 	return 0
 }
 
-func (m *Params) GetTobinTaxes() []TobinTax {
-	if m != nil {
-		return m.TobinTaxes
-	}
-	return nil
-}
-
 func (m *Params) GetAttendanceWindow() uint64 {
 	if m != nil {
 		return m.AttendanceWindow
@@ -124,24 +158,35 @@ func (m *Params) GetMaxExchangeRateAge() time.Duration {
 	return 0
 }
 
-// TobinTax - the object to hold configurations of each denom
-type TobinTax struct {
-	Denom    string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
+// Feeds defines the materialized active feed set and any scheduled per-feed
+// transitions not yet activated. The feed set for a vote height is the active
+// set folded with every transition whose activation height has arrived.
+type Feeds struct {
+	// denoms is the sorted unique active feed set. A feed is keyed by the
+	// denomination it prices: the feed registry and the asset registry share one
+	// identifier namespace, so a feed for a listed asset is keyed by that
+	// asset's denomination and a feed priced ahead of listing is keyed by the
+	// denomination it will carry.
+	Denoms []string `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
+	// version advances once per activation batch.
+	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	// transitions are scheduled membership changes, sorted by
+	// (activation_vote_height, denom). Immutable once written.
+	Transitions []FeedTransition `protobuf:"bytes,3,rep,name=transitions,proto3" json:"transitions"`
 }
 
-func (m *TobinTax) Reset()         { *m = TobinTax{} }
-func (m *TobinTax) String() string { return proto.CompactTextString(m) }
-func (*TobinTax) ProtoMessage()    {}
-func (*TobinTax) Descriptor() ([]byte, []int) {
+func (m *Feeds) Reset()         { *m = Feeds{} }
+func (m *Feeds) String() string { return proto.CompactTextString(m) }
+func (*Feeds) ProtoMessage()    {}
+func (*Feeds) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bf1cbe85fbb10c3, []int{1}
 }
-func (m *TobinTax) XXX_Unmarshal(b []byte) error {
+func (m *Feeds) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TobinTax) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Feeds) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TobinTax.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Feeds.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -151,154 +196,165 @@ func (m *TobinTax) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *TobinTax) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TobinTax.Merge(m, src)
+func (m *Feeds) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Feeds.Merge(m, src)
 }
-func (m *TobinTax) XXX_Size() int {
+func (m *Feeds) XXX_Size() int {
 	return m.Size()
 }
-func (m *TobinTax) XXX_DiscardUnknown() {
-	xxx_messageInfo_TobinTax.DiscardUnknown(m)
+func (m *Feeds) XXX_DiscardUnknown() {
+	xxx_messageInfo_Feeds.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TobinTax proto.InternalMessageInfo
+var xxx_messageInfo_Feeds proto.InternalMessageInfo
 
-func (m *TobinTax) GetDenom() string {
+func (m *Feeds) GetDenoms() []string {
+	if m != nil {
+		return m.Denoms
+	}
+	return nil
+}
+
+func (m *Feeds) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+func (m *Feeds) GetTransitions() []FeedTransition {
+	if m != nil {
+		return m.Transitions
+	}
+	return nil
+}
+
+// FeedTransition is one scheduled membership change for one feed. Immutable
+// once written.
+type FeedTransition struct {
+	Denom                string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Direction            FeedDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=ark.oracle.v1.FeedDirection" json:"direction,omitempty"`
+	ActivationVoteHeight int64         `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
+}
+
+func (m *FeedTransition) Reset()         { *m = FeedTransition{} }
+func (m *FeedTransition) String() string { return proto.CompactTextString(m) }
+func (*FeedTransition) ProtoMessage()    {}
+func (*FeedTransition) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5bf1cbe85fbb10c3, []int{2}
+}
+func (m *FeedTransition) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *FeedTransition) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_FeedTransition.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *FeedTransition) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeedTransition.Merge(m, src)
+}
+func (m *FeedTransition) XXX_Size() int {
+	return m.Size()
+}
+func (m *FeedTransition) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeedTransition.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FeedTransition proto.InternalMessageInfo
+
+func (m *FeedTransition) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-// VoteTargets defines the active vote-target epoch and an optional scheduled
-// replacement. Pending targets become authoritative for vote extensions at
-// activation_vote_height.
-type VoteTargets struct {
-	Denoms  []string            `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
-	Version uint64              `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-	Pending *PendingVoteTargets `protobuf:"bytes,3,opt,name=pending,proto3" json:"pending,omitempty"`
-}
-
-func (m *VoteTargets) Reset()         { *m = VoteTargets{} }
-func (m *VoteTargets) String() string { return proto.CompactTextString(m) }
-func (*VoteTargets) ProtoMessage()    {}
-func (*VoteTargets) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bf1cbe85fbb10c3, []int{2}
-}
-func (m *VoteTargets) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *VoteTargets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_VoteTargets.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *VoteTargets) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VoteTargets.Merge(m, src)
-}
-func (m *VoteTargets) XXX_Size() int {
-	return m.Size()
-}
-func (m *VoteTargets) XXX_DiscardUnknown() {
-	xxx_messageInfo_VoteTargets.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_VoteTargets proto.InternalMessageInfo
-
-func (m *VoteTargets) GetDenoms() []string {
+func (m *FeedTransition) GetDirection() FeedDirection {
 	if m != nil {
-		return m.Denoms
+		return m.Direction
 	}
-	return nil
+	return FeedDirection_FEED_DIRECTION_UNSPECIFIED
 }
 
-func (m *VoteTargets) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
-func (m *VoteTargets) GetPending() *PendingVoteTargets {
-	if m != nil {
-		return m.Pending
-	}
-	return nil
-}
-
-// PendingVoteTargets defines a scheduled vote-target epoch.
-type PendingVoteTargets struct {
-	Denoms               []string `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
-	Version              uint64   `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-	ActivationVoteHeight int64    `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
-}
-
-func (m *PendingVoteTargets) Reset()         { *m = PendingVoteTargets{} }
-func (m *PendingVoteTargets) String() string { return proto.CompactTextString(m) }
-func (*PendingVoteTargets) ProtoMessage()    {}
-func (*PendingVoteTargets) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bf1cbe85fbb10c3, []int{3}
-}
-func (m *PendingVoteTargets) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *PendingVoteTargets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_PendingVoteTargets.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *PendingVoteTargets) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PendingVoteTargets.Merge(m, src)
-}
-func (m *PendingVoteTargets) XXX_Size() int {
-	return m.Size()
-}
-func (m *PendingVoteTargets) XXX_DiscardUnknown() {
-	xxx_messageInfo_PendingVoteTargets.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PendingVoteTargets proto.InternalMessageInfo
-
-func (m *PendingVoteTargets) GetDenoms() []string {
-	if m != nil {
-		return m.Denoms
-	}
-	return nil
-}
-
-func (m *PendingVoteTargets) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
-func (m *PendingVoteTargets) GetActivationVoteHeight() int64 {
+func (m *FeedTransition) GetActivationVoteHeight() int64 {
 	if m != nil {
 		return m.ActivationVoteHeight
 	}
 	return 0
 }
 
+// FeedReferent is one consumer claim on a feed, derived from the consumer's
+// own state at the moment it is asked. Claims are never stored: a referent
+// exists exactly while the consumer state that implies it does.
+type FeedReferent struct {
+	// consumer names the module holding the claim.
+	Consumer string `protobuf:"bytes,1,opt,name=consumer,proto3" json:"consumer,omitempty"`
+	// referent describes the claim in the consumer's own terms. It is prose for
+	// operators and proposal authors, not a machine contract, which is why this
+	// query is not module-query-safe.
+	Referent string `protobuf:"bytes,2,opt,name=referent,proto3" json:"referent,omitempty"`
+}
+
+func (m *FeedReferent) Reset()         { *m = FeedReferent{} }
+func (m *FeedReferent) String() string { return proto.CompactTextString(m) }
+func (*FeedReferent) ProtoMessage()    {}
+func (*FeedReferent) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5bf1cbe85fbb10c3, []int{3}
+}
+func (m *FeedReferent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *FeedReferent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_FeedReferent.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *FeedReferent) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeedReferent.Merge(m, src)
+}
+func (m *FeedReferent) XXX_Size() int {
+	return m.Size()
+}
+func (m *FeedReferent) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeedReferent.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FeedReferent proto.InternalMessageInfo
+
+func (m *FeedReferent) GetConsumer() string {
+	if m != nil {
+		return m.Consumer
+	}
+	return ""
+}
+
+func (m *FeedReferent) GetReferent() string {
+	if m != nil {
+		return m.Referent
+	}
+	return ""
+}
+
 // Attendance counts a validator's functioning-block presence within the
 // active attendance window. A block is eligible for a validator when it was in
 // the commit and fleet participating power reached the functioning threshold;
-// it is attended when the validator also submitted a valid report containing
-// at least one positive rate.
+// it is attended when the validator also submitted a valid report pricing at
+// least the participation-threshold share of the target set.
 type Attendance struct {
 	EligibleBlocks uint64 `protobuf:"varint,1,opt,name=eligible_blocks,json=eligibleBlocks,proto3" json:"eligible_blocks,omitempty"`
 	AttendedBlocks uint64 `protobuf:"varint,2,opt,name=attended_blocks,json=attendedBlocks,proto3" json:"attended_blocks,omitempty"`
@@ -352,61 +408,68 @@ func (m *Attendance) GetAttendedBlocks() uint64 {
 }
 
 func init() {
+	proto.RegisterEnum("ark.oracle.v1.FeedDirection", FeedDirection_name, FeedDirection_value)
 	proto.RegisterType((*Params)(nil), "ark.oracle.v1.Params")
-	proto.RegisterType((*TobinTax)(nil), "ark.oracle.v1.TobinTax")
-	proto.RegisterType((*VoteTargets)(nil), "ark.oracle.v1.VoteTargets")
-	proto.RegisterType((*PendingVoteTargets)(nil), "ark.oracle.v1.PendingVoteTargets")
+	proto.RegisterType((*Feeds)(nil), "ark.oracle.v1.Feeds")
+	proto.RegisterType((*FeedTransition)(nil), "ark.oracle.v1.FeedTransition")
+	proto.RegisterType((*FeedReferent)(nil), "ark.oracle.v1.FeedReferent")
 	proto.RegisterType((*Attendance)(nil), "ark.oracle.v1.Attendance")
 }
 
 func init() { proto.RegisterFile("ark/oracle/v1/oracle.proto", fileDescriptor_5bf1cbe85fbb10c3) }
 
 var fileDescriptor_5bf1cbe85fbb10c3 = []byte{
-	// 702 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x31, 0x6f, 0xd3, 0x40,
-	0x14, 0x8e, 0x49, 0x9a, 0x36, 0x17, 0x52, 0xe8, 0x51, 0x8a, 0x93, 0xa2, 0x24, 0x84, 0x81, 0xa8,
-	0x80, 0xa3, 0x16, 0xc4, 0x50, 0x58, 0x1a, 0x82, 0xc4, 0xc0, 0x50, 0x99, 0x8a, 0x4a, 0x20, 0xb0,
-	0x2e, 0xf6, 0xab, 0x73, 0x4a, 0x7c, 0x17, 0xec, 0x4b, 0x9a, 0x8a, 0xfe, 0x02, 0x26, 0x46, 0x46,
-	0x46, 0xc6, 0x0e, 0xfc, 0x88, 0x8e, 0x15, 0x13, 0x62, 0x28, 0xa8, 0x1d, 0xca, 0x7f, 0x60, 0x41,
-	0xbe, 0x3b, 0xb7, 0x29, 0x6c, 0x64, 0x89, 0xfc, 0xde, 0xfb, 0xde, 0xf7, 0x3d, 0xfb, 0x7d, 0x2f,
-	0xa8, 0x44, 0xc2, 0x6e, 0x83, 0x87, 0xc4, 0xed, 0x41, 0x63, 0xb8, 0xac, 0x9f, 0xac, 0x7e, 0xc8,
-	0x05, 0xc7, 0x05, 0x12, 0x76, 0x2d, 0x9d, 0x19, 0x2e, 0x97, 0xe6, 0x48, 0x40, 0x19, 0x6f, 0xc8,
-	0x5f, 0x85, 0x28, 0x15, 0x5d, 0x1e, 0x05, 0x3c, 0x72, 0x64, 0xd4, 0x50, 0x81, 0x2e, 0xcd, 0xfb,
-	0xdc, 0xe7, 0x2a, 0x1f, 0x3f, 0xe9, 0x6c, 0xd9, 0xe7, 0xdc, 0xef, 0x41, 0x43, 0x46, 0xed, 0xc1,
-	0x56, 0xc3, 0x1b, 0x84, 0x44, 0x50, 0xce, 0x54, 0xbd, 0xf6, 0x7b, 0x0a, 0x65, 0xd7, 0x49, 0x48,
-	0x82, 0x08, 0xbf, 0x46, 0xb3, 0x43, 0x2e, 0xc0, 0x11, 0x9d, 0x10, 0xa2, 0x0e, 0xef, 0x79, 0xa6,
-	0x51, 0x35, 0xea, 0xb9, 0xe6, 0x83, 0xfd, 0xc3, 0x4a, 0xea, 0xfb, 0x61, 0x65, 0x51, 0xc9, 0x45,
-	0x5e, 0xd7, 0xa2, 0xbc, 0x11, 0x10, 0xd1, 0xb1, 0x9e, 0x81, 0x4f, 0xdc, 0x9d, 0x16, 0xb8, 0x5f,
-	0xbf, 0xdc, 0x45, 0x7a, 0x9a, 0x16, 0xb8, 0x9f, 0x4f, 0xf6, 0x96, 0x0c, 0xbb, 0x10, 0xb3, 0x6d,
-	0x24, 0x64, 0x78, 0x13, 0xe5, 0x43, 0xd8, 0x26, 0xa1, 0xe7, 0xb4, 0x09, 0xf3, 0xcc, 0x0b, 0x13,
-	0x71, 0x23, 0x45, 0xd5, 0x24, 0xcc, 0xc3, 0x37, 0x51, 0x41, 0x13, 0x6f, 0x53, 0xe6, 0xf1, 0x6d,
-	0x33, 0x5d, 0x35, 0xea, 0x19, 0xfb, 0xa2, 0x4a, 0x6e, 0xca, 0x1c, 0x7e, 0x84, 0x4a, 0x1a, 0xe4,
-	0xd1, 0x48, 0x84, 0xb4, 0x3d, 0x88, 0x3f, 0x42, 0xd2, 0x91, 0x91, 0x1d, 0xa6, 0x42, 0xb4, 0xc6,
-	0x00, 0xba, 0xfb, 0x31, 0xca, 0x0b, 0xde, 0xa6, 0xcc, 0x11, 0x64, 0x04, 0x91, 0x39, 0x55, 0x4d,
-	0xd7, 0xf3, 0x2b, 0xd7, 0xac, 0x73, 0xeb, 0xb2, 0x36, 0x62, 0xc4, 0x06, 0x19, 0x35, 0x73, 0xf1,
-	0x4b, 0xe9, 0x39, 0x85, 0x4e, 0x42, 0x84, 0x6f, 0xa3, 0x39, 0x22, 0x04, 0x30, 0x8f, 0x30, 0x17,
-	0x12, 0xe5, 0xac, 0x54, 0xbe, 0x7c, 0x56, 0xd0, 0x8a, 0x6f, 0x51, 0x31, 0xa0, 0xcc, 0x19, 0x6b,
-	0xe8, 0x43, 0x98, 0x34, 0x4d, 0x4f, 0xf4, 0xed, 0x16, 0x02, 0xca, 0xd6, 0x4e, 0x79, 0xd7, 0x21,
-	0xd4, 0x92, 0xaf, 0xd0, 0xd5, 0x80, 0x8c, 0x1c, 0x18, 0xb9, 0x1d, 0xc2, 0x7c, 0x70, 0x42, 0x22,
-	0xc0, 0x21, 0x3e, 0x98, 0x33, 0x55, 0xa3, 0x9e, 0x5f, 0x29, 0x5a, 0xca, 0x4a, 0x56, 0x62, 0x25,
-	0xab, 0xa5, 0xad, 0xd4, 0x2c, 0xc4, 0x93, 0x7c, 0xfc, 0x51, 0x31, 0x94, 0x00, 0x0e, 0xc8, 0xe8,
-	0x89, 0x66, 0xb1, 0x89, 0x80, 0x35, 0x1f, 0xf0, 0x10, 0x2d, 0x6e, 0x0d, 0x98, 0x1b, 0xc3, 0x29,
-	0xf3, 0x9d, 0x76, 0x8f, 0xbb, 0xdd, 0x31, 0xa7, 0xe5, 0x26, 0x7a, 0xa3, 0xe2, 0x18, 0x75, 0x33,
-	0x66, 0x3e, 0x75, 0xdd, 0xea, 0xf5, 0x5f, 0x9f, 0x2a, 0xc6, 0xfb, 0x93, 0xbd, 0xa5, 0x2b, 0xf1,
-	0xdd, 0x8d, 0x92, 0xcb, 0x53, 0x96, 0xaf, 0xbd, 0x43, 0x33, 0xc9, 0xd6, 0xf0, 0x3c, 0x9a, 0xf2,
-	0x80, 0xf1, 0x40, 0xb9, 0xde, 0x56, 0x01, 0x7e, 0x8e, 0x72, 0xa7, 0x9b, 0x9f, 0xd0, 0xb3, 0x33,
-	0x89, 0x17, 0x56, 0x33, 0xf1, 0x50, 0xb5, 0x5d, 0x94, 0x7f, 0x11, 0x5f, 0x08, 0x09, 0x7d, 0x10,
-	0x11, 0x5e, 0x40, 0x59, 0x29, 0x19, 0x99, 0x46, 0x35, 0x5d, 0xcf, 0xd9, 0x3a, 0xc2, 0x26, 0x9a,
-	0x1e, 0x42, 0x18, 0x51, 0xce, 0xa4, 0x7e, 0xc6, 0x4e, 0x42, 0xfc, 0x10, 0x4d, 0xf7, 0x81, 0x79,
-	0x94, 0xf9, 0xd2, 0xf2, 0xf9, 0x95, 0x1b, 0x7f, 0x39, 0x72, 0x5d, 0x55, 0xc7, 0x54, 0xec, 0xa4,
-	0xa3, 0xb6, 0x8b, 0xf0, 0xbf, 0xe5, 0xff, 0x18, 0xe2, 0x3e, 0x5a, 0x20, 0xae, 0xa0, 0x43, 0xe9,
-	0x04, 0x47, 0xfe, 0x81, 0x74, 0x80, 0xfa, 0x1d, 0x21, 0x67, 0x4a, 0xdb, 0xf3, 0x67, 0xd5, 0x58,
-	0xe8, 0xa9, 0xac, 0xd5, 0xde, 0x20, 0x74, 0x66, 0x41, 0x7c, 0x0b, 0x5d, 0x82, 0x1e, 0xf5, 0x69,
-	0xbb, 0x07, 0xca, 0x19, 0x91, 0x5c, 0x42, 0xc6, 0x9e, 0x4d, 0xd2, 0x72, 0xab, 0x51, 0x0c, 0x54,
-	0x17, 0x01, 0x5e, 0x02, 0x54, 0xe3, 0xcc, 0x26, 0x69, 0x05, 0x6c, 0xde, 0xd9, 0x3f, 0x2a, 0x1b,
-	0x07, 0x47, 0x65, 0xe3, 0xe7, 0x51, 0xd9, 0xf8, 0x70, 0x5c, 0x4e, 0x1d, 0x1c, 0x97, 0x53, 0xdf,
-	0x8e, 0xcb, 0xa9, 0x97, 0xf8, 0x9c, 0x0f, 0xc4, 0x4e, 0x1f, 0xa2, 0x76, 0x56, 0x5a, 0xfa, 0xde,
-	0x9f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xdd, 0x21, 0xbc, 0xc6, 0x9c, 0x05, 0x00, 0x00,
+	// 793 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xcf, 0x8f, 0xdb, 0x44,
+	0x14, 0x8e, 0x37, 0xbb, 0x69, 0x33, 0xdb, 0x84, 0x74, 0xd8, 0x86, 0x24, 0x2d, 0x4e, 0x14, 0x0e,
+	0x44, 0x0b, 0x38, 0xea, 0x22, 0x71, 0x00, 0x2e, 0x49, 0xed, 0x88, 0x20, 0x68, 0x57, 0x66, 0x69,
+	0x25, 0x10, 0x58, 0x13, 0xfb, 0xad, 0x33, 0x4a, 0x3c, 0x13, 0xc6, 0x93, 0x6c, 0xfa, 0x2f, 0x20,
+	0x0e, 0x1c, 0x39, 0x72, 0x02, 0x8e, 0x3d, 0xf0, 0x47, 0xf4, 0x58, 0x71, 0x42, 0x1c, 0x0a, 0xda,
+	0x3d, 0x94, 0x3f, 0x03, 0x79, 0xc6, 0xce, 0x8f, 0x15, 0xb7, 0x5c, 0x22, 0xbf, 0xf7, 0xbe, 0xef,
+	0x7b, 0x6f, 0x26, 0xdf, 0x1b, 0xd4, 0x20, 0x62, 0xd2, 0xe5, 0x82, 0xf8, 0x53, 0xe8, 0x2e, 0xee,
+	0xa7, 0x5f, 0xd6, 0x4c, 0x70, 0xc9, 0x71, 0x89, 0x88, 0x89, 0x95, 0x66, 0x16, 0xf7, 0x1b, 0xb7,
+	0x49, 0x44, 0x19, 0xef, 0xaa, 0x5f, 0x8d, 0x68, 0xd4, 0x7d, 0x1e, 0x47, 0x3c, 0xf6, 0x54, 0xd4,
+	0xd5, 0x41, 0x5a, 0x3a, 0x0a, 0x79, 0xc8, 0x75, 0x3e, 0xf9, 0x4a, 0xb3, 0x66, 0xc8, 0x79, 0x38,
+	0x85, 0xae, 0x8a, 0x46, 0xf3, 0xf3, 0x6e, 0x30, 0x17, 0x44, 0x52, 0xce, 0x74, 0xbd, 0xfd, 0x6b,
+	0x01, 0x15, 0x4e, 0x89, 0x20, 0x51, 0x8c, 0xbf, 0x41, 0xe5, 0x05, 0x97, 0xe0, 0xc9, 0xb1, 0x80,
+	0x78, 0xcc, 0xa7, 0x41, 0xcd, 0x68, 0x19, 0x9d, 0x62, 0xff, 0x83, 0xe7, 0x2f, 0x9b, 0xb9, 0xbf,
+	0x5e, 0x36, 0xef, 0xea, 0x76, 0x71, 0x30, 0xb1, 0x28, 0xef, 0x46, 0x44, 0x8e, 0xad, 0xcf, 0x20,
+	0x24, 0xfe, 0x53, 0x1b, 0xfc, 0x3f, 0x7e, 0x7f, 0x0f, 0xa5, 0xd3, 0xd8, 0xe0, 0xff, 0xf6, 0xea,
+	0xd9, 0xb1, 0xe1, 0x96, 0x12, 0xb5, 0xb3, 0x4c, 0x0c, 0x3f, 0x41, 0x87, 0x02, 0x2e, 0x88, 0x08,
+	0xbc, 0x11, 0x61, 0x41, 0x6d, 0x6f, 0x27, 0x6d, 0xa4, 0xa5, 0xfa, 0x84, 0x05, 0xf8, 0x2d, 0x54,
+	0x4a, 0x85, 0x2f, 0x28, 0x0b, 0xf8, 0x45, 0x2d, 0xdf, 0x32, 0x3a, 0xfb, 0xee, 0x2d, 0x9d, 0x7c,
+	0xa2, 0x72, 0xf8, 0x63, 0xd4, 0x48, 0x41, 0x01, 0x8d, 0xa5, 0xa0, 0xa3, 0x79, 0x72, 0x09, 0x19,
+	0x63, 0x5f, 0x31, 0x6a, 0x1a, 0x61, 0x6f, 0x00, 0x52, 0xf6, 0x3b, 0xe8, 0x36, 0x91, 0x12, 0x58,
+	0x40, 0x98, 0x0f, 0x19, 0xe9, 0x40, 0x91, 0x2a, 0xeb, 0x42, 0x0a, 0xfe, 0x0e, 0xd5, 0x23, 0xca,
+	0xbc, 0x0d, 0xc2, 0x0c, 0x44, 0x46, 0x2a, 0xec, 0x74, 0xec, 0x6a, 0x44, 0x59, 0x6f, 0xa5, 0x7b,
+	0x0a, 0x22, 0x6d, 0xf9, 0x35, 0xba, 0x13, 0x91, 0xa5, 0x07, 0x4b, 0x7f, 0x4c, 0x58, 0x08, 0x9e,
+	0x20, 0x12, 0x3c, 0x12, 0x42, 0xed, 0x46, 0xcb, 0xe8, 0x1c, 0x9e, 0xd4, 0x2d, 0xed, 0x02, 0x2b,
+	0x73, 0x81, 0x65, 0xa7, 0x2e, 0xe8, 0x97, 0x92, 0x49, 0x7e, 0xfa, 0xbb, 0x69, 0xe8, 0x06, 0x38,
+	0x22, 0x4b, 0x27, 0x55, 0x71, 0x89, 0x84, 0x5e, 0x08, 0x78, 0x81, 0xee, 0x9e, 0xcf, 0x99, 0x9f,
+	0xc0, 0x29, 0x0b, 0xbd, 0xd1, 0x94, 0xfb, 0x93, 0x0d, 0x93, 0xdc, 0xdc, 0xe9, 0x44, 0xf5, 0x0d,
+	0xe9, 0x7e, 0xa2, 0xbc, 0x36, 0x0c, 0x47, 0x6f, 0xcc, 0x88, 0x90, 0xd4, 0xa7, 0x33, 0x35, 0xeb,
+	0x46, 0xcf, 0xe2, 0x6e, 0xb7, 0xb8, 0x25, 0xbb, 0x6a, 0xf8, 0xe1, 0xbd, 0x7f, 0x7f, 0x6e, 0x1a,
+	0xdf, 0xbf, 0x7a, 0x76, 0xfc, 0x7a, 0xb2, 0xa3, 0xcb, 0x6c, 0x4b, 0xf5, 0x7a, 0xb4, 0x7f, 0x30,
+	0xd0, 0xc1, 0x00, 0x20, 0x88, 0x71, 0x15, 0x15, 0x02, 0x60, 0x3c, 0x8a, 0x6b, 0x46, 0x2b, 0xdf,
+	0x29, 0xba, 0x69, 0x84, 0x9b, 0xe8, 0xc6, 0x02, 0x44, 0x4c, 0x39, 0x53, 0xee, 0xde, 0xef, 0x1f,
+	0xe8, 0x7e, 0x59, 0x16, 0x7f, 0x8a, 0x0e, 0xa5, 0x20, 0x2c, 0xa6, 0x49, 0xdf, 0xb8, 0x96, 0x6f,
+	0xe5, 0x3b, 0x87, 0x27, 0x6f, 0x5a, 0x5b, 0x5b, 0x6f, 0x25, 0x3d, 0xce, 0x56, 0xa8, 0x7e, 0x31,
+	0x39, 0xa4, 0xd6, 0xd9, 0x24, 0xb7, 0x7f, 0x31, 0x50, 0x79, 0x1b, 0x8a, 0x8f, 0xd0, 0x81, 0x9a,
+	0x44, 0xef, 0xad, 0xab, 0x03, 0xdc, 0x43, 0xc5, 0x80, 0x0a, 0x50, 0x97, 0xac, 0xe6, 0x2a, 0x9f,
+	0xdc, 0xfb, 0x9f, 0x96, 0x76, 0x86, 0xc9, 0xa6, 0x5e, 0xb3, 0xf0, 0x47, 0xa8, 0x4a, 0x7c, 0x49,
+	0x17, 0xfa, 0x6f, 0x50, 0x8f, 0xc4, 0x18, 0x68, 0x38, 0x96, 0x6a, 0xd5, 0xf2, 0x19, 0xe3, 0x68,
+	0x0d, 0x7a, 0xcc, 0x25, 0x7c, 0xa2, 0x20, 0xed, 0x01, 0xba, 0x95, 0xe8, 0xbb, 0x70, 0x0e, 0x02,
+	0x98, 0xc4, 0x0d, 0x74, 0xd3, 0xe7, 0x2c, 0x9e, 0x47, 0x20, 0xd2, 0x41, 0x57, 0x71, 0x52, 0x13,
+	0x29, 0x4e, 0x3f, 0x10, 0xee, 0x2a, 0x6e, 0x7f, 0x8b, 0xd0, 0xda, 0xfa, 0xf8, 0x6d, 0xf4, 0x1a,
+	0x4c, 0x69, 0x48, 0x47, 0x53, 0xd0, 0x8e, 0x8c, 0x95, 0xd8, 0xbe, 0x5b, 0xce, 0xd2, 0xca, 0x4d,
+	0x71, 0x02, 0xd4, 0x9b, 0x08, 0x41, 0x06, 0xdc, 0xd3, 0xc0, 0x2c, 0xad, 0x81, 0xc7, 0x23, 0x54,
+	0xda, 0xba, 0x07, 0x6c, 0xa2, 0xc6, 0xc0, 0x71, 0x6c, 0xcf, 0x1e, 0xba, 0xce, 0x83, 0xb3, 0xe1,
+	0xa3, 0x87, 0xde, 0x97, 0x0f, 0xbf, 0x38, 0x75, 0x1e, 0x0c, 0x07, 0x43, 0xc7, 0xae, 0xe4, 0x70,
+	0x15, 0xe1, 0x6b, 0xf5, 0x9e, 0x6d, 0x57, 0x0c, 0x5c, 0x47, 0x77, 0xae, 0xe5, 0x5d, 0xe7, 0xf3,
+	0x47, 0x8f, 0x9d, 0xca, 0x5e, 0xff, 0xdd, 0xe7, 0x97, 0xa6, 0xf1, 0xe2, 0xd2, 0x34, 0xfe, 0xb9,
+	0x34, 0x8d, 0x1f, 0xaf, 0xcc, 0xdc, 0x8b, 0x2b, 0x33, 0xf7, 0xe7, 0x95, 0x99, 0xfb, 0x0a, 0x6f,
+	0x59, 0x4e, 0x3e, 0x9d, 0x41, 0x3c, 0x2a, 0xa8, 0x75, 0x7d, 0xff, 0xbf, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x6a, 0xa7, 0x67, 0x96, 0x33, 0x06, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -440,14 +503,6 @@ func (this *Params) Equal(that interface{}) bool {
 	if this.RewardDistributionWindow != that1.RewardDistributionWindow {
 		return false
 	}
-	if len(this.TobinTaxes) != len(that1.TobinTaxes) {
-		return false
-	}
-	for i := range this.TobinTaxes {
-		if !this.TobinTaxes[i].Equal(&that1.TobinTaxes[i]) {
-			return false
-		}
-	}
 	if this.AttendanceWindow != that1.AttendanceWindow {
 		return false
 	}
@@ -460,31 +515,7 @@ func (this *Params) Equal(that interface{}) bool {
 	if !this.FunctioningBlockThreshold.Equal(that1.FunctioningBlockThreshold) {
 		return false
 	}
-	return true
-}
-func (this *TobinTax) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*TobinTax)
-	if !ok {
-		that2, ok := that.(TobinTax)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Denom != that1.Denom {
-		return false
-	}
-	if !this.TobinTax.Equal(that1.TobinTax) {
+	if !this.ParticipationThreshold.Equal(that1.ParticipationThreshold) {
 		return false
 	}
 	return true
@@ -510,6 +541,16 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
+		size := m.ParticipationThreshold.Size()
+		i -= size
+		if _, err := m.ParticipationThreshold.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintOracle(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x4a
+	{
 		size := m.FunctioningBlockThreshold.Size()
 		i -= size
 		if _, err := m.FunctioningBlockThreshold.MarshalTo(dAtA[i:]); err != nil {
@@ -518,7 +559,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintOracle(dAtA, i, uint64(size))
 	}
 	i--
-	dAtA[i] = 0x4a
+	dAtA[i] = 0x42
 	n1, err1 := github_com_cosmos_gogoproto_types.StdDurationMarshalTo(m.MaxExchangeRateAge, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.MaxExchangeRateAge):])
 	if err1 != nil {
 		return 0, err1
@@ -526,7 +567,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i -= n1
 	i = encodeVarintOracle(dAtA, i, uint64(n1))
 	i--
-	dAtA[i] = 0x42
+	dAtA[i] = 0x3a
 	{
 		size := m.MinAttendancePerWindow.Size()
 		i -= size
@@ -536,25 +577,11 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintOracle(dAtA, i, uint64(size))
 	}
 	i--
-	dAtA[i] = 0x3a
+	dAtA[i] = 0x32
 	if m.AttendanceWindow != 0 {
 		i = encodeVarintOracle(dAtA, i, uint64(m.AttendanceWindow))
 		i--
-		dAtA[i] = 0x30
-	}
-	if len(m.TobinTaxes) > 0 {
-		for iNdEx := len(m.TobinTaxes) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.TobinTaxes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintOracle(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
+		dAtA[i] = 0x28
 	}
 	if m.RewardDistributionWindow != 0 {
 		i = encodeVarintOracle(dAtA, i, uint64(m.RewardDistributionWindow))
@@ -589,7 +616,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TobinTax) Marshal() (dAtA []byte, err error) {
+func (m *Feeds) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -599,26 +626,77 @@ func (m *TobinTax) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TobinTax) MarshalTo(dAtA []byte) (int, error) {
+func (m *Feeds) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TobinTax) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Feeds) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	{
-		size := m.TobinTax.Size()
-		i -= size
-		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
+	if len(m.Transitions) > 0 {
+		for iNdEx := len(m.Transitions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Transitions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintOracle(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
 		}
-		i = encodeVarintOracle(dAtA, i, uint64(size))
 	}
-	i--
-	dAtA[i] = 0x12
+	if m.Version != 0 {
+		i = encodeVarintOracle(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Denoms) > 0 {
+		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Denoms[iNdEx])
+			copy(dAtA[i:], m.Denoms[iNdEx])
+			i = encodeVarintOracle(dAtA, i, uint64(len(m.Denoms[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *FeedTransition) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *FeedTransition) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *FeedTransition) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ActivationVoteHeight != 0 {
+		i = encodeVarintOracle(dAtA, i, uint64(m.ActivationVoteHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Direction != 0 {
+		i = encodeVarintOracle(dAtA, i, uint64(m.Direction))
+		i--
+		dAtA[i] = 0x10
+	}
 	if len(m.Denom) > 0 {
 		i -= len(m.Denom)
 		copy(dAtA[i:], m.Denom)
@@ -629,7 +707,7 @@ func (m *TobinTax) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *VoteTargets) Marshal() (dAtA []byte, err error) {
+func (m *FeedReferent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -639,83 +717,29 @@ func (m *VoteTargets) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VoteTargets) MarshalTo(dAtA []byte) (int, error) {
+func (m *FeedReferent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *VoteTargets) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *FeedReferent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Pending != nil {
-		{
-			size, err := m.Pending.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintOracle(dAtA, i, uint64(size))
-		}
+	if len(m.Referent) > 0 {
+		i -= len(m.Referent)
+		copy(dAtA[i:], m.Referent)
+		i = encodeVarintOracle(dAtA, i, uint64(len(m.Referent)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 	}
-	if m.Version != 0 {
-		i = encodeVarintOracle(dAtA, i, uint64(m.Version))
+	if len(m.Consumer) > 0 {
+		i -= len(m.Consumer)
+		copy(dAtA[i:], m.Consumer)
+		i = encodeVarintOracle(dAtA, i, uint64(len(m.Consumer)))
 		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denoms) > 0 {
-		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Denoms[iNdEx])
-			copy(dAtA[i:], m.Denoms[iNdEx])
-			i = encodeVarintOracle(dAtA, i, uint64(len(m.Denoms[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *PendingVoteTargets) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PendingVoteTargets) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PendingVoteTargets) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ActivationVoteHeight != 0 {
-		i = encodeVarintOracle(dAtA, i, uint64(m.ActivationVoteHeight))
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.Version != 0 {
-		i = encodeVarintOracle(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denoms) > 0 {
-		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Denoms[iNdEx])
-			copy(dAtA[i:], m.Denoms[iNdEx])
-			i = encodeVarintOracle(dAtA, i, uint64(len(m.Denoms[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -780,12 +804,6 @@ func (m *Params) Size() (n int) {
 	if m.RewardDistributionWindow != 0 {
 		n += 1 + sovOracle(uint64(m.RewardDistributionWindow))
 	}
-	if len(m.TobinTaxes) > 0 {
-		for _, e := range m.TobinTaxes {
-			l = e.Size()
-			n += 1 + l + sovOracle(uint64(l))
-		}
-	}
 	if m.AttendanceWindow != 0 {
 		n += 1 + sovOracle(uint64(m.AttendanceWindow))
 	}
@@ -795,10 +813,36 @@ func (m *Params) Size() (n int) {
 	n += 1 + l + sovOracle(uint64(l))
 	l = m.FunctioningBlockThreshold.Size()
 	n += 1 + l + sovOracle(uint64(l))
+	l = m.ParticipationThreshold.Size()
+	n += 1 + l + sovOracle(uint64(l))
 	return n
 }
 
-func (m *TobinTax) Size() (n int) {
+func (m *Feeds) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Denoms) > 0 {
+		for _, s := range m.Denoms {
+			l = len(s)
+			n += 1 + l + sovOracle(uint64(l))
+		}
+	}
+	if m.Version != 0 {
+		n += 1 + sovOracle(uint64(m.Version))
+	}
+	if len(m.Transitions) > 0 {
+		for _, e := range m.Transitions {
+			l = e.Size()
+			n += 1 + l + sovOracle(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *FeedTransition) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -808,50 +852,28 @@ func (m *TobinTax) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOracle(uint64(l))
 	}
-	l = m.TobinTax.Size()
-	n += 1 + l + sovOracle(uint64(l))
-	return n
-}
-
-func (m *VoteTargets) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Denoms) > 0 {
-		for _, s := range m.Denoms {
-			l = len(s)
-			n += 1 + l + sovOracle(uint64(l))
-		}
-	}
-	if m.Version != 0 {
-		n += 1 + sovOracle(uint64(m.Version))
-	}
-	if m.Pending != nil {
-		l = m.Pending.Size()
-		n += 1 + l + sovOracle(uint64(l))
-	}
-	return n
-}
-
-func (m *PendingVoteTargets) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Denoms) > 0 {
-		for _, s := range m.Denoms {
-			l = len(s)
-			n += 1 + l + sovOracle(uint64(l))
-		}
-	}
-	if m.Version != 0 {
-		n += 1 + sovOracle(uint64(m.Version))
+	if m.Direction != 0 {
+		n += 1 + sovOracle(uint64(m.Direction))
 	}
 	if m.ActivationVoteHeight != 0 {
 		n += 1 + sovOracle(uint64(m.ActivationVoteHeight))
+	}
+	return n
+}
+
+func (m *FeedReferent) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Consumer)
+	if l > 0 {
+		n += 1 + l + sovOracle(uint64(l))
+	}
+	l = len(m.Referent)
+	if l > 0 {
+		n += 1 + l + sovOracle(uint64(l))
 	}
 	return n
 }
@@ -1013,40 +1035,6 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				}
 			}
 		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TobinTaxes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowOracle
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthOracle
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TobinTaxes = append(m.TobinTaxes, TobinTax{})
-			if err := m.TobinTaxes[len(m.TobinTaxes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AttendanceWindow", wireType)
 			}
@@ -1065,7 +1053,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 7:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MinAttendancePerWindow", wireType)
 			}
@@ -1099,7 +1087,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 8:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MaxExchangeRateAge", wireType)
 			}
@@ -1132,7 +1120,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FunctioningBlockThreshold", wireType)
 			}
@@ -1166,6 +1154,40 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ParticipationThreshold", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOracle
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthOracle
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ParticipationThreshold.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipOracle(dAtA[iNdEx:])
@@ -1187,7 +1209,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TobinTax) Unmarshal(dAtA []byte) error {
+func (m *Feeds) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1210,10 +1232,145 @@ func (m *TobinTax) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TobinTax: wiretype end group for non-group")
+			return fmt.Errorf("proto: Feeds: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Feeds: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOracle
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthOracle
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOracle
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Transitions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOracle
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthOracle
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Transitions = append(m.Transitions, FeedTransition{})
+			if err := m.Transitions[len(m.Transitions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipOracle(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *FeedTransition) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowOracle
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FeedTransition: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FeedTransition: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1249,126 +1406,10 @@ func (m *TobinTax) Unmarshal(dAtA []byte) error {
 			m.Denom = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowOracle
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthOracle
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipOracle(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *VoteTargets) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowOracle
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: VoteTargets: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: VoteTargets: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowOracle
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthOracle
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Direction", wireType)
 			}
-			m.Version = 0
+			m.Direction = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOracle
@@ -1378,144 +1419,7 @@ func (m *VoteTargets) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pending", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowOracle
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthOracle
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Pending == nil {
-				m.Pending = &PendingVoteTargets{}
-			}
-			if err := m.Pending.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipOracle(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PendingVoteTargets) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowOracle
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PendingVoteTargets: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PendingVoteTargets: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowOracle
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthOracle
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthOracle
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			m.Version = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowOracle
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
+				m.Direction |= FeedDirection(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1539,6 +1443,120 @@ func (m *PendingVoteTargets) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipOracle(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *FeedReferent) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowOracle
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FeedReferent: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FeedReferent: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Consumer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOracle
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthOracle
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Consumer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Referent", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOracle
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthOracle
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthOracle
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Referent = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipOracle(dAtA[iNdEx:])

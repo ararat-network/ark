@@ -144,6 +144,137 @@ func (m *EventOracleJail) GetAttendanceWindow() uint64 {
 	return 0
 }
 
+// EventFeedTransitionScheduled is emitted when one feed transition is
+// scheduled.
+type EventFeedTransitionScheduled struct {
+	Denom                string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Direction            FeedDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=ark.oracle.v1.FeedDirection" json:"direction,omitempty"`
+	ActivationVoteHeight int64         `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
+	ResultingVersion     uint64        `protobuf:"varint,4,opt,name=resulting_version,json=resultingVersion,proto3" json:"resulting_version,omitempty"`
+}
+
+func (m *EventFeedTransitionScheduled) Reset()         { *m = EventFeedTransitionScheduled{} }
+func (m *EventFeedTransitionScheduled) String() string { return proto.CompactTextString(m) }
+func (*EventFeedTransitionScheduled) ProtoMessage()    {}
+func (*EventFeedTransitionScheduled) Descriptor() ([]byte, []int) {
+	return fileDescriptor_df98b89084f88b97, []int{2}
+}
+func (m *EventFeedTransitionScheduled) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventFeedTransitionScheduled) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventFeedTransitionScheduled.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventFeedTransitionScheduled) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventFeedTransitionScheduled.Merge(m, src)
+}
+func (m *EventFeedTransitionScheduled) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventFeedTransitionScheduled) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventFeedTransitionScheduled.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventFeedTransitionScheduled proto.InternalMessageInfo
+
+func (m *EventFeedTransitionScheduled) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+func (m *EventFeedTransitionScheduled) GetDirection() FeedDirection {
+	if m != nil {
+		return m.Direction
+	}
+	return FeedDirection_FEED_DIRECTION_UNSPECIFIED
+}
+
+func (m *EventFeedTransitionScheduled) GetActivationVoteHeight() int64 {
+	if m != nil {
+		return m.ActivationVoteHeight
+	}
+	return 0
+}
+
+func (m *EventFeedTransitionScheduled) GetResultingVersion() uint64 {
+	if m != nil {
+		return m.ResultingVersion
+	}
+	return 0
+}
+
+// EventFeedsActivated is emitted once per promoted activation batch.
+type EventFeedsActivated struct {
+	Version       uint64   `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	AddedDenoms   []string `protobuf:"bytes,2,rep,name=added_denoms,json=addedDenoms,proto3" json:"added_denoms,omitempty"`
+	RemovedDenoms []string `protobuf:"bytes,3,rep,name=removed_denoms,json=removedDenoms,proto3" json:"removed_denoms,omitempty"`
+}
+
+func (m *EventFeedsActivated) Reset()         { *m = EventFeedsActivated{} }
+func (m *EventFeedsActivated) String() string { return proto.CompactTextString(m) }
+func (*EventFeedsActivated) ProtoMessage()    {}
+func (*EventFeedsActivated) Descriptor() ([]byte, []int) {
+	return fileDescriptor_df98b89084f88b97, []int{3}
+}
+func (m *EventFeedsActivated) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventFeedsActivated) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventFeedsActivated.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventFeedsActivated) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventFeedsActivated.Merge(m, src)
+}
+func (m *EventFeedsActivated) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventFeedsActivated) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventFeedsActivated.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventFeedsActivated proto.InternalMessageInfo
+
+func (m *EventFeedsActivated) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+func (m *EventFeedsActivated) GetAddedDenoms() []string {
+	if m != nil {
+		return m.AddedDenoms
+	}
+	return nil
+}
+
+func (m *EventFeedsActivated) GetRemovedDenoms() []string {
+	if m != nil {
+		return m.RemovedDenoms
+	}
+	return nil
+}
+
 // EventOracleReward is emitted after a validator's Oracle rewards are funded.
 type EventOracleReward struct {
 	Validator string                                   `protobuf:"bytes,1,opt,name=validator,proto3" json:"validator,omitempty"`
@@ -154,7 +285,7 @@ func (m *EventOracleReward) Reset()         { *m = EventOracleReward{} }
 func (m *EventOracleReward) String() string { return proto.CompactTextString(m) }
 func (*EventOracleReward) ProtoMessage()    {}
 func (*EventOracleReward) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df98b89084f88b97, []int{2}
+	return fileDescriptor_df98b89084f88b97, []int{4}
 }
 func (m *EventOracleReward) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -200,43 +331,56 @@ func (m *EventOracleReward) GetRewards() github_com_cosmos_cosmos_sdk_types.Coin
 func init() {
 	proto.RegisterType((*EventExchangeRateUpdate)(nil), "ark.oracle.v1.EventExchangeRateUpdate")
 	proto.RegisterType((*EventOracleJail)(nil), "ark.oracle.v1.EventOracleJail")
+	proto.RegisterType((*EventFeedTransitionScheduled)(nil), "ark.oracle.v1.EventFeedTransitionScheduled")
+	proto.RegisterType((*EventFeedsActivated)(nil), "ark.oracle.v1.EventFeedsActivated")
 	proto.RegisterType((*EventOracleReward)(nil), "ark.oracle.v1.EventOracleReward")
 }
 
 func init() { proto.RegisterFile("ark/oracle/v1/event.proto", fileDescriptor_df98b89084f88b97) }
 
 var fileDescriptor_df98b89084f88b97 = []byte{
-	// 475 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x92, 0x41, 0x6f, 0xd3, 0x30,
-	0x14, 0xc7, 0x1b, 0xb6, 0x81, 0x66, 0x18, 0xa3, 0xd1, 0x24, 0xda, 0x21, 0x52, 0xe8, 0xa9, 0x42,
-	0xd4, 0x51, 0x87, 0xe0, 0x8a, 0x08, 0xdb, 0x05, 0x21, 0x21, 0x05, 0x01, 0x12, 0x1c, 0x2a, 0xc7,
-	0x7e, 0x4a, 0x4d, 0x12, 0xbb, 0xb2, 0x4d, 0xbb, 0x7d, 0x07, 0x0e, 0x7c, 0x0c, 0xc4, 0x89, 0xc3,
-	0x3e, 0x00, 0xc7, 0x1d, 0xa7, 0x9d, 0x10, 0x87, 0x81, 0x5a, 0x09, 0xbe, 0x06, 0x8a, 0xed, 0x68,
-	0xe5, 0xcc, 0xa5, 0x8d, 0xfd, 0xfb, 0xbf, 0xf7, 0xfe, 0x2f, 0xf9, 0xa3, 0x2e, 0x51, 0x45, 0x2c,
-	0x15, 0xa1, 0x25, 0xc4, 0xb3, 0x51, 0x0c, 0x33, 0x10, 0x06, 0x4f, 0x95, 0x34, 0x32, 0xdc, 0x22,
-	0xaa, 0xc0, 0x0e, 0xe1, 0xd9, 0x68, 0xb7, 0x4d, 0x2a, 0x2e, 0x64, 0x6c, 0x7f, 0x9d, 0x62, 0x37,
-	0xa2, 0x52, 0x57, 0x52, 0xc7, 0x19, 0xd1, 0x75, 0x75, 0x06, 0x86, 0x8c, 0x62, 0x2a, 0xb9, 0xf0,
-	0xbc, 0xeb, 0xf8, 0xd8, 0x9e, 0x62, 0x77, 0xf0, 0x68, 0x27, 0x97, 0xb9, 0x74, 0xf7, 0xf5, 0x93,
-	0xbb, 0xed, 0x7f, 0x0c, 0xd0, 0xcd, 0x83, 0xda, 0xc2, 0xc1, 0x21, 0x9d, 0x10, 0x91, 0x43, 0x4a,
-	0x0c, 0xbc, 0x9a, 0x32, 0x62, 0x20, 0xdc, 0x41, 0x1b, 0x0c, 0x84, 0xac, 0x3a, 0xc1, 0x9d, 0x60,
-	0xb0, 0x99, 0xba, 0x43, 0xf8, 0x0e, 0x6d, 0x81, 0xd7, 0x8e, 0x15, 0x31, 0xd0, 0xb9, 0x54, 0xd3,
-	0xe4, 0xd1, 0xc9, 0x79, 0xaf, 0xf5, 0xe3, 0xbc, 0x77, 0xcb, 0x0d, 0xd5, 0xac, 0xc0, 0x5c, 0xc6,
-	0x15, 0x31, 0x13, 0xfc, 0x1c, 0x72, 0x42, 0x8f, 0xf6, 0x81, 0x9e, 0x1d, 0x0f, 0x91, 0xf7, 0xb4,
-	0x0f, 0xf4, 0xf3, 0x9f, 0xaf, 0xf7, 0x82, 0xf4, 0x1a, 0xac, 0x0c, 0xee, 0xff, 0x0e, 0xd0, 0xb6,
-	0xb5, 0xf3, 0xc2, 0xbe, 0x85, 0x67, 0x84, 0x97, 0xe1, 0x63, 0xb4, 0x39, 0x23, 0x25, 0x67, 0xc4,
-	0x48, 0xe5, 0xac, 0x24, 0x77, 0xcf, 0x8e, 0x87, 0xb7, 0x7d, 0xa7, 0xd7, 0x0d, 0x7b, 0xc2, 0x98,
-	0x02, 0xad, 0x5f, 0x1a, 0xc5, 0x45, 0x9e, 0x5e, 0xd4, 0x84, 0x18, 0x6d, 0x43, 0xc9, 0x73, 0x9e,
-	0x95, 0x30, 0xce, 0x4a, 0x49, 0x0b, 0x6d, 0x3d, 0xaf, 0x27, 0x1b, 0xce, 0xc2, 0xf5, 0x86, 0x26,
-	0x16, 0xd6, 0x7a, 0x62, 0x0c, 0x08, 0x06, 0xac, 0xd1, 0xaf, 0xfd, 0xa3, 0x6f, 0xa8, 0xd7, 0xef,
-	0xa1, 0xb6, 0xbb, 0x21, 0x82, 0xc2, 0x78, 0xce, 0x05, 0x93, 0xf3, 0xce, 0xfa, 0x6a, 0xc5, 0x8d,
-	0x0b, 0xfe, 0xc6, 0xe2, 0xfe, 0xb7, 0x00, 0xb5, 0x57, 0x16, 0x4d, 0x61, 0x4e, 0x14, 0xfb, 0xff,
-	0x55, 0xdf, 0xa3, 0x2b, 0xca, 0xb6, 0xaa, 0x57, 0x5c, 0x1b, 0x5c, 0xdd, 0xeb, 0x62, 0x5f, 0x5b,
-	0x27, 0x06, 0xfb, 0xc4, 0xe0, 0xa7, 0x92, 0x8b, 0xe4, 0x61, 0xfd, 0xc5, 0xbe, 0xfc, 0xec, 0x0d,
-	0x72, 0x6e, 0x26, 0x1f, 0x32, 0x4c, 0x65, 0xe5, 0x13, 0xe3, 0xff, 0x86, 0x9a, 0x15, 0xb1, 0x39,
-	0x9a, 0x82, 0xb6, 0x05, 0xda, 0xed, 0xd2, 0x0c, 0x48, 0xee, 0x9f, 0x2c, 0xa2, 0xe0, 0x74, 0x11,
-	0x05, 0xbf, 0x16, 0x51, 0xf0, 0x69, 0x19, 0xb5, 0x4e, 0x97, 0x51, 0xeb, 0xfb, 0x32, 0x6a, 0xbd,
-	0x0d, 0xeb, 0x88, 0x1f, 0x36, 0x21, 0xb7, 0x1d, 0xb2, 0xcb, 0x36, 0x6f, 0x0f, 0xfe, 0x06, 0x00,
-	0x00, 0xff, 0xff, 0x5c, 0x8f, 0xd5, 0x85, 0xff, 0x02, 0x00, 0x00,
+	// 645 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xcd, 0x6e, 0x13, 0x3b,
+	0x14, 0xce, 0xdc, 0xb4, 0xb7, 0x8a, 0xfb, 0x77, 0x3b, 0xb7, 0x82, 0xb6, 0x94, 0x09, 0x8d, 0x84,
+	0x54, 0x21, 0x3a, 0xa3, 0x16, 0xc1, 0x86, 0x05, 0x6a, 0x48, 0x11, 0x42, 0x48, 0x48, 0x29, 0x14,
+	0x09, 0x16, 0x23, 0xc7, 0x3e, 0x9a, 0x98, 0x4c, 0xec, 0xca, 0x76, 0xa7, 0xed, 0x8e, 0x07, 0x60,
+	0xc1, 0x63, 0x20, 0x56, 0x2c, 0xfa, 0x00, 0x2c, 0xbb, 0xac, 0xba, 0x42, 0x2c, 0x0a, 0x6a, 0x25,
+	0xe0, 0x31, 0x90, 0x7f, 0xa6, 0x49, 0x16, 0xac, 0xd8, 0x24, 0x73, 0xce, 0xf7, 0x9d, 0xe3, 0xef,
+	0xb3, 0x7d, 0x8c, 0x16, 0xb1, 0xec, 0x25, 0x42, 0x62, 0x92, 0x43, 0x52, 0xac, 0x27, 0x50, 0x00,
+	0xd7, 0xf1, 0xae, 0x14, 0x5a, 0x84, 0xd3, 0x58, 0xf6, 0x62, 0x07, 0xc5, 0xc5, 0xfa, 0xd2, 0x1c,
+	0xee, 0x33, 0x2e, 0x12, 0xfb, 0xeb, 0x18, 0x4b, 0x4b, 0xa3, 0xc5, 0x9e, 0xeb, 0xb0, 0x88, 0x08,
+	0xd5, 0x17, 0x2a, 0xe9, 0x60, 0x65, 0xc0, 0x0e, 0x68, 0xbc, 0x9e, 0x10, 0xc1, 0xb8, 0xc7, 0x17,
+	0x1d, 0x9e, 0xda, 0x28, 0x71, 0x81, 0x87, 0xe6, 0x33, 0x91, 0x09, 0x97, 0x37, 0x5f, 0x2e, 0xdb,
+	0x78, 0x17, 0xa0, 0xab, 0x5b, 0x46, 0xde, 0xd6, 0x01, 0xe9, 0x62, 0x9e, 0x41, 0x1b, 0x6b, 0x78,
+	0xb1, 0x4b, 0xb1, 0x86, 0x70, 0x1e, 0x8d, 0x53, 0xe0, 0xa2, 0xbf, 0x10, 0xdc, 0x08, 0x56, 0x6b,
+	0x6d, 0x17, 0x84, 0xaf, 0xd1, 0x34, 0x78, 0x6e, 0x2a, 0xb1, 0x86, 0x85, 0x7f, 0x0c, 0xda, 0xbc,
+	0x77, 0x7c, 0x56, 0xaf, 0x7c, 0x3d, 0xab, 0x5f, 0x73, 0x8b, 0x2a, 0xda, 0x8b, 0x99, 0x48, 0xfa,
+	0x58, 0x77, 0xe3, 0xa7, 0x90, 0x61, 0x72, 0xd8, 0x02, 0x72, 0x7a, 0xb4, 0x86, 0xbc, 0xa6, 0x16,
+	0x90, 0x0f, 0x3f, 0x3f, 0xdd, 0x0a, 0xda, 0x53, 0x30, 0xb4, 0x70, 0xe3, 0x47, 0x80, 0x66, 0xad,
+	0x9c, 0x67, 0xd6, 0xf5, 0x13, 0xcc, 0xf2, 0xf0, 0x01, 0xaa, 0x15, 0x38, 0x67, 0x14, 0x6b, 0x21,
+	0x9d, 0x94, 0xe6, 0xca, 0xe9, 0xd1, 0xda, 0x75, 0xdf, 0x69, 0xa7, 0xc4, 0x36, 0x29, 0x95, 0xa0,
+	0xd4, 0xb6, 0x96, 0x8c, 0x67, 0xed, 0x41, 0x4d, 0x18, 0xa3, 0x59, 0xc8, 0x59, 0xc6, 0x3a, 0x39,
+	0xa4, 0x9d, 0x5c, 0x90, 0x9e, 0xb2, 0x9a, 0xc7, 0x9a, 0xe3, 0x4e, 0xc2, 0x4c, 0x89, 0x36, 0x2d,
+	0x68, 0xf8, 0x58, 0x6b, 0xe0, 0x14, 0x68, 0xc9, 0xaf, 0x8e, 0xf0, 0x4b, 0xd4, 0xf3, 0x37, 0xd0,
+	0x9c, 0xcb, 0x60, 0x4e, 0x20, 0xdd, 0x67, 0x9c, 0x8a, 0xfd, 0x85, 0xb1, 0xe1, 0x8a, 0xff, 0x06,
+	0xf8, 0x4b, 0x0b, 0x37, 0x7e, 0x05, 0x68, 0xd9, 0x1a, 0x7d, 0x04, 0x40, 0x9f, 0x4b, 0xcc, 0x15,
+	0xd3, 0x4c, 0xf0, 0x6d, 0xd2, 0x05, 0xba, 0x97, 0x03, 0xfd, 0xc3, 0xe6, 0x6f, 0xa2, 0x1a, 0x65,
+	0x12, 0x88, 0xe1, 0x5a, 0x13, 0x33, 0x1b, 0xcb, 0xf1, 0xc8, 0x8d, 0x8a, 0x4d, 0xc3, 0x56, 0xc9,
+	0x29, 0x05, 0x0c, 0xaa, 0xc2, 0xfb, 0xe8, 0x0a, 0x26, 0x9a, 0x15, 0xd8, 0x44, 0x69, 0x21, 0x34,
+	0xa4, 0x5d, 0x60, 0x59, 0x57, 0x5b, 0x93, 0xd5, 0xb2, 0x62, 0x7e, 0x40, 0xda, 0x11, 0x1a, 0x1e,
+	0x5b, 0x8a, 0xb1, 0x2a, 0x41, 0xed, 0xe5, 0x9a, 0xf1, 0x2c, 0x2d, 0x40, 0x2a, 0xa3, 0x63, 0xd4,
+	0xea, 0x25, 0xbe, 0xe3, 0xe0, 0xc6, 0xdb, 0x00, 0xfd, 0x7f, 0x69, 0x55, 0x6d, 0xba, 0xb6, 0x40,
+	0xc3, 0x3a, 0x9a, 0x28, 0x3b, 0x04, 0xc3, 0x1d, 0xca, 0x6c, 0xb8, 0x82, 0xa6, 0x30, 0x35, 0x87,
+	0x60, 0xbd, 0x9b, 0x43, 0xab, 0xae, 0xd6, 0xda, 0x93, 0x36, 0xd7, 0xb2, 0xa9, 0xf0, 0x26, 0x9a,
+	0x91, 0xd0, 0x17, 0xc5, 0x80, 0x54, 0xb5, 0xa4, 0x69, 0x9f, 0x75, 0xb4, 0xc6, 0xe7, 0x00, 0xcd,
+	0x0d, 0x5d, 0xab, 0x36, 0xec, 0x63, 0x49, 0xff, 0xfe, 0x62, 0xbd, 0x41, 0x13, 0xd2, 0xb6, 0x72,
+	0xda, 0x26, 0x37, 0x16, 0x63, 0x5f, 0x6b, 0xe6, 0x33, 0xf6, 0xf3, 0x19, 0x3f, 0x14, 0x8c, 0x37,
+	0xef, 0x9a, 0xf9, 0xf8, 0xf8, 0xad, 0xbe, 0x9a, 0x31, 0xdd, 0xdd, 0xeb, 0xc4, 0x44, 0xf4, 0xfd,
+	0x7c, 0xfa, 0xbf, 0x35, 0x45, 0x7b, 0x89, 0x3e, 0xdc, 0x05, 0x65, 0x0b, 0x94, 0xdf, 0x0c, 0xbf,
+	0x40, 0xf3, 0xf6, 0xf1, 0x79, 0x14, 0x9c, 0x9c, 0x47, 0xc1, 0xf7, 0xf3, 0x28, 0x78, 0x7f, 0x11,
+	0x55, 0x4e, 0x2e, 0xa2, 0xca, 0x97, 0x8b, 0xa8, 0xf2, 0x2a, 0x34, 0xef, 0xc5, 0x41, 0xf9, 0x62,
+	0xd8, 0x0e, 0x9d, 0x7f, 0xed, 0x74, 0xdf, 0xf9, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xfa, 0x95, 0x9e,
+	0xe2, 0x89, 0x04, 0x00, 0x00,
 }
 
 func (m *EventExchangeRateUpdate) Marshal() (dAtA []byte, err error) {
@@ -320,6 +464,97 @@ func (m *EventOracleJail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.Validator)))
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventFeedTransitionScheduled) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventFeedTransitionScheduled) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventFeedTransitionScheduled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ResultingVersion != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ResultingVersion))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationVoteHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationVoteHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Direction != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Direction))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventFeedsActivated) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventFeedsActivated) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventFeedsActivated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.RemovedDenoms) > 0 {
+		for iNdEx := len(m.RemovedDenoms) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.RemovedDenoms[iNdEx])
+			copy(dAtA[i:], m.RemovedDenoms[iNdEx])
+			i = encodeVarintEvent(dAtA, i, uint64(len(m.RemovedDenoms[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.AddedDenoms) > 0 {
+		for iNdEx := len(m.AddedDenoms) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.AddedDenoms[iNdEx])
+			copy(dAtA[i:], m.AddedDenoms[iNdEx])
+			i = encodeVarintEvent(dAtA, i, uint64(len(m.AddedDenoms[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.Version != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -412,6 +647,52 @@ func (m *EventOracleJail) Size() (n int) {
 	}
 	if m.AttendanceWindow != 0 {
 		n += 1 + sovEvent(uint64(m.AttendanceWindow))
+	}
+	return n
+}
+
+func (m *EventFeedTransitionScheduled) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.Direction != 0 {
+		n += 1 + sovEvent(uint64(m.Direction))
+	}
+	if m.ActivationVoteHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ActivationVoteHeight))
+	}
+	if m.ResultingVersion != 0 {
+		n += 1 + sovEvent(uint64(m.ResultingVersion))
+	}
+	return n
+}
+
+func (m *EventFeedsActivated) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Version != 0 {
+		n += 1 + sovEvent(uint64(m.Version))
+	}
+	if len(m.AddedDenoms) > 0 {
+		for _, s := range m.AddedDenoms {
+			l = len(s)
+			n += 1 + l + sovEvent(uint64(l))
+		}
+	}
+	if len(m.RemovedDenoms) > 0 {
+		for _, s := range m.RemovedDenoms {
+			l = len(s)
+			n += 1 + l + sovEvent(uint64(l))
+		}
 	}
 	return n
 }
@@ -675,6 +956,278 @@ func (m *EventOracleJail) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventFeedTransitionScheduled) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventFeedTransitionScheduled: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventFeedTransitionScheduled: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Direction", wireType)
+			}
+			m.Direction = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Direction |= FeedDirection(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationVoteHeight", wireType)
+			}
+			m.ActivationVoteHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationVoteHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResultingVersion", wireType)
+			}
+			m.ResultingVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ResultingVersion |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventFeedsActivated) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventFeedsActivated: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventFeedsActivated: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AddedDenoms", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AddedDenoms = append(m.AddedDenoms, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RemovedDenoms", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RemovedDenoms = append(m.RemovedDenoms, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

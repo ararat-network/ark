@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Msg_UpdateParams_FullMethodName = "/ark.oracle.v1.Msg/UpdateParams"
+	Msg_AddFeed_FullMethodName      = "/ark.oracle.v1.Msg/AddFeed"
+	Msg_RemoveFeed_FullMethodName   = "/ark.oracle.v1.Msg/RemoveFeed"
 )
 
 // MsgClient is the client API for Msg service.
@@ -31,6 +33,11 @@ type MsgClient interface {
 	// UpdateParams defines an operation for updating the x/oracle module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// AddFeed schedules the addition of one price feed to the active feed set.
+	AddFeed(ctx context.Context, in *MsgAddFeed, opts ...grpc.CallOption) (*MsgAddFeedResponse, error)
+	// RemoveFeed schedules the removal of one price feed from the active feed
+	// set.
+	RemoveFeed(ctx context.Context, in *MsgRemoveFeed, opts ...grpc.CallOption) (*MsgRemoveFeedResponse, error)
 }
 
 type msgClient struct {
@@ -51,6 +58,26 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
+func (c *msgClient) AddFeed(ctx context.Context, in *MsgAddFeed, opts ...grpc.CallOption) (*MsgAddFeedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgAddFeedResponse)
+	err := c.cc.Invoke(ctx, Msg_AddFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) RemoveFeed(ctx context.Context, in *MsgRemoveFeed, opts ...grpc.CallOption) (*MsgRemoveFeedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgRemoveFeedResponse)
+	err := c.cc.Invoke(ctx, Msg_RemoveFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
@@ -60,6 +87,11 @@ type MsgServer interface {
 	// UpdateParams defines an operation for updating the x/oracle module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// AddFeed schedules the addition of one price feed to the active feed set.
+	AddFeed(context.Context, *MsgAddFeed) (*MsgAddFeedResponse, error)
+	// RemoveFeed schedules the removal of one price feed from the active feed
+	// set.
+	RemoveFeed(context.Context, *MsgRemoveFeed) (*MsgRemoveFeedResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -72,6 +104,12 @@ type UnimplementedMsgServer struct{}
 
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (UnimplementedMsgServer) AddFeed(context.Context, *MsgAddFeed) (*MsgAddFeedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddFeed not implemented")
+}
+func (UnimplementedMsgServer) RemoveFeed(context.Context, *MsgRemoveFeed) (*MsgRemoveFeedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveFeed not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -112,6 +150,42 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_AddFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgAddFeed)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).AddFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_AddFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).AddFeed(ctx, req.(*MsgAddFeed))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_RemoveFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRemoveFeed)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RemoveFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_RemoveFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RemoveFeed(ctx, req.(*MsgRemoveFeed))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -122,6 +196,14 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "AddFeed",
+			Handler:    _Msg_AddFeed_Handler,
+		},
+		{
+			MethodName: "RemoveFeed",
+			Handler:    _Msg_RemoveFeed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

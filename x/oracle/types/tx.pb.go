@@ -125,15 +125,207 @@ func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
+// MsgAddFeed schedules one feed addition.
+type MsgAddFeed struct {
+	// authority is the address that controls the module (defaults to x/gov unless
+	// overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// denom keys the feed to add.
+	Denom string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+}
+
+func (m *MsgAddFeed) Reset()         { *m = MsgAddFeed{} }
+func (m *MsgAddFeed) String() string { return proto.CompactTextString(m) }
+func (*MsgAddFeed) ProtoMessage()    {}
+func (*MsgAddFeed) Descriptor() ([]byte, []int) {
+	return fileDescriptor_afb66e07e3a64155, []int{2}
+}
+func (m *MsgAddFeed) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgAddFeed) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgAddFeed.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgAddFeed) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgAddFeed.Merge(m, src)
+}
+func (m *MsgAddFeed) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgAddFeed) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgAddFeed.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgAddFeed proto.InternalMessageInfo
+
+func (m *MsgAddFeed) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgAddFeed) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// MsgAddFeedResponse defines the response structure for executing a MsgAddFeed
+// message.
+type MsgAddFeedResponse struct {
+}
+
+func (m *MsgAddFeedResponse) Reset()         { *m = MsgAddFeedResponse{} }
+func (m *MsgAddFeedResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgAddFeedResponse) ProtoMessage()    {}
+func (*MsgAddFeedResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_afb66e07e3a64155, []int{3}
+}
+func (m *MsgAddFeedResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgAddFeedResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgAddFeedResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgAddFeedResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgAddFeedResponse.Merge(m, src)
+}
+func (m *MsgAddFeedResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgAddFeedResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgAddFeedResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgAddFeedResponse proto.InternalMessageInfo
+
+// MsgRemoveFeed schedules one feed removal.
+type MsgRemoveFeed struct {
+	// authority is the address that controls the module (defaults to x/gov unless
+	// overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// denom keys the feed to remove.
+	Denom string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+}
+
+func (m *MsgRemoveFeed) Reset()         { *m = MsgRemoveFeed{} }
+func (m *MsgRemoveFeed) String() string { return proto.CompactTextString(m) }
+func (*MsgRemoveFeed) ProtoMessage()    {}
+func (*MsgRemoveFeed) Descriptor() ([]byte, []int) {
+	return fileDescriptor_afb66e07e3a64155, []int{4}
+}
+func (m *MsgRemoveFeed) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRemoveFeed) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRemoveFeed.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRemoveFeed) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRemoveFeed.Merge(m, src)
+}
+func (m *MsgRemoveFeed) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRemoveFeed) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRemoveFeed.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRemoveFeed proto.InternalMessageInfo
+
+func (m *MsgRemoveFeed) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgRemoveFeed) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// MsgRemoveFeedResponse defines the response structure for executing a
+// MsgRemoveFeed message.
+type MsgRemoveFeedResponse struct {
+}
+
+func (m *MsgRemoveFeedResponse) Reset()         { *m = MsgRemoveFeedResponse{} }
+func (m *MsgRemoveFeedResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgRemoveFeedResponse) ProtoMessage()    {}
+func (*MsgRemoveFeedResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_afb66e07e3a64155, []int{5}
+}
+func (m *MsgRemoveFeedResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRemoveFeedResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRemoveFeedResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRemoveFeedResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRemoveFeedResponse.Merge(m, src)
+}
+func (m *MsgRemoveFeedResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRemoveFeedResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRemoveFeedResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRemoveFeedResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "ark.oracle.v1.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "ark.oracle.v1.MsgUpdateParamsResponse")
+	proto.RegisterType((*MsgAddFeed)(nil), "ark.oracle.v1.MsgAddFeed")
+	proto.RegisterType((*MsgAddFeedResponse)(nil), "ark.oracle.v1.MsgAddFeedResponse")
+	proto.RegisterType((*MsgRemoveFeed)(nil), "ark.oracle.v1.MsgRemoveFeed")
+	proto.RegisterType((*MsgRemoveFeedResponse)(nil), "ark.oracle.v1.MsgRemoveFeedResponse")
 }
 
 func init() { proto.RegisterFile("ark/oracle/v1/tx.proto", fileDescriptor_afb66e07e3a64155) }
 
 var fileDescriptor_afb66e07e3a64155 = []byte{
-	// 327 bytes of a gzipped FileDescriptorProto
+	// 445 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x4b, 0x2c, 0xca, 0xd6,
 	0xcf, 0x2f, 0x4a, 0x4c, 0xce, 0x49, 0xd5, 0x2f, 0x33, 0xd4, 0x2f, 0xa9, 0xd0, 0x2b, 0x28, 0xca,
 	0x2f, 0xc9, 0x17, 0xe2, 0x4d, 0x2c, 0xca, 0xd6, 0x83, 0x88, 0xeb, 0x95, 0x19, 0x4a, 0x09, 0x26,
@@ -148,13 +340,20 @@ var fileDescriptor_afb66e07e3a64155 = []byte{
 	0x0a, 0x8c, 0x1a, 0xdc, 0x46, 0xa2, 0x7a, 0x28, 0x9e, 0xd4, 0x83, 0x18, 0xef, 0xc4, 0x79, 0xe2,
 	0x9e, 0x3c, 0xc3, 0x8a, 0xe7, 0x1b, 0xb4, 0x18, 0x83, 0xa0, 0xea, 0xad, 0xf4, 0x9b, 0x9e, 0x6f,
 	0xd0, 0x42, 0x98, 0xd4, 0xf5, 0x7c, 0x83, 0x96, 0x0c, 0xc8, 0xfb, 0x15, 0xb0, 0x00, 0x40, 0x73,
-	0xa2, 0x92, 0x24, 0x97, 0x38, 0x9a, 0x50, 0x50, 0x6a, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x51,
-	0x1a, 0x17, 0xb3, 0x6f, 0x71, 0xba, 0x50, 0x04, 0x17, 0x0f, 0x8a, 0xa7, 0xe4, 0xd0, 0x1c, 0x83,
-	0xa6, 0x5d, 0x4a, 0x0d, 0xbf, 0x3c, 0xcc, 0x78, 0x25, 0x06, 0x29, 0xd6, 0x06, 0x90, 0xdb, 0x9d,
-	0x74, 0x4e, 0x3c, 0x92, 0x63, 0xbc, 0xf0, 0x48, 0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x09, 0x8f,
-	0xe5, 0x18, 0x2e, 0x3c, 0x96, 0x63, 0xb8, 0xf1, 0x58, 0x8e, 0x21, 0x4a, 0x08, 0xc5, 0xe9, 0x25,
-	0x95, 0x05, 0xa9, 0xc5, 0x49, 0x6c, 0xe0, 0xe0, 0x36, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xd3,
-	0xc3, 0x12, 0x28, 0x10, 0x02, 0x00, 0x00,
+	0xa2, 0x92, 0x24, 0x97, 0x38, 0x9a, 0x50, 0x50, 0x6a, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x52,
+	0x1b, 0x23, 0x17, 0x97, 0x6f, 0x71, 0xba, 0x63, 0x4a, 0x8a, 0x5b, 0x6a, 0x6a, 0x0a, 0xd9, 0x9e,
+	0x11, 0xe1, 0x62, 0x4d, 0x49, 0xcd, 0xcb, 0xcf, 0x05, 0xfb, 0x85, 0x33, 0x08, 0xc2, 0xb1, 0xd2,
+	0xc2, 0x74, 0xa8, 0x38, 0xba, 0x43, 0xa1, 0x36, 0x2b, 0x89, 0x70, 0x09, 0x21, 0x78, 0x70, 0xe7,
+	0xf5, 0x30, 0x72, 0xf1, 0xfa, 0x16, 0xa7, 0x07, 0xa5, 0xe6, 0xe6, 0x97, 0xa5, 0xd2, 0xc0, 0x85,
+	0xba, 0x98, 0x2e, 0x94, 0x42, 0x77, 0x21, 0xc2, 0x72, 0x25, 0x71, 0x2e, 0x51, 0x14, 0x01, 0x98,
+	0x3b, 0x8d, 0x5a, 0x99, 0xb8, 0x98, 0x7d, 0x8b, 0xd3, 0x85, 0x22, 0xb8, 0x78, 0x50, 0x12, 0x87,
+	0x1c, 0x5a, 0xa4, 0xa2, 0x45, 0x83, 0x94, 0x1a, 0x7e, 0x79, 0x78, 0x38, 0x30, 0x08, 0x79, 0x72,
+	0xb1, 0xc3, 0x22, 0x49, 0x12, 0x53, 0x13, 0x54, 0x4a, 0x4a, 0x11, 0xa7, 0x14, 0x92, 0x51, 0x41,
+	0x5c, 0x5c, 0x48, 0x01, 0x2a, 0x83, 0xa9, 0x05, 0x21, 0x2b, 0xa5, 0x82, 0x4f, 0x16, 0x61, 0xa6,
+	0x14, 0x6b, 0x03, 0x28, 0x89, 0x3a, 0xe9, 0x9c, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3,
+	0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70, 0xe3, 0xb1, 0x1c,
+	0x43, 0x94, 0x10, 0x4a, 0xb0, 0x96, 0x54, 0x16, 0xa4, 0x16, 0x27, 0xb1, 0x81, 0x73, 0x95, 0x31,
+	0x20, 0x00, 0x00, 0xff, 0xff, 0xe4, 0x03, 0x16, 0xda, 0xf7, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -172,6 +371,11 @@ type MsgClient interface {
 	// UpdateParams defines an operation for updating the x/oracle module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// AddFeed schedules the addition of one price feed to the active feed set.
+	AddFeed(ctx context.Context, in *MsgAddFeed, opts ...grpc.CallOption) (*MsgAddFeedResponse, error)
+	// RemoveFeed schedules the removal of one price feed from the active feed
+	// set.
+	RemoveFeed(ctx context.Context, in *MsgRemoveFeed, opts ...grpc.CallOption) (*MsgRemoveFeedResponse, error)
 }
 
 type msgClient struct {
@@ -191,11 +395,34 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
+func (c *msgClient) AddFeed(ctx context.Context, in *MsgAddFeed, opts ...grpc.CallOption) (*MsgAddFeedResponse, error) {
+	out := new(MsgAddFeedResponse)
+	err := c.cc.Invoke(ctx, "/ark.oracle.v1.Msg/AddFeed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) RemoveFeed(ctx context.Context, in *MsgRemoveFeed, opts ...grpc.CallOption) (*MsgRemoveFeedResponse, error) {
+	out := new(MsgRemoveFeedResponse)
+	err := c.cc.Invoke(ctx, "/ark.oracle.v1.Msg/RemoveFeed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateParams defines an operation for updating the x/oracle module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// AddFeed schedules the addition of one price feed to the active feed set.
+	AddFeed(context.Context, *MsgAddFeed) (*MsgAddFeedResponse, error)
+	// RemoveFeed schedules the removal of one price feed from the active feed
+	// set.
+	RemoveFeed(context.Context, *MsgRemoveFeed) (*MsgRemoveFeedResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -204,6 +431,12 @@ type UnimplementedMsgServer struct {
 
 func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (*UnimplementedMsgServer) AddFeed(ctx context.Context, req *MsgAddFeed) (*MsgAddFeedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddFeed not implemented")
+}
+func (*UnimplementedMsgServer) RemoveFeed(ctx context.Context, req *MsgRemoveFeed) (*MsgRemoveFeedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveFeed not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -228,6 +461,42 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_AddFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgAddFeed)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).AddFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.oracle.v1.Msg/AddFeed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).AddFeed(ctx, req.(*MsgAddFeed))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_RemoveFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRemoveFeed)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RemoveFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.oracle.v1.Msg/RemoveFeed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RemoveFeed(ctx, req.(*MsgRemoveFeed))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ark.oracle.v1.Msg",
@@ -236,6 +505,14 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "AddFeed",
+			Handler:    _Msg_AddFeed_Handler,
+		},
+		{
+			MethodName: "RemoveFeed",
+			Handler:    _Msg_RemoveFeed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -305,6 +582,126 @@ func (m *MsgUpdateParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgAddFeed) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgAddFeed) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgAddFeed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgAddFeedResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgAddFeedResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgAddFeedResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgRemoveFeed) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgRemoveFeed) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgRemoveFeed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgRemoveFeedResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgRemoveFeedResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgRemoveFeedResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -332,6 +729,58 @@ func (m *MsgUpdateParams) Size() (n int) {
 }
 
 func (m *MsgUpdateParamsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgAddFeed) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgAddFeedResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgRemoveFeed) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgRemoveFeedResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -488,6 +937,334 @@ func (m *MsgUpdateParamsResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgUpdateParamsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgAddFeed) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgAddFeed: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgAddFeed: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgAddFeedResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgAddFeedResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgAddFeedResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgRemoveFeed) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgRemoveFeed: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgRemoveFeed: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgRemoveFeedResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgRemoveFeedResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgRemoveFeedResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

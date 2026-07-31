@@ -28,22 +28,22 @@ service Query {
     option (google.api.http).get = "/ark/oracle/v1/denoms/exchange_rates";
   }
 
-  // TobinTax returns tobin tax of a denom
-  rpc TobinTax(QueryTobinTaxRequest) returns (QueryTobinTaxResponse) {
+  // Feeds returns the active feed set and scheduled transitions.
+  rpc Feeds(QueryFeedsRequest) returns (QueryFeedsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/oracle/v1/denoms/{denom}/tobin_tax";
+    option (google.api.http).get = "/ark/oracle/v1/feeds";
   }
 
-  // TobinTaxes returns tobin taxes of all denoms
-  rpc TobinTaxes(QueryTobinTaxesRequest) returns (QueryTobinTaxesResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/oracle/v1/denoms/tobin_taxes";
-  }
-
-  // VoteTargets returns all vote target denoms
-  rpc VoteTargets(QueryVoteTargetsRequest) returns (QueryVoteTargetsResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/oracle/v1/denoms/vote_targets";
+  // FeedReferents returns every consumer claim currently pinning a feed, as
+  // MsgRemoveFeed would see them. Returns NotFound for a denom with no active
+  // or in-flight feed.
+  //
+  // Deliberately not module_query_safe: referent descriptions are consumer-
+  // owned prose for operators, and whitelisting them for wasm and ICQ would
+  // make rewording a claim a state-machine-breaking change.
+  rpc FeedReferents(QueryFeedReferentsRequest)
+      returns (QueryFeedReferentsResponse) {
+    option (google.api.http).get = "/ark/oracle/v1/feeds/{denom}/referents";
   }
 
   // RewardWeight returns a validator's accumulated oracle reward weight.
@@ -103,50 +103,31 @@ message QueryExchangeRatesResponse {
   ];
 }
 
-// QueryTobinTaxRequest is the request type for the Query/TobinTax RPC method.
-message QueryTobinTaxRequest {
-  // denom defines the denomination to query for.
-  string denom = 1;
-}
+// QueryFeedsRequest is the request type for the Query/Feeds RPC method.
+message QueryFeedsRequest {}
 
-// QueryTobinTaxResponse is response type for the
-// Query/TobinTax RPC method.
-message QueryTobinTaxResponse {
-  // tobin_tax defines the tobin tax of a denom
-  string tobin_tax = 1 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
-
-// QueryTobinTaxesRequest is the request type for the Query/TobinTaxes RPC
-// method.
-message QueryTobinTaxesRequest {}
-
-// QueryTobinTaxesResponse is response type for the
-// Query/TobinTaxes RPC method.
-message QueryTobinTaxesResponse {
-  // tobin_taxes defines a list of all the denoms and their respective tobin tax
-  repeated TobinTax tobin_taxes = 1
+// QueryFeedsResponse is the response type for the Query/Feeds RPC method.
+message QueryFeedsResponse {
+  // feeds defines the active feed set and any scheduled transitions.
+  Feeds feeds = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryVoteTargetsRequest is the request type for the Query/VoteTargets RPC
-// method.
-message QueryVoteTargetsRequest {}
+// QueryFeedReferentsRequest is the request type for the Query/FeedReferents
+// RPC method.
+message QueryFeedReferentsRequest {
+  // denom identifies the feed to report referents for.
+  string denom = 1;
+}
 
-// QueryVoteTargetsResponse is response type for the
-// Query/VoteTargets RPC method.
-message QueryVoteTargetsResponse {
-  // vote_targets defines a list of the denomination in which everyone
-  // should vote in the active vote-target epoch.
-  repeated string vote_targets = 1;
-  // target_version identifies the active vote-target epoch.
-  uint64 target_version = 2;
-  // pending defines the next scheduled vote-target epoch, when present.
-  PendingVoteTargets pending = 3;
+// QueryFeedReferentsResponse is the response type for the Query/FeedReferents
+// RPC method.
+message QueryFeedReferentsResponse {
+  // referents lists every claim consumers hold on the feed. Empty means no
+  // consumer blocks removal. Unpaginated: the count is bounded by consumers
+  // times claims per consumer.
+  repeated FeedReferent referents = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC

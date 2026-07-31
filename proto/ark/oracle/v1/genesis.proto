@@ -19,9 +19,10 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated AttendanceRecord attendance_records = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  VoteTargets vote_targets = 5
+  Accounting accounting = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  Accounting accounting = 6
+  // feeds seeds the active feed set and scheduled transitions.
+  Feeds feeds = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
@@ -47,8 +48,11 @@ message ExchangeRate {
   // BlockTimestamp tracks the block time associated with this price update.
   // We include block timestamp alongside the price to ensure that smart
   // contracts and applications are not utilizing stale oracle prices
-  google.protobuf.Timestamp block_timestamp = 3
-      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp block_timestamp = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true,
+    (amino.dont_omitempty) = true
+  ];
 
   // BlockHeight is height of block mentioned above
   uint64 block_height = 4;
