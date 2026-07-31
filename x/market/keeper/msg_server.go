@@ -11,6 +11,7 @@ import (
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"ark/pkg/chain"
+	"ark/pkg/mandate"
 	"ark/x/market/types"
 )
 
@@ -94,10 +95,6 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, err
 	}
 
-	// Conversion capacity is not here: depth and the recovery period are
-	// committee-delegable, so they move through the capacity messages and a
-	// params replacement drafted from a stale copy cannot revert an emergency
-	// resize.
 	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
 		return nil, err
 	}
@@ -158,38 +155,23 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 	if err != nil {
 		return nil, fmt.Errorf("getting conversion mandate: %w", err)
 	}
-	term, err := current.NextTerm()
+	envelope, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	updated := types.NewDisabledConversionMandate(term)
+	updated := types.NewDisabledConversionMandate(envelope.Term)
+	updated.Envelope = envelope
 	if msg.Committee != "" {
-		updated.Committee = msg.Committee
-		updated.ActivationHeight = msg.ActivationHeight
-		updated.ExpiryHeight = msg.ExpiryHeight
 		updated.MinimumPolicy = msg.MinimumPolicy
 		updated.MaximumPolicy = msg.MaximumPolicy
-		// An absent cap is a capacity-only appointment: the constructor's zero
-		// survives, delegating no Tobin power.
-		if !msg.MaxTobinTax.IsNil() {
-			updated.MaxTobinTax = msg.MaxTobinTax
-		}
+		updated.MaxTobinTax = msg.MaxTobinTax
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
-		// Governance holds the unbounded path already, so a committee that is
-		// also the authority would be a delegation to nobody while reading as a
-		// live fast path.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
 			return nil, errors.New("conversion committee must be distinct from Market authority")
 		}
-		// An expiry already behind the chain is a delegation the committee could
-		// never exercise, for the same reason a corridor in the wrong unit is:
-		// the appointment reads as live and authorizes nothing. The window is
-		// half-open, so a proposal landing exactly on its own expiry is already
-		// too late. Genesis deliberately applies no such check — an import must
-		// carry a mandate that expired before the export.
 		if updated.ExpiryHeight <= uint64(sdkCtx.BlockHeight()) {
 			return nil, fmt.Errorf(
 				"conversion mandate expires at height %d, which is not above the current height %d",
@@ -197,10 +179,6 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 				sdkCtx.BlockHeight(),
 			)
 		}
-		// A corridor in any unit other than the live pool's could never
-		// authorize an action. Rejecting it here turns a stillborn appointment
-		// into a failed proposal instead of a committee discovering it has no
-		// usable power at the moment it musters.
 		capacity, err := m.k.ConversionPolicy.Get(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("getting conversion policy: %w", err)
@@ -211,6 +189,19 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 				updated.MinimumPolicy.BasePool.Denom,
 				capacity.BasePool.Denom,
 			)
+		}
+		if updated.MaxTobinTax.IsPositive() {
+			params, err := m.k.Params.Get(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("getting params: %w", err)
+			}
+			if updated.MaxTobinTax.LT(params.DefaultTobinTax) {
+				return nil, fmt.Errorf(
+					"conversion mandate Tobin cap %s is below the default rate %s, which delegates an empty band",
+					updated.MaxTobinTax,
+					params.DefaultTobinTax,
+				)
+			}
 		}
 	}
 
@@ -287,19 +278,12 @@ func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgComm
 	return &types.MsgCommitteeUpdatePolicyResponse{}, nil
 }
 
-// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
-// override as the exact appointed committee, during the active term and
-// window, at or above the denomination's current effective rate and at most
-// the mandate's cap.
-//
-// This is the per-denomination containment rung between the chain-wide depth
-// throttle and an asset suspension: when one market's plausible oracle error
-// outgrows its rate, the committee widens that buffer without freezing the
-// asset. The raise persists across mandate replacement the way an applied
-// policy does; only governance lowers or removes it.
-func (m msgServer) CommitteeRaiseTobinTax(ctx context.Context, msg *types.MsgCommitteeRaiseTobinTax) (*types.MsgCommitteeRaiseTobinTaxResponse, error) {
+// CommitteeSetTobinTax creates or replaces one per-denomination Tobin override
+// as the exact appointed committee, during the active term and window, inside
+// the band between the chain-wide default and the mandate's cap.
+func (m msgServer) CommitteeSetTobinTax(ctx context.Context, msg *types.MsgCommitteeSetTobinTax) (*types.MsgCommitteeSetTobinTaxResponse, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("nil committee raise tobin tax message")
+		return nil, fmt.Errorf("nil committee set tobin tax message")
 	}
 	if _, err := chain.ParseCanonicalAccountAddress("committee", msg.Committee); err != nil {
 		return nil, err
@@ -317,13 +301,15 @@ func (m msgServer) CommitteeRaiseTobinTax(ctx context.Context, msg *types.MsgCom
 	); err != nil {
 		return nil, fmt.Errorf("%s: %w", types.ConversionMandateLabel, err)
 	}
-	effective, err := m.k.GetTobinTax(ctx, msg.Denom)
+
+	params, err := m.k.Params.Get(ctx)
 	if err != nil {
+		return nil, fmt.Errorf("getting params: %w", err)
+	}
+	if err := conversionMandate.ValidateTobinCandidate(params.DefaultTobinTax, msg.TobinTax); err != nil {
 		return nil, err
 	}
-	if err := conversionMandate.ValidateTobinRaise(effective, msg.TobinTax); err != nil {
-		return nil, err
-	}
+
 	if err := m.k.SetTobinTaxOverride(ctx, msg.Denom, msg.TobinTax); err != nil {
 		return nil, err
 	}
@@ -334,5 +320,5 @@ func (m msgServer) CommitteeRaiseTobinTax(ctx context.Context, msg *types.MsgCom
 		return nil, fmt.Errorf("emitting Market tobin tax override: %w", err)
 	}
 
-	return &types.MsgCommitteeRaiseTobinTaxResponse{}, nil
+	return &types.MsgCommitteeSetTobinTaxResponse{}, nil
 }

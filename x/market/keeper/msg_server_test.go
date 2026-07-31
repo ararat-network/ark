@@ -639,7 +639,6 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			name:      "valid params",
 			authority: authority,
 			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
 				p.DefaultTobinTax = math.LegacyNewDecWithPrec(5, 3)
 			},
 		},
@@ -652,7 +651,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			},
 			authority: consensusAuthority,
 			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
+				p.DefaultTobinTax = math.LegacyNewDecWithPrec(5, 3)
 			},
 		},
 		{
@@ -660,22 +659,6 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 			authority:   "invalid_authority",
 			expectErr:   "invalid authority",
 			expectErrIs: errortypes.ErrUnauthorized,
-		},
-		{
-			name:      "negative min stability spread",
-			authority: authority,
-			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyNewDec(-1)
-			},
-			expectErr: "min stability spread must be in [0, 1]",
-		},
-		{
-			name:      "min stability spread greater than 1",
-			authority: authority,
-			mutate: func(p *types.Params) {
-				p.MinStabilitySpread = math.LegacyNewDecWithPrec(11, 1) // 1.1
-			},
-			expectErr: "min stability spread must be in [0, 1]",
 		},
 		{
 			name:      "unset default tobin tax",

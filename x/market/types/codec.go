@@ -19,7 +19,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgSetConversionMandate{}, "ark/x/market/MsgSetConversionMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/x/market/MsgUpdatePolicy")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/x/market/MsgCommitteeUpdatePolicy")
-	legacy.RegisterAminoMsg(cdc, &MsgCommitteeRaiseTobinTax{}, "ark/x/market/MsgCommitteeRaiseTobinTax")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeSetTobinTax{}, "ark/x/market/MsgCommitteeSetTobinTax")
 
 	cdc.RegisterConcrete(Params{}, "ark/x/market/Params", nil)
 }
@@ -37,7 +37,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgSetConversionMandate{},
 		&MsgUpdatePolicy{},
 		&MsgCommitteeUpdatePolicy{},
-		&MsgCommitteeRaiseTobinTax{},
+		&MsgCommitteeSetTobinTax{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

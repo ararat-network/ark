@@ -36,14 +36,19 @@ func livePool() math.LegacyDec {
 	return math.LegacyNewDec(100)
 }
 
+// capacityCorridor bounds depth and the recovery period in both directions, and
+// pins the spread floor's own floor at launch: the committee may lift it to four
+// times launch and walk it back, but never below the rate governance set.
 func capacityCorridor() (types.ConversionPolicy, types.ConversionPolicy) {
 	minimum := types.ConversionPolicy{
 		BasePool:           sdrBasePool(livePool().QuoInt64(2)),
 		PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod / 4,
+		MinStabilitySpread: types.DefaultMinStabilitySpread,
 	}
 	maximum := types.ConversionPolicy{
 		BasePool:           sdrBasePool(livePool().MulInt64(2)),
 		PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod,
+		MinStabilitySpread: types.DefaultMinStabilitySpread.MulInt64(4),
 	}
 
 	return minimum, maximum
@@ -66,6 +71,7 @@ func (s *KeeperTestSuite) seedLiveConversionMandate() types.ConversionMandate {
 		ExpiryHeight:     capacityExpiry,
 		MinimumPolicy:    minimum,
 		MaximumPolicy:    maximum,
+		MaxTobinTax:      math.LegacyZeroDec(),
 	})
 	s.Require().NoError(err)
 
@@ -89,12 +95,16 @@ func oracleRateSetForRebase() oracletypes.RateSet {
 	}
 }
 
-// candidateInsideCorridor is a genuine emergency response: twice the depth and a
-// quarter of the recovery period, both inside the seeded corridor.
+// candidateInsideCorridor is a genuine emergency response: twice the depth, a
+// quarter of the recovery period, and double the spread floor, all inside the
+// seeded corridor. Lifting the floor alongside depth is the point of carrying
+// them in one policy — a sized conversion and a dust-sized one both get dearer
+// in the same message.
 func candidateInsideCorridor() types.ConversionPolicy {
 	return types.ConversionPolicy{
 		BasePool:           sdrBasePool(livePool().MulInt64(2)),
 		PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod / 4,
+		MinStabilitySpread: types.DefaultMinStabilitySpread.MulInt64(2),
 	}
 }
 
@@ -204,6 +214,7 @@ func (s *KeeperTestSuite) TestSetMandateRejections() {
 				ExpiryHeight:     capacityExpiry,
 				MinimumPolicy:    minimum,
 				MaximumPolicy:    maximum,
+				MaxTobinTax:      math.LegacyZeroDec(),
 			}
 			tc.mutate(msg)
 
@@ -237,9 +248,9 @@ func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 		GetModuleAccount(gomock.Any(), types.ModuleName).
 		Return(authtypes.NewEmptyModuleAccount(types.ModuleName)).
 		AnyTimes()
-	s.assetKeeper.EXPECT().
-		GetReference(gomock.Any()).
-		Return(assettypes.ReferenceState{ReferenceDenom: chain.USDBaseDenom}, nil).
+	s.oracleKeeper.EXPECT().
+		GetReferenceDenom(gomock.Any()).
+		Return(chain.USDBaseDenom, nil).
 		AnyTimes()
 
 	s.Require().NoError(s.keeper.RebaseBasePool(
@@ -304,6 +315,7 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 		ExpiryHeight:     capacityExpiry,
 		MinimumPolicy:    minimum,
 		MaximumPolicy:    maximum,
+		MaxTobinTax:      math.LegacyZeroDec(),
 	})
 	s.Require().NoError(err)
 
@@ -382,6 +394,7 @@ func (s *KeeperTestSuite) TestSetMandateRejectsClosedWindow() {
 		ExpiryHeight:     capacityExpiry,
 		MinimumPolicy:    minimum,
 		MaximumPolicy:    maximum,
+		MaxTobinTax:      math.LegacyZeroDec(),
 	}
 
 	// The window is half-open, so the appointment's own expiry is the first
@@ -546,7 +559,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsInvalidCandidates() {
 
 // TestMsgUpdatePolicyRejectsBasePoolDenomChange pins the ownership
 // boundary. The pool is denominated in the protocol reference, which x/asset
-// owns, so its unit moves only through MsgSetReference and the RebaseBasePool
+// owns, so its unit moves only through MsgSetReferenceDenom and the RebaseBasePool
 // call that follows. Accepting a denomination here would let Market re-anchor
 // behind the reference's back and leave Treasury's cap in a different unit.
 func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsBasePoolDenomChange() {
@@ -590,7 +603,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsBasePoolDenomChange() {
 			})
 			s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
 			s.Require().ErrorContains(err, "base pool denom is set by the protocol reference")
-			s.Require().ErrorContains(err, "MsgSetReference")
+			s.Require().ErrorContains(err, "MsgSetReferenceDenom")
 
 			stored, err := s.keeper.ConversionPolicy.Get(s.ctx)
 			s.Require().NoError(err)
@@ -759,6 +772,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			policy: types.ConversionPolicy{
 				BasePool:           sdrBasePool(maximum.BasePool.Amount.MulInt64(2)),
 				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod,
+				MinStabilitySpread: minimum.MinStabilitySpread,
 			},
 			expectErr: "base pool",
 		},
@@ -769,8 +783,33 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			policy: types.ConversionPolicy{
 				BasePool:           maximum.BasePool,
 				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod - 1,
+				MinStabilitySpread: minimum.MinStabilitySpread,
 			},
 			expectErr: "pool recovery period",
+		},
+		{
+			// The corridor is bounded raise-only, so the committee is refused the
+			// one direction that would narrow the buffer it exists to widen.
+			name:      "stability spread below the corridor",
+			height:    capacityActivation,
+			committee: capacityCommittee(),
+			policy: types.ConversionPolicy{
+				BasePool:           maximum.BasePool,
+				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod,
+				MinStabilitySpread: minimum.MinStabilitySpread.QuoInt64(2),
+			},
+			expectErr: "min stability spread",
+		},
+		{
+			name:      "stability spread above the corridor",
+			height:    capacityActivation,
+			committee: capacityCommittee(),
+			policy: types.ConversionPolicy{
+				BasePool:           maximum.BasePool,
+				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod,
+				MinStabilitySpread: maximum.MinStabilitySpread.Add(math.LegacySmallestDec()),
+			},
+			expectErr: "min stability spread",
 		},
 		{
 			name:      "structurally invalid candidate",
@@ -779,6 +818,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			policy: types.ConversionPolicy{
 				BasePool:           sdrBasePool(math.LegacyZeroDec()),
 				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod,
+				MinStabilitySpread: minimum.MinStabilitySpread,
 			},
 			expectErr: "base pool must be positive",
 		},
@@ -825,6 +865,7 @@ func (s *KeeperTestSuite) TestGovernanceCapacityPathIgnoresCorridor() {
 	beyondCorridor := types.ConversionPolicy{
 		BasePool:           sdrBasePool(maximum.BasePool.Amount.MulInt64(10)),
 		PoolRecoveryPeriod: maximum.PoolRecoveryPeriod,
+		MinStabilitySpread: maximum.MinStabilitySpread,
 	}
 
 	_, err := s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
@@ -878,12 +919,13 @@ func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 		Policy: types.ConversionPolicy{
 			BasePool:           sdk.NewDecCoinFromDec(chain.USDBaseDenom, livePool().MulInt64(2)),
 			PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod / 4,
+			MinStabilitySpread: types.DefaultMinStabilitySpread,
 		},
 	})
 	s.Require().ErrorContains(err, "base pool denomination ausd is outside the mandate")
 
 	// A candidate in the old unit satisfies the corridor but is refused as a
-	// re-denomination, which only MsgSetReference may perform.
+	// re-denomination, which only MsgSetReferenceDenom may perform.
 	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    capacityCommittee(),
 		ExpectedTerm: appointment.Term,
@@ -897,24 +939,28 @@ func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 		Policy: types.ConversionPolicy{
 			BasePool:           sdk.NewDecCoinFromDec(chain.USDBaseDenom, livePool()),
 			PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod,
+			MinStabilitySpread: types.DefaultMinStabilitySpread,
 		},
 	})
 	s.Require().NoError(err)
 }
 
-// TestMsgUpdateParamsLeavesCapacityAlone pins the reason capacity left Params: a
-// governance params replacement drafted from a stale copy must not be able to
-// revert a committee's emergency resize.
+// TestMsgUpdateParamsLeavesCapacityAlone pins the reason the conversion dials
+// left Params: a governance params replacement drafted from a stale copy must
+// not be able to revert a committee's emergency retune. The raised spread floor
+// is the case that motivated moving it — a stale copy carrying the launch floor
+// would otherwise undo a committee raise as a side effect of a Tobin change.
 func (s *KeeperTestSuite) TestMsgUpdateParamsLeavesCapacityAlone() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	resized := types.DefaultConversionPolicy()
 	resized.BasePool = sdrBasePool(math.LegacyNewDec(999))
 	resized.PoolRecoveryPeriod = 7
+	resized.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, resized))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(11)))
 
 	params := types.DefaultParams()
-	params.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
+	params.DefaultTobinTax = math.LegacyNewDecWithPrec(5, 3)
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: authority,
 		Params:    params,
@@ -960,46 +1006,82 @@ func (s *KeeperTestSuite) seedLiveTobinMandate(tobinCap math.LegacyDec) types.Co
 	return appointment
 }
 
-func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxAppliesAndRatchets() {
+// TestCommitteeSetTobinTaxAppliesAndUnwinds walks the whole band: up during an
+// incident, further up, and all the way back to the default once it passes. The
+// return leg is the point — the committee retires its own emergency rate
+// without a proposal, and only the trip below the default needs governance.
+func (s *KeeperTestSuite) TestCommitteeSetTobinTaxAppliesAndUnwinds() {
 	appointment := s.seedLiveTobinMandate(tobinCapForTest())
 
+	set := func(rate math.LegacyDec) error {
+		_, err := s.msgServer.CommitteeSetTobinTax(s.ctx, &types.MsgCommitteeSetTobinTax{
+			Committee:    capacityCommittee(),
+			ExpectedTerm: appointment.Term,
+			Denom:        chain.USDBaseDenom,
+			TobinTax:     rate,
+		})
+
+		return err
+	}
+	requireStored := func(expected math.LegacyDec) {
+		stored, err := s.keeper.TobinTaxOverrides.Get(s.ctx, chain.USDBaseDenom)
+		s.Require().NoError(err)
+		s.Require().Equal(expected, stored)
+	}
+
 	raise := math.LegacyNewDecWithPrec(2, 2)
-	_, err := s.msgServer.CommitteeRaiseTobinTax(s.ctx, &types.MsgCommitteeRaiseTobinTax{
+	s.Require().NoError(set(raise))
+	requireStored(raise)
+
+	higher := math.LegacyNewDecWithPrec(3, 2)
+	s.Require().NoError(set(higher))
+	requireStored(higher)
+
+	// Stepping back down is authorised now: the floor is the chain-wide
+	// default, not wherever the committee last left the rate.
+	s.Require().NoError(set(raise))
+	requireStored(raise)
+
+	s.Require().NoError(set(types.DefaultTobinTax))
+	requireStored(types.DefaultTobinTax)
+
+	// Below the default stays governance's alone.
+	s.Require().ErrorContains(
+		set(types.DefaultTobinTax.QuoInt64(2)),
+		"below the default rate",
+	)
+	requireStored(types.DefaultTobinTax)
+}
+
+// TestCommitteeSetTobinTaxReachesGovernanceOverride pins the consequence of the
+// floor being the default: the two writers share one override map and the chain
+// cannot tell whose entry it is reading, so a committee inside its band may
+// lower a sparse override governance set above the default. Restoring it is a
+// proposal, and the cap still binds absolutely.
+func (s *KeeperTestSuite) TestCommitteeSetTobinTaxReachesGovernanceOverride() {
+	appointment := s.seedLiveTobinMandate(tobinCapForTest())
+
+	governanceRate := math.LegacyNewDecWithPrec(4, 2)
+	s.Require().NoError(s.keeper.TobinTaxOverrides.Set(
+		s.ctx,
+		chain.USDBaseDenom,
+		governanceRate,
+	))
+
+	_, err := s.msgServer.CommitteeSetTobinTax(s.ctx, &types.MsgCommitteeSetTobinTax{
 		Committee:    capacityCommittee(),
 		ExpectedTerm: appointment.Term,
 		Denom:        chain.USDBaseDenom,
-		TobinTax:     raise,
+		TobinTax:     types.DefaultTobinTax,
 	})
 	s.Require().NoError(err)
 
 	stored, err := s.keeper.TobinTaxOverrides.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(raise, stored)
-
-	// The floor moves with the override: raising again from the new rate
-	// works, stepping back below it does not.
-	higher := math.LegacyNewDecWithPrec(3, 2)
-	_, err = s.msgServer.CommitteeRaiseTobinTax(s.ctx, &types.MsgCommitteeRaiseTobinTax{
-		Committee:    capacityCommittee(),
-		ExpectedTerm: appointment.Term,
-		Denom:        chain.USDBaseDenom,
-		TobinTax:     higher,
-	})
-	s.Require().NoError(err)
-	_, err = s.msgServer.CommitteeRaiseTobinTax(s.ctx, &types.MsgCommitteeRaiseTobinTax{
-		Committee:    capacityCommittee(),
-		ExpectedTerm: appointment.Term,
-		Denom:        chain.USDBaseDenom,
-		TobinTax:     raise,
-	})
-	s.Require().ErrorContains(err, "the committee only raises")
-
-	stored, err = s.keeper.TobinTaxOverrides.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(higher, stored)
+	s.Require().Equal(types.DefaultTobinTax, stored)
 }
 
-func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
+func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	tests := []struct {
@@ -1009,15 +1091,15 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 		tobinCap math.LegacyDec
 		// setup runs after the seed, before the message.
 		setup       func()
-		msg         func(term uint64) *types.MsgCommitteeRaiseTobinTax
+		msg         func(term uint64) *types.MsgCommitteeSetTobinTax
 		expectErr   string
 		expectErrIs error
 	}{
 		{
 			name:     "capacity-only mandate",
 			tobinCap: math.LegacyZeroDec(),
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term,
 					Denom:        chain.USDBaseDenom,
@@ -1028,8 +1110,8 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 		},
 		{
 			name: "disabled mandate",
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term,
 					Denom:        chain.USDBaseDenom,
@@ -1041,8 +1123,8 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 		{
 			name:     "wrong signer",
 			tobinCap: tobinCapForTest(),
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    authority,
 					ExpectedTerm: term,
 					Denom:        chain.USDBaseDenom,
@@ -1054,8 +1136,8 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 		{
 			name:     "stale term",
 			tobinCap: tobinCapForTest(),
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term + 1,
 					Denom:        chain.USDBaseDenom,
@@ -1068,8 +1150,8 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 			name:     "outside the window",
 			tobinCap: tobinCapForTest(),
 			setup:    func() { s.setCapacityHeight(capacityExpiry) },
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term,
 					Denom:        chain.USDBaseDenom,
@@ -1079,7 +1161,9 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 			expectErr: "mandate is not active",
 		},
 		{
-			name:     "below the current effective rate",
+			// The band's floor is the chain-wide default, so a candidate under
+			// it is refused however high the denomination currently sits.
+			name:     "below the default rate",
 			tobinCap: tobinCapForTest(),
 			setup: func() {
 				s.Require().NoError(s.keeper.SetTobinTaxOverride(
@@ -1088,21 +1172,21 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 					math.LegacyNewDecWithPrec(3, 2),
 				))
 			},
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term,
 					Denom:        chain.USDBaseDenom,
-					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
+					TobinTax:     types.DefaultTobinTax.QuoInt64(2),
 				}
 			},
-			expectErr: "the committee only raises",
+			expectErr: "below the default rate",
 		},
 		{
 			name:     "above the cap",
 			tobinCap: tobinCapForTest(),
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term,
 					Denom:        chain.USDBaseDenom,
@@ -1121,8 +1205,8 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 					chain.EURBaseDenom: assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED,
 				}
 			},
-			msg: func(term uint64) *types.MsgCommitteeRaiseTobinTax {
-				return &types.MsgCommitteeRaiseTobinTax{
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
 					ExpectedTerm: term,
 					Denom:        chain.EURBaseDenom,
@@ -1152,7 +1236,7 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 				tc.setup()
 			}
 
-			_, err := s.msgServer.CommitteeRaiseTobinTax(s.ctx, tc.msg(term))
+			_, err := s.msgServer.CommitteeSetTobinTax(s.ctx, tc.msg(term))
 			s.Require().Error(err)
 			if tc.expectErr != "" {
 				s.Require().ErrorContains(err, tc.expectErr)
@@ -1164,14 +1248,15 @@ func (s *KeeperTestSuite) TestCommitteeRaiseTobinTaxRejections() {
 	}
 }
 
-// TestGovernanceRestoresCommitteeRaise pins the restore asymmetry: the ratchet
-// binds only the committee. Governance lowers below the committee's floor,
-// removes outright, and a mandate replacement never rewrites an applied raise.
-func (s *KeeperTestSuite) TestGovernanceRestoresCommitteeRaise() {
+// TestGovernanceRestoresCommitteeRate pins what stays governance's alone once
+// the committee can move within its band: taking a denomination below the
+// default, removing an override outright so it tracks the default again, and
+// the fact that a mandate replacement never rewrites an applied rate.
+func (s *KeeperTestSuite) TestGovernanceRestoresCommitteeRate() {
 	appointment := s.seedLiveTobinMandate(tobinCapForTest())
 
 	raise := math.LegacyNewDecWithPrec(2, 2)
-	_, err := s.msgServer.CommitteeRaiseTobinTax(s.ctx, &types.MsgCommitteeRaiseTobinTax{
+	_, err := s.msgServer.CommitteeSetTobinTax(s.ctx, &types.MsgCommitteeSetTobinTax{
 		Committee:    capacityCommittee(),
 		ExpectedTerm: appointment.Term,
 		Denom:        chain.GBPBaseDenom,
@@ -1179,7 +1264,8 @@ func (s *KeeperTestSuite) TestGovernanceRestoresCommitteeRaise() {
 	})
 	s.Require().NoError(err)
 
-	// Governance lowers below the committee floor: its path reads no mandate.
+	// Governance goes below the default, which the band forbids the committee:
+	// its path reads no mandate at all.
 	lowered := math.LegacyNewDecWithPrec(1, 3)
 	s.Require().NoError(s.keeper.SetTobinTaxOverride(s.ctx, chain.GBPBaseDenom, lowered))
 	stored, err := s.keeper.TobinTaxOverrides.Get(s.ctx, chain.GBPBaseDenom)
@@ -1192,7 +1278,7 @@ func (s *KeeperTestSuite) TestGovernanceRestoresCommitteeRaise() {
 	// Replacing the mandate never rewrites an applied raise: the override an
 	// outgoing committee set keeps protecting its market until governance
 	// acts, exactly like an applied capacity policy.
-	_, err = s.msgServer.CommitteeRaiseTobinTax(s.ctx, &types.MsgCommitteeRaiseTobinTax{
+	_, err = s.msgServer.CommitteeSetTobinTax(s.ctx, &types.MsgCommitteeSetTobinTax{
 		Committee:    capacityCommittee(),
 		ExpectedTerm: appointment.Term,
 		Denom:        chain.GBPBaseDenom,
@@ -1231,7 +1317,7 @@ func (s *KeeperTestSuite) TestStrandedCorridorLeavesTobinPowerUsable() {
 
 	// ...and the Tobin power is not.
 	raise := math.LegacyNewDecWithPrec(2, 2)
-	_, err = s.msgServer.CommitteeRaiseTobinTax(s.ctx, &types.MsgCommitteeRaiseTobinTax{
+	_, err = s.msgServer.CommitteeSetTobinTax(s.ctx, &types.MsgCommitteeSetTobinTax{
 		Committee:    capacityCommittee(),
 		ExpectedTerm: appointment.Term,
 		Denom:        chain.KRWBaseDenom,
@@ -1242,4 +1328,46 @@ func (s *KeeperTestSuite) TestStrandedCorridorLeavesTobinPowerUsable() {
 	stored, err := s.keeper.TobinTaxOverrides.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(raise, stored)
+}
+
+// TestSetConversionMandateRejectsEmptyTobinBand pins the appointment-time guard
+// on the band: a cap under the chain-wide default delegates a power that
+// refuses every candidate, which is the same stillborn appointment as a
+// corridor in the wrong unit. Delegating nothing is spelled with a zero cap.
+func (s *KeeperTestSuite) TestSetConversionMandateRejectsEmptyTobinBand() {
+	s.setCapacityHeight(capacityActivation)
+	current := types.DefaultConversionPolicy()
+	current.BasePool = sdrBasePool(livePool())
+	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
+	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
+
+	minimum, maximum := capacityCorridor()
+	appoint := func(cap math.LegacyDec) error {
+		_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{
+			Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			Committee:        capacityCommittee(),
+			ActivationHeight: capacityActivation,
+			ExpiryHeight:     capacityExpiry,
+			MinimumPolicy:    minimum,
+			MaximumPolicy:    maximum,
+			MaxTobinTax:      cap,
+		})
+
+		return err
+	}
+
+	s.Require().ErrorContains(
+		appoint(types.DefaultTobinTax.QuoInt64(2)),
+		"delegates an empty band",
+	)
+
+	// The default itself is a one-point band, which authorises exactly the
+	// baseline rate, so it is a real delegation rather than a stillborn one.
+	s.Require().NoError(appoint(types.DefaultTobinTax))
+
+	// And a zero cap stays the canonical capacity-only appointment.
+	s.Require().NoError(appoint(math.LegacyZeroDec()))
+	appointment, err := s.keeper.ConversionMandate.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().True(appointment.MaxTobinTax.IsZero())
 }

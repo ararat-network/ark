@@ -21,6 +21,10 @@ func testCapacityCommittee() string {
 // conversionBounds returns a corridor around the launch depth: half to double,
 // with the recovery period allowed to shorten to a quarter day. Halving the
 // period and deepening the pool together is the historical depeg response.
+//
+// The spread floor is bounded raise-only, which is how governance is expected
+// to delegate it: the minimum is the live floor, so the committee can lift the
+// floor up to four times launch but never below where it already stands.
 func conversionBounds() (types.ConversionPolicy, types.ConversionPolicy) {
 	launch := types.DefaultConversionPolicy()
 	minimum := types.ConversionPolicy{
@@ -29,6 +33,7 @@ func conversionBounds() (types.ConversionPolicy, types.ConversionPolicy) {
 			launch.BasePool.Amount.QuoInt64(2),
 		),
 		PoolRecoveryPeriod: launch.PoolRecoveryPeriod / 4,
+		MinStabilitySpread: launch.MinStabilitySpread,
 	}
 	maximum := types.ConversionPolicy{
 		BasePool: sdk.NewDecCoinFromDec(
@@ -36,6 +41,7 @@ func conversionBounds() (types.ConversionPolicy, types.ConversionPolicy) {
 			launch.BasePool.Amount.MulInt64(2),
 		),
 		PoolRecoveryPeriod: launch.PoolRecoveryPeriod,
+		MinStabilitySpread: launch.MinStabilitySpread.MulInt64(4),
 	}
 
 	return minimum, maximum
@@ -258,10 +264,20 @@ func TestValidateConversionMandateTobinCap(t *testing.T) {
 			expectErr: "disabled conversion mandate must carry a zero Tobin cap",
 		},
 		{
-			// An appointment without the field is a capacity-only committee,
-			// not an error: nil reads as zero.
-			name:    "nil Tobin cap",
-			mandate: enabledConversionMandate,
+			// An enabled appointment states its whole delegation explicitly, so
+			// an omitted cap is refused like an omitted corridor bound. A
+			// capacity-only committee is spelled with an explicit zero.
+			name:      "nil Tobin cap on an enabled mandate",
+			mandate:   enabledConversionMandate,
+			mutate:    func(m *types.ConversionMandate) { m.MaxTobinTax = math.LegacyDec{} },
+			expectErr: "invalid conversion mandate Tobin cap: tobin tax must be set",
+		},
+		{
+			// The disabled sentinel is the one shape omission may take: a
+			// genesis file carrying an empty mandate object must still read as
+			// disabled rather than fail on a field it never delegated.
+			name:    "nil Tobin cap on the disabled sentinel",
+			mandate: types.DefaultConversionMandate,
 			mutate:  func(m *types.ConversionMandate) { m.MaxTobinTax = math.LegacyDec{} },
 		},
 		{
@@ -308,89 +324,103 @@ func TestValidateConversionMandateTobinCap(t *testing.T) {
 	}
 }
 
-func TestConversionMandateValidateTobinRaise(t *testing.T) {
+func TestConversionMandateValidateTobinCandidate(t *testing.T) {
 	appointment := enabledConversionMandate()
 	appointment.MaxTobinTax = math.LegacyNewDecWithPrec(5, 2)
 	powerless := enabledConversionMandate()
 
 	tests := []struct {
-		name      string
-		mandate   types.ConversionMandate
-		effective math.LegacyDec
-		candidate math.LegacyDec
-		expectErr string
+		name         string
+		mandate      types.ConversionMandate
+		defaultTobin math.LegacyDec
+		candidate    math.LegacyDec
+		expectErr    string
 	}{
 		{
-			name:      "raises from the default",
-			mandate:   appointment,
-			effective: types.DefaultTobinTax,
-			candidate: math.LegacyNewDecWithPrec(2, 2),
+			name:         "inside the band",
+			mandate:      appointment,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    math.LegacyNewDecWithPrec(2, 2),
 		},
 		{
-			// Pinning the current rate is a raise of zero: it shields the
-			// denomination from a later default lowering, and governance can
-			// always remove it.
-			name:      "pins the effective rate",
-			mandate:   appointment,
-			effective: math.LegacyNewDecWithPrec(2, 2),
-			candidate: math.LegacyNewDecWithPrec(2, 2),
+			// The floor itself is reachable, which is what lets a committee
+			// retire its own emergency rate without waiting for a proposal.
+			name:         "back down to the default",
+			mandate:      appointment,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    types.DefaultTobinTax,
 		},
 		{
-			name:      "raises exactly to the cap",
-			mandate:   appointment,
-			effective: types.DefaultTobinTax,
-			candidate: math.LegacyNewDecWithPrec(5, 2),
+			name:         "exactly at the cap",
+			mandate:      appointment,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    math.LegacyNewDecWithPrec(5, 2),
 		},
 		{
-			name:      "capacity-only mandate",
-			mandate:   powerless,
-			effective: types.DefaultTobinTax,
-			candidate: math.LegacyNewDecWithPrec(2, 2),
-			expectErr: "conversion mandate delegates no Tobin power",
+			name:         "capacity-only mandate",
+			mandate:      powerless,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    math.LegacyNewDecWithPrec(2, 2),
+			expectErr:    "conversion mandate delegates no Tobin power",
 		},
 		{
-			name:      "nil candidate",
-			mandate:   appointment,
-			effective: types.DefaultTobinTax,
-			candidate: math.LegacyDec{},
-			expectErr: "tobin tax must be set",
+			// The corner that makes the zero-cap check authorization rather than
+			// redundancy: with a zero default, a zero candidate satisfies both
+			// band edges, so without the explicit check a capacity-only committee
+			// could write a zero override and pin the denomination against a
+			// later default raise.
+			name:         "capacity-only mandate with a zero default",
+			mandate:      powerless,
+			defaultTobin: math.LegacyZeroDec(),
+			candidate:    math.LegacyZeroDec(),
+			expectErr:    "conversion mandate delegates no Tobin power",
 		},
 		{
-			name:      "candidate of one",
-			mandate:   appointment,
-			effective: types.DefaultTobinTax,
-			candidate: math.LegacyOneDec(),
-			expectErr: "tobin tax must be in [0, 1)",
+			name:         "nil candidate",
+			mandate:      appointment,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    math.LegacyDec{},
+			expectErr:    "tobin tax must be set",
 		},
 		{
-			name:      "candidate below the effective rate",
-			mandate:   appointment,
-			effective: math.LegacyNewDecWithPrec(3, 2),
-			candidate: math.LegacyNewDecWithPrec(2, 2),
-			expectErr: "the committee only raises",
+			name:         "candidate of one",
+			mandate:      appointment,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    math.LegacyOneDec(),
+			expectErr:    "tobin tax must be in [0, 1)",
 		},
 		{
-			name:      "candidate above the cap",
-			mandate:   appointment,
-			effective: types.DefaultTobinTax,
-			candidate: math.LegacyNewDecWithPrec(6, 2),
-			expectErr: "exceeds the mandate cap",
+			// Below the default is governance's alone: the committee may retire
+			// its own rate but never take a denomination under the chain-wide
+			// baseline.
+			name:         "candidate below the default",
+			mandate:      appointment,
+			defaultTobin: math.LegacyNewDecWithPrec(3, 2),
+			candidate:    math.LegacyNewDecWithPrec(2, 2),
+			expectErr:    "below the default rate",
 		},
 		{
-			// Governance parked this denomination above the committee's cap,
-			// so even a pin is out of reach: the cap is absolute, not
-			// relative to wherever the rate stands.
-			name:      "effective rate already above the cap",
-			mandate:   appointment,
-			effective: math.LegacyNewDecWithPrec(10, 2),
-			candidate: math.LegacyNewDecWithPrec(10, 2),
-			expectErr: "exceeds the mandate cap",
+			name:         "candidate above the cap",
+			mandate:      appointment,
+			defaultTobin: types.DefaultTobinTax,
+			candidate:    math.LegacyNewDecWithPrec(6, 2),
+			expectErr:    "exceeds the mandate cap",
+		},
+		{
+			// The band is bounded by the default and the cap alone, so where a
+			// denomination currently sits never enters into it — including when
+			// governance has parked one above the cap.
+			name:         "cap below the default leaves an empty band",
+			mandate:      appointment,
+			defaultTobin: math.LegacyNewDecWithPrec(10, 2),
+			candidate:    math.LegacyNewDecWithPrec(10, 2),
+			expectErr:    "exceeds the mandate cap",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.mandate.ValidateTobinRaise(tc.effective, tc.candidate)
+			err := tc.mandate.ValidateTobinCandidate(tc.defaultTobin, tc.candidate)
 			if tc.expectErr == "" {
 				require.NoError(t, err)
 				return
@@ -404,9 +434,21 @@ func TestConversionMandateValidatePolicy(t *testing.T) {
 	appointment := enabledConversionMandate()
 	minimum, maximum := conversionBounds()
 
+	launch := types.DefaultConversionPolicy()
 	inside := types.ConversionPolicy{
-		BasePool:           types.DefaultConversionPolicy().BasePool,
-		PoolRecoveryPeriod: types.DefaultConversionPolicy().PoolRecoveryPeriod / 2,
+		BasePool:           launch.BasePool,
+		PoolRecoveryPeriod: launch.PoolRecoveryPeriod / 2,
+		MinStabilitySpread: launch.MinStabilitySpread.MulInt64(2),
+	}
+
+	// Each rejection case starts from a candidate the corridor accepts and moves
+	// exactly one field out of range, so the error named is the only one the
+	// candidate could have earned.
+	outside := func(mutate func(*types.ConversionPolicy)) types.ConversionPolicy {
+		policy := inside
+		mutate(&policy)
+
+		return policy
 	}
 
 	tests := []struct {
@@ -419,51 +461,79 @@ func TestConversionMandateValidatePolicy(t *testing.T) {
 		{name: "at the maximum bound", policy: maximum},
 		{
 			name: "below the minimum depth",
-			policy: types.ConversionPolicy{
-				BasePool: sdk.NewDecCoinFromDec(
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.BasePool = sdk.NewDecCoinFromDec(
 					minimum.BasePool.Denom,
 					minimum.BasePool.Amount.QuoInt64(2),
-				),
-				PoolRecoveryPeriod: inside.PoolRecoveryPeriod,
-			},
+				)
+			}),
 			expectErr: "base pool",
 		},
 		{
 			name: "above the maximum depth",
-			policy: types.ConversionPolicy{
-				BasePool: sdk.NewDecCoinFromDec(
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.BasePool = sdk.NewDecCoinFromDec(
 					maximum.BasePool.Denom,
 					maximum.BasePool.Amount.MulInt64(2),
-				),
-				PoolRecoveryPeriod: inside.PoolRecoveryPeriod,
-			},
+				)
+			}),
 			expectErr: "base pool",
 		},
 		{
 			name: "below the minimum recovery period",
-			policy: types.ConversionPolicy{
-				BasePool:           inside.BasePool,
-				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod - 1,
-			},
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.PoolRecoveryPeriod = minimum.PoolRecoveryPeriod - 1
+			}),
 			expectErr: "pool recovery period",
 		},
 		{
 			name: "above the maximum recovery period",
-			policy: types.ConversionPolicy{
-				BasePool:           inside.BasePool,
-				PoolRecoveryPeriod: maximum.PoolRecoveryPeriod + 1,
-			},
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.PoolRecoveryPeriod = maximum.PoolRecoveryPeriod + 1
+			}),
 			expectErr: "pool recovery period",
+		},
+		{
+			// The corridor is bounded raise-only here, so dropping the floor below
+			// where it stands is the move the delegation is meant to refuse.
+			name: "below the minimum stability spread",
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.MinStabilitySpread = minimum.MinStabilitySpread.QuoInt64(2)
+			}),
+			expectErr: "min stability spread",
+		},
+		{
+			name: "above the maximum stability spread",
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.MinStabilitySpread = maximum.MinStabilitySpread.Add(math.LegacySmallestDec())
+			}),
+			expectErr: "min stability spread",
 		},
 		{
 			// The corridor keeps the unit governance approved it in, which is
 			// what strands a live mandate across a reference re-pointing.
 			name: "candidate in another denomination",
-			policy: types.ConversionPolicy{
-				BasePool:           sdk.NewDecCoinFromDec(chain.USDBaseDenom, inside.BasePool.Amount),
-				PoolRecoveryPeriod: inside.PoolRecoveryPeriod,
-			},
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.BasePool = sdk.NewDecCoinFromDec(chain.USDBaseDenom, inside.BasePool.Amount)
+			}),
 			expectErr: "base pool denomination ausd is outside the mandate",
+		},
+		{
+			// ValidatePolicy is exported and the comparisons are a nil decimal
+			// away from a panic, so an unvalidated candidate must be refused
+			// rather than halt.
+			name: "unset stability spread is refused, not panicked on",
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.MinStabilitySpread = math.LegacyDec{}
+			}),
+			expectErr: "min stability spread must be set",
+		},
+		{
+			name: "unset depth is refused, not panicked on",
+			policy: outside(func(p *types.ConversionPolicy) {
+				p.BasePool = sdk.DecCoin{Denom: minimum.BasePool.Denom}
+			}),
+			expectErr: "base pool amount must be set",
 		},
 	}
 

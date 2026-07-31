@@ -32,13 +32,6 @@ func NewDisabledConversionMandate(term uint64) ConversionMandate {
 	}
 }
 
-// DelegatesTobinPower reports whether the appointment carries any Tobin-raise
-// authority. A nil cap is read as zero so a mandate appointed without the
-// field — a capacity-only committee — validates and simply has no Tobin power.
-func (conversionMandate ConversionMandate) DelegatesTobinPower() bool {
-	return !conversionMandate.MaxTobinTax.IsNil() && !conversionMandate.MaxTobinTax.IsZero()
-}
-
 // Validate validates either a disabled mandate or one complete bounded
 // committee appointment.
 //
@@ -56,7 +49,7 @@ func (conversionMandate ConversionMandate) Validate() error {
 		if !conversionMandate.MinimumPolicy.IsZero() || !conversionMandate.MaximumPolicy.IsZero() {
 			return errors.New("disabled conversion mandate must use identical zero bounds")
 		}
-		if conversionMandate.DelegatesTobinPower() {
+		if !conversionMandate.MaxTobinTax.IsNil() && !conversionMandate.MaxTobinTax.IsZero() {
 			return errors.New("disabled conversion mandate must carry a zero Tobin cap")
 		}
 
@@ -92,12 +85,15 @@ func (conversionMandate ConversionMandate) Validate() error {
 			conversionMandate.MaximumPolicy.PoolRecoveryPeriod,
 		)
 	}
-	// A zero cap is a valid enabled mandate: it delegates the corridor and no
-	// Tobin power. A set cap must itself be a chargeable Tobin rate.
-	if conversionMandate.DelegatesTobinPower() {
-		if err := ValidateTobinTax(conversionMandate.MaxTobinTax); err != nil {
-			return fmt.Errorf("invalid conversion mandate Tobin cap: %w", err)
-		}
+	if conversionMandate.MinimumPolicy.MinStabilitySpread.GT(conversionMandate.MaximumPolicy.MinStabilitySpread) {
+		return fmt.Errorf(
+			"minimum stability spread %s exceeds maximum %s",
+			conversionMandate.MinimumPolicy.MinStabilitySpread,
+			conversionMandate.MaximumPolicy.MinStabilitySpread,
+		)
+	}
+	if err := ValidateTobinTax(conversionMandate.MaxTobinTax); err != nil {
+		return fmt.Errorf("invalid conversion mandate Tobin cap: %w", err)
 	}
 
 	return nil
@@ -106,20 +102,6 @@ func (conversionMandate ConversionMandate) Validate() error {
 // IsActive reports whether the appointment can actually authorize a capacity
 // update at height: inside its window and still denominated in the live pool's
 // unit.
-//
-// Being inside the window is not enough on its own. A reference re-point
-// rebases the pool and deliberately leaves the corridor in the unit governance
-// appointed it in, so an otherwise-live appointment can be stranded — and the
-// moment a committee musters is the worst possible time to learn that. Anything
-// reporting a mandate's standing has to answer the question a caller is really
-// asking, which is whether the fast path is there, not whether the window is
-// open.
-//
-// This method shadows the promoted Envelope.IsActive the way Validate shadows
-// Envelope.Validate, and the different signature is the point: a capacity
-// mandate cannot answer for itself without the live pool, so asking without it
-// does not compile. Window-only semantics remain reachable through the
-// Envelope field, which is also how this method reads them.
 func (conversionMandate ConversionMandate) IsActive(livePolicy ConversionPolicy, height uint64) bool {
 	if !conversionMandate.Envelope.IsActive(height) {
 		return false
@@ -131,13 +113,13 @@ func (conversionMandate ConversionMandate) IsActive(livePolicy ConversionPolicy,
 // ValidatePolicy checks one committee candidate against every mandate bound.
 // Bounds are inclusive: governance naming a depth as the corridor edge means
 // the committee may set exactly that depth.
-//
-// The denomination check is what strands a mandate across a reference change.
-// Bounds keep the unit governance approved them in, so after a re-pointing a
-// candidate in the new unit falls outside the corridor and one in the old unit
-// is refused as a re-denomination, until governance re-appoints the committee
-// with bounds it has actually reviewed.
 func (conversionMandate ConversionMandate) ValidatePolicy(policy ConversionPolicy) error {
+	if policy.BasePool.Amount.IsNil() {
+		return errors.New("base pool amount must be set")
+	}
+	if policy.MinStabilitySpread.IsNil() {
+		return errors.New("min stability spread must be set")
+	}
 	if policy.BasePool.Denom != conversionMandate.MinimumPolicy.BasePool.Denom {
 		return fmt.Errorf(
 			"base pool denomination %s is outside the mandate, which bounds %s",
@@ -163,33 +145,34 @@ func (conversionMandate ConversionMandate) ValidatePolicy(policy ConversionPolic
 			conversionMandate.MaximumPolicy.PoolRecoveryPeriod,
 		)
 	}
+	if policy.MinStabilitySpread.LT(conversionMandate.MinimumPolicy.MinStabilitySpread) ||
+		policy.MinStabilitySpread.GT(conversionMandate.MaximumPolicy.MinStabilitySpread) {
+		return fmt.Errorf(
+			"min stability spread %s is outside mandate range [%s, %s]",
+			policy.MinStabilitySpread,
+			conversionMandate.MinimumPolicy.MinStabilitySpread,
+			conversionMandate.MaximumPolicy.MinStabilitySpread,
+		)
+	}
 
 	return nil
 }
 
-// ValidateTobinRaise checks one committee Tobin candidate against the
-// mandate's cap and the denomination's current effective rate. The committee
-// only raises: the floor is wherever the rate already stands, so the delegated
-// power widens the oracle-staleness buffer and never narrows it. Lowering or
-// removing an override is governance's restore path. Both boundaries are
-// inclusive, matching the corridor: pinning the current rate and raising
-// exactly to the cap are both authorized.
-//
-// Unlike the corridor, the cap is a dimensionless rate, so a reference
-// re-point that strands the depth bounds leaves this power usable: containment
-// must not die with a unit change it has nothing to do with.
-func (conversionMandate ConversionMandate) ValidateTobinRaise(effective, candidate math.LegacyDec) error {
-	if !conversionMandate.DelegatesTobinPower() {
+// ValidateTobinCandidate checks one committee Tobin candidate against the band
+// the mandate delegates: at least the chain-wide default and at most the
+// mandate's cap. Both boundaries are inclusive, matching the corridor.
+func (conversionMandate ConversionMandate) ValidateTobinCandidate(defaultTobinTax, candidate math.LegacyDec) error {
+	if conversionMandate.MaxTobinTax.IsZero() {
 		return errors.New("conversion mandate delegates no Tobin power")
 	}
 	if err := ValidateTobinTax(candidate); err != nil {
 		return err
 	}
-	if candidate.LT(effective) {
+	if candidate.LT(defaultTobinTax) {
 		return fmt.Errorf(
-			"tobin tax %s is below the current effective rate %s: the committee only raises",
+			"tobin tax %s is below the default rate %s: only governance sets a denomination lower",
 			candidate,
-			effective,
+			defaultTobinTax,
 		)
 	}
 	if candidate.GT(conversionMandate.MaxTobinTax) {
