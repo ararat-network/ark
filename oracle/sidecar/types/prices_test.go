@@ -71,6 +71,20 @@ func TestPricesByFeedProjectsPairPricesToFeeds(t *testing.T) {
 	}
 }
 
+func TestPricesByFeedEmptyFeedsProjectsNothing(t *testing.T) {
+	prices := Prices{
+		"USDT/USD": big.NewFloat(1.23),
+		"NOAH/KRW": big.NewFloat(1300),
+	}
+
+	if got := PricesByFeed(prices, nil); len(got) != 0 {
+		t.Fatalf("PricesByFeed(nil feeds) len = %d, want 0", len(got))
+	}
+	if got := PricesByFeed(prices, []string{}); len(got) != 0 {
+		t.Fatalf("PricesByFeed(empty feeds) len = %d, want 0", len(got))
+	}
+}
+
 func TestPricesByFeedReturnsDeepCopy(t *testing.T) {
 	prices := Prices{
 		"USDT/USD": big.NewFloat(1.23),

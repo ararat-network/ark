@@ -45,24 +45,24 @@ type PriceSnapshot struct {
 	Timestamp time.Time
 }
 
-// PricesByFeed projects internal pair prices to public feed prices.
+// PricesByFeed projects internal pair prices to public feed prices. Only pairs
+// whose denom is in feeds are projected, so an empty feed set — the chain's
+// authoritative signal that nothing is priced — projects nothing.
 func PricesByFeed(prices Prices, feeds []string) FeedPrices {
-	result := make(FeedPrices, len(prices))
 	active := make(map[string]struct{}, len(feeds))
 	for _, denom := range feeds {
 		active[denom] = struct{}{}
 	}
 
+	result := make(FeedPrices, len(active))
 	for pair, price := range prices {
 		if price == nil {
 			continue
 		}
 
 		denom := pair.Denom()
-		if len(active) != 0 {
-			if _, ok := active[denom]; !ok {
-				continue
-			}
+		if _, ok := active[denom]; !ok {
+			continue
 		}
 
 		result[denom] = new(big.Float).Copy(price)
