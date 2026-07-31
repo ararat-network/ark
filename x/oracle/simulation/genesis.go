@@ -11,7 +11,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	chain "ark/pkg/chain"
 	"ark/x/oracle/types"
 )
 
@@ -25,6 +24,7 @@ const (
 	minAttendancePerWindowKey   = "min_attendance_per_window"
 
 	functioningBlockThresholdKey = "functioning_block_threshold"
+	participationThresholdKey    = "participation_threshold"
 )
 
 // GenVoteThreshold randomised VoteThreshold
@@ -61,6 +61,12 @@ func GenMinAttendancePerWindow(r *rand.Rand) math.LegacyDec {
 // full legal range of [50%, 100%].
 func GenFunctioningBlockThreshold(r *rand.Rand) math.LegacyDec {
 	return types.MinFunctioningBlockThreshold.Add(math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3))
+}
+
+// GenParticipationThreshold randomised ParticipationThreshold across its full
+// legal range of [0%, 50%].
+func GenParticipationThreshold(r *rand.Rand) math.LegacyDec {
+	return math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3)
 }
 
 // RandomisedGenState generates a random GenesisState for oracle
@@ -107,29 +113,30 @@ func RandomisedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { functioningBlockThreshold = GenFunctioningBlockThreshold(r) },
 	)
 
+	var participationThreshold math.LegacyDec
+	simState.AppParams.GetOrGenerate(
+		participationThresholdKey, &participationThreshold, simState.Rand,
+		func(r *rand.Rand) { participationThreshold = GenParticipationThreshold(r) },
+	)
+
 	params := types.Params{
-		VoteThreshold:            voteThreshold,
-		RewardBand:               rewardBand,
-		RewardWindow:             rewardWindow,
-		RewardDistributionWindow: rewardDistributionWindow,
-		TobinTaxes: []types.TobinTax{
-			{Denom: chain.KRWBaseDenom, TobinTax: types.DefaultTobinTax},
-			{Denom: chain.MNTBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
-			{Denom: chain.SDRBaseDenom, TobinTax: types.DefaultTobinTax},
-			{Denom: chain.USDBaseDenom, TobinTax: types.DefaultTobinTax},
-		},
+		VoteThreshold:             voteThreshold,
+		RewardBand:                rewardBand,
+		RewardWindow:              rewardWindow,
+		RewardDistributionWindow:  rewardDistributionWindow,
 		AttendanceWindow:          attendanceWindow,
 		MinAttendancePerWindow:    minAttendancePerWindow,
 		MaxExchangeRateAge:        types.DefaultMaxExchangeRateAge,
 		FunctioningBlockThreshold: functioningBlockThreshold,
+		ParticipationThreshold:    participationThreshold,
 	}
 	oracleGenesis := types.NewGenesisState(
 		params,
-		types.NewAccounting(params),
 		[]types.ExchangeRate{},
 		[]types.RewardWeight{},
 		[]types.AttendanceRecord{},
-		types.NewVoteTargets(params),
+		types.NewAccounting(params),
+		types.DefaultFeeds(),
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

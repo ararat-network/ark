@@ -9,7 +9,7 @@ import (
 	"ark/x/oracle/types"
 )
 
-// GenerateGenesisState creates a randomized GenState of the market module.
+// GenerateGenesisState creates a randomised GenState of the oracle module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simulation.RandomisedGenState(simState)
 }
@@ -19,7 +19,7 @@ func (am AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory(am.k))
 }
 
-// RegisterStoreDecoder registers a decoder for market module's types
+// RegisterStoreDecoder registers a decoder for the oracle module's types
 func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.k.Schema)
 }

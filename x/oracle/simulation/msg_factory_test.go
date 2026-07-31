@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
@@ -22,7 +24,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
 	"ark/x/oracle/keeper"
 	"ark/x/oracle/simulation"
 	"ark/x/oracle/testutil"
@@ -36,14 +37,16 @@ func TestMsgUpdateParamsFactory(t *testing.T) {
 		assert      func(t *testing.T, reporter simsx.SimulationReporter, msg *types.MsgUpdateParams, stored types.Params)
 	}{
 		{
-			name:        "preserves target and staleness policy",
+			name:        "preserves staleness and participation policy",
 			storeParams: true,
 			assert: func(t *testing.T, reporter simsx.SimulationReporter, msg *types.MsgUpdateParams, stored types.Params) {
 				require.False(t, reporter.IsSkipped())
 				require.NotNil(t, msg)
 				require.Equal(t, authtypes.NewModuleAddress(govtypes.ModuleName).String(), msg.Authority)
-				require.Equal(t, stored.TobinTaxes, msg.Params.TobinTaxes)
+				// The factory randomises the windows and thresholds it owns and
+				// carries the rest through untouched.
 				require.Equal(t, stored.MaxExchangeRateAge, msg.Params.MaxExchangeRateAge)
+				require.True(t, stored.ParticipationThreshold.Equal(msg.Params.ParticipationThreshold))
 				require.NoError(t, msg.Params.Validate())
 			},
 		},
@@ -61,11 +64,8 @@ func TestMsgUpdateParamsFactory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, oracleKeeper, accountKeeper := newOracleSimulationKeeper(t)
 			stored := types.DefaultParams()
-			stored.TobinTaxes = []types.TobinTax{
-				{Denom: chain.SDRBaseDenom, TobinTax: types.DefaultTobinTax},
-				{Denom: chain.USDBaseDenom, TobinTax: types.DefaultTobinTax},
-			}
 			stored.MaxExchangeRateAge = 2 * time.Minute
+			stored.ParticipationThreshold = math.LegacyNewDecWithPrec(37, 2)
 			if tt.storeParams {
 				require.NoError(t, oracleKeeper.Params.Set(ctx, stored))
 			}

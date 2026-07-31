@@ -52,7 +52,7 @@ func TestRandomisedGenState(t *testing.T) {
 	require.True(t, oracleGenesis.Params.MinAttendancePerWindow.LTE(math.LegacyOneDec()))
 	require.True(t, oracleGenesis.Params.FunctioningBlockThreshold.GTE(types.MinFunctioningBlockThreshold))
 	require.True(t, oracleGenesis.Params.FunctioningBlockThreshold.LTE(math.LegacyOneDec()))
-	require.NotEmpty(t, oracleGenesis.Params.TobinTaxes)
+	require.Equal(t, types.DefaultFeedDenoms, oracleGenesis.Feeds.Denoms)
 }
 
 func TestRandomisedGenState_InvalidSimState(t *testing.T) {
