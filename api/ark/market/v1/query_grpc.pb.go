@@ -19,9 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Swap_FullMethodName         = "/ark.market.v1.Query/Swap"
-	Query_ArkPoolDelta_FullMethodName = "/ark.market.v1.Query/ArkPoolDelta"
-	Query_Params_FullMethodName       = "/ark.market.v1.Query/Params"
+	Query_Swap_FullMethodName              = "/ark.market.v1.Query/Swap"
+	Query_Pool_FullMethodName              = "/ark.market.v1.Query/Pool"
+	Query_Params_FullMethodName            = "/ark.market.v1.Query/Params"
+	Query_TobinTax_FullMethodName          = "/ark.market.v1.Query/TobinTax"
+	Query_TobinTaxOverrides_FullMethodName = "/ark.market.v1.Query/TobinTaxOverrides"
+	Query_ConversionPolicy_FullMethodName  = "/ark.market.v1.Query/ConversionPolicy"
+	Query_ConversionMandate_FullMethodName = "/ark.market.v1.Query/ConversionMandate"
 )
 
 // QueryClient is the client API for Query service.
@@ -32,10 +36,22 @@ const (
 type QueryClient interface {
 	// Swap returns simulated swap amount.
 	Swap(ctx context.Context, in *QuerySwapRequest, opts ...grpc.CallOption) (*QuerySwapResponse, error)
-	// ArkPoolDelta returns ark_pool_delta amount.
-	ArkPoolDelta(ctx context.Context, in *QueryArkPoolDeltaRequest, opts ...grpc.CallOption) (*QueryArkPoolDeltaResponse, error)
+	// Pool returns the live virtual-pool state: the policy depth and the signed
+	// deviation from it, in one snapshot. The effective pools derive from these
+	// two numbers, so a caller never has to join queries across heights.
+	Pool(ctx context.Context, in *QueryPoolRequest, opts ...grpc.CallOption) (*QueryPoolResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// TobinTax returns the effective Tobin rate for a denomination: its
+	// override when one is set, the default otherwise.
+	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
+	// TobinTaxOverrides returns the sparse per-denomination exceptions.
+	TobinTaxOverrides(ctx context.Context, in *QueryTobinTaxOverridesRequest, opts ...grpc.CallOption) (*QueryTobinTaxOverridesResponse, error)
+	// ConversionPolicy returns the live conversion-capacity pair.
+	ConversionPolicy(ctx context.Context, in *QueryConversionPolicyRequest, opts ...grpc.CallOption) (*QueryConversionPolicyResponse, error)
+	// ConversionMandate returns the governed committee appointment over
+	// conversion policy and its current effective status.
+	ConversionMandate(ctx context.Context, in *QueryConversionMandateRequest, opts ...grpc.CallOption) (*QueryConversionMandateResponse, error)
 }
 
 type queryClient struct {
@@ -56,10 +72,10 @@ func (c *queryClient) Swap(ctx context.Context, in *QuerySwapRequest, opts ...gr
 	return out, nil
 }
 
-func (c *queryClient) ArkPoolDelta(ctx context.Context, in *QueryArkPoolDeltaRequest, opts ...grpc.CallOption) (*QueryArkPoolDeltaResponse, error) {
+func (c *queryClient) Pool(ctx context.Context, in *QueryPoolRequest, opts ...grpc.CallOption) (*QueryPoolResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryArkPoolDeltaResponse)
-	err := c.cc.Invoke(ctx, Query_ArkPoolDelta_FullMethodName, in, out, cOpts...)
+	out := new(QueryPoolResponse)
+	err := c.cc.Invoke(ctx, Query_Pool_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +92,46 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
+func (c *queryClient) TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryTobinTaxResponse)
+	err := c.cc.Invoke(ctx, Query_TobinTax_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) TobinTaxOverrides(ctx context.Context, in *QueryTobinTaxOverridesRequest, opts ...grpc.CallOption) (*QueryTobinTaxOverridesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryTobinTaxOverridesResponse)
+	err := c.cc.Invoke(ctx, Query_TobinTaxOverrides_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ConversionPolicy(ctx context.Context, in *QueryConversionPolicyRequest, opts ...grpc.CallOption) (*QueryConversionPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryConversionPolicyResponse)
+	err := c.cc.Invoke(ctx, Query_ConversionPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ConversionMandate(ctx context.Context, in *QueryConversionMandateRequest, opts ...grpc.CallOption) (*QueryConversionMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryConversionMandateResponse)
+	err := c.cc.Invoke(ctx, Query_ConversionMandate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -84,10 +140,22 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 type QueryServer interface {
 	// Swap returns simulated swap amount.
 	Swap(context.Context, *QuerySwapRequest) (*QuerySwapResponse, error)
-	// ArkPoolDelta returns ark_pool_delta amount.
-	ArkPoolDelta(context.Context, *QueryArkPoolDeltaRequest) (*QueryArkPoolDeltaResponse, error)
+	// Pool returns the live virtual-pool state: the policy depth and the signed
+	// deviation from it, in one snapshot. The effective pools derive from these
+	// two numbers, so a caller never has to join queries across heights.
+	Pool(context.Context, *QueryPoolRequest) (*QueryPoolResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// TobinTax returns the effective Tobin rate for a denomination: its
+	// override when one is set, the default otherwise.
+	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
+	// TobinTaxOverrides returns the sparse per-denomination exceptions.
+	TobinTaxOverrides(context.Context, *QueryTobinTaxOverridesRequest) (*QueryTobinTaxOverridesResponse, error)
+	// ConversionPolicy returns the live conversion-capacity pair.
+	ConversionPolicy(context.Context, *QueryConversionPolicyRequest) (*QueryConversionPolicyResponse, error)
+	// ConversionMandate returns the governed committee appointment over
+	// conversion policy and its current effective status.
+	ConversionMandate(context.Context, *QueryConversionMandateRequest) (*QueryConversionMandateResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -101,11 +169,23 @@ type UnimplementedQueryServer struct{}
 func (UnimplementedQueryServer) Swap(context.Context, *QuerySwapRequest) (*QuerySwapResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Swap not implemented")
 }
-func (UnimplementedQueryServer) ArkPoolDelta(context.Context, *QueryArkPoolDeltaRequest) (*QueryArkPoolDeltaResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ArkPoolDelta not implemented")
+func (UnimplementedQueryServer) Pool(context.Context, *QueryPoolRequest) (*QueryPoolResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Pool not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
+}
+func (UnimplementedQueryServer) TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TobinTax not implemented")
+}
+func (UnimplementedQueryServer) TobinTaxOverrides(context.Context, *QueryTobinTaxOverridesRequest) (*QueryTobinTaxOverridesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TobinTaxOverrides not implemented")
+}
+func (UnimplementedQueryServer) ConversionPolicy(context.Context, *QueryConversionPolicyRequest) (*QueryConversionPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConversionPolicy not implemented")
+}
+func (UnimplementedQueryServer) ConversionMandate(context.Context, *QueryConversionMandateRequest) (*QueryConversionMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConversionMandate not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -146,20 +226,20 @@ func _Query_Swap_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_ArkPoolDelta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryArkPoolDeltaRequest)
+func _Query_Pool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPoolRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).ArkPoolDelta(ctx, in)
+		return srv.(QueryServer).Pool(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_ArkPoolDelta_FullMethodName,
+		FullMethod: Query_Pool_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ArkPoolDelta(ctx, req.(*QueryArkPoolDeltaRequest))
+		return srv.(QueryServer).Pool(ctx, req.(*QueryPoolRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -182,6 +262,78 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_TobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTobinTaxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).TobinTax(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_TobinTax_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).TobinTax(ctx, req.(*QueryTobinTaxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_TobinTaxOverrides_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTobinTaxOverridesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).TobinTaxOverrides(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_TobinTaxOverrides_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).TobinTaxOverrides(ctx, req.(*QueryTobinTaxOverridesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ConversionPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ConversionPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionPolicy(ctx, req.(*QueryConversionPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ConversionMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionMandateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ConversionMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionMandate(ctx, req.(*QueryConversionMandateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -194,12 +346,28 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Swap_Handler,
 		},
 		{
-			MethodName: "ArkPoolDelta",
-			Handler:    _Query_ArkPoolDelta_Handler,
+			MethodName: "Pool",
+			Handler:    _Query_Pool_Handler,
 		},
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "TobinTax",
+			Handler:    _Query_TobinTax_Handler,
+		},
+		{
+			MethodName: "TobinTaxOverrides",
+			Handler:    _Query_TobinTaxOverrides_Handler,
+		},
+		{
+			MethodName: "ConversionPolicy",
+			Handler:    _Query_ConversionPolicy_Handler,
+		},
+		{
+			MethodName: "ConversionMandate",
+			Handler:    _Query_ConversionMandate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -19,17 +19,47 @@ service Query {
     option (google.api.http).get = "/ark/market/v1/swap";
   }
 
-  // ArkPoolDelta returns ark_pool_delta amount.
-  rpc ArkPoolDelta(QueryArkPoolDeltaRequest)
-      returns (QueryArkPoolDeltaResponse) {
+  // Pool returns the live virtual-pool state: the policy depth and the signed
+  // deviation from it, in one snapshot. The effective pools derive from these
+  // two numbers, so a caller never has to join queries across heights.
+  rpc Pool(QueryPoolRequest) returns (QueryPoolResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/market/v1/ark_pool_delta";
+    option (google.api.http).get = "/ark/market/v1/pool";
   }
 
   // Params queries all parameters.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/market/v1/params";
+  }
+
+  // TobinTax returns the effective Tobin rate for a denomination: its
+  // override when one is set, the default otherwise.
+  rpc TobinTax(QueryTobinTaxRequest) returns (QueryTobinTaxResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/market/v1/tobin_tax/{denom}";
+  }
+
+  // TobinTaxOverrides returns the sparse per-denomination exceptions.
+  rpc TobinTaxOverrides(QueryTobinTaxOverridesRequest)
+      returns (QueryTobinTaxOverridesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/market/v1/tobin_tax_overrides";
+  }
+
+  // ConversionPolicy returns the live conversion-capacity pair.
+  rpc ConversionPolicy(QueryConversionPolicyRequest)
+      returns (QueryConversionPolicyResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/market/v1/conversion_policy";
+  }
+
+  // ConversionMandate returns the governed committee appointment over
+  // conversion policy and its current effective status.
+  rpc ConversionMandate(QueryConversionMandateRequest)
+      returns (QueryConversionMandateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/market/v1/conversion_mandate";
   }
 }
 
@@ -49,23 +79,23 @@ message QuerySwapResponse {
   cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
 }
 
-// QueryArkPoolDeltaRequest is the request type for the Query/ArkPoolDelta RPC
-// method.
-message QueryArkPoolDeltaRequest {}
+// QueryPoolRequest is the request type for the Query/Pool RPC method.
+message QueryPoolRequest {}
 
-// QueryArkPoolDeltaResponse is the response type for the Query/ArkPoolDelta
-// RPC method.
-message QueryArkPoolDeltaResponse {
-  // ark_pool_delta defines the signed gap between the ArkPool and BasePool in
-  // pool_denom units.
-  string ark_pool_delta = 1 [
+// QueryPoolResponse is the response type for the Query/Pool RPC method.
+message QueryPoolResponse {
+  // base_pool is the policy depth the pool recovers toward, denominated in
+  // the protocol reference.
+  cosmos.base.v1beta1.DecCoin base_pool = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // ark_pool_delta is the signed gap between the ArkPool and base_pool, in
+  // base_pool units.
+  string ark_pool_delta = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // pool_denom defines the denomination of ark_pool_delta.
-  string pool_denom = 2;
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -76,4 +106,55 @@ message QueryParamsResponse {
   // params defines the parameters of the module.
   Params params = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryTobinTaxRequest is the request type for the Query/TobinTax RPC method.
+message QueryTobinTaxRequest { string denom = 1; }
+
+// QueryTobinTaxResponse is the response type for the Query/TobinTax RPC
+// method.
+message QueryTobinTaxResponse {
+  // tobin_tax is the rate a conversion leg in this denomination contributes,
+  // which is what a caller pricing a conversion needs. Whether that rate came
+  // from an override is governance provenance, answered by TobinTaxOverrides.
+  string tobin_tax = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryTobinTaxOverridesRequest is the request type for the
+// Query/TobinTaxOverrides RPC method.
+message QueryTobinTaxOverridesRequest {}
+
+// QueryTobinTaxOverridesResponse is the response type for the
+// Query/TobinTaxOverrides RPC method.
+message QueryTobinTaxOverridesResponse {
+  repeated TobinTaxOverride tobin_tax_overrides = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryConversionPolicyRequest is the request type for the
+// Query/ConversionPolicy RPC method.
+message QueryConversionPolicyRequest {}
+
+// QueryConversionPolicyResponse is the response type for the
+// Query/ConversionPolicy RPC method.
+message QueryConversionPolicyResponse {
+  ConversionPolicy conversion_policy = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryConversionMandateRequest is the request type for the
+// Query/ConversionMandate RPC method.
+message QueryConversionMandateRequest {}
+
+// QueryConversionMandateResponse returns the stored mandate and whether it is
+// usable at the current height.
+message QueryConversionMandateResponse {
+  ConversionMandate mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  bool active = 2 [ (amino.dont_omitempty) = true ];
 }

@@ -5,19 +5,99 @@ import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "ark/mandate/v1/envelope.proto";
 
 option go_package = "ark/x/market/types";
 
 // Params defines the parameters for the market module.
+//
+// The conversion-capacity dials moved to ConversionPolicy when they became
+// committee-delegable: params are replaced whole by MsgUpdateParams, so leaving
+// them here would let a governance proposal drafted from a stale copy silently
+// revert a committee's emergency resize.
 message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "ark/x/market/Params";
 
+  string min_stability_spread = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // default_tobin_tax is the spread applied to conversion between two
+  // denominations for every asset without an override. Rates are governance
+  // judgment, never derived, so a newly activated asset converts at this
+  // default from its first live block.
+  string default_tobin_tax = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// ConversionPolicy is the pair of conversion-capacity dials delegated to the
+// conversion committee: together they set how much conversion the protocol
+// absorbs per recovery period before the spread widens, which is the dial a
+// depeg response reaches for.
+//
+// The pool is denominated in the protocol reference. Its unit moves only when
+// governance re-points that reference, through RebaseBasePool, never through a
+// policy update from either entry point.
+message ConversionPolicy {
   // base_pool defines the denomination-labelled virtual-pool depth.
   cosmos.base.v1beta1.DecCoin base_pool = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  uint64 pool_recovery_period = 2;
-  string min_stability_spread = 3 [
+  // pool_recovery_period is the number of blocks over which the pool delta
+  // decays back to the base depth.
+  uint64 pool_recovery_period = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// ConversionMandate stores one governance-created, bounded committee
+// appointment over conversion policy: a corridor over ConversionPolicy and a
+// cap on Tobin raises. An empty committee identifies a disabled mandate; term
+// still increases on replacement so previously prepared committee transactions
+// cannot become valid again.
+//
+// The bounds are denominated in the pool unit that was live when governance
+// appointed the committee. A reference re-pointing leaves them untouched, which
+// strands the mandate until governance re-appoints it: converting a delegated
+// corridor at one instant's rate would produce bounds no proposal ever
+// contained, so the appointment fails closed instead.
+message ConversionMandate {
+  // envelope carries the shared term, committee, and half-open height window.
+  ark.mandate.v1.Envelope envelope = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  ConversionPolicy minimum_policy = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ConversionPolicy maximum_policy = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // max_tobin_tax caps committee-raised per-denomination Tobin overrides. The
+  // committee only ever raises — the floor of any raise is the denomination's
+  // current effective rate — so the power delegated here widens the buffer
+  // against oracle-staleness arbitrage and never narrows it. Lowering or
+  // removing an override stays governance-only. Zero delegates no Tobin power,
+  // which keeps a capacity-only committee expressible.
+  string max_tobin_tax = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// TobinTaxOverride is one sparse per-denomination exception to the default
+// Tobin rate. Overrides exist for markets whose plausible oracle error between
+// updates exceeds the default — an illiquid or gap-prone listing warrants a
+// raise, because the Tobin tax is the buffer against oracle-staleness
+// arbitrage. They are policy annotations on members, never membership.
+message TobinTaxOverride {
+  string denom = 1;
+  string tobin_tax = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,

@@ -144,23 +144,22 @@ func (m *QuerySwapResponse) GetSwapFee() types.DecCoin {
 	return types.DecCoin{}
 }
 
-// QueryArkPoolDeltaRequest is the request type for the Query/ArkPoolDelta RPC
-// method.
-type QueryArkPoolDeltaRequest struct {
+// QueryPoolRequest is the request type for the Query/Pool RPC method.
+type QueryPoolRequest struct {
 }
 
-func (m *QueryArkPoolDeltaRequest) Reset()         { *m = QueryArkPoolDeltaRequest{} }
-func (m *QueryArkPoolDeltaRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryArkPoolDeltaRequest) ProtoMessage()    {}
-func (*QueryArkPoolDeltaRequest) Descriptor() ([]byte, []int) {
+func (m *QueryPoolRequest) Reset()         { *m = QueryPoolRequest{} }
+func (m *QueryPoolRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryPoolRequest) ProtoMessage()    {}
+func (*QueryPoolRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f732f14b0cd578b2, []int{2}
 }
-func (m *QueryArkPoolDeltaRequest) XXX_Unmarshal(b []byte) error {
+func (m *QueryPoolRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryArkPoolDeltaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryPoolRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryArkPoolDeltaRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryPoolRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -170,40 +169,40 @@ func (m *QueryArkPoolDeltaRequest) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-func (m *QueryArkPoolDeltaRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryArkPoolDeltaRequest.Merge(m, src)
+func (m *QueryPoolRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryPoolRequest.Merge(m, src)
 }
-func (m *QueryArkPoolDeltaRequest) XXX_Size() int {
+func (m *QueryPoolRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryArkPoolDeltaRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryArkPoolDeltaRequest.DiscardUnknown(m)
+func (m *QueryPoolRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryPoolRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryArkPoolDeltaRequest proto.InternalMessageInfo
+var xxx_messageInfo_QueryPoolRequest proto.InternalMessageInfo
 
-// QueryArkPoolDeltaResponse is the response type for the Query/ArkPoolDelta
-// RPC method.
-type QueryArkPoolDeltaResponse struct {
-	// ark_pool_delta defines the signed gap between the ArkPool and BasePool in
-	// pool_denom units.
-	ArkPoolDelta cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=ark_pool_delta,json=arkPoolDelta,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"ark_pool_delta"`
-	// pool_denom defines the denomination of ark_pool_delta.
-	PoolDenom string `protobuf:"bytes,2,opt,name=pool_denom,json=poolDenom,proto3" json:"pool_denom,omitempty"`
+// QueryPoolResponse is the response type for the Query/Pool RPC method.
+type QueryPoolResponse struct {
+	// base_pool is the policy depth the pool recovers toward, denominated in
+	// the protocol reference.
+	BasePool types.DecCoin `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool"`
+	// ark_pool_delta is the signed gap between the ArkPool and base_pool, in
+	// base_pool units.
+	ArkPoolDelta cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=ark_pool_delta,json=arkPoolDelta,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"ark_pool_delta"`
 }
 
-func (m *QueryArkPoolDeltaResponse) Reset()         { *m = QueryArkPoolDeltaResponse{} }
-func (m *QueryArkPoolDeltaResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryArkPoolDeltaResponse) ProtoMessage()    {}
-func (*QueryArkPoolDeltaResponse) Descriptor() ([]byte, []int) {
+func (m *QueryPoolResponse) Reset()         { *m = QueryPoolResponse{} }
+func (m *QueryPoolResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryPoolResponse) ProtoMessage()    {}
+func (*QueryPoolResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f732f14b0cd578b2, []int{3}
 }
-func (m *QueryArkPoolDeltaResponse) XXX_Unmarshal(b []byte) error {
+func (m *QueryPoolResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryArkPoolDeltaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryPoolResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryArkPoolDeltaResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryPoolResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -213,23 +212,23 @@ func (m *QueryArkPoolDeltaResponse) XXX_Marshal(b []byte, deterministic bool) ([
 		return b[:n], nil
 	}
 }
-func (m *QueryArkPoolDeltaResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryArkPoolDeltaResponse.Merge(m, src)
+func (m *QueryPoolResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryPoolResponse.Merge(m, src)
 }
-func (m *QueryArkPoolDeltaResponse) XXX_Size() int {
+func (m *QueryPoolResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryArkPoolDeltaResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryArkPoolDeltaResponse.DiscardUnknown(m)
+func (m *QueryPoolResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryPoolResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryArkPoolDeltaResponse proto.InternalMessageInfo
+var xxx_messageInfo_QueryPoolResponse proto.InternalMessageInfo
 
-func (m *QueryArkPoolDeltaResponse) GetPoolDenom() string {
+func (m *QueryPoolResponse) GetBasePool() types.DecCoin {
 	if m != nil {
-		return m.PoolDenom
+		return m.BasePool
 	}
-	return ""
+	return types.DecCoin{}
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -315,56 +314,430 @@ func (m *QueryParamsResponse) GetParams() Params {
 	return Params{}
 }
 
+// QueryTobinTaxRequest is the request type for the Query/TobinTax RPC method.
+type QueryTobinTaxRequest struct {
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+}
+
+func (m *QueryTobinTaxRequest) Reset()         { *m = QueryTobinTaxRequest{} }
+func (m *QueryTobinTaxRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryTobinTaxRequest) ProtoMessage()    {}
+func (*QueryTobinTaxRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{6}
+}
+func (m *QueryTobinTaxRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryTobinTaxRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryTobinTaxRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryTobinTaxRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryTobinTaxRequest.Merge(m, src)
+}
+func (m *QueryTobinTaxRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryTobinTaxRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryTobinTaxRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryTobinTaxRequest proto.InternalMessageInfo
+
+func (m *QueryTobinTaxRequest) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// QueryTobinTaxResponse is the response type for the Query/TobinTax RPC
+// method.
+type QueryTobinTaxResponse struct {
+	// tobin_tax is the rate a conversion leg in this denomination contributes,
+	// which is what a caller pricing a conversion needs. Whether that rate came
+	// from an override is governance provenance, answered by TobinTaxOverrides.
+	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
+}
+
+func (m *QueryTobinTaxResponse) Reset()         { *m = QueryTobinTaxResponse{} }
+func (m *QueryTobinTaxResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryTobinTaxResponse) ProtoMessage()    {}
+func (*QueryTobinTaxResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{7}
+}
+func (m *QueryTobinTaxResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryTobinTaxResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryTobinTaxResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryTobinTaxResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryTobinTaxResponse.Merge(m, src)
+}
+func (m *QueryTobinTaxResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryTobinTaxResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryTobinTaxResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryTobinTaxResponse proto.InternalMessageInfo
+
+// QueryTobinTaxOverridesRequest is the request type for the
+// Query/TobinTaxOverrides RPC method.
+type QueryTobinTaxOverridesRequest struct {
+}
+
+func (m *QueryTobinTaxOverridesRequest) Reset()         { *m = QueryTobinTaxOverridesRequest{} }
+func (m *QueryTobinTaxOverridesRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryTobinTaxOverridesRequest) ProtoMessage()    {}
+func (*QueryTobinTaxOverridesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{8}
+}
+func (m *QueryTobinTaxOverridesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryTobinTaxOverridesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryTobinTaxOverridesRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryTobinTaxOverridesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryTobinTaxOverridesRequest.Merge(m, src)
+}
+func (m *QueryTobinTaxOverridesRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryTobinTaxOverridesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryTobinTaxOverridesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryTobinTaxOverridesRequest proto.InternalMessageInfo
+
+// QueryTobinTaxOverridesResponse is the response type for the
+// Query/TobinTaxOverrides RPC method.
+type QueryTobinTaxOverridesResponse struct {
+	TobinTaxOverrides []TobinTaxOverride `protobuf:"bytes,1,rep,name=tobin_tax_overrides,json=tobinTaxOverrides,proto3" json:"tobin_tax_overrides"`
+}
+
+func (m *QueryTobinTaxOverridesResponse) Reset()         { *m = QueryTobinTaxOverridesResponse{} }
+func (m *QueryTobinTaxOverridesResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryTobinTaxOverridesResponse) ProtoMessage()    {}
+func (*QueryTobinTaxOverridesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{9}
+}
+func (m *QueryTobinTaxOverridesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryTobinTaxOverridesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryTobinTaxOverridesResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryTobinTaxOverridesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryTobinTaxOverridesResponse.Merge(m, src)
+}
+func (m *QueryTobinTaxOverridesResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryTobinTaxOverridesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryTobinTaxOverridesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryTobinTaxOverridesResponse proto.InternalMessageInfo
+
+func (m *QueryTobinTaxOverridesResponse) GetTobinTaxOverrides() []TobinTaxOverride {
+	if m != nil {
+		return m.TobinTaxOverrides
+	}
+	return nil
+}
+
+// QueryConversionPolicyRequest is the request type for the
+// Query/ConversionPolicy RPC method.
+type QueryConversionPolicyRequest struct {
+}
+
+func (m *QueryConversionPolicyRequest) Reset()         { *m = QueryConversionPolicyRequest{} }
+func (m *QueryConversionPolicyRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryConversionPolicyRequest) ProtoMessage()    {}
+func (*QueryConversionPolicyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{10}
+}
+func (m *QueryConversionPolicyRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConversionPolicyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConversionPolicyRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConversionPolicyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConversionPolicyRequest.Merge(m, src)
+}
+func (m *QueryConversionPolicyRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConversionPolicyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConversionPolicyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConversionPolicyRequest proto.InternalMessageInfo
+
+// QueryConversionPolicyResponse is the response type for the
+// Query/ConversionPolicy RPC method.
+type QueryConversionPolicyResponse struct {
+	ConversionPolicy ConversionPolicy `protobuf:"bytes,1,opt,name=conversion_policy,json=conversionPolicy,proto3" json:"conversion_policy"`
+}
+
+func (m *QueryConversionPolicyResponse) Reset()         { *m = QueryConversionPolicyResponse{} }
+func (m *QueryConversionPolicyResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryConversionPolicyResponse) ProtoMessage()    {}
+func (*QueryConversionPolicyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{11}
+}
+func (m *QueryConversionPolicyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConversionPolicyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConversionPolicyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConversionPolicyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConversionPolicyResponse.Merge(m, src)
+}
+func (m *QueryConversionPolicyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConversionPolicyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConversionPolicyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConversionPolicyResponse proto.InternalMessageInfo
+
+func (m *QueryConversionPolicyResponse) GetConversionPolicy() ConversionPolicy {
+	if m != nil {
+		return m.ConversionPolicy
+	}
+	return ConversionPolicy{}
+}
+
+// QueryConversionMandateRequest is the request type for the
+// Query/ConversionMandate RPC method.
+type QueryConversionMandateRequest struct {
+}
+
+func (m *QueryConversionMandateRequest) Reset()         { *m = QueryConversionMandateRequest{} }
+func (m *QueryConversionMandateRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryConversionMandateRequest) ProtoMessage()    {}
+func (*QueryConversionMandateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{12}
+}
+func (m *QueryConversionMandateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConversionMandateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConversionMandateRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConversionMandateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConversionMandateRequest.Merge(m, src)
+}
+func (m *QueryConversionMandateRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConversionMandateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConversionMandateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConversionMandateRequest proto.InternalMessageInfo
+
+// QueryConversionMandateResponse returns the stored mandate and whether it is
+// usable at the current height.
+type QueryConversionMandateResponse struct {
+	Mandate ConversionMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
+	Active  bool              `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
+}
+
+func (m *QueryConversionMandateResponse) Reset()         { *m = QueryConversionMandateResponse{} }
+func (m *QueryConversionMandateResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryConversionMandateResponse) ProtoMessage()    {}
+func (*QueryConversionMandateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{13}
+}
+func (m *QueryConversionMandateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConversionMandateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConversionMandateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConversionMandateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConversionMandateResponse.Merge(m, src)
+}
+func (m *QueryConversionMandateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConversionMandateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConversionMandateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConversionMandateResponse proto.InternalMessageInfo
+
+func (m *QueryConversionMandateResponse) GetMandate() ConversionMandate {
+	if m != nil {
+		return m.Mandate
+	}
+	return ConversionMandate{}
+}
+
+func (m *QueryConversionMandateResponse) GetActive() bool {
+	if m != nil {
+		return m.Active
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*QuerySwapRequest)(nil), "ark.market.v1.QuerySwapRequest")
 	proto.RegisterType((*QuerySwapResponse)(nil), "ark.market.v1.QuerySwapResponse")
-	proto.RegisterType((*QueryArkPoolDeltaRequest)(nil), "ark.market.v1.QueryArkPoolDeltaRequest")
-	proto.RegisterType((*QueryArkPoolDeltaResponse)(nil), "ark.market.v1.QueryArkPoolDeltaResponse")
+	proto.RegisterType((*QueryPoolRequest)(nil), "ark.market.v1.QueryPoolRequest")
+	proto.RegisterType((*QueryPoolResponse)(nil), "ark.market.v1.QueryPoolResponse")
 	proto.RegisterType((*QueryParamsRequest)(nil), "ark.market.v1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "ark.market.v1.QueryParamsResponse")
+	proto.RegisterType((*QueryTobinTaxRequest)(nil), "ark.market.v1.QueryTobinTaxRequest")
+	proto.RegisterType((*QueryTobinTaxResponse)(nil), "ark.market.v1.QueryTobinTaxResponse")
+	proto.RegisterType((*QueryTobinTaxOverridesRequest)(nil), "ark.market.v1.QueryTobinTaxOverridesRequest")
+	proto.RegisterType((*QueryTobinTaxOverridesResponse)(nil), "ark.market.v1.QueryTobinTaxOverridesResponse")
+	proto.RegisterType((*QueryConversionPolicyRequest)(nil), "ark.market.v1.QueryConversionPolicyRequest")
+	proto.RegisterType((*QueryConversionPolicyResponse)(nil), "ark.market.v1.QueryConversionPolicyResponse")
+	proto.RegisterType((*QueryConversionMandateRequest)(nil), "ark.market.v1.QueryConversionMandateRequest")
+	proto.RegisterType((*QueryConversionMandateResponse)(nil), "ark.market.v1.QueryConversionMandateResponse")
 }
 
 func init() { proto.RegisterFile("ark/market/v1/query.proto", fileDescriptor_f732f14b0cd578b2) }
 
 var fileDescriptor_f732f14b0cd578b2 = []byte{
-	// 590 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x53, 0x3f, 0x6f, 0xd3, 0x4e,
-	0x18, 0x8e, 0xab, 0xfe, 0xf2, 0xab, 0xaf, 0x05, 0xd1, 0x6b, 0x23, 0x12, 0xb7, 0x75, 0x82, 0x17,
-	0xaa, 0x0a, 0x7c, 0x4a, 0x90, 0x10, 0x03, 0x0c, 0x84, 0x88, 0x09, 0x41, 0x09, 0x1b, 0x42, 0xb2,
-	0x2e, 0xce, 0x25, 0x58, 0x8e, 0xfd, 0xba, 0x3e, 0x37, 0x25, 0x2b, 0x13, 0x0b, 0x52, 0x25, 0x16,
-	0x3e, 0x02, 0x23, 0x03, 0x1f, 0xa2, 0x63, 0x05, 0x0b, 0x62, 0xa8, 0x50, 0x82, 0xc4, 0x67, 0x60,
-	0x43, 0xf7, 0x27, 0x4a, 0x1c, 0x05, 0x58, 0x22, 0xdf, 0xfb, 0xbc, 0xef, 0xf3, 0x3c, 0xf7, 0xbc,
-	0x17, 0x54, 0xa1, 0x69, 0x48, 0x22, 0x9a, 0x86, 0x2c, 0x23, 0xc3, 0x3a, 0x39, 0x3a, 0x66, 0xe9,
-	0xc8, 0x4d, 0x52, 0xc8, 0x00, 0x5f, 0xa2, 0x69, 0xe8, 0x2a, 0xc8, 0x1d, 0xd6, 0xad, 0x4d, 0x1a,
-	0x05, 0x31, 0x10, 0xf9, 0xab, 0x3a, 0x2c, 0xdb, 0x07, 0x1e, 0x01, 0x27, 0x1d, 0xca, 0x19, 0x19,
-	0xd6, 0x3b, 0x2c, 0xa3, 0x75, 0xe2, 0x43, 0x10, 0x6b, 0x7c, 0x47, 0xe3, 0x92, 0x75, 0x81, 0xde,
-	0xaa, 0x28, 0xd0, 0x93, 0x27, 0xa2, 0x0e, 0x1a, 0xda, 0xee, 0x43, 0x1f, 0x54, 0x5d, 0x7c, 0xe9,
-	0xea, 0x6e, 0x1f, 0xa0, 0x3f, 0x60, 0x84, 0x26, 0x01, 0xa1, 0x71, 0x0c, 0x19, 0xcd, 0x02, 0x88,
-	0xa7, 0x33, 0x56, 0xfe, 0x22, 0xda, 0xb7, 0xc4, 0x9c, 0xc7, 0xe8, 0xca, 0x53, 0xa1, 0xfc, 0xec,
-	0x84, 0x26, 0x6d, 0x76, 0x74, 0xcc, 0x78, 0x86, 0xf7, 0x10, 0x82, 0x5e, 0x8f, 0xa5, 0x9e, 0xf0,
-	0x5b, 0x36, 0x6a, 0xc6, 0xbe, 0xd9, 0x36, 0x65, 0xe5, 0x01, 0x04, 0x31, 0xde, 0x41, 0x26, 0xe5,
-	0xa1, 0xd7, 0x65, 0x31, 0x44, 0xe5, 0x15, 0x89, 0xae, 0x51, 0x1e, 0xb6, 0xc4, 0xd9, 0x39, 0x35,
-	0xd0, 0xe6, 0x1c, 0x21, 0x4f, 0x20, 0xe6, 0x0c, 0xdf, 0x45, 0x26, 0x3f, 0xa1, 0xc9, 0x8c, 0x70,
-	0xbd, 0x51, 0x71, 0xf5, 0xbd, 0x44, 0x42, 0xae, 0x4e, 0xc8, 0x15, 0x02, 0xcd, 0xd5, 0xb3, 0x8b,
-	0x6a, 0xa1, 0xbd, 0x26, 0x26, 0xa4, 0xe0, 0x3d, 0x24, 0xbf, 0xbd, 0x1e, 0x63, 0x52, 0x6f, 0xbd,
-	0xb1, 0xbb, 0x74, 0xb8, 0xc5, 0xfc, 0xb9, 0xf9, 0xff, 0xc5, 0xcc, 0x43, 0xc6, 0x1c, 0x0b, 0x95,
-	0xa5, 0xa3, 0xfb, 0x69, 0x78, 0x08, 0x30, 0x68, 0xb1, 0x41, 0x46, 0xf5, 0x55, 0x9d, 0xf7, 0x06,
-	0xaa, 0x2c, 0x01, 0xb5, 0xed, 0x17, 0xe8, 0x32, 0x4d, 0x43, 0x2f, 0x01, 0x18, 0x78, 0x5d, 0x81,
-	0xa8, 0x30, 0x9a, 0xb7, 0x85, 0xc0, 0xb7, 0x8b, 0xaa, 0x5e, 0x22, 0xef, 0x86, 0x6e, 0x00, 0x24,
-	0xa2, 0xd9, 0x4b, 0xf7, 0x11, 0xeb, 0x53, 0x7f, 0xd4, 0x62, 0xfe, 0xe7, 0x4f, 0x37, 0x91, 0x36,
-	0xd9, 0x62, 0xfe, 0x87, 0x9f, 0x1f, 0x0f, 0x8c, 0xf6, 0x06, 0x9d, 0x53, 0x11, 0x31, 0x6b, 0xe6,
-	0x59, 0x90, 0x66, 0x22, 0x61, 0x91, 0xe4, 0x36, 0xc2, 0xd2, 0xd9, 0x21, 0x4d, 0x69, 0xc4, 0xa7,
-	0x86, 0x9f, 0xa0, 0xad, 0x5c, 0x55, 0x3b, 0xbd, 0x83, 0x8a, 0x89, 0xac, 0xe8, 0x74, 0x4b, 0x6e,
-	0xee, 0x85, 0xba, 0xaa, 0xbd, 0x69, 0x0a, 0xe3, 0xca, 0x8b, 0xee, 0x6f, 0xfc, 0x5a, 0x41, 0xff,
-	0x49, 0x46, 0x1c, 0xa2, 0x55, 0xb1, 0x34, 0x5c, 0x5d, 0x98, 0x5d, 0x7c, 0x1f, 0x56, 0xed, 0xcf,
-	0x0d, 0xca, 0x8e, 0x53, 0x7b, 0x23, 0x34, 0x5e, 0x7f, 0xf9, 0xf1, 0x6e, 0xa5, 0x84, 0xb7, 0x48,
-	0xfe, 0xfd, 0x89, 0xbd, 0xe0, 0xb7, 0x06, 0xda, 0x98, 0xcf, 0x1c, 0x5f, 0x5f, 0x46, 0xba, 0x64,
-	0x65, 0xd6, 0xfe, 0xbf, 0x1b, 0xb5, 0x8b, 0x83, 0x99, 0x8b, 0x2a, 0xde, 0x5b, 0x70, 0x91, 0x5f,
-	0x2c, 0xe6, 0xa8, 0xa8, 0x32, 0xc2, 0xd7, 0x96, 0xf1, 0xe7, 0x96, 0x60, 0x39, 0x7f, 0x6b, 0xd1,
-	0xe2, 0xce, 0x4c, 0xfc, 0x2a, 0x2e, 0x2d, 0x88, 0xab, 0xec, 0x9b, 0x37, 0xce, 0xc6, 0xb6, 0x71,
-	0x3e, 0xb6, 0x8d, 0xef, 0x63, 0xdb, 0x38, 0x9d, 0xd8, 0x85, 0xf3, 0x89, 0x5d, 0xf8, 0x3a, 0xb1,
-	0x0b, 0xcf, 0xb1, 0xe8, 0x7f, 0x35, 0x9d, 0xc8, 0x46, 0x09, 0xe3, 0x9d, 0xa2, 0xfc, 0xc7, 0xde,
-	0xfa, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xd5, 0x87, 0xbb, 0x6f, 0x98, 0x04, 0x00, 0x00,
+	// 892 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xcf, 0x6f, 0xe3, 0x44,
+	0x14, 0x8e, 0x97, 0x6d, 0x9a, 0xbc, 0x02, 0x6a, 0xa6, 0x89, 0x68, 0xbd, 0xad, 0x93, 0xf5, 0xee,
+	0x61, 0x05, 0xa9, 0xad, 0x04, 0x09, 0x71, 0x80, 0x4b, 0x36, 0x70, 0x02, 0x5a, 0xd2, 0x4a, 0x48,
+	0x15, 0x92, 0x35, 0x71, 0xa6, 0xc1, 0x72, 0xe2, 0x71, 0x6d, 0x37, 0x4d, 0x04, 0x5c, 0x10, 0x42,
+	0x1c, 0x2b, 0x71, 0xe5, 0x00, 0x37, 0x8e, 0x1c, 0x90, 0xf8, 0x03, 0xb8, 0xf4, 0x58, 0xc1, 0x05,
+	0x71, 0xa8, 0x50, 0x8b, 0xc4, 0xbf, 0x81, 0xe6, 0x87, 0x13, 0xc7, 0x71, 0x42, 0xb5, 0x97, 0xc8,
+	0xf3, 0x7e, 0x7c, 0xdf, 0xf7, 0xde, 0xcc, 0x7b, 0x0a, 0xec, 0xe0, 0xc0, 0x35, 0x87, 0x38, 0x70,
+	0x49, 0x64, 0x8e, 0x1a, 0xe6, 0xd9, 0x39, 0x09, 0x26, 0x86, 0x1f, 0xd0, 0x88, 0xa2, 0x57, 0x70,
+	0xe0, 0x1a, 0xc2, 0x65, 0x8c, 0x1a, 0x6a, 0x09, 0x0f, 0x1d, 0x8f, 0x9a, 0xfc, 0x57, 0x44, 0xa8,
+	0x9a, 0x4d, 0xc3, 0x21, 0x0d, 0xcd, 0x2e, 0x0e, 0x89, 0x39, 0x6a, 0x74, 0x49, 0x84, 0x1b, 0xa6,
+	0x4d, 0x1d, 0x4f, 0xfa, 0x1f, 0x49, 0x3f, 0x47, 0x4d, 0xc1, 0xab, 0x3b, 0xc2, 0x69, 0xf1, 0x93,
+	0x29, 0x0e, 0xd2, 0x55, 0xee, 0xd3, 0x3e, 0x15, 0x76, 0xf6, 0x25, 0xad, 0xbb, 0x7d, 0x4a, 0xfb,
+	0x03, 0x62, 0x62, 0xdf, 0x31, 0xb1, 0xe7, 0xd1, 0x08, 0x47, 0x0e, 0xf5, 0xe2, 0x1c, 0x75, 0xbe,
+	0x10, 0xa9, 0x9b, 0xfb, 0xf4, 0x8f, 0x60, 0xf3, 0x63, 0xc6, 0x7c, 0x74, 0x81, 0xfd, 0x0e, 0x39,
+	0x3b, 0x27, 0x61, 0x84, 0xf6, 0x00, 0xe8, 0xe9, 0x29, 0x09, 0x2c, 0xa6, 0x77, 0x5b, 0xa9, 0x29,
+	0xcf, 0x8a, 0x9d, 0x22, 0xb7, 0x3c, 0xa7, 0x8e, 0x87, 0x1e, 0x41, 0x11, 0x87, 0xae, 0xd5, 0x23,
+	0x1e, 0x1d, 0x6e, 0x3f, 0xe0, 0xde, 0x02, 0x0e, 0xdd, 0x36, 0x3b, 0xeb, 0x97, 0x0a, 0x94, 0x12,
+	0x80, 0xa1, 0x4f, 0xbd, 0x90, 0xa0, 0x77, 0xa0, 0x18, 0x5e, 0x60, 0x7f, 0x06, 0xb8, 0xd1, 0xdc,
+	0x31, 0x64, 0x5d, 0xac, 0x43, 0x86, 0xec, 0x90, 0xc1, 0x08, 0x5a, 0x0f, 0xaf, 0x6e, 0xaa, 0xb9,
+	0x4e, 0x81, 0x65, 0x70, 0xc2, 0x77, 0x81, 0x7f, 0x5b, 0xa7, 0x84, 0x70, 0xbe, 0x8d, 0xe6, 0x6e,
+	0x66, 0x72, 0x9b, 0xd8, 0x89, 0xfc, 0x75, 0x96, 0xf3, 0x3e, 0x21, 0x3a, 0x92, 0x25, 0x1e, 0x52,
+	0x3a, 0x90, 0x25, 0xea, 0xbf, 0xc6, 0x32, 0x85, 0x51, 0xca, 0x6c, 0x43, 0x91, 0x01, 0x5a, 0x3e,
+	0xa5, 0x03, 0x29, 0x73, 0x35, 0x53, 0x91, 0x31, 0xfd, 0xf4, 0xef, 0xcf, 0xaf, 0x2b, 0x9d, 0x02,
+	0x0b, 0x60, 0x68, 0xe8, 0x53, 0x78, 0x15, 0x07, 0x2e, 0x07, 0xb1, 0x7a, 0x64, 0x10, 0x61, 0xd1,
+	0xa4, 0xd6, 0x5b, 0x2c, 0xf8, 0xaf, 0x9b, 0xaa, 0xbc, 0xfa, 0xb0, 0xe7, 0x1a, 0x0e, 0x35, 0x87,
+	0x38, 0xfa, 0xcc, 0xf8, 0x80, 0xf4, 0xb1, 0x3d, 0x69, 0x13, 0xfb, 0xf7, 0x5f, 0xf6, 0x41, 0x12,
+	0xb6, 0x89, 0x2d, 0x90, 0x5f, 0xc6, 0x81, 0xcb, 0x80, 0xdb, 0x0c, 0x4b, 0x2f, 0x03, 0x12, 0xc2,
+	0x71, 0x80, 0x87, 0x61, 0x5c, 0xcf, 0x01, 0x6c, 0xcd, 0x59, 0x65, 0x41, 0x6f, 0x43, 0xde, 0xe7,
+	0x16, 0x59, 0x4d, 0xc5, 0x98, 0x7b, 0xb8, 0x86, 0x08, 0x4f, 0x96, 0x21, 0xe3, 0xf5, 0x3a, 0x94,
+	0x39, 0xe0, 0x31, 0xed, 0x3a, 0xde, 0x31, 0x1e, 0xc7, 0x6f, 0xa3, 0x0c, 0x6b, 0xe2, 0xe2, 0xc5,
+	0xb3, 0x10, 0x07, 0x7d, 0x00, 0x95, 0x54, 0xb4, 0x14, 0x70, 0x04, 0xc5, 0x88, 0xd9, 0xac, 0x08,
+	0x8f, 0x45, 0xca, 0x0b, 0xb7, 0xa1, 0x10, 0x49, 0x70, 0xbd, 0x0a, 0x7b, 0x73, 0x6c, 0x07, 0x23,
+	0x12, 0x04, 0x4e, 0x8f, 0x4c, 0xbb, 0xf1, 0x05, 0x68, 0xcb, 0x02, 0xa4, 0xae, 0x13, 0xd8, 0x9a,
+	0xea, 0xb2, 0x68, 0xec, 0xde, 0x56, 0x6a, 0x2f, 0x3d, 0xdb, 0x68, 0x56, 0x53, 0x5d, 0x4a, 0xc3,
+	0x24, 0xfb, 0x55, 0x8a, 0xd2, 0x1c, 0xba, 0x06, 0xbb, 0x9c, 0xfd, 0x39, 0xf5, 0x46, 0x24, 0x08,
+	0x1d, 0xea, 0x1d, 0xd2, 0x81, 0x63, 0x4f, 0x62, 0x75, 0x63, 0x29, 0x7f, 0xd1, 0x2f, 0xc5, 0x7d,
+	0x02, 0x25, 0x7b, 0xea, 0xb3, 0x7c, 0xee, 0x94, 0x17, 0x98, 0x96, 0x96, 0xc6, 0x48, 0x4a, 0xdb,
+	0xb4, 0x53, 0xce, 0x69, 0xe3, 0x66, 0x59, 0x1f, 0x62, 0xaf, 0x87, 0x23, 0x12, 0x4b, 0xfb, 0x46,
+	0x91, 0x9d, 0xcb, 0x88, 0x90, 0xe2, 0xde, 0x83, 0xf5, 0xa1, 0x30, 0x49, 0x49, 0xb5, 0xa5, 0x92,
+	0x64, 0x6a, 0x52, 0x53, 0x9c, 0x8b, 0xf6, 0x20, 0x8f, 0xed, 0xc8, 0x19, 0x89, 0x89, 0x2e, 0xb4,
+	0xd6, 0xe4, 0xf3, 0x13, 0xc6, 0xe6, 0x6f, 0xeb, 0xb0, 0xc6, 0x85, 0x20, 0x17, 0x1e, 0xb2, 0x55,
+	0x82, 0xd2, 0x95, 0xa7, 0xb7, 0x96, 0x5a, 0x5b, 0x1e, 0x20, 0xa4, 0xeb, 0xb5, 0x6f, 0x19, 0xc7,
+	0x57, 0x7f, 0xfc, 0xf3, 0xdd, 0x83, 0x0a, 0xda, 0x32, 0xe7, 0xb7, 0x22, 0xdb, 0x16, 0x8c, 0x8c,
+	0x8f, 0x70, 0x26, 0x59, 0x62, 0x7f, 0x64, 0x93, 0x25, 0x77, 0xc9, 0x6a, 0x32, 0xb6, 0x1b, 0x50,
+	0x08, 0x79, 0x31, 0x7f, 0xe8, 0x71, 0x26, 0x5a, 0x72, 0xc0, 0x55, 0x7d, 0x55, 0x88, 0xa4, 0xd4,
+	0x67, 0x94, 0xaf, 0xa1, 0x4a, 0x9a, 0x52, 0x50, 0x7d, 0xad, 0x40, 0x21, 0x7e, 0xcf, 0xe8, 0x49,
+	0x16, 0x68, 0x6a, 0xe2, 0xd5, 0xa7, 0xab, 0x83, 0x24, 0xf7, 0xfe, 0x8c, 0x5b, 0x47, 0xb5, 0x14,
+	0xf7, 0x74, 0xd4, 0xcc, 0xcf, 0xf9, 0xbe, 0xf8, 0x12, 0xfd, 0xa8, 0x40, 0x69, 0x61, 0x3a, 0x51,
+	0x7d, 0x15, 0x55, 0x7a, 0xca, 0xd5, 0xfd, 0x7b, 0x46, 0x4b, 0x85, 0xe6, 0x4c, 0xe1, 0x53, 0xa4,
+	0x2f, 0x53, 0x38, 0x5b, 0x06, 0xe8, 0x7b, 0x05, 0x36, 0xd3, 0xf3, 0x85, 0xde, 0xc8, 0x22, 0x5d,
+	0x32, 0xe9, 0x6a, 0xfd, 0x7e, 0xc1, 0xf7, 0x69, 0xe1, 0xc2, 0x42, 0x40, 0x3f, 0x28, 0x50, 0x5a,
+	0x98, 0x35, 0xf4, 0x3f, 0x94, 0xf3, 0xf3, 0x9e, 0xdd, 0xc2, 0xa5, 0xb3, 0xaf, 0x1b, 0x33, 0x85,
+	0x4f, 0xd0, 0xe3, 0xe5, 0x0a, 0xe5, 0x90, 0xb7, 0xea, 0x57, 0xb7, 0x9a, 0x72, 0x7d, 0xab, 0x29,
+	0x7f, 0xdf, 0x6a, 0xca, 0xe5, 0x9d, 0x96, 0xbb, 0xbe, 0xd3, 0x72, 0x7f, 0xde, 0x69, 0xb9, 0x13,
+	0xc4, 0x72, 0xc7, 0x71, 0x76, 0x34, 0xf1, 0x49, 0xd8, 0xcd, 0xf3, 0x7f, 0x24, 0x6f, 0xfe, 0x17,
+	0x00, 0x00, 0xff, 0xff, 0xc6, 0x7d, 0x02, 0xef, 0x78, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -381,10 +754,22 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Swap returns simulated swap amount.
 	Swap(ctx context.Context, in *QuerySwapRequest, opts ...grpc.CallOption) (*QuerySwapResponse, error)
-	// ArkPoolDelta returns ark_pool_delta amount.
-	ArkPoolDelta(ctx context.Context, in *QueryArkPoolDeltaRequest, opts ...grpc.CallOption) (*QueryArkPoolDeltaResponse, error)
+	// Pool returns the live virtual-pool state: the policy depth and the signed
+	// deviation from it, in one snapshot. The effective pools derive from these
+	// two numbers, so a caller never has to join queries across heights.
+	Pool(ctx context.Context, in *QueryPoolRequest, opts ...grpc.CallOption) (*QueryPoolResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// TobinTax returns the effective Tobin rate for a denomination: its
+	// override when one is set, the default otherwise.
+	TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error)
+	// TobinTaxOverrides returns the sparse per-denomination exceptions.
+	TobinTaxOverrides(ctx context.Context, in *QueryTobinTaxOverridesRequest, opts ...grpc.CallOption) (*QueryTobinTaxOverridesResponse, error)
+	// ConversionPolicy returns the live conversion-capacity pair.
+	ConversionPolicy(ctx context.Context, in *QueryConversionPolicyRequest, opts ...grpc.CallOption) (*QueryConversionPolicyResponse, error)
+	// ConversionMandate returns the governed committee appointment over
+	// conversion policy and its current effective status.
+	ConversionMandate(ctx context.Context, in *QueryConversionMandateRequest, opts ...grpc.CallOption) (*QueryConversionMandateResponse, error)
 }
 
 type queryClient struct {
@@ -404,9 +789,9 @@ func (c *queryClient) Swap(ctx context.Context, in *QuerySwapRequest, opts ...gr
 	return out, nil
 }
 
-func (c *queryClient) ArkPoolDelta(ctx context.Context, in *QueryArkPoolDeltaRequest, opts ...grpc.CallOption) (*QueryArkPoolDeltaResponse, error) {
-	out := new(QueryArkPoolDeltaResponse)
-	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/ArkPoolDelta", in, out, opts...)
+func (c *queryClient) Pool(ctx context.Context, in *QueryPoolRequest, opts ...grpc.CallOption) (*QueryPoolResponse, error) {
+	out := new(QueryPoolResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/Pool", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -422,14 +807,62 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
+func (c *queryClient) TobinTax(ctx context.Context, in *QueryTobinTaxRequest, opts ...grpc.CallOption) (*QueryTobinTaxResponse, error) {
+	out := new(QueryTobinTaxResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/TobinTax", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) TobinTaxOverrides(ctx context.Context, in *QueryTobinTaxOverridesRequest, opts ...grpc.CallOption) (*QueryTobinTaxOverridesResponse, error) {
+	out := new(QueryTobinTaxOverridesResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/TobinTaxOverrides", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ConversionPolicy(ctx context.Context, in *QueryConversionPolicyRequest, opts ...grpc.CallOption) (*QueryConversionPolicyResponse, error) {
+	out := new(QueryConversionPolicyResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/ConversionPolicy", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ConversionMandate(ctx context.Context, in *QueryConversionMandateRequest, opts ...grpc.CallOption) (*QueryConversionMandateResponse, error) {
+	out := new(QueryConversionMandateResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/ConversionMandate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Swap returns simulated swap amount.
 	Swap(context.Context, *QuerySwapRequest) (*QuerySwapResponse, error)
-	// ArkPoolDelta returns ark_pool_delta amount.
-	ArkPoolDelta(context.Context, *QueryArkPoolDeltaRequest) (*QueryArkPoolDeltaResponse, error)
+	// Pool returns the live virtual-pool state: the policy depth and the signed
+	// deviation from it, in one snapshot. The effective pools derive from these
+	// two numbers, so a caller never has to join queries across heights.
+	Pool(context.Context, *QueryPoolRequest) (*QueryPoolResponse, error)
 	// Params queries all parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// TobinTax returns the effective Tobin rate for a denomination: its
+	// override when one is set, the default otherwise.
+	TobinTax(context.Context, *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error)
+	// TobinTaxOverrides returns the sparse per-denomination exceptions.
+	TobinTaxOverrides(context.Context, *QueryTobinTaxOverridesRequest) (*QueryTobinTaxOverridesResponse, error)
+	// ConversionPolicy returns the live conversion-capacity pair.
+	ConversionPolicy(context.Context, *QueryConversionPolicyRequest) (*QueryConversionPolicyResponse, error)
+	// ConversionMandate returns the governed committee appointment over
+	// conversion policy and its current effective status.
+	ConversionMandate(context.Context, *QueryConversionMandateRequest) (*QueryConversionMandateResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -439,11 +872,23 @@ type UnimplementedQueryServer struct {
 func (*UnimplementedQueryServer) Swap(ctx context.Context, req *QuerySwapRequest) (*QuerySwapResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Swap not implemented")
 }
-func (*UnimplementedQueryServer) ArkPoolDelta(ctx context.Context, req *QueryArkPoolDeltaRequest) (*QueryArkPoolDeltaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ArkPoolDelta not implemented")
+func (*UnimplementedQueryServer) Pool(ctx context.Context, req *QueryPoolRequest) (*QueryPoolResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Pool not implemented")
 }
 func (*UnimplementedQueryServer) Params(ctx context.Context, req *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
+}
+func (*UnimplementedQueryServer) TobinTax(ctx context.Context, req *QueryTobinTaxRequest) (*QueryTobinTaxResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TobinTax not implemented")
+}
+func (*UnimplementedQueryServer) TobinTaxOverrides(ctx context.Context, req *QueryTobinTaxOverridesRequest) (*QueryTobinTaxOverridesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TobinTaxOverrides not implemented")
+}
+func (*UnimplementedQueryServer) ConversionPolicy(ctx context.Context, req *QueryConversionPolicyRequest) (*QueryConversionPolicyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConversionPolicy not implemented")
+}
+func (*UnimplementedQueryServer) ConversionMandate(ctx context.Context, req *QueryConversionMandateRequest) (*QueryConversionMandateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConversionMandate not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -468,20 +913,20 @@ func _Query_Swap_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_ArkPoolDelta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryArkPoolDeltaRequest)
+func _Query_Pool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPoolRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).ArkPoolDelta(ctx, in)
+		return srv.(QueryServer).Pool(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.market.v1.Query/ArkPoolDelta",
+		FullMethod: "/ark.market.v1.Query/Pool",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ArkPoolDelta(ctx, req.(*QueryArkPoolDeltaRequest))
+		return srv.(QueryServer).Pool(ctx, req.(*QueryPoolRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -504,6 +949,78 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_TobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTobinTaxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).TobinTax(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Query/TobinTax",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).TobinTax(ctx, req.(*QueryTobinTaxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_TobinTaxOverrides_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTobinTaxOverridesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).TobinTaxOverrides(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Query/TobinTaxOverrides",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).TobinTaxOverrides(ctx, req.(*QueryTobinTaxOverridesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ConversionPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Query/ConversionPolicy",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionPolicy(ctx, req.(*QueryConversionPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ConversionMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionMandateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Query/ConversionMandate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionMandate(ctx, req.(*QueryConversionMandateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ark.market.v1.Query",
@@ -514,12 +1031,28 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Swap_Handler,
 		},
 		{
-			MethodName: "ArkPoolDelta",
-			Handler:    _Query_ArkPoolDelta_Handler,
+			MethodName: "Pool",
+			Handler:    _Query_Pool_Handler,
 		},
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "TobinTax",
+			Handler:    _Query_TobinTax_Handler,
+		},
+		{
+			MethodName: "TobinTaxOverrides",
+			Handler:    _Query_TobinTaxOverrides_Handler,
+		},
+		{
+			MethodName: "ConversionPolicy",
+			Handler:    _Query_ConversionPolicy_Handler,
+		},
+		{
+			MethodName: "ConversionMandate",
+			Handler:    _Query_ConversionMandate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -606,7 +1139,7 @@ func (m *QuerySwapResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryArkPoolDeltaRequest) Marshal() (dAtA []byte, err error) {
+func (m *QueryPoolRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -616,12 +1149,12 @@ func (m *QueryArkPoolDeltaRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryArkPoolDeltaRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryPoolRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryArkPoolDeltaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryPoolRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -629,7 +1162,7 @@ func (m *QueryArkPoolDeltaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryArkPoolDeltaResponse) Marshal() (dAtA []byte, err error) {
+func (m *QueryPoolResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -639,29 +1172,32 @@ func (m *QueryArkPoolDeltaResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryArkPoolDeltaResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryPoolResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryArkPoolDeltaResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryPoolResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.PoolDenom) > 0 {
-		i -= len(m.PoolDenom)
-		copy(dAtA[i:], m.PoolDenom)
-		i = encodeVarintQuery(dAtA, i, uint64(len(m.PoolDenom)))
-		i--
-		dAtA[i] = 0x12
-	}
 	{
 		size := m.ArkPoolDelta.Size()
 		i -= size
 		if _, err := m.ArkPoolDelta.MarshalTo(dAtA[i:]); err != nil {
 			return 0, err
 		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.BasePool.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
 		i = encodeVarintQuery(dAtA, i, uint64(size))
 	}
 	i--
@@ -725,6 +1261,251 @@ func (m *QueryParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryTobinTaxRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryTobinTaxRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryTobinTaxRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryTobinTaxResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryTobinTaxResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryTobinTaxResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.TobinTax.Size()
+		i -= size
+		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryTobinTaxOverridesRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryTobinTaxOverridesRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryTobinTaxOverridesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryTobinTaxOverridesResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryTobinTaxOverridesResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryTobinTaxOverridesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.TobinTaxOverrides) > 0 {
+		for iNdEx := len(m.TobinTaxOverrides) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TobinTaxOverrides[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConversionPolicyRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConversionPolicyRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConversionPolicyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConversionPolicyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConversionPolicyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConversionPolicyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ConversionPolicy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConversionMandateRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConversionMandateRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConversionMandateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConversionMandateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConversionMandateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConversionMandateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Active {
+		i--
+		if m.Active {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	{
+		size, err := m.Mandate.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -766,7 +1547,7 @@ func (m *QuerySwapResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryArkPoolDeltaRequest) Size() (n int) {
+func (m *QueryPoolRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -775,18 +1556,16 @@ func (m *QueryArkPoolDeltaRequest) Size() (n int) {
 	return n
 }
 
-func (m *QueryArkPoolDeltaResponse) Size() (n int) {
+func (m *QueryPoolResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	l = m.BasePool.Size()
+	n += 1 + l + sovQuery(uint64(l))
 	l = m.ArkPoolDelta.Size()
 	n += 1 + l + sovQuery(uint64(l))
-	l = len(m.PoolDenom)
-	if l > 0 {
-		n += 1 + l + sovQuery(uint64(l))
-	}
 	return n
 }
 
@@ -807,6 +1586,97 @@ func (m *QueryParamsResponse) Size() (n int) {
 	_ = l
 	l = m.Params.Size()
 	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QueryTobinTaxRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryTobinTaxResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.TobinTax.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QueryTobinTaxOverridesRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryTobinTaxOverridesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.TobinTaxOverrides) > 0 {
+		for _, e := range m.TobinTaxOverrides {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *QueryConversionPolicyRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryConversionPolicyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ConversionPolicy.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QueryConversionMandateRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryConversionMandateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Mandate.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if m.Active {
+		n += 2
+	}
 	return n
 }
 
@@ -1046,7 +1916,7 @@ func (m *QuerySwapResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryArkPoolDeltaRequest) Unmarshal(dAtA []byte) error {
+func (m *QueryPoolRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1069,10 +1939,10 @@ func (m *QueryArkPoolDeltaRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryArkPoolDeltaRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryPoolRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryArkPoolDeltaRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryPoolRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -1096,7 +1966,7 @@ func (m *QueryArkPoolDeltaRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryArkPoolDeltaResponse) Unmarshal(dAtA []byte) error {
+func (m *QueryPoolResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1119,13 +1989,46 @@ func (m *QueryArkPoolDeltaResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryArkPoolDeltaResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryPoolResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryArkPoolDeltaResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryPoolResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BasePool", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BasePool.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ArkPoolDelta", wireType)
 			}
@@ -1158,38 +2061,6 @@ func (m *QueryArkPoolDeltaResponse) Unmarshal(dAtA []byte) error {
 			if err := m.ArkPoolDelta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PoolDenom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.PoolDenom = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1324,6 +2195,592 @@ func (m *QueryParamsResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryTobinTaxRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryTobinTaxRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryTobinTaxRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryTobinTaxResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryTobinTaxResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryTobinTaxResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryTobinTaxOverridesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryTobinTaxOverridesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryTobinTaxOverridesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryTobinTaxOverridesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryTobinTaxOverridesResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryTobinTaxOverridesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTaxOverrides", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TobinTaxOverrides = append(m.TobinTaxOverrides, TobinTaxOverride{})
+			if err := m.TobinTaxOverrides[len(m.TobinTaxOverrides)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConversionPolicyRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConversionPolicyRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConversionPolicyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConversionPolicyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConversionPolicyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConversionPolicyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConversionPolicy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ConversionPolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConversionMandateRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConversionMandateRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConversionMandateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConversionMandateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConversionMandateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConversionMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mandate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Mandate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Active", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Active = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipQuery(dAtA[iNdEx:])

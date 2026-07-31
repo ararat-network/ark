@@ -15,10 +15,64 @@ import (
 	sync "sync"
 )
 
+var _ protoreflect.List = (*_GenesisState_3_list)(nil)
+
+type _GenesisState_3_list struct {
+	list *[]*TobinTaxOverride
+}
+
+func (x *_GenesisState_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_GenesisState_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*TobinTaxOverride)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*TobinTaxOverride)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_3_list) AppendMutable() protoreflect.Value {
+	v := new(TobinTaxOverride)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_3_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_3_list) NewElement() protoreflect.Value {
+	v := new(TobinTaxOverride)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_3_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_GenesisState                protoreflect.MessageDescriptor
-	fd_GenesisState_params         protoreflect.FieldDescriptor
-	fd_GenesisState_ark_pool_delta protoreflect.FieldDescriptor
+	md_GenesisState                     protoreflect.MessageDescriptor
+	fd_GenesisState_params              protoreflect.FieldDescriptor
+	fd_GenesisState_ark_pool_delta      protoreflect.FieldDescriptor
+	fd_GenesisState_tobin_tax_overrides protoreflect.FieldDescriptor
+	fd_GenesisState_conversion_policy   protoreflect.FieldDescriptor
+	fd_GenesisState_conversion_mandate  protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -26,6 +80,9 @@ func init() {
 	md_GenesisState = File_ark_market_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_ark_pool_delta = md_GenesisState.Fields().ByName("ark_pool_delta")
+	fd_GenesisState_tobin_tax_overrides = md_GenesisState.Fields().ByName("tobin_tax_overrides")
+	fd_GenesisState_conversion_policy = md_GenesisState.Fields().ByName("conversion_policy")
+	fd_GenesisState_conversion_mandate = md_GenesisState.Fields().ByName("conversion_mandate")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -105,6 +162,24 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
+	if len(x.TobinTaxOverrides) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.TobinTaxOverrides})
+		if !f(fd_GenesisState_tobin_tax_overrides, value) {
+			return
+		}
+	}
+	if x.ConversionPolicy != nil {
+		value := protoreflect.ValueOfMessage(x.ConversionPolicy.ProtoReflect())
+		if !f(fd_GenesisState_conversion_policy, value) {
+			return
+		}
+	}
+	if x.ConversionMandate != nil {
+		value := protoreflect.ValueOfMessage(x.ConversionMandate.ProtoReflect())
+		if !f(fd_GenesisState_conversion_mandate, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -124,6 +199,12 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.Params != nil
 	case "ark.market.v1.GenesisState.ark_pool_delta":
 		return x.ArkPoolDelta != ""
+	case "ark.market.v1.GenesisState.tobin_tax_overrides":
+		return len(x.TobinTaxOverrides) != 0
+	case "ark.market.v1.GenesisState.conversion_policy":
+		return x.ConversionPolicy != nil
+	case "ark.market.v1.GenesisState.conversion_mandate":
+		return x.ConversionMandate != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.GenesisState"))
@@ -144,6 +225,12 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Params = nil
 	case "ark.market.v1.GenesisState.ark_pool_delta":
 		x.ArkPoolDelta = ""
+	case "ark.market.v1.GenesisState.tobin_tax_overrides":
+		x.TobinTaxOverrides = nil
+	case "ark.market.v1.GenesisState.conversion_policy":
+		x.ConversionPolicy = nil
+	case "ark.market.v1.GenesisState.conversion_mandate":
+		x.ConversionMandate = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.GenesisState"))
@@ -166,6 +253,18 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.market.v1.GenesisState.ark_pool_delta":
 		value := x.ArkPoolDelta
 		return protoreflect.ValueOfString(value)
+	case "ark.market.v1.GenesisState.tobin_tax_overrides":
+		if len(x.TobinTaxOverrides) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_3_list{})
+		}
+		listValue := &_GenesisState_3_list{list: &x.TobinTaxOverrides}
+		return protoreflect.ValueOfList(listValue)
+	case "ark.market.v1.GenesisState.conversion_policy":
+		value := x.ConversionPolicy
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.GenesisState.conversion_mandate":
+		value := x.ConversionMandate
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.GenesisState"))
@@ -190,6 +289,14 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		x.Params = value.Message().Interface().(*Params)
 	case "ark.market.v1.GenesisState.ark_pool_delta":
 		x.ArkPoolDelta = value.Interface().(string)
+	case "ark.market.v1.GenesisState.tobin_tax_overrides":
+		lv := value.List()
+		clv := lv.(*_GenesisState_3_list)
+		x.TobinTaxOverrides = *clv.list
+	case "ark.market.v1.GenesisState.conversion_policy":
+		x.ConversionPolicy = value.Message().Interface().(*ConversionPolicy)
+	case "ark.market.v1.GenesisState.conversion_mandate":
+		x.ConversionMandate = value.Message().Interface().(*ConversionMandate)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.GenesisState"))
@@ -215,6 +322,22 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.Params = new(Params)
 		}
 		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
+	case "ark.market.v1.GenesisState.tobin_tax_overrides":
+		if x.TobinTaxOverrides == nil {
+			x.TobinTaxOverrides = []*TobinTaxOverride{}
+		}
+		value := &_GenesisState_3_list{list: &x.TobinTaxOverrides}
+		return protoreflect.ValueOfList(value)
+	case "ark.market.v1.GenesisState.conversion_policy":
+		if x.ConversionPolicy == nil {
+			x.ConversionPolicy = new(ConversionPolicy)
+		}
+		return protoreflect.ValueOfMessage(x.ConversionPolicy.ProtoReflect())
+	case "ark.market.v1.GenesisState.conversion_mandate":
+		if x.ConversionMandate == nil {
+			x.ConversionMandate = new(ConversionMandate)
+		}
+		return protoreflect.ValueOfMessage(x.ConversionMandate.ProtoReflect())
 	case "ark.market.v1.GenesisState.ark_pool_delta":
 		panic(fmt.Errorf("field ark_pool_delta of message ark.market.v1.GenesisState is not mutable"))
 	default:
@@ -235,6 +358,15 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.market.v1.GenesisState.ark_pool_delta":
 		return protoreflect.ValueOfString("")
+	case "ark.market.v1.GenesisState.tobin_tax_overrides":
+		list := []*TobinTaxOverride{}
+		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
+	case "ark.market.v1.GenesisState.conversion_policy":
+		m := new(ConversionPolicy)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.GenesisState.conversion_mandate":
+		m := new(ConversionMandate)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.GenesisState"))
@@ -312,6 +444,20 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if len(x.TobinTaxOverrides) > 0 {
+			for _, e := range x.TobinTaxOverrides {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.ConversionPolicy != nil {
+			l = options.Size(x.ConversionPolicy)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ConversionMandate != nil {
+			l = options.Size(x.ConversionMandate)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -340,6 +486,50 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ConversionMandate != nil {
+			encoded, err := options.Marshal(x.ConversionMandate)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if x.ConversionPolicy != nil {
+			encoded, err := options.Marshal(x.ConversionPolicy)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.TobinTaxOverrides) > 0 {
+			for iNdEx := len(x.TobinTaxOverrides) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.TobinTaxOverrides[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x1a
+			}
 		}
 		if len(x.ArkPoolDelta) > 0 {
 			i -= len(x.ArkPoolDelta)
@@ -479,6 +669,112 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				}
 				x.ArkPoolDelta = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TobinTaxOverrides", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TobinTaxOverrides = append(x.TobinTaxOverrides, &TobinTaxOverride{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TobinTaxOverrides[len(x.TobinTaxOverrides)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ConversionPolicy", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ConversionPolicy == nil {
+					x.ConversionPolicy = &ConversionPolicy{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ConversionPolicy); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ConversionMandate", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ConversionMandate == nil {
+					x.ConversionMandate = &ConversionMandate{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ConversionMandate); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -536,8 +832,17 @@ type GenesisState struct {
 	// params defines all the parameters of the module.
 	Params *Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 	// ark_pool_delta is the signed gap between the ArkPool and BasePool measured
-	// in params.base_pool.denom.
+	// in conversion_policy.base_pool.denom.
 	ArkPoolDelta string `protobuf:"bytes,2,opt,name=ark_pool_delta,json=arkPoolDelta,proto3" json:"ark_pool_delta,omitempty"`
+	// tobin_tax_overrides are the sparse per-denomination Tobin exceptions,
+	// sorted by unique denomination.
+	TobinTaxOverrides []*TobinTaxOverride `protobuf:"bytes,3,rep,name=tobin_tax_overrides,json=tobinTaxOverrides,proto3" json:"tobin_tax_overrides,omitempty"`
+	// conversion_policy is the live conversion-capacity pair. Its base pool must
+	// be denominated in the configured protocol reference.
+	ConversionPolicy *ConversionPolicy `protobuf:"bytes,4,opt,name=conversion_policy,json=conversionPolicy,proto3" json:"conversion_policy,omitempty"`
+	// conversion_mandate is the governed conversion committee appointment,
+	// disabled at launch.
+	ConversionMandate *ConversionMandate `protobuf:"bytes,5,opt,name=conversion_mandate,json=conversionMandate,proto3" json:"conversion_mandate,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -574,6 +879,27 @@ func (x *GenesisState) GetArkPoolDelta() string {
 	return ""
 }
 
+func (x *GenesisState) GetTobinTaxOverrides() []*TobinTaxOverride {
+	if x != nil {
+		return x.TobinTaxOverrides
+	}
+	return nil
+}
+
+func (x *GenesisState) GetConversionPolicy() *ConversionPolicy {
+	if x != nil {
+		return x.ConversionPolicy
+	}
+	return nil
+}
+
+func (x *GenesisState) GetConversionMandate() *ConversionMandate {
+	if x != nil {
+		return x.ConversionMandate
+	}
+	return nil
+}
+
 var File_ark_market_v1_genesis_proto protoreflect.FileDescriptor
 
 var file_ark_market_v1_genesis_proto_rawDesc = []byte{
@@ -585,7 +911,7 @@ var file_ark_market_v1_genesis_proto_rawDesc = []byte{
 	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x1a, 0x1a, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f,
-	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xa6, 0x01, 0x0a,
+	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb7, 0x03, 0x0a,
 	0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x38, 0x0a,
 	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61,
@@ -596,17 +922,34 @@ var file_ark_market_v1_genesis_proto_rawDesc = []byte{
 	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
 	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
 	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x61, 0x72, 0x6b, 0x50, 0x6f, 0x6f, 0x6c,
-	0x44, 0x65, 0x6c, 0x74, 0x61, 0x42, 0x97, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e,
-	0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f,
-	0x76, 0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d,
-	0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56,
-	0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56,
-	0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56,
-	0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f,
-	0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x44, 0x65, 0x6c, 0x74, 0x61, 0x12, 0x5a, 0x0a, 0x13, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74,
+	0x61, 0x78, 0x5f, 0x6f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
+	0x76, 0x31, 0x2e, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72,
+	0x69, 0x64, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11,
+	0x74, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65,
+	0x73, 0x12, 0x57, 0x0a, 0x11, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
+	0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x5a, 0x0a, 0x12, 0x63, 0x6f,
+	0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x11, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d,
+	0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x97, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65,
+	0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72,
+	0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41,
+	0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
+	0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c,
+	0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c,
+	0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
+	0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -623,16 +966,22 @@ func file_ark_market_v1_genesis_proto_rawDescGZIP() []byte {
 
 var file_ark_market_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_ark_market_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil), // 0: ark.market.v1.GenesisState
-	(*Params)(nil),       // 1: ark.market.v1.Params
+	(*GenesisState)(nil),      // 0: ark.market.v1.GenesisState
+	(*Params)(nil),            // 1: ark.market.v1.Params
+	(*TobinTaxOverride)(nil),  // 2: ark.market.v1.TobinTaxOverride
+	(*ConversionPolicy)(nil),  // 3: ark.market.v1.ConversionPolicy
+	(*ConversionMandate)(nil), // 4: ark.market.v1.ConversionMandate
 }
 var file_ark_market_v1_genesis_proto_depIdxs = []int32{
 	1, // 0: ark.market.v1.GenesisState.params:type_name -> ark.market.v1.Params
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 1: ark.market.v1.GenesisState.tobin_tax_overrides:type_name -> ark.market.v1.TobinTaxOverride
+	3, // 2: ark.market.v1.GenesisState.conversion_policy:type_name -> ark.market.v1.ConversionPolicy
+	4, // 3: ark.market.v1.GenesisState.conversion_mandate:type_name -> ark.market.v1.ConversionMandate
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_ark_market_v1_genesis_proto_init() }

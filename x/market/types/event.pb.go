@@ -163,47 +163,292 @@ func (m *EventPoolUpdated) GetNewBasePoolDenom() string {
 	return ""
 }
 
+// EventSettle is emitted after a settlement redemption executes. It is
+// distinct from EventSwap because the rate is the plan's, not the oracle's,
+// and no pool state moves.
+type EventSettle struct {
+	Trader      string                `protobuf:"bytes,1,opt,name=trader,proto3" json:"trader,omitempty"`
+	OfferDenom  string                `protobuf:"bytes,2,opt,name=offer_denom,json=offerDenom,proto3" json:"offer_denom,omitempty"`
+	OfferAmount cosmossdk_io_math.Int `protobuf:"bytes,3,opt,name=offer_amount,json=offerAmount,proto3,customtype=cosmossdk.io/math.Int" json:"offer_amount"`
+	// redeemed_amount is the NOAH paid to the trader, whole entitlement
+	// regardless of how much of it the shared buffer covered.
+	RedeemedAmount cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=redeemed_amount,json=redeemedAmount,proto3,customtype=cosmossdk.io/math.Int" json:"redeemed_amount"`
+	// redemption_rate is the plan rate the redemption executed at, in units of
+	// the settled asset per one NOAH — the same NOAH-quoted orientation as
+	// oracle exchange rates.
+	RedemptionRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,5,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
+}
+
+func (m *EventSettle) Reset()         { *m = EventSettle{} }
+func (m *EventSettle) String() string { return proto.CompactTextString(m) }
+func (*EventSettle) ProtoMessage()    {}
+func (*EventSettle) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7341de42c1e47040, []int{2}
+}
+func (m *EventSettle) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventSettle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventSettle.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventSettle) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventSettle.Merge(m, src)
+}
+func (m *EventSettle) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventSettle) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventSettle.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventSettle proto.InternalMessageInfo
+
+func (m *EventSettle) GetTrader() string {
+	if m != nil {
+		return m.Trader
+	}
+	return ""
+}
+
+func (m *EventSettle) GetOfferDenom() string {
+	if m != nil {
+		return m.OfferDenom
+	}
+	return ""
+}
+
+// EventTobinTaxOverrideSet is emitted when governance or the conversion
+// committee creates or replaces one per-denomination Tobin exception.
+type EventTobinTaxOverrideSet struct {
+	Denom    string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
+}
+
+func (m *EventTobinTaxOverrideSet) Reset()         { *m = EventTobinTaxOverrideSet{} }
+func (m *EventTobinTaxOverrideSet) String() string { return proto.CompactTextString(m) }
+func (*EventTobinTaxOverrideSet) ProtoMessage()    {}
+func (*EventTobinTaxOverrideSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7341de42c1e47040, []int{3}
+}
+func (m *EventTobinTaxOverrideSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventTobinTaxOverrideSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventTobinTaxOverrideSet.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventTobinTaxOverrideSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventTobinTaxOverrideSet.Merge(m, src)
+}
+func (m *EventTobinTaxOverrideSet) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventTobinTaxOverrideSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventTobinTaxOverrideSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventTobinTaxOverrideSet proto.InternalMessageInfo
+
+func (m *EventTobinTaxOverrideSet) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// EventTobinTaxOverrideRemoved is emitted when governance deletes one
+// per-denomination Tobin exception, returning that denomination to the
+// default rate.
+type EventTobinTaxOverrideRemoved struct {
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+}
+
+func (m *EventTobinTaxOverrideRemoved) Reset()         { *m = EventTobinTaxOverrideRemoved{} }
+func (m *EventTobinTaxOverrideRemoved) String() string { return proto.CompactTextString(m) }
+func (*EventTobinTaxOverrideRemoved) ProtoMessage()    {}
+func (*EventTobinTaxOverrideRemoved) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7341de42c1e47040, []int{4}
+}
+func (m *EventTobinTaxOverrideRemoved) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventTobinTaxOverrideRemoved) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventTobinTaxOverrideRemoved.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventTobinTaxOverrideRemoved) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventTobinTaxOverrideRemoved.Merge(m, src)
+}
+func (m *EventTobinTaxOverrideRemoved) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventTobinTaxOverrideRemoved) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventTobinTaxOverrideRemoved.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventTobinTaxOverrideRemoved proto.InternalMessageInfo
+
+func (m *EventTobinTaxOverrideRemoved) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// EventConversionMandateSet is emitted when governance appoints, replaces, or
+// disables the conversion committee. A disabling carries the empty committee
+// and the advanced term.
+type EventConversionMandateSet struct {
+	Term             uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (m *EventConversionMandateSet) Reset()         { *m = EventConversionMandateSet{} }
+func (m *EventConversionMandateSet) String() string { return proto.CompactTextString(m) }
+func (*EventConversionMandateSet) ProtoMessage()    {}
+func (*EventConversionMandateSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7341de42c1e47040, []int{5}
+}
+func (m *EventConversionMandateSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventConversionMandateSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventConversionMandateSet.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventConversionMandateSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventConversionMandateSet.Merge(m, src)
+}
+func (m *EventConversionMandateSet) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventConversionMandateSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventConversionMandateSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventConversionMandateSet proto.InternalMessageInfo
+
+func (m *EventConversionMandateSet) GetTerm() uint64 {
+	if m != nil {
+		return m.Term
+	}
+	return 0
+}
+
+func (m *EventConversionMandateSet) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *EventConversionMandateSet) GetActivationHeight() uint64 {
+	if m != nil {
+		return m.ActivationHeight
+	}
+	return 0
+}
+
+func (m *EventConversionMandateSet) GetExpiryHeight() uint64 {
+	if m != nil {
+		return m.ExpiryHeight
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*EventSwap)(nil), "ark.market.v1.EventSwap")
 	proto.RegisterType((*EventPoolUpdated)(nil), "ark.market.v1.EventPoolUpdated")
+	proto.RegisterType((*EventSettle)(nil), "ark.market.v1.EventSettle")
+	proto.RegisterType((*EventTobinTaxOverrideSet)(nil), "ark.market.v1.EventTobinTaxOverrideSet")
+	proto.RegisterType((*EventTobinTaxOverrideRemoved)(nil), "ark.market.v1.EventTobinTaxOverrideRemoved")
+	proto.RegisterType((*EventConversionMandateSet)(nil), "ark.market.v1.EventConversionMandateSet")
 }
 
 func init() { proto.RegisterFile("ark/market/v1/event.proto", fileDescriptor_7341de42c1e47040) }
 
 var fileDescriptor_7341de42c1e47040 = []byte{
-	// 511 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0xd4, 0x3d, 0x6f, 0xd3, 0x40,
-	0x18, 0x07, 0xf0, 0xb8, 0x2d, 0xa1, 0x79, 0x0a, 0x22, 0x75, 0x83, 0xe4, 0xb6, 0xc2, 0x41, 0x9d,
-	0x10, 0x22, 0x76, 0x2b, 0xa4, 0xee, 0x89, 0xc2, 0x50, 0x89, 0x01, 0x12, 0x75, 0x61, 0x89, 0xae,
-	0xbe, 0x27, 0xc6, 0xb2, 0x7d, 0x67, 0x9d, 0x8f, 0x98, 0x7e, 0x07, 0x06, 0x3e, 0x06, 0x23, 0x43,
-	0x3f, 0x44, 0xc7, 0xd2, 0x09, 0x31, 0x54, 0x28, 0x19, 0xf8, 0x1a, 0xe8, 0x5e, 0x2a, 0x12, 0x32,
-	0x54, 0x4a, 0x97, 0x28, 0x7e, 0xee, 0xb9, 0xfb, 0xfd, 0xed, 0x3b, 0x1d, 0xec, 0x12, 0x91, 0x86,
-	0x39, 0x11, 0x29, 0xca, 0x70, 0x72, 0x14, 0xe2, 0x04, 0x99, 0x0c, 0x0a, 0xc1, 0x25, 0x77, 0x1f,
-	0x13, 0x91, 0x06, 0x66, 0x28, 0x98, 0x1c, 0xed, 0x6d, 0x93, 0x3c, 0x61, 0x3c, 0xd4, 0xbf, 0xa6,
-	0x63, 0x6f, 0x37, 0xe2, 0x65, 0xce, 0xcb, 0x91, 0x7e, 0x0a, 0xcd, 0x83, 0x1d, 0x6a, 0xc5, 0x3c,
-	0xe6, 0xa6, 0xae, 0xfe, 0x99, 0xea, 0xc1, 0x8f, 0x75, 0x68, 0xbc, 0x51, 0xc4, 0xb0, 0x22, 0x85,
-	0x7b, 0x08, 0x75, 0x29, 0x08, 0x45, 0xe1, 0x39, 0xcf, 0x9d, 0x17, 0x8d, 0x9e, 0x77, 0x7d, 0xd1,
-	0x69, 0xd9, 0x55, 0xba, 0x94, 0x0a, 0x2c, 0xcb, 0xa1, 0x14, 0x09, 0x8b, 0x07, 0xb6, 0xcf, 0x3d,
-	0x86, 0x86, 0xc0, 0x28, 0x29, 0x12, 0x64, 0xd2, 0x5b, 0xbb, 0x63, 0xd2, 0xbf, 0x56, 0xb7, 0x0d,
-	0x5b, 0x7c, 0x3c, 0x46, 0x31, 0xa2, 0xc8, 0x78, 0xee, 0xad, 0xab, 0x99, 0x03, 0xd0, 0xa5, 0xbe,
-	0xaa, 0xb8, 0x43, 0x78, 0x64, 0x1a, 0x48, 0xce, 0x3f, 0x31, 0xe9, 0x6d, 0xe8, 0xb5, 0x0f, 0x2f,
-	0x6f, 0xda, 0xb5, 0x5f, 0x37, 0xed, 0xa7, 0x66, 0xfd, 0x92, 0xa6, 0x41, 0xc2, 0xc3, 0x9c, 0xc8,
-	0x8f, 0xc1, 0x09, 0x93, 0xd7, 0x17, 0x1d, 0xb0, 0xf0, 0x09, 0x93, 0xdf, 0xfe, 0x7c, 0x7f, 0xe9,
-	0x0c, 0x0c, 0xd3, 0xd5, 0x8b, 0xb8, 0xcf, 0x00, 0xca, 0x8a, 0x14, 0x16, 0x7d, 0xa0, 0xd1, 0x86,
-	0xaa, 0x18, 0xf3, 0x3d, 0x6c, 0xe9, 0x61, 0x4b, 0xd6, 0x57, 0x24, 0xb5, 0x61, 0xc5, 0x7d, 0x68,
-	0x8c, 0x11, 0x2d, 0xf8, 0x50, 0x83, 0x9b, 0x63, 0x44, 0xe3, 0x9d, 0x02, 0xa8, 0x41, 0xcb, 0x6d,
-	0x6a, 0xee, 0xd8, 0x72, 0xfb, 0xcb, 0xdc, 0x5b, 0x8c, 0x49, 0x74, 0xde, 0xc7, 0x68, 0x0e, 0xed,
-	0x63, 0x64, 0x50, 0xc5, 0x18, 0xf3, 0xe0, 0xcb, 0x06, 0x34, 0xf5, 0x9e, 0xbe, 0xe3, 0x3c, 0x3b,
-	0x2d, 0x28, 0x91, 0x48, 0xdd, 0x0e, 0xec, 0xf0, 0x8c, 0x8e, 0xce, 0x48, 0x89, 0xa3, 0x82, 0xf3,
-	0xcc, 0x46, 0xd2, 0xfb, 0x3c, 0x68, 0xf2, 0x8c, 0xf6, 0x48, 0x89, 0x6a, 0x82, 0x89, 0x16, 0x43,
-	0x6b, 0xb1, 0xdd, 0x86, 0x5c, 0xbb, 0x57, 0xc8, 0xed, 0x39, 0xc7, 0x7e, 0xa0, 0x0e, 0xec, 0x30,
-	0xac, 0x96, 0x72, 0x99, 0x03, 0xd1, 0x64, 0x58, 0x2d, 0xe5, 0x5a, 0x6c, 0x5f, 0x38, 0x1e, 0x2b,
-	0xe7, 0x9a, 0x73, 0x6c, 0xae, 0x08, 0x5c, 0xf5, 0x01, 0x88, 0x48, 0x6f, 0x63, 0x65, 0x92, 0x98,
-	0x23, 0xb3, 0x32, 0xf3, 0x84, 0x67, 0xb4, 0x2b, 0x52, 0xf3, 0x36, 0x99, 0x24, 0x0a, 0x51, 0x6f,
-	0xf3, 0x1f, 0x52, 0xbf, 0x1f, 0xc2, 0xb0, 0x9a, 0x47, 0x7a, 0xaf, 0x2e, 0xa7, 0xbe, 0x73, 0x35,
-	0xf5, 0x9d, 0xdf, 0x53, 0xdf, 0xf9, 0x3a, 0xf3, 0x6b, 0x57, 0x33, 0xbf, 0xf6, 0x73, 0xe6, 0xd7,
-	0x3e, 0xb8, 0xea, 0xaa, 0xf9, 0x7c, 0x7b, 0xd9, 0xc8, 0xf3, 0x02, 0xcb, 0xb3, 0xba, 0xbe, 0x17,
-	0x5e, 0xff, 0x0d, 0x00, 0x00, 0xff, 0xff, 0xfd, 0xd6, 0x85, 0x38, 0x87, 0x04, 0x00, 0x00,
+	// 718 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x95, 0x4d, 0x4f, 0x13, 0x5d,
+	0x14, 0xc7, 0x3b, 0xa5, 0xf4, 0xa1, 0x87, 0xb7, 0x32, 0xf4, 0x49, 0x5a, 0xd0, 0x62, 0xba, 0x32,
+	0xc4, 0xb6, 0xa0, 0x86, 0x3d, 0x15, 0x13, 0x49, 0x34, 0x6a, 0x0b, 0x0b, 0xdd, 0x34, 0x97, 0xb9,
+	0xa7, 0x65, 0xd2, 0x99, 0x7b, 0x27, 0x77, 0xae, 0x6d, 0xf9, 0x00, 0xee, 0x5c, 0xf8, 0x31, 0x5c,
+	0xba, 0xe0, 0x43, 0xb0, 0x32, 0xc8, 0xca, 0xb8, 0x20, 0x06, 0x16, 0xae, 0xfd, 0x06, 0xe6, 0xbe,
+	0x14, 0xca, 0x4b, 0x42, 0xd2, 0xba, 0x69, 0x3a, 0xe7, 0xfc, 0xef, 0xf9, 0xfd, 0xe7, 0xde, 0x7b,
+	0xe6, 0x40, 0x81, 0x88, 0x4e, 0x35, 0x24, 0xa2, 0x83, 0xb2, 0xda, 0x5d, 0xaf, 0x62, 0x17, 0x99,
+	0xac, 0x44, 0x82, 0x4b, 0xee, 0xce, 0x12, 0xd1, 0xa9, 0x98, 0x54, 0xa5, 0xbb, 0xbe, 0xb4, 0x40,
+	0x42, 0x9f, 0xf1, 0xaa, 0xfe, 0x35, 0x8a, 0xa5, 0x82, 0xc7, 0xe3, 0x90, 0xc7, 0x4d, 0xfd, 0x54,
+	0x35, 0x0f, 0x36, 0x95, 0x6b, 0xf3, 0x36, 0x37, 0x71, 0xf5, 0xcf, 0x44, 0x4b, 0xdf, 0x27, 0x20,
+	0xf3, 0x5c, 0x21, 0x1a, 0x3d, 0x12, 0xb9, 0x6b, 0x90, 0x96, 0x82, 0x50, 0x14, 0x79, 0xe7, 0x81,
+	0xf3, 0x30, 0x53, 0xcb, 0x9f, 0x1c, 0x96, 0x73, 0xb6, 0xca, 0x26, 0xa5, 0x02, 0xe3, 0xb8, 0x21,
+	0x85, 0xcf, 0xda, 0x75, 0xab, 0x73, 0x37, 0x20, 0x23, 0xd0, 0xf3, 0x23, 0x1f, 0x99, 0xcc, 0x27,
+	0xef, 0x58, 0x74, 0x29, 0x75, 0x57, 0x60, 0x9a, 0xb7, 0x5a, 0x28, 0x9a, 0x14, 0x19, 0x0f, 0xf3,
+	0x13, 0x6a, 0x65, 0x1d, 0x74, 0x68, 0x4b, 0x45, 0xdc, 0x06, 0xcc, 0x18, 0x01, 0x09, 0xf9, 0x07,
+	0x26, 0xf3, 0x29, 0x5d, 0x7b, 0xed, 0xe8, 0x74, 0x25, 0xf1, 0xf3, 0x74, 0xe5, 0x7f, 0x53, 0x3f,
+	0xa6, 0x9d, 0x8a, 0xcf, 0xab, 0x21, 0x91, 0xfb, 0x95, 0x6d, 0x26, 0x4f, 0x0e, 0xcb, 0x60, 0xc1,
+	0xdb, 0x4c, 0x7e, 0xf9, 0xfd, 0x75, 0xd5, 0xa9, 0x1b, 0xcc, 0xa6, 0x2e, 0xe2, 0xde, 0x07, 0x88,
+	0x7b, 0x24, 0xb2, 0xd0, 0x49, 0x0d, 0xcd, 0xa8, 0x88, 0x61, 0xbe, 0x85, 0x69, 0x9d, 0xb6, 0xc8,
+	0xf4, 0x88, 0x48, 0xcd, 0xb0, 0xc4, 0x65, 0xc8, 0xb4, 0x10, 0x2d, 0xf0, 0x3f, 0x0d, 0x9c, 0x6a,
+	0x21, 0x1a, 0xde, 0x2e, 0x80, 0x4a, 0x5a, 0xdc, 0x94, 0xc6, 0x6d, 0x58, 0xdc, 0xf2, 0x4d, 0xdc,
+	0x4b, 0x6c, 0x13, 0xef, 0x60, 0x0b, 0xbd, 0x21, 0xe8, 0x16, 0x7a, 0x06, 0xaa, 0x30, 0x86, 0x59,
+	0xfa, 0x94, 0x82, 0xac, 0x3e, 0xd3, 0x37, 0x9c, 0x07, 0xbb, 0x11, 0x25, 0x12, 0xa9, 0x5b, 0x86,
+	0x45, 0x1e, 0xd0, 0xe6, 0x1e, 0x89, 0xb1, 0x19, 0x71, 0x1e, 0x58, 0x4b, 0xfa, 0x9c, 0xeb, 0x59,
+	0x1e, 0xd0, 0x1a, 0x89, 0x51, 0x2d, 0x30, 0xd6, 0xda, 0x90, 0xbb, 0x2a, 0xb7, 0x26, 0x93, 0x63,
+	0x99, 0x5c, 0x18, 0xe2, 0xd8, 0x0d, 0x2a, 0xc3, 0x22, 0xc3, 0xde, 0x0d, 0x5f, 0xe6, 0x42, 0x64,
+	0x19, 0xf6, 0x6e, 0xf8, 0xba, 0x2a, 0xbf, 0x72, 0x3d, 0x46, 0xf6, 0x35, 0xc4, 0xb1, 0xbe, 0x3c,
+	0x70, 0xd5, 0x06, 0x10, 0xd1, 0x19, 0xd8, 0x0a, 0x24, 0x31, 0x57, 0x66, 0x64, 0xcc, 0x3c, 0x0f,
+	0xe8, 0xa6, 0xe8, 0x98, 0xb7, 0x09, 0x24, 0x51, 0x10, 0xf5, 0x36, 0xd7, 0x20, 0xe9, 0xf1, 0x20,
+	0x0c, 0x7b, 0xc3, 0x90, 0xd2, 0x9f, 0x24, 0x4c, 0x9b, 0x16, 0x47, 0x29, 0x03, 0x1c, 0xa1, 0xc9,
+	0xaf, 0x35, 0x6b, 0xf2, 0xce, 0x66, 0x9d, 0xf8, 0x17, 0xcd, 0xfa, 0x0e, 0xe6, 0x05, 0x52, 0xc4,
+	0x10, 0xe9, 0xb8, 0x1f, 0x81, 0xb9, 0x41, 0x21, 0x5b, 0xba, 0x69, 0x4a, 0x87, 0x91, 0xf4, 0x39,
+	0x6b, 0x0a, 0x22, 0x71, 0xcc, 0x93, 0x9d, 0xbb, 0x2c, 0x57, 0x27, 0x12, 0x4b, 0x1f, 0x1d, 0xc8,
+	0xeb, 0x3d, 0xdf, 0xe1, 0x7b, 0x3e, 0xdb, 0x21, 0xfd, 0xd7, 0x5d, 0x14, 0xc2, 0xa7, 0xd8, 0x40,
+	0xe9, 0xe6, 0x60, 0x72, 0xb8, 0xf9, 0xcc, 0x83, 0xdb, 0x80, 0x8c, 0x54, 0xe2, 0xa6, 0x24, 0xfd,
+	0x31, 0xdb, 0x6c, 0x4a, 0x5a, 0x6a, 0xe9, 0x29, 0xdc, 0xbb, 0xd5, 0x46, 0x1d, 0x43, 0xde, 0x45,
+	0x7a, 0xbb, 0x95, 0xd2, 0x37, 0x07, 0x0a, 0x7a, 0xd9, 0x33, 0xce, 0xba, 0x28, 0x62, 0x9f, 0xb3,
+	0x57, 0x84, 0xa9, 0xef, 0x88, 0xb2, 0x5f, 0x80, 0x94, 0x44, 0x61, 0x96, 0xa4, 0x6a, 0x93, 0x06,
+	0xa9, 0x43, 0x6a, 0x1a, 0x78, 0x3c, 0x0c, 0x7d, 0x29, 0x11, 0xef, 0x9e, 0x06, 0x17, 0x52, 0xf7,
+	0x31, 0x2c, 0x10, 0x4f, 0xfa, 0x5d, 0xa2, 0xcf, 0x63, 0x1f, 0xfd, 0xf6, 0xbe, 0xb9, 0x44, 0x17,
+	0xf5, 0xb3, 0x97, 0xf9, 0x17, 0x3a, 0xed, 0xae, 0xc2, 0x2c, 0xf6, 0x23, 0x5f, 0x1c, 0x0c, 0xf4,
+	0xa9, 0x61, 0xfd, 0x8c, 0xc9, 0x19, 0x6d, 0xed, 0xd1, 0xd1, 0x59, 0xd1, 0x39, 0x3e, 0x2b, 0x3a,
+	0xbf, 0xce, 0x8a, 0xce, 0xe7, 0xf3, 0x62, 0xe2, 0xf8, 0xbc, 0x98, 0xf8, 0x71, 0x5e, 0x4c, 0xbc,
+	0x77, 0xd5, 0xb4, 0xed, 0x0f, 0xe6, 0xad, 0x3c, 0x88, 0x30, 0xde, 0x4b, 0xeb, 0xd1, 0xf8, 0xe4,
+	0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xcb, 0x37, 0x90, 0x71, 0x8a, 0x07, 0x00, 0x00,
 }
 
 func (m *EventSwap) Marshal() (dAtA []byte, err error) {
@@ -371,6 +616,188 @@ func (m *EventPoolUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *EventSettle) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventSettle) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventSettle) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.RedemptionRate.Size()
+		i -= size
+		if _, err := m.RedemptionRate.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	{
+		size := m.RedeemedAmount.Size()
+		i -= size
+		if _, err := m.RedeemedAmount.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size := m.OfferAmount.Size()
+		i -= size
+		if _, err := m.OfferAmount.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.OfferDenom) > 0 {
+		i -= len(m.OfferDenom)
+		copy(dAtA[i:], m.OfferDenom)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OfferDenom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Trader) > 0 {
+		i -= len(m.Trader)
+		copy(dAtA[i:], m.Trader)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Trader)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventTobinTaxOverrideSet) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventTobinTaxOverrideSet) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventTobinTaxOverrideSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.TobinTax.Size()
+		i -= size
+		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventTobinTaxOverrideRemoved) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventTobinTaxOverrideRemoved) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventTobinTaxOverrideRemoved) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventConversionMandateSet) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventConversionMandateSet) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventConversionMandateSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExpiryHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ExpiryHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Term != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Term))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
 	offset -= sovEvent(v)
 	base := offset
@@ -439,6 +866,79 @@ func (m *EventPoolUpdated) Size() (n int) {
 	n += 1 + l + sovEvent(uint64(l))
 	l = m.NewArkPoolDelta.Size()
 	n += 1 + l + sovEvent(uint64(l))
+	return n
+}
+
+func (m *EventSettle) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Trader)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.OfferDenom)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = m.OfferAmount.Size()
+	n += 1 + l + sovEvent(uint64(l))
+	l = m.RedeemedAmount.Size()
+	n += 1 + l + sovEvent(uint64(l))
+	l = m.RedemptionRate.Size()
+	n += 1 + l + sovEvent(uint64(l))
+	return n
+}
+
+func (m *EventTobinTaxOverrideSet) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = m.TobinTax.Size()
+	n += 1 + l + sovEvent(uint64(l))
+	return n
+}
+
+func (m *EventTobinTaxOverrideRemoved) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	return n
+}
+
+func (m *EventConversionMandateSet) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Term != 0 {
+		n += 1 + sovEvent(uint64(m.Term))
+	}
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.ActivationHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ActivationHeight))
+	}
+	if m.ExpiryHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ExpiryHeight))
+	}
 	return n
 }
 
@@ -989,6 +1489,559 @@ func (m *EventPoolUpdated) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventSettle) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventSettle: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventSettle: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trader", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Trader = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OfferDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OfferDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OfferAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.OfferAmount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RedeemedAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.RedeemedAmount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RedemptionRate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.RedemptionRate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventTobinTaxOverrideSet) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventTobinTaxOverrideSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventTobinTaxOverrideSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventTobinTaxOverrideRemoved) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventTobinTaxOverrideRemoved: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventTobinTaxOverrideRemoved: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventConversionMandateSet) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventConversionMandateSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventConversionMandateSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+			}
+			m.Term = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Term |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+			}
+			m.ActivationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+			}
+			m.ExpiryHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

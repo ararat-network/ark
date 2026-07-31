@@ -2,6 +2,7 @@
 package marketv1
 
 import (
+	v1 "ark/api/ark/mandate/v1"
 	_ "cosmossdk.io/api/amino"
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
@@ -18,17 +19,15 @@ import (
 
 var (
 	md_Params                      protoreflect.MessageDescriptor
-	fd_Params_base_pool            protoreflect.FieldDescriptor
-	fd_Params_pool_recovery_period protoreflect.FieldDescriptor
 	fd_Params_min_stability_spread protoreflect.FieldDescriptor
+	fd_Params_default_tobin_tax    protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_market_proto_init()
 	md_Params = File_ark_market_v1_market_proto.Messages().ByName("Params")
-	fd_Params_base_pool = md_Params.Fields().ByName("base_pool")
-	fd_Params_pool_recovery_period = md_Params.Fields().ByName("pool_recovery_period")
 	fd_Params_min_stability_spread = md_Params.Fields().ByName("min_stability_spread")
+	fd_Params_default_tobin_tax = md_Params.Fields().ByName("default_tobin_tax")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -96,21 +95,15 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.BasePool != nil {
-		value := protoreflect.ValueOfMessage(x.BasePool.ProtoReflect())
-		if !f(fd_Params_base_pool, value) {
-			return
-		}
-	}
-	if x.PoolRecoveryPeriod != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.PoolRecoveryPeriod)
-		if !f(fd_Params_pool_recovery_period, value) {
-			return
-		}
-	}
 	if x.MinStabilitySpread != "" {
 		value := protoreflect.ValueOfString(x.MinStabilitySpread)
 		if !f(fd_Params_min_stability_spread, value) {
+			return
+		}
+	}
+	if x.DefaultTobinTax != "" {
+		value := protoreflect.ValueOfString(x.DefaultTobinTax)
+		if !f(fd_Params_default_tobin_tax, value) {
 			return
 		}
 	}
@@ -129,12 +122,10 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.base_pool":
-		return x.BasePool != nil
-	case "ark.market.v1.Params.pool_recovery_period":
-		return x.PoolRecoveryPeriod != uint64(0)
 	case "ark.market.v1.Params.min_stability_spread":
 		return x.MinStabilitySpread != ""
+	case "ark.market.v1.Params.default_tobin_tax":
+		return x.DefaultTobinTax != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.Params"))
@@ -151,12 +142,10 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.base_pool":
-		x.BasePool = nil
-	case "ark.market.v1.Params.pool_recovery_period":
-		x.PoolRecoveryPeriod = uint64(0)
 	case "ark.market.v1.Params.min_stability_spread":
 		x.MinStabilitySpread = ""
+	case "ark.market.v1.Params.default_tobin_tax":
+		x.DefaultTobinTax = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.Params"))
@@ -173,14 +162,11 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.Params.base_pool":
-		value := x.BasePool
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.market.v1.Params.pool_recovery_period":
-		value := x.PoolRecoveryPeriod
-		return protoreflect.ValueOfUint64(value)
 	case "ark.market.v1.Params.min_stability_spread":
 		value := x.MinStabilitySpread
+		return protoreflect.ValueOfString(value)
+	case "ark.market.v1.Params.default_tobin_tax":
+		value := x.DefaultTobinTax
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
@@ -202,12 +188,10 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.base_pool":
-		x.BasePool = value.Message().Interface().(*v1beta1.DecCoin)
-	case "ark.market.v1.Params.pool_recovery_period":
-		x.PoolRecoveryPeriod = value.Uint()
 	case "ark.market.v1.Params.min_stability_spread":
 		x.MinStabilitySpread = value.Interface().(string)
+	case "ark.market.v1.Params.default_tobin_tax":
+		x.DefaultTobinTax = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.Params"))
@@ -228,15 +212,10 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.base_pool":
-		if x.BasePool == nil {
-			x.BasePool = new(v1beta1.DecCoin)
-		}
-		return protoreflect.ValueOfMessage(x.BasePool.ProtoReflect())
-	case "ark.market.v1.Params.pool_recovery_period":
-		panic(fmt.Errorf("field pool_recovery_period of message ark.market.v1.Params is not mutable"))
 	case "ark.market.v1.Params.min_stability_spread":
 		panic(fmt.Errorf("field min_stability_spread of message ark.market.v1.Params is not mutable"))
+	case "ark.market.v1.Params.default_tobin_tax":
+		panic(fmt.Errorf("field default_tobin_tax of message ark.market.v1.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.Params"))
@@ -250,12 +229,9 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.base_pool":
-		m := new(v1beta1.DecCoin)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.market.v1.Params.pool_recovery_period":
-		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.market.v1.Params.min_stability_spread":
+		return protoreflect.ValueOfString("")
+	case "ark.market.v1.Params.default_tobin_tax":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -326,14 +302,11 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.BasePool != nil {
-			l = options.Size(x.BasePool)
+		l = len(x.MinStabilitySpread)
+		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.PoolRecoveryPeriod != 0 {
-			n += 1 + runtime.Sov(uint64(x.PoolRecoveryPeriod))
-		}
-		l = len(x.MinStabilitySpread)
+		l = len(x.DefaultTobinTax)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -366,29 +339,17 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if len(x.DefaultTobinTax) > 0 {
+			i -= len(x.DefaultTobinTax)
+			copy(dAtA[i:], x.DefaultTobinTax)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DefaultTobinTax)))
+			i--
+			dAtA[i] = 0x12
+		}
 		if len(x.MinStabilitySpread) > 0 {
 			i -= len(x.MinStabilitySpread)
 			copy(dAtA[i:], x.MinStabilitySpread)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MinStabilitySpread)))
-			i--
-			dAtA[i] = 0x1a
-		}
-		if x.PoolRecoveryPeriod != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.PoolRecoveryPeriod))
-			i--
-			dAtA[i] = 0x10
-		}
-		if x.BasePool != nil {
-			encoded, err := options.Marshal(x.BasePool)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -439,6 +400,498 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			}
 			if fieldNum <= 0 {
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinStabilitySpread", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MinStabilitySpread = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DefaultTobinTax", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.DefaultTobinTax = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_ConversionPolicy                      protoreflect.MessageDescriptor
+	fd_ConversionPolicy_base_pool            protoreflect.FieldDescriptor
+	fd_ConversionPolicy_pool_recovery_period protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_market_v1_market_proto_init()
+	md_ConversionPolicy = File_ark_market_v1_market_proto.Messages().ByName("ConversionPolicy")
+	fd_ConversionPolicy_base_pool = md_ConversionPolicy.Fields().ByName("base_pool")
+	fd_ConversionPolicy_pool_recovery_period = md_ConversionPolicy.Fields().ByName("pool_recovery_period")
+}
+
+var _ protoreflect.Message = (*fastReflection_ConversionPolicy)(nil)
+
+type fastReflection_ConversionPolicy ConversionPolicy
+
+func (x *ConversionPolicy) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ConversionPolicy)(x)
+}
+
+func (x *ConversionPolicy) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_market_v1_market_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ConversionPolicy_messageType fastReflection_ConversionPolicy_messageType
+var _ protoreflect.MessageType = fastReflection_ConversionPolicy_messageType{}
+
+type fastReflection_ConversionPolicy_messageType struct{}
+
+func (x fastReflection_ConversionPolicy_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ConversionPolicy)(nil)
+}
+func (x fastReflection_ConversionPolicy_messageType) New() protoreflect.Message {
+	return new(fastReflection_ConversionPolicy)
+}
+func (x fastReflection_ConversionPolicy_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ConversionPolicy
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ConversionPolicy) Descriptor() protoreflect.MessageDescriptor {
+	return md_ConversionPolicy
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ConversionPolicy) Type() protoreflect.MessageType {
+	return _fastReflection_ConversionPolicy_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ConversionPolicy) New() protoreflect.Message {
+	return new(fastReflection_ConversionPolicy)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ConversionPolicy) Interface() protoreflect.ProtoMessage {
+	return (*ConversionPolicy)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ConversionPolicy) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.BasePool != nil {
+		value := protoreflect.ValueOfMessage(x.BasePool.ProtoReflect())
+		if !f(fd_ConversionPolicy_base_pool, value) {
+			return
+		}
+	}
+	if x.PoolRecoveryPeriod != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.PoolRecoveryPeriod)
+		if !f(fd_ConversionPolicy_pool_recovery_period, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ConversionPolicy) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionPolicy.base_pool":
+		return x.BasePool != nil
+	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
+		return x.PoolRecoveryPeriod != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionPolicy does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionPolicy) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionPolicy.base_pool":
+		x.BasePool = nil
+	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
+		x.PoolRecoveryPeriod = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionPolicy does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ConversionPolicy) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.market.v1.ConversionPolicy.base_pool":
+		value := x.BasePool
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
+		value := x.PoolRecoveryPeriod
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionPolicy does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionPolicy) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionPolicy.base_pool":
+		x.BasePool = value.Message().Interface().(*v1beta1.DecCoin)
+	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
+		x.PoolRecoveryPeriod = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionPolicy does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionPolicy) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionPolicy.base_pool":
+		if x.BasePool == nil {
+			x.BasePool = new(v1beta1.DecCoin)
+		}
+		return protoreflect.ValueOfMessage(x.BasePool.ProtoReflect())
+	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
+		panic(fmt.Errorf("field pool_recovery_period of message ark.market.v1.ConversionPolicy is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionPolicy does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ConversionPolicy) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionPolicy.base_pool":
+		m := new(v1beta1.DecCoin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionPolicy does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ConversionPolicy) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.ConversionPolicy", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ConversionPolicy) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionPolicy) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ConversionPolicy) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ConversionPolicy) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ConversionPolicy)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.BasePool != nil {
+			l = options.Size(x.BasePool)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.PoolRecoveryPeriod != 0 {
+			n += 1 + runtime.Sov(uint64(x.PoolRecoveryPeriod))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ConversionPolicy)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.PoolRecoveryPeriod != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.PoolRecoveryPeriod))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.BasePool != nil {
+			encoded, err := options.Marshal(x.BasePool)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ConversionPolicy)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ConversionPolicy: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ConversionPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -496,9 +949,634 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_ConversionMandate                protoreflect.MessageDescriptor
+	fd_ConversionMandate_envelope       protoreflect.FieldDescriptor
+	fd_ConversionMandate_minimum_policy protoreflect.FieldDescriptor
+	fd_ConversionMandate_maximum_policy protoreflect.FieldDescriptor
+	fd_ConversionMandate_max_tobin_tax  protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_market_v1_market_proto_init()
+	md_ConversionMandate = File_ark_market_v1_market_proto.Messages().ByName("ConversionMandate")
+	fd_ConversionMandate_envelope = md_ConversionMandate.Fields().ByName("envelope")
+	fd_ConversionMandate_minimum_policy = md_ConversionMandate.Fields().ByName("minimum_policy")
+	fd_ConversionMandate_maximum_policy = md_ConversionMandate.Fields().ByName("maximum_policy")
+	fd_ConversionMandate_max_tobin_tax = md_ConversionMandate.Fields().ByName("max_tobin_tax")
+}
+
+var _ protoreflect.Message = (*fastReflection_ConversionMandate)(nil)
+
+type fastReflection_ConversionMandate ConversionMandate
+
+func (x *ConversionMandate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ConversionMandate)(x)
+}
+
+func (x *ConversionMandate) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_market_v1_market_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ConversionMandate_messageType fastReflection_ConversionMandate_messageType
+var _ protoreflect.MessageType = fastReflection_ConversionMandate_messageType{}
+
+type fastReflection_ConversionMandate_messageType struct{}
+
+func (x fastReflection_ConversionMandate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ConversionMandate)(nil)
+}
+func (x fastReflection_ConversionMandate_messageType) New() protoreflect.Message {
+	return new(fastReflection_ConversionMandate)
+}
+func (x fastReflection_ConversionMandate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ConversionMandate
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ConversionMandate) Descriptor() protoreflect.MessageDescriptor {
+	return md_ConversionMandate
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ConversionMandate) Type() protoreflect.MessageType {
+	return _fastReflection_ConversionMandate_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ConversionMandate) New() protoreflect.Message {
+	return new(fastReflection_ConversionMandate)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ConversionMandate) Interface() protoreflect.ProtoMessage {
+	return (*ConversionMandate)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ConversionMandate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Envelope != nil {
+		value := protoreflect.ValueOfMessage(x.Envelope.ProtoReflect())
+		if !f(fd_ConversionMandate_envelope, value) {
+			return
+		}
+	}
+	if x.MinimumPolicy != nil {
+		value := protoreflect.ValueOfMessage(x.MinimumPolicy.ProtoReflect())
+		if !f(fd_ConversionMandate_minimum_policy, value) {
+			return
+		}
+	}
+	if x.MaximumPolicy != nil {
+		value := protoreflect.ValueOfMessage(x.MaximumPolicy.ProtoReflect())
+		if !f(fd_ConversionMandate_maximum_policy, value) {
+			return
+		}
+	}
+	if x.MaxTobinTax != "" {
+		value := protoreflect.ValueOfString(x.MaxTobinTax)
+		if !f(fd_ConversionMandate_max_tobin_tax, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ConversionMandate) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionMandate.envelope":
+		return x.Envelope != nil
+	case "ark.market.v1.ConversionMandate.minimum_policy":
+		return x.MinimumPolicy != nil
+	case "ark.market.v1.ConversionMandate.maximum_policy":
+		return x.MaximumPolicy != nil
+	case "ark.market.v1.ConversionMandate.max_tobin_tax":
+		return x.MaxTobinTax != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionMandate"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionMandate) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionMandate.envelope":
+		x.Envelope = nil
+	case "ark.market.v1.ConversionMandate.minimum_policy":
+		x.MinimumPolicy = nil
+	case "ark.market.v1.ConversionMandate.maximum_policy":
+		x.MaximumPolicy = nil
+	case "ark.market.v1.ConversionMandate.max_tobin_tax":
+		x.MaxTobinTax = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionMandate"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ConversionMandate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.market.v1.ConversionMandate.envelope":
+		value := x.Envelope
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.minimum_policy":
+		value := x.MinimumPolicy
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.maximum_policy":
+		value := x.MaximumPolicy
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.max_tobin_tax":
+		value := x.MaxTobinTax
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionMandate"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionMandate does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionMandate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionMandate.envelope":
+		x.Envelope = value.Message().Interface().(*v1.Envelope)
+	case "ark.market.v1.ConversionMandate.minimum_policy":
+		x.MinimumPolicy = value.Message().Interface().(*ConversionPolicy)
+	case "ark.market.v1.ConversionMandate.maximum_policy":
+		x.MaximumPolicy = value.Message().Interface().(*ConversionPolicy)
+	case "ark.market.v1.ConversionMandate.max_tobin_tax":
+		x.MaxTobinTax = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionMandate"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionMandate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionMandate.envelope":
+		if x.Envelope == nil {
+			x.Envelope = new(v1.Envelope)
+		}
+		return protoreflect.ValueOfMessage(x.Envelope.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.minimum_policy":
+		if x.MinimumPolicy == nil {
+			x.MinimumPolicy = new(ConversionPolicy)
+		}
+		return protoreflect.ValueOfMessage(x.MinimumPolicy.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.maximum_policy":
+		if x.MaximumPolicy == nil {
+			x.MaximumPolicy = new(ConversionPolicy)
+		}
+		return protoreflect.ValueOfMessage(x.MaximumPolicy.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.max_tobin_tax":
+		panic(fmt.Errorf("field max_tobin_tax of message ark.market.v1.ConversionMandate is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionMandate"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ConversionMandate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.ConversionMandate.envelope":
+		m := new(v1.Envelope)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.minimum_policy":
+		m := new(ConversionPolicy)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.maximum_policy":
+		m := new(ConversionPolicy)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.ConversionMandate.max_tobin_tax":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionMandate"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.ConversionMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ConversionMandate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.ConversionMandate", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ConversionMandate) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ConversionMandate) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ConversionMandate) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ConversionMandate) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ConversionMandate)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Envelope != nil {
+			l = options.Size(x.Envelope)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.MinimumPolicy != nil {
+			l = options.Size(x.MinimumPolicy)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.MaximumPolicy != nil {
+			l = options.Size(x.MaximumPolicy)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.MaxTobinTax)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ConversionMandate)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.MaxTobinTax) > 0 {
+			i -= len(x.MaxTobinTax)
+			copy(dAtA[i:], x.MaxTobinTax)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MaxTobinTax)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if x.MaximumPolicy != nil {
+			encoded, err := options.Marshal(x.MaximumPolicy)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.MinimumPolicy != nil {
+			encoded, err := options.Marshal(x.MinimumPolicy)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if x.Envelope != nil {
+			encoded, err := options.Marshal(x.Envelope)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ConversionMandate)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ConversionMandate: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ConversionMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Envelope", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Envelope == nil {
+					x.Envelope = &v1.Envelope{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Envelope); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinimumPolicy", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.MinimumPolicy == nil {
+					x.MinimumPolicy = &ConversionPolicy{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MinimumPolicy); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinStabilitySpread", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaximumPolicy", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.MaximumPolicy == nil {
+					x.MaximumPolicy = &ConversionPolicy{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MaximumPolicy); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaxTobinTax", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -526,7 +1604,491 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.MinStabilitySpread = string(dAtA[iNdEx:postIndex])
+				x.MaxTobinTax = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_TobinTaxOverride           protoreflect.MessageDescriptor
+	fd_TobinTaxOverride_denom     protoreflect.FieldDescriptor
+	fd_TobinTaxOverride_tobin_tax protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_market_v1_market_proto_init()
+	md_TobinTaxOverride = File_ark_market_v1_market_proto.Messages().ByName("TobinTaxOverride")
+	fd_TobinTaxOverride_denom = md_TobinTaxOverride.Fields().ByName("denom")
+	fd_TobinTaxOverride_tobin_tax = md_TobinTaxOverride.Fields().ByName("tobin_tax")
+}
+
+var _ protoreflect.Message = (*fastReflection_TobinTaxOverride)(nil)
+
+type fastReflection_TobinTaxOverride TobinTaxOverride
+
+func (x *TobinTaxOverride) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_TobinTaxOverride)(x)
+}
+
+func (x *TobinTaxOverride) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_market_v1_market_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_TobinTaxOverride_messageType fastReflection_TobinTaxOverride_messageType
+var _ protoreflect.MessageType = fastReflection_TobinTaxOverride_messageType{}
+
+type fastReflection_TobinTaxOverride_messageType struct{}
+
+func (x fastReflection_TobinTaxOverride_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_TobinTaxOverride)(nil)
+}
+func (x fastReflection_TobinTaxOverride_messageType) New() protoreflect.Message {
+	return new(fastReflection_TobinTaxOverride)
+}
+func (x fastReflection_TobinTaxOverride_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_TobinTaxOverride
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_TobinTaxOverride) Descriptor() protoreflect.MessageDescriptor {
+	return md_TobinTaxOverride
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_TobinTaxOverride) Type() protoreflect.MessageType {
+	return _fastReflection_TobinTaxOverride_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_TobinTaxOverride) New() protoreflect.Message {
+	return new(fastReflection_TobinTaxOverride)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_TobinTaxOverride) Interface() protoreflect.ProtoMessage {
+	return (*TobinTaxOverride)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_TobinTaxOverride) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_TobinTaxOverride_denom, value) {
+			return
+		}
+	}
+	if x.TobinTax != "" {
+		value := protoreflect.ValueOfString(x.TobinTax)
+		if !f(fd_TobinTaxOverride_tobin_tax, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_TobinTaxOverride) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.market.v1.TobinTaxOverride.denom":
+		return x.Denom != ""
+	case "ark.market.v1.TobinTaxOverride.tobin_tax":
+		return x.TobinTax != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.TobinTaxOverride"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.TobinTaxOverride does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_TobinTaxOverride) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.market.v1.TobinTaxOverride.denom":
+		x.Denom = ""
+	case "ark.market.v1.TobinTaxOverride.tobin_tax":
+		x.TobinTax = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.TobinTaxOverride"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.TobinTaxOverride does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_TobinTaxOverride) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.market.v1.TobinTaxOverride.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
+	case "ark.market.v1.TobinTaxOverride.tobin_tax":
+		value := x.TobinTax
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.TobinTaxOverride"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.TobinTaxOverride does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_TobinTaxOverride) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.market.v1.TobinTaxOverride.denom":
+		x.Denom = value.Interface().(string)
+	case "ark.market.v1.TobinTaxOverride.tobin_tax":
+		x.TobinTax = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.TobinTaxOverride"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.TobinTaxOverride does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_TobinTaxOverride) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.TobinTaxOverride.denom":
+		panic(fmt.Errorf("field denom of message ark.market.v1.TobinTaxOverride is not mutable"))
+	case "ark.market.v1.TobinTaxOverride.tobin_tax":
+		panic(fmt.Errorf("field tobin_tax of message ark.market.v1.TobinTaxOverride is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.TobinTaxOverride"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.TobinTaxOverride does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_TobinTaxOverride) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.TobinTaxOverride.denom":
+		return protoreflect.ValueOfString("")
+	case "ark.market.v1.TobinTaxOverride.tobin_tax":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.TobinTaxOverride"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.TobinTaxOverride does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_TobinTaxOverride) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.TobinTaxOverride", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_TobinTaxOverride) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_TobinTaxOverride) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_TobinTaxOverride) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_TobinTaxOverride) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*TobinTaxOverride)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Denom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.TobinTax)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*TobinTaxOverride)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.TobinTax) > 0 {
+			i -= len(x.TobinTax)
+			copy(dAtA[i:], x.TobinTax)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TobinTax)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*TobinTaxOverride)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: TobinTaxOverride: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: TobinTaxOverride: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TobinTax = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -577,15 +2139,22 @@ const (
 )
 
 // Params defines the parameters for the market module.
+//
+// The conversion-capacity dials moved to ConversionPolicy when they became
+// committee-delegable: params are replaced whole by MsgUpdateParams, so leaving
+// them here would let a governance proposal drafted from a stale copy silently
+// revert a committee's emergency resize.
 type Params struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// base_pool defines the denomination-labelled virtual-pool depth.
-	BasePool           *v1beta1.DecCoin `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool,omitempty"`
-	PoolRecoveryPeriod uint64           `protobuf:"varint,2,opt,name=pool_recovery_period,json=poolRecoveryPeriod,proto3" json:"pool_recovery_period,omitempty"`
-	MinStabilitySpread string           `protobuf:"bytes,3,opt,name=min_stability_spread,json=minStabilitySpread,proto3" json:"min_stability_spread,omitempty"`
+	MinStabilitySpread string `protobuf:"bytes,1,opt,name=min_stability_spread,json=minStabilitySpread,proto3" json:"min_stability_spread,omitempty"`
+	// default_tobin_tax is the spread applied to conversion between two
+	// denominations for every asset without an override. Rates are governance
+	// judgment, never derived, so a newly activated asset converts at this
+	// default from its first live block.
+	DefaultTobinTax string `protobuf:"bytes,2,opt,name=default_tobin_tax,json=defaultTobinTax,proto3" json:"default_tobin_tax,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -608,23 +2177,195 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_market_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Params) GetBasePool() *v1beta1.DecCoin {
+func (x *Params) GetMinStabilitySpread() string {
+	if x != nil {
+		return x.MinStabilitySpread
+	}
+	return ""
+}
+
+func (x *Params) GetDefaultTobinTax() string {
+	if x != nil {
+		return x.DefaultTobinTax
+	}
+	return ""
+}
+
+// ConversionPolicy is the pair of conversion-capacity dials delegated to the
+// conversion committee: together they set how much conversion the protocol
+// absorbs per recovery period before the spread widens, which is the dial a
+// depeg response reaches for.
+//
+// The pool is denominated in the protocol reference. Its unit moves only when
+// governance re-points that reference, through RebaseBasePool, never through a
+// policy update from either entry point.
+type ConversionPolicy struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// base_pool defines the denomination-labelled virtual-pool depth.
+	BasePool *v1beta1.DecCoin `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool,omitempty"`
+	// pool_recovery_period is the number of blocks over which the pool delta
+	// decays back to the base depth.
+	PoolRecoveryPeriod uint64 `protobuf:"varint,2,opt,name=pool_recovery_period,json=poolRecoveryPeriod,proto3" json:"pool_recovery_period,omitempty"`
+}
+
+func (x *ConversionPolicy) Reset() {
+	*x = ConversionPolicy{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_market_v1_market_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConversionPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConversionPolicy) ProtoMessage() {}
+
+// Deprecated: Use ConversionPolicy.ProtoReflect.Descriptor instead.
+func (*ConversionPolicy) Descriptor() ([]byte, []int) {
+	return file_ark_market_v1_market_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ConversionPolicy) GetBasePool() *v1beta1.DecCoin {
 	if x != nil {
 		return x.BasePool
 	}
 	return nil
 }
 
-func (x *Params) GetPoolRecoveryPeriod() uint64 {
+func (x *ConversionPolicy) GetPoolRecoveryPeriod() uint64 {
 	if x != nil {
 		return x.PoolRecoveryPeriod
 	}
 	return 0
 }
 
-func (x *Params) GetMinStabilitySpread() string {
+// ConversionMandate stores one governance-created, bounded committee
+// appointment over conversion policy: a corridor over ConversionPolicy and a
+// cap on Tobin raises. An empty committee identifies a disabled mandate; term
+// still increases on replacement so previously prepared committee transactions
+// cannot become valid again.
+//
+// The bounds are denominated in the pool unit that was live when governance
+// appointed the committee. A reference re-pointing leaves them untouched, which
+// strands the mandate until governance re-appoints it: converting a delegated
+// corridor at one instant's rate would produce bounds no proposal ever
+// contained, so the appointment fails closed instead.
+type ConversionMandate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// envelope carries the shared term, committee, and half-open height window.
+	Envelope      *v1.Envelope      `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
+	MinimumPolicy *ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
+	MaximumPolicy *ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
+	// max_tobin_tax caps committee-raised per-denomination Tobin overrides. The
+	// committee only ever raises — the floor of any raise is the denomination's
+	// current effective rate — so the power delegated here widens the buffer
+	// against oracle-staleness arbitrage and never narrows it. Lowering or
+	// removing an override stays governance-only. Zero delegates no Tobin power,
+	// which keeps a capacity-only committee expressible.
+	MaxTobinTax string `protobuf:"bytes,4,opt,name=max_tobin_tax,json=maxTobinTax,proto3" json:"max_tobin_tax,omitempty"`
+}
+
+func (x *ConversionMandate) Reset() {
+	*x = ConversionMandate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_market_v1_market_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConversionMandate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConversionMandate) ProtoMessage() {}
+
+// Deprecated: Use ConversionMandate.ProtoReflect.Descriptor instead.
+func (*ConversionMandate) Descriptor() ([]byte, []int) {
+	return file_ark_market_v1_market_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ConversionMandate) GetEnvelope() *v1.Envelope {
 	if x != nil {
-		return x.MinStabilitySpread
+		return x.Envelope
+	}
+	return nil
+}
+
+func (x *ConversionMandate) GetMinimumPolicy() *ConversionPolicy {
+	if x != nil {
+		return x.MinimumPolicy
+	}
+	return nil
+}
+
+func (x *ConversionMandate) GetMaximumPolicy() *ConversionPolicy {
+	if x != nil {
+		return x.MaximumPolicy
+	}
+	return nil
+}
+
+func (x *ConversionMandate) GetMaxTobinTax() string {
+	if x != nil {
+		return x.MaxTobinTax
+	}
+	return ""
+}
+
+// TobinTaxOverride is one sparse per-denomination exception to the default
+// Tobin rate. Overrides exist for markets whose plausible oracle error between
+// updates exceeds the default — an illiquid or gap-prone listing warrants a
+// raise, because the Tobin tax is the buffer against oracle-staleness
+// arbitrage. They are policy annotations on members, never membership.
+type TobinTaxOverride struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Denom    string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	TobinTax string `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3" json:"tobin_tax,omitempty"`
+}
+
+func (x *TobinTaxOverride) Reset() {
+	*x = TobinTaxOverride{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_market_v1_market_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TobinTaxOverride) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TobinTaxOverride) ProtoMessage() {}
+
+// Deprecated: Use TobinTaxOverride.ProtoReflect.Descriptor instead.
+func (*TobinTaxOverride) Descriptor() ([]byte, []int) {
+	return file_ark_market_v1_market_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TobinTaxOverride) GetDenom() string {
+	if x != nil {
+		return x.Denom
+	}
+	return ""
+}
+
+func (x *TobinTaxOverride) GetTobinTax() string {
+	if x != nil {
+		return x.TobinTax
 	}
 	return ""
 }
@@ -640,34 +2381,74 @@ var file_ark_market_v1_market_proto_rawDesc = []byte{
 	0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73,
 	0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
-	0x88, 0x02, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x44, 0x0a, 0x09, 0x62, 0x61,
+	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
+	0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2f, 0x76, 0x31, 0x2f,
+	0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xf4,
+	0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x68, 0x0a, 0x14, 0x6d, 0x69, 0x6e,
+	0x5f, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x73, 0x70, 0x72, 0x65, 0x61,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x12, 0x6d, 0x69, 0x6e, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x53, 0x70, 0x72,
+	0x65, 0x61, 0x64, 0x12, 0x62, 0x0a, 0x11, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x5f, 0x74,
+	0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x54,
+	0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x1c, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0,
+	0x2a, 0x13, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x50,
+	0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x91, 0x01, 0x0a, 0x10, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x44, 0x0a, 0x09, 0x62, 0x61,
 	0x73, 0x65, 0x5f, 0x70, 0x6f, 0x6f, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65,
 	0x74, 0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f,
 	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x62, 0x61, 0x73, 0x65, 0x50, 0x6f, 0x6f, 0x6c,
-	0x12, 0x30, 0x0a, 0x14, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72,
-	0x79, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x12,
-	0x70, 0x6f, 0x6f, 0x6c, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x50, 0x65, 0x72, 0x69,
-	0x6f, 0x64, 0x12, 0x68, 0x0a, 0x14, 0x6d, 0x69, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c,
-	0x69, 0x74, 0x79, 0x5f, 0x73, 0x70, 0x72, 0x65, 0x61, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
-	0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61,
-	0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x6d, 0x69, 0x6e, 0x53, 0x74, 0x61,
-	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x53, 0x70, 0x72, 0x65, 0x61, 0x64, 0x3a, 0x1c, 0xe8, 0xa0,
-	0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x96, 0x01, 0x0a, 0x11, 0x63,
-	0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x42, 0x0b, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
-	0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2,
-	0x02, 0x03, 0x41, 0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a,
-	0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x37, 0x0a, 0x14, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72,
+	0x79, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x70, 0x6f, 0x6f, 0x6c, 0x52, 0x65, 0x63, 0x6f, 0x76,
+	0x65, 0x72, 0x79, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x22, 0xda, 0x02, 0x0a, 0x11, 0x43, 0x6f,
+	0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12,
+	0x43, 0x0a, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x42, 0x0d, 0xc8, 0xde, 0x1f,
+	0x00, 0xd0, 0xde, 0x1f, 0x01, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x65, 0x6e, 0x76, 0x65,
+	0x6c, 0x6f, 0x70, 0x65, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d, 0x5f,
+	0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75,
+	0x6d, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x61, 0x78, 0x69, 0x6d,
+	0x75, 0x6d, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79,
+	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x61, 0x78,
+	0x69, 0x6d, 0x75, 0x6d, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x5a, 0x0a, 0x0d, 0x6d, 0x61,
+	0x78, 0x5f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67,
+	0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x6d, 0x61, 0x78, 0x54, 0x6f,
+	0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x22, 0x7d, 0x0a, 0x10, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54,
+	0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65,
+	0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x12, 0x53, 0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c,
+	0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x74, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x42, 0x96, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0b, 0x4d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76,
+	0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58,
+	0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31,
+	0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31,
+	0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31,
+	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41,
+	0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -682,18 +2463,25 @@ func file_ark_market_v1_market_proto_rawDescGZIP() []byte {
 	return file_ark_market_v1_market_proto_rawDescData
 }
 
-var file_ark_market_v1_market_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_ark_market_v1_market_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_ark_market_v1_market_proto_goTypes = []interface{}{
-	(*Params)(nil),          // 0: ark.market.v1.Params
-	(*v1beta1.DecCoin)(nil), // 1: cosmos.base.v1beta1.DecCoin
+	(*Params)(nil),            // 0: ark.market.v1.Params
+	(*ConversionPolicy)(nil),  // 1: ark.market.v1.ConversionPolicy
+	(*ConversionMandate)(nil), // 2: ark.market.v1.ConversionMandate
+	(*TobinTaxOverride)(nil),  // 3: ark.market.v1.TobinTaxOverride
+	(*v1beta1.DecCoin)(nil),   // 4: cosmos.base.v1beta1.DecCoin
+	(*v1.Envelope)(nil),       // 5: ark.mandate.v1.Envelope
 }
 var file_ark_market_v1_market_proto_depIdxs = []int32{
-	1, // 0: ark.market.v1.Params.base_pool:type_name -> cosmos.base.v1beta1.DecCoin
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: ark.market.v1.ConversionPolicy.base_pool:type_name -> cosmos.base.v1beta1.DecCoin
+	5, // 1: ark.market.v1.ConversionMandate.envelope:type_name -> ark.mandate.v1.Envelope
+	1, // 2: ark.market.v1.ConversionMandate.minimum_policy:type_name -> ark.market.v1.ConversionPolicy
+	1, // 3: ark.market.v1.ConversionMandate.maximum_policy:type_name -> ark.market.v1.ConversionPolicy
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_ark_market_v1_market_proto_init() }
@@ -714,6 +2502,42 @@ func file_ark_market_v1_market_proto_init() {
 				return nil
 			}
 		}
+		file_ark_market_v1_market_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConversionPolicy); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_market_v1_market_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConversionMandate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_market_v1_market_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TobinTaxOverride); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -721,7 +2545,7 @@ func file_ark_market_v1_market_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_market_v1_market_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

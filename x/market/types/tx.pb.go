@@ -5,6 +5,7 @@ package types
 
 import (
 	context "context"
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/types"
@@ -37,8 +38,11 @@ type MsgSwap struct {
 	Trader    string     `protobuf:"bytes,1,opt,name=trader,proto3" json:"trader,omitempty"`
 	OfferCoin types.Coin `protobuf:"bytes,2,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin"`
 	AskDenom  string     `protobuf:"bytes,3,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`
-	// minimum_receive is the minimum ask-denom coin the trader accepts. The
-	// swap fails if the final output is lower.
+	// minimum_receive is the optional minimum ask-denom coin the trader
+	// accepts; the swap fails if the final output is lower. The zero coin means
+	// the trader accepts market execution — absence is the only spelling of
+	// that intent, so a denominated zero is rejected as a probable caller bug
+	// rather than read as a second way to opt out.
 	MinimumReceive types.Coin `protobuf:"bytes,4,opt,name=minimum_receive,json=minimumReceive,proto3" json:"minimum_receive"`
 }
 
@@ -163,8 +167,11 @@ type MsgSwapSend struct {
 	ToAddress   string     `protobuf:"bytes,2,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
 	OfferCoin   types.Coin `protobuf:"bytes,3,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin"`
 	AskDenom    string     `protobuf:"bytes,4,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`
-	// minimum_receive is the minimum ask-denom coin the sender accepts. The
-	// swap fails if the final output is lower.
+	// minimum_receive is the optional minimum ask-denom coin the sender
+	// accepts; the swap fails if the final output is lower. The zero coin means
+	// the sender accepts market execution — absence is the only spelling of
+	// that intent, so a denominated zero is rejected as a probable caller bug
+	// rather than read as a second way to opt out.
 	MinimumReceive types.Coin `protobuf:"bytes,5,opt,name=minimum_receive,json=minimumReceive,proto3" json:"minimum_receive"`
 }
 
@@ -296,10 +303,10 @@ type MsgUpdateParams struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// params defines the x/market parameters to update.
 	//
-	// NOTE: All parameters must be supplied. For a same-denomination BasePool
-	// update, BasePool.Amount is authoritative. For a denomination change,
-	// BasePool.Amount is a non-binding audit expectation; Market applies the
-	// amount derived from a fresh deterministic Oracle snapshot.
+	// NOTE: All parameters must be supplied. Conversion capacity is not here:
+	// pool depth and the recovery period are committee-delegable, so they move
+	// through MsgUpdatePolicy and never through this whole-object
+	// replacement.
 	Params Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params"`
 }
 
@@ -388,6 +395,740 @@ func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
+// MsgSettle redeems a suspended asset against its governance-approved
+// settlement plan: asset to NOAH only, at the plan rate, burning the offer.
+// This is the suspended holder's exit, so it is signed by the holder rather
+// than by governance, and the plan rate never reaches ordinary routing or
+// reverse issuance.
+type MsgSettle struct {
+	Trader    string     `protobuf:"bytes,1,opt,name=trader,proto3" json:"trader,omitempty"`
+	OfferCoin types.Coin `protobuf:"bytes,2,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin"`
+}
+
+func (m *MsgSettle) Reset()         { *m = MsgSettle{} }
+func (m *MsgSettle) String() string { return proto.CompactTextString(m) }
+func (*MsgSettle) ProtoMessage()    {}
+func (*MsgSettle) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{6}
+}
+func (m *MsgSettle) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSettle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSettle.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSettle) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSettle.Merge(m, src)
+}
+func (m *MsgSettle) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSettle) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSettle.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSettle proto.InternalMessageInfo
+
+func (m *MsgSettle) GetTrader() string {
+	if m != nil {
+		return m.Trader
+	}
+	return ""
+}
+
+func (m *MsgSettle) GetOfferCoin() types.Coin {
+	if m != nil {
+		return m.OfferCoin
+	}
+	return types.Coin{}
+}
+
+// MsgSettleResponse defines the Msg/Settle response type.
+type MsgSettleResponse struct {
+	RedeemedCoin types.Coin `protobuf:"bytes,1,opt,name=redeemed_coin,json=redeemedCoin,proto3" json:"redeemed_coin"`
+}
+
+func (m *MsgSettleResponse) Reset()         { *m = MsgSettleResponse{} }
+func (m *MsgSettleResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSettleResponse) ProtoMessage()    {}
+func (*MsgSettleResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{7}
+}
+func (m *MsgSettleResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSettleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSettleResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSettleResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSettleResponse.Merge(m, src)
+}
+func (m *MsgSettleResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSettleResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSettleResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSettleResponse proto.InternalMessageInfo
+
+func (m *MsgSettleResponse) GetRedeemedCoin() types.Coin {
+	if m != nil {
+		return m.RedeemedCoin
+	}
+	return types.Coin{}
+}
+
+// MsgSetTobinTaxOverride creates or replaces one per-denomination Tobin
+// exception. The denomination must identify a registered asset — PENDING
+// counts, so a listing proposal can set the override before the asset ever
+// goes live — because a dangling override fails silently: the protection it
+// was written for would simply not exist on the real denomination.
+type MsgSetTobinTaxOverride struct {
+	// authority is the address that controls the module (defaults to x/gov unless
+	// overwritten).
+	Authority string                      `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom     string                      `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	TobinTax  cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
+}
+
+func (m *MsgSetTobinTaxOverride) Reset()         { *m = MsgSetTobinTaxOverride{} }
+func (m *MsgSetTobinTaxOverride) String() string { return proto.CompactTextString(m) }
+func (*MsgSetTobinTaxOverride) ProtoMessage()    {}
+func (*MsgSetTobinTaxOverride) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{8}
+}
+func (m *MsgSetTobinTaxOverride) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSetTobinTaxOverride) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSetTobinTaxOverride.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSetTobinTaxOverride) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetTobinTaxOverride.Merge(m, src)
+}
+func (m *MsgSetTobinTaxOverride) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSetTobinTaxOverride) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetTobinTaxOverride.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSetTobinTaxOverride proto.InternalMessageInfo
+
+func (m *MsgSetTobinTaxOverride) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgSetTobinTaxOverride) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// MsgSetTobinTaxOverrideResponse is the response type for
+// MsgSetTobinTaxOverride.
+type MsgSetTobinTaxOverrideResponse struct {
+}
+
+func (m *MsgSetTobinTaxOverrideResponse) Reset()         { *m = MsgSetTobinTaxOverrideResponse{} }
+func (m *MsgSetTobinTaxOverrideResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSetTobinTaxOverrideResponse) ProtoMessage()    {}
+func (*MsgSetTobinTaxOverrideResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{9}
+}
+func (m *MsgSetTobinTaxOverrideResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSetTobinTaxOverrideResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSetTobinTaxOverrideResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSetTobinTaxOverrideResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetTobinTaxOverrideResponse.Merge(m, src)
+}
+func (m *MsgSetTobinTaxOverrideResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSetTobinTaxOverrideResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetTobinTaxOverrideResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSetTobinTaxOverrideResponse proto.InternalMessageInfo
+
+// MsgRemoveTobinTaxOverride deletes one per-denomination Tobin exception. The
+// entry must exist, so a typo fails loudly, but the asset registry is
+// deliberately not consulted: an entry left behind by a retired asset must
+// stay removable.
+type MsgRemoveTobinTaxOverride struct {
+	// authority is the address that controls the module (defaults to x/gov unless
+	// overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom     string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+}
+
+func (m *MsgRemoveTobinTaxOverride) Reset()         { *m = MsgRemoveTobinTaxOverride{} }
+func (m *MsgRemoveTobinTaxOverride) String() string { return proto.CompactTextString(m) }
+func (*MsgRemoveTobinTaxOverride) ProtoMessage()    {}
+func (*MsgRemoveTobinTaxOverride) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{10}
+}
+func (m *MsgRemoveTobinTaxOverride) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRemoveTobinTaxOverride) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRemoveTobinTaxOverride.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRemoveTobinTaxOverride) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRemoveTobinTaxOverride.Merge(m, src)
+}
+func (m *MsgRemoveTobinTaxOverride) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRemoveTobinTaxOverride) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRemoveTobinTaxOverride.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRemoveTobinTaxOverride proto.InternalMessageInfo
+
+func (m *MsgRemoveTobinTaxOverride) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgRemoveTobinTaxOverride) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// MsgRemoveTobinTaxOverrideResponse is the response type for
+// MsgRemoveTobinTaxOverride.
+type MsgRemoveTobinTaxOverrideResponse struct {
+}
+
+func (m *MsgRemoveTobinTaxOverrideResponse) Reset()         { *m = MsgRemoveTobinTaxOverrideResponse{} }
+func (m *MsgRemoveTobinTaxOverrideResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgRemoveTobinTaxOverrideResponse) ProtoMessage()    {}
+func (*MsgRemoveTobinTaxOverrideResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{11}
+}
+func (m *MsgRemoveTobinTaxOverrideResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRemoveTobinTaxOverrideResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRemoveTobinTaxOverrideResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRemoveTobinTaxOverrideResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRemoveTobinTaxOverrideResponse.Merge(m, src)
+}
+func (m *MsgRemoveTobinTaxOverrideResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRemoveTobinTaxOverrideResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRemoveTobinTaxOverrideResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRemoveTobinTaxOverrideResponse proto.InternalMessageInfo
+
+// MsgSetConversionMandate is the governance request for a complete conversion
+// committee replacement. An empty committee disables the mandate; Market
+// derives the next term on chain.
+//
+// Both bounds must be denominated in the live pool unit. A corridor in any
+// other denomination could never authorize an action, and a mandate that cannot
+// act is discovered when the committee musters — the worst moment to find out —
+// so appointment rejects it instead.
+type MsgSetConversionMandate struct {
+	Authority        string           `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Committee        string           `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64           `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64           `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	MinimumPolicy    ConversionPolicy `protobuf:"bytes,5,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy"`
+	MaximumPolicy    ConversionPolicy `protobuf:"bytes,6,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy"`
+	// max_tobin_tax caps committee Tobin raises for this appointment. Zero
+	// delegates no Tobin power.
+	MaxTobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,7,opt,name=max_tobin_tax,json=maxTobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"max_tobin_tax"`
+}
+
+func (m *MsgSetConversionMandate) Reset()         { *m = MsgSetConversionMandate{} }
+func (m *MsgSetConversionMandate) String() string { return proto.CompactTextString(m) }
+func (*MsgSetConversionMandate) ProtoMessage()    {}
+func (*MsgSetConversionMandate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{12}
+}
+func (m *MsgSetConversionMandate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSetConversionMandate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSetConversionMandate.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSetConversionMandate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetConversionMandate.Merge(m, src)
+}
+func (m *MsgSetConversionMandate) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSetConversionMandate) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetConversionMandate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSetConversionMandate proto.InternalMessageInfo
+
+func (m *MsgSetConversionMandate) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgSetConversionMandate) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *MsgSetConversionMandate) GetActivationHeight() uint64 {
+	if m != nil {
+		return m.ActivationHeight
+	}
+	return 0
+}
+
+func (m *MsgSetConversionMandate) GetExpiryHeight() uint64 {
+	if m != nil {
+		return m.ExpiryHeight
+	}
+	return 0
+}
+
+func (m *MsgSetConversionMandate) GetMinimumPolicy() ConversionPolicy {
+	if m != nil {
+		return m.MinimumPolicy
+	}
+	return ConversionPolicy{}
+}
+
+func (m *MsgSetConversionMandate) GetMaximumPolicy() ConversionPolicy {
+	if m != nil {
+		return m.MaximumPolicy
+	}
+	return ConversionPolicy{}
+}
+
+// MsgSetConversionMandateResponse is the response for a committee appointment,
+// replacement, or disablement.
+type MsgSetConversionMandateResponse struct {
+}
+
+func (m *MsgSetConversionMandateResponse) Reset()         { *m = MsgSetConversionMandateResponse{} }
+func (m *MsgSetConversionMandateResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSetConversionMandateResponse) ProtoMessage()    {}
+func (*MsgSetConversionMandateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{13}
+}
+func (m *MsgSetConversionMandateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSetConversionMandateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSetConversionMandateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSetConversionMandateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetConversionMandateResponse.Merge(m, src)
+}
+func (m *MsgSetConversionMandateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSetConversionMandateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetConversionMandateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSetConversionMandateResponse proto.InternalMessageInfo
+
+// MsgUpdatePolicy is a governance-signed conversion update. Governance
+// applies any structurally valid candidate, so it carries no expected term: its
+// authorization never depends on the committee mandate.
+type MsgUpdatePolicy struct {
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// policy is the complete conversion pair to apply. The base pool denomination
+	// must match the live pool: re-denomination happens only through
+	// MsgSetReference.
+	Policy ConversionPolicy `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy"`
+}
+
+func (m *MsgUpdatePolicy) Reset()         { *m = MsgUpdatePolicy{} }
+func (m *MsgUpdatePolicy) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdatePolicy) ProtoMessage()    {}
+func (*MsgUpdatePolicy) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{14}
+}
+func (m *MsgUpdatePolicy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdatePolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdatePolicy.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdatePolicy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdatePolicy.Merge(m, src)
+}
+func (m *MsgUpdatePolicy) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdatePolicy) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdatePolicy.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdatePolicy proto.InternalMessageInfo
+
+func (m *MsgUpdatePolicy) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgUpdatePolicy) GetPolicy() ConversionPolicy {
+	if m != nil {
+		return m.Policy
+	}
+	return ConversionPolicy{}
+}
+
+// MsgUpdatePolicyResponse is the response type for
+// MsgUpdatePolicy.
+type MsgUpdatePolicyResponse struct {
+}
+
+func (m *MsgUpdatePolicyResponse) Reset()         { *m = MsgUpdatePolicyResponse{} }
+func (m *MsgUpdatePolicyResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdatePolicyResponse) ProtoMessage()    {}
+func (*MsgUpdatePolicyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{15}
+}
+func (m *MsgUpdatePolicyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdatePolicyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdatePolicyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdatePolicyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdatePolicyResponse.Merge(m, src)
+}
+func (m *MsgUpdatePolicyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdatePolicyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdatePolicyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdatePolicyResponse proto.InternalMessageInfo
+
+// MsgCommitteeUpdatePolicy is a conversion-committee-signed update. It
+// carries the expected term so a transaction prepared against a replaced
+// appointment fails rather than applying under a mandate its signers never saw.
+type MsgCommitteeUpdatePolicy struct {
+	Committee    string           `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	ExpectedTerm uint64           `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
+	Policy       ConversionPolicy `protobuf:"bytes,3,opt,name=policy,proto3" json:"policy"`
+}
+
+func (m *MsgCommitteeUpdatePolicy) Reset()         { *m = MsgCommitteeUpdatePolicy{} }
+func (m *MsgCommitteeUpdatePolicy) String() string { return proto.CompactTextString(m) }
+func (*MsgCommitteeUpdatePolicy) ProtoMessage()    {}
+func (*MsgCommitteeUpdatePolicy) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{16}
+}
+func (m *MsgCommitteeUpdatePolicy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCommitteeUpdatePolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCommitteeUpdatePolicy.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCommitteeUpdatePolicy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCommitteeUpdatePolicy.Merge(m, src)
+}
+func (m *MsgCommitteeUpdatePolicy) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCommitteeUpdatePolicy) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCommitteeUpdatePolicy.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCommitteeUpdatePolicy proto.InternalMessageInfo
+
+func (m *MsgCommitteeUpdatePolicy) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *MsgCommitteeUpdatePolicy) GetExpectedTerm() uint64 {
+	if m != nil {
+		return m.ExpectedTerm
+	}
+	return 0
+}
+
+func (m *MsgCommitteeUpdatePolicy) GetPolicy() ConversionPolicy {
+	if m != nil {
+		return m.Policy
+	}
+	return ConversionPolicy{}
+}
+
+// MsgCommitteeUpdatePolicyResponse is the response type for
+// MsgCommitteeUpdatePolicy.
+type MsgCommitteeUpdatePolicyResponse struct {
+}
+
+func (m *MsgCommitteeUpdatePolicyResponse) Reset()         { *m = MsgCommitteeUpdatePolicyResponse{} }
+func (m *MsgCommitteeUpdatePolicyResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgCommitteeUpdatePolicyResponse) ProtoMessage()    {}
+func (*MsgCommitteeUpdatePolicyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{17}
+}
+func (m *MsgCommitteeUpdatePolicyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCommitteeUpdatePolicyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCommitteeUpdatePolicyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCommitteeUpdatePolicyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCommitteeUpdatePolicyResponse.Merge(m, src)
+}
+func (m *MsgCommitteeUpdatePolicyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCommitteeUpdatePolicyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCommitteeUpdatePolicyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCommitteeUpdatePolicyResponse proto.InternalMessageInfo
+
+// MsgCommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
+// override as the conversion committee. The committee only raises: the new
+// rate must be at least the denomination's current effective rate and at most
+// the mandate's max_tobin_tax, so the delegated power widens the
+// oracle-staleness buffer and never narrows it. Lowering or removing an
+// override stays governance-only. The verb is "raise" rather than "set" for
+// exactly that asymmetry — and the raise spelling also fits amino's
+// 39-character registration cap, which a CommitteeSetTobinTaxOverride
+// spelling would not.
+type MsgCommitteeRaiseTobinTax struct {
+	Committee    string                      `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	ExpectedTerm uint64                      `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
+	Denom        string                      `protobuf:"bytes,3,opt,name=denom,proto3" json:"denom,omitempty"`
+	TobinTax     cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
+}
+
+func (m *MsgCommitteeRaiseTobinTax) Reset()         { *m = MsgCommitteeRaiseTobinTax{} }
+func (m *MsgCommitteeRaiseTobinTax) String() string { return proto.CompactTextString(m) }
+func (*MsgCommitteeRaiseTobinTax) ProtoMessage()    {}
+func (*MsgCommitteeRaiseTobinTax) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{18}
+}
+func (m *MsgCommitteeRaiseTobinTax) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCommitteeRaiseTobinTax) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCommitteeRaiseTobinTax.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCommitteeRaiseTobinTax) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCommitteeRaiseTobinTax.Merge(m, src)
+}
+func (m *MsgCommitteeRaiseTobinTax) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCommitteeRaiseTobinTax) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCommitteeRaiseTobinTax.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCommitteeRaiseTobinTax proto.InternalMessageInfo
+
+func (m *MsgCommitteeRaiseTobinTax) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *MsgCommitteeRaiseTobinTax) GetExpectedTerm() uint64 {
+	if m != nil {
+		return m.ExpectedTerm
+	}
+	return 0
+}
+
+func (m *MsgCommitteeRaiseTobinTax) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// MsgCommitteeRaiseTobinTaxResponse is the response type for
+// MsgCommitteeRaiseTobinTax.
+type MsgCommitteeRaiseTobinTaxResponse struct {
+}
+
+func (m *MsgCommitteeRaiseTobinTaxResponse) Reset()         { *m = MsgCommitteeRaiseTobinTaxResponse{} }
+func (m *MsgCommitteeRaiseTobinTaxResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgCommitteeRaiseTobinTaxResponse) ProtoMessage()    {}
+func (*MsgCommitteeRaiseTobinTaxResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5c13b6dc655db4df, []int{19}
+}
+func (m *MsgCommitteeRaiseTobinTaxResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCommitteeRaiseTobinTaxResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCommitteeRaiseTobinTaxResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCommitteeRaiseTobinTaxResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCommitteeRaiseTobinTaxResponse.Merge(m, src)
+}
+func (m *MsgCommitteeRaiseTobinTaxResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCommitteeRaiseTobinTaxResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCommitteeRaiseTobinTaxResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCommitteeRaiseTobinTaxResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgSwap)(nil), "ark.market.v1.MsgSwap")
 	proto.RegisterType((*MsgSwapResponse)(nil), "ark.market.v1.MsgSwapResponse")
@@ -395,52 +1136,103 @@ func init() {
 	proto.RegisterType((*MsgSwapSendResponse)(nil), "ark.market.v1.MsgSwapSendResponse")
 	proto.RegisterType((*MsgUpdateParams)(nil), "ark.market.v1.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "ark.market.v1.MsgUpdateParamsResponse")
+	proto.RegisterType((*MsgSettle)(nil), "ark.market.v1.MsgSettle")
+	proto.RegisterType((*MsgSettleResponse)(nil), "ark.market.v1.MsgSettleResponse")
+	proto.RegisterType((*MsgSetTobinTaxOverride)(nil), "ark.market.v1.MsgSetTobinTaxOverride")
+	proto.RegisterType((*MsgSetTobinTaxOverrideResponse)(nil), "ark.market.v1.MsgSetTobinTaxOverrideResponse")
+	proto.RegisterType((*MsgRemoveTobinTaxOverride)(nil), "ark.market.v1.MsgRemoveTobinTaxOverride")
+	proto.RegisterType((*MsgRemoveTobinTaxOverrideResponse)(nil), "ark.market.v1.MsgRemoveTobinTaxOverrideResponse")
+	proto.RegisterType((*MsgSetConversionMandate)(nil), "ark.market.v1.MsgSetConversionMandate")
+	proto.RegisterType((*MsgSetConversionMandateResponse)(nil), "ark.market.v1.MsgSetConversionMandateResponse")
+	proto.RegisterType((*MsgUpdatePolicy)(nil), "ark.market.v1.MsgUpdatePolicy")
+	proto.RegisterType((*MsgUpdatePolicyResponse)(nil), "ark.market.v1.MsgUpdatePolicyResponse")
+	proto.RegisterType((*MsgCommitteeUpdatePolicy)(nil), "ark.market.v1.MsgCommitteeUpdatePolicy")
+	proto.RegisterType((*MsgCommitteeUpdatePolicyResponse)(nil), "ark.market.v1.MsgCommitteeUpdatePolicyResponse")
+	proto.RegisterType((*MsgCommitteeRaiseTobinTax)(nil), "ark.market.v1.MsgCommitteeRaiseTobinTax")
+	proto.RegisterType((*MsgCommitteeRaiseTobinTaxResponse)(nil), "ark.market.v1.MsgCommitteeRaiseTobinTaxResponse")
 }
 
 func init() { proto.RegisterFile("ark/market/v1/tx.proto", fileDescriptor_5c13b6dc655db4df) }
 
 var fileDescriptor_5c13b6dc655db4df = []byte{
-	// 633 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x54, 0x4f, 0x6b, 0x13, 0x4f,
-	0x18, 0xce, 0xa6, 0xe9, 0x9f, 0x9d, 0xf4, 0xf7, 0x2b, 0x8e, 0xb1, 0xdd, 0xac, 0x65, 0x2d, 0x8b,
-	0x48, 0x09, 0xba, 0x6b, 0x2a, 0xa8, 0xd4, 0x3f, 0x60, 0x5a, 0x3c, 0x08, 0x01, 0xd9, 0x20, 0x88,
-	0x97, 0x65, 0x92, 0x9d, 0xac, 0x4b, 0xd8, 0x9d, 0x65, 0x66, 0x9a, 0xb6, 0x37, 0xf1, 0xe8, 0x41,
-	0xa4, 0x9f, 0xc2, 0x63, 0x0e, 0xfd, 0x10, 0x3d, 0x16, 0x4f, 0x9e, 0x44, 0x12, 0x21, 0x77, 0x3f,
-	0x81, 0xcc, 0xee, 0x24, 0xcd, 0x86, 0x68, 0x10, 0x3d, 0x78, 0x09, 0x33, 0xef, 0xf3, 0x3e, 0xef,
-	0x3c, 0xf3, 0x3c, 0xd9, 0x01, 0xeb, 0x88, 0x76, 0xec, 0x10, 0xd1, 0x0e, 0xe6, 0x76, 0xb7, 0x6a,
-	0xf3, 0x23, 0x2b, 0xa6, 0x84, 0x13, 0xf8, 0x1f, 0xa2, 0x1d, 0x2b, 0xad, 0x5b, 0xdd, 0xaa, 0x7e,
-	0x09, 0x85, 0x41, 0x44, 0xec, 0xe4, 0x37, 0xed, 0xd0, 0x8d, 0x16, 0x61, 0x21, 0x61, 0x76, 0x13,
-	0x31, 0x6c, 0x77, 0xab, 0x4d, 0xcc, 0x51, 0xd5, 0x6e, 0x91, 0x20, 0x92, 0xf8, 0x86, 0xc4, 0x43,
-	0xe6, 0x8b, 0xc9, 0x21, 0xf3, 0x25, 0x50, 0x4e, 0x01, 0x37, 0xd9, 0xd9, 0xe9, 0x46, 0x42, 0x25,
-	0x9f, 0xf8, 0x24, 0xad, 0x8b, 0x95, 0xac, 0xea, 0x59, 0x8d, 0x52, 0x55, 0x82, 0x99, 0x27, 0x79,
-	0xb0, 0x5c, 0x67, 0x7e, 0xe3, 0x10, 0xc5, 0xf0, 0x36, 0x58, 0xe2, 0x14, 0x79, 0x98, 0x6a, 0xca,
-	0x96, 0xb2, 0xad, 0xd6, 0xb4, 0x4f, 0xa7, 0xb7, 0x4a, 0x72, 0xfe, 0x13, 0xcf, 0xa3, 0x98, 0xb1,
-	0x06, 0xa7, 0x41, 0xe4, 0x3b, 0xb2, 0x0f, 0xee, 0x01, 0x40, 0xda, 0x6d, 0x4c, 0x5d, 0xa1, 0x5b,
-	0xcb, 0x6f, 0x29, 0xdb, 0xc5, 0x9d, 0xb2, 0x25, 0x29, 0xe2, 0x62, 0x96, 0xbc, 0x98, 0xb5, 0x47,
-	0x82, 0xa8, 0xa6, 0x9e, 0x7d, 0xb9, 0x96, 0xfb, 0x38, 0xec, 0x55, 0x14, 0x47, 0x4d, 0x78, 0xa2,
-	0x0a, 0xaf, 0x02, 0x15, 0xb1, 0x8e, 0xeb, 0xe1, 0x88, 0x84, 0xda, 0x82, 0x38, 0xd9, 0x59, 0x41,
-	0xac, 0xb3, 0x2f, 0xf6, 0xb0, 0x0e, 0xd6, 0xc2, 0x20, 0x0a, 0xc2, 0x83, 0xd0, 0xa5, 0xb8, 0x85,
-	0x83, 0x2e, 0xd6, 0x0a, 0xbf, 0x71, 0xcc, 0xff, 0x92, 0xec, 0xa4, 0xdc, 0xdd, 0xeb, 0x6f, 0x87,
-	0xbd, 0x8a, 0x54, 0xff, 0x6e, 0xd8, 0xab, 0x94, 0x84, 0x35, 0x47, 0x23, 0x73, 0xa4, 0x11, 0xe6,
-	0x7b, 0x05, 0xac, 0xc9, 0xb5, 0x83, 0x59, 0x4c, 0x22, 0x86, 0xe1, 0x43, 0xa0, 0xb2, 0x43, 0x14,
-	0xa7, 0x37, 0x55, 0xe6, 0x49, 0x28, 0x08, 0x09, 0xce, 0x8a, 0x60, 0x24, 0x77, 0x7c, 0x04, 0x92,
-	0xb5, 0xdb, 0xc6, 0x58, 0xda, 0xb4, 0x39, 0x93, 0xbc, 0x8f, 0x5b, 0x13, 0xfc, 0x65, 0xc1, 0x79,
-	0x8a, 0xb1, 0xf9, 0x2d, 0x0f, 0x8a, 0x52, 0x50, 0x03, 0x47, 0x1e, 0x7c, 0x00, 0x56, 0xdb, 0x94,
-	0x84, 0x2e, 0x4a, 0x53, 0x99, 0x9b, 0x57, 0x51, 0x74, 0xcb, 0x12, 0xbc, 0x07, 0x00, 0x27, 0x63,
-	0x6a, 0x7e, 0x0e, 0x55, 0xe5, 0x64, 0x44, 0xcc, 0xa6, 0xbd, 0xf0, 0x17, 0xd2, 0x2e, 0xcc, 0x4f,
-	0x7b, 0xf1, 0x0f, 0xd2, 0xb6, 0x44, 0xda, 0x19, 0xa7, 0x44, 0xe6, 0xda, 0xac, 0xcc, 0x85, 0xad,
-	0xe6, 0x89, 0x02, 0x2e, 0x4f, 0xec, 0xff, 0x8d, 0xec, 0x4f, 0xd3, 0x3f, 0xe3, 0x8b, 0xd8, 0x43,
-	0x1c, 0x3f, 0x47, 0x14, 0x85, 0x0c, 0xde, 0x05, 0x2a, 0x3a, 0xe0, 0xaf, 0x09, 0x0d, 0xf8, 0xf1,
-	0xdc, 0xf0, 0x2f, 0x5a, 0xe1, 0x7d, 0xb0, 0x14, 0x27, 0x13, 0xa4, 0x90, 0x2b, 0x56, 0xe6, 0x99,
-	0xb2, 0xd2, 0xf1, 0x93, 0x96, 0xca, 0xfe, 0x5d, 0x5b, 0x58, 0x79, 0x31, 0x49, 0xf8, 0xb8, 0x39,
-	0xed, 0xe3, 0xa4, 0x44, 0xb3, 0x0c, 0x36, 0xa6, 0x4a, 0x23, 0x3b, 0x77, 0xbe, 0x2b, 0x60, 0xa1,
-	0xce, 0x7c, 0xf8, 0x18, 0x14, 0x92, 0x77, 0x67, 0x7d, 0x4a, 0x85, 0x8c, 0x40, 0x37, 0x66, 0xd7,
-	0xc7, 0xb1, 0x3c, 0x03, 0x2b, 0xe3, 0x2f, 0x42, 0x9f, 0xdd, 0x2b, 0x30, 0xdd, 0xfc, 0x39, 0x36,
-	0x9e, 0xf5, 0x12, 0xac, 0x66, 0x1c, 0x9e, 0x71, 0xf6, 0x24, 0xae, 0xdf, 0xf8, 0x35, 0x3e, 0x9a,
-	0x6b, 0xe6, 0xf4, 0xc5, 0x37, 0xc2, 0xc8, 0xda, 0xcd, 0xb3, 0xbe, 0xa1, 0x9c, 0xf7, 0x0d, 0xe5,
-	0x6b, 0xdf, 0x50, 0x3e, 0x0c, 0x8c, 0xdc, 0xf9, 0xc0, 0xc8, 0x7d, 0x1e, 0x18, 0xb9, 0x57, 0x30,
-	0xe3, 0x23, 0x3f, 0x8e, 0x31, 0x6b, 0x2e, 0x25, 0xaf, 0xf3, 0x9d, 0x1f, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0x31, 0x24, 0xff, 0x4c, 0x5f, 0x06, 0x00, 0x00,
+	// 1229 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x58, 0xcb, 0x6f, 0xdb, 0xc6,
+	0x13, 0x16, 0x65, 0x59, 0xb6, 0xc6, 0xf6, 0x2f, 0xbf, 0x30, 0x8e, 0x23, 0x33, 0x81, 0xec, 0x30,
+	0x89, 0x6b, 0x18, 0x0d, 0x15, 0xbb, 0x80, 0x93, 0xa8, 0x0f, 0xa0, 0xb2, 0x51, 0x14, 0x45, 0x85,
+	0xa6, 0xb2, 0x0b, 0xb4, 0xb9, 0x08, 0x6b, 0x72, 0x4d, 0x13, 0x0a, 0xb9, 0x02, 0x77, 0xa3, 0xc8,
+	0xb7, 0xa2, 0xc7, 0x1e, 0x8a, 0x22, 0x7f, 0x43, 0x0b, 0x14, 0x3d, 0xf9, 0xe0, 0x73, 0xcf, 0x39,
+	0x06, 0x39, 0x05, 0x3d, 0x04, 0x85, 0x5d, 0xc0, 0x7f, 0x40, 0xaf, 0x3d, 0x14, 0xfb, 0x10, 0x45,
+	0x4a, 0x94, 0x5f, 0x49, 0x1f, 0x97, 0x40, 0xdc, 0xef, 0x9b, 0xd9, 0x99, 0x6f, 0x66, 0x67, 0x37,
+	0x86, 0x19, 0x14, 0x36, 0xcb, 0x3e, 0x0a, 0x9b, 0x98, 0x95, 0xdb, 0xcb, 0x65, 0xd6, 0xb1, 0x5a,
+	0x21, 0x61, 0x44, 0x9f, 0x42, 0x61, 0xd3, 0x92, 0xeb, 0x56, 0x7b, 0xd9, 0xb8, 0x88, 0x7c, 0x2f,
+	0x20, 0x65, 0xf1, 0xaf, 0x64, 0x18, 0x25, 0x9b, 0x50, 0x9f, 0xd0, 0xf2, 0x16, 0xa2, 0xb8, 0xdc,
+	0x5e, 0xde, 0xc2, 0x0c, 0x2d, 0x97, 0x6d, 0xe2, 0x05, 0x0a, 0xbf, 0xa2, 0x70, 0x9f, 0xba, 0xdc,
+	0xb3, 0x4f, 0x5d, 0x05, 0xcc, 0x4a, 0xa0, 0x21, 0xbe, 0xca, 0xf2, 0x43, 0x41, 0xd3, 0x2e, 0x71,
+	0x89, 0x5c, 0xe7, 0xbf, 0xd4, 0xaa, 0x91, 0x8c, 0x51, 0x45, 0x25, 0x30, 0xf3, 0x69, 0x16, 0xc6,
+	0x6a, 0xd4, 0xdd, 0x78, 0x82, 0x5a, 0xfa, 0x1d, 0xc8, 0xb3, 0x10, 0x39, 0x38, 0x2c, 0x6a, 0xf3,
+	0xda, 0x62, 0xa1, 0x5a, 0x7c, 0xb1, 0x7f, 0x7b, 0x5a, 0xf9, 0xff, 0xd0, 0x71, 0x42, 0x4c, 0xe9,
+	0x06, 0x0b, 0xbd, 0xc0, 0xad, 0x2b, 0x9e, 0xbe, 0x06, 0x40, 0xb6, 0xb7, 0x71, 0xd8, 0xe0, 0x71,
+	0x17, 0xb3, 0xf3, 0xda, 0xe2, 0xc4, 0xca, 0xac, 0xa5, 0x4c, 0x78, 0x62, 0x96, 0x4a, 0xcc, 0x5a,
+	0x23, 0x5e, 0x50, 0x2d, 0x3c, 0x7b, 0x35, 0x97, 0xf9, 0xe9, 0x68, 0x6f, 0x49, 0xab, 0x17, 0x84,
+	0x1d, 0x5f, 0xd5, 0xaf, 0x42, 0x01, 0xd1, 0x66, 0xc3, 0xc1, 0x01, 0xf1, 0x8b, 0x23, 0x7c, 0xe7,
+	0xfa, 0x38, 0xa2, 0xcd, 0x75, 0xfe, 0xad, 0xd7, 0xe0, 0x82, 0xef, 0x05, 0x9e, 0xff, 0xd8, 0x6f,
+	0x84, 0xd8, 0xc6, 0x5e, 0x1b, 0x17, 0x73, 0x67, 0xd8, 0xe6, 0x7f, 0xca, 0xb8, 0x2e, 0x6d, 0x2b,
+	0x37, 0xbf, 0x39, 0xda, 0x5b, 0x52, 0xd1, 0x7f, 0x7b, 0xb4, 0xb7, 0x34, 0xcd, 0xa5, 0xe9, 0x74,
+	0xc5, 0x51, 0x42, 0x98, 0xdf, 0x69, 0x70, 0x41, 0xfd, 0xae, 0x63, 0xda, 0x22, 0x01, 0xc5, 0xfa,
+	0x7b, 0x50, 0xa0, 0x4f, 0x50, 0x4b, 0x66, 0xaa, 0x9d, 0x14, 0x42, 0x8e, 0x87, 0x50, 0x1f, 0xe7,
+	0x16, 0x22, 0xc7, 0xf7, 0x41, 0xfc, 0x6e, 0x6c, 0x63, 0xac, 0x64, 0xba, 0x96, 0x6a, 0xbc, 0x8e,
+	0xed, 0x98, 0xfd, 0x18, 0xb7, 0xf9, 0x08, 0x63, 0xf3, 0xf7, 0x2c, 0x4c, 0xa8, 0x80, 0x36, 0x70,
+	0xe0, 0xe8, 0xef, 0xc2, 0xe4, 0x76, 0x48, 0xfc, 0x06, 0x92, 0x55, 0x39, 0xb1, 0x5e, 0x13, 0x9c,
+	0xad, 0x96, 0xf4, 0xbb, 0x00, 0x8c, 0x44, 0xa6, 0xd9, 0x13, 0x4c, 0x0b, 0x8c, 0x74, 0x0d, 0x93,
+	0xd5, 0x1e, 0x79, 0x03, 0xd5, 0xce, 0x9d, 0x5c, 0xed, 0xd1, 0xd7, 0xa8, 0xb6, 0xc5, 0xab, 0x9d,
+	0x50, 0x8a, 0xd7, 0xbc, 0x98, 0x56, 0x73, 0x2e, 0xab, 0xf9, 0x54, 0x83, 0x4b, 0xb1, 0xef, 0xff,
+	0x46, 0xed, 0xf7, 0x65, 0x33, 0x7e, 0xd1, 0x72, 0x10, 0xc3, 0x0f, 0x50, 0x88, 0x7c, 0xaa, 0xaf,
+	0x42, 0x01, 0x3d, 0x66, 0x3b, 0x24, 0xf4, 0xd8, 0xee, 0x89, 0xc5, 0xef, 0x51, 0xf5, 0x7b, 0x90,
+	0x6f, 0x09, 0x0f, 0x2a, 0x90, 0xcb, 0x56, 0x62, 0x4c, 0x59, 0xd2, 0x7d, 0x5c, 0x52, 0xc5, 0xaf,
+	0x94, 0xb9, 0x94, 0x3d, 0x4f, 0x5c, 0xc7, 0x6b, 0xfd, 0x3a, 0xc6, 0x43, 0x34, 0x67, 0xe1, 0x4a,
+	0xdf, 0x52, 0x57, 0x4e, 0xf3, 0x67, 0x0d, 0x0a, 0x5c, 0x66, 0xcc, 0xd8, 0x23, 0xfc, 0x2f, 0x4d,
+	0x9d, 0xca, 0x42, 0xdf, 0x24, 0x98, 0x19, 0xe8, 0x0a, 0x11, 0x9e, 0xf9, 0x15, 0x5c, 0x8c, 0x3e,
+	0xa2, 0x86, 0x58, 0x87, 0xa9, 0x10, 0x3b, 0x18, 0xfb, 0xd8, 0x39, 0x53, 0x53, 0x4c, 0x76, 0xad,
+	0xf8, 0x9a, 0xf9, 0x87, 0x06, 0x33, 0xd2, 0xf7, 0x26, 0xd9, 0xf2, 0x82, 0x4d, 0xd4, 0xf9, 0xac,
+	0x8d, 0xc3, 0xd0, 0x73, 0xf0, 0xb9, 0x0b, 0x3c, 0x0d, 0xa3, 0xf2, 0x64, 0x89, 0x63, 0x5d, 0x97,
+	0x1f, 0xfa, 0x06, 0x14, 0x18, 0xdf, 0xa1, 0xc1, 0x50, 0x47, 0x4e, 0xd8, 0xea, 0x2a, 0x8f, 0xe7,
+	0xd7, 0x57, 0x73, 0x57, 0xa5, 0x47, 0xea, 0x34, 0x2d, 0x8f, 0x94, 0x7d, 0xc4, 0x76, 0xac, 0x4f,
+	0xb1, 0x8b, 0xec, 0xdd, 0x75, 0x6c, 0xbf, 0xd8, 0xbf, 0x0d, 0x6a, 0xc3, 0x75, 0x6c, 0x4b, 0x05,
+	0xc7, 0x99, 0x0a, 0xb5, 0xb2, 0x3a, 0xd8, 0x11, 0x37, 0x52, 0x34, 0xec, 0x4f, 0xcd, 0x9c, 0x87,
+	0x52, 0x3a, 0x12, 0xf5, 0xc7, 0x0f, 0x1a, 0xcc, 0xd6, 0xa8, 0x5b, 0xc7, 0x3e, 0x69, 0xe3, 0xbf,
+	0x57, 0x9a, 0xca, 0xfd, 0xc1, 0x2c, 0x16, 0xfa, 0xb3, 0x48, 0x0f, 0xc4, 0xbc, 0x01, 0xd7, 0x87,
+	0x82, 0xbd, 0x5c, 0x72, 0xe2, 0x1c, 0x6c, 0x60, 0xb6, 0x46, 0x82, 0x36, 0x0e, 0xa9, 0x47, 0x82,
+	0x1a, 0x0a, 0xf8, 0xa9, 0x38, 0x77, 0x26, 0xab, 0x50, 0xb0, 0x89, 0xef, 0x7b, 0x8c, 0xa9, 0x89,
+	0x72, 0xac, 0x5d, 0x44, 0xd5, 0x57, 0xe0, 0x22, 0xb2, 0x99, 0xd7, 0x46, 0xcc, 0x23, 0x41, 0x63,
+	0x07, 0x7b, 0xee, 0x0e, 0x13, 0xed, 0x90, 0xab, 0x8e, 0xca, 0xea, 0xfe, 0xbf, 0x87, 0x7f, 0x2c,
+	0x60, 0x7d, 0x09, 0xa6, 0x70, 0xa7, 0xe5, 0x85, 0xbb, 0x5d, 0x7e, 0x2e, 0xce, 0x9f, 0x94, 0x98,
+	0xe2, 0x7e, 0x0e, 0xdd, 0x01, 0xdc, 0x68, 0x91, 0x47, 0x9e, 0xbd, 0xab, 0x86, 0xf7, 0x5c, 0xdf,
+	0x94, 0xe9, 0x29, 0xf1, 0x40, 0xd0, 0xe2, 0x27, 0x74, 0x4a, 0x79, 0x90, 0x88, 0x70, 0x89, 0x3a,
+	0x71, 0x97, 0xf9, 0x73, 0xb8, 0x94, 0x1e, 0x94, 0xcb, 0x87, 0xc0, 0x17, 0x1a, 0xbd, 0x03, 0x31,
+	0xf6, 0x5a, 0x07, 0x62, 0xc2, 0x47, 0x9d, 0x6e, 0xf5, 0x2b, 0x77, 0x07, 0xbb, 0xe9, 0x66, 0xca,
+	0x99, 0x18, 0x68, 0x05, 0xf3, 0x3a, 0xcc, 0x0d, 0x81, 0xa2, 0x4e, 0xfa, 0x25, 0x71, 0x0f, 0xc8,
+	0x5c, 0xce, 0xdb, 0x41, 0x55, 0xc8, 0x2b, 0x39, 0xb3, 0x67, 0x96, 0x53, 0x59, 0x9e, 0xe5, 0x46,
+	0x10, 0x06, 0xc9, 0x1b, 0x41, 0x2c, 0x45, 0xb9, 0xfd, 0xa9, 0x41, 0xb1, 0x46, 0xdd, 0xb5, 0x6e,
+	0xab, 0xf6, 0x27, 0xd9, 0x6b, 0x77, 0xed, 0xf4, 0xed, 0x2e, 0x5b, 0x17, 0xdb, 0x0c, 0x3b, 0x0d,
+	0x86, 0x43, 0x79, 0xf0, 0x13, 0xad, 0x2b, 0xb0, 0x4d, 0x1c, 0xfa, 0x31, 0x41, 0x46, 0xce, 0x2d,
+	0xc8, 0x3d, 0x21, 0x48, 0xb4, 0x3f, 0x17, 0xe4, 0x56, 0xbf, 0x20, 0xa9, 0x19, 0x9a, 0x26, 0xcc,
+	0x0f, 0xc3, 0x22, 0x89, 0x7e, 0xcc, 0x8a, 0xa1, 0x18, 0x91, 0xea, 0xc8, 0xa3, 0xd1, 0xd8, 0xf9,
+	0x47, 0x34, 0x8a, 0x06, 0xe8, 0xc8, 0xd0, 0xbb, 0x25, 0xf7, 0x86, 0xee, 0x96, 0xfb, 0x83, 0x52,
+	0x2e, 0x0c, 0x95, 0x32, 0xa1, 0x84, 0x9a, 0xca, 0xe9, 0x60, 0x57, 0xcc, 0x95, 0x97, 0x63, 0x30,
+	0x52, 0xa3, 0xae, 0xfe, 0x01, 0xe4, 0xc4, 0xff, 0x7c, 0x66, 0xfa, 0xca, 0xad, 0x1e, 0x81, 0x46,
+	0x29, 0x7d, 0x3d, 0x7a, 0x07, 0x7c, 0x02, 0xe3, 0xd1, 0x9b, 0xdc, 0x48, 0xe7, 0x72, 0xcc, 0x30,
+	0x87, 0x63, 0xb1, 0x37, 0x45, 0x5e, 0xbd, 0x88, 0x8a, 0x29, 0x6c, 0x81, 0x18, 0xf3, 0xc3, 0x90,
+	0xc8, 0xcb, 0x97, 0x30, 0x99, 0x78, 0x29, 0xa6, 0x64, 0x10, 0xc7, 0x8d, 0x85, 0xe3, 0xf1, 0xa8,
+	0xfd, 0x32, 0xba, 0x0f, 0x97, 0xd2, 0x5e, 0x2a, 0xb7, 0x52, 0x43, 0xea, 0xa7, 0x19, 0xb7, 0x4f,
+	0x45, 0x8b, 0x6d, 0xd7, 0x86, 0x99, 0x21, 0x0f, 0x80, 0xc5, 0x41, 0x57, 0xe9, 0x4c, 0xe3, 0xce,
+	0x69, 0x99, 0xb1, 0x7d, 0x5b, 0x30, 0x9d, 0x7a, 0x59, 0x2f, 0xa4, 0x26, 0x30, 0xc0, 0x33, 0xac,
+	0xd3, 0xf1, 0x62, 0x3b, 0xf6, 0x4a, 0x26, 0xe7, 0xdd, 0xf0, 0x92, 0x09, 0xfc, 0x98, 0x92, 0x25,
+	0x27, 0x46, 0x46, 0xa7, 0x70, 0x39, 0x7d, 0xa4, 0xbe, 0x35, 0xe8, 0x22, 0x95, 0x68, 0x94, 0x4f,
+	0x49, 0x4c, 0x16, 0x6e, 0xc8, 0x90, 0x5a, 0x3c, 0xc6, 0x59, 0x82, 0x99, 0x56, 0xb8, 0xe3, 0x4f,
+	0xb4, 0x99, 0x31, 0x46, 0xbf, 0xe6, 0x43, 0xa4, 0xfa, 0xf6, 0xb3, 0x83, 0x92, 0xf6, 0xfc, 0xa0,
+	0xa4, 0xfd, 0x76, 0x50, 0xd2, 0xbe, 0x3f, 0x2c, 0x65, 0x9e, 0x1f, 0x96, 0x32, 0x2f, 0x0f, 0x4b,
+	0x99, 0x87, 0x7a, 0x62, 0x82, 0xb0, 0xdd, 0x16, 0xa6, 0x5b, 0x79, 0xf1, 0x57, 0x90, 0x77, 0xfe,
+	0x0a, 0x00, 0x00, 0xff, 0xff, 0x0e, 0x65, 0x56, 0x2d, 0xc7, 0x11, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -461,9 +1253,30 @@ type MsgClient interface {
 	// SwapSend defines a method for swapping and sending coin from a account to
 	// other account.
 	SwapSend(ctx context.Context, in *MsgSwapSend, opts ...grpc.CallOption) (*MsgSwapSendResponse, error)
+	// Settle redeems a suspended asset against its governance-approved
+	// settlement plan.
+	Settle(ctx context.Context, in *MsgSettle, opts ...grpc.CallOption) (*MsgSettleResponse, error)
 	// UpdateParams defines an operation for updating the x/market module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// SetTobinTaxOverride creates or replaces one per-denomination Tobin
+	// exception.
+	SetTobinTaxOverride(ctx context.Context, in *MsgSetTobinTaxOverride, opts ...grpc.CallOption) (*MsgSetTobinTaxOverrideResponse, error)
+	// RemoveTobinTaxOverride deletes one per-denomination Tobin exception.
+	RemoveTobinTaxOverride(ctx context.Context, in *MsgRemoveTobinTaxOverride, opts ...grpc.CallOption) (*MsgRemoveTobinTaxOverrideResponse, error)
+	// SetConversionMandate appoints, replaces, or disables the bounded conversion
+	// committee.
+	SetConversionMandate(ctx context.Context, in *MsgSetConversionMandate, opts ...grpc.CallOption) (*MsgSetConversionMandateResponse, error)
+	// UpdatePolicy applies one complete conversion candidate as the
+	// governance authority, unbounded by the committee mandate.
+	UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error)
+	// CommitteeUpdatePolicy applies one complete conversion candidate as
+	// the conversion committee, inside its mandate bounds.
+	CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error)
+	// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
+	// override as the conversion committee, at or above the current effective
+	// rate and at most the mandate's cap.
+	CommitteeRaiseTobinTax(ctx context.Context, in *MsgCommitteeRaiseTobinTax, opts ...grpc.CallOption) (*MsgCommitteeRaiseTobinTaxResponse, error)
 }
 
 type msgClient struct {
@@ -492,9 +1305,72 @@ func (c *msgClient) SwapSend(ctx context.Context, in *MsgSwapSend, opts ...grpc.
 	return out, nil
 }
 
+func (c *msgClient) Settle(ctx context.Context, in *MsgSettle, opts ...grpc.CallOption) (*MsgSettleResponse, error) {
+	out := new(MsgSettleResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/Settle", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
 	out := new(MsgUpdateParamsResponse)
 	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/UpdateParams", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetTobinTaxOverride(ctx context.Context, in *MsgSetTobinTaxOverride, opts ...grpc.CallOption) (*MsgSetTobinTaxOverrideResponse, error) {
+	out := new(MsgSetTobinTaxOverrideResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/SetTobinTaxOverride", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) RemoveTobinTaxOverride(ctx context.Context, in *MsgRemoveTobinTaxOverride, opts ...grpc.CallOption) (*MsgRemoveTobinTaxOverrideResponse, error) {
+	out := new(MsgRemoveTobinTaxOverrideResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/RemoveTobinTaxOverride", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetConversionMandate(ctx context.Context, in *MsgSetConversionMandate, opts ...grpc.CallOption) (*MsgSetConversionMandateResponse, error) {
+	out := new(MsgSetConversionMandateResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/SetConversionMandate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error) {
+	out := new(MsgUpdatePolicyResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/UpdatePolicy", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error) {
+	out := new(MsgCommitteeUpdatePolicyResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/CommitteeUpdatePolicy", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeRaiseTobinTax(ctx context.Context, in *MsgCommitteeRaiseTobinTax, opts ...grpc.CallOption) (*MsgCommitteeRaiseTobinTaxResponse, error) {
+	out := new(MsgCommitteeRaiseTobinTaxResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Msg/CommitteeRaiseTobinTax", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -509,9 +1385,30 @@ type MsgServer interface {
 	// SwapSend defines a method for swapping and sending coin from a account to
 	// other account.
 	SwapSend(context.Context, *MsgSwapSend) (*MsgSwapSendResponse, error)
+	// Settle redeems a suspended asset against its governance-approved
+	// settlement plan.
+	Settle(context.Context, *MsgSettle) (*MsgSettleResponse, error)
 	// UpdateParams defines an operation for updating the x/market module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// SetTobinTaxOverride creates or replaces one per-denomination Tobin
+	// exception.
+	SetTobinTaxOverride(context.Context, *MsgSetTobinTaxOverride) (*MsgSetTobinTaxOverrideResponse, error)
+	// RemoveTobinTaxOverride deletes one per-denomination Tobin exception.
+	RemoveTobinTaxOverride(context.Context, *MsgRemoveTobinTaxOverride) (*MsgRemoveTobinTaxOverrideResponse, error)
+	// SetConversionMandate appoints, replaces, or disables the bounded conversion
+	// committee.
+	SetConversionMandate(context.Context, *MsgSetConversionMandate) (*MsgSetConversionMandateResponse, error)
+	// UpdatePolicy applies one complete conversion candidate as the
+	// governance authority, unbounded by the committee mandate.
+	UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error)
+	// CommitteeUpdatePolicy applies one complete conversion candidate as
+	// the conversion committee, inside its mandate bounds.
+	CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error)
+	// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
+	// override as the conversion committee, at or above the current effective
+	// rate and at most the mandate's cap.
+	CommitteeRaiseTobinTax(context.Context, *MsgCommitteeRaiseTobinTax) (*MsgCommitteeRaiseTobinTaxResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -524,8 +1421,29 @@ func (*UnimplementedMsgServer) Swap(ctx context.Context, req *MsgSwap) (*MsgSwap
 func (*UnimplementedMsgServer) SwapSend(ctx context.Context, req *MsgSwapSend) (*MsgSwapSendResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SwapSend not implemented")
 }
+func (*UnimplementedMsgServer) Settle(ctx context.Context, req *MsgSettle) (*MsgSettleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Settle not implemented")
+}
 func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (*UnimplementedMsgServer) SetTobinTaxOverride(ctx context.Context, req *MsgSetTobinTaxOverride) (*MsgSetTobinTaxOverrideResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetTobinTaxOverride not implemented")
+}
+func (*UnimplementedMsgServer) RemoveTobinTaxOverride(ctx context.Context, req *MsgRemoveTobinTaxOverride) (*MsgRemoveTobinTaxOverrideResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveTobinTaxOverride not implemented")
+}
+func (*UnimplementedMsgServer) SetConversionMandate(ctx context.Context, req *MsgSetConversionMandate) (*MsgSetConversionMandateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetConversionMandate not implemented")
+}
+func (*UnimplementedMsgServer) UpdatePolicy(ctx context.Context, req *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePolicy not implemented")
+}
+func (*UnimplementedMsgServer) CommitteeUpdatePolicy(ctx context.Context, req *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CommitteeUpdatePolicy not implemented")
+}
+func (*UnimplementedMsgServer) CommitteeRaiseTobinTax(ctx context.Context, req *MsgCommitteeRaiseTobinTax) (*MsgCommitteeRaiseTobinTaxResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CommitteeRaiseTobinTax not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -568,6 +1486,24 @@ func _Msg_SwapSend_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_Settle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSettle)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Settle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/Settle",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Settle(ctx, req.(*MsgSettle))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgUpdateParams)
 	if err := dec(in); err != nil {
@@ -586,6 +1522,114 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_SetTobinTaxOverride_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetTobinTaxOverride)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetTobinTaxOverride(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/SetTobinTaxOverride",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetTobinTaxOverride(ctx, req.(*MsgSetTobinTaxOverride))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_RemoveTobinTaxOverride_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRemoveTobinTaxOverride)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RemoveTobinTaxOverride(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/RemoveTobinTaxOverride",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RemoveTobinTaxOverride(ctx, req.(*MsgRemoveTobinTaxOverride))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetConversionMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetConversionMandate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetConversionMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/SetConversionMandate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetConversionMandate(ctx, req.(*MsgSetConversionMandate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdatePolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/UpdatePolicy",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdatePolicy(ctx, req.(*MsgUpdatePolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeUpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeUpdatePolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeUpdatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/CommitteeUpdatePolicy",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeUpdatePolicy(ctx, req.(*MsgCommitteeUpdatePolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeRaiseTobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeRaiseTobinTax)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeRaiseTobinTax(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Msg/CommitteeRaiseTobinTax",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeRaiseTobinTax(ctx, req.(*MsgCommitteeRaiseTobinTax))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ark.market.v1.Msg",
@@ -600,8 +1644,36 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_SwapSend_Handler,
 		},
 		{
+			MethodName: "Settle",
+			Handler:    _Msg_Settle_Handler,
+		},
+		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "SetTobinTaxOverride",
+			Handler:    _Msg_SetTobinTaxOverride_Handler,
+		},
+		{
+			MethodName: "RemoveTobinTaxOverride",
+			Handler:    _Msg_RemoveTobinTaxOverride_Handler,
+		},
+		{
+			MethodName: "SetConversionMandate",
+			Handler:    _Msg_SetConversionMandate_Handler,
+		},
+		{
+			MethodName: "UpdatePolicy",
+			Handler:    _Msg_UpdatePolicy_Handler,
+		},
+		{
+			MethodName: "CommitteeUpdatePolicy",
+			Handler:    _Msg_CommitteeUpdatePolicy_Handler,
+		},
+		{
+			MethodName: "CommitteeRaiseTobinTax",
+			Handler:    _Msg_CommitteeRaiseTobinTax_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -878,6 +1950,515 @@ func (m *MsgUpdateParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgSettle) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSettle) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSettle) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.OfferCoin.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Trader) > 0 {
+		i -= len(m.Trader)
+		copy(dAtA[i:], m.Trader)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Trader)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSettleResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSettleResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSettleResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.RedeemedCoin.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSetTobinTaxOverride) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetTobinTaxOverride) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetTobinTaxOverride) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.TobinTax.Size()
+		i -= size
+		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSetTobinTaxOverrideResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetTobinTaxOverrideResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetTobinTaxOverrideResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgRemoveTobinTaxOverride) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgRemoveTobinTaxOverride) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgRemoveTobinTaxOverride) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgRemoveTobinTaxOverrideResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgRemoveTobinTaxOverrideResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgRemoveTobinTaxOverrideResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSetConversionMandate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetConversionMandate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetConversionMandate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.MaxTobinTax.Size()
+		i -= size
+		if _, err := m.MaxTobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
+	{
+		size, err := m.MaximumPolicy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x32
+	{
+		size, err := m.MinimumPolicy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	if m.ExpiryHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ExpiryHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ActivationHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSetConversionMandateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetConversionMandateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetConversionMandateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdatePolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdatePolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdatePolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Policy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdatePolicyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdatePolicyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdatePolicyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCommitteeUpdatePolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCommitteeUpdatePolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCommitteeUpdatePolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Policy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if m.ExpectedTerm != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedTerm))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCommitteeUpdatePolicyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCommitteeUpdatePolicyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCommitteeUpdatePolicyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCommitteeRaiseTobinTax) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCommitteeRaiseTobinTax) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCommitteeRaiseTobinTax) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.TobinTax.Size()
+		i -= size
+		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.ExpectedTerm != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedTerm))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCommitteeRaiseTobinTaxResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCommitteeRaiseTobinTaxResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCommitteeRaiseTobinTaxResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -977,6 +2558,206 @@ func (m *MsgUpdateParams) Size() (n int) {
 }
 
 func (m *MsgUpdateParamsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgSettle) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Trader)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.OfferCoin.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgSettleResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.RedeemedCoin.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgSetTobinTaxOverride) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.TobinTax.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgSetTobinTaxOverrideResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgRemoveTobinTaxOverride) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgRemoveTobinTaxOverrideResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgSetConversionMandate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ActivationHeight != 0 {
+		n += 1 + sovTx(uint64(m.ActivationHeight))
+	}
+	if m.ExpiryHeight != 0 {
+		n += 1 + sovTx(uint64(m.ExpiryHeight))
+	}
+	l = m.MinimumPolicy.Size()
+	n += 1 + l + sovTx(uint64(l))
+	l = m.MaximumPolicy.Size()
+	n += 1 + l + sovTx(uint64(l))
+	l = m.MaxTobinTax.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgSetConversionMandateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgUpdatePolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.Policy.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgUpdatePolicyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgCommitteeUpdatePolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ExpectedTerm != 0 {
+		n += 1 + sovTx(uint64(m.ExpectedTerm))
+	}
+	l = m.Policy.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgCommitteeUpdatePolicyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgCommitteeRaiseTobinTax) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ExpectedTerm != 0 {
+		n += 1 + sovTx(uint64(m.ExpectedTerm))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.TobinTax.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgCommitteeRaiseTobinTaxResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1757,6 +3538,1434 @@ func (m *MsgUpdateParamsResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgUpdateParamsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSettle) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSettle: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSettle: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trader", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Trader = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OfferCoin", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.OfferCoin.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSettleResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSettleResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSettleResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RedeemedCoin", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.RedeemedCoin.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetTobinTaxOverride) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetTobinTaxOverride: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetTobinTaxOverride: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetTobinTaxOverrideResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetTobinTaxOverrideResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetTobinTaxOverrideResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgRemoveTobinTaxOverride) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgRemoveTobinTaxOverride: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgRemoveTobinTaxOverride: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgRemoveTobinTaxOverrideResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgRemoveTobinTaxOverrideResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgRemoveTobinTaxOverrideResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetConversionMandate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetConversionMandate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetConversionMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+			}
+			m.ActivationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+			}
+			m.ExpiryHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinimumPolicy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinimumPolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaximumPolicy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MaximumPolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxTobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MaxTobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetConversionMandateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetConversionMandateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetConversionMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdatePolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdatePolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdatePolicy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Policy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdatePolicyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdatePolicyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdatePolicyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCommitteeUpdatePolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCommitteeUpdatePolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCommitteeUpdatePolicy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+			}
+			m.ExpectedTerm = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedTerm |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Policy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCommitteeUpdatePolicyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCommitteeUpdatePolicyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCommitteeUpdatePolicyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCommitteeRaiseTobinTax) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCommitteeRaiseTobinTax: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCommitteeRaiseTobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+			}
+			m.ExpectedTerm = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedTerm |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCommitteeRaiseTobinTaxResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCommitteeRaiseTobinTaxResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCommitteeRaiseTobinTaxResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

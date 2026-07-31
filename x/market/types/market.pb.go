@@ -4,6 +4,7 @@
 package types
 
 import (
+	mandate "ark/pkg/mandate"
 	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
@@ -28,11 +29,18 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the market module.
+//
+// The conversion-capacity dials moved to ConversionPolicy when they became
+// committee-delegable: params are replaced whole by MsgUpdateParams, so leaving
+// them here would let a governance proposal drafted from a stale copy silently
+// revert a committee's emergency resize.
 type Params struct {
-	// base_pool defines the denomination-labelled virtual-pool depth.
-	BasePool           types.DecCoin               `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool"`
-	PoolRecoveryPeriod uint64                      `protobuf:"varint,2,opt,name=pool_recovery_period,json=poolRecoveryPeriod,proto3" json:"pool_recovery_period,omitempty"`
-	MinStabilitySpread cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=min_stability_spread,json=minStabilitySpread,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_stability_spread"`
+	MinStabilitySpread cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=min_stability_spread,json=minStabilitySpread,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_stability_spread"`
+	// default_tobin_tax is the spread applied to conversion between two
+	// denominations for every asset without an override. Rates are governance
+	// judgment, never derived, so a newly activated asset converts at this
+	// default from its first live block.
+	DefaultTobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=default_tobin_tax,json=defaultTobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"default_tobin_tax"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -68,51 +76,237 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
-func (m *Params) GetBasePool() types.DecCoin {
+// ConversionPolicy is the pair of conversion-capacity dials delegated to the
+// conversion committee: together they set how much conversion the protocol
+// absorbs per recovery period before the spread widens, which is the dial a
+// depeg response reaches for.
+//
+// The pool is denominated in the protocol reference. Its unit moves only when
+// governance re-points that reference, through RebaseBasePool, never through a
+// policy update from either entry point.
+type ConversionPolicy struct {
+	// base_pool defines the denomination-labelled virtual-pool depth.
+	BasePool types.DecCoin `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool"`
+	// pool_recovery_period is the number of blocks over which the pool delta
+	// decays back to the base depth.
+	PoolRecoveryPeriod uint64 `protobuf:"varint,2,opt,name=pool_recovery_period,json=poolRecoveryPeriod,proto3" json:"pool_recovery_period,omitempty"`
+}
+
+func (m *ConversionPolicy) Reset()         { *m = ConversionPolicy{} }
+func (m *ConversionPolicy) String() string { return proto.CompactTextString(m) }
+func (*ConversionPolicy) ProtoMessage()    {}
+func (*ConversionPolicy) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9c5090283af5eaab, []int{1}
+}
+func (m *ConversionPolicy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConversionPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConversionPolicy.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConversionPolicy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConversionPolicy.Merge(m, src)
+}
+func (m *ConversionPolicy) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConversionPolicy) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConversionPolicy.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConversionPolicy proto.InternalMessageInfo
+
+func (m *ConversionPolicy) GetBasePool() types.DecCoin {
 	if m != nil {
 		return m.BasePool
 	}
 	return types.DecCoin{}
 }
 
-func (m *Params) GetPoolRecoveryPeriod() uint64 {
+func (m *ConversionPolicy) GetPoolRecoveryPeriod() uint64 {
 	if m != nil {
 		return m.PoolRecoveryPeriod
 	}
 	return 0
 }
 
+// ConversionMandate stores one governance-created, bounded committee
+// appointment over conversion policy: a corridor over ConversionPolicy and a
+// cap on Tobin raises. An empty committee identifies a disabled mandate; term
+// still increases on replacement so previously prepared committee transactions
+// cannot become valid again.
+//
+// The bounds are denominated in the pool unit that was live when governance
+// appointed the committee. A reference re-pointing leaves them untouched, which
+// strands the mandate until governance re-appoints it: converting a delegated
+// corridor at one instant's rate would produce bounds no proposal ever
+// contained, so the appointment fails closed instead.
+type ConversionMandate struct {
+	// envelope carries the shared term, committee, and half-open height window.
+	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
+	MinimumPolicy    ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy"`
+	MaximumPolicy    ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy"`
+	// max_tobin_tax caps committee-raised per-denomination Tobin overrides. The
+	// committee only ever raises — the floor of any raise is the denomination's
+	// current effective rate — so the power delegated here widens the buffer
+	// against oracle-staleness arbitrage and never narrows it. Lowering or
+	// removing an override stays governance-only. Zero delegates no Tobin power,
+	// which keeps a capacity-only committee expressible.
+	MaxTobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=max_tobin_tax,json=maxTobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"max_tobin_tax"`
+}
+
+func (m *ConversionMandate) Reset()         { *m = ConversionMandate{} }
+func (m *ConversionMandate) String() string { return proto.CompactTextString(m) }
+func (*ConversionMandate) ProtoMessage()    {}
+func (*ConversionMandate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9c5090283af5eaab, []int{2}
+}
+func (m *ConversionMandate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConversionMandate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConversionMandate.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConversionMandate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConversionMandate.Merge(m, src)
+}
+func (m *ConversionMandate) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConversionMandate) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConversionMandate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConversionMandate proto.InternalMessageInfo
+
+func (m *ConversionMandate) GetMinimumPolicy() ConversionPolicy {
+	if m != nil {
+		return m.MinimumPolicy
+	}
+	return ConversionPolicy{}
+}
+
+func (m *ConversionMandate) GetMaximumPolicy() ConversionPolicy {
+	if m != nil {
+		return m.MaximumPolicy
+	}
+	return ConversionPolicy{}
+}
+
+// TobinTaxOverride is one sparse per-denomination exception to the default
+// Tobin rate. Overrides exist for markets whose plausible oracle error between
+// updates exceeds the default — an illiquid or gap-prone listing warrants a
+// raise, because the Tobin tax is the buffer against oracle-staleness
+// arbitrage. They are policy annotations on members, never membership.
+type TobinTaxOverride struct {
+	Denom    string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`
+}
+
+func (m *TobinTaxOverride) Reset()         { *m = TobinTaxOverride{} }
+func (m *TobinTaxOverride) String() string { return proto.CompactTextString(m) }
+func (*TobinTaxOverride) ProtoMessage()    {}
+func (*TobinTaxOverride) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9c5090283af5eaab, []int{3}
+}
+func (m *TobinTaxOverride) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TobinTaxOverride) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TobinTaxOverride.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TobinTaxOverride) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TobinTaxOverride.Merge(m, src)
+}
+func (m *TobinTaxOverride) XXX_Size() int {
+	return m.Size()
+}
+func (m *TobinTaxOverride) XXX_DiscardUnknown() {
+	xxx_messageInfo_TobinTaxOverride.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TobinTaxOverride proto.InternalMessageInfo
+
+func (m *TobinTaxOverride) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Params)(nil), "ark.market.v1.Params")
+	proto.RegisterType((*ConversionPolicy)(nil), "ark.market.v1.ConversionPolicy")
+	proto.RegisterType((*ConversionMandate)(nil), "ark.market.v1.ConversionMandate")
+	proto.RegisterType((*TobinTaxOverride)(nil), "ark.market.v1.TobinTaxOverride")
 }
 
 func init() { proto.RegisterFile("ark/market/v1/market.proto", fileDescriptor_9c5090283af5eaab) }
 
 var fileDescriptor_9c5090283af5eaab = []byte{
-	// 358 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x91, 0x31, 0x4f, 0xc2, 0x40,
-	0x14, 0xc7, 0x7b, 0x68, 0x88, 0xd4, 0x38, 0x58, 0x19, 0x10, 0x49, 0x21, 0x4e, 0x84, 0x68, 0xcf,
-	0x6a, 0xe2, 0xe0, 0x88, 0x1d, 0x1d, 0x08, 0x6c, 0x2e, 0xcd, 0xb5, 0x5c, 0xe0, 0x52, 0xda, 0xd7,
-	0xdc, 0x35, 0x8d, 0xfd, 0x06, 0xc6, 0xc9, 0x8f, 0xe0, 0xe8, 0xc8, 0xe0, 0x87, 0x60, 0x24, 0x4e,
-	0xc6, 0x81, 0x18, 0x18, 0xf0, 0x63, 0x98, 0xeb, 0x1d, 0x83, 0x4b, 0xf3, 0xde, 0xfb, 0xfd, 0xf3,
-	0x7f, 0xff, 0xde, 0x33, 0x9b, 0x84, 0x47, 0x38, 0x26, 0x3c, 0xa2, 0x19, 0xce, 0x5d, 0x5d, 0x39,
-	0x29, 0x87, 0x0c, 0xac, 0x23, 0xc2, 0x23, 0x47, 0x4f, 0x72, 0xb7, 0x79, 0x4c, 0x62, 0x96, 0x00,
-	0x2e, 0xbf, 0x4a, 0xd1, 0xb4, 0x43, 0x10, 0x31, 0x08, 0x1c, 0x10, 0x41, 0x71, 0xee, 0x06, 0x34,
-	0x23, 0x2e, 0x0e, 0x81, 0x25, 0x9a, 0x9f, 0x2a, 0xee, 0x97, 0x1d, 0x56, 0x8d, 0x46, 0xf5, 0x09,
-	0x4c, 0x40, 0xcd, 0x65, 0xa5, 0xa6, 0xe7, 0xcf, 0x15, 0xb3, 0x3a, 0x20, 0x9c, 0xc4, 0xc2, 0xf2,
-	0xcc, 0x9a, 0xb4, 0xf5, 0x53, 0x80, 0x59, 0x03, 0x75, 0x50, 0xf7, 0xf0, 0xba, 0xe5, 0x68, 0x0b,
-	0x09, 0x1c, 0xbd, 0xcf, 0xf1, 0x68, 0x78, 0x0f, 0x2c, 0xe9, 0xd7, 0x16, 0xab, 0xb6, 0xf1, 0xbe,
-	0x9d, 0xf7, 0xd0, 0xf0, 0x40, 0x0a, 0x06, 0x00, 0x33, 0xeb, 0xca, 0xac, 0x4b, 0x03, 0x9f, 0xd3,
-	0x10, 0x72, 0xca, 0x0b, 0x3f, 0xa5, 0x9c, 0xc1, 0xb8, 0x51, 0xe9, 0xa0, 0xee, 0xfe, 0xd0, 0x92,
-	0x6c, 0xa8, 0xd1, 0xa0, 0x24, 0xd6, 0xd4, 0xac, 0xc7, 0x2c, 0xf1, 0x45, 0x46, 0x02, 0x36, 0x63,
-	0x59, 0xe1, 0x8b, 0x94, 0x53, 0x32, 0x6e, 0xec, 0x75, 0x50, 0xb7, 0xd6, 0xbf, 0x95, 0x4b, 0xbe,
-	0x57, 0xed, 0x33, 0x95, 0x44, 0x8c, 0x23, 0x87, 0x01, 0x8e, 0x49, 0x36, 0x75, 0x1e, 0xe8, 0x84,
-	0x84, 0x85, 0x47, 0xc3, 0xcf, 0x8f, 0x4b, 0x53, 0x07, 0xf5, 0x68, 0xa8, 0x12, 0x59, 0x31, 0x4b,
-	0x46, 0x3b, 0xcb, 0x51, 0xe9, 0x78, 0xd7, 0xfa, 0x7d, 0x6b, 0xa3, 0x97, 0xed, 0xbc, 0x77, 0x22,
-	0x8f, 0xf0, 0xb4, 0x3b, 0x83, 0xfa, 0xff, 0xfe, 0xc5, 0x62, 0x6d, 0xa3, 0xe5, 0xda, 0x46, 0x3f,
-	0x6b, 0x1b, 0xbd, 0x6e, 0x6c, 0x63, 0xb9, 0xb1, 0x8d, 0xaf, 0x8d, 0x6d, 0x3c, 0x5a, 0xff, 0xe4,
-	0x59, 0x91, 0x52, 0x11, 0x54, 0xcb, 0xf7, 0xbb, 0xf9, 0x0b, 0x00, 0x00, 0xff, 0xff, 0x10, 0xc5,
-	0x95, 0x81, 0xd0, 0x01, 0x00, 0x00,
+	// 556 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x53, 0xb1, 0x6e, 0x13, 0x41,
+	0x10, 0xf5, 0x85, 0x24, 0x8a, 0x37, 0x0a, 0xc4, 0x87, 0x0b, 0x63, 0xc2, 0x19, 0xb9, 0x42, 0x11,
+	0xec, 0xc9, 0x41, 0x02, 0x89, 0xd2, 0x36, 0x1d, 0x08, 0x63, 0xa7, 0x4a, 0x73, 0xda, 0xbb, 0x5b,
+	0x9c, 0x95, 0x6f, 0x77, 0x4e, 0x7b, 0x9b, 0x93, 0x5d, 0xf0, 0x03, 0x54, 0xf0, 0x07, 0x94, 0x94,
+	0x29, 0xf8, 0x88, 0x94, 0x16, 0x15, 0x4a, 0x61, 0x21, 0xbb, 0x08, 0x1f, 0xc0, 0x07, 0xa0, 0xbd,
+	0xdd, 0x13, 0x0e, 0x25, 0xa1, 0xb1, 0x76, 0xe6, 0x8d, 0xdf, 0xbc, 0x99, 0x79, 0x87, 0x9a, 0x44,
+	0x4e, 0x7c, 0x4e, 0xe4, 0x84, 0x2a, 0x3f, 0xef, 0xd8, 0x17, 0x4e, 0x25, 0x28, 0x70, 0xf7, 0x88,
+	0x9c, 0x60, 0x9b, 0xc9, 0x3b, 0xcd, 0x1a, 0xe1, 0x4c, 0x80, 0x5f, 0xfc, 0x9a, 0x8a, 0xa6, 0x17,
+	0x41, 0xc6, 0x21, 0xf3, 0x43, 0x92, 0x51, 0x3f, 0xef, 0x84, 0x54, 0x91, 0x8e, 0x1f, 0x01, 0x13,
+	0x16, 0xbf, 0x67, 0xf0, 0xa0, 0x88, 0x7c, 0x13, 0x58, 0xa8, 0x3e, 0x86, 0x31, 0x98, 0xbc, 0x7e,
+	0xd9, 0xec, 0x03, 0x23, 0x47, 0xc4, 0x44, 0x69, 0x42, 0x9f, 0x8a, 0x9c, 0x26, 0x90, 0x52, 0x03,
+	0xb7, 0x7f, 0x39, 0x68, 0x7b, 0x40, 0x24, 0xe1, 0x99, 0x7b, 0x8a, 0xea, 0x9c, 0x89, 0x20, 0x53,
+	0x24, 0x64, 0x09, 0x53, 0xb3, 0x20, 0x4b, 0x25, 0x25, 0x71, 0xc3, 0x79, 0xe8, 0x3c, 0xaa, 0x76,
+	0x9f, 0x5d, 0x2c, 0x5a, 0x95, 0xcb, 0x45, 0xeb, 0xbe, 0xe9, 0x99, 0xc5, 0x13, 0xcc, 0xc0, 0xe7,
+	0x44, 0x9d, 0xe2, 0x57, 0x74, 0x4c, 0xa2, 0x59, 0x9f, 0x46, 0xdf, 0xbe, 0x3e, 0x41, 0x56, 0x52,
+	0x9f, 0x46, 0x5f, 0xae, 0xce, 0x0f, 0x9d, 0xa1, 0xcb, 0x99, 0x18, 0x95, 0x94, 0xa3, 0x82, 0xd1,
+	0x0d, 0x51, 0x2d, 0xa6, 0xef, 0xc8, 0x59, 0xa2, 0x02, 0x05, 0x21, 0x13, 0x81, 0x22, 0xd3, 0xc6,
+	0xc6, 0x8d, 0xda, 0xdc, 0xb1, 0x84, 0xc7, 0x9a, 0xef, 0x98, 0x4c, 0x5f, 0x1c, 0xfc, 0xfc, 0xdc,
+	0x72, 0x3e, 0x5c, 0x9d, 0x1f, 0xde, 0xd5, 0x0b, 0x98, 0x96, 0x17, 0x31, 0xb3, 0xb6, 0x3f, 0x39,
+	0x68, 0xbf, 0x07, 0x22, 0xa7, 0x32, 0x63, 0x20, 0x06, 0x90, 0xb0, 0x68, 0xe6, 0xf6, 0x51, 0x55,
+	0xaf, 0x3d, 0x48, 0x01, 0x92, 0x62, 0xea, 0xdd, 0xa3, 0x03, 0x6c, 0x1b, 0x69, 0x00, 0xdb, 0x7b,
+	0xe8, 0xae, 0x3d, 0x60, 0xa2, 0x5b, 0xd5, 0x62, 0x4d, 0xff, 0x1d, 0x5d, 0x30, 0x00, 0x48, 0xdc,
+	0xe7, 0xa8, 0xae, 0x09, 0x02, 0x49, 0x23, 0xc8, 0xa9, 0x9c, 0x05, 0x29, 0x95, 0x0c, 0xe2, 0x62,
+	0xbe, 0xcd, 0xee, 0x96, 0xdd, 0x8a, 0x2e, 0x19, 0xda, 0x8a, 0x41, 0x51, 0xd0, 0xbe, 0xdc, 0x40,
+	0xb5, 0x3f, 0x9a, 0x5e, 0x9b, 0x93, 0xb9, 0x3d, 0xb4, 0x53, 0x9e, 0xcc, 0x6a, 0x6a, 0x60, 0xe3,
+	0xa2, 0x02, 0xc7, 0x79, 0x07, 0xbf, 0xb4, 0x78, 0x77, 0x4f, 0xeb, 0x99, 0x2f, 0x5a, 0x8e, 0xd5,
+	0x54, 0xfe, 0xd1, 0x7d, 0x8b, 0x6e, 0x73, 0x26, 0x18, 0x3f, 0xe3, 0x41, 0x5a, 0xcc, 0x5a, 0xa8,
+	0xd9, 0x3d, 0x6a, 0xe1, 0x6b, 0x86, 0xc4, 0x7f, 0xaf, 0x64, 0x7d, 0xc2, 0x3d, 0xcb, 0x60, 0x97,
+	0xa5, 0x29, 0xc9, 0x74, 0x9d, 0xf2, 0xd6, 0x3f, 0x50, 0x1a, 0x06, 0x4b, 0x79, 0x82, 0x74, 0x62,
+	0xcd, 0x12, 0x9b, 0x37, 0xb2, 0xc4, 0x2e, 0x27, 0xd3, 0xd2, 0x0e, 0xed, 0xf7, 0x68, 0xbf, 0x7c,
+	0xbf, 0xc9, 0xa9, 0x94, 0x2c, 0xa6, 0x6e, 0x1d, 0x6d, 0xc5, 0x54, 0x00, 0x37, 0x0e, 0x1f, 0x9a,
+	0xc0, 0x1d, 0xa1, 0xea, 0xff, 0x32, 0xe5, 0x8e, 0xb2, 0x2d, 0xbb, 0x8f, 0x2f, 0x96, 0x9e, 0x33,
+	0x5f, 0x7a, 0xce, 0x8f, 0xa5, 0xe7, 0x7c, 0x5c, 0x79, 0x95, 0xf9, 0xca, 0xab, 0x7c, 0x5f, 0x79,
+	0x95, 0x13, 0xf7, 0x9a, 0x3d, 0xd5, 0x2c, 0xa5, 0x59, 0xb8, 0x5d, 0x7c, 0x9b, 0x4f, 0x7f, 0x07,
+	0x00, 0x00, 0xff, 0xff, 0xb4, 0x14, 0x96, 0xf8, 0x4b, 0x04, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -134,13 +328,10 @@ func (this *Params) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if !this.BasePool.Equal(&that1.BasePool) {
-		return false
-	}
-	if this.PoolRecoveryPeriod != that1.PoolRecoveryPeriod {
-		return false
-	}
 	if !this.MinStabilitySpread.Equal(that1.MinStabilitySpread) {
+		return false
+	}
+	if !this.DefaultTobinTax.Equal(that1.DefaultTobinTax) {
 		return false
 	}
 	return true
@@ -166,6 +357,16 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
+		size := m.DefaultTobinTax.Size()
+		i -= size
+		if _, err := m.DefaultTobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintMarket(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
 		size := m.MinStabilitySpread.Size()
 		i -= size
 		if _, err := m.MinStabilitySpread.MarshalTo(dAtA[i:]); err != nil {
@@ -174,7 +375,30 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintMarket(dAtA, i, uint64(size))
 	}
 	i--
-	dAtA[i] = 0x1a
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ConversionPolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConversionPolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConversionPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	if m.PoolRecoveryPeriod != 0 {
 		i = encodeVarintMarket(dAtA, i, uint64(m.PoolRecoveryPeriod))
 		i--
@@ -190,6 +414,109 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ConversionMandate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConversionMandate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConversionMandate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.MaxTobinTax.Size()
+		i -= size
+		if _, err := m.MaxTobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintMarket(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size, err := m.MaximumPolicy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintMarket(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size, err := m.MinimumPolicy.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintMarket(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.Envelope.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintMarket(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *TobinTaxOverride) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TobinTaxOverride) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TobinTaxOverride) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.TobinTax.Size()
+		i -= size
+		if _, err := m.TobinTax.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintMarket(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintMarket(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -210,12 +537,55 @@ func (m *Params) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = m.MinStabilitySpread.Size()
+	n += 1 + l + sovMarket(uint64(l))
+	l = m.DefaultTobinTax.Size()
+	n += 1 + l + sovMarket(uint64(l))
+	return n
+}
+
+func (m *ConversionPolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	l = m.BasePool.Size()
 	n += 1 + l + sovMarket(uint64(l))
 	if m.PoolRecoveryPeriod != 0 {
 		n += 1 + sovMarket(uint64(m.PoolRecoveryPeriod))
 	}
-	l = m.MinStabilitySpread.Size()
+	return n
+}
+
+func (m *ConversionMandate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Envelope.Size()
+	n += 1 + l + sovMarket(uint64(l))
+	l = m.MinimumPolicy.Size()
+	n += 1 + l + sovMarket(uint64(l))
+	l = m.MaximumPolicy.Size()
+	n += 1 + l + sovMarket(uint64(l))
+	l = m.MaxTobinTax.Size()
+	n += 1 + l + sovMarket(uint64(l))
+	return n
+}
+
+func (m *TobinTaxOverride) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovMarket(uint64(l))
+	}
+	l = m.TobinTax.Size()
 	n += 1 + l + sovMarket(uint64(l))
 	return n
 }
@@ -253,6 +623,124 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinStabilitySpread", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinStabilitySpread.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefaultTobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DefaultTobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConversionPolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConversionPolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConversionPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -307,9 +795,158 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConversionMandate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConversionMandate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConversionMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Envelope", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Envelope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinimumPolicy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinimumPolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MinStabilitySpread", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MaximumPolicy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MaximumPolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxTobinTax", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -337,7 +974,123 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.MinStabilitySpread.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MaxTobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TobinTaxOverride) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TobinTaxOverride: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TobinTaxOverride: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TobinTax", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMarket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TobinTax.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

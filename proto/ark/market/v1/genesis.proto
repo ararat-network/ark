@@ -15,11 +15,26 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 
   // ark_pool_delta is the signed gap between the ArkPool and BasePool measured
-  // in params.base_pool.denom.
+  // in conversion_policy.base_pool.denom.
   string ark_pool_delta = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+
+  // tobin_tax_overrides are the sparse per-denomination Tobin exceptions,
+  // sorted by unique denomination.
+  repeated TobinTaxOverride tobin_tax_overrides = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+
+  // conversion_policy is the live conversion-capacity pair. Its base pool must
+  // be denominated in the configured protocol reference.
+  ConversionPolicy conversion_policy = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+
+  // conversion_mandate is the governed conversion committee appointment,
+  // disabled at launch.
+  ConversionMandate conversion_mandate = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

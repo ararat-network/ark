@@ -19,9 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_Swap_FullMethodName         = "/ark.market.v1.Msg/Swap"
-	Msg_SwapSend_FullMethodName     = "/ark.market.v1.Msg/SwapSend"
-	Msg_UpdateParams_FullMethodName = "/ark.market.v1.Msg/UpdateParams"
+	Msg_Swap_FullMethodName                   = "/ark.market.v1.Msg/Swap"
+	Msg_SwapSend_FullMethodName               = "/ark.market.v1.Msg/SwapSend"
+	Msg_Settle_FullMethodName                 = "/ark.market.v1.Msg/Settle"
+	Msg_UpdateParams_FullMethodName           = "/ark.market.v1.Msg/UpdateParams"
+	Msg_SetTobinTaxOverride_FullMethodName    = "/ark.market.v1.Msg/SetTobinTaxOverride"
+	Msg_RemoveTobinTaxOverride_FullMethodName = "/ark.market.v1.Msg/RemoveTobinTaxOverride"
+	Msg_SetConversionMandate_FullMethodName   = "/ark.market.v1.Msg/SetConversionMandate"
+	Msg_UpdatePolicy_FullMethodName           = "/ark.market.v1.Msg/UpdatePolicy"
+	Msg_CommitteeUpdatePolicy_FullMethodName  = "/ark.market.v1.Msg/CommitteeUpdatePolicy"
+	Msg_CommitteeRaiseTobinTax_FullMethodName = "/ark.market.v1.Msg/CommitteeRaiseTobinTax"
 )
 
 // MsgClient is the client API for Msg service.
@@ -36,9 +43,30 @@ type MsgClient interface {
 	// SwapSend defines a method for swapping and sending coin from a account to
 	// other account.
 	SwapSend(ctx context.Context, in *MsgSwapSend, opts ...grpc.CallOption) (*MsgSwapSendResponse, error)
+	// Settle redeems a suspended asset against its governance-approved
+	// settlement plan.
+	Settle(ctx context.Context, in *MsgSettle, opts ...grpc.CallOption) (*MsgSettleResponse, error)
 	// UpdateParams defines an operation for updating the x/market module
 	// parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// SetTobinTaxOverride creates or replaces one per-denomination Tobin
+	// exception.
+	SetTobinTaxOverride(ctx context.Context, in *MsgSetTobinTaxOverride, opts ...grpc.CallOption) (*MsgSetTobinTaxOverrideResponse, error)
+	// RemoveTobinTaxOverride deletes one per-denomination Tobin exception.
+	RemoveTobinTaxOverride(ctx context.Context, in *MsgRemoveTobinTaxOverride, opts ...grpc.CallOption) (*MsgRemoveTobinTaxOverrideResponse, error)
+	// SetConversionMandate appoints, replaces, or disables the bounded conversion
+	// committee.
+	SetConversionMandate(ctx context.Context, in *MsgSetConversionMandate, opts ...grpc.CallOption) (*MsgSetConversionMandateResponse, error)
+	// UpdatePolicy applies one complete conversion candidate as the
+	// governance authority, unbounded by the committee mandate.
+	UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error)
+	// CommitteeUpdatePolicy applies one complete conversion candidate as
+	// the conversion committee, inside its mandate bounds.
+	CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error)
+	// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
+	// override as the conversion committee, at or above the current effective
+	// rate and at most the mandate's cap.
+	CommitteeRaiseTobinTax(ctx context.Context, in *MsgCommitteeRaiseTobinTax, opts ...grpc.CallOption) (*MsgCommitteeRaiseTobinTaxResponse, error)
 }
 
 type msgClient struct {
@@ -69,10 +97,80 @@ func (c *msgClient) SwapSend(ctx context.Context, in *MsgSwapSend, opts ...grpc.
 	return out, nil
 }
 
+func (c *msgClient) Settle(ctx context.Context, in *MsgSettle, opts ...grpc.CallOption) (*MsgSettleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSettleResponse)
+	err := c.cc.Invoke(ctx, Msg_Settle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgUpdateParamsResponse)
 	err := c.cc.Invoke(ctx, Msg_UpdateParams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetTobinTaxOverride(ctx context.Context, in *MsgSetTobinTaxOverride, opts ...grpc.CallOption) (*MsgSetTobinTaxOverrideResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSetTobinTaxOverrideResponse)
+	err := c.cc.Invoke(ctx, Msg_SetTobinTaxOverride_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) RemoveTobinTaxOverride(ctx context.Context, in *MsgRemoveTobinTaxOverride, opts ...grpc.CallOption) (*MsgRemoveTobinTaxOverrideResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgRemoveTobinTaxOverrideResponse)
+	err := c.cc.Invoke(ctx, Msg_RemoveTobinTaxOverride_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetConversionMandate(ctx context.Context, in *MsgSetConversionMandate, opts ...grpc.CallOption) (*MsgSetConversionMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSetConversionMandateResponse)
+	err := c.cc.Invoke(ctx, Msg_SetConversionMandate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgUpdatePolicyResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeUpdatePolicyResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeUpdatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeRaiseTobinTax(ctx context.Context, in *MsgCommitteeRaiseTobinTax, opts ...grpc.CallOption) (*MsgCommitteeRaiseTobinTaxResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeRaiseTobinTaxResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeRaiseTobinTax_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +189,30 @@ type MsgServer interface {
 	// SwapSend defines a method for swapping and sending coin from a account to
 	// other account.
 	SwapSend(context.Context, *MsgSwapSend) (*MsgSwapSendResponse, error)
+	// Settle redeems a suspended asset against its governance-approved
+	// settlement plan.
+	Settle(context.Context, *MsgSettle) (*MsgSettleResponse, error)
 	// UpdateParams defines an operation for updating the x/market module
 	// parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// SetTobinTaxOverride creates or replaces one per-denomination Tobin
+	// exception.
+	SetTobinTaxOverride(context.Context, *MsgSetTobinTaxOverride) (*MsgSetTobinTaxOverrideResponse, error)
+	// RemoveTobinTaxOverride deletes one per-denomination Tobin exception.
+	RemoveTobinTaxOverride(context.Context, *MsgRemoveTobinTaxOverride) (*MsgRemoveTobinTaxOverrideResponse, error)
+	// SetConversionMandate appoints, replaces, or disables the bounded conversion
+	// committee.
+	SetConversionMandate(context.Context, *MsgSetConversionMandate) (*MsgSetConversionMandateResponse, error)
+	// UpdatePolicy applies one complete conversion candidate as the
+	// governance authority, unbounded by the committee mandate.
+	UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error)
+	// CommitteeUpdatePolicy applies one complete conversion candidate as
+	// the conversion committee, inside its mandate bounds.
+	CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error)
+	// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
+	// override as the conversion committee, at or above the current effective
+	// rate and at most the mandate's cap.
+	CommitteeRaiseTobinTax(context.Context, *MsgCommitteeRaiseTobinTax) (*MsgCommitteeRaiseTobinTaxResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -110,8 +229,29 @@ func (UnimplementedMsgServer) Swap(context.Context, *MsgSwap) (*MsgSwapResponse,
 func (UnimplementedMsgServer) SwapSend(context.Context, *MsgSwapSend) (*MsgSwapSendResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SwapSend not implemented")
 }
+func (UnimplementedMsgServer) Settle(context.Context, *MsgSettle) (*MsgSettleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Settle not implemented")
+}
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (UnimplementedMsgServer) SetTobinTaxOverride(context.Context, *MsgSetTobinTaxOverride) (*MsgSetTobinTaxOverrideResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetTobinTaxOverride not implemented")
+}
+func (UnimplementedMsgServer) RemoveTobinTaxOverride(context.Context, *MsgRemoveTobinTaxOverride) (*MsgRemoveTobinTaxOverrideResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveTobinTaxOverride not implemented")
+}
+func (UnimplementedMsgServer) SetConversionMandate(context.Context, *MsgSetConversionMandate) (*MsgSetConversionMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetConversionMandate not implemented")
+}
+func (UnimplementedMsgServer) UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePolicy not implemented")
+}
+func (UnimplementedMsgServer) CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeUpdatePolicy not implemented")
+}
+func (UnimplementedMsgServer) CommitteeRaiseTobinTax(context.Context, *MsgCommitteeRaiseTobinTax) (*MsgCommitteeRaiseTobinTaxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeRaiseTobinTax not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -170,6 +310,24 @@ func _Msg_SwapSend_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_Settle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSettle)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Settle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_Settle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Settle(ctx, req.(*MsgSettle))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgUpdateParams)
 	if err := dec(in); err != nil {
@@ -184,6 +342,114 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).UpdateParams(ctx, req.(*MsgUpdateParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetTobinTaxOverride_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetTobinTaxOverride)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetTobinTaxOverride(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetTobinTaxOverride_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetTobinTaxOverride(ctx, req.(*MsgSetTobinTaxOverride))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_RemoveTobinTaxOverride_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRemoveTobinTaxOverride)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RemoveTobinTaxOverride(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_RemoveTobinTaxOverride_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RemoveTobinTaxOverride(ctx, req.(*MsgRemoveTobinTaxOverride))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetConversionMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetConversionMandate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetConversionMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetConversionMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetConversionMandate(ctx, req.(*MsgSetConversionMandate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdatePolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdatePolicy(ctx, req.(*MsgUpdatePolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeUpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeUpdatePolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeUpdatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeUpdatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeUpdatePolicy(ctx, req.(*MsgCommitteeUpdatePolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeRaiseTobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeRaiseTobinTax)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeRaiseTobinTax(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeRaiseTobinTax_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeRaiseTobinTax(ctx, req.(*MsgCommitteeRaiseTobinTax))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -204,8 +470,36 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_SwapSend_Handler,
 		},
 		{
+			MethodName: "Settle",
+			Handler:    _Msg_Settle_Handler,
+		},
+		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "SetTobinTaxOverride",
+			Handler:    _Msg_SetTobinTaxOverride_Handler,
+		},
+		{
+			MethodName: "RemoveTobinTaxOverride",
+			Handler:    _Msg_RemoveTobinTaxOverride_Handler,
+		},
+		{
+			MethodName: "SetConversionMandate",
+			Handler:    _Msg_SetConversionMandate_Handler,
+		},
+		{
+			MethodName: "UpdatePolicy",
+			Handler:    _Msg_UpdatePolicy_Handler,
+		},
+		{
+			MethodName: "CommitteeUpdatePolicy",
+			Handler:    _Msg_CommitteeUpdatePolicy_Handler,
+		},
+		{
+			MethodName: "CommitteeRaiseTobinTax",
+			Handler:    _Msg_CommitteeRaiseTobinTax_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
