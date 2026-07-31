@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -34,32 +33,51 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, err
 	}
 
-	currentParams, err := m.k.Params.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting current params: %w", err)
-	}
-	currentVoteTargets := types.VoteTargetDenoms(currentParams)
-	nextVoteTargets := types.VoteTargetDenoms(msg.Params)
-	for _, denom := range currentVoteTargets {
-		if _, found := slices.BinarySearch(nextVoteTargets, denom); !found {
-			return nil, fmt.Errorf("%w: %s", types.ErrVoteTargetRemoval, denom)
-		}
-	}
-
-	for _, tobinTax := range msg.Params.TobinTaxes {
-		if _, found := slices.BinarySearch(currentVoteTargets, tobinTax.Denom); !found {
-			m.k.registerTobinTaxMetadata(ctx, tobinTax.Denom)
-		}
-	}
-	if !slices.Equal(currentVoteTargets, nextVoteTargets) {
-		if err := m.k.ScheduleVoteTargets(ctx, nextVoteTargets); err != nil {
-			return nil, fmt.Errorf("scheduling vote targets: %w", err)
-		}
-	}
-
+	// Oracle parameters carry no feed referents: membership moves only through
+	// MsgAddFeed and MsgRemoveFeed, and every consumer-side referent (the asset
+	// registry and the protocol reference) is checked by the removal guard.
 	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
 		return nil, fmt.Errorf("setting params: %w", err)
 	}
 
 	return &types.MsgUpdateParamsResponse{}, nil
+}
+
+// AddFeed schedules one feed addition.
+func (m msgServer) AddFeed(ctx context.Context, msg *types.MsgAddFeed) (*types.MsgAddFeedResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
+		return nil, err
+	}
+
+	if err := m.k.ScheduleFeedTransition(
+		ctx,
+		msg.Denom,
+		types.FeedDirection_FEED_DIRECTION_ADD,
+	); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgAddFeedResponse{}, nil
+}
+
+// RemoveFeed schedules one feed removal once no consumer still references it.
+func (m msgServer) RemoveFeed(ctx context.Context, msg *types.MsgRemoveFeed) (*types.MsgRemoveFeedResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
+		return nil, err
+	}
+
+	if err := m.k.requireFeedUnreferenced(ctx, msg.Denom); err != nil {
+		return nil, err
+	}
+	if err := m.k.ScheduleFeedTransition(
+		ctx,
+		msg.Denom,
+		types.FeedDirection_FEED_DIRECTION_REMOVE,
+	); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgRemoveFeedResponse{}, nil
 }

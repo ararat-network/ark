@@ -72,8 +72,20 @@ func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchange
 	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRates}, nil
 }
 
-// TobinTax queries the active Tobin tax for a denom.
-func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxRequest) (*types.QueryTobinTaxResponse, error) {
+// Feeds queries the active feed set and any scheduled transitions.
+func (q queryServer) Feeds(ctx context.Context, req *types.QueryFeedsRequest) (*types.QueryFeedsResponse, error) {
+	feeds, err := q.k.Feeds.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting oracle feeds: %v", err)
+	}
+
+	return &types.QueryFeedsResponse{Feeds: feeds}, nil
+}
+
+// FeedReferents queries the consumer claims pinning a feed. Existence and the
+// claims themselves both come from the collector MsgRemoveFeed consults, so a
+// denom this reports as unremovable is exactly one governance would reject.
+func (q queryServer) FeedReferents(ctx context.Context, req *types.QueryFeedReferentsRequest) (*types.QueryFeedReferentsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -81,39 +93,16 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
-	tobinTax, err := q.k.GetTobinTax(ctx, req.Denom)
+	referents, err := q.k.FeedReferents(ctx, req.Denom)
 	if err != nil {
-		if errors.Is(err, types.ErrUnknownDenom) {
-			return nil, status.Errorf(codes.NotFound, "tobin tax not found for denom %s", req.Denom)
+		if errors.Is(err, types.ErrFeedNotFound) {
+			return nil, status.Errorf(codes.NotFound, "no active or in-flight feed for denom %s", req.Denom)
 		}
-		return nil, status.Errorf(codes.Internal, "getting tobin tax for denom %s: %v", req.Denom, err)
+
+		return nil, status.Errorf(codes.Internal, "getting feed referents for denom %s: %v", req.Denom, err)
 	}
 
-	return &types.QueryTobinTaxResponse{TobinTax: tobinTax}, nil
-}
-
-// TobinTaxes queries all active Tobin taxes.
-func (q queryServer) TobinTaxes(ctx context.Context, req *types.QueryTobinTaxesRequest) (*types.QueryTobinTaxesResponse, error) {
-	tobinTaxes, err := q.k.GetTobinTaxes(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle tobin taxes: %v", err)
-	}
-
-	return &types.QueryTobinTaxesResponse{TobinTaxes: tobinTaxes}, nil
-}
-
-// VoteTargets queries active vote target denoms.
-func (q queryServer) VoteTargets(ctx context.Context, req *types.QueryVoteTargetsRequest) (*types.QueryVoteTargetsResponse, error) {
-	voteTargets, err := q.k.VoteTargets.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle vote targets: %v", err)
-	}
-
-	return &types.QueryVoteTargetsResponse{
-		VoteTargets:   voteTargets.Denoms,
-		TargetVersion: voteTargets.Version,
-		Pending:       voteTargets.Pending,
-	}, nil
+	return &types.QueryFeedReferentsResponse{Referents: referents}, nil
 }
 
 // RewardWeight queries a validator's oracle reward weight.

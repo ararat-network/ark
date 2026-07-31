@@ -119,49 +119,121 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	s.Require().ElementsMatch(expected, resp.ExchangeRates)
 }
 
-func (s *KeeperTestSuite) TestQueryTobinTax() {
+func (s *KeeperTestSuite) TestQueryFeeds() {
+	denoms := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
+	transitions := []types.FeedTransition{{
+		Denom:                "agold",
+		Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
+		ActivationVoteHeight: 10,
+	}}
+	stored := types.Feeds{
+		Denoms:      denoms,
+		Version:     types.InitialFeedVersion,
+		Transitions: transitions,
+	}
+	s.Require().NoError(s.keeper.Feeds.Set(s.ctx, stored))
+
+	resp, err := s.queryClient.Feeds(s.ctx, &types.QueryFeedsRequest{})
+	s.Require().NoError(err)
+	s.Require().Equal(stored, resp.Feeds)
+}
+
+// TestQueryFeedReferents covers the operator-facing half of the removal
+// guard: the query answers from the same collector MsgRemoveFeed consults, so
+// what an author inspects beforehand is what governance is judged against.
+func (s *KeeperTestSuite) TestQueryFeedReferents() {
+	adding := types.Feeds{
+		Denoms:  []string{chain.USDBaseDenom},
+		Version: types.InitialFeedVersion,
+		Transitions: []types.FeedTransition{{
+			Denom:                feedGold,
+			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
+			ActivationVoteHeight: 10,
+		}},
+	}
+	referentAssetGold := "asset " + feedGold + " (PENDING)"
+
 	tests := []struct {
 		name      string
 		setup     func()
-		req       *types.QueryTobinTaxRequest
+		req       *types.QueryFeedReferentsRequest
 		code      codes.Code
-		expect    math.LegacyDec
+		expect    []types.FeedReferent
 		expectErr bool
 	}{
 		{
 			name:      "invalid denom rejected",
-			req:       &types.QueryTobinTaxRequest{Denom: "/"},
+			req:       &types.QueryFeedReferentsRequest{Denom: "/"},
 			code:      codes.InvalidArgument,
 			expectErr: true,
 		},
 		{
-			name: "configured tobin tax returned",
+			name: "denom without a feed is not found",
 			setup: func() {
-				params, err := s.keeper.Params.Get(s.ctx)
-				s.Require().NoError(err)
-				params.TobinTaxes = []types.TobinTax{
-					{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-				}
-				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+				s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
 			},
-			req:    &types.QueryTobinTaxRequest{Denom: chain.USDBaseDenom},
-			expect: math.LegacyNewDecWithPrec(25, 4),
-		},
-		{
-			name:      "missing denom returns not found",
-			req:       &types.QueryTobinTaxRequest{Denom: "afoo"},
+			req:       &types.QueryFeedReferentsRequest{Denom: feedGold},
 			code:      codes.NotFound,
 			expectErr: true,
+		},
+		{
+			name: "active feed with no claims returns empty",
+			setup: func() {
+				s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
+			},
+			req: &types.QueryFeedReferentsRequest{Denom: chain.USDBaseDenom},
+		},
+		{
+			// An asset awaiting activation pins a feed that has not activated
+			// yet, so Adding must be answerable rather than NotFound.
+			name: "feed being added is answerable",
+			setup: func() {
+				s.Require().NoError(s.keeper.Feeds.Set(s.ctx, adding))
+				s.keeper.SetFeedReferentGuards(stubFeedReferentGuard{
+					consumer: consumerAsset,
+					pinned:   map[string][]string{feedGold: {referentAssetGold}},
+				})
+			},
+			req: &types.QueryFeedReferentsRequest{Denom: feedGold},
+			expect: []types.FeedReferent{
+				{Consumer: consumerAsset, Referent: referentAssetGold},
+			},
+		},
+		{
+			name: "claims are concatenated across guards",
+			setup: func() {
+				s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
+				s.keeper.SetFeedReferentGuards(
+					stubFeedReferentGuard{
+						consumer: consumerAsset,
+						pinned: map[string][]string{chain.USDBaseDenom: {
+							referentReference,
+							referentAssetUSD,
+						}},
+					},
+					stubFeedReferentGuard{
+						consumer: consumerBasket,
+						pinned:   map[string][]string{chain.USDBaseDenom: {referentBasket}},
+					},
+				)
+			},
+			req: &types.QueryFeedReferentsRequest{Denom: chain.USDBaseDenom},
+			expect: []types.FeedReferent{
+				{Consumer: consumerAsset, Referent: referentReference},
+				{Consumer: consumerAsset, Referent: referentAssetUSD},
+				{Consumer: consumerBasket, Referent: referentBasket},
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
+			s.keeper.SetFeedReferentGuards()
 			if tc.setup != nil {
 				tc.setup()
 			}
 
-			resp, err := s.queryClient.TobinTax(s.ctx, tc.req)
+			resp, err := s.queryClient.FeedReferents(s.ctx, tc.req)
 			if tc.expectErr {
 				s.Require().Error(err)
 				s.Require().Equal(tc.code, status.Code(err))
@@ -169,44 +241,9 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 			}
 
 			s.Require().NoError(err)
-			s.Require().True(tc.expect.Equal(resp.TobinTax))
+			s.Require().Equal(tc.expect, resp.Referents)
 		})
 	}
-}
-
-func (s *KeeperTestSuite) TestQueryTobinTaxes() {
-	expected := []types.TobinTax{
-		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(5, 2)},
-	}
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = expected
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-
-	resp, err := s.queryClient.TobinTaxes(s.ctx, &types.QueryTobinTaxesRequest{})
-	s.Require().NoError(err)
-	s.Require().ElementsMatch(expected, resp.TobinTaxes)
-}
-
-func (s *KeeperTestSuite) TestQueryVoteTargets() {
-	voteTargets := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
-	pending := &types.PendingVoteTargets{
-		Denoms:               []string{chain.USDBaseDenom},
-		Version:              types.InitialVoteTargetVersion + 1,
-		ActivationVoteHeight: 10,
-	}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
-		Denoms:  voteTargets,
-		Version: types.InitialVoteTargetVersion,
-		Pending: pending,
-	}))
-
-	resp, err := s.queryClient.VoteTargets(s.ctx, &types.QueryVoteTargetsRequest{})
-	s.Require().NoError(err)
-	s.Require().Equal(voteTargets, resp.VoteTargets)
-	s.Require().Equal(types.InitialVoteTargetVersion, resp.TargetVersion)
-	s.Require().Equal(pending, resp.Pending)
 }
 
 func (s *KeeperTestSuite) TestQueryRewardWeight() {

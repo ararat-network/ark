@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"cosmossdk.io/collections"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	chain "ark/pkg/chain"
 	"ark/x/oracle/types"
@@ -40,7 +38,12 @@ type Keeper struct {
 	ExchangeRate collections.Map[string, types.ExchangeRate]
 	RewardWeight collections.Map[sdk.ValAddress, math.Int]
 	Attendance   collections.Map[sdk.ValAddress, types.Attendance]
-	VoteTargets  collections.Item[types.VoteTargets]
+	Feeds        collections.Item[types.Feeds]
+
+	// feedReferentGuards answer, at removal time, whether a consumer still
+	// depends on a feed. They derive from the consumer's own state; nothing is
+	// indexed here.
+	feedReferentGuards []FeedReferentGuard
 }
 
 // NewKeeper constructs an oracle keeper.
@@ -107,11 +110,11 @@ func NewKeeper(
 			sdk.ValAddressKey,
 			codec.CollValue[types.Attendance](cdc),
 		),
-		VoteTargets: collections.NewItem(
+		Feeds: collections.NewItem(
 			sb,
-			types.VoteTargetsKey,
-			"vote_targets",
-			codec.CollValue[types.VoteTargets](cdc),
+			types.FeedsKey,
+			"feeds",
+			codec.CollValue[types.Feeds](cdc),
 		),
 	}
 
@@ -179,8 +182,11 @@ func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 
 // SetExchangeRateWithEvent stores an exchange rate and emits an update event.
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
-	if err := chain.ValidateNativeBaseDenom(exchangeRate.Denom); err != nil {
-		return fmt.Errorf("invalid exchange rate denom: %w", err)
+	// Rates are keyed by the denomination the feed prices, which may run ahead
+	// of that denomination being listed as an asset. The numeraire is excluded
+	// for the same reason it has no feed.
+	if err := chain.ValidatePricedDenom(exchangeRate.Denom); err != nil {
+		return fmt.Errorf("invalid exchange rate feed: %w", err)
 	}
 	if exchangeRate.Rate.IsNil() {
 		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate is unset", exchangeRate.Denom)
@@ -217,42 +223,6 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	return nil
 }
 
-// GetTobinTax returns the configured Tobin tax for a denom.
-func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return math.LegacyZeroDec(), fmt.Errorf("getting params: %w", err)
-	}
-
-	for _, tobinTax := range params.TobinTaxes {
-		if tobinTax.Denom == denom {
-			return tobinTax.TobinTax, nil
-		}
-	}
-
-	return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
-}
-
-// GetTobinTaxes returns configured Tobin taxes.
-func (k Keeper) GetTobinTaxes(ctx context.Context) ([]types.TobinTax, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting params: %w", err)
-	}
-
-	return params.TobinTaxes, nil
-}
-
-// GetVoteTargets returns the target epoch validators must report at voteHeight.
-func (k Keeper) GetVoteTargets(ctx context.Context, voteHeight int64) (types.VoteTargetSet, error) {
-	voteTargets, err := k.VoteTargets.Get(ctx)
-	if err != nil {
-		return types.VoteTargetSet{}, fmt.Errorf("getting vote targets: %w", err)
-	}
-
-	return voteTargets.AtHeight(voteHeight), nil
-}
-
 func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime time.Time, maxAge time.Duration) (math.LegacyDec, error) {
 	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
 	if err != nil {
@@ -272,23 +242,4 @@ func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime t
 	}
 
 	return exchangeRate.Rate, nil
-}
-
-func (k Keeper) registerTobinTaxMetadata(ctx context.Context, denom string) {
-	if _, ok := k.bankKeeper.GetDenomMetaData(ctx, denom); ok {
-		return
-	}
-
-	display := denom[1:]
-	k.bankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
-		Description: "The native stable token of Ark Icarus.",
-		DenomUnits: []*banktypes.DenomUnit{
-			{Denom: denom, Exponent: 0},
-			{Denom: display, Exponent: chain.NativeDisplayExponent},
-		},
-		Base:    denom,
-		Display: display,
-		Name:    fmt.Sprintf("%s ARK", strings.ToUpper(display)),
-		Symbol:  fmt.Sprintf("%sA", strings.ToUpper(display[:len(display)-1])),
-	})
 }

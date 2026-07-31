@@ -3,13 +3,10 @@ package keeper_test
 import (
 	"time"
 
-	"go.uber.org/mock/gomock"
-
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	chain "ark/pkg/chain"
 	"ark/x/oracle/types"
@@ -31,10 +28,6 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			name: "full genesis stores all collections",
 			genesis: func() *types.GenesisState {
 				params := types.DefaultParams()
-				params.TobinTaxes = []types.TobinTax{
-					{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-					{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
-				}
 				return &types.GenesisState{
 					Params:     params,
 					Accounting: types.NewAccounting(params),
@@ -50,12 +43,12 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 						{ValidatorAddress: valAddr1.String(), Attendance: types.Attendance{EligibleBlocks: 5, AttendedBlocks: 3}},
 						{ValidatorAddress: valAddr2.String(), Attendance: types.Attendance{EligibleBlocks: 0, AttendedBlocks: 0}},
 					},
-					VoteTargets: types.VoteTargets{
+					Feeds: types.Feeds{
 						Denoms: []string{
 							chain.KRWBaseDenom,
 							chain.USDBaseDenom,
 						},
-						Version: types.InitialVoteTargetVersion,
+						Version: types.InitialFeedVersion,
 					},
 				}
 			},
@@ -63,10 +56,6 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
 					authtypes.NewEmptyModuleAccount(types.ModuleName),
 				)
-				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.KRWBaseDenom).Return(banktypes.Metadata{}, false)
-				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
-				s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, chain.USDBaseDenom).Return(banktypes.Metadata{}, false)
-				s.bankKeeper.EXPECT().SetDenomMetaData(s.ctx, gomock.Any())
 			},
 		},
 		{
@@ -99,13 +88,47 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			expectErr: "oracle genesis state is nil",
 		},
 		{
-			name: "unsorted vote targets return error",
+			// The shape a zero-height export produces if it carries old-chain
+			// heights over: the anchor is unreachable, so reward settlement
+			// would never fire on the new chain.
+			name: "reward window anchor after genesis height returns error",
 			genesis: func() *types.GenesisState {
 				gs := types.DefaultGenesisState()
-				gs.VoteTargets.Denoms = []string{chain.USDBaseDenom, chain.KRWBaseDenom}
+				gs.Accounting.RewardWindowStartHeight = uint64(oracleTestGenesisHeight) + 1
 				return gs
 			},
-			expectErr: "active vote targets must be sorted",
+			expectErr:           "reward window start height 21 is after genesis block height 20",
+			expectAccountingOld: true,
+		},
+		{
+			name: "attendance window anchor after genesis height returns error",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Accounting.AttendanceWindowStartHeight = uint64(oracleTestGenesisHeight) + 1
+				return gs
+			},
+			expectErr:           "attendance window start height 21 is after genesis block height 20",
+			expectAccountingOld: true,
+		},
+		{
+			// The boundary is inclusive: an anchor at the genesis height itself
+			// is the window opening exactly now, not a stale import.
+			name: "anchors at the genesis height are accepted",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Accounting.RewardWindowStartHeight = uint64(oracleTestGenesisHeight)
+				gs.Accounting.AttendanceWindowStartHeight = uint64(oracleTestGenesisHeight)
+				return gs
+			},
+		},
+		{
+			name: "unsorted feeds return error",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds.Denoms = []string{chain.USDBaseDenom, chain.KRWBaseDenom}
+				return gs
+			},
+			expectErr: "must be sorted by unique denom",
 		},
 		{
 			name: "future exchange rate timestamp returns error",
@@ -183,7 +206,6 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 }
 
 func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
-	// Params are stored as module params; compare TobinTaxes by contents so nil and empty slices are equivalent.
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(expected.Params.VoteThreshold.Equal(params.VoteThreshold))
@@ -193,11 +215,8 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	s.Require().Equal(expected.Params.AttendanceWindow, params.AttendanceWindow)
 	s.Require().True(expected.Params.MinAttendancePerWindow.Equal(params.MinAttendancePerWindow))
 	s.Require().Equal(expected.Params.MaxExchangeRateAge, params.MaxExchangeRateAge)
-	s.Require().Len(params.TobinTaxes, len(expected.Params.TobinTaxes))
-	for i, item := range expected.Params.TobinTaxes {
-		s.Require().Equal(item.Denom, params.TobinTaxes[i].Denom)
-		s.Require().True(item.TobinTax.Equal(params.TobinTaxes[i].TobinTax))
-	}
+	s.Require().True(expected.Params.FunctioningBlockThreshold.Equal(params.FunctioningBlockThreshold))
+	s.Require().True(expected.Params.ParticipationThreshold.Equal(params.ParticipationThreshold))
 	accounting, err := s.keeper.Accounting.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(expected.Accounting, accounting)
@@ -256,14 +275,9 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().Equal(item.Attendance, attendance)
 	}
 
-	// Tobin taxes are read directly from params.
-	tobinTaxes, err := s.keeper.GetTobinTaxes(s.ctx)
+	voteTargets, err := s.keeper.Feeds.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(expected.Params.TobinTaxes, tobinTaxes)
-
-	voteTargets, err := s.keeper.VoteTargets.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(expected.VoteTargets, voteTargets)
+	s.Require().Equal(expected.Feeds, voteTargets)
 }
 
 func (s *KeeperTestSuite) TestExportGenesis() {
@@ -291,10 +305,11 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			{ValidatorAddress: valAddr1.String(), Attendance: types.Attendance{EligibleBlocks: 5, AttendedBlocks: 3}},
 			{ValidatorAddress: valAddr2.String(), Attendance: types.Attendance{EligibleBlocks: 0, AttendedBlocks: 0}},
 		},
-		VoteTargets: types.VoteTargets{Denoms: []string{
-			chain.KRWBaseDenom,
-			chain.USDBaseDenom,
-		}, Version: types.InitialVoteTargetVersion},
+		Feeds: types.Feeds{
+			Denoms: []string{
+				chain.KRWBaseDenom,
+				chain.USDBaseDenom,
+			}, Version: types.InitialFeedVersion},
 	}
 	expected.Params.RewardWindow = 10
 	expected.Params.VoteThreshold = math.LegacyNewDecWithPrec(6, 1)
@@ -316,7 +331,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 
 		s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr, item.Attendance))
 	}
-	s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, expected.VoteTargets))
+	s.Require().NoError(s.keeper.Feeds.Set(s.ctx, expected.Feeds))
 
 	gs, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
@@ -330,8 +345,9 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	s.Require().Equal(expected.Params.AttendanceWindow, gs.Params.AttendanceWindow)
 	s.Require().True(expected.Params.MinAttendancePerWindow.Equal(gs.Params.MinAttendancePerWindow))
 	s.Require().Equal(expected.Params.MaxExchangeRateAge, gs.Params.MaxExchangeRateAge)
-	s.Require().Equal(expected.Params.TobinTaxes, gs.Params.TobinTaxes)
-	s.Require().Equal(expected.VoteTargets, gs.VoteTargets)
+	s.Require().True(expected.Params.FunctioningBlockThreshold.Equal(gs.Params.FunctioningBlockThreshold))
+	s.Require().True(expected.Params.ParticipationThreshold.Equal(gs.Params.ParticipationThreshold))
+	s.Require().Equal(expected.Feeds, gs.Feeds)
 	s.Require().Equal(expected.Accounting, gs.Accounting)
 
 	// Exchange rates are exported by denom.

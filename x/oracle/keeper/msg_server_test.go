@@ -3,13 +3,10 @@ package keeper_test
 import (
 	"context"
 
-	"go.uber.org/mock/gomock"
-
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	chain "ark/pkg/chain"
@@ -70,104 +67,245 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		s.Require().ErrorContains(err, "RewardWindow must be > 0")
 	})
 
-	for _, tc := range []struct {
-		name   string
-		mutate func(*types.Params)
-	}{
-		{
-			name: "rejects removed vote target",
-			mutate: func(params *types.Params) {
-				params.TobinTaxes = params.TobinTaxes[1:]
-			},
-		},
-		{
-			name: "rejects empty vote targets",
-			mutate: func(params *types.Params) {
-				params.TobinTaxes = nil
-			},
-		},
-	} {
-		s.Run(tc.name, func() {
-			currentParams, err := s.keeper.Params.Get(s.ctx)
-			s.Require().NoError(err)
-			currentVoteTargets := types.NewVoteTargets(currentParams)
-			s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, currentVoteTargets))
+	// Parameters carry no feed referents, so no parameter update can move
+	// membership: that travels only through MsgAddFeed and MsgRemoveFeed, and a
+	// scheduled removal in flight does not change the answer.
+	s.Run("never touches feed membership", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{
+			chain.USDBaseDenom,
+			"aaud",
+		})))
+		s.Require().NoError(s.keeper.ScheduleFeedTransition(
+			s.ctx,
+			"aaud",
+			types.FeedDirection_FEED_DIRECTION_REMOVE,
+		))
+		currentFeeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
 
-			params := currentParams
-			tc.mutate(&params)
-			_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-				Authority: authority,
-				Params:    params,
-			})
-			s.Require().ErrorIs(err, types.ErrVoteTargetRemoval)
-
-			storedParams, err := s.keeper.Params.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().Equal(currentParams, storedParams)
-			storedVoteTargets, err := s.keeper.VoteTargets.Get(s.ctx)
-			s.Require().NoError(err)
-			s.Require().Equal(currentVoteTargets, storedVoteTargets)
-		})
-	}
-
-	s.Run("updates market taxes and schedules added vote targets", func() {
-		oldVoteTargets := []string{chain.USDBaseDenom}
-		currentParams := types.DefaultParams()
-		currentParams.TobinTaxes = []types.TobinTax{
-			{Denom: chain.USDBaseDenom, TobinTax: types.DefaultTobinTax},
-		}
-		s.Require().NoError(s.keeper.Params.Set(s.ctx, currentParams))
-		s.Require().NoError(s.keeper.VoteTargets.Set(s.ctx, types.VoteTargets{
-			Denoms:  oldVoteTargets,
-			Version: types.InitialVoteTargetVersion,
-		}))
-		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, newStoredExchangeRate(chain.USDBaseDenom, math.LegacyOneDec())))
-
-		const newDenom = "aaud"
 		params := types.DefaultParams()
-		params.TobinTaxes = []types.TobinTax{
-			{Denom: newDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-			{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-		}
-		s.bankKeeper.EXPECT().GetDenomMetaData(s.ctx, newDenom).Return(banktypes.Metadata{}, false)
-		s.bankKeeper.EXPECT().
-			SetDenomMetaData(s.ctx, gomock.Any()).
-			Do(func(_ context.Context, metadata banktypes.Metadata) {
-				s.Require().Equal(newDenom, metadata.Base)
-				s.Require().Equal("aud", metadata.Display)
-				s.Require().Equal([]*banktypes.DenomUnit{
-					{Denom: newDenom, Exponent: 0},
-					{Denom: "aud", Exponent: chain.NativeDisplayExponent},
-				}, metadata.DenomUnits)
-			})
-
-		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		params.RewardBand = math.LegacyNewDecWithPrec(5, 2)
+		_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 			Authority: authority,
 			Params:    params,
 		})
 		s.Require().NoError(err)
 
-		hasUSD, err := s.keeper.ExchangeRate.Has(s.ctx, chain.USDBaseDenom)
+		storedParams, err := s.keeper.Params.Get(s.ctx)
 		s.Require().NoError(err)
-		s.Require().True(hasUSD)
+		s.Require().True(params.RewardBand.Equal(storedParams.RewardBand))
 
-		usdTax, err := s.keeper.GetTobinTax(s.ctx, chain.USDBaseDenom)
+		storedFeeds, err := s.keeper.Feeds.Get(s.ctx)
 		s.Require().NoError(err)
-		s.Require().True(math.LegacyNewDecWithPrec(25, 4).Equal(usdTax))
+		s.Require().Equal(currentFeeds, storedFeeds)
+	})
+}
 
-		audTax, err := s.keeper.GetTobinTax(s.ctx, newDenom)
-		s.Require().NoError(err)
-		s.Require().True(math.LegacyNewDecWithPrec(50, 4).Equal(audTax))
+func (s *KeeperTestSuite) TestAddFeed() {
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-		state, err := s.keeper.VoteTargets.Get(s.ctx)
+	s.Run("schedules an addition", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
+
+		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
+			Authority: authority,
+			Denom:     feedGold,
+		})
 		s.Require().NoError(err)
-		s.Require().Equal(oldVoteTargets, state.Denoms)
-		s.Require().NotNil(state.Pending)
-		s.Require().Equal(types.InitialVoteTargetVersion+1, state.Pending.Version)
+
+		feeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
+		s.Require().Len(feeds.Transitions, 1)
+		s.Require().Equal(feedGold, feeds.Transitions[0].Denom)
 		s.Require().Equal(
-			sdk.UnwrapSDKContext(s.ctx).BlockHeight()+types.VoteTargetActivationDelayBlocks,
-			state.Pending.ActivationVoteHeight,
+			types.FeedDirection_FEED_DIRECTION_ADD,
+			feeds.Transitions[0].Direction,
 		)
-		s.Require().Equal([]string{newDenom, chain.USDBaseDenom}, state.Pending.Denoms)
+	})
+
+	s.Run("rejects invalid authority", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
+
+		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
+			Authority: sdk.AccAddress("not-gov").String(),
+			Denom:     feedGold,
+		})
+		s.Require().Error(err)
+	})
+
+	s.Run("rejects an invalid feed id", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
+
+		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
+			Authority: authority,
+			Denom:     "aGOLD",
+		})
+		s.Require().ErrorContains(err, "must be an Ark-native base denom matching")
+	})
+}
+
+// Referent fixtures shared by the removal-guard and query tests. The strings
+// mirror what x/asset actually reports, so the aggregation these exercise is
+// the shape operators see.
+const (
+	consumerAsset  = "asset"
+	consumerBasket = "basket"
+
+	referentReference = "protocol reference"
+	referentAssetUSD  = "asset ausd (ACTIVE)"
+	referentBasket    = "component of abasket"
+)
+
+// stubFeedReferentGuard stands in for a future consumer guard (asset, basket,
+// reserve) so the veto path keeps coverage while the wiring-owned set is
+// empty. One stub reports every claim it holds for a denom, matching a real
+// consumer that can pin a feed for more than one reason.
+type stubFeedReferentGuard struct {
+	consumer string
+	pinned   map[string][]string
+}
+
+func (g stubFeedReferentGuard) FeedReferents(
+	_ context.Context,
+	denom string,
+) ([]types.FeedReferent, error) {
+	var referents []types.FeedReferent
+	for _, referent := range g.pinned[denom] {
+		referents = append(referents, types.FeedReferent{
+			Consumer: g.consumer,
+			Referent: referent,
+		})
+	}
+
+	return referents, nil
+}
+
+func (s *KeeperTestSuite) TestRemoveFeed() {
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	s.Run("rejects removal while a registered guard pins the feed", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
+		s.keeper.SetFeedReferentGuards(stubFeedReferentGuard{
+			consumer: consumerAsset,
+			pinned:   map[string][]string{chain.USDBaseDenom: {referentAssetUSD}},
+		})
+
+		_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+			Authority: authority,
+			Denom:     chain.USDBaseDenom,
+		})
+		s.Require().ErrorIs(err, types.ErrFeedReferenced)
+
+		feeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
+		s.Require().Empty(feeds.Transitions)
+	})
+
+	// Every blocker in one rejection: a proposal author fixing them serially
+	// would burn a governance cycle per claim.
+	s.Run("reports every claim across every guard in one rejection", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
+		s.keeper.SetFeedReferentGuards(
+			stubFeedReferentGuard{
+				consumer: consumerAsset,
+				pinned: map[string][]string{chain.USDBaseDenom: {
+					referentReference,
+					referentAssetUSD,
+				}},
+			},
+			stubFeedReferentGuard{
+				consumer: consumerBasket,
+				pinned:   map[string][]string{chain.USDBaseDenom: {referentBasket}},
+			},
+		)
+
+		_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+			Authority: authority,
+			Denom:     chain.USDBaseDenom,
+		})
+		s.Require().ErrorIs(err, types.ErrFeedReferenced)
+		s.Require().ErrorContains(err, consumerAsset+": "+referentReference)
+		s.Require().ErrorContains(err, consumerAsset+": "+referentAssetUSD)
+		s.Require().ErrorContains(err, consumerBasket+": "+referentBasket)
+	})
+
+	s.Run("schedules removal once no guard pins the feed", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{
+			chain.USDBaseDenom,
+			feedGold,
+		})))
+		s.keeper.SetFeedReferentGuards(stubFeedReferentGuard{
+			consumer: consumerAsset,
+			pinned:   map[string][]string{chain.USDBaseDenom: {referentAssetUSD}},
+		})
+
+		_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+			Authority: authority,
+			Denom:     feedGold,
+		})
+		s.Require().NoError(err)
+
+		feeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
+		s.Require().Len(feeds.Transitions, 1)
+		s.Require().Equal(feedGold, feeds.Transitions[0].Denom)
+		s.Require().Equal(
+			types.FeedDirection_FEED_DIRECTION_REMOVE,
+			feeds.Transitions[0].Direction,
+		)
+	})
+
+	// Scheduling treats removing an absent feed as a no-op, which would pass a
+	// governance proposal that silently does nothing. The guard check rejects
+	// it first so a typo or an already-removed feed fails where it is seen.
+	s.Run("rejects removal of a feed that does not exist", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
+
+		_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+			Authority: authority,
+			Denom:     feedGold,
+		})
+		s.Require().ErrorIs(err, types.ErrFeedNotFound)
+	})
+
+	// A feed already being removed still exists, so re-submitting inside the
+	// activation window stays idempotent rather than becoming an error.
+	s.Run("re-submitting an in-flight removal stays idempotent", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedGold})))
+
+		for range 2 {
+			_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+				Authority: authority,
+				Denom:     feedGold,
+			})
+			s.Require().NoError(err)
+		}
+
+		feeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
+		s.Require().Len(feeds.Transitions, 1)
+	})
+
+	s.Run("removal is unguarded until consumers exist", func() {
+		// The guard set is wiring-owned and empty on the pre-activation chain:
+		// intermediate phase commits are not launchable configurations, so no
+		// transitional guard protects the params-driven swap path.
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{chain.USDBaseDenom})))
+
+		_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+			Authority: authority,
+			Denom:     chain.USDBaseDenom,
+		})
+		s.Require().NoError(err)
+	})
+
+	s.Run("rejects invalid authority", func() {
+		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedGold})))
+
+		_, err := s.msgServer.RemoveFeed(s.ctx, &types.MsgRemoveFeed{
+			Authority: sdk.AccAddress("not-gov").String(),
+			Denom:     feedGold,
+		})
+		s.Require().Error(err)
 	})
 }

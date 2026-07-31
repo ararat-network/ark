@@ -86,7 +86,9 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	storeService := runtime.NewKVStoreService(key)
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
-	s.ctx = sdk.UnwrapSDKContext(testCtx.Ctx).WithBlockTime(oracleTestBlockTime)
+	s.ctx = sdk.UnwrapSDKContext(testCtx.Ctx).
+		WithBlockTime(oracleTestBlockTime).
+		WithBlockHeight(oracleTestGenesisHeight)
 
 	ctrl := gomock.NewController(s.T())
 
@@ -113,6 +115,9 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 
+	// Mirror the launch feed set genesis seeds.
+	s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.DefaultFeeds()))
+
 	queryHelper := baseapp.NewQueryServerTestHelper(sdk.UnwrapSDKContext(s.ctx), interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
 	s.queryClient = types.NewQueryClient(queryHelper)
@@ -130,6 +135,11 @@ var (
 	valAddr3            = sdk.ValAddress([]byte("validator3___________"))
 	oracleTestBlockTime = time.Date(2026, 7, 12, 12, 0, 0, 0, time.UTC)
 )
+
+// oracleTestGenesisHeight is the suite's default block height. It is non-zero
+// so that height-relative assertions — accounting anchors especially — can
+// distinguish "at the current height" from "unset".
+const oracleTestGenesisHeight int64 = 20
 
 // newBondedValidator builds a bonded validator fixture with operator address
 // valAddr and returns it alongside its derived consensus address. Callers
@@ -325,14 +335,28 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEvent() {
 	})
 }
 
-func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidDenom() {
+func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidFeed() {
 	err := s.keeper.SetExchangeRateWithEvent(s.ctx, newStoredExchangeRate("aUSD", math.LegacyOneDec()))
-	s.Require().ErrorContains(err, "invalid exchange rate denom")
+	s.Require().ErrorContains(err, "invalid exchange rate feed")
 
 	has, getErr := s.keeper.ExchangeRate.Has(s.ctx, "aUSD")
 	s.Require().NoError(getErr)
 	s.Require().False(has)
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
+}
+
+// TestSetExchangeRateWithEventAcceptsNonDenomFeed covers the reason feed ids
+// are opaque: a commodity feed is priced like any other and must not be
+// rejected for failing to look like an Ark-native denomination.
+func (s *KeeperTestSuite) TestSetExchangeRateWithEventAcceptsNonDenomFeed() {
+	s.Require().NoError(s.keeper.SetExchangeRateWithEvent(
+		s.ctx,
+		newStoredExchangeRate("agold", math.LegacyNewDec(2000)),
+	))
+
+	stored, err := s.keeper.ExchangeRate.Get(s.ctx, "agold")
+	s.Require().NoError(err)
+	s.Require().True(math.LegacyNewDec(2000).Equal(stored.Rate))
 }
 
 func (s *KeeperTestSuite) TestGetExchangeRates() {
@@ -358,37 +382,6 @@ func (s *KeeperTestSuite) TestGetExchangeRates() {
 		sdk.DecCoins{sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec())},
 		exchangeRates,
 	)
-}
-
-func (s *KeeperTestSuite) TestGetTobinTaxes() {
-	expected := []types.TobinTax{
-		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(50, 4)},
-		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(25, 4)},
-	}
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = expected
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-
-	tobinTaxes, err := s.keeper.GetTobinTaxes(s.ctx)
-	s.Require().NoError(err)
-	s.Require().ElementsMatch(expected, tobinTaxes)
-}
-
-func (s *KeeperTestSuite) TestGetTobinTax() {
-	expected := math.LegacyNewDecWithPrec(25, 4)
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.TobinTaxes = []types.TobinTax{{Denom: chain.USDBaseDenom, TobinTax: expected}}
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-
-	tobinTax, err := s.keeper.GetTobinTax(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().True(expected.Equal(tobinTax))
-
-	_, err = s.keeper.GetTobinTax(s.ctx, "afoo")
-	s.Require().Error(err)
-	s.Require().ErrorContains(err, types.ErrUnknownDenom.Error())
 }
 
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {

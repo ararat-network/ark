@@ -19,8 +19,9 @@ import (
 // RecordVoteAccounting records reward weight and attendance for the validator
 // resolved from a consensus address. eligible is true when the block reached
 // the functioning threshold with this validator in the commit; participated
-// is true when the validator submitted a valid report containing at least
-// one positive rate. Participation on a non-functioning (ineligible) block is
+// is true when the validator submitted a valid report pricing at least the
+// participation-threshold share of the target set. Participation on a
+// non-functioning (ineligible) block is
 // deliberately ignored rather than rejected: attendance is only ever credited
 // on functioning blocks. If the validator no longer resolves, accounting is
 // skipped.
