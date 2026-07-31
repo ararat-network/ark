@@ -12,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/abci/codec"
 	arkmetrics "ark/abci/metrics"
 	abcioracle "ark/abci/oracle"
 	oraclemetrics "ark/abci/oracle/metrics"
@@ -35,9 +34,6 @@ type Handler struct {
 	// treasuryKeeper primes block-local treasury valuations once oracle prices
 	// for the block are final.
 	treasuryKeeper arkabcitypes.TreasuryKeeper
-
-	// codec owns reusable vote-extension decompression state.
-	codec *codec.VoteExtensionCodec
 }
 
 // NewHandler returns a new Handler. The handler
@@ -46,13 +42,11 @@ func NewHandler(
 	oracleKeeper arkabcitypes.OracleKeeper,
 	assetKeeper arkabcitypes.AssetKeeper,
 	treasuryKeeper arkabcitypes.TreasuryKeeper,
-	voteExtensionCodec *codec.VoteExtensionCodec,
 ) *Handler {
 	return &Handler{
 		oracleKeeper:   oracleKeeper,
 		assetKeeper:    assetKeeper,
 		treasuryKeeper: treasuryKeeper,
-		codec:          voteExtensionCodec,
 	}
 }
 
@@ -104,7 +98,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			// away. Advancing first would reject every report with a version
 			// mismatch exactly at an activation height. This ordering is a
 			// consensus invariant, not an implementation detail.
-			prices, err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, h.codec, req)
+			prices, err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, req)
 			if err != nil {
 				return response, err
 			}

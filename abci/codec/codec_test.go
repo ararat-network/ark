@@ -2,7 +2,6 @@ package codec
 
 import (
 	"bytes"
-	"compress/zlib"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -22,7 +21,6 @@ import (
 )
 
 func TestVoteExtensionCodec(t *testing.T) {
-	codec := NewVoteExtensionCodec()
 	voteExtension := vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{
 			"akrw": []byte("2"),
@@ -31,16 +29,28 @@ func TestVoteExtensionCodec(t *testing.T) {
 		TargetVersion: oracletypes.InitialFeedVersion,
 	}
 
-	encoded, err := codec.Encode(voteExtension)
+	encoded, err := EncodeVoteExtension(voteExtension)
 	require.NoError(t, err)
 
-	decoded, err := codec.Decode(encoded)
+	decoded, err := DecodeVoteExtension(encoded)
 	require.NoError(t, err)
 	require.Equal(t, voteExtension, decoded)
 
-	decoded, err = codec.Decode(nil)
+	decoded, err = DecodeVoteExtension(nil)
 	require.NoError(t, err)
 	require.Empty(t, decoded.Rates)
+}
+
+// The wire limit is derived from the zstd frame format; the encoder derives
+// the same bound from its own options. Cross-checking the two catches both a
+// domain bound leaving the ranges the derivation assumes and a dependency
+// upgrade changing the worst case, either of which moves consensus acceptance.
+func TestVoteExtensionWireLimitMatchesEncoderWorstCase(t *testing.T) {
+	require.Equal(
+		t,
+		maxVoteExtensionWireBytes,
+		zstdEncoder.MaxEncodedSize(maxVoteExtensionDecodedBytes),
+	)
 }
 
 func TestExtendedCommitCodec(t *testing.T) {
@@ -145,7 +155,6 @@ func TestExtendedCommitCodecRejectsExcessVotesOnEncode(t *testing.T) {
 
 func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 	t.Run("256-target vote extension", func(t *testing.T) {
-		codec := NewVoteExtensionCodec()
 		// The widest rate a vote may carry: MaxEncodedVoteRateBytes decimal
 		// digits of raw price*10^18.
 		maxRate, err := arkencoding.EncodeLegacyDec(
@@ -172,9 +181,16 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 		// headroom only for the version varint width.
 		require.Greater(t, len(decoded), maxVoteExtensionDecodedBytes-versionFieldMaxBytes)
 
-		encoded, err := codec.Encode(voteExtension)
+		encoded, err := EncodeVoteExtension(voteExtension)
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(encoded), maxVoteExtensionWireBytes)
+
+		// The maximal payload must survive the round trip: it exercises the
+		// encoder window against the decoder's window and memory bounds at the
+		// exact size where those limits meet.
+		roundTripped, err := DecodeVoteExtension(encoded)
+		require.NoError(t, err)
+		require.Equal(t, voteExtension, roundTripped)
 	})
 
 	t.Run("130-validator extended commit fits default block budget", func(t *testing.T) {
@@ -222,7 +238,7 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 }
 
 func TestVoteExtensionCodecRejectsOversizedWirePayload(t *testing.T) {
-	_, err := NewVoteExtensionCodec().Decode(make([]byte, maxVoteExtensionWireBytes+1))
+	_, err := DecodeVoteExtension(make([]byte, maxVoteExtensionWireBytes+1))
 	require.ErrorContains(t, err, "compressed vote extension")
 }
 
@@ -236,36 +252,26 @@ func TestVoteExtensionCodecRejectsDuplicateKeyPadding(t *testing.T) {
 	// keys are pure wire padding; the decoded limit must stop them.
 	padded := bytes.Repeat(entry, maxVoteExtensionDecodedBytes/len(entry)+1)
 
-	var compressed bytes.Buffer
-	writer := zlib.NewWriter(&compressed)
-	_, err = writer.Write(padded)
-	require.NoError(t, err)
-	require.NoError(t, writer.Close())
-
-	_, err = NewVoteExtensionCodec().Decode(compressed.Bytes())
+	_, err = DecodeVoteExtension(zstdEncoder.EncodeAll(padded, nil))
 	require.ErrorContains(t, err, "decompressed output size")
 }
 
 func TestVoteExtensionCodecBoundsDecompressedOutput(t *testing.T) {
-	var compressed bytes.Buffer
-	writer := zlib.NewWriter(&compressed)
-	_, err := writer.Write(bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1))
-	require.NoError(t, err)
-	require.NoError(t, writer.Close())
+	oversized := bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1)
 
-	_, err = NewVoteExtensionCodec().Decode(compressed.Bytes())
+	_, err := DecodeVoteExtension(zstdEncoder.EncodeAll(oversized, nil))
 	require.ErrorContains(t, err, "decompressed output size")
 }
 
 func TestVoteExtensionCodecRejectsOversizedPayloadOnEncode(t *testing.T) {
-	_, err := NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
+	_, err := EncodeVoteExtension(vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{"ausd": bytes.Repeat([]byte("1"), maxVoteExtensionDecodedBytes)},
 	})
 	require.ErrorContains(t, err, "decoded vote extension")
 }
 
 func TestCodecsRejectMalformedPayloads(t *testing.T) {
-	_, err := NewVoteExtensionCodec().Decode([]byte("not-zlib"))
+	_, err := DecodeVoteExtension([]byte("not-zstd"))
 	require.Error(t, err)
 
 	_, err = DecodeExtendedCommit([]byte("not-protobuf"), cmttypes.MaxVotesCount)

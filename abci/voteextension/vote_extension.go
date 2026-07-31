@@ -32,9 +32,6 @@ type Handler struct {
 	// oracleKeeper resolves the consensus target epoch for each vote height.
 	oracleKeeper arkabci.OracleKeeper
 
-	// codec owns reusable vote-extension compression state.
-	codec *codec.VoteExtensionCodec
-
 	// timeout is the maximum amount of time to wait for the oracle to respond
 	// to a price request.
 	timeout time.Duration
@@ -45,14 +42,12 @@ func NewHandler(
 	logger log.Logger,
 	oracleClient arkabci.OracleClient,
 	oracleKeeper arkabci.OracleKeeper,
-	voteExtensionCodec *codec.VoteExtensionCodec,
 	timeout time.Duration,
 ) *Handler {
 	return &Handler{
 		logger:       logger,
 		oracleClient: oracleClient,
 		oracleKeeper: oracleKeeper,
-		codec:        voteExtensionCodec,
 		timeout:      timeout,
 	}
 }
@@ -158,7 +153,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			err = fmt.Errorf("%w: %w", errInvalidOraclePrices, validationErr)
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
-		bz, err := h.codec.Encode(voteExt)
+		bz, err := codec.EncodeVoteExtension(voteExt)
 		if err != nil {
 			err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
@@ -193,7 +188,7 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		}
 
 		// Decode the vote-extension bytes.
-		voteExtension, err := h.codec.Decode(req.VoteExtension)
+		voteExtension, err := codec.DecodeVoteExtension(req.VoteExtension)
 		if err != nil {
 			err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
 

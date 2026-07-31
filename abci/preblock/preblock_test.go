@@ -17,7 +17,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/abci/codec"
 	"ark/abci/preblock"
 	abcitestutil "ark/abci/testutil"
 	arkabcitypes "ark/abci/types"
@@ -31,7 +30,6 @@ func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {
 		abcitestutil.NewMockOracleKeeper(ctrl),
 		abcitestutil.NewMockAssetKeeper(ctrl),
 		abcitestutil.NewMockTreasuryKeeper(ctrl),
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith(fake))(abcitestutil.NewSDKContext(3, 2, sdk.ExecModeFinalize), nil)
@@ -48,7 +46,6 @@ func TestWrappedPreBlockerWrapsModuleManagerError(t *testing.T) {
 		abcitestutil.NewMockOracleKeeper(ctrl),
 		abcitestutil.NewMockAssetKeeper(ctrl),
 		abcitestutil.NewMockTreasuryKeeper(ctrl),
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith(fake))(
@@ -77,7 +74,6 @@ func TestWrappedPreBlockerSkipsVoteExtensionsWithoutPreviousCommit(t *testing.T)
 		keeper,
 		assetKeeper,
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 
 	res, err := handler.WrappedPreBlocker(managerWith(fake))(
@@ -102,7 +98,6 @@ func TestWrappedPreBlockerWrapsAdvanceFeedsError(t *testing.T) {
 		keeper,
 		abcitestutil.NewMockAssetKeeper(ctrl),
 		abcitestutil.NewMockTreasuryKeeper(ctrl),
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(
@@ -132,7 +127,6 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 		keeper,
 		assetKeeper,
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 	val1 := sdk.ConsAddress("validator1")
 	val2 := sdk.ConsAddress("validator2")
@@ -198,7 +192,6 @@ func TestWrappedPreBlockerCompletesLifecycleWithAggregatedRates(t *testing.T) {
 		keeper,
 		assetKeeper,
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(ctx, req)
@@ -222,7 +215,6 @@ func TestWrappedPreBlockerSkipsCompletionsWithoutAggregatedRates(t *testing.T) {
 		keeper,
 		assetKeeper,
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(
@@ -248,7 +240,6 @@ func TestWrappedPreBlockerWrapsCompleteLifecycleError(t *testing.T) {
 		keeper,
 		assetKeeper,
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(ctx, req)
@@ -270,7 +261,6 @@ func TestWrappedPreBlockerPrimesTreasuryLiability(t *testing.T) {
 		oracleKeeper,
 		abcitestutil.NewMockAssetKeeper(ctrl),
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(
@@ -292,7 +282,6 @@ func TestWrappedPreBlockerWrapsTreasuryPrimeError(t *testing.T) {
 		oracleKeeper,
 		abcitestutil.NewMockAssetKeeper(ctrl),
 		treasuryKeeper,
-		codec.NewVoteExtensionCodec(),
 	)
 
 	_, err := handler.WrappedPreBlocker(managerWith())(

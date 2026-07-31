@@ -891,13 +891,12 @@ func processVoteExtensions(
 	voteTargets []string,
 ) (*recordingOracleKeeper, map[string]math.LegacyDec, error) {
 	t.Helper()
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 
 	extendedVotes := make([]cometabci.ExtendedVoteInfo, 0, len(votes))
 	for _, vote := range votes {
 		var voteExtension []byte
 		if !vote.absent {
-			encoded, err := voteExtensionCodec.Encode(abcitestutil.NewOracleVoteExtension(t, vote.rates))
+			encoded, err := codec.EncodeVoteExtension(abcitestutil.NewOracleVoteExtension(t, vote.rates))
 			require.NoError(t, err)
 			voteExtension = encoded
 		}
@@ -911,7 +910,6 @@ func processVoteExtensions(
 	prices, err := oracle.ProcessVoteExtensions(
 		abcitestutil.NewSDKContext(3, 0),
 		keeper,
-		voteExtensionCodec,
 		&cometabci.RequestFinalizeBlock{
 			Height:            3,
 			Txs:               [][]byte{extendedCommit},

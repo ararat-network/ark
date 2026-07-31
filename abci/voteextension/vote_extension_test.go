@@ -25,7 +25,6 @@ import (
 )
 
 func TestExtendVoteHandler(t *testing.T) {
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
 	validPrices := map[string][]byte{"ausd": validRate}
 	targets := oracletypes.FeedSet{
@@ -158,7 +157,6 @@ func TestExtendVoteHandler(t *testing.T) {
 				log.NewNopLogger(),
 				oracleClient,
 				oracleKeeper,
-				voteExtensionCodec,
 				time.Second,
 			).ExtendVoteHandler()
 
@@ -182,7 +180,6 @@ func TestExtendVoteHandler(t *testing.T) {
 }
 
 func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
 	zeroRate := abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())
 	negativeRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(-1))
@@ -261,7 +258,6 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 				log.NewNopLogger(),
 				oracleClient,
 				oracleKeeper,
-				voteExtensionCodec,
 				time.Second,
 			).ExtendVoteHandler()
 
@@ -271,7 +267,7 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 
 			// Multi-entry rate maps do not encode with a canonical byte order,
 			// so assertions compare the decoded report.
-			decoded, err := voteExtensionCodec.Decode(resp.VoteExtension)
+			decoded, err := codec.DecodeVoteExtension(resp.VoteExtension)
 			require.NoError(t, err)
 			require.Equal(t, targets.Version, decoded.TargetVersion)
 			if len(tc.expectedRates) == 0 {
@@ -284,7 +280,6 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 }
 
 func TestVerifyVoteExtensionHandler(t *testing.T) {
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
 	targets := oracletypes.FeedSet{
 		Version: oracletypes.InitialFeedVersion,
@@ -399,7 +394,6 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				log.NewNopLogger(),
 				nil,
 				oracleKeeper,
-				voteExtensionCodec,
 				time.Second,
 			).VerifyVoteExtensionHandler()
 

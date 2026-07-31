@@ -14,7 +14,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
 	"ark/abci/oracle"
 	abcitestutil "ark/abci/testutil"
 	arkabci "ark/abci/types"
@@ -23,7 +22,6 @@ import (
 )
 
 func TestProcessVoteExtensions(t *testing.T) {
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	val1 := sdk.ConsAddress("validator1")
 	val2 := sdk.ConsAddress("validator2")
 	val3 := sdk.ConsAddress("validator3")
@@ -240,7 +238,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 			prices, err := oracle.ProcessVoteExtensions(
 				abcitestutil.NewSDKContext(3, 0, sdk.ExecModeFinalize),
 				keeper,
-				voteExtensionCodec,
 				tc.req,
 			)
 			if tc.expectErr {

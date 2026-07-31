@@ -1,12 +1,10 @@
 package codec
 
 import (
-	"bytes"
-	"compress/zlib"
+	"errors"
 	"fmt"
-	"io"
-	"sync"
 
+	"github.com/klauspost/compress/zstd"
 	"google.golang.org/protobuf/encoding/protowire"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
@@ -20,9 +18,9 @@ import (
 // The vote-extension byte limits derive from the domain bounds, so the codec
 // admits exactly the payloads validation could accept and padding of any kind
 // gains nothing: duplicate-key wire entries no longer fit under the decoded
-// limit, and deflate stored-block padding no longer fits under the wire limit.
-// Every constant below is consensus-relevant through VerifyVoteExtension
-// acceptance and moves in lockstep with the domain bounds it derives from.
+// limit, and raw-block padding no longer fits under the wire limit. Every
+// constant below is consensus-relevant through VerifyVoteExtension acceptance
+// and moves in lockstep with the domain bounds it derives from.
 const (
 	// rateEntryFramingBytes is the protobuf framing around one Rates map
 	// entry: entry tag+length, key tag+length, and value tag+length, each one
@@ -36,49 +34,69 @@ const (
 		(chain.MaxPricedDenomBytes+oracletypes.MaxEncodedVoteRateBytes+rateEntryFramingBytes) +
 		versionFieldMaxBytes
 
-	// zlibEnvelopeBytes is the zlib header plus the Adler-32 trailer;
-	// zlibStoredBlockBytes is the header of one stored (uncompressed) deflate
-	// block, the least compact encoding zlib can legally emit.
-	zlibEnvelopeBytes    = 6
-	zlibStoredBlockBytes = 5
-	zlibStoredBlockLimit = 65535
+	// zstdWindowSize is the smallest power of two above the decoded limit. It
+	// bounds encoder state, the window any accepted frame may declare, and the
+	// raw-block payload cap in the wire-limit derivation below.
+	zstdWindowSize = 1 << 15
 
-	maxVoteExtensionWireBytes = maxVoteExtensionDecodedBytes + zlibEnvelopeBytes +
-		zlibStoredBlockBytes*(maxVoteExtensionDecodedBytes/zlibStoredBlockLimit+1)
+	// The zstd frame envelope (RFC 8878) under this codec's encoder options:
+	// frame magic number, frame-header descriptor plus window descriptor, the
+	// content-size field (two bytes while the decoded limit stays within
+	// [256, 65791]), and the xxhash64 content checksum.
+	zstdMagicBytes       = 4
+	zstdFrameHeaderBytes = 2
+	zstdContentSizeBytes = 2
+	zstdChecksumBytes    = 4
+	zstdEnvelopeBytes    = zstdMagicBytes + zstdFrameHeaderBytes +
+		zstdContentSizeBytes + zstdChecksumBytes
+
+	// zstdRawBlockHeaderBytes is the header of one raw (uncompressed) block,
+	// the least compact encoding zstd can legally emit. Blocks carry at most
+	// min(zstdWindowSize, 128 KiB) payload bytes — the window size here.
+	zstdRawBlockHeaderBytes = 3
+	zstdMaxBlockBytes       = zstdWindowSize
+
+	maxVoteExtensionWireBytes = maxVoteExtensionDecodedBytes + zstdEnvelopeBytes +
+		zstdRawBlockHeaderBytes*(maxVoteExtensionDecodedBytes/zstdMaxBlockBytes+1)
 )
 
-type resettableZlibReader interface {
-	io.ReadCloser
-	zlib.Resetter
-}
+// The encoder and decoder hold no per-call state: EncodeAll and DecodeAll are
+// safe for concurrent use, so the codec needs no locking or pooling of its own.
+var (
+	zstdEncoder = newZstdEncoder()
+	zstdDecoder = newZstdDecoder()
+)
 
-// VoteExtensionCodec encodes and decodes Ark oracle vote extensions while
-// retaining reusable compression state. It is safe for concurrent use but must
-// not be copied after first use.
-type VoteExtensionCodec struct {
-	encodeMu sync.Mutex
-	writer   *zlib.Writer
-
-	readerPool sync.Pool
-	bufferPool sync.Pool
-}
-
-// NewVoteExtensionCodec returns Ark's bounded protobuf-plus-zlib vote-extension
-// codec.
-func NewVoteExtensionCodec() *VoteExtensionCodec {
-	return &VoteExtensionCodec{
-		writer: zlib.NewWriter(io.Discard),
-		bufferPool: sync.Pool{
-			New: func() any {
-				return new(bytes.Buffer)
-			},
-		},
+func newZstdEncoder() *zstd.Encoder {
+	encoder, err := zstd.NewWriter(
+		nil,
+		zstd.WithEncoderConcurrency(1),
+		zstd.WithWindowSize(zstdWindowSize),
+	)
+	if err != nil {
+		panic(fmt.Sprintf("construct vote-extension zstd encoder: %v", err))
 	}
+
+	return encoder
 }
 
-// Encode encodes an Ark oracle vote extension as bounded protobuf compressed
-// with zlib.
-func (c *VoteExtensionCodec) Encode(voteExtension vetypes.OracleVoteExtension) ([]byte, error) {
+func newZstdDecoder() *zstd.Decoder {
+	decoder, err := zstd.NewReader(
+		nil,
+		zstd.WithDecoderConcurrency(1),
+		zstd.WithDecoderMaxMemory(maxVoteExtensionDecodedBytes),
+		zstd.WithDecoderMaxWindow(zstdWindowSize),
+	)
+	if err != nil {
+		panic(fmt.Sprintf("construct vote-extension zstd decoder: %v", err))
+	}
+
+	return decoder
+}
+
+// EncodeVoteExtension encodes an Ark oracle vote extension as bounded protobuf
+// compressed with zstd.
+func EncodeVoteExtension(voteExtension vetypes.OracleVoteExtension) ([]byte, error) {
 	decoded, err := voteExtension.Marshal()
 	if err != nil {
 		return nil, err
@@ -91,32 +109,21 @@ func (c *VoteExtensionCodec) Encode(voteExtension vetypes.OracleVoteExtension) (
 		)
 	}
 
-	var encoded bytes.Buffer
-	c.encodeMu.Lock()
-	c.writer.Reset(&encoded)
-	defer func() {
-		c.writer.Reset(io.Discard)
-		c.encodeMu.Unlock()
-	}()
-	if _, err := c.writer.Write(decoded); err != nil {
-		return nil, err
-	}
-	if err := c.writer.Close(); err != nil {
-		return nil, err
-	}
-	if encoded.Len() > maxVoteExtensionWireBytes {
+	encoded := zstdEncoder.EncodeAll(decoded, nil)
+	if len(encoded) > maxVoteExtensionWireBytes {
 		return nil, fmt.Errorf(
 			"compressed vote extension size %d exceeds maximum %d",
-			encoded.Len(),
+			len(encoded),
 			maxVoteExtensionWireBytes,
 		)
 	}
 
-	return encoded.Bytes(), nil
+	return encoded, nil
 }
 
-// Decode decodes a bounded protobuf-plus-zlib oracle vote extension.
-func (c *VoteExtensionCodec) Decode(encoded []byte) (vetypes.OracleVoteExtension, error) {
+// DecodeVoteExtension decodes a bounded protobuf-plus-zstd oracle vote
+// extension.
+func DecodeVoteExtension(encoded []byte) (vetypes.OracleVoteExtension, error) {
 	if len(encoded) > maxVoteExtensionWireBytes {
 		return vetypes.OracleVoteExtension{}, fmt.Errorf(
 			"compressed vote extension size %d exceeds maximum %d",
@@ -128,61 +135,30 @@ func (c *VoteExtensionCodec) Decode(encoded []byte) (vetypes.OracleVoteExtension
 		return vetypes.OracleVoteExtension{}, nil
 	}
 
-	reader, err := c.acquireReader(encoded)
+	// The decoder rejects oversized frames from their declared content size,
+	// and bounds unknown-size frames as it decompresses; the length check
+	// below covers the decoded output either way.
+	decoded, err := zstdDecoder.DecodeAll(encoded, nil)
 	if err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
+		if errors.Is(err, zstd.ErrDecoderSizeExceeded) {
+			return vetypes.OracleVoteExtension{}, fmt.Errorf(
+				"decompressed output size exceeds maximum %d",
+				maxVoteExtensionDecodedBytes,
+			)
+		}
 
-	decodedBuffer := c.bufferPool.Get().(*bytes.Buffer)
-	decodedBuffer.Reset()
-	defer c.releaseBuffer(decodedBuffer)
-	limited := &io.LimitedReader{R: reader, N: maxVoteExtensionDecodedBytes + 1}
-	if _, err := decodedBuffer.ReadFrom(limited); err != nil {
-		_ = reader.Close()
 		return vetypes.OracleVoteExtension{}, err
 	}
-	if decodedBuffer.Len() > maxVoteExtensionDecodedBytes {
-		_ = reader.Close()
+	if len(decoded) > maxVoteExtensionDecodedBytes {
 		return vetypes.OracleVoteExtension{}, fmt.Errorf(
 			"decompressed output size %d exceeds maximum %d",
-			decodedBuffer.Len(),
+			len(decoded),
 			maxVoteExtensionDecodedBytes,
 		)
 	}
-	if err := reader.Close(); err != nil {
-		return vetypes.OracleVoteExtension{}, err
-	}
-	c.readerPool.Put(reader)
 
 	var voteExtension vetypes.OracleVoteExtension
-	return voteExtension, voteExtension.Unmarshal(decodedBuffer.Bytes())
-}
-
-func (c *VoteExtensionCodec) acquireReader(encoded []byte) (resettableZlibReader, error) {
-	source := bytes.NewReader(encoded)
-	pooled := c.readerPool.Get()
-	if pooled != nil {
-		reader := pooled.(resettableZlibReader)
-		if err := reader.Reset(source, nil); err != nil {
-			_ = reader.Close()
-			return nil, err
-		}
-		return reader, nil
-	}
-
-	reader, err := zlib.NewReader(source)
-	if err != nil {
-		return nil, err
-	}
-	return reader.(resettableZlibReader), nil
-}
-
-func (c *VoteExtensionCodec) releaseBuffer(buffer *bytes.Buffer) {
-	if buffer.Cap() > maxVoteExtensionDecodedBytes {
-		return
-	}
-	buffer.Reset()
-	c.bufferPool.Put(buffer)
+	return voteExtension, voteExtension.Unmarshal(decoded)
 }
 
 // EncodeExtendedCommit encodes CometBFT extended commit info as protobuf.

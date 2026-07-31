@@ -2,19 +2,18 @@ package codec
 
 import (
 	"bytes"
-	"compress/zlib"
 	"fmt"
 	"reflect"
 	"sync"
 	"testing"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/stretchr/testify/require"
 
 	vetypes "ark/abci/voteextension/types"
 )
 
 func TestVoteExtensionCodecReusePreservesWireEncoding(t *testing.T) {
-	codec := NewVoteExtensionCodec()
 	first := vetypes.OracleVoteExtension{
 		Rates:         map[string][]byte{"uone": []byte("first-rate")},
 		TargetVersion: 1,
@@ -24,33 +23,35 @@ func TestVoteExtensionCodecReusePreservesWireEncoding(t *testing.T) {
 		TargetVersion: 2,
 	}
 
-	expectedFirst := encodeVoteExtensionWithoutReuse(t, first)
-	encodedFirst, err := codec.Encode(first)
+	expectedFirst := encodeVoteExtensionWithFreshEncoder(t, first)
+	encodedFirst, err := EncodeVoteExtension(first)
 	require.NoError(t, err)
 	require.Equal(t, expectedFirst, encodedFirst)
 
-	encodedSecond, err := codec.Encode(second)
+	encodedSecond, err := EncodeVoteExtension(second)
 	require.NoError(t, err)
-	decodedSecond, err := codec.Decode(encodedSecond)
+	decodedSecond, err := DecodeVoteExtension(encodedSecond)
 	require.NoError(t, err)
 	require.Equal(t, second, decodedSecond)
 
-	encodedFirst, err = codec.Encode(first)
+	encodedFirst, err = EncodeVoteExtension(first)
 	require.NoError(t, err)
 	require.Equal(t, expectedFirst, encodedFirst)
-	decodedFirst, err := codec.Decode(encodedFirst)
+	decodedFirst, err := DecodeVoteExtension(encodedFirst)
 	require.NoError(t, err)
 	require.Equal(t, first, decodedFirst)
 }
 
-func TestDecodeVoteExtensionOwnsRateBytesAfterBufferReuse(t *testing.T) {
-	codec := NewVoteExtensionCodec()
+// Finalisation decodes one vote extension per validator and retains every
+// result, so decoded rate bytes must not alias storage that a later decode can
+// overwrite.
+func TestDecodeVoteExtensionOwnsReturnedRateBytes(t *testing.T) {
 	first := vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{"uone": []byte("first-rate")},
 	}
-	encodedFirst, err := codec.Encode(first)
+	encodedFirst, err := EncodeVoteExtension(first)
 	require.NoError(t, err)
-	decodedFirst, err := codec.Decode(encodedFirst)
+	decodedFirst, err := DecodeVoteExtension(encodedFirst)
 	require.NoError(t, err)
 
 	for i := range 10 {
@@ -59,9 +60,9 @@ func TestDecodeVoteExtensionOwnsRateBytesAfterBufferReuse(t *testing.T) {
 				"utwo": bytes.Repeat([]byte{byte(i + 1)}, 1_024),
 			},
 		}
-		encodedSecond, err := codec.Encode(second)
+		encodedSecond, err := EncodeVoteExtension(second)
 		require.NoError(t, err)
-		decodedSecond, err := codec.Decode(encodedSecond)
+		decodedSecond, err := DecodeVoteExtension(encodedSecond)
 		require.NoError(t, err)
 		require.Equal(t, second, decodedSecond)
 	}
@@ -70,29 +71,24 @@ func TestDecodeVoteExtensionOwnsRateBytesAfterBufferReuse(t *testing.T) {
 }
 
 func TestVoteExtensionCodecReuseAfterMalformedInput(t *testing.T) {
-	codec := NewVoteExtensionCodec()
 	voteExtension := vetypes.OracleVoteExtension{
 		Rates:         map[string][]byte{"uone": []byte("rate")},
 		TargetVersion: 1,
 	}
-	encoded, err := codec.Encode(voteExtension)
+	encoded, err := EncodeVoteExtension(voteExtension)
 	require.NoError(t, err)
-	decoded, err := codec.Decode(encoded)
+	decoded, err := DecodeVoteExtension(encoded)
 	require.NoError(t, err)
 	require.Equal(t, voteExtension, decoded)
 
-	_, err = codec.Decode([]byte("not-zlib"))
+	_, err = DecodeVoteExtension([]byte("not-zstd"))
 	require.Error(t, err)
 
-	var oversized bytes.Buffer
-	writer := zlib.NewWriter(&oversized)
-	_, err = writer.Write(bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1))
-	require.NoError(t, err)
-	require.NoError(t, writer.Close())
-	_, err = codec.Decode(oversized.Bytes())
+	oversized := bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1)
+	_, err = DecodeVoteExtension(zstdEncoder.EncodeAll(oversized, nil))
 	require.ErrorContains(t, err, "decompressed output size")
 
-	decoded, err = codec.Decode(encoded)
+	decoded, err = DecodeVoteExtension(encoded)
 	require.NoError(t, err)
 	require.Equal(t, voteExtension, decoded)
 }
@@ -102,7 +98,6 @@ func TestVoteExtensionCodecReuseConcurrent(t *testing.T) {
 		goroutineCount = 16
 		iterationCount = 50
 	)
-	codec := NewVoteExtensionCodec()
 
 	fixtures := []vetypes.OracleVoteExtension{
 		{
@@ -123,12 +118,12 @@ func TestVoteExtensionCodecReuseConcurrent(t *testing.T) {
 			defer waitGroup.Done()
 			for iteration := range iterationCount {
 				want := fixtures[(goroutineIndex+iteration)%len(fixtures)]
-				encoded, err := codec.Encode(want)
+				encoded, err := EncodeVoteExtension(want)
 				if err != nil {
 					errors <- fmt.Errorf("encode: %w", err)
 					return
 				}
-				got, err := codec.Decode(encoded)
+				got, err := DecodeVoteExtension(encoded)
 				if err != nil {
 					errors <- fmt.Errorf("decode: %w", err)
 					return
@@ -148,16 +143,22 @@ func TestVoteExtensionCodecReuseConcurrent(t *testing.T) {
 	}
 }
 
-func encodeVoteExtensionWithoutReuse(t *testing.T, voteExtension vetypes.OracleVoteExtension) []byte {
+// encodeVoteExtensionWithFreshEncoder mirrors the codec's encoder options on a
+// throwaway encoder, so the package-level encoder is held to byte-identical
+// output regardless of how many extensions it has already encoded.
+func encodeVoteExtensionWithFreshEncoder(t *testing.T, voteExtension vetypes.OracleVoteExtension) []byte {
 	t.Helper()
 
 	decoded, err := voteExtension.Marshal()
 	require.NoError(t, err)
 
-	var encoded bytes.Buffer
-	writer := zlib.NewWriter(&encoded)
-	_, err = writer.Write(decoded)
+	encoder, err := zstd.NewWriter(
+		nil,
+		zstd.WithEncoderConcurrency(1),
+		zstd.WithWindowSize(zstdWindowSize),
+	)
 	require.NoError(t, err)
-	require.NoError(t, writer.Close())
-	return encoded.Bytes()
+	defer encoder.Close()
+
+	return encoder.EncodeAll(decoded, nil)
 }

@@ -36,7 +36,6 @@ type benchmarkValidator struct {
 
 func BenchmarkValidateExtendedCommit(b *testing.B) {
 	const validatorCount = 100
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 
 	keyTypes := []benchmarkKeyType{
 		{
@@ -55,7 +54,7 @@ func BenchmarkValidateExtendedCommit(b *testing.B) {
 	targetCounts := []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds}
 	extensions := make(map[int][]byte, len(targetCounts))
 	for _, targetCount := range targetCounts {
-		extensions[targetCount] = benchmarkVoteExtension(b, voteExtensionCodec, targetCount)
+		extensions[targetCount] = benchmarkVoteExtension(b, targetCount)
 	}
 
 	for _, keyType := range keyTypes {
@@ -87,7 +86,7 @@ func BenchmarkValidateExtendedCommit(b *testing.B) {
 	}
 }
 
-func benchmarkVoteExtension(b *testing.B, voteExtensionCodec *codec.VoteExtensionCodec, targetCount int) []byte {
+func benchmarkVoteExtension(b *testing.B, targetCount int) []byte {
 	b.Helper()
 
 	rates := make(map[string][]byte, targetCount)
@@ -99,7 +98,7 @@ func benchmarkVoteExtension(b *testing.B, voteExtensionCodec *codec.VoteExtensio
 		rates[fmt.Sprintf("uasset%03d", i)] = rate
 	}
 
-	extension, err := voteExtensionCodec.Encode(vetypes.OracleVoteExtension{
+	extension, err := codec.EncodeVoteExtension(vetypes.OracleVoteExtension{
 		Rates:         rates,
 		TargetVersion: oracletypes.InitialFeedVersion,
 	})

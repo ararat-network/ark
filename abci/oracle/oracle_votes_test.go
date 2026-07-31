@@ -307,7 +307,6 @@ func TestValidateVoteExtension(t *testing.T) {
 }
 
 func TestGetOracleVotes(t *testing.T) {
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	validVoteExtension := abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 		"ausd": math.LegacyNewDec(100),
 	})
@@ -340,7 +339,7 @@ func TestGetOracleVotes(t *testing.T) {
 			},
 		})
 
-		votes, err := oracle.GetOracleVotes(voteExtensionCodec, [][]byte{commitBz}, targets, 6)
+		votes, err := oracle.GetOracleVotes([][]byte{commitBz}, targets, 6)
 		require.NoError(t, err)
 		require.Len(t, votes, 6)
 		require.Len(t, votes[0].Rates, 1)
@@ -369,7 +368,7 @@ func TestGetOracleVotes(t *testing.T) {
 			},
 		})
 
-		votes, err := oracle.GetOracleVotes(voteExtensionCodec, [][]byte{commitBz}, targets, 2)
+		votes, err := oracle.GetOracleVotes([][]byte{commitBz}, targets, 2)
 		require.NoError(t, err)
 		require.Len(t, votes, 2)
 		require.Empty(t, votes[0].Rates)
@@ -379,7 +378,7 @@ func TestGetOracleVotes(t *testing.T) {
 	})
 
 	t.Run("extended commit decode error remains fatal", func(t *testing.T) {
-		_, err := oracle.GetOracleVotes(voteExtensionCodec, [][]byte{[]byte("not-protobuf")}, targets, 1)
+		_, err := oracle.GetOracleVotes([][]byte{[]byte("not-protobuf")}, targets, 1)
 		require.Error(t, err)
 	})
 }
@@ -418,7 +417,6 @@ func BenchmarkVoteExtension(b *testing.B) {
 }
 
 func BenchmarkGetOracleVotes(b *testing.B) {
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	cases := []struct {
 		targetCount int
 		reportCount int
@@ -441,7 +439,7 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 				Rates:         makeRateMap(b, benchmarkCase.reportCount),
 				TargetVersion: targets.Version,
 			}
-			voteExtensionBz, err := voteExtensionCodec.Encode(voteExtension)
+			voteExtensionBz, err := codec.EncodeVoteExtension(voteExtension)
 			require.NoError(b, err)
 			extendedVotes := make([]cometabci.ExtendedVoteInfo, 100)
 			for validatorIndex := range extendedVotes {
@@ -458,7 +456,7 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 			})
 			require.NoError(b, err)
 
-			votes, err := oracle.GetOracleVotes(voteExtensionCodec, [][]byte{commitBz}, targets, len(extendedVotes))
+			votes, err := oracle.GetOracleVotes([][]byte{commitBz}, targets, len(extendedVotes))
 			require.NoError(b, err)
 			require.Len(b, votes, len(extendedVotes))
 			require.Len(b, votes[0].Rates, benchmarkCase.reportCount)
@@ -467,7 +465,7 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 			b.SetBytes(int64(len(commitBz)))
 			b.ResetTimer()
 			for b.Loop() {
-				benchmarkOracleVotes, err = oracle.GetOracleVotes(voteExtensionCodec, [][]byte{commitBz}, targets, len(extendedVotes))
+				benchmarkOracleVotes, err = oracle.GetOracleVotes([][]byte{commitBz}, targets, len(extendedVotes))
 				if err != nil {
 					b.Fatal(err)
 				}

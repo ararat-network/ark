@@ -142,7 +142,6 @@ func ValidateVoteExtension(
 // telemetry can separate them from plain absences. Extended-commit envelope
 // errors remain fatal.
 func GetOracleVotes(
-	voteExtensionCodec *codec.VoteExtensionCodec,
 	proposal [][]byte,
 	feeds oracletypes.FeedSet,
 	maxVotes int,
@@ -163,7 +162,7 @@ func GetOracleVotes(
 			continue
 		}
 
-		voteExtension, err := voteExtensionCodec.Decode(voteInfo.VoteExtension)
+		voteExtension, err := codec.DecodeVoteExtension(voteInfo.VoteExtension)
 		if err != nil {
 			votes[i].Invalid = true
 			continue

@@ -20,8 +20,6 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-var voteExtensionCodec = codec.NewVoteExtensionCodec()
-
 // NewSDKContext returns a minimal SDK context for ABCI tests.
 func NewSDKContext(height int64, voteExtensionsEnableHeight int64, modes ...sdk.ExecMode) sdk.Context {
 	ctx := sdk.Context{}.
@@ -67,7 +65,7 @@ func NewOracleVoteExtension(t *testing.T, rates map[string]math.LegacyDec) vetyp
 func MustEncodeVoteExtension(t *testing.T, voteExtension vetypes.OracleVoteExtension) []byte {
 	t.Helper()
 
-	encoded, err := voteExtensionCodec.Encode(voteExtension)
+	encoded, err := codec.EncodeVoteExtension(voteExtension)
 	require.NoError(t, err)
 
 	return encoded

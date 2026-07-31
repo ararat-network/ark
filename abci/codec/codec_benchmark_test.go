@@ -18,18 +18,17 @@ var (
 
 func BenchmarkVoteExtensionCodec(b *testing.B) {
 	const validatorCount = 100
-	codec := NewVoteExtensionCodec()
 
 	targetCounts := []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds}
 	fixtures := make(map[int]vetypes.OracleVoteExtension, len(targetCounts))
 	encodedFixtures := make(map[int][]byte, len(targetCounts))
 	for _, targetCount := range targetCounts {
 		fixture := benchmarkCodecVoteExtension(b, targetCount)
-		encoded, err := codec.Encode(fixture)
+		encoded, err := EncodeVoteExtension(fixture)
 		if err != nil {
 			b.Fatal(err)
 		}
-		if _, err := codec.Decode(encoded); err != nil {
+		if _, err := DecodeVoteExtension(encoded); err != nil {
 			b.Fatal(err)
 		}
 		fixtures[targetCount] = fixture
@@ -43,7 +42,7 @@ func BenchmarkVoteExtensionCodec(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					encoded, err := codec.Encode(fixture)
+					encoded, err := EncodeVoteExtension(fixture)
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -63,7 +62,7 @@ func BenchmarkVoteExtensionCodec(b *testing.B) {
 				b.ResetTimer()
 				for b.Loop() {
 					for i := range validatorCount {
-						voteExtension, err := codec.Decode(encoded)
+						voteExtension, err := DecodeVoteExtension(encoded)
 						if err != nil {
 							b.Fatal(err)
 						}

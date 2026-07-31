@@ -9,7 +9,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	abcicodec "ark/abci/codec"
 	oraclemetrics "ark/abci/oracle/metrics"
 	arkabcitypes "ark/abci/types"
 	oracletypes "ark/x/oracle/types"
@@ -21,7 +20,6 @@ import (
 func ProcessVoteExtensions(
 	ctx sdk.Context,
 	oracleKeeper arkabcitypes.OracleKeeper,
-	voteExtensionCodec *abcicodec.VoteExtensionCodec,
 	req *cometabci.RequestFinalizeBlock,
 ) (map[string]math.LegacyDec, error) {
 	voteHeight := req.Height - 1
@@ -38,7 +36,7 @@ func ProcessVoteExtensions(
 	// If vote extensions have been enabled, the extended commit info - which
 	// contains the vote extensions - must be included in the request.
 	expectedVotes := len(req.DecidedLastCommit.Votes)
-	votes, err := GetOracleVotes(voteExtensionCodec, req.Txs, feeds, expectedVotes)
+	votes, err := GetOracleVotes(req.Txs, feeds, expectedVotes)
 	if err != nil {
 		return nil, fmt.Errorf("get oracle votes for block %d: %w", req.Height, err)
 	}

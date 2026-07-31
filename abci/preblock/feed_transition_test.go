@@ -48,12 +48,10 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
 	logger := log.NewTestLogger(t)
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	extendVote := voteextension.NewHandler(
 		logger,
 		oracleClient,
 		keeper,
-		voteExtensionCodec,
 		time.Second,
 	).ExtendVoteHandler()
 
@@ -65,7 +63,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 		&cometabci.RequestExtendVote{Height: activationVoteHeight - 1},
 	)
 	require.NoError(t, err)
-	oldVoteExtension, err := voteExtensionCodec.Decode(oldResponse.VoteExtension)
+	oldVoteExtension, err := codec.DecodeVoteExtension(oldResponse.VoteExtension)
 	require.NoError(t, err)
 	require.Equal(t, oracletypes.InitialFeedVersion, oldVoteExtension.TargetVersion)
 	require.Equal(t, []string{"ausd"}, sortedKeys(oldVoteExtension.Rates))
@@ -75,7 +73,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 		&cometabci.RequestExtendVote{Height: activationVoteHeight},
 	)
 	require.NoError(t, err)
-	newVoteExtension, err := voteExtensionCodec.Decode(newResponse.VoteExtension)
+	newVoteExtension, err := codec.DecodeVoteExtension(newResponse.VoteExtension)
 	require.NoError(t, err)
 	require.Equal(t, oracletypes.InitialFeedVersion+1, newVoteExtension.TargetVersion)
 	require.Equal(t, []string{"akrw", "ausd"}, sortedKeys(newVoteExtension.Rates))
@@ -87,7 +85,6 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 		keeper,
 		noopAssetKeeper{},
 		noopTreasuryKeeper{},
-		voteExtensionCodec,
 	).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
 
@@ -150,12 +147,10 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 		"akrw": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(1300)),
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	extendVote := voteextension.NewHandler(
 		log.NewTestLogger(t),
 		oracleClient,
 		keeper,
-		voteExtensionCodec,
 		time.Second,
 	).ExtendVoteHandler()
 
@@ -178,7 +173,7 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 		require.NoError(t, err)
 		extensions[i] = response.VoteExtension
 
-		voteExtension, err := voteExtensionCodec.Decode(response.VoteExtension)
+		voteExtension, err := codec.DecodeVoteExtension(response.VoteExtension)
 		require.NoError(t, err)
 		require.Equal(t, want.version, voteExtension.TargetVersion)
 		require.Equal(t, want.denoms, sortedKeys(voteExtension.Rates))
@@ -188,7 +183,6 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 		keeper,
 		noopAssetKeeper{},
 		noopTreasuryKeeper{},
-		voteExtensionCodec,
 	).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
 
@@ -240,12 +234,10 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 	oracleClient := staticOracleClient{prices: map[string][]byte{
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	extendVote := voteextension.NewHandler(
 		log.NewTestLogger(t),
 		oracleClient,
 		keeper,
-		voteExtensionCodec,
 		time.Second,
 	).ExtendVoteHandler()
 
@@ -262,7 +254,6 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 		keeper,
 		noopAssetKeeper{},
 		noopTreasuryKeeper{},
-		voteExtensionCodec,
 	).WrappedPreBlocker(managerWith())
 	request := finalizeRequest(t, activationVoteHeight, sdk.ConsAddress("validator"), response.VoteExtension)
 	_, err = preBlocker(
@@ -350,7 +341,7 @@ func (k *transitionOracleKeeper) AdvanceFeeds(ctx context.Context) error {
 		}
 		remaining := k.feeds.Transitions
 		for len(remaining) > 0 && remaining[0].ActivationVoteHeight == batchHeight {
-			promoted.Denoms = oracletypes.ApplyFeedTransition(promoted.Denoms, remaining[0])
+			promoted.ApplyTransition(remaining[0])
 			remaining = remaining[1:]
 		}
 		promoted.Transitions = slices.Clone(remaining)
