@@ -166,26 +166,53 @@ message QueryComputeTaxResponse {
 message QueryFundStatusRequest {}
 
 // QueryFundStatusResponse is the response type for Query/FundStatus.
+// Liability reporting is partitioned by asset lifecycle status. The response
+// always answers: when the total is unavailable, the partition says exactly
+// which exposure is unvaluable and every target is zero rather than a guess.
 message QueryFundStatusResponse {
-  cosmos.base.v1beta1.DecCoin nominal_liability_noah_equivalent = 1
+  // priced_liability_noah_equivalent values ACTIVE and ISSUANCE_HALTED supply
+  // at fresh Oracle rates.
+  cosmos.base.v1beta1.DecCoin priced_liability_noah_equivalent = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin subsidy_pool_balance = 2
+  // settlement_liability_noah_equivalent values SUSPENDED supply carrying an
+  // open settlement plan at the plan's committed rate.
+  cosmos.base.v1beta1.DecCoin settlement_liability_noah_equivalent = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_balance = 3
+  // untrusted_suspended_supply is SUSPENDED supply with no open settlement:
+  // explicit exposure, never zero, valuable by no honest rate.
+  repeated cosmos.base.v1beta1.Coin untrusted_suspended_supply = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
+  ];
+  // written_off_exposure is derecognized supply, disclosed but excluded from
+  // recognized liability.
+  repeated WrittenOffExposure written_off_exposure = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_target = 4
+  // total_liability_available reports whether every recognized liability was
+  // valued. Targets below are meaningful only when true.
+  bool total_liability_available = 5;
+  // nominal_liability_noah_equivalent is priced plus settlement-priced, the
+  // aggregate every fund target derives from.
+  cosmos.base.v1beta1.DecCoin nominal_liability_noah_equivalent = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_balance = 5
+  cosmos.base.v1beta1.Coin subsidy_pool_balance = 7
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_target = 6
+  cosmos.base.v1beta1.Coin redemption_buffer_balance = 8
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_balance = 7
+  cosmos.base.v1beta1.Coin redemption_buffer_target = 9
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_reserved = 8
+  cosmos.base.v1beta1.Coin strategic_reserve_balance = 10
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_unencumbered_balance = 9
+  cosmos.base.v1beta1.Coin strategic_reserve_target = 11
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_target = 10
+  cosmos.base.v1beta1.Coin insurance_balance = 12
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_reserved = 13
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_unencumbered_balance = 14
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_target = 15
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 

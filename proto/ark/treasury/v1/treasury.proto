@@ -48,6 +48,15 @@ message Params {
   // claim_cancellation_period_blocks is the shared veto window between any
   // claim's submission and its executable height, for both origins.
   uint64 claim_cancellation_period_blocks = 3 [ (amino.dont_omitempty) = true ];
+  // tax_cap_refresh_period_blocks is how often the derived per-denomination
+  // caps are trued up against rate drift. Membership changes refresh the map on
+  // their own, so this cadence exists only for the drift between them: the
+  // reference cap is a fixed amount in the reference unit, and every other
+  // denomination's ceiling is that amount priced through a rate that keeps
+  // moving after the map is built. A shorter period tracks the ceiling
+  // governance voted for more closely and rebuilds the map more often; a longer
+  // one lets the real ceiling drift further from it.
+  uint64 tax_cap_refresh_period_blocks = 4 [ (amino.dont_omitempty) = true ];
 }
 
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
@@ -131,7 +140,6 @@ message RewardFundingState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  bool valuation_complete = 5 [ (amino.dont_omitempty) = true ];
 }
 
 // TaxCap defines the tax ceiling for one denomination. A zero amount is the
@@ -145,6 +153,15 @@ message TaxCap {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// WrittenOffExposure discloses supply governance has formally derecognized.
+// The coin carries the denomination; the version pins which asset record the
+// write-off resolved.
+message WrittenOffExposure {
+  cosmos.base.v1beta1.Coin outstanding_supply = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  uint64 write_off_version = 2;
 }
 
 // ClaimsMandate stores one governance-created, height-scoped Claims committee

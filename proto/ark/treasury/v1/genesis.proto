@@ -38,4 +38,8 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   MonetaryPolicy monetary_policy = 10
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // tax_cap_refresh_pending records a cadence boundary that passed without a
+  // successful tax-cap rebuild, so an owed refresh survives export and import
+  // instead of being forgiven by the migration.
+  bool tax_cap_refresh_pending = 11 [ (amino.dont_omitempty) = true ];
 }

@@ -3,49 +3,17 @@ package ark.treasury.v1;
 
 import "amino/amino.proto";
 import "ark/treasury/v1/treasury.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/treasury/types";
-
-// EventSkipReason identifies why a scheduled Treasury calculation was skipped.
-enum EventSkipReason {
-  // EVENT_SKIP_REASON_UNSPECIFIED is invalid for an emitted skip event.
-  EVENT_SKIP_REASON_UNSPECIFIED = 0;
-  // EVENT_SKIP_REASON_UNKNOWN_DENOM indicates that a required denomination had
-  // no Oracle market.
-  EVENT_SKIP_REASON_UNKNOWN_DENOM = 1;
-  // EVENT_SKIP_REASON_STALE_EXCHANGE_RATE indicates that a required Oracle rate
-  // was stale.
-  EVENT_SKIP_REASON_STALE_EXCHANGE_RATE = 2;
-  // EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE indicates that a required Oracle
-  // rate was invalid.
-  EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE = 3;
-  // EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE indicates that a valuation could
-  // not fit its target domain.
-  EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE = 4;
-  // EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE indicates that intermediate
-  // arithmetic exceeded its valid domain.
-  EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE = 5;
-  // EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE indicates that the completed
-  // funding window lacked complete valuations.
-  EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE = 6;
-  // EVENT_SKIP_REASON_VALUATION_UNAVAILABLE is the conservative fallback for
-  // unavailable valuations.
-  EVENT_SKIP_REASON_VALUATION_UNAVAILABLE = 7;
-}
 
 // EventTaxCapsUpdated is emitted after the complete derived tax-cap set
 // changes.
 message EventTaxCapsUpdated {
   repeated TaxCap tax_caps = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// EventTaxCapsUpdateSkipped is emitted when a scheduled tax-cap refresh cannot
-// obtain a complete valuation.
-message EventTaxCapsUpdateSkipped {
-  EventSkipReason reason = 1 [ (amino.dont_omitempty) = true ];
 }
 
 // EventBlockRewardsToppedUp is emitted after a reward-funding window settles.
@@ -89,10 +57,21 @@ message EventBlockRewardsToppedUp {
   ];
 }
 
-// EventBlockRewardTopUpSkipped is emitted when a reward-funding window cannot
-// obtain a complete valuation.
-message EventBlockRewardTopUpSkipped {
-  EventSkipReason reason = 1 [ (amino.dont_omitempty) = true ];
+// EventUnpricedStabilityTaxRouted reports settlement routing of stability tax
+// held in denominations without a usable Oracle rate. Moved supply belongs to
+// written-off or retired assets and now sits in the strategic reserve;
+// deferred supply stays in the collector awaiting a returning feed.
+message EventUnpricedStabilityTaxRouted {
+  repeated cosmos.base.v1beta1.Coin moved = 1 [
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated cosmos.base.v1beta1.Coin deferred = 2 [
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventExpansionAllocated records the complete realised expansion allocation.
@@ -159,4 +138,36 @@ message EventClaimPaid {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// EventMonetaryMandateSet is emitted when governance appoints, replaces, or
+// disables the monetary-policy committee. A disabling carries the empty
+// committee and the advanced term.
+message EventMonetaryMandateSet {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  // committee is empty when governance disabled the mandate.
+  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// EventClaimsMandateSet is emitted when governance appoints, replaces, or
+// disables the Claims committee. A disabling carries the empty committee and
+// the advanced term.
+message EventClaimsMandateSet {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  // committee is empty when governance disabled the mandate.
+  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// EventReferenceTaxCapRebased records the reference tax cap re-expressed in a
+// new protocol reference unit. Emitted only by RebaseTaxCap, whose only caller
+// is MsgSetReference.
+message EventReferenceTaxCapRebased {
+  cosmos.base.v1beta1.Coin old_cap = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin new_cap = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

@@ -7,6 +7,8 @@ import (
 	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -25,65 +27,6 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
-
-// EventSkipReason identifies why a scheduled Treasury calculation was skipped.
-type EventSkipReason int32
-
-const (
-	// EVENT_SKIP_REASON_UNSPECIFIED is invalid for an emitted skip event.
-	EventSkipReason_EVENT_SKIP_REASON_UNSPECIFIED EventSkipReason = 0
-	// EVENT_SKIP_REASON_UNKNOWN_DENOM indicates that a required denomination had
-	// no Oracle market.
-	EventSkipReason_EVENT_SKIP_REASON_UNKNOWN_DENOM EventSkipReason = 1
-	// EVENT_SKIP_REASON_STALE_EXCHANGE_RATE indicates that a required Oracle rate
-	// was stale.
-	EventSkipReason_EVENT_SKIP_REASON_STALE_EXCHANGE_RATE EventSkipReason = 2
-	// EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE indicates that a required Oracle
-	// rate was invalid.
-	EventSkipReason_EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE EventSkipReason = 3
-	// EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE indicates that a valuation could
-	// not fit its target domain.
-	EventSkipReason_EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE EventSkipReason = 4
-	// EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE indicates that intermediate
-	// arithmetic exceeded its valid domain.
-	EventSkipReason_EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE EventSkipReason = 5
-	// EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE indicates that the completed
-	// funding window lacked complete valuations.
-	EventSkipReason_EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE EventSkipReason = 6
-	// EVENT_SKIP_REASON_VALUATION_UNAVAILABLE is the conservative fallback for
-	// unavailable valuations.
-	EventSkipReason_EVENT_SKIP_REASON_VALUATION_UNAVAILABLE EventSkipReason = 7
-)
-
-var EventSkipReason_name = map[int32]string{
-	0: "EVENT_SKIP_REASON_UNSPECIFIED",
-	1: "EVENT_SKIP_REASON_UNKNOWN_DENOM",
-	2: "EVENT_SKIP_REASON_STALE_EXCHANGE_RATE",
-	3: "EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE",
-	4: "EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE",
-	5: "EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE",
-	6: "EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE",
-	7: "EVENT_SKIP_REASON_VALUATION_UNAVAILABLE",
-}
-
-var EventSkipReason_value = map[string]int32{
-	"EVENT_SKIP_REASON_UNSPECIFIED":                 0,
-	"EVENT_SKIP_REASON_UNKNOWN_DENOM":               1,
-	"EVENT_SKIP_REASON_STALE_EXCHANGE_RATE":         2,
-	"EVENT_SKIP_REASON_INVALID_EXCHANGE_RATE":       3,
-	"EVENT_SKIP_REASON_CONVERSION_OUT_OF_RANGE":     4,
-	"EVENT_SKIP_REASON_ARITHMETIC_OUT_OF_RANGE":     5,
-	"EVENT_SKIP_REASON_WINDOW_VALUATION_INCOMPLETE": 6,
-	"EVENT_SKIP_REASON_VALUATION_UNAVAILABLE":       7,
-}
-
-func (x EventSkipReason) String() string {
-	return proto.EnumName(EventSkipReason_name, int32(x))
-}
-
-func (EventSkipReason) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{0}
-}
 
 // EventTaxCapsUpdated is emitted after the complete derived tax-cap set
 // changes.
@@ -131,52 +74,6 @@ func (m *EventTaxCapsUpdated) GetTaxCaps() []TaxCap {
 	return nil
 }
 
-// EventTaxCapsUpdateSkipped is emitted when a scheduled tax-cap refresh cannot
-// obtain a complete valuation.
-type EventTaxCapsUpdateSkipped struct {
-	Reason EventSkipReason `protobuf:"varint,1,opt,name=reason,proto3,enum=ark.treasury.v1.EventSkipReason" json:"reason,omitempty"`
-}
-
-func (m *EventTaxCapsUpdateSkipped) Reset()         { *m = EventTaxCapsUpdateSkipped{} }
-func (m *EventTaxCapsUpdateSkipped) String() string { return proto.CompactTextString(m) }
-func (*EventTaxCapsUpdateSkipped) ProtoMessage()    {}
-func (*EventTaxCapsUpdateSkipped) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{1}
-}
-func (m *EventTaxCapsUpdateSkipped) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventTaxCapsUpdateSkipped) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventTaxCapsUpdateSkipped.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventTaxCapsUpdateSkipped) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventTaxCapsUpdateSkipped.Merge(m, src)
-}
-func (m *EventTaxCapsUpdateSkipped) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventTaxCapsUpdateSkipped) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventTaxCapsUpdateSkipped.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventTaxCapsUpdateSkipped proto.InternalMessageInfo
-
-func (m *EventTaxCapsUpdateSkipped) GetReason() EventSkipReason {
-	if m != nil {
-		return m.Reason
-	}
-	return EventSkipReason_EVENT_SKIP_REASON_UNSPECIFIED
-}
-
 // EventBlockRewardsToppedUp is emitted after a reward-funding window settles.
 type EventBlockRewardsToppedUp struct {
 	Denom            string                `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
@@ -192,7 +89,7 @@ func (m *EventBlockRewardsToppedUp) Reset()         { *m = EventBlockRewardsTopp
 func (m *EventBlockRewardsToppedUp) String() string { return proto.CompactTextString(m) }
 func (*EventBlockRewardsToppedUp) ProtoMessage()    {}
 func (*EventBlockRewardsToppedUp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{2}
+	return fileDescriptor_f861eec5413b282d, []int{1}
 }
 func (m *EventBlockRewardsToppedUp) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -228,24 +125,27 @@ func (m *EventBlockRewardsToppedUp) GetDenom() string {
 	return ""
 }
 
-// EventBlockRewardTopUpSkipped is emitted when a reward-funding window cannot
-// obtain a complete valuation.
-type EventBlockRewardTopUpSkipped struct {
-	Reason EventSkipReason `protobuf:"varint,1,opt,name=reason,proto3,enum=ark.treasury.v1.EventSkipReason" json:"reason,omitempty"`
+// EventUnpricedStabilityTaxRouted reports settlement routing of stability tax
+// held in denominations without a usable Oracle rate. Moved supply belongs to
+// written-off or retired assets and now sits in the strategic reserve;
+// deferred supply stays in the collector awaiting a returning feed.
+type EventUnpricedStabilityTaxRouted struct {
+	Moved    github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,1,rep,name=moved,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"moved"`
+	Deferred github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,2,rep,name=deferred,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"deferred"`
 }
 
-func (m *EventBlockRewardTopUpSkipped) Reset()         { *m = EventBlockRewardTopUpSkipped{} }
-func (m *EventBlockRewardTopUpSkipped) String() string { return proto.CompactTextString(m) }
-func (*EventBlockRewardTopUpSkipped) ProtoMessage()    {}
-func (*EventBlockRewardTopUpSkipped) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{3}
+func (m *EventUnpricedStabilityTaxRouted) Reset()         { *m = EventUnpricedStabilityTaxRouted{} }
+func (m *EventUnpricedStabilityTaxRouted) String() string { return proto.CompactTextString(m) }
+func (*EventUnpricedStabilityTaxRouted) ProtoMessage()    {}
+func (*EventUnpricedStabilityTaxRouted) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f861eec5413b282d, []int{2}
 }
-func (m *EventBlockRewardTopUpSkipped) XXX_Unmarshal(b []byte) error {
+func (m *EventUnpricedStabilityTaxRouted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EventBlockRewardTopUpSkipped) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EventUnpricedStabilityTaxRouted) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_EventBlockRewardTopUpSkipped.Marshal(b, m, deterministic)
+		return xxx_messageInfo_EventUnpricedStabilityTaxRouted.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -255,23 +155,30 @@ func (m *EventBlockRewardTopUpSkipped) XXX_Marshal(b []byte, deterministic bool)
 		return b[:n], nil
 	}
 }
-func (m *EventBlockRewardTopUpSkipped) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventBlockRewardTopUpSkipped.Merge(m, src)
+func (m *EventUnpricedStabilityTaxRouted) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventUnpricedStabilityTaxRouted.Merge(m, src)
 }
-func (m *EventBlockRewardTopUpSkipped) XXX_Size() int {
+func (m *EventUnpricedStabilityTaxRouted) XXX_Size() int {
 	return m.Size()
 }
-func (m *EventBlockRewardTopUpSkipped) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventBlockRewardTopUpSkipped.DiscardUnknown(m)
+func (m *EventUnpricedStabilityTaxRouted) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventUnpricedStabilityTaxRouted.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EventBlockRewardTopUpSkipped proto.InternalMessageInfo
+var xxx_messageInfo_EventUnpricedStabilityTaxRouted proto.InternalMessageInfo
 
-func (m *EventBlockRewardTopUpSkipped) GetReason() EventSkipReason {
+func (m *EventUnpricedStabilityTaxRouted) GetMoved() github_com_cosmos_cosmos_sdk_types.Coins {
 	if m != nil {
-		return m.Reason
+		return m.Moved
 	}
-	return EventSkipReason_EVENT_SKIP_REASON_UNSPECIFIED
+	return nil
+}
+
+func (m *EventUnpricedStabilityTaxRouted) GetDeferred() github_com_cosmos_cosmos_sdk_types.Coins {
+	if m != nil {
+		return m.Deferred
+	}
+	return nil
 }
 
 // EventExpansionAllocated records the complete realised expansion allocation.
@@ -289,7 +196,7 @@ func (m *EventExpansionAllocated) Reset()         { *m = EventExpansionAllocated
 func (m *EventExpansionAllocated) String() string { return proto.CompactTextString(m) }
 func (*EventExpansionAllocated) ProtoMessage()    {}
 func (*EventExpansionAllocated) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{4}
+	return fileDescriptor_f861eec5413b282d, []int{3}
 }
 func (m *EventExpansionAllocated) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -343,7 +250,7 @@ func (m *EventRedemptionBufferDrawn) Reset()         { *m = EventRedemptionBuffe
 func (m *EventRedemptionBufferDrawn) String() string { return proto.CompactTextString(m) }
 func (*EventRedemptionBufferDrawn) ProtoMessage()    {}
 func (*EventRedemptionBufferDrawn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{5}
+	return fileDescriptor_f861eec5413b282d, []int{4}
 }
 func (m *EventRedemptionBufferDrawn) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -395,7 +302,7 @@ func (m *EventClaimSubmitted) Reset()         { *m = EventClaimSubmitted{} }
 func (m *EventClaimSubmitted) String() string { return proto.CompactTextString(m) }
 func (*EventClaimSubmitted) ProtoMessage()    {}
 func (*EventClaimSubmitted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{6}
+	return fileDescriptor_f861eec5413b282d, []int{5}
 }
 func (m *EventClaimSubmitted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -443,7 +350,7 @@ func (m *EventClaimPaid) Reset()         { *m = EventClaimPaid{} }
 func (m *EventClaimPaid) String() string { return proto.CompactTextString(m) }
 func (*EventClaimPaid) ProtoMessage()    {}
 func (*EventClaimPaid) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f861eec5413b282d, []int{7}
+	return fileDescriptor_f861eec5413b282d, []int{6}
 }
 func (m *EventClaimPaid) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -493,84 +400,285 @@ func (m *EventClaimPaid) GetAmountDenom() string {
 	return ""
 }
 
+// EventMonetaryMandateSet is emitted when governance appoints, replaces, or
+// disables the monetary-policy committee. A disabling carries the empty
+// committee and the advanced term.
+type EventMonetaryMandateSet struct {
+	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	// committee is empty when governance disabled the mandate.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (m *EventMonetaryMandateSet) Reset()         { *m = EventMonetaryMandateSet{} }
+func (m *EventMonetaryMandateSet) String() string { return proto.CompactTextString(m) }
+func (*EventMonetaryMandateSet) ProtoMessage()    {}
+func (*EventMonetaryMandateSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f861eec5413b282d, []int{7}
+}
+func (m *EventMonetaryMandateSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventMonetaryMandateSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventMonetaryMandateSet.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventMonetaryMandateSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventMonetaryMandateSet.Merge(m, src)
+}
+func (m *EventMonetaryMandateSet) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventMonetaryMandateSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventMonetaryMandateSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventMonetaryMandateSet proto.InternalMessageInfo
+
+func (m *EventMonetaryMandateSet) GetTerm() uint64 {
+	if m != nil {
+		return m.Term
+	}
+	return 0
+}
+
+func (m *EventMonetaryMandateSet) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *EventMonetaryMandateSet) GetActivationHeight() uint64 {
+	if m != nil {
+		return m.ActivationHeight
+	}
+	return 0
+}
+
+func (m *EventMonetaryMandateSet) GetExpiryHeight() uint64 {
+	if m != nil {
+		return m.ExpiryHeight
+	}
+	return 0
+}
+
+// EventClaimsMandateSet is emitted when governance appoints, replaces, or
+// disables the Claims committee. A disabling carries the empty committee and
+// the advanced term.
+type EventClaimsMandateSet struct {
+	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	// committee is empty when governance disabled the mandate.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (m *EventClaimsMandateSet) Reset()         { *m = EventClaimsMandateSet{} }
+func (m *EventClaimsMandateSet) String() string { return proto.CompactTextString(m) }
+func (*EventClaimsMandateSet) ProtoMessage()    {}
+func (*EventClaimsMandateSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f861eec5413b282d, []int{8}
+}
+func (m *EventClaimsMandateSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventClaimsMandateSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventClaimsMandateSet.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventClaimsMandateSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventClaimsMandateSet.Merge(m, src)
+}
+func (m *EventClaimsMandateSet) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventClaimsMandateSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventClaimsMandateSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventClaimsMandateSet proto.InternalMessageInfo
+
+func (m *EventClaimsMandateSet) GetTerm() uint64 {
+	if m != nil {
+		return m.Term
+	}
+	return 0
+}
+
+func (m *EventClaimsMandateSet) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *EventClaimsMandateSet) GetActivationHeight() uint64 {
+	if m != nil {
+		return m.ActivationHeight
+	}
+	return 0
+}
+
+func (m *EventClaimsMandateSet) GetExpiryHeight() uint64 {
+	if m != nil {
+		return m.ExpiryHeight
+	}
+	return 0
+}
+
+// EventReferenceTaxCapRebased records the reference tax cap re-expressed in a
+// new protocol reference unit. Emitted only by RebaseTaxCap, whose only caller
+// is MsgSetReference.
+type EventReferenceTaxCapRebased struct {
+	OldCap types.Coin `protobuf:"bytes,1,opt,name=old_cap,json=oldCap,proto3" json:"old_cap"`
+	NewCap types.Coin `protobuf:"bytes,2,opt,name=new_cap,json=newCap,proto3" json:"new_cap"`
+}
+
+func (m *EventReferenceTaxCapRebased) Reset()         { *m = EventReferenceTaxCapRebased{} }
+func (m *EventReferenceTaxCapRebased) String() string { return proto.CompactTextString(m) }
+func (*EventReferenceTaxCapRebased) ProtoMessage()    {}
+func (*EventReferenceTaxCapRebased) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f861eec5413b282d, []int{9}
+}
+func (m *EventReferenceTaxCapRebased) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventReferenceTaxCapRebased) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventReferenceTaxCapRebased.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventReferenceTaxCapRebased) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventReferenceTaxCapRebased.Merge(m, src)
+}
+func (m *EventReferenceTaxCapRebased) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventReferenceTaxCapRebased) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventReferenceTaxCapRebased.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventReferenceTaxCapRebased proto.InternalMessageInfo
+
+func (m *EventReferenceTaxCapRebased) GetOldCap() types.Coin {
+	if m != nil {
+		return m.OldCap
+	}
+	return types.Coin{}
+}
+
+func (m *EventReferenceTaxCapRebased) GetNewCap() types.Coin {
+	if m != nil {
+		return m.NewCap
+	}
+	return types.Coin{}
+}
+
 func init() {
-	proto.RegisterEnum("ark.treasury.v1.EventSkipReason", EventSkipReason_name, EventSkipReason_value)
 	proto.RegisterType((*EventTaxCapsUpdated)(nil), "ark.treasury.v1.EventTaxCapsUpdated")
-	proto.RegisterType((*EventTaxCapsUpdateSkipped)(nil), "ark.treasury.v1.EventTaxCapsUpdateSkipped")
 	proto.RegisterType((*EventBlockRewardsToppedUp)(nil), "ark.treasury.v1.EventBlockRewardsToppedUp")
-	proto.RegisterType((*EventBlockRewardTopUpSkipped)(nil), "ark.treasury.v1.EventBlockRewardTopUpSkipped")
+	proto.RegisterType((*EventUnpricedStabilityTaxRouted)(nil), "ark.treasury.v1.EventUnpricedStabilityTaxRouted")
 	proto.RegisterType((*EventExpansionAllocated)(nil), "ark.treasury.v1.EventExpansionAllocated")
 	proto.RegisterType((*EventRedemptionBufferDrawn)(nil), "ark.treasury.v1.EventRedemptionBufferDrawn")
 	proto.RegisterType((*EventClaimSubmitted)(nil), "ark.treasury.v1.EventClaimSubmitted")
 	proto.RegisterType((*EventClaimPaid)(nil), "ark.treasury.v1.EventClaimPaid")
+	proto.RegisterType((*EventMonetaryMandateSet)(nil), "ark.treasury.v1.EventMonetaryMandateSet")
+	proto.RegisterType((*EventClaimsMandateSet)(nil), "ark.treasury.v1.EventClaimsMandateSet")
+	proto.RegisterType((*EventReferenceTaxCapRebased)(nil), "ark.treasury.v1.EventReferenceTaxCapRebased")
 }
 
 func init() { proto.RegisterFile("ark/treasury/v1/event.proto", fileDescriptor_f861eec5413b282d) }
 
 var fileDescriptor_f861eec5413b282d = []byte{
-	// 978 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x96, 0x4f, 0x6f, 0xe3, 0x44,
-	0x18, 0xc6, 0xeb, 0xfe, 0x49, 0xda, 0xe9, 0xd2, 0xa6, 0x26, 0x6c, 0xd3, 0xb2, 0xa4, 0xdd, 0x20,
-	0xc4, 0xee, 0xa2, 0x26, 0x74, 0x91, 0xe0, 0x84, 0x90, 0x93, 0x78, 0xb7, 0x66, 0x53, 0xbb, 0x38,
-	0x4e, 0x8a, 0x58, 0xd0, 0x68, 0x6a, 0x4f, 0x83, 0x49, 0x3c, 0x63, 0x8d, 0xc7, 0x69, 0xfb, 0x2d,
-	0xf8, 0x18, 0x1c, 0x39, 0xec, 0x77, 0x60, 0xb9, 0xad, 0xf6, 0x02, 0xe2, 0xb0, 0x82, 0xf6, 0xc0,
-	0x91, 0xaf, 0x80, 0x3c, 0xe3, 0x24, 0x4b, 0x12, 0x84, 0x64, 0x71, 0xa9, 0x3a, 0x33, 0xcf, 0xfb,
-	0x9b, 0xf7, 0x1d, 0x3f, 0xef, 0x64, 0xc0, 0xdb, 0x88, 0xf5, 0x6b, 0x9c, 0x61, 0x14, 0xc5, 0xec,
-	0xaa, 0x36, 0x3c, 0xac, 0xe1, 0x21, 0x26, 0xbc, 0x1a, 0x32, 0xca, 0xa9, 0xba, 0x89, 0x58, 0xbf,
-	0x3a, 0x5a, 0xac, 0x0e, 0x0f, 0x77, 0xb7, 0x50, 0xe0, 0x13, 0x5a, 0x13, 0x7f, 0xa5, 0x66, 0xb7,
-	0x3c, 0x0d, 0x18, 0xeb, 0xe5, 0xfa, 0x8e, 0x4b, 0xa3, 0x80, 0x46, 0x50, 0x8c, 0x6a, 0x72, 0x90,
-	0x2e, 0x15, 0x7b, 0xb4, 0x47, 0xe5, 0x7c, 0xf2, 0x9f, 0x9c, 0xad, 0x38, 0xe0, 0x4d, 0x3d, 0xc9,
-	0xc1, 0x41, 0x97, 0x0d, 0x14, 0x46, 0x9d, 0xd0, 0x43, 0x1c, 0x7b, 0xea, 0xa7, 0x60, 0x95, 0xa3,
-	0x4b, 0xe8, 0xa2, 0x30, 0x2a, 0x29, 0xfb, 0x4b, 0xf7, 0xd6, 0x1f, 0x6e, 0x57, 0xa7, 0xd2, 0xab,
-	0xca, 0x90, 0xfa, 0xda, 0xf3, 0x57, 0x7b, 0x0b, 0x3f, 0xfc, 0xf9, 0xe3, 0x03, 0xc5, 0xce, 0x73,
-	0x49, 0xa9, 0x7c, 0x0d, 0x76, 0x66, 0xa9, 0xed, 0xbe, 0x1f, 0x86, 0xd8, 0x53, 0x3f, 0x03, 0xb9,
-	0x84, 0x42, 0x49, 0x49, 0xd9, 0x57, 0xee, 0x6d, 0x3c, 0xdc, 0x9f, 0x21, 0x8b, 0xd8, 0x44, 0x6e,
-	0x0b, 0x5d, 0x7d, 0x45, 0xe2, 0xd3, 0xb0, 0xca, 0xcf, 0xcb, 0x29, 0xbe, 0x3e, 0xa0, 0x6e, 0xdf,
-	0xc6, 0x17, 0x88, 0x79, 0x91, 0x43, 0x13, 0x78, 0x27, 0x54, 0x8b, 0x60, 0xc5, 0xc3, 0x84, 0x06,
-	0x82, 0xbe, 0x66, 0xcb, 0x81, 0xfa, 0x14, 0x14, 0x86, 0x68, 0xe0, 0x7b, 0x88, 0x53, 0x06, 0x39,
-	0x62, 0x3d, 0xcc, 0x4b, 0x8b, 0x89, 0xa0, 0xfe, 0x61, 0x92, 0xff, 0x6f, 0xaf, 0xf6, 0xde, 0x92,
-	0xa7, 0x15, 0x79, 0xfd, 0xaa, 0x4f, 0x6b, 0x01, 0xe2, 0xdf, 0x56, 0x0d, 0xc2, 0x5f, 0x3e, 0x3b,
-	0x00, 0xe9, 0x31, 0x1a, 0x84, 0xcb, 0x3c, 0x36, 0xc7, 0x24, 0x47, 0x80, 0xd4, 0x0e, 0x78, 0x83,
-	0x32, 0xe4, 0x0e, 0xf0, 0x88, 0xbc, 0x94, 0x91, 0x7c, 0x4b, 0x62, 0x52, 0xec, 0x37, 0x60, 0x6b,
-	0x92, 0x33, 0x65, 0x3d, 0x44, 0x7c, 0xb7, 0xb4, 0x9c, 0x11, 0x3d, 0x29, 0xdf, 0x92, 0x24, 0xf5,
-	0x14, 0x6c, 0xa4, 0x59, 0x8f, 0xd8, 0x2b, 0x19, 0xd9, 0x69, 0xf5, 0xaf, 0x81, 0x27, 0x79, 0x87,
-	0xc8, 0xf7, 0x4a, 0xb9, 0xac, 0xe0, 0x31, 0xe7, 0x04, 0xf9, 0x9e, 0xfa, 0x05, 0x58, 0x4f, 0x33,
-	0x16, 0xd4, 0x7c, 0x46, 0x2a, 0x90, 0x90, 0x04, 0x59, 0x81, 0xe0, 0xce, 0xb4, 0x95, 0x1c, 0x1a,
-	0x76, 0xc2, 0xff, 0xcd, 0xac, 0x7f, 0x2c, 0x83, 0x6d, 0x21, 0xd1, 0x2f, 0x43, 0x44, 0x22, 0x9f,
-	0x12, 0x6d, 0x30, 0xa0, 0xae, 0xe8, 0xb2, 0xf9, 0x56, 0xfd, 0x0e, 0x94, 0x18, 0xf6, 0x70, 0x10,
-	0x72, 0x9f, 0x12, 0x78, 0x16, 0x9f, 0x9f, 0x63, 0x06, 0x5d, 0x86, 0x3d, 0x3f, 0xbb, 0x65, 0x6f,
-	0x4f, 0x88, 0x75, 0x01, 0x6c, 0x08, 0x5e, 0xb2, 0x57, 0xc4, 0x19, 0xe2, 0xb8, 0xe7, 0xbb, 0x90,
-	0xe1, 0x08, 0xb3, 0x21, 0x1e, 0xed, 0x95, 0xd5, 0xc4, 0xb7, 0xc7, 0x44, 0x5b, 0x02, 0xd3, 0xbd,
-	0x9e, 0x82, 0x82, 0x4f, 0xa2, 0x98, 0x21, 0xe2, 0x8e, 0xf7, 0xc8, 0xea, 0xe6, 0xcd, 0x31, 0x29,
-	0x85, 0x23, 0x50, 0x8c, 0x42, 0x86, 0x91, 0x07, 0x11, 0xf1, 0xa0, 0x17, 0x47, 0x1c, 0x9e, 0xc5,
-	0x8c, 0x64, 0xb6, 0xf4, 0x96, 0xa4, 0x69, 0xc4, 0x6b, 0xc6, 0x11, 0xaf, 0xc7, 0x8c, 0x88, 0x2e,
-	0x1f, 0x62, 0x76, 0x3e, 0xa0, 0x17, 0x92, 0x9d, 0xcb, 0xdc, 0xe5, 0x29, 0x46, 0x60, 0x35, 0xb0,
-	0x23, 0x6f, 0x0d, 0x38, 0x44, 0x83, 0x18, 0x89, 0x8f, 0xee, 0xd2, 0x20, 0x1c, 0x60, 0x8e, 0x85,
-	0xc5, 0x57, 0x47, 0x96, 0xda, 0x96, 0xba, 0xee, 0x48, 0xd6, 0x48, 0x55, 0x95, 0x9f, 0x14, 0xb0,
-	0x2b, 0x3c, 0x66, 0x4f, 0x7d, 0xe5, 0x26, 0x43, 0x17, 0xe4, 0x5f, 0x6c, 0xf6, 0x39, 0xc8, 0x87,
-	0xe8, 0x2a, 0xc0, 0x24, 0xbb, 0xab, 0x46, 0x00, 0xf5, 0x31, 0xb8, 0x83, 0x7a, 0x3d, 0x86, 0x7b,
-	0x88, 0xe3, 0x79, 0x65, 0x2c, 0xbd, 0x5e, 0xc6, 0xee, 0x58, 0x3a, 0x5b, 0xc9, 0x27, 0xe9, 0xcf,
-	0x51, 0x63, 0x80, 0xfc, 0xa0, 0x1d, 0x9f, 0x05, 0x3e, 0x4f, 0x1a, 0x65, 0x1f, 0xac, 0xba, 0xc9,
-	0x0c, 0xf4, 0x3d, 0x51, 0xc4, 0xf2, 0x88, 0x95, 0x17, 0xd3, 0x86, 0x57, 0xf9, 0x45, 0x01, 0x1b,
-	0x93, 0x48, 0x71, 0x5b, 0xfc, 0x67, 0x90, 0xfa, 0x31, 0x58, 0x63, 0xd8, 0xf5, 0x43, 0x7f, 0x72,
-	0x08, 0xa5, 0x97, 0xcf, 0x0e, 0x8a, 0x69, 0x9d, 0x9a, 0xe7, 0x31, 0x1c, 0x45, 0x6d, 0xce, 0x7c,
-	0xd2, 0xb3, 0x27, 0x52, 0xf5, 0x2e, 0xb8, 0x85, 0x02, 0x1a, 0x13, 0x0e, 0xe5, 0xb9, 0x8a, 0x4e,
-	0xb1, 0xd7, 0xe5, 0x5c, 0x53, 0x9c, 0xee, 0x11, 0xc8, 0xc9, 0x61, 0x66, 0x8b, 0xa7, 0xf1, 0x0f,
-	0xfe, 0x5a, 0x04, 0x9b, 0x53, 0x77, 0x8c, 0x7a, 0x17, 0xbc, 0xa3, 0x77, 0x75, 0xd3, 0x81, 0xed,
-	0x27, 0xc6, 0x09, 0xb4, 0x75, 0xad, 0x6d, 0x99, 0xb0, 0x63, 0xb6, 0x4f, 0xf4, 0x86, 0xf1, 0xc8,
-	0xd0, 0x9b, 0x85, 0x05, 0xf5, 0x5d, 0xb0, 0x37, 0x4f, 0xf2, 0xc4, 0xb4, 0x4e, 0x4d, 0xd8, 0xd4,
-	0x4d, 0xeb, 0xb8, 0xa0, 0xa8, 0xf7, 0xc1, 0x7b, 0xb3, 0xa2, 0xb6, 0xa3, 0xb5, 0x74, 0xa8, 0x7f,
-	0xd9, 0x38, 0xd2, 0xcc, 0xc7, 0x3a, 0xb4, 0x35, 0x47, 0x2f, 0x2c, 0xaa, 0x1f, 0x80, 0xf7, 0x67,
-	0xa5, 0x86, 0xd9, 0xd5, 0x5a, 0x46, 0x73, 0x4a, 0xbc, 0xa4, 0x1e, 0x80, 0xfb, 0xb3, 0xe2, 0x86,
-	0x65, 0x76, 0x75, 0xbb, 0x6d, 0x58, 0x26, 0xb4, 0x3a, 0x0e, 0xb4, 0x1e, 0x41, 0x3b, 0x89, 0x29,
-	0x2c, 0xcf, 0x97, 0x6b, 0xb6, 0xe1, 0x1c, 0x1d, 0xeb, 0x8e, 0xd1, 0xf8, 0xa7, 0x7c, 0x45, 0x3d,
-	0x04, 0x07, 0xb3, 0xf2, 0x53, 0xc3, 0x6c, 0x5a, 0xa7, 0xb0, 0xab, 0xb5, 0x3a, 0x9a, 0x63, 0x88,
-	0xdc, 0x1a, 0xd6, 0xf1, 0x49, 0x4b, 0x77, 0xf4, 0x42, 0x6e, 0x7e, 0xf6, 0x13, 0x6d, 0xc7, 0xd4,
-	0xba, 0x9a, 0xd1, 0xd2, 0xea, 0x2d, 0xbd, 0x90, 0xaf, 0x57, 0x9f, 0x5f, 0x97, 0x95, 0x17, 0xd7,
-	0x65, 0xe5, 0xf7, 0xeb, 0xb2, 0xf2, 0xfd, 0x4d, 0x79, 0xe1, 0xc5, 0x4d, 0x79, 0xe1, 0xd7, 0x9b,
-	0xf2, 0xc2, 0x57, 0xc5, 0xe4, 0xf9, 0x75, 0x39, 0x79, 0x80, 0xf1, 0xab, 0x10, 0x47, 0x67, 0x39,
-	0xf1, 0x94, 0xfa, 0xe8, 0xef, 0x00, 0x00, 0x00, 0xff, 0xff, 0x9f, 0xf3, 0x9c, 0x56, 0xde, 0x09,
-	0x00, 0x00,
+	// 1007 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x96, 0xcf, 0x6f, 0x1c, 0x35,
+	0x14, 0xc7, 0x33, 0xc9, 0xe6, 0x97, 0x93, 0x36, 0xc9, 0x90, 0x36, 0x9b, 0x14, 0x6d, 0xc2, 0x9e,
+	0xa2, 0x4a, 0x99, 0x25, 0x45, 0xc0, 0x89, 0x43, 0x76, 0x53, 0xd1, 0x20, 0x55, 0xc0, 0x26, 0x01,
+	0x89, 0x0a, 0x8d, 0xde, 0x8e, 0xdf, 0x4e, 0x4c, 0x66, 0xec, 0x91, 0xed, 0xd9, 0x1f, 0xff, 0x05,
+	0x77, 0xfe, 0x01, 0xc4, 0x89, 0x43, 0xff, 0x07, 0x0a, 0xe2, 0x50, 0xf5, 0x02, 0xe2, 0x50, 0x20,
+	0x39, 0xf0, 0x27, 0x70, 0x45, 0x63, 0x7b, 0x77, 0x43, 0x28, 0x54, 0x8c, 0xc4, 0x81, 0x4b, 0xb2,
+	0xe3, 0xf7, 0xde, 0xc7, 0xef, 0x6b, 0xfb, 0xd9, 0x8f, 0xdc, 0x01, 0x79, 0xde, 0xd0, 0x12, 0x41,
+	0xe5, 0x72, 0xd8, 0xe8, 0xed, 0x37, 0xb0, 0x87, 0x5c, 0x07, 0x99, 0x14, 0x5a, 0xf8, 0x2b, 0x20,
+	0xcf, 0x83, 0x91, 0x31, 0xe8, 0xed, 0x6f, 0xad, 0x41, 0xca, 0xb8, 0x68, 0x98, 0xbf, 0xd6, 0x67,
+	0xab, 0x76, 0x1d, 0x30, 0xf6, 0x77, 0xf6, 0x48, 0xa8, 0x54, 0xa8, 0x46, 0x07, 0x14, 0x36, 0x7a,
+	0xfb, 0x1d, 0xd4, 0xb0, 0xdf, 0x88, 0x04, 0xe3, 0xce, 0xbe, 0x69, 0xed, 0xa1, 0xf9, 0x6a, 0xd8,
+	0x0f, 0x67, 0x5a, 0x8f, 0x45, 0x2c, 0xec, 0x78, 0xf1, 0xcb, 0x8e, 0xd6, 0x4f, 0xc8, 0x2b, 0xf7,
+	0x8b, 0x1c, 0x4f, 0x60, 0xd0, 0x82, 0x4c, 0x9d, 0x66, 0x14, 0x34, 0x52, 0xff, 0x1d, 0xb2, 0xa0,
+	0x61, 0x10, 0x46, 0x90, 0xa9, 0xaa, 0xb7, 0x33, 0xb3, 0xbb, 0x74, 0x6f, 0x23, 0xb8, 0x96, 0x7e,
+	0x60, 0x43, 0x9a, 0x8b, 0x4f, 0x9e, 0x6f, 0x4f, 0x7d, 0xf9, 0xdb, 0xd7, 0x77, 0xbd, 0xf6, 0xbc,
+	0xb6, 0x94, 0xfa, 0xb7, 0x15, 0xb2, 0x69, 0xb0, 0xcd, 0x44, 0x44, 0xe7, 0x6d, 0xec, 0x83, 0xa4,
+	0xea, 0x44, 0x64, 0x19, 0xd2, 0xd3, 0xcc, 0x5f, 0x27, 0xb3, 0x14, 0xb9, 0x48, 0xab, 0xde, 0x8e,
+	0xb7, 0xbb, 0xd8, 0xb6, 0x1f, 0xfe, 0x23, 0xb2, 0xda, 0x83, 0x84, 0x51, 0xd0, 0x42, 0x86, 0x1a,
+	0x64, 0x8c, 0xba, 0x3a, 0x5d, 0x38, 0x34, 0x5f, 0x2f, 0x66, 0xf8, 0xe9, 0xf9, 0xf6, 0x2d, 0xab,
+	0x47, 0xd1, 0xf3, 0x80, 0x89, 0x46, 0x0a, 0xfa, 0x2c, 0x38, 0xe2, 0xfa, 0xd9, 0xe3, 0x3d, 0xe2,
+	0x84, 0x1e, 0x71, 0x6d, 0x13, 0x59, 0x19, 0x93, 0x4e, 0x0c, 0xc8, 0x3f, 0x25, 0x37, 0x84, 0x84,
+	0x28, 0xc1, 0x11, 0x79, 0xa6, 0x24, 0x79, 0xd9, 0x62, 0x1c, 0xf6, 0x53, 0xb2, 0x36, 0xc9, 0x59,
+	0xc8, 0x18, 0x38, 0x8b, 0xaa, 0x95, 0x92, 0xe8, 0x89, 0xfc, 0xf7, 0x2d, 0xc9, 0xff, 0x98, 0xdc,
+	0x74, 0x59, 0x8f, 0xd8, 0xb3, 0x25, 0xd9, 0x4e, 0xfd, 0x15, 0xf0, 0x24, 0xef, 0x0c, 0x18, 0xad,
+	0xce, 0x95, 0x05, 0x8f, 0x39, 0x1f, 0x00, 0xa3, 0xfe, 0x87, 0x64, 0xc9, 0x65, 0x6c, 0xa8, 0xf3,
+	0x25, 0xa9, 0xc4, 0x42, 0x0a, 0x64, 0xfd, 0x77, 0x8f, 0x6c, 0x9b, 0xb3, 0x74, 0xca, 0x33, 0xc9,
+	0x22, 0xa4, 0xc7, 0x1a, 0x3a, 0x2c, 0x61, 0x7a, 0x78, 0x02, 0x83, 0xb6, 0xc8, 0x8b, 0xe3, 0xda,
+	0x25, 0xb3, 0xa9, 0xe8, 0x21, 0x75, 0x67, 0x75, 0x33, 0x70, 0xc0, 0xa2, 0x4c, 0x02, 0x57, 0x26,
+	0x41, 0x4b, 0x30, 0xde, 0x7c, 0xb3, 0xc8, 0xe5, 0xab, 0x9f, 0xb7, 0x77, 0x63, 0xa6, 0xcf, 0xf2,
+	0x4e, 0x10, 0x89, 0xd4, 0x95, 0x89, 0xfb, 0xb7, 0xa7, 0xe8, 0x79, 0x43, 0x0f, 0x33, 0x54, 0x26,
+	0x40, 0xd9, 0x84, 0x2c, 0xde, 0x4f, 0xc8, 0x02, 0xc5, 0x2e, 0x4a, 0x89, 0xb4, 0x3a, 0xfd, 0x1f,
+	0x4d, 0x35, 0x9e, 0xa1, 0xfe, 0x6b, 0x85, 0x6c, 0x18, 0xe5, 0xf7, 0x07, 0x19, 0x70, 0xc5, 0x04,
+	0x3f, 0x48, 0x12, 0x11, 0x99, 0x02, 0x7d, 0x71, 0x0d, 0x7d, 0x46, 0xaa, 0x12, 0x29, 0xa6, 0x99,
+	0x66, 0x82, 0x87, 0x9d, 0xbc, 0xdb, 0x45, 0x19, 0x46, 0x12, 0x29, 0x2b, 0x5f, 0x4b, 0xb7, 0x27,
+	0xc4, 0xa6, 0x01, 0xb6, 0x0c, 0xaf, 0x98, 0x4b, 0x69, 0x09, 0x1a, 0x63, 0x16, 0x85, 0x12, 0x15,
+	0xca, 0x1e, 0x8e, 0xe6, 0x2a, 0x5b, 0x5d, 0xb7, 0xc7, 0xc4, 0xb6, 0x05, 0xba, 0xb9, 0x1e, 0x91,
+	0x55, 0xc6, 0x55, 0x2e, 0x81, 0x47, 0xe3, 0x39, 0xca, 0x96, 0xd9, 0xca, 0x98, 0xe4, 0xe0, 0x40,
+	0xd6, 0x55, 0x26, 0x11, 0x68, 0x08, 0x9c, 0x86, 0x34, 0x57, 0x3a, 0xec, 0xe4, 0x92, 0x97, 0xae,
+	0xb5, 0x35, 0x4b, 0x3b, 0xe0, 0xf4, 0x30, 0x57, 0xba, 0x99, 0x4b, 0x6e, 0xae, 0x9f, 0x1e, 0xca,
+	0x6e, 0x22, 0xfa, 0x96, 0x3d, 0x57, 0xfa, 0xfa, 0x71, 0x18, 0x83, 0x3d, 0x20, 0x9b, 0xf6, 0x3a,
+	0x0b, 0x7b, 0x90, 0xe4, 0x60, 0x36, 0x3d, 0x12, 0x69, 0x96, 0xa0, 0x46, 0x53, 0x7b, 0x0b, 0xcd,
+	0x59, 0x1b, 0xb7, 0x61, 0xfd, 0x3e, 0x1a, 0xb9, 0xb5, 0x9c, 0x57, 0xfd, 0x1b, 0x8f, 0x6c, 0x99,
+	0x33, 0xd6, 0xbe, 0xb6, 0xcb, 0x87, 0x12, 0xfa, 0xfc, 0x6f, 0x8e, 0xd9, 0x7b, 0x64, 0x3e, 0x83,
+	0x61, 0x8a, 0xbc, 0xfc, 0xa9, 0x1a, 0x01, 0xfc, 0x77, 0xc9, 0xab, 0x10, 0xc7, 0x12, 0x63, 0xd0,
+	0xf8, 0x22, 0x19, 0x33, 0x57, 0x65, 0x6c, 0x8d, 0x5d, 0xff, 0xaa, 0xe4, 0x6d, 0xf7, 0x92, 0xb5,
+	0x12, 0x60, 0xe9, 0x71, 0xde, 0x49, 0x99, 0x2e, 0x0a, 0x65, 0x87, 0x2c, 0x44, 0xc5, 0x48, 0xc8,
+	0xa8, 0x11, 0x51, 0x19, 0xb1, 0xe6, 0xcd, 0xf0, 0x11, 0xad, 0xff, 0xe0, 0x91, 0x9b, 0x93, 0x48,
+	0x73, 0x8d, 0xbd, 0x34, 0xc8, 0x7f, 0x8b, 0x2c, 0x4a, 0x8c, 0x58, 0xc6, 0x26, 0x8b, 0x50, 0x7d,
+	0xf6, 0x78, 0x6f, 0xdd, 0xe9, 0x3c, 0xa0, 0x54, 0xa2, 0x52, 0xc7, 0x5a, 0x32, 0x1e, 0xb7, 0x27,
+	0xae, 0xfe, 0x6b, 0x64, 0x19, 0x52, 0x91, 0x73, 0x1d, 0xda, 0x75, 0x35, 0x95, 0xd2, 0x5e, 0xb2,
+	0x63, 0x87, 0x66, 0x75, 0x1f, 0x90, 0x39, 0xfb, 0x59, 0xfa, 0x88, 0xbb, 0xf8, 0xfa, 0xf7, 0x9e,
+	0xbb, 0x40, 0x1e, 0x0a, 0x8e, 0x1a, 0xe4, 0xf0, 0x21, 0xf0, 0xe2, 0x7d, 0x3f, 0x46, 0xed, 0x6f,
+	0x92, 0x8a, 0x46, 0x99, 0xfe, 0x59, 0x9e, 0x19, 0x2a, 0xb4, 0x45, 0x22, 0x35, 0xeb, 0x87, 0x2f,
+	0xd7, 0x36, 0x76, 0xf5, 0xef, 0x91, 0x35, 0x88, 0x34, 0xeb, 0xd9, 0x1d, 0x3c, 0x43, 0x16, 0x9f,
+	0xd9, 0xab, 0x60, 0xcc, 0x5f, 0x9d, 0xd8, 0x1f, 0x18, 0xb3, 0x7f, 0x97, 0xdc, 0xc0, 0x41, 0xc6,
+	0xe4, 0x70, 0xe4, 0x5f, 0xb9, 0xea, 0xbf, 0x6c, 0x6d, 0xd6, 0xb7, 0xfe, 0x9d, 0x47, 0x6e, 0x4d,
+	0x36, 0x4a, 0xfd, 0xbf, 0xc5, 0x7c, 0xe1, 0x91, 0x3b, 0xae, 0xf0, 0xba, 0x28, 0x91, 0x47, 0x68,
+	0xfb, 0xa9, 0x36, 0x16, 0x2f, 0x49, 0xd1, 0x81, 0xcd, 0x8b, 0x84, 0x16, 0x1d, 0x98, 0x51, 0xf5,
+	0x8f, 0x2f, 0xcd, 0x95, 0x16, 0x6c, 0x4e, 0x24, 0xb4, 0x05, 0x59, 0x11, 0xce, 0xb1, 0x6f, 0xc2,
+	0xa7, 0xff, 0x4d, 0x38, 0xc7, 0x7e, 0xd1, 0xd4, 0x05, 0x4f, 0x2e, 0x6a, 0xde, 0xd3, 0x8b, 0x9a,
+	0xf7, 0xcb, 0x45, 0xcd, 0xfb, 0xfc, 0xb2, 0x36, 0xf5, 0xf4, 0xb2, 0x36, 0xf5, 0xe3, 0x65, 0x6d,
+	0xea, 0x93, 0xf5, 0xa2, 0x43, 0x1d, 0x4c, 0x7a, 0x54, 0xf3, 0x7e, 0x75, 0xe6, 0x4c, 0x37, 0xf9,
+	0xc6, 0x1f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xb2, 0xcb, 0x44, 0xe9, 0x01, 0x0b, 0x00, 0x00,
 }
 
 func (m *EventTaxCapsUpdated) Marshal() (dAtA []byte, err error) {
@@ -606,34 +714,6 @@ func (m *EventTaxCapsUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xa
 		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventTaxCapsUpdateSkipped) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventTaxCapsUpdateSkipped) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventTaxCapsUpdateSkipped) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Reason != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Reason))
-		i--
-		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -728,7 +808,7 @@ func (m *EventBlockRewardsToppedUp) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *EventBlockRewardTopUpSkipped) Marshal() (dAtA []byte, err error) {
+func (m *EventUnpricedStabilityTaxRouted) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -738,20 +818,43 @@ func (m *EventBlockRewardTopUpSkipped) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EventBlockRewardTopUpSkipped) MarshalTo(dAtA []byte) (int, error) {
+func (m *EventUnpricedStabilityTaxRouted) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *EventBlockRewardTopUpSkipped) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *EventUnpricedStabilityTaxRouted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Reason != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Reason))
-		i--
-		dAtA[i] = 0x8
+	if len(m.Deferred) > 0 {
+		for iNdEx := len(m.Deferred) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Deferred[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintEvent(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Moved) > 0 {
+		for iNdEx := len(m.Moved) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Moved[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintEvent(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -976,6 +1079,139 @@ func (m *EventClaimPaid) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *EventMonetaryMandateSet) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventMonetaryMandateSet) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventMonetaryMandateSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExpiryHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ExpiryHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Term != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Term))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventClaimsMandateSet) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventClaimsMandateSet) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventClaimsMandateSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExpiryHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ExpiryHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Term != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Term))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventReferenceTaxCapRebased) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventReferenceTaxCapRebased) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventReferenceTaxCapRebased) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.NewCap.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.OldCap.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
 	offset -= sovEvent(v)
 	base := offset
@@ -998,18 +1234,6 @@ func (m *EventTaxCapsUpdated) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovEvent(uint64(l))
 		}
-	}
-	return n
-}
-
-func (m *EventTaxCapsUpdateSkipped) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Reason != 0 {
-		n += 1 + sovEvent(uint64(m.Reason))
 	}
 	return n
 }
@@ -1039,14 +1263,23 @@ func (m *EventBlockRewardsToppedUp) Size() (n int) {
 	return n
 }
 
-func (m *EventBlockRewardTopUpSkipped) Size() (n int) {
+func (m *EventUnpricedStabilityTaxRouted) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Reason != 0 {
-		n += 1 + sovEvent(uint64(m.Reason))
+	if len(m.Moved) > 0 {
+		for _, e := range m.Moved {
+			l = e.Size()
+			n += 1 + l + sovEvent(uint64(l))
+		}
+	}
+	if len(m.Deferred) > 0 {
+		for _, e := range m.Deferred {
+			l = e.Size()
+			n += 1 + l + sovEvent(uint64(l))
+		}
 	}
 	return n
 }
@@ -1129,6 +1362,63 @@ func (m *EventClaimPaid) Size() (n int) {
 	return n
 }
 
+func (m *EventMonetaryMandateSet) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Term != 0 {
+		n += 1 + sovEvent(uint64(m.Term))
+	}
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.ActivationHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ActivationHeight))
+	}
+	if m.ExpiryHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ExpiryHeight))
+	}
+	return n
+}
+
+func (m *EventClaimsMandateSet) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Term != 0 {
+		n += 1 + sovEvent(uint64(m.Term))
+	}
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.ActivationHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ActivationHeight))
+	}
+	if m.ExpiryHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ExpiryHeight))
+	}
+	return n
+}
+
+func (m *EventReferenceTaxCapRebased) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.OldCap.Size()
+	n += 1 + l + sovEvent(uint64(l))
+	l = m.NewCap.Size()
+	n += 1 + l + sovEvent(uint64(l))
+	return n
+}
+
 func sovEvent(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
@@ -1198,75 +1488,6 @@ func (m *EventTaxCapsUpdated) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventTaxCapsUpdateSkipped) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventTaxCapsUpdateSkipped: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventTaxCapsUpdateSkipped: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
-			}
-			m.Reason = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Reason |= EventSkipReason(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1574,7 +1795,7 @@ func (m *EventBlockRewardsToppedUp) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EventBlockRewardTopUpSkipped) Unmarshal(dAtA []byte) error {
+func (m *EventUnpricedStabilityTaxRouted) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1597,17 +1818,17 @@ func (m *EventBlockRewardTopUpSkipped) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EventBlockRewardTopUpSkipped: wiretype end group for non-group")
+			return fmt.Errorf("proto: EventUnpricedStabilityTaxRouted: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventBlockRewardTopUpSkipped: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: EventUnpricedStabilityTaxRouted: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Moved", wireType)
 			}
-			m.Reason = 0
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -1617,11 +1838,60 @@ func (m *EventBlockRewardTopUpSkipped) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Reason |= EventSkipReason(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Moved = append(m.Moved, types.Coin{})
+			if err := m.Moved[len(m.Moved)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deferred", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Deferred = append(m.Deferred, types.Coin{})
+			if err := m.Deferred[len(m.Deferred)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -2263,6 +2533,400 @@ func (m *EventClaimPaid) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventMonetaryMandateSet) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventMonetaryMandateSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventMonetaryMandateSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+			}
+			m.Term = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Term |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+			}
+			m.ActivationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+			}
+			m.ExpiryHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventClaimsMandateSet) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventClaimsMandateSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventClaimsMandateSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+			}
+			m.Term = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Term |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+			}
+			m.ActivationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+			}
+			m.ExpiryHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventReferenceTaxCapRebased) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventReferenceTaxCapRebased: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventReferenceTaxCapRebased: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OldCap", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.OldCap.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NewCap", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.NewCap.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

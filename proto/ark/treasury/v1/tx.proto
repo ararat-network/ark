@@ -20,14 +20,13 @@ service Msg {
   // monetary-policy committee.
   rpc SetMonetaryMandate(MsgSetMonetaryMandate)
       returns (MsgSetMonetaryMandateResponse) {}
-  // UpdateMonetaryPolicy applies one complete reversible policy candidate as
+  // UpdatePolicy applies one complete reversible policy candidate as
   // the governance authority, unbounded by the committee mandate.
-  rpc UpdateMonetaryPolicy(MsgUpdateMonetaryPolicy)
-      returns (MsgUpdateMonetaryPolicyResponse) {}
-  // CommitteeUpdateMonetaryPolicy applies one complete reversible policy
+  rpc UpdatePolicy(MsgUpdatePolicy) returns (MsgUpdatePolicyResponse) {}
+  // CommitteeUpdatePolicy applies one complete reversible policy
   // candidate as the monetary-policy committee, inside its mandate bounds.
-  rpc CommitteeUpdateMonetaryPolicy(MsgCommitteeUpdateMonetaryPolicy)
-      returns (MsgCommitteeUpdateMonetaryPolicyResponse) {}
+  rpc CommitteeUpdatePolicy(MsgCommitteeUpdatePolicy)
+      returns (MsgCommitteeUpdatePolicyResponse) {}
   // SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
   // committee.
   rpc SetClaimsMandate(MsgSetClaimsMandate)
@@ -87,26 +86,26 @@ message MsgSetMonetaryMandate {
 // appointment, replacement, or disablement.
 message MsgSetMonetaryMandateResponse {}
 
-// MsgUpdateMonetaryPolicy is a governance-signed policy update. Governance
+// MsgUpdatePolicy is a governance-signed policy update. Governance
 // applies any structurally valid candidate, so it carries no expected term:
 // its authorization never depends on the committee mandate.
-message MsgUpdateMonetaryPolicy {
+message MsgUpdatePolicy {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgUpdateMonetaryPolicy";
+  option (amino.name) = "ark/x/treasury/MsgUpdatePolicy";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   MonetaryPolicy policy = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// MsgUpdateMonetaryPolicyResponse is the response for one governance
+// MsgUpdatePolicyResponse is the response for one governance
 // monetary-policy update.
-message MsgUpdateMonetaryPolicyResponse {}
+message MsgUpdatePolicyResponse {}
 
-// MsgCommitteeUpdateMonetaryPolicy is an exact committee-signed policy update.
+// MsgCommitteeUpdatePolicy is an exact committee-signed policy update.
 // expected_term protects committee transactions from authority rotation, and
 // every field must fall inside the mandate's minimum and maximum policies.
-message MsgCommitteeUpdateMonetaryPolicy {
+message MsgCommitteeUpdatePolicy {
   option (cosmos.msg.v1.signer) = "committee";
   // The protobuf-derived Amino name exceeds the SDK type-name limit, so this
   // message uses the compact identifier below. Its protobuf message name, RPC
@@ -119,9 +118,9 @@ message MsgCommitteeUpdateMonetaryPolicy {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// MsgCommitteeUpdateMonetaryPolicyResponse is the response for one committee
+// MsgCommitteeUpdatePolicyResponse is the response for one committee
 // monetary-policy update.
-message MsgCommitteeUpdateMonetaryPolicyResponse {}
+message MsgCommitteeUpdatePolicyResponse {}
 
 // MsgSetClaimsMandate is the request for a complete Claims committee mandate.
 // The committee claim limit is a fixed gross base-unit NOAH allowance for the

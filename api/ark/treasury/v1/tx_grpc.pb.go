@@ -19,17 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_UpdateParams_FullMethodName                  = "/ark.treasury.v1.Msg/UpdateParams"
-	Msg_SetMonetaryMandate_FullMethodName            = "/ark.treasury.v1.Msg/SetMonetaryMandate"
-	Msg_UpdateMonetaryPolicy_FullMethodName          = "/ark.treasury.v1.Msg/UpdateMonetaryPolicy"
-	Msg_CommitteeUpdateMonetaryPolicy_FullMethodName = "/ark.treasury.v1.Msg/CommitteeUpdateMonetaryPolicy"
-	Msg_SetClaimsMandate_FullMethodName              = "/ark.treasury.v1.Msg/SetClaimsMandate"
-	Msg_SubmitClaim_FullMethodName                   = "/ark.treasury.v1.Msg/SubmitClaim"
-	Msg_CommitteeSubmitClaim_FullMethodName          = "/ark.treasury.v1.Msg/CommitteeSubmitClaim"
-	Msg_CancelClaim_FullMethodName                   = "/ark.treasury.v1.Msg/CancelClaim"
-	Msg_CommitteeCancelClaim_FullMethodName          = "/ark.treasury.v1.Msg/CommitteeCancelClaim"
-	Msg_ExecuteClaim_FullMethodName                  = "/ark.treasury.v1.Msg/ExecuteClaim"
-	Msg_TransferReserveToBuffer_FullMethodName       = "/ark.treasury.v1.Msg/TransferReserveToBuffer"
+	Msg_UpdateParams_FullMethodName            = "/ark.treasury.v1.Msg/UpdateParams"
+	Msg_SetMonetaryMandate_FullMethodName      = "/ark.treasury.v1.Msg/SetMonetaryMandate"
+	Msg_UpdatePolicy_FullMethodName            = "/ark.treasury.v1.Msg/UpdatePolicy"
+	Msg_CommitteeUpdatePolicy_FullMethodName   = "/ark.treasury.v1.Msg/CommitteeUpdatePolicy"
+	Msg_SetClaimsMandate_FullMethodName        = "/ark.treasury.v1.Msg/SetClaimsMandate"
+	Msg_SubmitClaim_FullMethodName             = "/ark.treasury.v1.Msg/SubmitClaim"
+	Msg_CommitteeSubmitClaim_FullMethodName    = "/ark.treasury.v1.Msg/CommitteeSubmitClaim"
+	Msg_CancelClaim_FullMethodName             = "/ark.treasury.v1.Msg/CancelClaim"
+	Msg_CommitteeCancelClaim_FullMethodName    = "/ark.treasury.v1.Msg/CommitteeCancelClaim"
+	Msg_ExecuteClaim_FullMethodName            = "/ark.treasury.v1.Msg/ExecuteClaim"
+	Msg_TransferReserveToBuffer_FullMethodName = "/ark.treasury.v1.Msg/TransferReserveToBuffer"
 )
 
 // MsgClient is the client API for Msg service.
@@ -43,12 +43,12 @@ type MsgClient interface {
 	// SetMonetaryMandate appoints, replaces, or disables the bounded
 	// monetary-policy committee.
 	SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMandate, opts ...grpc.CallOption) (*MsgSetMonetaryMandateResponse, error)
-	// UpdateMonetaryPolicy applies one complete reversible policy candidate as
+	// UpdatePolicy applies one complete reversible policy candidate as
 	// the governance authority, unbounded by the committee mandate.
-	UpdateMonetaryPolicy(ctx context.Context, in *MsgUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgUpdateMonetaryPolicyResponse, error)
-	// CommitteeUpdateMonetaryPolicy applies one complete reversible policy
+	UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error)
+	// CommitteeUpdatePolicy applies one complete reversible policy
 	// candidate as the monetary-policy committee, inside its mandate bounds.
-	CommitteeUpdateMonetaryPolicy(ctx context.Context, in *MsgCommitteeUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdateMonetaryPolicyResponse, error)
+	CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error)
 	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
 	// committee.
 	SetClaimsMandate(ctx context.Context, in *MsgSetClaimsMandate, opts ...grpc.CallOption) (*MsgSetClaimsMandateResponse, error)
@@ -98,20 +98,20 @@ func (c *msgClient) SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMa
 	return out, nil
 }
 
-func (c *msgClient) UpdateMonetaryPolicy(ctx context.Context, in *MsgUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgUpdateMonetaryPolicyResponse, error) {
+func (c *msgClient) UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgUpdateMonetaryPolicyResponse)
-	err := c.cc.Invoke(ctx, Msg_UpdateMonetaryPolicy_FullMethodName, in, out, cOpts...)
+	out := new(MsgUpdatePolicyResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdatePolicy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) CommitteeUpdateMonetaryPolicy(ctx context.Context, in *MsgCommitteeUpdateMonetaryPolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdateMonetaryPolicyResponse, error) {
+func (c *msgClient) CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCommitteeUpdateMonetaryPolicyResponse)
-	err := c.cc.Invoke(ctx, Msg_CommitteeUpdateMonetaryPolicy_FullMethodName, in, out, cOpts...)
+	out := new(MsgCommitteeUpdatePolicyResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeUpdatePolicy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -199,12 +199,12 @@ type MsgServer interface {
 	// SetMonetaryMandate appoints, replaces, or disables the bounded
 	// monetary-policy committee.
 	SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error)
-	// UpdateMonetaryPolicy applies one complete reversible policy candidate as
+	// UpdatePolicy applies one complete reversible policy candidate as
 	// the governance authority, unbounded by the committee mandate.
-	UpdateMonetaryPolicy(context.Context, *MsgUpdateMonetaryPolicy) (*MsgUpdateMonetaryPolicyResponse, error)
-	// CommitteeUpdateMonetaryPolicy applies one complete reversible policy
+	UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error)
+	// CommitteeUpdatePolicy applies one complete reversible policy
 	// candidate as the monetary-policy committee, inside its mandate bounds.
-	CommitteeUpdateMonetaryPolicy(context.Context, *MsgCommitteeUpdateMonetaryPolicy) (*MsgCommitteeUpdateMonetaryPolicyResponse, error)
+	CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error)
 	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
 	// committee.
 	SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error)
@@ -240,11 +240,11 @@ func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*
 func (UnimplementedMsgServer) SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetMonetaryMandate not implemented")
 }
-func (UnimplementedMsgServer) UpdateMonetaryPolicy(context.Context, *MsgUpdateMonetaryPolicy) (*MsgUpdateMonetaryPolicyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateMonetaryPolicy not implemented")
+func (UnimplementedMsgServer) UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePolicy not implemented")
 }
-func (UnimplementedMsgServer) CommitteeUpdateMonetaryPolicy(context.Context, *MsgCommitteeUpdateMonetaryPolicy) (*MsgCommitteeUpdateMonetaryPolicyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CommitteeUpdateMonetaryPolicy not implemented")
+func (UnimplementedMsgServer) CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeUpdatePolicy not implemented")
 }
 func (UnimplementedMsgServer) SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetClaimsMandate not implemented")
@@ -324,38 +324,38 @@ func _Msg_SetMonetaryMandate_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_UpdateMonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgUpdateMonetaryPolicy)
+func _Msg_UpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdatePolicy)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).UpdateMonetaryPolicy(ctx, in)
+		return srv.(MsgServer).UpdatePolicy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_UpdateMonetaryPolicy_FullMethodName,
+		FullMethod: Msg_UpdatePolicy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).UpdateMonetaryPolicy(ctx, req.(*MsgUpdateMonetaryPolicy))
+		return srv.(MsgServer).UpdatePolicy(ctx, req.(*MsgUpdatePolicy))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CommitteeUpdateMonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCommitteeUpdateMonetaryPolicy)
+func _Msg_CommitteeUpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeUpdatePolicy)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CommitteeUpdateMonetaryPolicy(ctx, in)
+		return srv.(MsgServer).CommitteeUpdatePolicy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CommitteeUpdateMonetaryPolicy_FullMethodName,
+		FullMethod: Msg_CommitteeUpdatePolicy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CommitteeUpdateMonetaryPolicy(ctx, req.(*MsgCommitteeUpdateMonetaryPolicy))
+		return srv.(MsgServer).CommitteeUpdatePolicy(ctx, req.(*MsgCommitteeUpdatePolicy))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -502,12 +502,12 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_SetMonetaryMandate_Handler,
 		},
 		{
-			MethodName: "UpdateMonetaryPolicy",
-			Handler:    _Msg_UpdateMonetaryPolicy_Handler,
+			MethodName: "UpdatePolicy",
+			Handler:    _Msg_UpdatePolicy_Handler,
 		},
 		{
-			MethodName: "CommitteeUpdateMonetaryPolicy",
-			Handler:    _Msg_CommitteeUpdateMonetaryPolicy_Handler,
+			MethodName: "CommitteeUpdatePolicy",
+			Handler:    _Msg_CommitteeUpdatePolicy_Handler,
 		},
 		{
 			MethodName: "SetClaimsMandate",
