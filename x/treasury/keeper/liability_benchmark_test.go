@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/mock/gomock"
+
 	corestore "cosmossdk.io/core/store"
 	"cosmossdk.io/math"
 
@@ -19,7 +21,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"go.uber.org/mock/gomock"
 
 	chain "ark/pkg/chain"
 	oraclekeeper "ark/x/oracle/keeper"
@@ -108,17 +109,10 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 	)
 
 	denoms := make([]string, denomCount)
-	tobinTaxes := make([]oracletypes.TobinTax, denomCount)
 	for i := range denomCount {
 		denoms[i] = fmt.Sprintf("uasset%03d", i)
-		tobinTaxes[i] = oracletypes.TobinTax{
-			Denom:    denoms[i],
-			TobinTax: oracletypes.DefaultTobinTax,
-		}
 	}
-	oracleParams := oracletypes.DefaultParams()
-	oracleParams.TobinTaxes = tobinTaxes
-	if err := oracleKeeper.Params.Set(ctx, oracleParams); err != nil {
+	if err := oracleKeeper.Params.Set(ctx, oracletypes.DefaultParams()); err != nil {
 		tb.Fatal(err)
 	}
 	for _, denom := range denoms {
@@ -157,6 +151,10 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).AnyTimes()
 
 	transientService := runtime.NewTransientStoreService(transientKey)
+	// The liability scan is now a fold over the asset registry, so the
+	// benchmark hands the keeper a registry listing every seeded denom as
+	// ACTIVE: the measured path walks it, reads each supply, and captures one
+	// rate set for the whole membership.
 	keeper := treasurykeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(treasuryKey),
@@ -165,6 +163,7 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		treasuryAccountKeeper,
 		treasuryBankKeeper,
 		oracleKeeper,
+		benchAssetKeeper{denoms: denoms},
 	)
 
 	return &liabilityBenchFixture{
@@ -179,7 +178,7 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 // flat-metering design: the once-per-block preblock scan, the per-swap
 // snapshot read, and per-swap snapshot maintenance.
 func BenchmarkLiabilityValuation(b *testing.B) {
-	for _, denomCount := range []int{len(oracletypes.DefaultTobinTaxes), 26} {
+	for _, denomCount := range []int{len(oracletypes.DefaultFeedDenoms), 26} {
 		// The real scan, performed once per block by the preblocker. Includes
 		// two transient deletes per iteration to reset the block.
 		b.Run(fmt.Sprintf("denoms_%d/preblock_prime", denomCount), func(b *testing.B) {

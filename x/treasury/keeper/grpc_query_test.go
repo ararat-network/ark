@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/cosmos/gogoproto/proto"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,6 +19,7 @@ import (
 
 	"ark/pkg/chain"
 	"ark/pkg/mandate"
+	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	treasurytypes "ark/x/treasury/types"
@@ -250,21 +252,26 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesInvalidTaxMessage() {
 	s.Require().Equal(codes.InvalidArgument, status.Code(err))
 }
 
-func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesMissingConfiguredCap() {
+// TestQueryComputeTaxAnswersZeroForMissingCap pins the query to the same
+// contract as the ante path: a denomination with no cap quotes zero tax rather
+// than an error, so a client cannot be told a transfer is impossible when the
+// chain would accept it.
+func (s *KeeperTestSuite) TestQueryComputeTaxAnswersZeroForMissingCap() {
 	policy := treasurytypes.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.expectTaxableDenoms(chain.USDBaseDenom)
+	s.setAssets(chain.USDBaseDenom)
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 	})
 	s.Require().NoError(err)
 
-	_, err = keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+	response, err := keeper.NewQueryServerImpl(s.keeper).ComputeTax(
 		s.ctx,
 		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
 	)
-	s.Require().Equal(codes.FailedPrecondition, status.Code(err))
+	s.Require().NoError(err)
+	s.Require().True(response.Tax.IsZero())
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
@@ -277,7 +284,6 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 	policy.StabilityTaxRate = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, maxInt))
-	s.expectTaxableDenoms(chain.USDBaseDenom)
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, maxInt)),
 	})
@@ -305,6 +311,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
 }
 
 func (s *KeeperTestSuite) TestQueryFundStatus() {
+	s.setAssets()
 	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(7)))
 	balances := map[string]int64{
 		treasurytypes.SubsidyPoolName:      10,
@@ -312,7 +319,6 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 		treasurytypes.StrategicReserveName: 30,
 		treasurytypes.InsuranceName:        40,
 	}
-	s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return([]oracletypes.TobinTax{}, nil)
 	for moduleName, amount := range balances {
 		address := authtypes.NewModuleAddress(moduleName)
 		s.bankKeeper.EXPECT().GetBalance(s.ctx, address, chain.NoahBaseDenom).
@@ -324,6 +330,13 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 		&treasurytypes.QueryFundStatusRequest{},
 	)
 	s.Require().NoError(err)
+	// An empty registry is a complete valuation of nothing.
+	s.Require().True(response.TotalLiabilityAvailable)
+	s.Require().True(response.PricedLiabilityNoahEquivalent.IsZero())
+	s.Require().True(response.SettlementLiabilityNoahEquivalent.IsZero())
+	s.Require().Empty(response.UntrustedSuspendedSupply)
+	s.Require().Empty(response.WrittenOffExposure)
+	s.Require().True(response.NominalLiabilityNoahEquivalent.IsZero())
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 10), response.SubsidyPoolBalance)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 20), response.RedemptionBufferBalance)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 30), response.StrategicReserveBalance)
@@ -332,61 +345,106 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 33), response.InsuranceUnencumberedBalance)
 }
 
-func (s *KeeperTestSuite) TestQueryFundStatusClassifiesLiabilityValuationErrors() {
+func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognizedLiability() {
+	policy := treasurytypes.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
+	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	s.bankKeeper.EXPECT().GetBalance(s.ctx, gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(4)
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
+		s.ctx,
+		&treasurytypes.QueryFundStatusRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().True(response.TotalLiabilityAvailable)
+	s.Require().Equal(
+		sdk.NewDecCoinFromDec(chain.NoahBaseDenom, math.LegacyNewDec(100)),
+		response.NominalLiabilityNoahEquivalent,
+	)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 50), response.RedemptionBufferTarget)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 25), response.StrategicReserveTarget)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 25), response.InsuranceTarget)
+}
+
+// TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete pins the inversion
+// of the old contract: incompleteness used to be a FailedPrecondition error,
+// which blinded operators during exactly the stress that makes valuation
+// incomplete. The query now always answers with the partition that explains
+// the gap — real balances beside zero targets that claim nothing.
+func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete() {
 	tests := []struct {
-		name        string
-		oracleErr   error
-		wantCode    codes.Code
-		wantMessage string
+		name      string
+		oracleErr error
 	}{
-		{
-			name:        "stale exchange rate",
-			oracleErr:   oracletypes.ErrStaleExchangeRate,
-			wantCode:    codes.FailedPrecondition,
-			wantMessage: "getting treasury fund status: complete Treasury liability valuation is unavailable",
-		},
-		{
-			name:        "unknown denom",
-			oracleErr:   oracletypes.ErrUnknownDenom,
-			wantCode:    codes.FailedPrecondition,
-			wantMessage: "getting treasury fund status: complete Treasury liability valuation is unavailable",
-		},
-		{
-			name:        "conversion out of range",
-			oracleErr:   oracletypes.ErrConversionOutOfRange,
-			wantCode:    codes.FailedPrecondition,
-			wantMessage: "getting treasury fund status: complete Treasury liability valuation is unavailable",
-		},
-		{
-			name:        "unexpected oracle error",
-			oracleErr:   errors.New("oracle store failure"),
-			wantCode:    codes.Internal,
-			wantMessage: "getting treasury fund status: capturing aggregate liability rates: oracle store failure",
-		},
+		{name: "stale exchange rate", oracleErr: oracletypes.ErrStaleExchangeRate},
+		{name: "unknown denom", oracleErr: oracletypes.ErrUnknownDenom},
+		{name: "conversion out of range", oracleErr: oracletypes.ErrConversionOutOfRange},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			tobinTaxes := []oracletypes.TobinTax{{Denom: chain.USDBaseDenom}}
-			s.oracleKeeper.EXPECT().GetTobinTaxes(s.ctx).Return(tobinTaxes, nil)
+			policy := treasurytypes.DefaultMonetaryPolicy()
+			policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+			s.setAssets(chain.USDBaseDenom)
+			s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
+			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.KRWBaseDenom).
+				Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 40))
 			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
 				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
-			s.oracleKeeper.EXPECT().GetRateSet(s.ctx, chain.USDBaseDenom).
-				Return(nil, tc.oracleErr)
+			s.setRates(oracletypes.RateSet{})
+			s.bankKeeper.EXPECT().GetBalance(s.ctx, gomock.Any(), chain.NoahBaseDenom).
+				Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)).Times(4)
 
 			response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
 				s.ctx,
 				&treasurytypes.QueryFundStatusRequest{},
 			)
-			s.Require().Nil(response)
-			s.Require().Equal(tc.wantCode, status.Code(err))
-			s.Require().Equal(tc.wantMessage, status.Convert(err).Message())
+			s.Require().NoError(err)
+			s.Require().False(response.TotalLiabilityAvailable)
+			s.Require().True(response.PricedLiabilityNoahEquivalent.IsZero())
+			s.Require().Equal(
+				[]sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
+				response.UntrustedSuspendedSupply,
+			)
+			// Zero recognised liability yields zero targets: the report never
+			// guesses, while the balances stay real.
+			s.Require().True(response.NominalLiabilityNoahEquivalent.IsZero())
+			s.Require().True(response.RedemptionBufferTarget.IsZero())
+			s.Require().True(response.StrategicReserveTarget.IsZero())
+			s.Require().True(response.InsuranceTarget.IsZero())
+			s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 20), response.RedemptionBufferBalance)
 		})
 	}
 }
 
+func (s *KeeperTestSuite) TestQueryFundStatusClassifiesUnexpectedStateError() {
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.ratesErr = errors.New("oracle store failure")
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
+		s.ctx,
+		&treasurytypes.QueryFundStatusRequest{},
+	)
+	s.Require().Nil(response)
+	s.Require().Equal(codes.Internal, status.Code(err))
+	s.Require().Equal(
+		"getting treasury fund status: pricing aggregate liability: oracle store failure",
+		status.Convert(err).Message(),
+	)
+}
+
 func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
-	funding := rewardFunding(4, 7, 3, 2, true)
+	funding := rewardFunding(4, 7, 3, 2)
 	s.setRewardFunding(funding)
 
 	response, err := keeper.NewQueryServerImpl(s.keeper).RewardFunding(

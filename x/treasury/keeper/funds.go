@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
 	"cosmossdk.io/math"
 
@@ -30,6 +29,10 @@ type fundStatus struct {
 
 // RouteExpansion derives and executes the complete expansion-principal
 // waterfall from Market's escrow. It neither mints nor burns.
+//
+// The stable output is whatever Market's ask leg produced, so it is already
+// ACTIVE: eligibility is decided at quote time and nothing outside Market can
+// hold a quote and settle it.
 func (k Keeper) RouteExpansion(
 	ctx context.Context,
 	grossOffer sdk.Coin,
@@ -44,15 +47,6 @@ func (k Keeper) RouteExpansion(
 	}
 	if !stableOutput.IsPositive() {
 		return types.ExpansionAllocation{}, fmt.Errorf("stable output must be positive: %s", stableOutput)
-	}
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return types.ExpansionAllocation{}, fmt.Errorf("getting Tobin taxes: %w", err)
-	}
-	if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
-		return tax.Denom == stableOutput.Denom
-	}) {
-		return types.ExpansionAllocation{}, fmt.Errorf("stable output denom %s is not configured in oracle", stableOutput.Denom)
 	}
 
 	convertedOutput, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(stableOutput), chain.NoahBaseDenom)
@@ -79,7 +73,7 @@ func (k Keeper) RouteExpansion(
 		TargetValuationComplete: true,
 	}
 
-	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, tobinTaxes, quoteRates)
+	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, quoteRates)
 	if err != nil {
 		return types.ExpansionAllocation{}, err
 	}
@@ -154,6 +148,11 @@ func (k Keeper) RouteExpansion(
 
 // DrawRedemptionBuffer funds the current Buffer coverage share of the quoted
 // NOAH output using pre-burn liability and Buffer state.
+//
+// The redeemed denomination arrives already recognised as liability: Market
+// converts out of priced-live assets only, and routes a suspended asset through
+// settlement, which requires an activated plan. Neither path can reach here with
+// a denomination Treasury does not carry.
 func (k Keeper) DrawRedemptionBuffer(
 	ctx context.Context,
 	redeemedStable sdk.Coin,
@@ -170,16 +169,6 @@ func (k Keeper) DrawRedemptionBuffer(
 		return types.BufferDraw{}, fmt.Errorf("NOAH output must be set and positive")
 	}
 
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return types.BufferDraw{}, fmt.Errorf("getting Tobin taxes: %w", err)
-	}
-	if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
-		return tax.Denom == redeemedStable.Denom
-	}) {
-		return types.BufferDraw{}, fmt.Errorf("redeemed denom %s is not configured in oracle", redeemedStable.Denom)
-	}
-
 	convertedRedemption, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(redeemedStable), chain.NoahBaseDenom)
 	if err != nil {
 		return types.BufferDraw{}, fmt.Errorf("valuing redeemed stable coin: %w", err)
@@ -194,7 +183,7 @@ func (k Keeper) DrawRedemptionBuffer(
 		)
 	}
 
-	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, tobinTaxes, quoteRates)
+	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, quoteRates)
 	if err != nil {
 		return types.BufferDraw{}, err
 	}

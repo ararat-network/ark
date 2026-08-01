@@ -12,6 +12,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	chain "ark/pkg/chain"
+	assettypes "ark/x/asset/types"
 	markettypes "ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
@@ -19,11 +20,10 @@ import (
 
 func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 	tests := []struct {
-		name          string
-		grossOffer    sdk.Coin
-		stableOutput  sdk.Coin
-		wantErr       string
-		needsRegistry bool
+		name         string
+		grossOffer   sdk.Coin
+		stableOutput sdk.Coin
+		wantErr      string
 	}{
 		{
 			name:         "wrong gross denom",
@@ -55,22 +55,10 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 			stableOutput: sdk.Coin{Denom: "BAD DENOM", Amount: math.OneInt()},
 			wantErr:      "invalid stable output",
 		},
-		{
-			name:          "unconfigured stable output",
-			grossOffer:    sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-			stableOutput:  sdk.NewInt64Coin("aatom", 1),
-			wantErr:       "is not configured in oracle",
-			needsRegistry: true,
-		},
 	}
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			if test.needsRegistry {
-				s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-					{Denom: chain.USDBaseDenom},
-				}, nil)
-			}
 			_, err := s.keeper.RouteExpansion(
 				s.ctx,
 				test.grossOffer,
@@ -83,9 +71,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsInvalidInputs() {
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFailsBeforeTransferWhenOutputRateUnavailable() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom)
 
 	_, err := s.keeper.RouteExpansion(
 		s.ctx,
@@ -97,9 +83,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFailsBeforeTransferWhenOutputRateUna
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionRejectsOutputValueAboveGrossOffer() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom)
 
 	_, err := s.keeper.RouteExpansion(
 		s.ctx,
@@ -114,16 +98,12 @@ func (s *KeeperTestSuite) TestRouteExpansionRejectsOutputValueAboveGrossOffer() 
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-		{Denom: chain.KRWBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
-	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
-		Return(oracletypes.RateSet{chain.KRWBaseDenom: math.LegacyOneDec()}, nil)
+	s.setRates(oracletypes.RateSet{chain.KRWBaseDenom: math.LegacyOneDec()})
 	for _, moduleName := range []string{
 		types.RedemptionBufferName,
 		types.StrategicReserveName,
@@ -159,9 +139,7 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 40))
 	for _, moduleName := range []string{
@@ -219,9 +197,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
 	policy.InsuranceTargetRatio = math.LegacyZeroDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
 	for _, moduleName := range []string{
@@ -257,16 +233,12 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRate() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-		{Denom: chain.KRWBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
-	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.KRWBaseDenom).
-		Return(nil, oracletypes.ErrStaleExchangeRate)
+	s.setRates(oracletypes.RateSet{})
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 60)),
@@ -290,10 +262,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-		{Denom: chain.KRWBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	largeSupply := new(big.Int).Lsh(big.NewInt(1), uint(math.MaxBitLen-1))
 	largeSupply.Add(largeSupply, big.NewInt(1))
 	for _, denom := range []string{chain.KRWBaseDenom, chain.USDBaseDenom} {
@@ -338,9 +307,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 			policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.33")
 			policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.33")
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: chain.USDBaseDenom},
-			}, nil)
+			s.setAssets(chain.USDBaseDenom)
 			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
 			for _, moduleName := range []string{
@@ -392,9 +359,7 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
@@ -505,9 +470,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 			policy := types.DefaultMonetaryPolicy()
 			policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr(test.targetRatio)
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: chain.USDBaseDenom},
-			}, nil)
+			s.setAssets(chain.USDBaseDenom)
 			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 				Return(sdk.NewInt64Coin(chain.USDBaseDenom, test.supply))
 			s.bankKeeper.EXPECT().GetBalance(
@@ -546,9 +509,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiabilityBeforeAggregateValuation() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom)
 
 	_, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
@@ -563,17 +524,12 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiab
 }
 
 func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregateValuation() {
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-		{Denom: chain.KRWBaseDenom},
-	}, nil)
+	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100))
-	s.oracleKeeper.EXPECT().GetRateSet(
-		gomock.Any(), chain.KRWBaseDenom,
-	).Return(nil, oracletypes.ErrStaleExchangeRate)
+	s.setRates(oracletypes.RateSet{})
 
 	draw, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
@@ -588,4 +544,56 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregate
 	s.Require().False(draw.ValuationComplete)
 	s.Require().True(draw.AggregateLiabilityNoah.IsZero())
 	s.Require().True(draw.BufferPaid.IsZero())
+}
+
+// TestDrawRedemptionBufferDrawsForSuspendedDenomWithOpenPlan proves the
+// settlement arm of the aggregate valuation: a suspended denomination under an
+// open settlement plan is valued at the plan's committed rate rather than an
+// oracle rate, and the plan need not have reached its activation height — the
+// read is deliberately ungated so plan-open supply never disappears from the
+// liability total between the block a plan opens and the block it binds.
+func (s *KeeperTestSuite) TestDrawRedemptionBufferDrawsForSuspendedDenomWithOpenPlan() {
+	s.setAssets()
+	s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
+	s.plans[chain.USDBaseDenom] = usdSettlementPlan()
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 40))
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
+	).Return(nil)
+
+	// The quote rate matches the plan's 2-NOAH-per-unit commitment: half a
+	// unit of ausd per NOAH.
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyMustNewDecFromStr("0.5"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().True(draw.ValuationComplete)
+	// 100 units at the plan's committed 2-NOAH rate: the aggregate is
+	// settlement-priced, with no oracle read for the suspended denomination.
+	s.Require().Equal(math.LegacyNewDec(200), draw.AggregateLiabilityNoah)
+	s.Require().Equal(math.LegacyNewDec(50), draw.RedeemedLiabilityNoah)
+	// Coverage 40/200 of the 10-NOAH output, floored.
+	s.Require().Equal(math.NewInt(2), draw.BufferPaid)
+}
+
+// usdSettlementPlan is a valid open plan whose activation height is still in
+// the future relative to the suite's block height, so tests exercising it are
+// also exercising the ungated plan read.
+func usdSettlementPlan() assettypes.SettlementPlan {
+	return assettypes.SettlementPlan{
+		Denom:            chain.USDBaseDenom,
+		RedemptionRate:   math.LegacyNewDecWithPrec(5, 1),
+		OpenedHeight:     1,
+		ActivationHeight: 1_000,
+	}
 }

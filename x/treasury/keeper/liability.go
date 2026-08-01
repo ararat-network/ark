@@ -13,48 +13,39 @@ import (
 
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
+	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
+	"ark/x/treasury/types"
 )
 
 // liabilityValuationGas is the flat gas charged for one transaction-time
-// aggregate-liability valuation, whatever it finds. The preblocker performs the
-// real scan as unmetered block work, so the honest marginal cost is the single
-// transient read that every lookup performs.
+// aggregate-liability valuation. The preblocker does the real scan as unmetered
+// block work, so the honest marginal cost is the single transient read.
 //
 // Transient stores opened through the store service are metered with the KV gas
-// config rather than the cheaper transient one, because OpenTransientStore
-// calls Context.KVStore; that is 1,000 flat plus 3 per key and value byte.
-// Measured against that config: a typical valuation reads 1,066 gas, an
-// unvalued block 1,003, and the largest storable LegacyDec 1,291 (upperLimit is
-// raw 2^256 * 10^18 - 1, which Marshal emits as 96 bytes of decimal text). So
-// 2,000 strictly covers every lookup with at least 709 gas of headroom.
-// Recalibrate if the app customises store gas configs, or if a second key is
-// ever added, since two reads would cost about 2,009.
+// config rather than the cheaper transient one, because OpenTransientStore calls
+// Context.KVStore: 1,000 flat plus 3 per key and value byte. Measured against
+// it, a typical valuation reads 1,066 gas and the largest storable LegacyDec
+// 1,291. Recalibrate if the app customises store gas configs, or if a second key
+// is ever added, since two reads would cost about 2,009.
 //
 // The lazy scan reached on an unvalued block is deliberately not covered: it is
-// bounded to once per block by the recorded valuation, and it is the path
-// simulation always takes, where gas is not limiting. Charging a constant keeps
-// swap gas position-independent within a block and independent of the oracle
-// whitelist size, and simulation, which always runs with an empty transient
-// store, quotes exactly what execution consumes.
+// bounded to once per block, and it is the path simulation always takes, where
+// gas is not limiting. A constant keeps swap gas position-independent within a
+// block and independent of the oracle whitelist size.
 const liabilityValuationGas = 2_000
 
 var (
-	// liabilityValuationKey holds the block's aggregate liability valuation.
-	// Its value is either a marshalled LegacyDec, meaning the valuation
-	// succeeded, or liabilityUnavailableSentinel, meaning the block could not
-	// price every listed denom. Rates are fixed at preblock, so an unavailable
-	// valuation cannot become available within the block; recording it stops
-	// later callers from rescanning until the transient store resets at commit.
-	//
-	// Both states share one key so that every transaction-time lookup is a
-	// single transient read and so that they are mutually exclusive by
-	// construction rather than by a rule each writer has to honour.
+	// liabilityValuationKey holds the block's valuation: either a marshalled
+	// LegacyDec, or liabilityUnavailableSentinel when the block could not price
+	// every listed denom. Rates are fixed at preblock, so an unavailable
+	// valuation cannot become available within the block, and recording it stops
+	// later callers from rescanning. Both states share one key so that every
+	// lookup is a single read and they are mutually exclusive by construction.
 	liabilityValuationKey = []byte{0x01}
 
 	// liabilityUnavailableSentinel cannot collide with a stored valuation:
-	// LegacyDec.Marshal emits big.Int decimal text, which is always non-empty
-	// ASCII digits with an optional leading minus and never contains NUL.
+	// LegacyDec.Marshal emits big.Int decimal text, which never contains NUL.
 	liabilityUnavailableSentinel = []byte{0x00}
 )
 
@@ -63,12 +54,10 @@ var (
 type liabilityValuationState uint8
 
 const (
-	// liabilityUnvalued means the block has not been valued yet.
 	liabilityUnvalued liabilityValuationState = iota
 	// liabilityUnavailable means the block was valued but could not price every
 	// listed denom.
 	liabilityUnavailable
-	// liabilityAvailable means the block has a usable aggregate liability.
 	liabilityAvailable
 )
 
@@ -116,97 +105,194 @@ func (k Keeper) RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted 
 	return k.storeLiabilitySnapshot(ctx, liability)
 }
 
-// PrimeLiabilitySnapshot values the aggregate stable liability once for the
-// block. The preblocker calls it immediately after oracle price application
-// and vote-target advancement, so transaction-time callers always find a
-// recorded valuation and never rescan. Hard state errors propagate and fail the
-// block; an incomplete valuation (stale or missing rates) is an expected
+// PrimeLiabilitySnapshot values the aggregate recognised liability once for the
+// block. The preblocker calls it after oracle price application, feed
+// advancement, and asset lifecycle completions, so transaction-time callers
+// always find a valuation built from post-completion statuses and never rescan.
+// Hard state errors fail the block; an incomplete valuation is an expected
 // degraded mode and is recorded as unavailable.
 func (k Keeper) PrimeLiabilitySnapshot(ctx context.Context) error {
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return fmt.Errorf("getting Tobin taxes: %w", err)
-	}
-	liability, complete, err := k.nominalLiabilityValue(ctx, tobinTaxes, nil)
+	partition, err := k.liabilityPartitionValue(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	// Both outcomes write the same key, so priming is authoritative for the
-	// block without having to retract anything an earlier prime left behind.
-	if !complete {
+	if !partition.complete {
 		return k.markLiabilityUnavailable(ctx)
 	}
-	return k.storeLiabilitySnapshot(ctx, liability)
+	recognised, err := partition.recognizedNoah()
+	if err != nil {
+		return k.markLiabilityUnavailable(ctx)
+	}
+	return k.storeLiabilitySnapshot(ctx, recognised)
 }
 
-func (k Keeper) nominalLiabilityValue(
-	ctx context.Context,
-	tobinTaxes []oracletypes.TobinTax,
-	rates oracletypes.RateSet,
-) (math.LegacyDec, bool, error) {
-	if rates == nil {
-		rates = oracletypes.RateSet{}
-	}
-	coins := make([]sdk.Coin, 0, len(tobinTaxes))
-	needed := make([]string, 0, len(tobinTaxes))
-	for _, tax := range tobinTaxes {
-		supply := k.bankKeeper.GetSupply(ctx, tax.Denom)
-		if supply.Amount.IsPositive() {
-			coins = append(coins, supply)
-			if _, ok := rates[tax.Denom]; !ok {
-				needed = append(needed, tax.Denom)
-			}
-		}
-	}
-	if len(needed) > 0 {
-		captured, err := k.oracleKeeper.GetRateSet(ctx, needed...)
-		if err != nil {
-			if isValuationUnavailable(err) {
-				return math.LegacyZeroDec(), false, nil
-			}
-			return math.LegacyDec{}, false, fmt.Errorf("capturing aggregate liability rates: %w", err)
-		}
-		for denom, rate := range captured {
-			if _, exists := rates[denom]; !exists {
-				rates[denom] = rate
-			}
-		}
-	}
-
-	total := math.LegacyZeroDec()
-	for _, coin := range coins {
-		converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
-		if err != nil {
-			if isValuationUnavailable(err) {
-				return math.LegacyZeroDec(), false, nil
-			}
-			return math.LegacyDec{}, false, fmt.Errorf("valuing liability %s: %w", coin.Denom, err)
-		}
-		total, err = decimal.Add(total, converted.Amount)
-		if errors.Is(err, decimal.ErrOutOfRange) {
-			return math.LegacyZeroDec(), false, nil
-		}
-		if err != nil {
-			return math.LegacyDec{}, false, fmt.Errorf("summing liability %s: %w", coin.Denom, err)
-		}
-	}
-	return total, true, nil
+// liabilityPartition is one block's liability report, partitioned by asset
+// lifecycle status. The two valued buckets carry recognised liability; the two
+// lists are disclosure. complete reports whether every recognised liability was
+// valued — untrusted suspended exposure is recognised but valuable by no honest
+// rate, so its presence alone makes the total unavailable.
+type liabilityPartition struct {
+	pricedNoah     math.LegacyDec
+	settlementNoah math.LegacyDec
+	untrusted      []sdk.Coin
+	writtenOff     []types.WrittenOffExposure
+	complete       bool
 }
 
-// cachedLiabilityValue returns the current block's aggregate stable liability.
-// It charges a flat fee and evaluates the lookup itself against a free meter.
-// Do not free-meter the query path: FundStatus calls nominalLiabilityValue
+// recognizedNoah is the aggregate every fund target derives from. Meaningful
+// only when the partition is complete.
+func (p liabilityPartition) recognizedNoah() (math.LegacyDec, error) {
+	return decimal.Add(p.pricedNoah, p.settlementNoah)
+}
+
+// liabilityPartitionValue folds the asset registry into the block's liability
+// partition, classifying each holding by its pricing verdict. A valuation
+// failure zeroes the affected bucket and marks the partition incomplete rather
+// than aborting, because the disclosure lists never depend on rates and the
+// degraded report is what the stress scenario needs. Hard state errors
+// propagate.
+func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.RateSet) (liabilityPartition, error) {
+	assets, err := k.assetKeeper.ListAssets(ctx)
+	if err != nil {
+		return liabilityPartition{}, fmt.Errorf("listing assets for liability partition: %w", err)
+	}
+
+	partition := liabilityPartition{
+		pricedNoah:     math.LegacyZeroDec(),
+		settlementNoah: math.LegacyZeroDec(),
+		untrusted:      []sdk.Coin{},
+		writtenOff:     []types.WrittenOffExposure{},
+		complete:       true,
+	}
+	pricedComplete := true
+	settlementComplete := true
+
+	type liabilityHolding struct {
+		asset  assettypes.Asset
+		supply sdk.Coin
+	}
+	holdings := make([]liabilityHolding, 0, len(assets))
+	held := make([]string, 0, len(assets))
+	for _, asset := range assets {
+		supply := k.bankKeeper.GetSupply(ctx, asset.Denom)
+		if !supply.Amount.IsPositive() {
+			continue
+		}
+		holdings = append(holdings, liabilityHolding{asset: asset, supply: supply})
+		held = append(held, asset.Denom)
+	}
+
+	// rates belongs to the caller — Market passes its in-flight quote rates
+	// straight through — so it is an overlay the registry captures around,
+	// never a map this fold grows behind another module's back.
+	pricings, err := k.assetKeeper.Pricings(ctx, rates, held...)
+	if err != nil {
+		return liabilityPartition{}, fmt.Errorf("pricing aggregate liability: %w", err)
+	}
+
+	for _, holding := range holdings {
+		pricing := pricings[holding.supply.Denom]
+		switch {
+		case pricing.Priced && pricing.Source == assettypes.PriceSourceSettlement:
+			// Once the bucket is unvaluable it stays zeroed: accumulating later
+			// plans onto a zeroed total would report a number that is neither
+			// whole nor honestly partial.
+			if !settlementComplete {
+				continue
+			}
+			// Plan rates are quoted per one NOAH like oracle rates, so this is
+			// the same arithmetic that values a member.
+			partition.settlementNoah, settlementComplete, err = accrueLiability(
+				partition.settlementNoah,
+				holding.supply,
+				pricings,
+			)
+			if err != nil {
+				return liabilityPartition{}, err
+			}
+		case pricing.Priced:
+			if !pricedComplete {
+				continue
+			}
+			partition.pricedNoah, pricedComplete, err = accrueLiability(
+				partition.pricedNoah,
+				holding.supply,
+				pricings,
+			)
+			if err != nil {
+				return liabilityPartition{}, err
+			}
+		case pricing.Reason == assettypes.UnpricedUntrusted:
+			partition.untrusted = append(partition.untrusted, holding.supply)
+			partition.complete = false
+		case pricing.Reason == assettypes.UnpricedWrittenOff:
+			partition.writtenOff = append(partition.writtenOff, types.WrittenOffExposure{
+				OutstandingSupply: holding.supply,
+				WriteOffVersion:   holding.asset.Version,
+			})
+		case pricing.Reason == assettypes.UnpricedFeedUnavailable:
+			pricedComplete = false
+		default:
+			// Pending, retired, and unrecognised supply is invisible to the
+			// liability report.
+		}
+	}
+	if !settlementComplete {
+		partition.settlementNoah = math.LegacyZeroDec()
+		partition.complete = false
+	}
+	if !pricedComplete {
+		partition.pricedNoah = math.LegacyZeroDec()
+		partition.complete = false
+	}
+
+	return partition, nil
+}
+
+// accrueLiability adds the NOAH value of supply to a liability bucket, folding
+// both priced buckets through one conversion.
+func accrueLiability(total math.LegacyDec, supply sdk.Coin, pricings assettypes.DenomPricings) (math.LegacyDec, bool, error) {
+	converted, err := pricings.Convert(sdk.NewDecCoinFromCoin(supply), chain.NoahBaseDenom)
+	if err != nil {
+		if !isValuationUnavailable(err) {
+			return total, false, fmt.Errorf("valuing liability %s: %w", supply.Denom, err)
+		}
+		return total, false, nil
+	}
+
+	sum, err := decimal.Add(total, converted.Amount)
+	if errors.Is(err, decimal.ErrOutOfRange) {
+		return total, false, nil
+	}
+	if err != nil {
+		return total, false, fmt.Errorf("summing liability %s: %w", supply.Denom, err)
+	}
+
+	return sum, true, nil
+}
+
+func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSet) (math.LegacyDec, error) {
+	if coin.Denom == chain.NoahBaseDenom || coin.Amount.IsZero() {
+		return math.LegacyZeroDec(), nil
+	}
+
+	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
+	if err != nil {
+		return math.LegacyDec{}, err
+	}
+	return converted.Amount, nil
+}
+
+// cachedLiabilityValue returns the current block's aggregate recognised
+// liability, charging a flat fee and evaluating the lookup itself against a free
+// meter. Do not free-meter the query path: FundStatus builds the partition
 // directly so node query gas limits keep bounding its work.
 //
-// The preblocker primes it; the lazy scan below is the fallback. An incomplete
+// The preblocker primes it; the scan below is the fallback. An incomplete
 // valuation records the whole block as unavailable instead of retrying, because
-// oracle rates cannot change until the next block's preblock.
-func (k Keeper) cachedLiabilityValue(
-	ctx context.Context,
-	tobinTaxes []oracletypes.TobinTax,
-	rates oracletypes.RateSet,
-) (math.LegacyDec, bool, error) {
+// neither oracle rates nor asset statuses can change until the next preblock.
+func (k Keeper) cachedLiabilityValue(ctx context.Context, rates oracletypes.RateSet) (math.LegacyDec, bool, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.GasMeter().ConsumeGas(liabilityValuationGas, "treasury liability valuation")
 
@@ -225,32 +311,31 @@ func (k Keeper) cachedLiabilityValue(
 		return math.LegacyZeroDec(), false, nil
 	}
 
-	liability, complete, err := k.nominalLiabilityValue(freeCtx, tobinTaxes, rates)
+	partition, err := k.liabilityPartitionValue(freeCtx, rates)
 	if err != nil {
 		return math.LegacyDec{}, false, err
+	}
+	recognised := math.LegacyZeroDec()
+	complete := partition.complete
+	if complete {
+		recognised, err = partition.recognizedNoah()
+		if errors.Is(err, decimal.ErrOutOfRange) {
+			recognised = math.LegacyZeroDec()
+			complete = false
+		} else if err != nil {
+			return math.LegacyDec{}, false, err
+		}
 	}
 	if !complete {
 		if err := k.markLiabilityUnavailable(freeCtx); err != nil {
 			return math.LegacyDec{}, false, err
 		}
-		return liability, false, nil
+		return recognised, false, nil
 	}
-	if err := k.storeLiabilitySnapshot(freeCtx, liability); err != nil {
+	if err := k.storeLiabilitySnapshot(freeCtx, recognised); err != nil {
 		return math.LegacyDec{}, false, err
 	}
-	return liability, true, nil
-}
-
-func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSet) (math.LegacyDec, error) {
-	if coin.Denom == chain.NoahBaseDenom || coin.Amount.IsZero() {
-		return math.LegacyZeroDec(), nil
-	}
-
-	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
-	if err != nil {
-		return math.LegacyDec{}, err
-	}
-	return converted.Amount, nil
+	return recognised, true, nil
 }
 
 // loadLiabilityValuation reads the block's recorded valuation. The returned
@@ -281,18 +366,6 @@ func (k Keeper) loadLiabilityValuation(ctx context.Context) (math.LegacyDec, lia
 	return liability, liabilityAvailable, nil
 }
 
-// markLiabilityUnavailable records that this block cannot value liability. It
-// overwrites any valuation already stored, so a later prime always wins.
-func (k Keeper) markLiabilityUnavailable(ctx context.Context) error {
-	store := k.transientStoreService.OpenTransientStore(ctx)
-	if err := store.Set(liabilityValuationKey, liabilityUnavailableSentinel); err != nil {
-		return fmt.Errorf("marking liability valuation unavailable: %w", err)
-	}
-	return nil
-}
-
-// storeLiabilitySnapshot records a usable aggregate liability for this block.
-// It overwrites any unavailable marking already stored.
 func (k Keeper) storeLiabilitySnapshot(ctx context.Context, liability math.LegacyDec) error {
 	if liability.IsNil() || liability.IsNegative() || !liability.IsInValidRange() {
 		return fmt.Errorf("cannot cache invalid liability")
@@ -308,6 +381,14 @@ func (k Keeper) storeLiabilitySnapshot(ctx context.Context, liability math.Legac
 	store := k.transientStoreService.OpenTransientStore(ctx)
 	if err := store.Set(liabilityValuationKey, value); err != nil {
 		return fmt.Errorf("setting cached liability: %w", err)
+	}
+	return nil
+}
+
+func (k Keeper) markLiabilityUnavailable(ctx context.Context) error {
+	store := k.transientStoreService.OpenTransientStore(ctx)
+	if err := store.Set(liabilityValuationKey, liabilityUnavailableSentinel); err != nil {
+		return fmt.Errorf("marking liability valuation unavailable: %w", err)
 	}
 	return nil
 }
