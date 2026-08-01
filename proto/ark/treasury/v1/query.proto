@@ -169,9 +169,12 @@ message QueryFundStatusRequest {}
 // Liability reporting is partitioned by asset lifecycle status. The response
 // always answers: when the total is unavailable, the partition says exactly
 // which exposure is unvaluable and every target is zero rather than a guess.
+// Each valued bucket carries what this block could price, and every exclusion
+// from it is enumerated beside it, so a partial total is never silently short.
 message QueryFundStatusResponse {
   // priced_liability_noah_equivalent values ACTIVE and ISSUANCE_HALTED supply
-  // at fresh Oracle rates.
+  // at fresh Oracle rates. It excludes any member listed in
+  // stale_member_supply.
   cosmos.base.v1beta1.DecCoin priced_liability_noah_equivalent = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // settlement_liability_noah_equivalent values SUSPENDED supply carrying an
@@ -189,30 +192,56 @@ message QueryFundStatusResponse {
   // recognized liability.
   repeated WrittenOffExposure written_off_exposure = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // stale_member_supply is ACTIVE or ISSUANCE_HALTED supply the Oracle could
+  // not price this block: recognized liability whose feed is stale or absent,
+  // so priced_liability_noah_equivalent excludes it. Unlike the two lists
+  // above it is expected to be transient, and a returning feed moves the same
+  // supply back into the priced bucket without any lifecycle action. Because
+  // the obligation is untouched, this supply is still counted in the nominal
+  // total at its last known rate — see
+  // stale_priced_liability_noah_equivalent — rather than dropped from it.
+  repeated cosmos.base.v1beta1.Coin stale_member_supply = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
+  ];
   // total_liability_available reports whether every recognized liability was
   // valued. Targets below are meaningful only when true.
-  bool total_liability_available = 5;
-  // nominal_liability_noah_equivalent is priced plus settlement-priced, the
-  // aggregate every fund target derives from.
-  cosmos.base.v1beta1.DecCoin nominal_liability_noah_equivalent = 6
+  bool total_liability_available = 6;
+  // nominal_liability_noah_equivalent is priced plus settlement-priced: the
+  // claimable aggregate this block could value, and the denominator redemption
+  // coverage divides by. It is always reported, so a partial total is visible
+  // rather than withheld; total_liability_available says whether it also covers
+  // every recognized liability, which is what the targets below require.
+  cosmos.base.v1beta1.DecCoin nominal_liability_noah_equivalent = 7
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin subsidy_pool_balance = 7
+  cosmos.base.v1beta1.Coin subsidy_pool_balance = 8
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_balance = 8
+  cosmos.base.v1beta1.Coin redemption_buffer_balance = 9
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_target = 9
+  cosmos.base.v1beta1.Coin redemption_buffer_target = 10
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_balance = 10
+  cosmos.base.v1beta1.Coin strategic_reserve_balance = 11
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_target = 11
+  cosmos.base.v1beta1.Coin strategic_reserve_target = 12
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_balance = 12
+  cosmos.base.v1beta1.Coin insurance_balance = 13
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_reserved = 13
+  cosmos.base.v1beta1.Coin insurance_reserved = 14
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_unencumbered_balance = 14
+  cosmos.base.v1beta1.Coin insurance_unencumbered_balance = 15
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_target = 15
+  cosmos.base.v1beta1.Coin insurance_target = 16
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // stale_priced_liability_noah_equivalent values stale_member_supply at the
+  // last rate the Oracle stored for each denomination. It is reported apart
+  // from priced_liability_noah_equivalent because the rate behind it failed the
+  // freshness gate: good enough to keep a standing obligation in the total that
+  // redemption coverage divides by, never good enough to size a fund target on,
+  // which is what total_liability_available above exists to say. It is zero
+  // whenever that flag is true, and excludes any member the Oracle has never
+  // priced, for which no last rate exists.
+  cosmos.base.v1beta1.DecCoin stale_priced_liability_noah_equivalent = 17
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
