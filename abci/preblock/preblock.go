@@ -118,7 +118,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		// and recovery ride on consensus evidence produced after governance
 		// requested them, never on the tail of the freshness window.
 		if len(prices) > 0 {
-			if err = h.assetKeeper.CompleteLifecycle(ctx, oracletypes.RateSet(prices)); err != nil {
+			if err = h.assetKeeper.CompleteLifecycle(ctx, oracletypes.NewRateSetFrom(prices)); err != nil {
 				return response, fmt.Errorf(
 					"%w: complete asset lifecycle for height %d: %w",
 					arkabcitypes.ErrAssetKeeper,

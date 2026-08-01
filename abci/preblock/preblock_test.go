@@ -20,6 +20,7 @@ import (
 	"ark/abci/preblock"
 	abcitestutil "ark/abci/testutil"
 	arkabcitypes "ark/abci/types"
+	chain "ark/pkg/chain"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -181,8 +182,11 @@ func TestWrappedPreBlockerCompletesLifecycleWithAggregatedRates(t *testing.T) {
 		assetKeeper.EXPECT().
 			CompleteLifecycle(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(_ context.Context, rates oracletypes.RateSet) error {
-				require.Len(t, rates, 1)
+				// This block's aggregated rate, plus the NOAH identity every
+				// rate set carries by construction.
+				require.Len(t, rates, 2)
 				require.True(t, math.LegacyNewDec(100).Equal(rates["ausd"]))
+				require.True(t, math.LegacyOneDec().Equal(rates[chain.NoahBaseDenom]))
 				return nil
 			}),
 		treasuryKeeper.EXPECT().PrimeLiabilitySnapshot(gomock.Any()).Return(nil),
