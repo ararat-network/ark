@@ -13,8 +13,8 @@ import (
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/treasury/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgSetMonetaryMandate{}, "ark/x/treasury/MsgSetMonetaryMandate")
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateMonetaryPolicy{}, "ark/x/treasury/MsgUpdateMonetaryPolicy")
-	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdateMonetaryPolicy{}, "ark/x/treasury/MsgCommitteeUpdatePolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/x/treasury/MsgUpdatePolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/x/treasury/MsgCommitteeUpdatePolicy")
 	legacy.RegisterAminoMsg(cdc, &MsgSetClaimsMandate{}, "ark/x/treasury/MsgSetClaimsMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgSubmitClaim{}, "ark/x/treasury/MsgSubmitClaim")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeSubmitClaim{}, "ark/x/treasury/MsgCommitteeSubmitClaim")
@@ -33,8 +33,8 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
 		&MsgSetMonetaryMandate{},
-		&MsgUpdateMonetaryPolicy{},
-		&MsgCommitteeUpdateMonetaryPolicy{},
+		&MsgUpdatePolicy{},
+		&MsgCommitteeUpdatePolicy{},
 		&MsgSetClaimsMandate{},
 		&MsgSubmitClaim{},
 		&MsgCommitteeSubmitClaim{},

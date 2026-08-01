@@ -6,11 +6,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	"github.com/cosmos/gogoproto/proto"
 
 	"cosmossdk.io/math"
 
@@ -26,6 +26,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	chain "ark/pkg/chain"
+	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/types"
@@ -51,7 +52,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
-	funding := rewardFunding(2, 0, 0, 0, true)
+	funding := rewardFunding(2, 0, 0, 0)
 	s.setRewardFunding(funding)
 	params := types.DefaultParams()
 	params.RewardFundingWindow = 5
@@ -90,17 +91,15 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsRewardTargetCapacity() {
 	s.Require().Equal(currentParams, stored)
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
+func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceAmountChange() {
 	s.setBlockHeight(42)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 100)
-	configured := []oracletypes.TobinTax{
-		{Denom: chain.SDRBaseDenom},
-		{Denom: chain.USDBaseDenom},
-	}
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
+	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
+	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.oracleKeeper.EXPECT().GetRateSet(
-		gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
+		gomock.Any(),
+		chain.SDRBaseDenom,
+		chain.USDBaseDenom,
 	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
@@ -124,13 +123,12 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceChange() {
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 	s.setBlockHeight(42)
+	current := types.DefaultParams()
+	current.ReferenceTaxCap.Amount = math.OneInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 0)
-	configured := []oracletypes.TobinTax{
-		{Denom: chain.SDRBaseDenom},
-		{Denom: chain.USDBaseDenom},
-	}
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return(configured, nil)
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
@@ -151,14 +149,14 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 	}})
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActivatingTax() {
+func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax() {
 	s.setTaxCaps([]types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 	})
 
 	candidate := types.DefaultMonetaryPolicy()
 	candidate.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    candidate,
 	})
@@ -171,14 +169,14 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyDoesNotRebuildCapsWhenActiv
 	s.Require().True(cap.IsZero())
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyRejectsRewardTargetCapacity() {
+func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsRewardTargetCapacity() {
 	params := types.DefaultParams()
 	params.RewardFundingWindow = 2
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	candidate := types.DefaultMonetaryPolicy()
 	candidate.ValidatorBlockRewardTarget = maxRepresentableInt().QuoRaw(2).AddRaw(1)
 
-	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    candidate,
 	})
@@ -188,7 +186,7 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyRejectsRewardTargetCapacity
 	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyChecksActiveRewardFundingWindow() {
+func (s *KeeperTestSuite) TestMsgUpdatePolicyChecksActiveRewardFundingWindow() {
 	maxInt := maxRepresentableInt()
 	params := types.DefaultParams()
 	params.RewardFundingWindow = 1
@@ -198,12 +196,11 @@ func (s *KeeperTestSuite) TestMsgUpdateMonetaryPolicyChecksActiveRewardFundingWi
 		ValidatorTarget:   maxInt.QuoRaw(2),
 		OracleTarget:      math.ZeroInt(),
 		ValidatorFeeValue: math.ZeroInt(),
-		ValuationComplete: true,
 	})
 	candidate := types.DefaultMonetaryPolicy()
 	candidate.ValidatorBlockRewardTarget = maxInt
 
-	_, err := s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    candidate,
 	})
@@ -239,9 +236,15 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Require().NoError(err)
 	s.Equal(uint64(1), mandate.Term)
 	s.Equal(committee, mandate.Committee)
+	s.requireTypedEvent(&types.EventMonetaryMandateSet{
+		Term:             1,
+		Committee:        committee,
+		ActivationHeight: 10,
+		ExpiryHeight:     20,
+	})
 
 	policy := committeePolicyCandidate()
-	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
@@ -254,14 +257,14 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Require().NoError(err)
 	s.Equal(types.DefaultRewardFundingWindow, storedParams.RewardFundingWindow)
 
-	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String(),
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact monetary-policy committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
-	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
 		ExpectedTerm: mandate.Term + 1,
 		Policy:       policy,
@@ -270,7 +273,7 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 
 	outOfBounds := policy
 	outOfBounds.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.9")
-	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
 		ExpectedTerm: mandate.Term,
 		Policy:       outOfBounds,
@@ -279,7 +282,7 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 
 	governanceOverride := policy
 	governanceOverride.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.9")
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+	_, err = s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    governanceOverride,
 	})
@@ -296,13 +299,16 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Require().NoError(err)
 	s.Equal(uint64(2), disabled.Term)
 	s.Empty(disabled.Committee)
+	// A disabling is an appointment event too, carrying the empty committee and
+	// the advanced term.
+	s.requireTypedEvent(&types.EventMonetaryMandateSet{Term: 2})
 
-	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
 		ExpectedTerm: disabled.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact monetary-policy committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 }
 
 // TestMonetaryPolicyMessagesAreRoleDisjoint proves the split messages cannot be
@@ -325,18 +331,18 @@ func (s *KeeperTestSuite) TestMonetaryPolicyMessagesAreRoleDisjoint() {
 	s.Require().NoError(err)
 	policy := committeePolicyCandidate()
 
-	_, err = s.msgServer.UpdateMonetaryPolicy(s.ctx, &types.MsgUpdateMonetaryPolicy{
+	_, err = s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: committee,
 		Policy:    policy,
 	})
 	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
 
-	_, err = s.msgServer.CommitteeUpdateMonetaryPolicy(s.ctx, &types.MsgCommitteeUpdateMonetaryPolicy{
+	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    s.authority,
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact monetary-policy committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(err)
@@ -365,13 +371,39 @@ func (s *KeeperTestSuite) TestMonetaryMandateAuthorityAndRoleSeparation() {
 	message.Committee = committee
 	_, err = s.msgServer.SetMonetaryMandate(s.ctx, message)
 	s.Require().NoError(err)
+	// One address may hold both mandates: the roles are separated from the
+	// Treasury authority, not from each other.
 	_, err = s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 		Authority:           s.authority,
 		Committee:           committee,
-		ExpiryHeight:        100,
+		ExpiryHeight:        types.DefaultClaimCancellationPeriodBlocks + 1,
 		CommitteeClaimLimit: math.NewInt(100),
 	})
-	s.Require().ErrorContains(err, "distinct from the monetary-policy committee")
+	s.Require().NoError(err)
+}
+
+func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeMonetaryRole() {
+	consensusAuthority := sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String()
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
+		Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
+	})
+	minimum, maximum := monetaryPolicyBounds()
+	message := &types.MsgSetMonetaryMandate{
+		Authority:        consensusAuthority,
+		Committee:        consensusAuthority,
+		ActivationHeight: 1,
+		ExpiryHeight:     2,
+		MinimumPolicy:    minimum,
+		MaximumPolicy:    maximum,
+	}
+	_, err := s.msgServer.SetMonetaryMandate(s.ctx, message)
+	s.Require().ErrorContains(err, "distinct from Treasury authority")
+
+	// The fallback authority stays rejected as a committee even while a
+	// consensus-params authority overrides it.
+	message.Committee = s.authority
+	_, err = s.msgServer.SetMonetaryMandate(s.ctx, message)
+	s.Require().ErrorContains(err, "distinct from Treasury authority")
 }
 
 func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
@@ -388,13 +420,12 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	s.Require().NoError(err)
 
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 100)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.SDRBaseDenom},
-		{Denom: chain.USDBaseDenom},
-	}, nil)
+	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
+	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.oracleKeeper.EXPECT().GetRateSet(
-		gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
+		gomock.Any(),
+		chain.SDRBaseDenom,
+		chain.USDBaseDenom,
 	).Return(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
@@ -507,8 +538,32 @@ func (insuranceOracleKeeper) GetRateSet(context.Context, ...string) (oracletypes
 	return oracletypes.RateSet{}, nil
 }
 
-func (insuranceOracleKeeper) GetTobinTaxes(context.Context) ([]oracletypes.TobinTax, error) {
+func (insuranceOracleKeeper) GetAvailableRateSet(context.Context, ...string) (oracletypes.RateSet, error) {
+	return oracletypes.RateSet{}, nil
+}
+
+// insuranceAssetKeeper satisfies the asset dependency for the Claims suite,
+// which never exercises membership: an empty registry with no reference.
+type insuranceAssetKeeper struct{}
+
+func (insuranceAssetKeeper) Pricings(
+	context.Context,
+	oracletypes.RateSet,
+	...string,
+) (assettypes.DenomPricings, error) {
+	return assettypes.DenomPricings{}, nil
+}
+
+func (insuranceAssetKeeper) ListAssets(context.Context) ([]assettypes.Asset, error) {
 	return nil, nil
+}
+
+func (insuranceAssetKeeper) PricedLiveDenoms(context.Context) ([]string, error) {
+	return nil, nil
+}
+
+func (insuranceOracleKeeper) GetReferenceDenom(context.Context) (string, error) {
+	return "", nil
 }
 
 type ClaimsKeeperTestSuite struct {
@@ -564,6 +619,7 @@ func (s *ClaimsKeeperTestSuite) SetupTest() {
 		accountKeeper,
 		s.bank,
 		insuranceOracleKeeper{},
+		insuranceAssetKeeper{},
 	)
 	// Keep the two-block cancellation period the suite's height math is
 	// built around; the launch default is far larger.
@@ -676,6 +732,12 @@ func (s *ClaimsKeeperTestSuite) TestDefaultSentinelAndMandateUpdate() {
 	s.Equal(uint64(0), mandate.ActivationHeight)
 	s.Equal(uint64(1_000), mandate.ExpiryHeight)
 	s.Equal(math.NewInt(100), mandate.CommitteeClaimLimit)
+	s.requireTypedEvent(&types.EventClaimsMandateSet{
+		Term:             1,
+		Committee:        s.committee,
+		ActivationHeight: 0,
+		ExpiryHeight:     1_000,
+	})
 
 	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(30)))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(20)))
@@ -687,6 +749,12 @@ func (s *ClaimsKeeperTestSuite) TestDefaultSentinelAndMandateUpdate() {
 	s.Require().NoError(err)
 	s.Equal(uint64(2), mandate.Term)
 	s.Equal(math.NewInt(200), mandate.CommitteeClaimLimit)
+	s.requireTypedEvent(&types.EventClaimsMandateSet{
+		Term:             2,
+		Committee:        s.committee,
+		ActivationHeight: 0,
+		ExpiryHeight:     1_000,
+	})
 	allowanceUsed, err = s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
 	s.Require().NoError(err)
 	s.True(allowanceUsed.IsZero())
@@ -701,6 +769,7 @@ func (s *ClaimsKeeperTestSuite) TestDefaultSentinelAndMandateUpdate() {
 	mandate, err = s.keeper.ClaimsMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(types.NewDisabledClaimsMandate(3), mandate)
+	s.requireTypedEvent(&types.EventClaimsMandateSet{Term: 3})
 	allowanceUsed, err = s.keeper.ClaimsAllowanceUsed.Get(s.ctx)
 	s.Require().NoError(err)
 	s.True(allowanceUsed.IsZero())
@@ -755,6 +824,14 @@ func (s *ClaimsKeeperTestSuite) TestConsensusAuthorityCannotBecomeClaimsRole() {
 	msg.Authority = s.caller
 	msg.Committee = s.caller
 	_, err := s.msgServer.SetClaimsMandate(s.ctx, msg)
+	s.Require().ErrorContains(err, "distinct from Treasury authority")
+
+	// The fallback authority stays rejected as a committee even while a
+	// consensus-params authority overrides it.
+	msg = s.mandateMessage()
+	msg.Authority = s.caller
+	msg.Committee = s.authority
+	_, err = s.msgServer.SetClaimsMandate(s.ctx, msg)
 	s.Require().ErrorContains(err, "distinct from Treasury authority")
 }
 
@@ -826,15 +903,15 @@ func (s *ClaimsKeeperTestSuite) TestClaimMessagesAreRoleDisjoint() {
 	s.createMandate()
 	s.setHeight(25)
 
-	unauthorized := s.governanceSubmission(10)
-	unauthorized.Authority = s.committee
-	_, err := s.msgServer.SubmitClaim(s.ctx, unauthorized)
+	unauthorised := s.governanceSubmission(10)
+	unauthorised.Authority = s.committee
+	_, err := s.msgServer.SubmitClaim(s.ctx, unauthorised)
 	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
 
 	impersonating := s.submission(10)
 	impersonating.Committee = s.authority
 	_, err = s.msgServer.CommitteeSubmitClaim(s.ctx, impersonating)
-	s.Require().ErrorContains(err, "not the exact Claims committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	governanceClaim := s.submitGovernance(10)
 	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
@@ -843,7 +920,7 @@ func (s *ClaimsKeeperTestSuite) TestClaimMessagesAreRoleDisjoint() {
 		ClaimId:      governanceClaim.ClaimId,
 		Reason:       "impersonating the committee",
 	})
-	s.Require().ErrorContains(err, "not the exact Claims committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
 		Authority: s.committee,
@@ -907,7 +984,7 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimValidation() {
 	// The default sentinel mandate has no committee, so the identity check
 	// rejects the submission before any window or term reasoning.
 	_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, s.submission(1))
-	s.Require().ErrorContains(err, "not the exact Claims committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	s.createMandate()
 	tests := []struct {
@@ -915,7 +992,7 @@ func (s *ClaimsKeeperTestSuite) TestSubmitClaimValidation() {
 		mutate    func(*types.MsgCommitteeSubmitClaim)
 		expectErr string
 	}{
-		{name: "unrelated submitter", mutate: func(msg *types.MsgCommitteeSubmitClaim) { msg.Committee = s.caller }, expectErr: "not the exact Claims committee"},
+		{name: "unrelated submitter", mutate: func(msg *types.MsgCommitteeSubmitClaim) { msg.Committee = s.caller }, expectErr: "not the exact appointed committee"},
 		{name: "wrong denom", mutate: func(msg *types.MsgCommitteeSubmitClaim) { msg.Amount = sdk.NewInt64Coin("ausd", 1) }, expectErr: "anoah coin"},
 		{name: "self payment", mutate: func(msg *types.MsgCommitteeSubmitClaim) {
 			msg.Recipient = authtypes.NewModuleAddress(types.InsuranceName).String()
@@ -1029,9 +1106,9 @@ func (s *ClaimsKeeperTestSuite) TestCommitteeAndGovernanceCanCancelDuringPeriod(
 		Committee:    s.caller,
 		ExpectedTerm: 1,
 		ClaimId:      committeeClaim.ClaimId,
-		Reason:       "unauthorized",
+		Reason:       "unauthorised",
 	})
-	s.Require().ErrorContains(err, "not the exact Claims committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
 		Committee:    s.committee,
@@ -1117,7 +1194,7 @@ func (s *ClaimsKeeperTestSuite) TestGovernanceCancellationDoesNotDependOnCurrent
 		ClaimId:      claim.ClaimId,
 		Reason:       "disabled committee",
 	})
-	s.Require().ErrorContains(err, "not the exact Claims committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
 		Authority: s.authority,
@@ -1236,7 +1313,7 @@ func (s *ClaimsKeeperTestSuite) TestMandateRotationDoesNotRewritePendingClaim() 
 		ClaimId:      claim.ClaimId,
 		Reason:       "old committee",
 	})
-	s.Require().ErrorContains(err, "not the exact Claims committee")
+	s.Require().ErrorContains(err, "not the exact appointed committee")
 
 	_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
 		Committee:    newCommittee,
@@ -1247,62 +1324,27 @@ func (s *ClaimsKeeperTestSuite) TestMandateRotationDoesNotRewritePendingClaim() 
 	s.Require().NoError(err)
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsUnconfiguredReferenceDenom() {
+// TestMsgUpdateParamsRejectsReferenceDenomChange pins the ownership split:
+// the cap's unit is the protocol reference, so governance cannot re-anchor it
+// through ordinary params — only MsgSetReferenceDenom, which rebases every
+// reference-unit consumer in one transaction, may move it.
+func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsReferenceDenomChange() {
+	current, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Denom = chain.USDBaseDenom
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.SDRBaseDenom},
-	}, nil)
 
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+	// The strict oracle mock also proves the rejection precedes any rate
+	// capture or cap rebuild.
+	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
 		Params:    params,
 	})
-	s.Require().ErrorContains(err, "not configured in oracle")
-}
-
-func (s *KeeperTestSuite) TestMsgUpdateParamsSwitchesReferenceAndCopiesItsCapDirectly() {
-	current := types.DefaultParams()
-	current.ReferenceTaxCap.Amount = math.NewInt(8)
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-	s.setTaxCaps([]types.TaxCap{
-		{Denom: chain.KRWBaseDenom, TaxCap: math.NewInt(9)},
-		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(8)},
-		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(7)},
-	})
-
-	candidate := current
-	candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 101)
-	s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-		{Denom: chain.USDBaseDenom},
-		{Denom: chain.KRWBaseDenom},
-		{Denom: chain.SDRBaseDenom},
-	}, nil)
-	s.oracleKeeper.EXPECT().GetRateSet(
-		gomock.Any(), chain.USDBaseDenom, chain.KRWBaseDenom, chain.SDRBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.KRWBaseDenom: math.LegacyNewDec(2),
-		chain.SDRBaseDenom: math.LegacyNewDec(3),
-		chain.USDBaseDenom: math.LegacyNewDec(7),
-	}, nil)
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    candidate,
-	})
-	s.Require().NoError(err)
+	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
+	s.Require().ErrorContains(err, "re-point it with MsgSetReferenceDenom, not ausd")
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(candidate, stored)
-	referenceCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(101), referenceCap)
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(28), krwCap)
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(43), sdrCap)
+	s.Require().Equal(current, stored)
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCaps() {
@@ -1312,7 +1354,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 		err   error
 	}{
 		{
-			name: "missing candidate rate",
+			name: "missing member rate",
 			rates: oracletypes.RateSet{
 				chain.SDRBaseDenom: math.LegacyOneDec(),
 			},
@@ -1334,13 +1376,12 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCap
 			}
 			s.setTaxCaps(oldCaps)
 			candidate := current
-			candidate.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 101)
-			s.oracleKeeper.EXPECT().GetTobinTaxes(gomock.Any()).Return([]oracletypes.TobinTax{
-				{Denom: chain.SDRBaseDenom},
-				{Denom: chain.USDBaseDenom},
-			}, nil)
+			candidate.ReferenceTaxCap.Amount = math.NewInt(101)
+			s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 			s.oracleKeeper.EXPECT().GetRateSet(
-				gomock.Any(), chain.SDRBaseDenom, chain.USDBaseDenom,
+				gomock.Any(),
+				chain.SDRBaseDenom,
+				chain.USDBaseDenom,
 			).Return(test.rates, test.err)
 
 			_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{

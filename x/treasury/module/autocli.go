@@ -107,14 +107,14 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					GovProposal: true,
 				},
 				{
-					RpcMethod:   "UpdateMonetaryPolicy",
-					Use:         "update-monetary-policy-proposal",
+					RpcMethod:   "UpdatePolicy",
+					Use:         "update-policy-proposal",
 					Short:       "Submit a governance proposal to update reversible Treasury policy outside committee bounds",
 					GovProposal: true,
 				},
 				{
-					RpcMethod: "CommitteeUpdateMonetaryPolicy",
-					Use:       "committee-update-monetary-policy",
+					RpcMethod: "CommitteeUpdatePolicy",
+					Use:       "committee-update-policy",
 					Short:     "Update reversible Treasury policy as the monetary-policy committee",
 				},
 				{
