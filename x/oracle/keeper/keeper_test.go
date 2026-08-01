@@ -249,6 +249,37 @@ func (s *KeeperTestSuite) TestGetRateSetReturnsNoahIdentityByDefault() {
 	}, rates)
 }
 
+func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MaxExchangeRateAge = time.Minute
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
+		Rate:           math.LegacyMustNewDecFromStr("1.3"),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+	}))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
+	}))
+
+	// asdr is stale and akrw was never priced: both are omitted rather than
+	// failing the set, while the fresh rate and the NOAH identity survive.
+	rates, err := s.keeper.GetAvailableRateSet(
+		s.ctx,
+		chain.USDBaseDenom,
+		chain.SDRBaseDenom,
+		chain.KRWBaseDenom,
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(types.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyMustNewDecFromStr("1.3"),
+	}, rates)
+}
+
 func (s *KeeperTestSuite) TestGetRateSetRejectsElapsedTimeStaleness() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
