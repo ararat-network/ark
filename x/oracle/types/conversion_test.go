@@ -94,6 +94,24 @@ func TestRateSetConvertLargeRepresentableAmount(t *testing.T) {
 	require.True(t, offerCoin.Amount.Equal(actual.Amount))
 }
 
+// TestRateSetConvertUnderflowTruncatesToZero pins measurement semantics: a
+// positive offer whose converted value sits below Dec precision returns zero
+// rather than an error. Entitlement callers enforce their own positivity bar
+// after truncating to whole units.
+func TestRateSetConvertUnderflowTruncatesToZero(t *testing.T) {
+	rates := types.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		// One base unit of a denomination this hyperinflated is worth less
+		// than Dec precision can carry.
+		"ausd": math.LegacyNewDec(10).Power(19),
+	}
+
+	actual, err := rates.Convert(sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()), chain.NoahBaseDenom)
+	require.NoError(t, err)
+	require.Equal(t, chain.NoahBaseDenom, actual.Denom)
+	require.True(t, actual.Amount.IsZero())
+}
+
 func TestRateSetConvertRangeErrors(t *testing.T) {
 	max := maxLegacyDec()
 	outOfRangeRaw := max.BigInt()
@@ -177,12 +195,12 @@ func TestRateSetConvertRangeErrors(t *testing.T) {
 			askDenom:  "akrw",
 		},
 		{
-			name: "conversion underflows to zero",
+			name: "negative rate produces a negative conversion",
 			rates: types.RateSet{
 				"ausd": math.LegacyOneDec(),
-				"akrw": math.LegacySmallestDec(),
+				"akrw": math.LegacyNewDec(-1),
 			},
-			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacySmallestDec()),
+			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()),
 			askDenom:  "akrw",
 		},
 	}
