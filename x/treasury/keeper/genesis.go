@@ -2,15 +2,13 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"slices"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	chain "ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
 
@@ -39,64 +37,62 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			)
 		}
 	}
-	if data.ClaimsMandate.Committee != "" {
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		if data.ClaimsMandate.Committee == k.authority || sdk.ValidateAuthority(sdkCtx, k.authority, data.ClaimsMandate.Committee) == nil {
-			return fmt.Errorf("Claims committee must be distinct from Treasury authority")
-		}
+	// The InitGenesis context carries no consensus params, so these can only
+	// compare against the fallback authority; the message path re-checks every
+	// later replacement against the effective authority.
+	if data.ClaimsMandate.Committee == k.authority {
+		return fmt.Errorf("Claims committee must be distinct from Treasury authority")
 	}
-	if data.MonetaryMandate.Committee != "" {
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		committee := data.MonetaryMandate.Committee
-		if committee == k.authority || sdk.ValidateAuthority(sdkCtx, k.authority, committee) == nil {
-			return fmt.Errorf("monetary-policy committee must be distinct from Treasury authority")
-		}
+	if data.MonetaryMandate.Committee == k.authority {
+		return fmt.Errorf("monetary-policy committee must be distinct from Treasury authority")
+	}
+
+	// The reference tax cap and Market's base pool are the same unit by
+	// design, permanently: the protocol reference. A treasury genesis whose
+	// cap disagrees with the configured reference is not a launchable
+	// configuration. x/oracle imports before x/treasury, so the reference is
+	// already in state here.
+	referenceDenom, err := k.oracleKeeper.GetReferenceDenom(ctx)
+	if err != nil {
+		return fmt.Errorf("getting protocol reference: %w", err)
+	}
+	if referenceDenom == "" {
+		return fmt.Errorf(
+			"reference tax cap denom %s requires a configured protocol reference",
+			data.Params.ReferenceTaxCap.Denom,
+		)
+	}
+	if data.Params.ReferenceTaxCap.Denom != referenceDenom {
+		return fmt.Errorf(
+			"reference tax cap denom %s must be the protocol reference %s",
+			data.Params.ReferenceTaxCap.Denom,
+			referenceDenom,
+		)
 	}
 
 	taxCaps := append([]types.TaxCap(nil), data.TaxCaps...)
 	if len(taxCaps) == 0 {
-		derivedTaxCaps, err := k.buildTaxCaps(ctx, data.Params)
+		denoms, err := k.assetKeeper.PricedLiveDenoms(ctx)
+		if err != nil {
+			return fmt.Errorf("getting priced-live denominations: %w", err)
+		}
+		derivedTaxCaps, err := k.buildTaxCaps(ctx, data.Params, denoms)
 		if err != nil {
 			return fmt.Errorf("deriving genesis tax caps: %w", err)
 		}
 		taxCaps = derivedTaxCaps
-	} else {
-		tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-		if err != nil {
-			return fmt.Errorf("getting Tobin taxes: %w", err)
-		}
-		if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
-			return tax.Denom == data.Params.ReferenceTaxCap.Denom
-		}) {
-			return fmt.Errorf(
-				"reference tax cap denom %s is not configured in oracle",
-				data.Params.ReferenceTaxCap.Denom,
-			)
-		}
-		if len(taxCaps) != len(tobinTaxes) {
-			return fmt.Errorf(
-				"genesis tax cap set has %d denoms; expected %d configured native stables",
-				len(taxCaps),
-				len(tobinTaxes),
-			)
-		}
-		seen := make(map[string]math.Int, len(taxCaps))
-		for _, cap := range taxCaps {
-			seen[cap.Denom] = cap.TaxCap
-		}
-		for _, tax := range tobinTaxes {
-			if _, ok := seen[tax.Denom]; !ok {
-				return fmt.Errorf("genesis tax cap is missing configured native stable %s", tax.Denom)
-			}
-		}
-		if amount, ok := seen[data.Params.ReferenceTaxCap.Denom]; !ok || !amount.Equal(data.Params.ReferenceTaxCap.Amount) {
-			return fmt.Errorf(
-				"genesis tax cap for reference denom %s must equal %s",
-				data.Params.ReferenceTaxCap.Denom,
-				&data.Params.ReferenceTaxCap.Amount,
-			)
-		}
 	}
+	// A supplied cap set is imported as-is, loose on both sides of membership.
+	// A cap naming no member is the residue of a departure, and a member
+	// holding no cap is the gap an activation opens until a rebuild lands —
+	// live state maintains coverage eventually, not continuously, because a
+	// rebuild skips while any needed rate is stale. An export taken inside
+	// either window must remain importable, and the gap costs at import
+	// exactly what it costs at runtime: the member is untaxed until the
+	// membership trigger re-derives its cap, which the first BeginBlocker
+	// attempts. Amounts are not checked against the reference either: a kept
+	// cap is anchored to the reference amount it was derived under, which
+	// later policy moves and truncation drift are both free to leave behind.
 
 	insuranceBalance := math.ZeroInt()
 	for _, moduleName := range types.FundAccountNames() {
@@ -132,8 +128,17 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.MonetaryPolicy.Set(ctx, data.MonetaryPolicy); err != nil {
 		return fmt.Errorf("setting monetary policy: %w", err)
 	}
-	if err := k.replaceTaxCaps(ctx, taxCaps); err != nil {
-		return fmt.Errorf("setting tax caps: %w", err)
+	for _, cap := range taxCaps {
+		if err := k.TaxCaps.Set(ctx, cap.Denom, cap.TaxCap); err != nil {
+			return fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
+		}
+	}
+	// The cadence flag is imported state rather than something this import
+	// derives: an export taken while a refresh was owed keeps it owed on the
+	// new chain, and a fresh genesis carries false so block 1 does not rebuild
+	// what genesis just established.
+	if err := k.TaxCapRefreshPending.Set(ctx, data.TaxCapRefreshPending); err != nil {
+		return fmt.Errorf("setting pending tax cap refresh: %w", err)
 	}
 	if err := k.ClaimsMandate.Set(ctx, data.ClaimsMandate); err != nil {
 		return fmt.Errorf("setting Claims mandate: %w", err)
@@ -197,6 +202,10 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if err != nil {
 		return nil, fmt.Errorf("getting next claim ID: %w", err)
 	}
+	taxCapRefreshPending, err := k.TaxCapRefreshPending.Get(ctx)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return nil, fmt.Errorf("getting pending tax cap refresh: %w", err)
+	}
 
 	taxCaps := make([]types.TaxCap, 0)
 	if err := k.TaxCaps.Walk(ctx, nil, func(denom string, amount math.Int) (bool, error) {
@@ -215,15 +224,16 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	return &types.GenesisState{
-		Params:              params,
-		MonetaryPolicy:      monetaryPolicy,
-		TaxCaps:             taxCaps,
-		ClaimsMandate:       claimsMandate,
-		ClaimsAllowanceUsed: claimsAllowanceUsed,
-		InsuranceReserved:   insuranceReserved,
-		NextClaimId:         nextClaimID,
-		Claims:              claims,
-		RewardFunding:       rewardFunding,
-		MonetaryMandate:     monetaryMandate,
+		Params:               params,
+		TaxCaps:              taxCaps,
+		ClaimsMandate:        claimsMandate,
+		ClaimsAllowanceUsed:  claimsAllowanceUsed,
+		InsuranceReserved:    insuranceReserved,
+		NextClaimId:          nextClaimID,
+		Claims:               claims,
+		RewardFunding:        rewardFunding,
+		MonetaryMandate:      monetaryMandate,
+		MonetaryPolicy:       monetaryPolicy,
+		TaxCapRefreshPending: taxCapRefreshPending,
 	}, nil
 }

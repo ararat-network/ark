@@ -41,43 +41,41 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 		return sdk.NewCoins(), nil
 	}
 
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting taxable denominations: %w", err)
-	}
-	taxableDenoms := make(map[string]struct{}, len(tobinTaxes))
-	for _, tobinTax := range tobinTaxes {
-		taxableDenoms[tobinTax.Denom] = struct{}{}
-	}
-
+	// The tax base is the cap set: a denomination is taxed exactly when
+	// Treasury holds a cap for it. Caps are derived from priced-live
+	// membership and then kept, so lifecycle status governs what a cap is
+	// worth and never whether transfers of outstanding supply are taxed —
+	// suspended, written-off, and retirement-residual supply all still move
+	// between holders, and a transfer tax that exempted them would price
+	// distress below ordinary money.
 	caps := make(map[string]math.Int)
 	taxAmounts := make(map[string]math.Int)
 	for _, input := range inputs {
 		for _, principal := range input {
-			if _, taxable := taxableDenoms[principal.Denom]; !taxable {
-				continue
-			}
-
 			cap, loaded := caps[principal.Denom]
 			if !loaded {
-				cap, err = k.TaxCaps.Get(ctx, principal.Denom)
-				if err != nil {
-					if errors.Is(err, collections.ErrNotFound) {
-						return nil, errorsmod.Wrapf(
-							types.ErrTaxCapUnavailable,
-							"configured denom %s has no current tax cap",
-							principal.Denom,
-						)
+				stored, err := k.TaxCaps.Get(ctx, principal.Denom)
+				switch {
+				case err == nil:
+					if stored.IsNegative() {
+						return nil, fmt.Errorf("negative tax cap %s for denom %s", stored, principal.Denom)
 					}
-					return nil, fmt.Errorf("getting tax cap for configured denom %s: %w", principal.Denom, err)
-				}
-				if cap.IsNil() {
-					return nil, fmt.Errorf("tax cap is unset for configured denom %s", principal.Denom)
-				}
-				if cap.IsNegative() {
-					return nil, fmt.Errorf("negative tax cap %s for configured denom %s", cap, principal.Denom)
+					cap = stored
+				case errors.Is(err, collections.ErrNotFound):
+					// No cap has ever been derived for this denomination: it
+					// is outside the registry, or a member whose first rebuild
+					// has not landed. Untaxed either way, because taxing
+					// uncapped would be unbounded and rejecting would let a
+					// stalled refresh block transfers. A nil entry memoises
+					// the miss for the rest of the transaction.
+					cap = math.Int{}
+				default:
+					return nil, fmt.Errorf("getting tax cap for denom %s: %w", principal.Denom, err)
 				}
 				caps[principal.Denom] = cap
+			}
+			if cap.IsNil() {
+				continue
 			}
 
 			tax := policy.StabilityTaxRate.MulInt(principal.Amount).TruncateInt()

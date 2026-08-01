@@ -2,10 +2,11 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
-	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,38 +16,65 @@ import (
 	"ark/x/treasury/types"
 )
 
-func (k Keeper) refreshTaxCaps(ctx context.Context, tobinTaxes []oracletypes.TobinTax, configuredDenoms map[string]struct{}) error {
-	mismatch, err := k.taxCapDenomsMismatch(ctx, configuredDenoms)
-	if err != nil {
-		return fmt.Errorf("checking tax cap denominations: %w", err)
-	}
-	if !mismatch && !chain.IsPeriodLastBlock(ctx, chain.BlocksPerWeek) {
-		return nil
-	}
-
+// refreshTaxCaps rebuilds the derived caps when a rebuild is owed. Membership
+// is read once and feeds both the trigger and the rebuild, so the caps derived
+// are exactly the caps judged owed. Preblock lifecycle completions run before
+// BeginBlock, so an asset activated this block is a member in this block's
+// refresh.
+//
+// Coverage is containment, not equality. A denom that leaves priced-live keeps
+// the cap it was last derived with, because its outstanding supply stays
+// transferable and taxable — retirement itself can leave a residual — and its
+// feed may never return to re-derive one. An arrival is therefore a rebuild
+// trigger and a departure is not.
+//
+// A rebuild that cannot value its members skips rather than failing the block:
+// the triggers survive a skip, so the refresh retries every block until rates
+// return. Params are read before anything else because the cadence is one of
+// them.
+func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
-	caps, err := k.buildTaxCapsFromSnapshot(ctx, params, tobinTaxes)
+	denoms, err := k.assetKeeper.PricedLiveDenoms(ctx)
+	if err != nil {
+		return fmt.Errorf("getting priced-live denominations: %w", err)
+	}
+
+	owed, err := k.taxCapRefreshOwed(ctx, params, denoms)
+	if err != nil {
+		return err
+	}
+	if !owed {
+		return nil
+	}
+
+	caps, err := k.buildTaxCaps(ctx, params, denoms)
 	if err != nil {
 		if !isValuationUnavailable(err) {
 			return fmt.Errorf("building tax caps: %w", err)
 		}
 
-		reason := eventSkipReason(err)
-		k.Logger(ctx).Warn("skipping Treasury tax-cap refresh", "reason", reason, "error", err)
-		if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsUpdateSkipped{
-			Reason: reason,
-		}); err != nil {
-			return fmt.Errorf("emitting Treasury tax-cap refresh skip event: %w", err)
-		}
+		k.Logger(ctx).Warn("skipping Treasury tax-cap refresh", "error", err)
 		return nil
 	}
 
-	if err := k.replaceTaxCaps(ctx, caps); err != nil {
-		return fmt.Errorf("replacing tax caps: %w", err)
+	// Derived caps are upserted rather than replacing the stored set, so a cap
+	// left behind by a departed member survives untouched.
+	for _, cap := range caps {
+		if err := k.TaxCaps.Set(ctx, cap.Denom, cap.TaxCap); err != nil {
+			return fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
+		}
 	}
+	// This rebuild derived every member from current inputs, which is exactly
+	// what an outstanding cadence refresh was owed.
+	if err := k.TaxCapRefreshPending.Set(ctx, false); err != nil {
+		return fmt.Errorf("clearing pending tax cap refresh: %w", err)
+	}
+	// The event carries the denoms this rebuild derived, not the whole stored
+	// set: kept caps are unchanged by definition, so reporting them would
+	// describe an update that did not happen.
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{
 		TaxCaps: caps,
 	}); err != nil {
@@ -55,97 +83,113 @@ func (k Keeper) refreshTaxCaps(ctx context.Context, tobinTaxes []oracletypes.Tob
 	return nil
 }
 
-func (k Keeper) buildTaxCaps(
-	ctx context.Context,
-	params types.Params,
-) ([]types.TaxCap, error) {
-	tobinTaxes, err := k.oracleKeeper.GetTobinTaxes(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting Tobin taxes: %w", err)
+// taxCapRefreshOwed reports whether a rebuild is owed this block, recording
+// the cadence edge durably as it goes. The cadence boundary is an instant
+// rather than a state, so crossing one raises TaxCapRefreshPending before any
+// rebuild is attempted — once this block commits, the work is owed in state
+// even if every rebuild until rates return skips. Only a rebuild that reaches
+// its cap writes lowers the flag.
+//
+// The membership trigger is not an eager cadence: a member holding no cap is
+// untaxed rather than capped stale, because the tax reads a missing entry as
+// exemption, so deferring an arrival to the next boundary would leave a fresh
+// denomination collecting nothing for a whole period. It needs no flag of its
+// own either — the registry is re-read every block, so a gap left open by a
+// skipped rebuild re-asks on the next one. It reads ground truth rather than a
+// version consumers must be told to bump, so nothing has to announce a move.
+func (k Keeper) taxCapRefreshOwed(ctx context.Context, params types.Params, denoms []string) (bool, error) {
+	pending, err := k.TaxCapRefreshPending.Get(ctx)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return false, fmt.Errorf("getting pending tax cap refresh: %w", err)
 	}
-	return k.buildTaxCapsFromSnapshot(ctx, params, tobinTaxes)
+	if pending {
+		return true, nil
+	}
+	if chain.IsPeriodLastBlock(ctx, params.TaxCapRefreshPeriodBlocks) {
+		if err := k.TaxCapRefreshPending.Set(ctx, true); err != nil {
+			return false, fmt.Errorf("recording pending tax cap refresh: %w", err)
+		}
+		return true, nil
+	}
+	// Coverage asks containment of the members rather than equality with them:
+	// a stored cap naming no member is the expected residue of a departure, so
+	// this walks the membership and never the whole cap set, stopping at the
+	// first member found holding nothing.
+	for _, denom := range denoms {
+		covered, err := k.TaxCaps.Has(ctx, denom)
+		if err != nil {
+			return false, fmt.Errorf("checking tax cap for %s: %w", denom, err)
+		}
+		if !covered {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
-func (k Keeper) buildTaxCapsFromSnapshot(
-	ctx context.Context,
-	params types.Params,
-	tobinTaxes []oracletypes.TobinTax,
-) ([]types.TaxCap, error) {
+// buildTaxCaps derives one cap per given priced-live denomination from the
+// reference cap. The reference unit is the protocol reference by invariant —
+// genesis pins it, UpdateParams refuses to move it, and RebaseTaxCap is the
+// only denom-moving path — so it is not re-checked here. It need not itself be
+// a member: rates exist for any feed, so the cap converts into member units
+// whether or not an asset is listed under the reference denomination.
+func (k Keeper) buildTaxCaps(ctx context.Context, params types.Params, denoms []string) ([]types.TaxCap, error) {
 	referenceTaxCap := params.ReferenceTaxCap
-	if !slices.ContainsFunc(tobinTaxes, func(tax oracletypes.TobinTax) bool {
-		return tax.Denom == referenceTaxCap.Denom
-	}) {
-		return nil, fmt.Errorf("reference tax cap denom %s is not configured in oracle", referenceTaxCap.Denom)
-	}
 
-	caps := make([]types.TaxCap, 0, len(tobinTaxes))
+	caps := make([]types.TaxCap, 0, len(denoms))
+	// A zero cap is the uncapped sentinel, not a zero ceiling: the tax clamp
+	// only applies positive caps, so a zero reference lifts every member's
+	// ceiling rather than zeroing its tax.
 	if referenceTaxCap.IsZero() {
-		for _, tax := range tobinTaxes {
-			caps = append(caps, types.TaxCap{Denom: tax.Denom, TaxCap: math.ZeroInt()})
+		for _, denom := range denoms {
+			caps = append(caps, types.TaxCap{Denom: denom, TaxCap: math.ZeroInt()})
 		}
 		return caps, nil
 	}
-	if len(tobinTaxes) == 1 {
+	if len(denoms) == 0 {
+		return caps, nil
+	}
+	if len(denoms) == 1 && denoms[0] == referenceTaxCap.Denom {
 		return []types.TaxCap{{Denom: referenceTaxCap.Denom, TaxCap: referenceTaxCap.Amount}}, nil
 	}
 
-	denoms := make([]string, len(tobinTaxes))
-	for i, tax := range tobinTaxes {
-		denoms[i] = tax.Denom
+	capture := slices.Clone(denoms)
+	if !slices.Contains(capture, referenceTaxCap.Denom) {
+		capture = append(capture, referenceTaxCap.Denom)
 	}
-	rates, err := k.oracleKeeper.GetRateSet(ctx, denoms...)
+	rates, err := k.oracleKeeper.GetRateSet(ctx, capture...)
 	if err != nil {
 		return nil, fmt.Errorf("capturing tax-cap rates: %w", err)
 	}
 
 	reference := sdk.NewDecCoinFromCoin(referenceTaxCap)
-	for _, tax := range tobinTaxes {
-		if tax.Denom == reference.Denom {
-			caps = append(caps, types.TaxCap{Denom: tax.Denom, TaxCap: referenceTaxCap.Amount})
+	for _, denom := range denoms {
+		if denom == reference.Denom {
+			caps = append(caps, types.TaxCap{Denom: denom, TaxCap: referenceTaxCap.Amount})
 			continue
 		}
-		converted, err := rates.Convert(reference, tax.Denom)
+		converted, err := rates.Convert(reference, denom)
 		if err != nil {
-			return nil, fmt.Errorf("converting tax cap from %s to %s: %w", reference.Denom, tax.Denom, err)
+			return nil, fmt.Errorf("converting tax cap from %s to %s: %w", reference.Denom, denom, err)
 		}
 		coin, _ := converted.TruncateDecimal()
-		if !coin.Amount.IsPositive() {
-			return nil, errorsmod.Wrapf(
-				oracletypes.ErrConversionOutOfRange,
-				"converting positive tax cap from %s to %s truncated to zero",
-				reference.Denom,
-				tax.Denom,
-			)
+		amount := coin.Amount
+		if !amount.IsPositive() {
+			amount = math.OneInt()
 		}
-		caps = append(caps, types.TaxCap{Denom: tax.Denom, TaxCap: coin.Amount})
+		caps = append(caps, types.TaxCap{Denom: denom, TaxCap: amount})
 	}
 	return caps, nil
 }
 
-func (k Keeper) replaceTaxCaps(ctx context.Context, caps []types.TaxCap) error {
-	if err := k.TaxCaps.Clear(ctx, nil); err != nil {
-		return fmt.Errorf("clearing tax caps: %w", err)
-	}
-	for _, cap := range caps {
-		if err := k.TaxCaps.Set(ctx, cap.Denom, cap.TaxCap); err != nil {
-			return fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
-		}
-	}
-	return nil
-}
-
-func (k Keeper) taxCapDenomsMismatch(ctx context.Context, expected map[string]struct{}) (bool, error) {
-	mismatch := false
-	matched := 0
-	if err := k.TaxCaps.Walk(ctx, nil, func(denom string, _ math.Int) (bool, error) {
-		if _, ok := expected[denom]; !ok {
-			mismatch = true
-			return true, nil
-		}
-		matched++
-		return false, nil
-	}); err != nil {
-		return false, err
-	}
-	return mismatch || matched != len(expected), nil
+// isValuationUnavailable reports whether an error means a rate could not be
+// obtained or applied, rather than that state or arithmetic broke. Only the
+// former degrades gracefully: a feed that is missing, stale, invalid, or whose
+// conversion leaves its domain can return, so the work stays due and retries.
+func isValuationUnavailable(err error) bool {
+	return errors.Is(err, oracletypes.ErrUnknownDenom) ||
+		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||
+		errors.Is(err, oracletypes.ErrInvalidExchangeRate) ||
+		errors.Is(err, oracletypes.ErrConversionOutOfRange)
 }
