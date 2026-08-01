@@ -30,27 +30,3 @@ func IsPeriodLastBlockFrom(ctx context.Context, startHeight, blocksPerPeriod uin
 
 	return (uint64(height)-startHeight+1)%blocksPerPeriod == 0
 }
-
-// LastPeriodBoundary returns the most recent height at or before height that
-// closes a period anchored at zero — the heights IsPeriodLastBlock reports
-// true for — or -1 when no period has closed yet.
-//
-// It exists for work that is due once per period but may fail on the boundary
-// block itself. Recording the height of the last success and rebuilding
-// whenever it falls behind this boundary retries every block until the work
-// succeeds, which a bare IsPeriodLastBlock check cannot do: its boundary block
-// passes once and does not come back.
-//
-// A zero period panics, matching IsPeriodLastBlockFrom.
-func LastPeriodBoundary(height int64, blocksPerPeriod uint64) int64 {
-	if height < 0 {
-		return -1
-	}
-
-	closed := (uint64(height) + 1) / blocksPerPeriod
-	if closed == 0 {
-		return -1
-	}
-
-	return int64(closed*blocksPerPeriod - 1)
-}
