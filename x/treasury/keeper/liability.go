@@ -255,7 +255,16 @@ func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.R
 func accrueLiability(total math.LegacyDec, supply sdk.Coin, pricings assettypes.DenomPricings) (math.LegacyDec, bool, error) {
 	converted, err := pricings.Convert(sdk.NewDecCoinFromCoin(supply), chain.NoahBaseDenom)
 	if err != nil {
-		if !isValuationUnavailable(err) {
+		// Availability was settled by the verdict partition: the supply's rate
+		// and the numeraire both exist here by construction, so capture-layer
+		// failures — unknown denom, stale feed — cannot occur, and an error
+		// claiming one would mean the partition lied and stays hard. What can
+		// still fail is representability: a conversion leaving Dec range is
+		// the per-coin form of the sum overflow below and takes the same exit,
+		// an incomplete bucket. This path feeds settlement, whose designed
+		// answer to valuation trouble is the conservative fallback — degrade,
+		// never halt.
+		if !errors.Is(err, oracletypes.ErrConversionOutOfRange) {
 			return total, false, fmt.Errorf("valuing liability %s: %w", supply.Denom, err)
 		}
 		return total, false, nil

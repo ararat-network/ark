@@ -243,6 +243,39 @@ func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotCountsUnderflowingDustSupply
 	s.Require().Equal(math.LegacyNewDec(100), draw.AggregateLiabilityNoah)
 }
 
+// TestPrimeLiabilitySnapshotDegradesOnUnrepresentableConversion pins the
+// per-coin representability exit: a member the partition prices, whose supply
+// at its rate leaves Dec range, is the per-coin form of the aggregate overflow
+// and takes the same exit — the block degrades to the conservative fallback
+// instead of failing preblock. Capture-layer failures cannot reach that
+// conversion (both rates exist by construction), so out-of-range is the only
+// error class with a degrade path at that site.
+func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotDegradesOnUnrepresentableConversion() {
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewCoin(chain.USDBaseDenom, math.NewIntWithDecimal(1, 60))).Times(1)
+	// At 1e-18 ausd per NOAH, 1e60 base units value to 1e78 NOAH — beyond
+	// LegacyDec range.
+	s.setRates(oracletypes.RateSet{
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(1, 18),
+	})
+
+	s.Require().NoError(s.keeper.PrimeLiabilitySnapshot(s.ctx))
+
+	draw, err := s.keeper.DrawRedemptionBuffer(
+		s.ctx,
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10),
+		math.NewInt(10),
+		oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  math.LegacyOneDec(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().False(draw.ValuationComplete)
+	s.Require().True(draw.BufferPaid.IsZero())
+}
+
 func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotMarksUnavailableValuation() {
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
