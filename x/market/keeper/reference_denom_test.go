@@ -140,6 +140,22 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			errorIsNot: types.ErrNoEffectivePrice,
 		},
 		{
+			// Zero is a valid conversion result but never a swappable depth:
+			// a pool that truncates to nothing is caught by the effective-pool
+			// guard on the candidate, not by the conversion.
+			name: "rebased depth truncates to zero",
+			from: chain.SDRBaseDenom,
+			to:   chain.USDBaseDenom,
+			rates: oracletypes.RateSet{
+				chain.NoahBaseDenom: math.LegacyOneDec(),
+				chain.SDRBaseDenom:  math.LegacyNewDec(1_000),
+				chain.USDBaseDenom:  math.LegacySmallestDec(),
+			},
+			expectErr:  "invalid effective pools after rebasing to ausd",
+			errorIs:    errortypes.ErrInvalidRequest,
+			errorIsNot: types.ErrNoEffectivePrice,
+		},
+		{
 			// The conversion itself can succeed while the rebased depth is too
 			// deep to ever swap against: the effective-pool guard runs on the
 			// candidate before anything is written.

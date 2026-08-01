@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -66,10 +65,8 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	// The plan rate needs no adjustment to serve as a rate set: it is quoted in
 	// units per one NOAH like every oracle rate, so it drops in beside the
 	// numeraire carried at one.
-	planRates := oracletypes.RateSet{
-		chain.NoahBaseDenom: math.LegacyOneDec(),
-		plan.Denom:          plan.RedemptionRate,
-	}
+	planRates := oracletypes.NewRateSet()
+	planRates[plan.Denom] = plan.RedemptionRate
 
 	// The entitlement is quoted through that same rate set, so the payout and
 	// the liability Treasury records for it are one conversion, not two
