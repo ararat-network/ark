@@ -12,6 +12,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	chain "ark/pkg/chain"
+	"ark/pkg/decimal"
 	assettypes "ark/x/asset/types"
 	markettypes "ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
@@ -120,17 +121,26 @@ func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
-	allocation, err := s.keeper.RouteExpansion(
+	burned, err := s.keeper.RouteExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
 		quoteRates,
 	)
 	s.Require().NoError(err)
-	s.Require().True(allocation.RedemptionBufferCredit.IsZero())
-	s.Require().True(allocation.StrategicReserveCredit.IsZero())
-	s.Require().True(allocation.InsuranceCredit.IsZero())
-	s.Require().Equal(allocation.EligiblePrincipalNoah, allocation.OverflowBurn)
+	// Zero targets fund nothing, so the whole 60 of eligible principal overflows
+	// and joins the 40 spread: the gross offer burns entire. No credit transfer
+	// is expected, which the mock enforces by failing on any unexpected send.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), burned)
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                   chain.NoahBaseDenom,
+		RedemptionBufferCredit:  math.ZeroInt(),
+		StrategicReserveCredit:  math.ZeroInt(),
+		InsuranceCredit:         math.ZeroInt(),
+		SpreadAndDustBurn:       math.NewInt(40),
+		OverflowBurn:            math.NewInt(60),
+		TargetValuationComplete: true,
+	})
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
@@ -163,7 +173,7 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
 	).Return(nil)
 
-	allocation, err := s.keeper.RouteExpansion(
+	burned, err := s.keeper.RouteExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
@@ -173,13 +183,9 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 		},
 	)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(60), allocation.EligiblePrincipalNoah)
-	s.Require().Equal(math.NewInt(50), allocation.RedemptionBufferCredit)
-	s.Require().Equal(math.NewInt(10), allocation.StrategicReserveCredit)
-	s.Require().True(allocation.InsuranceCredit.IsZero())
-	s.Require().Equal(math.NewInt(40), allocation.SpreadAndDustBurn)
-	s.Require().True(allocation.OverflowBurn.IsZero())
-	s.Require().True(allocation.TargetValuationComplete)
+	// The waterfall funds both gaps out of the 60 eligible principal, so only
+	// the 40 spread burns.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 40), burned)
 	s.requireTypedEvent(&types.EventExpansionAllocated{
 		Denom:                   chain.NoahBaseDenom,
 		RedemptionBufferCredit:  math.NewInt(50),
@@ -216,7 +222,7 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
 	).Return(nil)
 
-	allocation, err := s.keeper.RouteExpansion(
+	burned, err := s.keeper.RouteExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 20),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 101),
@@ -226,10 +232,19 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 		},
 	)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(10), allocation.EligiblePrincipalNoah)
-	s.Require().Equal(math.NewInt(2), allocation.RedemptionBufferCredit)
-	s.Require().Equal(math.NewInt(8), allocation.OverflowBurn)
-	s.Require().Equal(math.NewInt(10), allocation.SpreadAndDustBurn)
+	// The 10.1 output truncates to 10 of eligible principal against a 20 offer,
+	// and the 0.1 target ratio rounds the Buffer gap up to 2. The 10 spread and
+	// the 8 overflow are audited apart but burn as one movement.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 18), burned)
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                   chain.NoahBaseDenom,
+		RedemptionBufferCredit:  math.NewInt(2),
+		StrategicReserveCredit:  math.ZeroInt(),
+		InsuranceCredit:         math.ZeroInt(),
+		SpreadAndDustBurn:       math.NewInt(10),
+		OverflowBurn:            math.NewInt(8),
+		TargetValuationComplete: true,
+	})
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRate() {
@@ -244,7 +259,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 60)),
 	).Return(nil)
 
-	allocation, err := s.keeper.RouteExpansion(
+	burned, err := s.keeper.RouteExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 60),
@@ -254,14 +269,28 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 		},
 	)
 	s.Require().NoError(err)
-	s.Require().False(allocation.TargetValuationComplete)
-	s.Require().Equal(allocation.EligiblePrincipalNoah, allocation.RedemptionBufferCredit)
-	s.Require().True(allocation.StrategicReserveCredit.IsZero())
-	s.Require().True(allocation.InsuranceCredit.IsZero())
-	s.Require().True(allocation.OverflowBurn.IsZero())
+	// An incomplete valuation parks the whole 60 of eligible principal in the
+	// Buffer, so nothing overflows and only the 40 spread burns.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 40), burned)
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                   chain.NoahBaseDenom,
+		RedemptionBufferCredit:  math.NewInt(60),
+		StrategicReserveCredit:  math.ZeroInt(),
+		InsuranceCredit:         math.ZeroInt(),
+		SpreadAndDustBurn:       math.NewInt(40),
+		OverflowBurn:            math.ZeroInt(),
+		TargetValuationComplete: false,
+	})
 }
 
-func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow() {
+// TestRouteExpansionFailsOnAggregateOverflow pins an unrepresentable aggregate
+// as fatal to the settlement rather than a conservative fallback. Two members
+// each value inside Dec range while their sum does not, so nothing here is
+// unpriced — the valuation is complete and the arithmetic is out of domain,
+// which the conversion declines to route around. The whole swap rolls back
+// instead of silently sending every principal to the Buffer on a liability
+// figure the chain could not compute.
+func (s *KeeperTestSuite) TestRouteExpansionFailsOnAggregateOverflow() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	largeSupply := new(big.Int).Lsh(big.NewInt(1), uint(math.MaxBitLen-1))
 	largeSupply.Add(largeSupply, big.NewInt(1))
@@ -269,12 +298,8 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow
 		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), denom).
 			Return(sdk.NewCoin(denom, math.NewIntFromBigInt(largeSupply)))
 	}
-	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
-	).Return(nil)
 
-	allocation, err := s.keeper.RouteExpansion(
+	_, err := s.keeper.RouteExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1),
@@ -284,9 +309,8 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnAggregateOverflow
 			chain.KRWBaseDenom:  math.LegacyOneDec(),
 		},
 	)
-	s.Require().NoError(err)
-	s.Require().False(allocation.TargetValuationComplete)
-	s.Require().Equal(math.OneInt(), allocation.RedemptionBufferCredit)
+	s.Require().ErrorContains(err, "summing liability")
+	s.Require().ErrorIs(err, decimal.ErrOutOfRange)
 }
 
 func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure() {
@@ -369,7 +393,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 8)),
 	).Return(nil)
 
-	draw, err := s.keeper.DrawRedemptionBuffer(
+	bufferPaid, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(10),
@@ -379,15 +403,17 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferPaysCoverageShareOfOutput() {
 		},
 	)
 	s.Require().NoError(err)
-	s.Require().True(draw.ValuationComplete)
-	s.Require().Equal(math.LegacyMustNewDecFromStr("12.5"), draw.RedeemedLiabilityNoah)
-	s.Require().Equal(math.LegacyNewDec(50), draw.AggregateLiabilityNoah)
-	s.Require().Equal(math.NewInt(8), draw.BufferPaid)
+	// Coverage 40/50 of a quoted 10 pays 8. The liability figures are Treasury's
+	// own and never leave it, so they are restated here from the fixture: 100
+	// ausd of supply at two per NOAH is 50, and 25 redeemed is 12.5.
+	s.Require().Equal(math.NewInt(8), bufferPaid)
+	aggregateLiability := math.LegacyNewDec(50)
+	redeemedLiability := math.LegacyMustNewDecFromStr("12.5")
 	bufferBefore := math.LegacyNewDec(40)
-	bufferAfter := math.LegacyNewDec(32)
-	liabilityAfter := draw.AggregateLiabilityNoah.Sub(draw.RedeemedLiabilityNoah)
+	bufferAfter := bufferBefore.Sub(math.LegacyNewDecFromInt(bufferPaid))
+	liabilityAfter := aggregateLiability.Sub(redeemedLiability)
 	s.Require().True(
-		bufferAfter.Mul(draw.AggregateLiabilityNoah).GTE(bufferBefore.Mul(liabilityAfter)),
+		bufferAfter.Mul(aggregateLiability).GTE(bufferBefore.Mul(liabilityAfter)),
 		"post-redemption Buffer coverage must not decrease",
 	)
 
@@ -487,7 +513,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 				).Return(nil)
 			}
 
-			draw, err := s.keeper.DrawRedemptionBuffer(
+			bufferPaid, err := s.keeper.DrawRedemptionBuffer(
 				s.ctx,
 				sdk.NewInt64Coin(chain.USDBaseDenom, test.redeemed),
 				math.NewInt(test.noahOutput),
@@ -497,12 +523,11 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferCoverageBoundariesAndTargetInd
 				},
 			)
 			s.Require().NoError(err)
-			s.Require().True(draw.ValuationComplete)
 			s.Require().True(
-				draw.BufferPaid.Equal(math.NewInt(test.expectedBuffer)),
+				bufferPaid.Equal(math.NewInt(test.expectedBuffer)),
 				"expected %d, got %s",
 				test.expectedBuffer,
-				draw.BufferPaid,
+				bufferPaid,
 			)
 		})
 	}
@@ -523,15 +548,32 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferRejectsOutputAboveRedeemedLiab
 	s.Require().ErrorContains(err, "NOAH output 11 exceeds redeemed liability 10")
 }
 
-func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregateValuation() {
-	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
+// TestDrawRedemptionBufferFundsHealthyExitsDuringSuspension pins the contagion
+// scenario the claimable denominator exists for: one member is suspended with
+// no plan — untrusted, unable to redeem — while holders of the healthy member
+// exit. The draw keeps funding those exits against the claimable aggregate,
+// and at higher coverage than before the suspension (50/100 rather than
+// 50/200), because the frozen supply is not competing for the Buffer. The
+// suspension is disclosed through the incomplete flag, never a kill switch.
+func (s *KeeperTestSuite) TestDrawRedemptionBufferFundsHealthyExitsDuringSuspension() {
+	s.setAssets(chain.USDBaseDenom)
+	s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100))
-	s.setRates(oracletypes.RateSet{})
+	s.setRates(oracletypes.RateSet{
+		chain.USDBaseDenom: math.LegacyOneDec(),
+		chain.KRWBaseDenom: math.LegacyOneDec(),
+	})
+	s.bankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 50))
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
+	).Return(nil)
 
-	draw, err := s.keeper.DrawRedemptionBuffer(
+	bufferPaid, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(20),
@@ -541,9 +583,16 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferFallsBackOnIncompleteAggregate
 		},
 	)
 	s.Require().NoError(err)
-	s.Require().False(draw.ValuationComplete)
-	s.Require().True(draw.AggregateLiabilityNoah.IsZero())
-	s.Require().True(draw.BufferPaid.IsZero())
+	// Coverage 50/100 of the 20-NOAH output. With the suspended akrw counted
+	// the denominator would be 200 and this would pay 5, so the payment is
+	// what pins the claimable denominator; the event carries the incomplete
+	// flag that used to travel back to Market.
+	s.Require().Equal(math.NewInt(10), bufferPaid)
+	s.requireTypedEvent(&types.EventRedemptionBufferDrawn{
+		Denom:                      chain.NoahBaseDenom,
+		Payment:                    math.NewInt(10),
+		AggregateValuationComplete: false,
+	})
 }
 
 // TestDrawRedemptionBufferDrawsForSuspendedDenomWithOpenPlan proves the
@@ -567,7 +616,7 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferDrawsForSuspendedDenomWithOpen
 
 	// The quote rate matches the plan's 2-NOAH-per-unit commitment: half a
 	// unit of ausd per NOAH.
-	draw, err := s.keeper.DrawRedemptionBuffer(
+	bufferPaid, err := s.keeper.DrawRedemptionBuffer(
 		s.ctx,
 		sdk.NewInt64Coin(chain.USDBaseDenom, 25),
 		math.NewInt(10),
@@ -577,13 +626,17 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferDrawsForSuspendedDenomWithOpen
 		},
 	)
 	s.Require().NoError(err)
-	s.Require().True(draw.ValuationComplete)
-	// 100 units at the plan's committed 2-NOAH rate: the aggregate is
-	// settlement-priced, with no oracle read for the suspended denomination.
-	s.Require().Equal(math.LegacyNewDec(200), draw.AggregateLiabilityNoah)
-	s.Require().Equal(math.LegacyNewDec(50), draw.RedeemedLiabilityNoah)
-	// Coverage 40/200 of the 10-NOAH output, floored.
-	s.Require().Equal(math.NewInt(2), draw.BufferPaid)
+	// 100 units at the plan's committed 2-NOAH rate makes the aggregate 200,
+	// settlement-priced with no oracle read for the suspended denomination, and
+	// coverage 40/200 of the 10-NOAH output floors to 2. An oracle-priced
+	// aggregate would not have been 200, so the payment is what pins the
+	// committed rate as the one used.
+	s.Require().Equal(math.NewInt(2), bufferPaid)
+	s.requireTypedEvent(&types.EventRedemptionBufferDrawn{
+		Denom:                      chain.NoahBaseDenom,
+		Payment:                    math.NewInt(2),
+		AggregateValuationComplete: true,
+	})
 }
 
 // usdSettlementPlan is a valid open plan whose activation height is still in

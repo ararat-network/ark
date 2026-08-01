@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -28,7 +27,16 @@ type fundStatus struct {
 }
 
 // RouteExpansion derives and executes the complete expansion-principal
-// waterfall from Market's escrow. It neither mints nor burns.
+// waterfall from Market's escrow and returns the NOAH Market must burn: the
+// quote spread plus whatever principal overflowed every funded target.
+// Treasury itself neither mints nor burns.
+//
+// The credit split behind that total stays execution-local and reaches
+// observers through EventExpansionAllocated rather than the caller. Market owns
+// burn, mint, and payout, never a decision about which fund was short; handing
+// it the split would invite settlement to branch on Treasury policy. The total
+// is exactly the residue left in Market's account once the credits are sent, so
+// burning it settles the escrow rather than acting on that policy.
 //
 // The stable output is whatever Market's ask leg produced, so it is already
 // ACTIVE: eligibility is decided at quote time and nothing outside Market can
@@ -38,24 +46,24 @@ func (k Keeper) RouteExpansion(
 	grossOffer sdk.Coin,
 	stableOutput sdk.Coin,
 	quoteRates oracletypes.RateSet,
-) (types.ExpansionAllocation, error) {
+) (sdk.Coin, error) {
 	if err := validatePositiveNoahCoin(grossOffer); err != nil {
-		return types.ExpansionAllocation{}, fmt.Errorf("invalid gross offer: %w", err)
+		return sdk.Coin{}, fmt.Errorf("invalid gross offer: %w", err)
 	}
 	if err := stableOutput.Validate(); err != nil {
-		return types.ExpansionAllocation{}, fmt.Errorf("invalid stable output: %w", err)
+		return sdk.Coin{}, fmt.Errorf("invalid stable output: %w", err)
 	}
 	if !stableOutput.IsPositive() {
-		return types.ExpansionAllocation{}, fmt.Errorf("stable output must be positive: %s", stableOutput)
+		return sdk.Coin{}, fmt.Errorf("stable output must be positive: %s", stableOutput)
 	}
 
 	convertedOutput, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(stableOutput), chain.NoahBaseDenom)
 	if err != nil {
-		return types.ExpansionAllocation{}, fmt.Errorf("valuing stable output: %w", err)
+		return sdk.Coin{}, fmt.Errorf("valuing stable output: %w", err)
 	}
 	eligible := convertedOutput.Amount.TruncateInt()
 	if eligible.GT(grossOffer.Amount) {
-		return types.ExpansionAllocation{}, fmt.Errorf(
+		return sdk.Coin{}, fmt.Errorf(
 			"stable output value %s exceeds gross offer %s",
 			sdk.NewCoin(chain.NoahBaseDenom, eligible),
 			grossOffer,
@@ -63,59 +71,64 @@ func (k Keeper) RouteExpansion(
 	}
 	spread := grossOffer.Amount.Sub(eligible)
 
-	allocation := types.ExpansionAllocation{
-		EligiblePrincipalNoah:   eligible,
-		RedemptionBufferCredit:  math.ZeroInt(),
-		StrategicReserveCredit:  math.ZeroInt(),
-		InsuranceCredit:         math.ZeroInt(),
-		SpreadAndDustBurn:       spread,
-		OverflowBurn:            math.ZeroInt(),
-		TargetValuationComplete: true,
-	}
-
 	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, quoteRates)
 	if err != nil {
-		return types.ExpansionAllocation{}, err
+		return sdk.Coin{}, err
 	}
 	if complete {
 		liabilityNoah, err = decimal.Add(liabilityNoah, convertedOutput.Amount)
-		if errors.Is(err, decimal.ErrOutOfRange) {
-			liabilityNoah = math.LegacyZeroDec()
-			complete = false
-		} else if err != nil {
-			return types.ExpansionAllocation{}, fmt.Errorf("adding stable output to aggregate liability: %w", err)
+		if err != nil {
+			return sdk.Coin{}, fmt.Errorf("adding stable output to aggregate liability: %w", err)
 		}
 	}
-	var status fundStatus
-	var bufferGap, reserveGap, insuranceGap math.Int
-	if !complete {
-		allocation.TargetValuationComplete = false
-		allocation.RedemptionBufferCredit = eligible
-	} else {
-		status, err = k.calculateFundStatus(ctx, liabilityNoah)
+
+	// Targets derive from a complete valuation only, which is why the waterfall
+	// runs solely under the branch below: there the claimable aggregate and full
+	// outstanding exposure are the same number. They part company the moment
+	// some supply cannot be valued, and then they answer opposite questions
+	// about it — coverage asks what can show up and claim, so unclaimable supply
+	// is rightly excluded, while a target asks what capital is owed against an
+	// obligation, and a suspended or unpriced asset is still an obligation, the
+	// kind Insurance and the Reserve exist for. Sizing a target off the
+	// claimable figure would call for less capital exactly when an asset has
+	// just failed.
+	//
+	// The exposure a target would need is exactly what could not be valued, so
+	// there is no honest basis to size one against. The whole eligible principal
+	// therefore parks in the Buffer rather than overflowing into a burn sized
+	// off an understated exposure. The asymmetry in the errors decides it:
+	// under-crediting Reserve and Insurance here is temporary, because their
+	// gaps persist and later expansions fill them, while burning principal we
+	// only thought was surplus is not.
+	bufferCredit := eligible
+	reserveCredit := math.ZeroInt()
+	insuranceCredit := math.ZeroInt()
+	overflowBurn := math.ZeroInt()
+	if complete {
+		status, err := k.calculateFundStatus(ctx, liabilityNoah)
 		if err != nil {
-			return types.ExpansionAllocation{}, err
+			return sdk.Coin{}, err
 		}
-		bufferGap = shortfall(status.bufferTarget, status.bufferBalance)
-		reserveGap = shortfall(status.reserveTarget, status.reserveBalance)
-		insuranceGap = shortfall(status.insuranceTarget, status.insuranceUnencumbered)
+		bufferGap := shortfall(status.bufferTarget, status.bufferBalance)
+		reserveGap := shortfall(status.reserveTarget, status.reserveBalance)
+		insuranceGap := shortfall(status.insuranceTarget, status.insuranceUnencumbered)
 		remaining := eligible
-		allocation.RedemptionBufferCredit = math.MinInt(remaining, bufferGap)
-		remaining = remaining.Sub(allocation.RedemptionBufferCredit)
-		allocation.StrategicReserveCredit = math.MinInt(remaining, reserveGap)
-		remaining = remaining.Sub(allocation.StrategicReserveCredit)
-		allocation.InsuranceCredit = math.MinInt(remaining, insuranceGap)
-		remaining = remaining.Sub(allocation.InsuranceCredit)
-		allocation.OverflowBurn = remaining
+		bufferCredit = math.MinInt(remaining, bufferGap)
+		remaining = remaining.Sub(bufferCredit)
+		reserveCredit = math.MinInt(remaining, reserveGap)
+		remaining = remaining.Sub(reserveCredit)
+		insuranceCredit = math.MinInt(remaining, insuranceGap)
+		remaining = remaining.Sub(insuranceCredit)
+		overflowBurn = remaining
 	}
 
 	credits := []struct {
 		module string
 		amount math.Int
 	}{
-		{types.RedemptionBufferName, allocation.RedemptionBufferCredit},
-		{types.StrategicReserveName, allocation.StrategicReserveCredit},
-		{types.InsuranceName, allocation.InsuranceCredit},
+		{types.RedemptionBufferName, bufferCredit},
+		{types.StrategicReserveName, reserveCredit},
+		{types.InsuranceName, insuranceCredit},
 	}
 	for _, credit := range credits {
 		if credit.amount.IsZero() {
@@ -127,56 +140,71 @@ func (k Keeper) RouteExpansion(
 			credit.module,
 			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, credit.amount)),
 		); err != nil {
-			return types.ExpansionAllocation{}, fmt.Errorf("crediting %s: %w", credit.module, err)
+			return sdk.Coin{}, fmt.Errorf("crediting %s: %w", credit.module, err)
 		}
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventExpansionAllocated{
 		Denom:                   chain.NoahBaseDenom,
-		RedemptionBufferCredit:  allocation.RedemptionBufferCredit,
-		StrategicReserveCredit:  allocation.StrategicReserveCredit,
-		InsuranceCredit:         allocation.InsuranceCredit,
-		SpreadAndDustBurn:       allocation.SpreadAndDustBurn,
-		OverflowBurn:            allocation.OverflowBurn,
+		RedemptionBufferCredit:  bufferCredit,
+		StrategicReserveCredit:  reserveCredit,
+		InsuranceCredit:         insuranceCredit,
+		SpreadAndDustBurn:       spread,
+		OverflowBurn:            overflowBurn,
 		TargetValuationComplete: complete,
 	}); err != nil {
-		return types.ExpansionAllocation{}, fmt.Errorf("emitting Treasury expansion allocation event: %w", err)
+		return sdk.Coin{}, fmt.Errorf("emitting Treasury expansion allocation event: %w", err)
 	}
 
-	return allocation, nil
+	return sdk.NewCoin(chain.NoahBaseDenom, spread.Add(overflowBurn)), nil
 }
 
 // DrawRedemptionBuffer funds the current Buffer coverage share of the quoted
-// NOAH output using pre-burn liability and Buffer state.
+// NOAH output using pre-burn claimable liability and Buffer state.
 //
 // The redeemed denomination arrives already recognised as liability: Market
 // converts out of priced-live assets only, and routes a suspended asset through
 // settlement, which requires an activated plan. Neither path can reach here with
 // a denomination Treasury does not carry.
+//
+// The draw runs whether or not valuation is complete. The claimable aggregate
+// excludes exactly the supply that cannot currently redeem — a member whose
+// feed is stale cannot quote, and suspension without an activated plan closes
+// both exits — so nothing the excluded supply will later claim is being spent,
+// and the exits still open are the ones the Buffer exists to dampen. A
+// suspension elsewhere therefore raises coverage for the healthy exits instead
+// of switching the Buffer off during exactly the contagion it was built for;
+// the completeness flag is audit disclosure, never a kill switch.
+//
+// The draw returns the payment alone. The liability figures behind the share,
+// and the completeness flag itself, stay execution-local and reach observers
+// through EventRedemptionBufferDrawn rather than the caller: handing settlement
+// a completeness flag would invite it to branch on valuation state, which is
+// the coupling the claimable-liability denominator exists to remove.
 func (k Keeper) DrawRedemptionBuffer(
 	ctx context.Context,
 	redeemedStable sdk.Coin,
 	noahOutput math.Int,
 	quoteRates oracletypes.RateSet,
-) (types.BufferDraw, error) {
+) (math.Int, error) {
 	if err := redeemedStable.Validate(); err != nil {
-		return types.BufferDraw{}, fmt.Errorf("invalid redeemed stable coin: %w", err)
+		return math.Int{}, fmt.Errorf("invalid redeemed stable coin: %w", err)
 	}
 	if !redeemedStable.IsPositive() {
-		return types.BufferDraw{}, fmt.Errorf("redeemed stable coin must be positive: %s", redeemedStable)
+		return math.Int{}, fmt.Errorf("redeemed stable coin must be positive: %s", redeemedStable)
 	}
 	if noahOutput.IsNil() || !noahOutput.IsPositive() {
-		return types.BufferDraw{}, fmt.Errorf("NOAH output must be set and positive")
+		return math.Int{}, fmt.Errorf("NOAH output must be set and positive")
 	}
 
 	convertedRedemption, err := quoteRates.Convert(sdk.NewDecCoinFromCoin(redeemedStable), chain.NoahBaseDenom)
 	if err != nil {
-		return types.BufferDraw{}, fmt.Errorf("valuing redeemed stable coin: %w", err)
+		return math.Int{}, fmt.Errorf("valuing redeemed stable coin: %w", err)
 	}
 	redeemedNoah := convertedRedemption.Amount
 	noahOutputInt := math.LegacyNewDecFromInt(noahOutput)
 	if noahOutputInt.GT(redeemedNoah) {
-		return types.BufferDraw{}, fmt.Errorf(
+		return math.Int{}, fmt.Errorf(
 			"NOAH output %s exceeds redeemed liability %s",
 			noahOutput,
 			redeemedNoah,
@@ -185,53 +213,49 @@ func (k Keeper) DrawRedemptionBuffer(
 
 	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, quoteRates)
 	if err != nil {
-		return types.BufferDraw{}, err
+		return math.Int{}, err
 	}
-	draw := types.BufferDraw{
-		AggregateLiabilityNoah: liabilityNoah,
-		RedeemedLiabilityNoah:  redeemedNoah,
-		BufferPaid:             math.ZeroInt(),
-		ValuationComplete:      complete,
+	// The redeemed denomination is claimable by definition — it just quoted —
+	// so its full supply is in the aggregate and this bound holds for every
+	// redemption Market can produce. Failing it means the snapshot and the
+	// quote disagree about state, which no draw should paper over.
+	if redeemedNoah.GT(liabilityNoah) {
+		return math.Int{}, fmt.Errorf("redeemed liability %s exceeds claimable liability %s", redeemedNoah, liabilityNoah)
 	}
-	if complete {
-		if redeemedNoah.GT(liabilityNoah) {
-			return types.BufferDraw{}, fmt.Errorf("redeemed liability %s exceeds aggregate liability %s", redeemedNoah, liabilityNoah)
-		}
 
-		bufferBalance := k.balance(ctx, types.RedemptionBufferName)
-		bufferNoah := math.LegacyNewDecFromInt(bufferBalance)
-		coverage := math.LegacyOneDec()
-		if bufferNoah.LT(liabilityNoah) {
-			coverage, err = decimal.Quo(bufferNoah, liabilityNoah)
-			if err != nil {
-				return types.BufferDraw{}, fmt.Errorf("calculating Buffer coverage: %w", err)
-			}
-		}
-		coveredOutput, err := decimal.Mul(noahOutputInt, coverage)
+	bufferBalance := k.balance(ctx, types.RedemptionBufferName)
+	bufferNoah := math.LegacyNewDecFromInt(bufferBalance)
+	coverage := math.LegacyOneDec()
+	if bufferNoah.LT(liabilityNoah) {
+		coverage, err = decimal.Quo(bufferNoah, liabilityNoah)
 		if err != nil {
-			return types.BufferDraw{}, fmt.Errorf("calculating Buffer-funded output: %w", err)
+			return math.Int{}, fmt.Errorf("calculating Buffer coverage: %w", err)
 		}
-		draw.BufferPaid = coveredOutput.TruncateInt()
-		if draw.BufferPaid.IsPositive() {
-			if err := k.bankKeeper.SendCoinsFromModuleToModule(
-				ctx,
-				types.RedemptionBufferName,
-				markettypes.ModuleName,
-				sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, draw.BufferPaid)),
-			); err != nil {
-				return types.BufferDraw{}, fmt.Errorf("drawing redemption buffer: %w", err)
-			}
+	}
+	coveredOutput, err := decimal.Mul(noahOutputInt, coverage)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("calculating Buffer-funded output: %w", err)
+	}
+	bufferPaid := coveredOutput.TruncateInt()
+	if bufferPaid.IsPositive() {
+		if err := k.bankKeeper.SendCoinsFromModuleToModule(
+			ctx,
+			types.RedemptionBufferName,
+			markettypes.ModuleName,
+			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, bufferPaid)),
+		); err != nil {
+			return math.Int{}, fmt.Errorf("drawing redemption buffer: %w", err)
 		}
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventRedemptionBufferDrawn{
 		Denom:                      chain.NoahBaseDenom,
-		Payment:                    draw.BufferPaid,
-		AggregateValuationComplete: draw.ValuationComplete,
+		Payment:                    bufferPaid,
+		AggregateValuationComplete: complete,
 	}); err != nil {
-		return types.BufferDraw{}, fmt.Errorf("emitting Treasury redemption buffer event: %w", err)
+		return math.Int{}, fmt.Errorf("emitting Treasury redemption buffer event: %w", err)
 	}
-	return draw, nil
+	return bufferPaid, nil
 }
 
 func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.LegacyDec) (fundStatus, error) {
