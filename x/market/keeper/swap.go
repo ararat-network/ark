@@ -399,6 +399,16 @@ func marketRateError(err error) error {
 
 // requireConvertible enforces the lifecycle gate on both legs of a conversion.
 //
+// This gate, not the absence of a rate, is the whole of suspension's
+// containment here: a suspended feed keeps running and its stored rate stays
+// fresh, so the Oracle would price a suspended denomination on request. Quotes
+// therefore read raw rates rather than registry pricing verdicts, which would
+// hand back a settlement-backed rate for exactly the denominations this refuses
+// — conversion asks what the market says, settlement asks what governance
+// committed, and keeping the swap path unable to see plan rates is what keeps
+// the two from merging. The status check must stay mandatory and ahead of
+// every rate read.
+//
 // The asymmetry is the point: an offer may be ISSUANCE_HALTED because halting
 // issuance is meant to preserve every exit — holders keep converting out — while
 // an ask must be ACTIVE because producing more of a denomination governance has
