@@ -19,7 +19,6 @@ import (
 	chain "ark/pkg/chain"
 	"ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
-	treasurytypes "ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestMsgSwap() {
@@ -274,7 +273,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 					sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 					math.NewInt(80),
 					rates,
-				).Return(treasurytypes.BufferDraw{BufferPaid: math.NewInt(20)}, nil)
+				).Return(math.NewInt(20), nil)
 			},
 		},
 		{
@@ -290,15 +289,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 					sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 					sdk.NewInt64Coin(chain.USDBaseDenom, 80),
 					rates,
-				).Return(treasurytypes.ExpansionAllocation{
-					EligiblePrincipalNoah:   math.NewInt(80),
-					RedemptionBufferCredit:  math.ZeroInt(),
-					StrategicReserveCredit:  math.ZeroInt(),
-					InsuranceCredit:         math.ZeroInt(),
-					SpreadAndDustBurn:       math.NewInt(20),
-					OverflowBurn:            math.NewInt(80),
-					TargetValuationComplete: true,
-				}, nil)
+				).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), nil)
 			},
 		},
 	}
@@ -490,7 +481,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 						sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 						sdk.NewInt64Coin(chain.USDBaseDenom, 80),
 						nativeRates,
-					).Return(treasurytypes.ExpansionAllocation{}, injectedErr),
+					).Return(sdk.Coin{}, injectedErr),
 				)
 			},
 		},
@@ -514,7 +505,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 						sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 						math.NewInt(80),
 						nativeRates,
-					).Return(treasurytypes.BufferDraw{}, injectedErr),
+					).Return(math.Int{}, injectedErr),
 				)
 			},
 		},

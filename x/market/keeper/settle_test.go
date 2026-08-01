@@ -11,7 +11,6 @@ import (
 	assettypes "ark/x/asset/types"
 	"ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
-	treasurytypes "ark/x/treasury/types"
 )
 
 // coinMatcher compares coins by denomination and amount. gomock's default
@@ -100,7 +99,7 @@ func (s *KeeperTestSuite) TestSettle() {
 				).Return(nil),
 				s.treasuryKeeper.EXPECT().DrawRedemptionBuffer(
 					s.ctx, offerCoin, entitlement.Amount, planRates,
-				).Return(treasurytypes.BufferDraw{BufferPaid: tc.bufferPaid}, nil),
+				).Return(tc.bufferPaid, nil),
 				s.bankKeeper.EXPECT().BurnCoins(
 					s.ctx, types.ModuleName, sdk.NewCoins(offerCoin),
 				).Return(nil),

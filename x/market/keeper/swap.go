@@ -341,17 +341,17 @@ func (k Keeper) settleSwap(
 	burned := offerCoin
 	minted := quote.swapCoin
 	if offerCoin.Denom == chain.NoahBaseDenom {
-		allocation, err := k.treasuryKeeper.RouteExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
+		routedBurn, err := k.treasuryKeeper.RouteExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "routing expansion for offer %s and output %s", offerCoin, quote.swapCoin)
 		}
-		burned = sdk.NewCoin(chain.NoahBaseDenom, allocation.TotalBurn())
+		burned = routedBurn
 	} else if quote.swapCoin.Denom == chain.NoahBaseDenom {
-		draw, err := k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, quote.swapCoin.Amount, quote.rates)
+		bufferPaid, err := k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, quote.swapCoin.Amount, quote.rates)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, quote.swapCoin)
 		}
-		minted = sdk.NewCoin(chain.NoahBaseDenom, quote.swapCoin.Amount.Sub(draw.BufferPaid))
+		minted = sdk.NewCoin(chain.NoahBaseDenom, quote.swapCoin.Amount.Sub(bufferPaid))
 	}
 
 	if !burned.IsZero() {
