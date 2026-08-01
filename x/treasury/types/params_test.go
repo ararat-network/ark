@@ -29,6 +29,16 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "ClaimCancellationPeriodBlocks must be positive",
 		},
 		{
+			// Zero would divide by zero in the modular cadence check.
+			name:      "zero tax cap refresh period",
+			mutate:    func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = 0 },
+			expectErr: "TaxCapRefreshPeriodBlocks must be positive",
+		},
+		{
+			name:   "single-block tax cap refresh period is valid",
+			mutate: func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = 1 },
+		},
+		{
 			name:      "reference cap denom must be canonical micro denom",
 			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "USDR" },
 			expectErr: "ReferenceTaxCap denom is invalid",

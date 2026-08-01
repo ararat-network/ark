@@ -14,7 +14,6 @@ import (
 // NewGenesisState creates a Treasury genesis state.
 func NewGenesisState(
 	params Params,
-	monetaryPolicy MonetaryPolicy,
 	taxCaps []TaxCap,
 	claimsMandate ClaimsMandate,
 	claimsAllowanceUsed math.Int,
@@ -23,18 +22,21 @@ func NewGenesisState(
 	claims []Claim,
 	rewardFunding RewardFundingState,
 	monetaryMandate MonetaryMandate,
+	monetaryPolicy MonetaryPolicy,
+	taxCapRefreshPending bool,
 ) *GenesisState {
 	return &GenesisState{
-		Params:              params,
-		MonetaryPolicy:      monetaryPolicy,
-		TaxCaps:             append([]TaxCap(nil), taxCaps...),
-		ClaimsMandate:       claimsMandate,
-		ClaimsAllowanceUsed: claimsAllowanceUsed,
-		InsuranceReserved:   insuranceReserved,
-		NextClaimId:         nextClaimID,
-		Claims:              append([]Claim(nil), claims...),
-		RewardFunding:       rewardFunding,
-		MonetaryMandate:     monetaryMandate,
+		Params:               params,
+		TaxCaps:              append([]TaxCap(nil), taxCaps...),
+		ClaimsMandate:        claimsMandate,
+		ClaimsAllowanceUsed:  claimsAllowanceUsed,
+		InsuranceReserved:    insuranceReserved,
+		NextClaimId:          nextClaimID,
+		Claims:               append([]Claim(nil), claims...),
+		RewardFunding:        rewardFunding,
+		MonetaryMandate:      monetaryMandate,
+		MonetaryPolicy:       monetaryPolicy,
+		TaxCapRefreshPending: taxCapRefreshPending,
 	}
 }
 
@@ -42,7 +44,6 @@ func NewGenesisState(
 func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
-		DefaultMonetaryPolicy(),
 		[]TaxCap{},
 		DefaultClaimsMandate(),
 		math.ZeroInt(),
@@ -51,6 +52,8 @@ func DefaultGenesisState() *GenesisState {
 		[]Claim{},
 		DefaultRewardFundingState(),
 		DefaultMonetaryMandate(),
+		DefaultMonetaryPolicy(),
+		false,
 	)
 }
 
@@ -65,7 +68,7 @@ func (gs GenesisState) Validate() error {
 	}
 
 	for i, taxCap := range gs.TaxCaps {
-		if err := chain.ValidateNativeBaseDenom(taxCap.Denom); err != nil {
+		if err := chain.ValidatePricedDenom(taxCap.Denom); err != nil {
 			return fmt.Errorf("tax cap denom %q is invalid: %w", taxCap.Denom, err)
 		}
 		if taxCap.TaxCap.IsNil() {
@@ -74,12 +77,12 @@ func (gs GenesisState) Validate() error {
 		if taxCap.TaxCap.IsNegative() {
 			return fmt.Errorf("tax cap for %s must be zero or positive", taxCap.Denom)
 		}
-		if gs.Params.ReferenceTaxCap.IsZero() && !taxCap.TaxCap.IsZero() {
-			return fmt.Errorf("tax cap for %s must be zero when the reference tax cap is zero", taxCap.Denom)
-		}
-		if gs.Params.ReferenceTaxCap.IsPositive() && taxCap.TaxCap.IsZero() {
-			return fmt.Errorf("tax cap for %s must be positive when the reference tax cap is positive", taxCap.Denom)
-		}
+		// A cap is deliberately not compared against the reference tax cap.
+		// Only caps derived under the current reference agree with it: caps
+		// kept after a denomination leaves priced-live are anchored to
+		// whatever the reference was when they were last derived, so a
+		// later policy move — including one to or from the zero uncapped
+		// sentinel — leaves them disagreeing by design.
 		if i > 0 && taxCap.Denom <= gs.TaxCaps[i-1].Denom {
 			return fmt.Errorf("genesis tax caps must be sorted by unique denom")
 		}
@@ -93,9 +96,6 @@ func (gs GenesisState) Validate() error {
 	}
 	if err := gs.MonetaryMandate.Validate(); err != nil {
 		return err
-	}
-	if gs.MonetaryMandate.Committee != "" && gs.MonetaryMandate.Committee == gs.ClaimsMandate.Committee {
-		return fmt.Errorf("monetary-policy committee must be distinct from Claims committee")
 	}
 
 	return nil

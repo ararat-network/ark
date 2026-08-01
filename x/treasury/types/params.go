@@ -12,12 +12,10 @@ import (
 )
 
 const (
-	DefaultReferenceTaxCapDenom = chain.SDRBaseDenom
-	DefaultRewardFundingWindow  = chain.BlocksPerWeek
-	// DefaultClaimCancellationPeriodBlocks sizes the claim veto window to a
-	// governance voting cycle: governance is the only canceller of its own
-	// claims, and a cancellation proposal needs a voting period to land.
+	DefaultReferenceTaxCapDenom          = chain.SDRBaseDenom
+	DefaultRewardFundingWindow           = chain.BlocksPerWeek
 	DefaultClaimCancellationPeriodBlocks = chain.BlocksPerWeek
+	DefaultTaxCapRefreshPeriodBlocks     = chain.BlocksPerWeek
 )
 
 // DefaultParams returns the safe launch defaults for Treasury.
@@ -26,16 +24,18 @@ func DefaultParams() Params {
 		ReferenceTaxCap:               sdk.NewCoin(DefaultReferenceTaxCapDenom, math.ZeroInt()),
 		RewardFundingWindow:           DefaultRewardFundingWindow,
 		ClaimCancellationPeriodBlocks: DefaultClaimCancellationPeriodBlocks,
+		TaxCapRefreshPeriodBlocks:     DefaultTaxCapRefreshPeriodBlocks,
 	}
 }
 
 // Validate performs context-free validation of Treasury parameters.
-// Oracle membership of ReferenceTaxCap.Denom is validated by the keeper.
+// ReferenceTaxCap.Denom's identity with the protocol reference is validated
+// by the keeper.
 func (p Params) Validate() error {
 	if err := p.ReferenceTaxCap.Validate(); err != nil {
 		return fmt.Errorf("treasury parameter ReferenceTaxCap is invalid: %w", err)
 	}
-	if err := chain.ValidateNativeBaseDenom(p.ReferenceTaxCap.Denom); err != nil {
+	if err := chain.ValidatePricedDenom(p.ReferenceTaxCap.Denom); err != nil {
 		return fmt.Errorf("treasury parameter ReferenceTaxCap denom is invalid: %w", err)
 	}
 	if p.RewardFundingWindow == 0 {
@@ -43,6 +43,9 @@ func (p Params) Validate() error {
 	}
 	if p.ClaimCancellationPeriodBlocks == 0 {
 		return errors.New("treasury parameter ClaimCancellationPeriodBlocks must be positive")
+	}
+	if p.TaxCapRefreshPeriodBlocks == 0 {
+		return errors.New("treasury parameter TaxCapRefreshPeriodBlocks must be positive")
 	}
 	return nil
 }

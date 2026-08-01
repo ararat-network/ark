@@ -14,16 +14,17 @@ const (
 )
 
 var (
-	ParamsKey              = collections.NewPrefix(0)
-	TaxCapsKey             = collections.NewPrefix(1)
-	ClaimsMandateKey       = collections.NewPrefix(2)
-	InsuranceReservedKey   = collections.NewPrefix(3)
-	ClaimsKey              = collections.NewPrefix(4)
-	RewardFundingKey       = collections.NewPrefix(5)
-	MonetaryMandateKey     = collections.NewPrefix(6)
-	MonetaryPolicyKey      = collections.NewPrefix(7)
-	ClaimsAllowanceUsedKey = collections.NewPrefix(8)
-	NextClaimIDKey         = collections.NewPrefix(9)
+	ParamsKey               = collections.NewPrefix(0)
+	TaxCapsKey              = collections.NewPrefix(1)
+	ClaimsMandateKey        = collections.NewPrefix(2)
+	ClaimsAllowanceUsedKey  = collections.NewPrefix(3)
+	InsuranceReservedKey    = collections.NewPrefix(4)
+	NextClaimIDKey          = collections.NewPrefix(5)
+	ClaimsKey               = collections.NewPrefix(6)
+	RewardFundingKey        = collections.NewPrefix(7)
+	MonetaryMandateKey      = collections.NewPrefix(8)
+	MonetaryPolicyKey       = collections.NewPrefix(9)
+	TaxCapRefreshPendingKey = collections.NewPrefix(10)
 )
 
 // FundAccountNames returns all launch Treasury custody module accounts.

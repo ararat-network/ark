@@ -3,9 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"cosmossdk.io/math"
-
 	"github.com/stretchr/testify/require"
+
+	"cosmossdk.io/math"
 
 	"ark/pkg/chain"
 	"ark/x/treasury/types"
@@ -32,7 +32,6 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 	taxCaps := []types.TaxCap{{Denom: chain.USDBaseDenom, TaxCap: math.OneInt()}}
 	genesis := types.NewGenesisState(
 		types.DefaultParams(),
-		types.DefaultMonetaryPolicy(),
 		taxCaps,
 		mandate,
 		math.NewInt(100),
@@ -41,6 +40,8 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 		claims,
 		types.DefaultRewardFundingState(),
 		types.DefaultMonetaryMandate(),
+		types.DefaultMonetaryPolicy(),
+		false,
 	)
 	taxCaps[0].Denom = "mutated"
 	claims[0].ClaimId = 99
@@ -61,13 +62,15 @@ func TestGenesisTaxCapValidation(t *testing.T) {
 				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()}}
 			},
 		},
+		// A cap that disagrees with the reference is the expected shape of a
+		// kept cap, not a corrupt one: it was derived under whatever the
+		// reference was at the time, and nothing re-derives it afterwards.
 		{
-			name: "positive reference cap rejects uncapped sentinel",
+			name: "positive reference cap permits uncapped sentinel",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
 				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()}}
 			},
-			expectErr: "must be positive when the reference tax cap is positive",
 		},
 		{
 			name: "zero reference cap permits uncapped sentinel",
@@ -77,12 +80,11 @@ func TestGenesisTaxCapValidation(t *testing.T) {
 			},
 		},
 		{
-			name: "zero reference cap rejects positive derived cap",
+			name: "zero reference cap permits positive kept cap",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
 				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()}}
 			},
-			expectErr: "must be zero when the reference tax cap is zero",
 		},
 		{
 			name: "sorted tax caps are valid",
@@ -135,7 +137,6 @@ func TestGenesisClaimsValidation(t *testing.T) {
 		claim := validPendingClaim()
 		return types.NewGenesisState(
 			types.DefaultParams(),
-			types.DefaultMonetaryPolicy(),
 			[]types.TaxCap{},
 			validClaimsMandate(),
 			claim.Amount.Amount,
@@ -144,6 +145,8 @@ func TestGenesisClaimsValidation(t *testing.T) {
 			[]types.Claim{claim},
 			types.DefaultRewardFundingState(),
 			types.DefaultMonetaryMandate(),
+			types.DefaultMonetaryPolicy(),
+			false,
 		)
 	}
 
@@ -261,14 +264,6 @@ func TestGenesisClaimsValidation(t *testing.T) {
 				genesis.Claims[0].Recipient = "invalid"
 			},
 			expectErr: "recipient is invalid",
-		},
-		{
-			name: "same Claims and monetary-policy committee",
-			mutate: func(genesis *types.GenesisState) {
-				genesis.MonetaryMandate = validMonetaryMandate()
-				genesis.MonetaryMandate.Committee = genesis.ClaimsMandate.Committee
-			},
-			expectErr: "monetary-policy committee must be distinct from Claims committee",
 		},
 		{
 			name:      "claim from future mandate term",

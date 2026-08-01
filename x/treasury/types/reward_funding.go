@@ -13,7 +13,6 @@ func DefaultRewardFundingState() RewardFundingState {
 		ValidatorTarget:   math.ZeroInt(),
 		OracleTarget:      math.ZeroInt(),
 		ValidatorFeeValue: math.ZeroInt(),
-		ValuationComplete: true,
 	}
 }
 
@@ -72,8 +71,7 @@ func (gs GenesisState) validateRewardFunding() error {
 	if gs.RewardFunding.BlocksRemaining == 0 &&
 		(!gs.RewardFunding.ValidatorTarget.IsZero() ||
 			!gs.RewardFunding.OracleTarget.IsZero() ||
-			!gs.RewardFunding.ValidatorFeeValue.IsZero() ||
-			!gs.RewardFunding.ValuationComplete) {
+			!gs.RewardFunding.ValidatorFeeValue.IsZero()) {
 		return errors.New("empty reward funding window must use the default state")
 	}
 	if err := ValidateRewardTargetCapacity(gs.Params, gs.RewardFunding, gs.MonetaryPolicy); err != nil {

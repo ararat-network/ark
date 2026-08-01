@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -25,9 +26,32 @@ type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
 
-// OracleKeeper defines the immutable pricing and native-stable registry
-// functionality required by Treasury.
+// OracleKeeper defines the pricing functionality required by Treasury: rates,
+// and the protocol reference its tax cap is denominated in. Membership
+// questions belong to the asset registry, and so does valuation — every path
+// that prices registry supply asks the registry for verdicts instead.
+//
+// What remains is cap derivation, which is deliberately feed-based rather than
+// verdict-based: the reference unit need not be a registered member, and a cap
+// set is one coherent artifact restating the same parity per denom. It needs
+// every requested rate or none, and it reports which rate failed and why on
+// its skip event, so it takes the all-or-nothing read.
 type OracleKeeper interface {
 	GetRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
-	GetTobinTaxes(ctx context.Context) ([]oracletypes.TobinTax, error)
+	GetReferenceDenom(ctx context.Context) (string, error)
+}
+
+// AssetKeeper defines the lifecycle authority Treasury derives its liability
+// partition and cap membership from. Treasury stores rate policy and fund
+// state only — never a membership set. The tax base is deliberately not read
+// from here: it is the cap set, which outlives membership.
+//
+// Pricing verdicts are asked of the registry rather than assembled here.
+// Whether a denomination is worth anything, and on whose authority, is
+// lifecycle state; Treasury owns only what to do about the answer — defer,
+// disclose, zero, or route.
+type AssetKeeper interface {
+	Pricings(ctx context.Context, overlay oracletypes.RateSet, denoms ...string) (assettypes.DenomPricings, error)
+	ListAssets(ctx context.Context) ([]assettypes.Asset, error)
+	PricedLiveDenoms(ctx context.Context) ([]string, error)
 }

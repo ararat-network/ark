@@ -174,7 +174,7 @@ func TestGenesisRewardFundingValidation(t *testing.T) {
 		{
 			name: "noncanonical empty window",
 			mutate: func(funding *types.RewardFundingState) {
-				funding.ValuationComplete = false
+				funding.ValidatorFeeValue = math.OneInt()
 			},
 			expectErr: "empty reward funding window must use the default state",
 		},
