@@ -18,15 +18,13 @@ import (
 )
 
 var (
-	md_Params                      protoreflect.MessageDescriptor
-	fd_Params_min_stability_spread protoreflect.FieldDescriptor
-	fd_Params_default_tobin_tax    protoreflect.FieldDescriptor
+	md_Params                   protoreflect.MessageDescriptor
+	fd_Params_default_tobin_tax protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_market_proto_init()
 	md_Params = File_ark_market_v1_market_proto.Messages().ByName("Params")
-	fd_Params_min_stability_spread = md_Params.Fields().ByName("min_stability_spread")
 	fd_Params_default_tobin_tax = md_Params.Fields().ByName("default_tobin_tax")
 }
 
@@ -95,12 +93,6 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.MinStabilitySpread != "" {
-		value := protoreflect.ValueOfString(x.MinStabilitySpread)
-		if !f(fd_Params_min_stability_spread, value) {
-			return
-		}
-	}
 	if x.DefaultTobinTax != "" {
 		value := protoreflect.ValueOfString(x.DefaultTobinTax)
 		if !f(fd_Params_default_tobin_tax, value) {
@@ -122,8 +114,6 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.min_stability_spread":
-		return x.MinStabilitySpread != ""
 	case "ark.market.v1.Params.default_tobin_tax":
 		return x.DefaultTobinTax != ""
 	default:
@@ -142,8 +132,6 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.min_stability_spread":
-		x.MinStabilitySpread = ""
 	case "ark.market.v1.Params.default_tobin_tax":
 		x.DefaultTobinTax = ""
 	default:
@@ -162,9 +150,6 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.Params.min_stability_spread":
-		value := x.MinStabilitySpread
-		return protoreflect.ValueOfString(value)
 	case "ark.market.v1.Params.default_tobin_tax":
 		value := x.DefaultTobinTax
 		return protoreflect.ValueOfString(value)
@@ -188,8 +173,6 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.min_stability_spread":
-		x.MinStabilitySpread = value.Interface().(string)
 	case "ark.market.v1.Params.default_tobin_tax":
 		x.DefaultTobinTax = value.Interface().(string)
 	default:
@@ -212,8 +195,6 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.min_stability_spread":
-		panic(fmt.Errorf("field min_stability_spread of message ark.market.v1.Params is not mutable"))
 	case "ark.market.v1.Params.default_tobin_tax":
 		panic(fmt.Errorf("field default_tobin_tax of message ark.market.v1.Params is not mutable"))
 	default:
@@ -229,8 +210,6 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.Params.min_stability_spread":
-		return protoreflect.ValueOfString("")
 	case "ark.market.v1.Params.default_tobin_tax":
 		return protoreflect.ValueOfString("")
 	default:
@@ -302,10 +281,6 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.MinStabilitySpread)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		l = len(x.DefaultTobinTax)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
@@ -343,13 +318,6 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.DefaultTobinTax)
 			copy(dAtA[i:], x.DefaultTobinTax)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DefaultTobinTax)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.MinStabilitySpread) > 0 {
-			i -= len(x.MinStabilitySpread)
-			copy(dAtA[i:], x.MinStabilitySpread)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MinStabilitySpread)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -403,38 +371,6 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			}
 			switch fieldNum {
 			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinStabilitySpread", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.MinStabilitySpread = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DefaultTobinTax", wireType)
 				}
@@ -505,6 +441,7 @@ var (
 	md_ConversionPolicy                      protoreflect.MessageDescriptor
 	fd_ConversionPolicy_base_pool            protoreflect.FieldDescriptor
 	fd_ConversionPolicy_pool_recovery_period protoreflect.FieldDescriptor
+	fd_ConversionPolicy_min_stability_spread protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -512,6 +449,7 @@ func init() {
 	md_ConversionPolicy = File_ark_market_v1_market_proto.Messages().ByName("ConversionPolicy")
 	fd_ConversionPolicy_base_pool = md_ConversionPolicy.Fields().ByName("base_pool")
 	fd_ConversionPolicy_pool_recovery_period = md_ConversionPolicy.Fields().ByName("pool_recovery_period")
+	fd_ConversionPolicy_min_stability_spread = md_ConversionPolicy.Fields().ByName("min_stability_spread")
 }
 
 var _ protoreflect.Message = (*fastReflection_ConversionPolicy)(nil)
@@ -591,6 +529,12 @@ func (x *fastReflection_ConversionPolicy) Range(f func(protoreflect.FieldDescrip
 			return
 		}
 	}
+	if x.MinStabilitySpread != "" {
+		value := protoreflect.ValueOfString(x.MinStabilitySpread)
+		if !f(fd_ConversionPolicy_min_stability_spread, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -610,6 +554,8 @@ func (x *fastReflection_ConversionPolicy) Has(fd protoreflect.FieldDescriptor) b
 		return x.BasePool != nil
 	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
 		return x.PoolRecoveryPeriod != uint64(0)
+	case "ark.market.v1.ConversionPolicy.min_stability_spread":
+		return x.MinStabilitySpread != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
@@ -630,6 +576,8 @@ func (x *fastReflection_ConversionPolicy) Clear(fd protoreflect.FieldDescriptor)
 		x.BasePool = nil
 	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
 		x.PoolRecoveryPeriod = uint64(0)
+	case "ark.market.v1.ConversionPolicy.min_stability_spread":
+		x.MinStabilitySpread = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
@@ -652,6 +600,9 @@ func (x *fastReflection_ConversionPolicy) Get(descriptor protoreflect.FieldDescr
 	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
 		value := x.PoolRecoveryPeriod
 		return protoreflect.ValueOfUint64(value)
+	case "ark.market.v1.ConversionPolicy.min_stability_spread":
+		value := x.MinStabilitySpread
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
@@ -676,6 +627,8 @@ func (x *fastReflection_ConversionPolicy) Set(fd protoreflect.FieldDescriptor, v
 		x.BasePool = value.Message().Interface().(*v1beta1.DecCoin)
 	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
 		x.PoolRecoveryPeriod = value.Uint()
+	case "ark.market.v1.ConversionPolicy.min_stability_spread":
+		x.MinStabilitySpread = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
@@ -703,6 +656,8 @@ func (x *fastReflection_ConversionPolicy) Mutable(fd protoreflect.FieldDescripto
 		return protoreflect.ValueOfMessage(x.BasePool.ProtoReflect())
 	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
 		panic(fmt.Errorf("field pool_recovery_period of message ark.market.v1.ConversionPolicy is not mutable"))
+	case "ark.market.v1.ConversionPolicy.min_stability_spread":
+		panic(fmt.Errorf("field min_stability_spread of message ark.market.v1.ConversionPolicy is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
@@ -721,6 +676,8 @@ func (x *fastReflection_ConversionPolicy) NewField(fd protoreflect.FieldDescript
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.market.v1.ConversionPolicy.pool_recovery_period":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.market.v1.ConversionPolicy.min_stability_spread":
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.ConversionPolicy"))
@@ -797,6 +754,10 @@ func (x *fastReflection_ConversionPolicy) ProtoMethods() *protoiface.Methods {
 		if x.PoolRecoveryPeriod != 0 {
 			n += 1 + runtime.Sov(uint64(x.PoolRecoveryPeriod))
 		}
+		l = len(x.MinStabilitySpread)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -825,6 +786,13 @@ func (x *fastReflection_ConversionPolicy) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.MinStabilitySpread) > 0 {
+			i -= len(x.MinStabilitySpread)
+			copy(dAtA[i:], x.MinStabilitySpread)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MinStabilitySpread)))
+			i--
+			dAtA[i] = 0x1a
 		}
 		if x.PoolRecoveryPeriod != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.PoolRecoveryPeriod))
@@ -949,6 +917,38 @@ func (x *fastReflection_ConversionPolicy) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinStabilitySpread", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MinStabilitySpread = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -2140,7 +2140,7 @@ const (
 
 // Params defines the parameters for the market module.
 //
-// The conversion-capacity dials moved to ConversionPolicy when they became
+// The conversion dials moved to ConversionPolicy when they became
 // committee-delegable: params are replaced whole by MsgUpdateParams, so leaving
 // them here would let a governance proposal drafted from a stale copy silently
 // revert a committee's emergency resize.
@@ -2149,12 +2149,11 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MinStabilitySpread string `protobuf:"bytes,1,opt,name=min_stability_spread,json=minStabilitySpread,proto3" json:"min_stability_spread,omitempty"`
 	// default_tobin_tax is the spread applied to conversion between two
 	// denominations for every asset without an override. Rates are governance
 	// judgment, never derived, so a newly activated asset converts at this
 	// default from its first live block.
-	DefaultTobinTax string `protobuf:"bytes,2,opt,name=default_tobin_tax,json=defaultTobinTax,proto3" json:"default_tobin_tax,omitempty"`
+	DefaultTobinTax string `protobuf:"bytes,1,opt,name=default_tobin_tax,json=defaultTobinTax,proto3" json:"default_tobin_tax,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -2177,13 +2176,6 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_market_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Params) GetMinStabilitySpread() string {
-	if x != nil {
-		return x.MinStabilitySpread
-	}
-	return ""
-}
-
 func (x *Params) GetDefaultTobinTax() string {
 	if x != nil {
 		return x.DefaultTobinTax
@@ -2191,10 +2183,20 @@ func (x *Params) GetDefaultTobinTax() string {
 	return ""
 }
 
-// ConversionPolicy is the pair of conversion-capacity dials delegated to the
-// conversion committee: together they set how much conversion the protocol
-// absorbs per recovery period before the spread widens, which is the dial a
-// depeg response reaches for.
+// ConversionPolicy is the complete set of NOAH-pair conversion dials delegated
+// to the conversion committee. Together they define one pricing curve: depth
+// and the recovery period set how much conversion the protocol absorbs before
+// the spread widens, and the floor sets what every conversion pays no matter
+// how small. This is the policy a depeg response reaches for.
+//
+// The floor lives here rather than in Params because depth-shrink is not a
+// substitute for it. The constant-product spread scales with the offer against
+// the pool, so it vanishes as the offer does: below the floor every conversion
+// pays exactly the floor, at any depth. A committee that can only tighten depth
+// can raise what a sized conversion costs while a stream of small ones keeps
+// clearing at the launch floor — which is the shape of stale-rate arbitrage.
+// Delegating both closes that gap and lets one message shrink depth and lift
+// the floor together, instead of leaving a window between two.
 //
 // The pool is denominated in the protocol reference. Its unit moves only when
 // governance re-points that reference, through RebaseBasePool, never through a
@@ -2209,6 +2211,10 @@ type ConversionPolicy struct {
 	// pool_recovery_period is the number of blocks over which the pool delta
 	// decays back to the base depth.
 	PoolRecoveryPeriod uint64 `protobuf:"varint,2,opt,name=pool_recovery_period,json=poolRecoveryPeriod,proto3" json:"pool_recovery_period,omitempty"`
+	// min_stability_spread is the floor under the constant-product spread on
+	// every NOAH pair. It is dimensionless, so unlike depth it means the same
+	// thing before and after a reference re-point.
+	MinStabilitySpread string `protobuf:"bytes,3,opt,name=min_stability_spread,json=minStabilitySpread,proto3" json:"min_stability_spread,omitempty"`
 }
 
 func (x *ConversionPolicy) Reset() {
@@ -2245,17 +2251,38 @@ func (x *ConversionPolicy) GetPoolRecoveryPeriod() uint64 {
 	return 0
 }
 
+func (x *ConversionPolicy) GetMinStabilitySpread() string {
+	if x != nil {
+		return x.MinStabilitySpread
+	}
+	return ""
+}
+
 // ConversionMandate stores one governance-created, bounded committee
 // appointment over conversion policy: a corridor over ConversionPolicy and a
 // cap on Tobin raises. An empty committee identifies a disabled mandate; term
 // still increases on replacement so previously prepared committee transactions
 // cannot become valid again.
 //
+// The corridor bounds every field of ConversionPolicy, including the spread
+// floor, and both edges are inclusive. Direction is governance's to choose
+// rather than the type's: appointing a minimum equal to the live floor
+// delegates a raise-only power, and equal bounds pin a field outright. That is
+// strictly more expressive than a hardcoded ratchet, and it is available
+// because the corridor already delegates friction in both directions — raising
+// depth lowers the spread a sized conversion pays just as lowering the floor
+// does.
+//
 // The bounds are denominated in the pool unit that was live when governance
 // appointed the committee. A reference re-pointing leaves them untouched, which
 // strands the mandate until governance re-appoints it: converting a delegated
 // corridor at one instant's rate would produce bounds no proposal ever
-// contained, so the appointment fails closed instead.
+// contained, so the appointment fails closed instead. The floor strands with
+// the rest even though it carries no unit, and that is deliberate: what floor
+// is prudent depends on how deep the pool is, so a re-denomination is exactly
+// when both halves of the curve want re-reviewing together. Tobin power is the
+// deliberate exception, because a per-denomination buffer has nothing to do
+// with the pool's unit.
 type ConversionMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2265,12 +2292,27 @@ type ConversionMandate struct {
 	Envelope      *v1.Envelope      `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 	MinimumPolicy *ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
 	MaximumPolicy *ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
-	// max_tobin_tax caps committee-raised per-denomination Tobin overrides. The
-	// committee only ever raises — the floor of any raise is the denomination's
-	// current effective rate — so the power delegated here widens the buffer
-	// against oracle-staleness arbitrage and never narrows it. Lowering or
-	// removing an override stays governance-only. Zero delegates no Tobin power,
-	// which keeps a capacity-only committee expressible.
+	// max_tobin_tax is the upper edge of the band the committee may set any
+	// registered denomination's Tobin rate within. The lower edge is
+	// Params.default_tobin_tax, so governance owns both ends exactly as it owns
+	// both ends of the policy corridor, and the committee moves freely between
+	// them — including back down, which is what lets it retire its own emergency
+	// rate without waiting for a proposal.
+	//
+	// The band's floor is the default rather than the denomination's current
+	// rate, which means the committee can lower a sparse override governance set
+	// above the default. That is deliberate: the two writers share one override
+	// map and the chain cannot tell whose rate an entry is, so a floor at the
+	// current rate does not protect governance's overrides — it just makes every
+	// committee action permanent until a proposal lands. Naming the default
+	// instead keeps the committee inside a band governance chose, and leaves it
+	// able to undo itself. Returning a denomination to tracking the default,
+	// rather than pinning it at that value, stays governance-only through
+	// RemoveTobinTaxOverride.
+	//
+	// Zero delegates no Tobin power, which keeps a capacity-only committee
+	// expressible and is the appointment to reach for when this band is not
+	// wanted at all.
 	MaxTobinTax string `protobuf:"bytes,4,opt,name=max_tobin_tax,json=maxTobinTax,proto3" json:"max_tobin_tax,omitempty"`
 }
 
@@ -2383,32 +2425,32 @@ var file_ark_market_v1_market_proto_rawDesc = []byte{
 	0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2f, 0x76, 0x31, 0x2f,
-	0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xf4,
-	0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x68, 0x0a, 0x14, 0x6d, 0x69, 0x6e,
-	0x5f, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x73, 0x70, 0x72, 0x65, 0x61,
-	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
-	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
-	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x12, 0x6d, 0x69, 0x6e, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x53, 0x70, 0x72,
-	0x65, 0x61, 0x64, 0x12, 0x62, 0x0a, 0x11, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x5f, 0x74,
-	0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
-	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
-	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
-	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x54,
-	0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x1c, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0,
-	0x2a, 0x13, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x50,
-	0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x91, 0x01, 0x0a, 0x10, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x44, 0x0a, 0x09, 0x62, 0x61,
-	0x73, 0x65, 0x5f, 0x70, 0x6f, 0x6f, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65,
-	0x74, 0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f,
-	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x62, 0x61, 0x73, 0x65, 0x50, 0x6f, 0x6f, 0x6c,
-	0x12, 0x37, 0x0a, 0x14, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72,
-	0x79, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x70, 0x6f, 0x6f, 0x6c, 0x52, 0x65, 0x63, 0x6f, 0x76,
-	0x65, 0x72, 0x79, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x22, 0xda, 0x02, 0x0a, 0x11, 0x43, 0x6f,
+	0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8a,
+	0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x62, 0x0a, 0x11, 0x64, 0x65, 0x66,
+	0x61, 0x75, 0x6c, 0x74, 0x5f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e,
+	0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x64, 0x65,
+	0x66, 0x61, 0x75, 0x6c, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x1c, 0xe8,
+	0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0xfb, 0x01, 0x0a, 0x10,
+	0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79,
+	0x12, 0x44, 0x0a, 0x09, 0x62, 0x61, 0x73, 0x65, 0x5f, 0x70, 0x6f, 0x6f, 0x6c, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69,
+	0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x62, 0x61,
+	0x73, 0x65, 0x50, 0x6f, 0x6f, 0x6c, 0x12, 0x37, 0x0a, 0x14, 0x70, 0x6f, 0x6f, 0x6c, 0x5f, 0x72,
+	0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x70, 0x6f, 0x6f,
+	0x6c, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x12,
+	0x68, 0x0a, 0x14, 0x6d, 0x69, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79,
+	0x5f, 0x73, 0x70, 0x72, 0x65, 0x61, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8,
+	0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
+	0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44,
+	0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x6d, 0x69, 0x6e, 0x53, 0x74, 0x61, 0x62, 0x69, 0x6c,
+	0x69, 0x74, 0x79, 0x53, 0x70, 0x72, 0x65, 0x61, 0x64, 0x22, 0xda, 0x02, 0x0a, 0x11, 0x43, 0x6f,
 	0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12,
 	0x43, 0x0a, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e,

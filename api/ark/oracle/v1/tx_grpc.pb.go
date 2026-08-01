@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_UpdateParams_FullMethodName = "/ark.oracle.v1.Msg/UpdateParams"
-	Msg_AddFeed_FullMethodName      = "/ark.oracle.v1.Msg/AddFeed"
-	Msg_RemoveFeed_FullMethodName   = "/ark.oracle.v1.Msg/RemoveFeed"
+	Msg_UpdateParams_FullMethodName      = "/ark.oracle.v1.Msg/UpdateParams"
+	Msg_AddFeed_FullMethodName           = "/ark.oracle.v1.Msg/AddFeed"
+	Msg_RemoveFeed_FullMethodName        = "/ark.oracle.v1.Msg/RemoveFeed"
+	Msg_SetReferenceDenom_FullMethodName = "/ark.oracle.v1.Msg/SetReferenceDenom"
 )
 
 // MsgClient is the client API for Msg service.
@@ -38,6 +39,9 @@ type MsgClient interface {
 	// RemoveFeed schedules the removal of one price feed from the active feed
 	// set.
 	RemoveFeed(ctx context.Context, in *MsgRemoveFeed, opts ...grpc.CallOption) (*MsgRemoveFeedResponse, error)
+	// SetReferenceDenom re-points the shared protocol reference denomination,
+	// rebasing consumer reference-unit state when it changes.
+	SetReferenceDenom(ctx context.Context, in *MsgSetReferenceDenom, opts ...grpc.CallOption) (*MsgSetReferenceDenomResponse, error)
 }
 
 type msgClient struct {
@@ -78,6 +82,16 @@ func (c *msgClient) RemoveFeed(ctx context.Context, in *MsgRemoveFeed, opts ...g
 	return out, nil
 }
 
+func (c *msgClient) SetReferenceDenom(ctx context.Context, in *MsgSetReferenceDenom, opts ...grpc.CallOption) (*MsgSetReferenceDenomResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSetReferenceDenomResponse)
+	err := c.cc.Invoke(ctx, Msg_SetReferenceDenom_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
@@ -92,6 +106,9 @@ type MsgServer interface {
 	// RemoveFeed schedules the removal of one price feed from the active feed
 	// set.
 	RemoveFeed(context.Context, *MsgRemoveFeed) (*MsgRemoveFeedResponse, error)
+	// SetReferenceDenom re-points the shared protocol reference denomination,
+	// rebasing consumer reference-unit state when it changes.
+	SetReferenceDenom(context.Context, *MsgSetReferenceDenom) (*MsgSetReferenceDenomResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -110,6 +127,9 @@ func (UnimplementedMsgServer) AddFeed(context.Context, *MsgAddFeed) (*MsgAddFeed
 }
 func (UnimplementedMsgServer) RemoveFeed(context.Context, *MsgRemoveFeed) (*MsgRemoveFeedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveFeed not implemented")
+}
+func (UnimplementedMsgServer) SetReferenceDenom(context.Context, *MsgSetReferenceDenom) (*MsgSetReferenceDenomResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetReferenceDenom not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -186,6 +206,24 @@ func _Msg_RemoveFeed_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_SetReferenceDenom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetReferenceDenom)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetReferenceDenom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetReferenceDenom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetReferenceDenom(ctx, req.(*MsgSetReferenceDenom))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -204,6 +242,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveFeed",
 			Handler:    _Msg_RemoveFeed_Handler,
+		},
+		{
+			MethodName: "SetReferenceDenom",
+			Handler:    _Msg_SetReferenceDenom_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -8843,31 +8843,31 @@ func (x *fastReflection_MsgCommitteeUpdatePolicyResponse) ProtoMethods() *protoi
 }
 
 var (
-	md_MsgCommitteeRaiseTobinTax               protoreflect.MessageDescriptor
-	fd_MsgCommitteeRaiseTobinTax_committee     protoreflect.FieldDescriptor
-	fd_MsgCommitteeRaiseTobinTax_expected_term protoreflect.FieldDescriptor
-	fd_MsgCommitteeRaiseTobinTax_denom         protoreflect.FieldDescriptor
-	fd_MsgCommitteeRaiseTobinTax_tobin_tax     protoreflect.FieldDescriptor
+	md_MsgCommitteeSetTobinTax               protoreflect.MessageDescriptor
+	fd_MsgCommitteeSetTobinTax_committee     protoreflect.FieldDescriptor
+	fd_MsgCommitteeSetTobinTax_expected_term protoreflect.FieldDescriptor
+	fd_MsgCommitteeSetTobinTax_denom         protoreflect.FieldDescriptor
+	fd_MsgCommitteeSetTobinTax_tobin_tax     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_tx_proto_init()
-	md_MsgCommitteeRaiseTobinTax = File_ark_market_v1_tx_proto.Messages().ByName("MsgCommitteeRaiseTobinTax")
-	fd_MsgCommitteeRaiseTobinTax_committee = md_MsgCommitteeRaiseTobinTax.Fields().ByName("committee")
-	fd_MsgCommitteeRaiseTobinTax_expected_term = md_MsgCommitteeRaiseTobinTax.Fields().ByName("expected_term")
-	fd_MsgCommitteeRaiseTobinTax_denom = md_MsgCommitteeRaiseTobinTax.Fields().ByName("denom")
-	fd_MsgCommitteeRaiseTobinTax_tobin_tax = md_MsgCommitteeRaiseTobinTax.Fields().ByName("tobin_tax")
+	md_MsgCommitteeSetTobinTax = File_ark_market_v1_tx_proto.Messages().ByName("MsgCommitteeSetTobinTax")
+	fd_MsgCommitteeSetTobinTax_committee = md_MsgCommitteeSetTobinTax.Fields().ByName("committee")
+	fd_MsgCommitteeSetTobinTax_expected_term = md_MsgCommitteeSetTobinTax.Fields().ByName("expected_term")
+	fd_MsgCommitteeSetTobinTax_denom = md_MsgCommitteeSetTobinTax.Fields().ByName("denom")
+	fd_MsgCommitteeSetTobinTax_tobin_tax = md_MsgCommitteeSetTobinTax.Fields().ByName("tobin_tax")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgCommitteeRaiseTobinTax)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeSetTobinTax)(nil)
 
-type fastReflection_MsgCommitteeRaiseTobinTax MsgCommitteeRaiseTobinTax
+type fastReflection_MsgCommitteeSetTobinTax MsgCommitteeSetTobinTax
 
-func (x *MsgCommitteeRaiseTobinTax) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgCommitteeRaiseTobinTax)(x)
+func (x *MsgCommitteeSetTobinTax) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSetTobinTax)(x)
 }
 
-func (x *MsgCommitteeRaiseTobinTax) slowProtoReflect() protoreflect.Message {
+func (x *MsgCommitteeSetTobinTax) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_tx_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -8879,43 +8879,43 @@ func (x *MsgCommitteeRaiseTobinTax) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgCommitteeRaiseTobinTax_messageType fastReflection_MsgCommitteeRaiseTobinTax_messageType
-var _ protoreflect.MessageType = fastReflection_MsgCommitteeRaiseTobinTax_messageType{}
+var _fastReflection_MsgCommitteeSetTobinTax_messageType fastReflection_MsgCommitteeSetTobinTax_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeSetTobinTax_messageType{}
 
-type fastReflection_MsgCommitteeRaiseTobinTax_messageType struct{}
+type fastReflection_MsgCommitteeSetTobinTax_messageType struct{}
 
-func (x fastReflection_MsgCommitteeRaiseTobinTax_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgCommitteeRaiseTobinTax)(nil)
+func (x fastReflection_MsgCommitteeSetTobinTax_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSetTobinTax)(nil)
 }
-func (x fastReflection_MsgCommitteeRaiseTobinTax_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgCommitteeRaiseTobinTax)
+func (x fastReflection_MsgCommitteeSetTobinTax_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSetTobinTax)
 }
-func (x fastReflection_MsgCommitteeRaiseTobinTax_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCommitteeRaiseTobinTax
+func (x fastReflection_MsgCommitteeSetTobinTax_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSetTobinTax
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCommitteeRaiseTobinTax
+func (x *fastReflection_MsgCommitteeSetTobinTax) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSetTobinTax
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Type() protoreflect.MessageType {
-	return _fastReflection_MsgCommitteeRaiseTobinTax_messageType
+func (x *fastReflection_MsgCommitteeSetTobinTax) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeSetTobinTax_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) New() protoreflect.Message {
-	return new(fastReflection_MsgCommitteeRaiseTobinTax)
+func (x *fastReflection_MsgCommitteeSetTobinTax) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSetTobinTax)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Interface() protoreflect.ProtoMessage {
-	return (*MsgCommitteeRaiseTobinTax)(x)
+func (x *fastReflection_MsgCommitteeSetTobinTax) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeSetTobinTax)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -8923,28 +8923,28 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) Interface() protoreflect.Prot
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgCommitteeSetTobinTax) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Committee != "" {
 		value := protoreflect.ValueOfString(x.Committee)
-		if !f(fd_MsgCommitteeRaiseTobinTax_committee, value) {
+		if !f(fd_MsgCommitteeSetTobinTax_committee, value) {
 			return
 		}
 	}
 	if x.ExpectedTerm != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpectedTerm)
-		if !f(fd_MsgCommitteeRaiseTobinTax_expected_term, value) {
+		if !f(fd_MsgCommitteeSetTobinTax_expected_term, value) {
 			return
 		}
 	}
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgCommitteeRaiseTobinTax_denom, value) {
+		if !f(fd_MsgCommitteeSetTobinTax_denom, value) {
 			return
 		}
 	}
 	if x.TobinTax != "" {
 		value := protoreflect.ValueOfString(x.TobinTax)
-		if !f(fd_MsgCommitteeRaiseTobinTax_tobin_tax, value) {
+		if !f(fd_MsgCommitteeSetTobinTax_tobin_tax, value) {
 			return
 		}
 	}
@@ -8961,21 +8961,21 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) Range(f func(protoreflect.Fie
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCommitteeSetTobinTax) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.committee":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.committee":
 		return x.Committee != ""
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.expected_term":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.expected_term":
 		return x.ExpectedTerm != uint64(0)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.denom":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.denom":
 		return x.Denom != ""
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.tobin_tax":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.tobin_tax":
 		return x.TobinTax != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTax"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTax"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTax does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8985,21 +8985,21 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) Has(fd protoreflect.FieldDesc
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCommitteeSetTobinTax) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.committee":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.committee":
 		x.Committee = ""
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.expected_term":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.expected_term":
 		x.ExpectedTerm = uint64(0)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.denom":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.denom":
 		x.Denom = ""
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.tobin_tax":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.tobin_tax":
 		x.TobinTax = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTax"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTax"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTax does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -9009,25 +9009,25 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) Clear(fd protoreflect.FieldDe
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSetTobinTax) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.committee":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.committee":
 		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.expected_term":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.expected_term":
 		value := x.ExpectedTerm
 		return protoreflect.ValueOfUint64(value)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.denom":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.tobin_tax":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.tobin_tax":
 		value := x.TobinTax
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTax"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTax"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTax does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTax does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -9041,21 +9041,21 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) Get(descriptor protoreflect.F
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCommitteeSetTobinTax) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.committee":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.committee":
 		x.Committee = value.Interface().(string)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.expected_term":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.expected_term":
 		x.ExpectedTerm = value.Uint()
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.denom":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.denom":
 		x.Denom = value.Interface().(string)
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.tobin_tax":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.tobin_tax":
 		x.TobinTax = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTax"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTax"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTax does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -9069,52 +9069,52 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) Set(fd protoreflect.FieldDesc
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSetTobinTax) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.committee":
-		panic(fmt.Errorf("field committee of message ark.market.v1.MsgCommitteeRaiseTobinTax is not mutable"))
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.expected_term":
-		panic(fmt.Errorf("field expected_term of message ark.market.v1.MsgCommitteeRaiseTobinTax is not mutable"))
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.denom":
-		panic(fmt.Errorf("field denom of message ark.market.v1.MsgCommitteeRaiseTobinTax is not mutable"))
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.tobin_tax":
-		panic(fmt.Errorf("field tobin_tax of message ark.market.v1.MsgCommitteeRaiseTobinTax is not mutable"))
+	case "ark.market.v1.MsgCommitteeSetTobinTax.committee":
+		panic(fmt.Errorf("field committee of message ark.market.v1.MsgCommitteeSetTobinTax is not mutable"))
+	case "ark.market.v1.MsgCommitteeSetTobinTax.expected_term":
+		panic(fmt.Errorf("field expected_term of message ark.market.v1.MsgCommitteeSetTobinTax is not mutable"))
+	case "ark.market.v1.MsgCommitteeSetTobinTax.denom":
+		panic(fmt.Errorf("field denom of message ark.market.v1.MsgCommitteeSetTobinTax is not mutable"))
+	case "ark.market.v1.MsgCommitteeSetTobinTax.tobin_tax":
+		panic(fmt.Errorf("field tobin_tax of message ark.market.v1.MsgCommitteeSetTobinTax is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTax"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTax"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTax does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSetTobinTax) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.committee":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.expected_term":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.expected_term":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.denom":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.denom":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgCommitteeRaiseTobinTax.tobin_tax":
+	case "ark.market.v1.MsgCommitteeSetTobinTax.tobin_tax":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTax"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTax"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTax does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTax does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCommitteeSetTobinTax) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgCommitteeRaiseTobinTax", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgCommitteeSetTobinTax", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -9122,7 +9122,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) WhichOneof(d protoreflect.One
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCommitteeSetTobinTax) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -9133,7 +9133,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) GetUnknown() protoreflect.Raw
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCommitteeSetTobinTax) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -9145,7 +9145,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) SetUnknown(fields protoreflec
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) IsValid() bool {
+func (x *fastReflection_MsgCommitteeSetTobinTax) IsValid() bool {
 	return x != nil
 }
 
@@ -9155,9 +9155,9 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgCommitteeRaiseTobinTax) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCommitteeSetTobinTax) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgCommitteeRaiseTobinTax)
+		x := input.Message.Interface().(*MsgCommitteeSetTobinTax)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -9194,7 +9194,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) ProtoMethods() *protoiface.Me
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCommitteeRaiseTobinTax)
+		x := input.Message.Interface().(*MsgCommitteeSetTobinTax)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -9250,7 +9250,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) ProtoMethods() *protoiface.Me
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCommitteeRaiseTobinTax)
+		x := input.Message.Interface().(*MsgCommitteeSetTobinTax)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -9282,10 +9282,10 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) ProtoMethods() *protoiface.Me
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRaiseTobinTax: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSetTobinTax: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRaiseTobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSetTobinTax: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -9439,23 +9439,23 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTax) ProtoMethods() *protoiface.Me
 }
 
 var (
-	md_MsgCommitteeRaiseTobinTaxResponse protoreflect.MessageDescriptor
+	md_MsgCommitteeSetTobinTaxResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_market_v1_tx_proto_init()
-	md_MsgCommitteeRaiseTobinTaxResponse = File_ark_market_v1_tx_proto.Messages().ByName("MsgCommitteeRaiseTobinTaxResponse")
+	md_MsgCommitteeSetTobinTaxResponse = File_ark_market_v1_tx_proto.Messages().ByName("MsgCommitteeSetTobinTaxResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgCommitteeRaiseTobinTaxResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeSetTobinTaxResponse)(nil)
 
-type fastReflection_MsgCommitteeRaiseTobinTaxResponse MsgCommitteeRaiseTobinTaxResponse
+type fastReflection_MsgCommitteeSetTobinTaxResponse MsgCommitteeSetTobinTaxResponse
 
-func (x *MsgCommitteeRaiseTobinTaxResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgCommitteeRaiseTobinTaxResponse)(x)
+func (x *MsgCommitteeSetTobinTaxResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSetTobinTaxResponse)(x)
 }
 
-func (x *MsgCommitteeRaiseTobinTaxResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgCommitteeSetTobinTaxResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_tx_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -9467,43 +9467,43 @@ func (x *MsgCommitteeRaiseTobinTaxResponse) slowProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType{}
+var _fastReflection_MsgCommitteeSetTobinTaxResponse_messageType fastReflection_MsgCommitteeSetTobinTaxResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeSetTobinTaxResponse_messageType{}
 
-type fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType struct{}
+type fastReflection_MsgCommitteeSetTobinTaxResponse_messageType struct{}
 
-func (x fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgCommitteeRaiseTobinTaxResponse)(nil)
+func (x fastReflection_MsgCommitteeSetTobinTaxResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSetTobinTaxResponse)(nil)
 }
-func (x fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgCommitteeRaiseTobinTaxResponse)
+func (x fastReflection_MsgCommitteeSetTobinTaxResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSetTobinTaxResponse)
 }
-func (x fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCommitteeRaiseTobinTaxResponse
+func (x fastReflection_MsgCommitteeSetTobinTaxResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSetTobinTaxResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCommitteeRaiseTobinTaxResponse
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSetTobinTaxResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgCommitteeRaiseTobinTaxResponse_messageType
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeSetTobinTaxResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgCommitteeRaiseTobinTaxResponse)
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSetTobinTaxResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgCommitteeRaiseTobinTaxResponse)(x)
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeSetTobinTaxResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -9511,7 +9511,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Interface() protorefl
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -9525,13 +9525,13 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Range(f func(protoref
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTaxResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTaxResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTaxResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -9541,13 +9541,13 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Has(fd protoreflect.F
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTaxResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTaxResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTaxResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -9557,13 +9557,13 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Clear(fd protoreflect
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTaxResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTaxResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTaxResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -9577,13 +9577,13 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Get(descriptor protor
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTaxResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTaxResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTaxResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -9597,36 +9597,36 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Set(fd protoreflect.F
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTaxResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTaxResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTaxResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgCommitteeSetTobinTaxResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeRaiseTobinTaxResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgCommitteeSetTobinTaxResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgCommitteeRaiseTobinTaxResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgCommitteeSetTobinTaxResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -9634,7 +9634,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) WhichOneof(d protoref
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -9645,7 +9645,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) GetUnknown() protoref
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -9657,7 +9657,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) SetUnknown(fields pro
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) IsValid() bool {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -9667,9 +9667,9 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCommitteeSetTobinTaxResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgCommitteeRaiseTobinTaxResponse)
+		x := input.Message.Interface().(*MsgCommitteeSetTobinTaxResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -9691,7 +9691,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) ProtoMethods() *proto
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCommitteeRaiseTobinTaxResponse)
+		x := input.Message.Interface().(*MsgCommitteeSetTobinTaxResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -9721,7 +9721,7 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) ProtoMethods() *proto
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCommitteeRaiseTobinTaxResponse)
+		x := input.Message.Interface().(*MsgCommitteeSetTobinTaxResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -9753,10 +9753,10 @@ func (x *fastReflection_MsgCommitteeRaiseTobinTaxResponse) ProtoMethods() *proto
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRaiseTobinTaxResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSetTobinTaxResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRaiseTobinTaxResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSetTobinTaxResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -10045,10 +10045,10 @@ type MsgUpdateParams struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// params defines the x/market parameters to update.
 	//
-	// NOTE: All parameters must be supplied. Conversion capacity is not here:
-	// pool depth and the recovery period are committee-delegable, so they move
-	// through MsgUpdatePolicy and never through this whole-object
-	// replacement.
+	// NOTE: All parameters must be supplied. The conversion dials are not here:
+	// pool depth, the recovery period, and the stability-spread floor are
+	// committee-delegable, so they move through MsgUpdatePolicy and never through
+	// this whole-object replacement.
 	Params *Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
 }
 
@@ -10380,8 +10380,12 @@ type MsgSetConversionMandate struct {
 	ExpiryHeight     uint64            `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
 	MinimumPolicy    *ConversionPolicy `protobuf:"bytes,5,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
 	MaximumPolicy    *ConversionPolicy `protobuf:"bytes,6,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
-	// max_tobin_tax caps committee Tobin raises for this appointment. Zero
-	// delegates no Tobin power.
+	// max_tobin_tax is the upper edge of the committee's Tobin band for this
+	// appointment; the lower edge is Params.default_tobin_tax. An enabled
+	// appointment states the cap explicitly like every other bound — zero, not
+	// omission, is how a capacity-only committee is spelled. (On the wire the
+	// two are the same bytes; the distinction binds genesis files and direct
+	// callers.)
 	MaxTobinTax string `protobuf:"bytes,7,opt,name=max_tobin_tax,json=maxTobinTax,proto3" json:"max_tobin_tax,omitempty"`
 }
 
@@ -10641,16 +10645,18 @@ func (*MsgCommitteeUpdatePolicyResponse) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{17}
 }
 
-// MsgCommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
-// override as the conversion committee. The committee only raises: the new
-// rate must be at least the denomination's current effective rate and at most
-// the mandate's max_tobin_tax, so the delegated power widens the
-// oracle-staleness buffer and never narrows it. Lowering or removing an
-// override stays governance-only. The verb is "raise" rather than "set" for
-// exactly that asymmetry — and the raise spelling also fits amino's
-// 39-character registration cap, which a CommitteeSetTobinTaxOverride
-// spelling would not.
-type MsgCommitteeRaiseTobinTax struct {
+// MsgCommitteeSetTobinTax creates or replaces one per-denomination Tobin
+// override as the conversion committee. The new rate must fall in
+// [Params.default_tobin_tax, mandate.max_tobin_tax] — a band with a
+// governance-owned edge at each end, the same shape as the policy corridor —
+// so the committee may widen a denomination's oracle-staleness buffer during an
+// incident and narrow it again once the incident passes, without either edge
+// moving.
+//
+// Only governance may take a denomination below the default or return it to
+// tracking the default, through MsgSetTobinTaxOverride and
+// MsgRemoveTobinTaxOverride.
+type MsgCommitteeSetTobinTax struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -10661,8 +10667,8 @@ type MsgCommitteeRaiseTobinTax struct {
 	TobinTax     string `protobuf:"bytes,4,opt,name=tobin_tax,json=tobinTax,proto3" json:"tobin_tax,omitempty"`
 }
 
-func (x *MsgCommitteeRaiseTobinTax) Reset() {
-	*x = MsgCommitteeRaiseTobinTax{}
+func (x *MsgCommitteeSetTobinTax) Reset() {
+	*x = MsgCommitteeSetTobinTax{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_tx_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -10670,55 +10676,55 @@ func (x *MsgCommitteeRaiseTobinTax) Reset() {
 	}
 }
 
-func (x *MsgCommitteeRaiseTobinTax) String() string {
+func (x *MsgCommitteeSetTobinTax) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgCommitteeRaiseTobinTax) ProtoMessage() {}
+func (*MsgCommitteeSetTobinTax) ProtoMessage() {}
 
-// Deprecated: Use MsgCommitteeRaiseTobinTax.ProtoReflect.Descriptor instead.
-func (*MsgCommitteeRaiseTobinTax) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgCommitteeSetTobinTax.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeSetTobinTax) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *MsgCommitteeRaiseTobinTax) GetCommittee() string {
+func (x *MsgCommitteeSetTobinTax) GetCommittee() string {
 	if x != nil {
 		return x.Committee
 	}
 	return ""
 }
 
-func (x *MsgCommitteeRaiseTobinTax) GetExpectedTerm() uint64 {
+func (x *MsgCommitteeSetTobinTax) GetExpectedTerm() uint64 {
 	if x != nil {
 		return x.ExpectedTerm
 	}
 	return 0
 }
 
-func (x *MsgCommitteeRaiseTobinTax) GetDenom() string {
+func (x *MsgCommitteeSetTobinTax) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *MsgCommitteeRaiseTobinTax) GetTobinTax() string {
+func (x *MsgCommitteeSetTobinTax) GetTobinTax() string {
 	if x != nil {
 		return x.TobinTax
 	}
 	return ""
 }
 
-// MsgCommitteeRaiseTobinTaxResponse is the response type for
-// MsgCommitteeRaiseTobinTax.
-type MsgCommitteeRaiseTobinTaxResponse struct {
+// MsgCommitteeSetTobinTaxResponse is the response type for
+// MsgCommitteeSetTobinTax.
+type MsgCommitteeSetTobinTaxResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgCommitteeRaiseTobinTaxResponse) Reset() {
-	*x = MsgCommitteeRaiseTobinTaxResponse{}
+func (x *MsgCommitteeSetTobinTaxResponse) Reset() {
+	*x = MsgCommitteeSetTobinTaxResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_tx_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -10726,14 +10732,14 @@ func (x *MsgCommitteeRaiseTobinTaxResponse) Reset() {
 	}
 }
 
-func (x *MsgCommitteeRaiseTobinTaxResponse) String() string {
+func (x *MsgCommitteeSetTobinTaxResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgCommitteeRaiseTobinTaxResponse) ProtoMessage() {}
+func (*MsgCommitteeSetTobinTaxResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgCommitteeRaiseTobinTaxResponse.ProtoReflect.Descriptor instead.
-func (*MsgCommitteeRaiseTobinTaxResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgCommitteeSetTobinTaxResponse.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeSetTobinTaxResponse) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{19}
 }
 
@@ -10938,99 +10944,99 @@ var file_ark_market_v1_tx_proto_rawDesc = []byte{
 	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50,
 	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x22, 0x22, 0x0a, 0x20, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d,
 	0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63,
-	0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa5, 0x02, 0x0a, 0x19, 0x4d, 0x73,
-	0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x61, 0x69, 0x73, 0x65, 0x54,
-	0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69,
-	0x74, 0x74, 0x65, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12,
-	0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65,
-	0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x14, 0x0a, 0x05, 0x64,
-	0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f,
-	0x6d, 0x12, 0x53, 0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e,
-	0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x74, 0x6f,
-	0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x39, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d,
-	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x8a, 0xe7, 0xb0, 0x2a, 0x26, 0x61, 0x72, 0x6b, 0x2f, 0x78,
-	0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69,
-	0x74, 0x74, 0x65, 0x65, 0x52, 0x61, 0x69, 0x73, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61,
-	0x78, 0x22, 0x23, 0x0a, 0x21, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
-	0x65, 0x52, 0x61, 0x69, 0x73, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xd8, 0x07, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x3e,
-	0x0a, 0x04, 0x53, 0x77, 0x61, 0x70, 0x12, 0x16, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x1a, 0x1e,
+	0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa1, 0x02, 0x0a, 0x17, 0x4d, 0x73,
+	0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x2a, 0x0a,
+	0x0d, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70,
+	0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
+	0x6f, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12,
+	0x53, 0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65,
+	0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x74, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x3a, 0x37, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x74, 0x65, 0x65, 0x8a, 0xe7, 0xb0, 0x2a, 0x24, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x22, 0x21, 0x0a,
+	0x1f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74,
+	0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x32, 0xd2, 0x07, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x3e, 0x0a, 0x04, 0x53, 0x77, 0x61, 0x70,
+	0x12, 0x16, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x1a, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a, 0x0a, 0x08, 0x53, 0x77, 0x61, 0x70,
+	0x53, 0x65, 0x6e, 0x64, 0x12, 0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65, 0x6e, 0x64,
+	0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x06, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x12, 0x18,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a,
-	0x0a, 0x08, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65, 0x6e, 0x64, 0x12, 0x1a, 0x2e, 0x61, 0x72, 0x6b,
-	0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77,
-	0x61, 0x70, 0x53, 0x65, 0x6e, 0x64, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65,
-	0x6e, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x06, 0x53, 0x65,
-	0x74, 0x74, 0x6c, 0x65, 0x12, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
-	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x1a, 0x20,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6d, 0x0a, 0x13, 0x53, 0x65,
-	0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64,
-	0x65, 0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
-	0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54,
-	0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x76, 0x0a, 0x16, 0x52, 0x65, 0x6d,
-	0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72,
-	0x69, 0x64, 0x65, 0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62,
-	0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x30, 0x2e,
+	0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x1a, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74,
+	0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x6d, 0x0a, 0x13, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e,
+	0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x12, 0x25, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53,
+	0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69,
+	0x64, 0x65, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
+	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61,
+	0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x76, 0x0a, 0x16, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x12, 0x28, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
 	0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f,
-	0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x70, 0x0a, 0x14, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
-	0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74,
-	0x65, 0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c,
-	0x69, 0x63, 0x79, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c,
-	0x69, 0x63, 0x79, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c,
-	0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a,
-	0x15, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
-	0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x1a,
-	0x2f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x76, 0x0a, 0x16, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52,
-	0x61, 0x69, 0x73, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x28, 0x2e, 0x61,
+	0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x30, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76,
+	0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x70, 0x0a, 0x14, 0x53,
+	0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64,
+	0x61, 0x74, 0x65, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x1a, 0x2e, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53,
+	0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64,
+	0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x58, 0x0a,
+	0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x1e, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
+	0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x1a, 0x26, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
+	0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x15, 0x43, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79,
+	0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x1a, 0x2f, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69,
+	0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x70, 0x0a, 0x14,
+	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x1a, 0x2e, 0x2e, 0x61,
 	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67,
-	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x61, 0x69, 0x73, 0x65, 0x54, 0x6f,
-	0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x1a, 0x30, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
-	0x74, 0x65, 0x65, 0x52, 0x61, 0x69, 0x73, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a,
-	0x01, 0x42, 0x92, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61,
-	0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
-	0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69,
+	0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x1a, 0x05,
+	0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x92, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x07, 0x54, 0x78, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41,
+	0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41,
+	0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41,
+	0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -11065,8 +11071,8 @@ var file_ark_market_v1_tx_proto_goTypes = []interface{}{
 	(*MsgUpdatePolicyResponse)(nil),           // 15: ark.market.v1.MsgUpdatePolicyResponse
 	(*MsgCommitteeUpdatePolicy)(nil),          // 16: ark.market.v1.MsgCommitteeUpdatePolicy
 	(*MsgCommitteeUpdatePolicyResponse)(nil),  // 17: ark.market.v1.MsgCommitteeUpdatePolicyResponse
-	(*MsgCommitteeRaiseTobinTax)(nil),         // 18: ark.market.v1.MsgCommitteeRaiseTobinTax
-	(*MsgCommitteeRaiseTobinTaxResponse)(nil), // 19: ark.market.v1.MsgCommitteeRaiseTobinTaxResponse
+	(*MsgCommitteeSetTobinTax)(nil),           // 18: ark.market.v1.MsgCommitteeSetTobinTax
+	(*MsgCommitteeSetTobinTaxResponse)(nil),   // 19: ark.market.v1.MsgCommitteeSetTobinTaxResponse
 	(*v1beta1.Coin)(nil),                      // 20: cosmos.base.v1beta1.Coin
 	(*v1beta1.DecCoin)(nil),                   // 21: cosmos.base.v1beta1.DecCoin
 	(*Params)(nil),                            // 22: ark.market.v1.Params
@@ -11097,7 +11103,7 @@ var file_ark_market_v1_tx_proto_depIdxs = []int32{
 	12, // 21: ark.market.v1.Msg.SetConversionMandate:input_type -> ark.market.v1.MsgSetConversionMandate
 	14, // 22: ark.market.v1.Msg.UpdatePolicy:input_type -> ark.market.v1.MsgUpdatePolicy
 	16, // 23: ark.market.v1.Msg.CommitteeUpdatePolicy:input_type -> ark.market.v1.MsgCommitteeUpdatePolicy
-	18, // 24: ark.market.v1.Msg.CommitteeRaiseTobinTax:input_type -> ark.market.v1.MsgCommitteeRaiseTobinTax
+	18, // 24: ark.market.v1.Msg.CommitteeSetTobinTax:input_type -> ark.market.v1.MsgCommitteeSetTobinTax
 	1,  // 25: ark.market.v1.Msg.Swap:output_type -> ark.market.v1.MsgSwapResponse
 	3,  // 26: ark.market.v1.Msg.SwapSend:output_type -> ark.market.v1.MsgSwapSendResponse
 	7,  // 27: ark.market.v1.Msg.Settle:output_type -> ark.market.v1.MsgSettleResponse
@@ -11107,7 +11113,7 @@ var file_ark_market_v1_tx_proto_depIdxs = []int32{
 	13, // 31: ark.market.v1.Msg.SetConversionMandate:output_type -> ark.market.v1.MsgSetConversionMandateResponse
 	15, // 32: ark.market.v1.Msg.UpdatePolicy:output_type -> ark.market.v1.MsgUpdatePolicyResponse
 	17, // 33: ark.market.v1.Msg.CommitteeUpdatePolicy:output_type -> ark.market.v1.MsgCommitteeUpdatePolicyResponse
-	19, // 34: ark.market.v1.Msg.CommitteeRaiseTobinTax:output_type -> ark.market.v1.MsgCommitteeRaiseTobinTaxResponse
+	19, // 34: ark.market.v1.Msg.CommitteeSetTobinTax:output_type -> ark.market.v1.MsgCommitteeSetTobinTaxResponse
 	25, // [25:35] is the sub-list for method output_type
 	15, // [15:25] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
@@ -11339,7 +11345,7 @@ func file_ark_market_v1_tx_proto_init() {
 			}
 		}
 		file_ark_market_v1_tx_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCommitteeRaiseTobinTax); i {
+			switch v := v.(*MsgCommitteeSetTobinTax); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11351,7 +11357,7 @@ func file_ark_market_v1_tx_proto_init() {
 			}
 		}
 		file_ark_market_v1_tx_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCommitteeRaiseTobinTaxResponse); i {
+			switch v := v.(*MsgCommitteeSetTobinTaxResponse); i {
 			case 0:
 				return &v.state
 			case 1:

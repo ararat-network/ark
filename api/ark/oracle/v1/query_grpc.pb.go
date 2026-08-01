@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_ExchangeRate_FullMethodName  = "/ark.oracle.v1.Query/ExchangeRate"
-	Query_ExchangeRates_FullMethodName = "/ark.oracle.v1.Query/ExchangeRates"
-	Query_Feeds_FullMethodName         = "/ark.oracle.v1.Query/Feeds"
-	Query_FeedReferents_FullMethodName = "/ark.oracle.v1.Query/FeedReferents"
-	Query_RewardWeight_FullMethodName  = "/ark.oracle.v1.Query/RewardWeight"
-	Query_Attendance_FullMethodName    = "/ark.oracle.v1.Query/Attendance"
-	Query_Params_FullMethodName        = "/ark.oracle.v1.Query/Params"
+	Query_ExchangeRate_FullMethodName   = "/ark.oracle.v1.Query/ExchangeRate"
+	Query_ExchangeRates_FullMethodName  = "/ark.oracle.v1.Query/ExchangeRates"
+	Query_Feeds_FullMethodName          = "/ark.oracle.v1.Query/Feeds"
+	Query_FeedReferents_FullMethodName  = "/ark.oracle.v1.Query/FeedReferents"
+	Query_ReferenceDenom_FullMethodName = "/ark.oracle.v1.Query/ReferenceDenom"
+	Query_RewardWeight_FullMethodName   = "/ark.oracle.v1.Query/RewardWeight"
+	Query_Attendance_FullMethodName     = "/ark.oracle.v1.Query/Attendance"
+	Query_Params_FullMethodName         = "/ark.oracle.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -48,6 +49,9 @@ type QueryClient interface {
 	// owned prose for operators, and whitelisting them for wasm and ICQ would
 	// make rewording a claim a state-machine-breaking change.
 	FeedReferents(ctx context.Context, in *QueryFeedReferentsRequest, opts ...grpc.CallOption) (*QueryFeedReferentsResponse, error)
+	// ReferenceDenom returns the denomination whose feed is the shared protocol
+	// reference unit.
+	ReferenceDenom(ctx context.Context, in *QueryReferenceDenomRequest, opts ...grpc.CallOption) (*QueryReferenceDenomResponse, error)
 	// RewardWeight returns a validator's accumulated oracle reward weight.
 	RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error)
 	// Attendance returns a validator's in-progress oracle attendance counters.
@@ -104,6 +108,16 @@ func (c *queryClient) FeedReferents(ctx context.Context, in *QueryFeedReferentsR
 	return out, nil
 }
 
+func (c *queryClient) ReferenceDenom(ctx context.Context, in *QueryReferenceDenomRequest, opts ...grpc.CallOption) (*QueryReferenceDenomResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryReferenceDenomResponse)
+	err := c.cc.Invoke(ctx, Query_ReferenceDenom_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) RewardWeight(ctx context.Context, in *QueryRewardWeightRequest, opts ...grpc.CallOption) (*QueryRewardWeightResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryRewardWeightResponse)
@@ -154,6 +168,9 @@ type QueryServer interface {
 	// owned prose for operators, and whitelisting them for wasm and ICQ would
 	// make rewording a claim a state-machine-breaking change.
 	FeedReferents(context.Context, *QueryFeedReferentsRequest) (*QueryFeedReferentsResponse, error)
+	// ReferenceDenom returns the denomination whose feed is the shared protocol
+	// reference unit.
+	ReferenceDenom(context.Context, *QueryReferenceDenomRequest) (*QueryReferenceDenomResponse, error)
 	// RewardWeight returns a validator's accumulated oracle reward weight.
 	RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error)
 	// Attendance returns a validator's in-progress oracle attendance counters.
@@ -181,6 +198,9 @@ func (UnimplementedQueryServer) Feeds(context.Context, *QueryFeedsRequest) (*Que
 }
 func (UnimplementedQueryServer) FeedReferents(context.Context, *QueryFeedReferentsRequest) (*QueryFeedReferentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FeedReferents not implemented")
+}
+func (UnimplementedQueryServer) ReferenceDenom(context.Context, *QueryReferenceDenomRequest) (*QueryReferenceDenomResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReferenceDenom not implemented")
 }
 func (UnimplementedQueryServer) RewardWeight(context.Context, *QueryRewardWeightRequest) (*QueryRewardWeightResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RewardWeight not implemented")
@@ -284,6 +304,24 @@ func _Query_FeedReferents_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ReferenceDenom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryReferenceDenomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ReferenceDenom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ReferenceDenom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ReferenceDenom(ctx, req.(*QueryReferenceDenomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_RewardWeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryRewardWeightRequest)
 	if err := dec(in); err != nil {
@@ -360,6 +398,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FeedReferents",
 			Handler:    _Query_FeedReferents_Handler,
+		},
+		{
+			MethodName: "ReferenceDenom",
+			Handler:    _Query_ReferenceDenom_Handler,
 		},
 		{
 			MethodName: "RewardWeight",

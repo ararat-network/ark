@@ -2551,6 +2551,910 @@ func (x *fastReflection_MsgRemoveFeedResponse) ProtoMethods() *protoiface.Method
 	}
 }
 
+var (
+	md_MsgSetReferenceDenom                 protoreflect.MessageDescriptor
+	fd_MsgSetReferenceDenom_authority       protoreflect.FieldDescriptor
+	fd_MsgSetReferenceDenom_reference_denom protoreflect.FieldDescriptor
+	fd_MsgSetReferenceDenom_outgoing_rate   protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_oracle_v1_tx_proto_init()
+	md_MsgSetReferenceDenom = File_ark_oracle_v1_tx_proto.Messages().ByName("MsgSetReferenceDenom")
+	fd_MsgSetReferenceDenom_authority = md_MsgSetReferenceDenom.Fields().ByName("authority")
+	fd_MsgSetReferenceDenom_reference_denom = md_MsgSetReferenceDenom.Fields().ByName("reference_denom")
+	fd_MsgSetReferenceDenom_outgoing_rate = md_MsgSetReferenceDenom.Fields().ByName("outgoing_rate")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgSetReferenceDenom)(nil)
+
+type fastReflection_MsgSetReferenceDenom MsgSetReferenceDenom
+
+func (x *MsgSetReferenceDenom) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetReferenceDenom)(x)
+}
+
+func (x *MsgSetReferenceDenom) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_oracle_v1_tx_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgSetReferenceDenom_messageType fastReflection_MsgSetReferenceDenom_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetReferenceDenom_messageType{}
+
+type fastReflection_MsgSetReferenceDenom_messageType struct{}
+
+func (x fastReflection_MsgSetReferenceDenom_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetReferenceDenom)(nil)
+}
+func (x fastReflection_MsgSetReferenceDenom_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetReferenceDenom)
+}
+func (x fastReflection_MsgSetReferenceDenom_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetReferenceDenom
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgSetReferenceDenom) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetReferenceDenom
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgSetReferenceDenom) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetReferenceDenom_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgSetReferenceDenom) New() protoreflect.Message {
+	return new(fastReflection_MsgSetReferenceDenom)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgSetReferenceDenom) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetReferenceDenom)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgSetReferenceDenom) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgSetReferenceDenom_authority, value) {
+			return
+		}
+	}
+	if x.ReferenceDenom != "" {
+		value := protoreflect.ValueOfString(x.ReferenceDenom)
+		if !f(fd_MsgSetReferenceDenom_reference_denom, value) {
+			return
+		}
+	}
+	if x.OutgoingRate != "" {
+		value := protoreflect.ValueOfString(x.OutgoingRate)
+		if !f(fd_MsgSetReferenceDenom_outgoing_rate, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgSetReferenceDenom) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.oracle.v1.MsgSetReferenceDenom.authority":
+		return x.Authority != ""
+	case "ark.oracle.v1.MsgSetReferenceDenom.reference_denom":
+		return x.ReferenceDenom != ""
+	case "ark.oracle.v1.MsgSetReferenceDenom.outgoing_rate":
+		return x.OutgoingRate != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenom"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenom does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenom) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.oracle.v1.MsgSetReferenceDenom.authority":
+		x.Authority = ""
+	case "ark.oracle.v1.MsgSetReferenceDenom.reference_denom":
+		x.ReferenceDenom = ""
+	case "ark.oracle.v1.MsgSetReferenceDenom.outgoing_rate":
+		x.OutgoingRate = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenom"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenom does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgSetReferenceDenom) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.oracle.v1.MsgSetReferenceDenom.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "ark.oracle.v1.MsgSetReferenceDenom.reference_denom":
+		value := x.ReferenceDenom
+		return protoreflect.ValueOfString(value)
+	case "ark.oracle.v1.MsgSetReferenceDenom.outgoing_rate":
+		value := x.OutgoingRate
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenom"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenom does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenom) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.oracle.v1.MsgSetReferenceDenom.authority":
+		x.Authority = value.Interface().(string)
+	case "ark.oracle.v1.MsgSetReferenceDenom.reference_denom":
+		x.ReferenceDenom = value.Interface().(string)
+	case "ark.oracle.v1.MsgSetReferenceDenom.outgoing_rate":
+		x.OutgoingRate = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenom"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenom does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenom) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.oracle.v1.MsgSetReferenceDenom.authority":
+		panic(fmt.Errorf("field authority of message ark.oracle.v1.MsgSetReferenceDenom is not mutable"))
+	case "ark.oracle.v1.MsgSetReferenceDenom.reference_denom":
+		panic(fmt.Errorf("field reference_denom of message ark.oracle.v1.MsgSetReferenceDenom is not mutable"))
+	case "ark.oracle.v1.MsgSetReferenceDenom.outgoing_rate":
+		panic(fmt.Errorf("field outgoing_rate of message ark.oracle.v1.MsgSetReferenceDenom is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenom"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenom does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgSetReferenceDenom) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.oracle.v1.MsgSetReferenceDenom.authority":
+		return protoreflect.ValueOfString("")
+	case "ark.oracle.v1.MsgSetReferenceDenom.reference_denom":
+		return protoreflect.ValueOfString("")
+	case "ark.oracle.v1.MsgSetReferenceDenom.outgoing_rate":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenom"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenom does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgSetReferenceDenom) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.MsgSetReferenceDenom", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgSetReferenceDenom) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenom) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgSetReferenceDenom) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgSetReferenceDenom) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgSetReferenceDenom)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ReferenceDenom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.OutgoingRate)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetReferenceDenom)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.OutgoingRate) > 0 {
+			i -= len(x.OutgoingRate)
+			copy(dAtA[i:], x.OutgoingRate)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OutgoingRate)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.ReferenceDenom) > 0 {
+			i -= len(x.ReferenceDenom)
+			copy(dAtA[i:], x.ReferenceDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ReferenceDenom)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetReferenceDenom)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetReferenceDenom: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetReferenceDenom: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ReferenceDenom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ReferenceDenom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OutgoingRate", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.OutgoingRate = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgSetReferenceDenomResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_oracle_v1_tx_proto_init()
+	md_MsgSetReferenceDenomResponse = File_ark_oracle_v1_tx_proto.Messages().ByName("MsgSetReferenceDenomResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgSetReferenceDenomResponse)(nil)
+
+type fastReflection_MsgSetReferenceDenomResponse MsgSetReferenceDenomResponse
+
+func (x *MsgSetReferenceDenomResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetReferenceDenomResponse)(x)
+}
+
+func (x *MsgSetReferenceDenomResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_oracle_v1_tx_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgSetReferenceDenomResponse_messageType fastReflection_MsgSetReferenceDenomResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetReferenceDenomResponse_messageType{}
+
+type fastReflection_MsgSetReferenceDenomResponse_messageType struct{}
+
+func (x fastReflection_MsgSetReferenceDenomResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetReferenceDenomResponse)(nil)
+}
+func (x fastReflection_MsgSetReferenceDenomResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetReferenceDenomResponse)
+}
+func (x fastReflection_MsgSetReferenceDenomResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetReferenceDenomResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetReferenceDenomResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetReferenceDenomResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgSetReferenceDenomResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgSetReferenceDenomResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetReferenceDenomResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenomResponse"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenomResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenomResponse"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenomResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenomResponse"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenomResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenomResponse"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenomResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenomResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenomResponse"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenomResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgSetReferenceDenomResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.MsgSetReferenceDenomResponse"))
+		}
+		panic(fmt.Errorf("message ark.oracle.v1.MsgSetReferenceDenomResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgSetReferenceDenomResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.oracle.v1.MsgSetReferenceDenomResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgSetReferenceDenomResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetReferenceDenomResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgSetReferenceDenomResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgSetReferenceDenomResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgSetReferenceDenomResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetReferenceDenomResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetReferenceDenomResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetReferenceDenomResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetReferenceDenomResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -2789,6 +3693,105 @@ func (*MsgRemoveFeedResponse) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
+// MsgSetReferenceDenom re-points the shared protocol reference denomination.
+// Changing a non-empty reference denom rebases Market and Treasury
+// reference-unit state atomically in the same transaction. Clearing a
+// configured reference denom is rejected: consumers hold state denominated in
+// it.
+type MsgSetReferenceDenom struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// reference_denom keys the feed the reference unit is priced from.
+	ReferenceDenom string `protobuf:"bytes,2,opt,name=reference_denom,json=referenceDenom,proto3" json:"reference_denom,omitempty"`
+	// outgoing_rate overrides the rate the outgoing reference denom is converted
+	// out of, in units of that denomination per one NOAH — the same orientation
+	// as every oracle rate. Absent means price the outgoing denomination like any
+	// other, under the ordinary freshness rule, which is the ordinary path for
+	// adopting a better reference while both feeds are healthy.
+	//
+	// Two situations need it, and both are the emergency this message exists
+	// for. A reference denom the chain has never priced cannot be converted out
+	// of at all, which leaves the pool denominated in a unit no swap can read and
+	// no proposal can move. And a reference denom whose feed has failed carries
+	// only a last-observed rate the freshness rule now rejects, so the rebase has
+	// nothing to convert at. Supplying the rate drops the outgoing denomination
+	// from the priced set entirely rather than filling in behind a failed read:
+	// the conversion becomes something governance states and votes on, instead
+	// of a number inherited from a feed nobody trusts.
+	OutgoingRate string `protobuf:"bytes,3,opt,name=outgoing_rate,json=outgoingRate,proto3" json:"outgoing_rate,omitempty"`
+}
+
+func (x *MsgSetReferenceDenom) Reset() {
+	*x = MsgSetReferenceDenom{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_oracle_v1_tx_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgSetReferenceDenom) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetReferenceDenom) ProtoMessage() {}
+
+// Deprecated: Use MsgSetReferenceDenom.ProtoReflect.Descriptor instead.
+func (*MsgSetReferenceDenom) Descriptor() ([]byte, []int) {
+	return file_ark_oracle_v1_tx_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MsgSetReferenceDenom) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgSetReferenceDenom) GetReferenceDenom() string {
+	if x != nil {
+		return x.ReferenceDenom
+	}
+	return ""
+}
+
+func (x *MsgSetReferenceDenom) GetOutgoingRate() string {
+	if x != nil {
+		return x.OutgoingRate
+	}
+	return ""
+}
+
+// MsgSetReferenceDenomResponse is the response type for MsgSetReferenceDenom.
+type MsgSetReferenceDenomResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgSetReferenceDenomResponse) Reset() {
+	*x = MsgSetReferenceDenomResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_oracle_v1_tx_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgSetReferenceDenomResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetReferenceDenomResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgSetReferenceDenomResponse.ProtoReflect.Descriptor instead.
+func (*MsgSetReferenceDenomResponse) Descriptor() ([]byte, []int) {
+	return file_ark_oracle_v1_tx_proto_rawDescGZIP(), []int{7}
+}
+
 var File_ark_oracle_v1_tx_proto protoreflect.FileDescriptor
 
 var file_ark_oracle_v1_tx_proto_rawDesc = []byte{
@@ -2835,33 +3838,59 @@ var file_ark_oracle_v1_tx_proto_rawDesc = []byte{
 	0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1a, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6f, 0x72, 0x61, 0x63,
 	0x6c, 0x65, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65, 0x65, 0x64,
 	0x22, 0x17, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65, 0x65,
-	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x85, 0x02, 0x0a, 0x03, 0x4d, 0x73,
-	0x67, 0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x49, 0x0a, 0x07, 0x41,
-	0x64, 0x64, 0x46, 0x65, 0x65, 0x64, 0x12, 0x19, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x64, 0x64, 0x46, 0x65, 0x65,
-	0x64, 0x1a, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x64, 0x64, 0x46, 0x65, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x52, 0x0a, 0x0a, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
-	0x46, 0x65, 0x65, 0x64, 0x12, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65,
-	0x65, 0x64, 0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65, 0x65, 0x64,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a,
-	0x01, 0x42, 0x92, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
-	0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4f, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f,
-	0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x8a, 0x02, 0x0a, 0x14, 0x4d, 0x73,
+	0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x44, 0x65, 0x6e,
+	0x6f, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
+	0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x27, 0x0a, 0x0f, 0x72, 0x65,
+	0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0e, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x44, 0x65,
+	0x6e, 0x6f, 0x6d, 0x12, 0x5b, 0x0a, 0x0d, 0x6f, 0x75, 0x74, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x5f,
+	0x72, 0x61, 0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00,
+	0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2,
+	0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0c, 0x6f, 0x75, 0x74, 0x67, 0x6f, 0x69, 0x6e, 0x67, 0x52, 0x61, 0x74, 0x65,
+	0x3a, 0x34, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x8a, 0xe7, 0xb0, 0x2a, 0x21, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c,
+	0x65, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63,
+	0x65, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x1e, 0x0a, 0x1c, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
+	0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xee, 0x02, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x58,
+	0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1e,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x26,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x49, 0x0a, 0x07, 0x41, 0x64, 0x64, 0x46,
+	0x65, 0x65, 0x64, 0x12, 0x19, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x64, 0x64, 0x46, 0x65, 0x65, 0x64, 0x1a, 0x21,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x41, 0x64, 0x64, 0x46, 0x65, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x52, 0x0a, 0x0a, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65, 0x65,
+	0x64, 0x12, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65, 0x65, 0x64, 0x1a,
+	0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x46, 0x65, 0x65, 0x64, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x52, 0x65,
+	0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x23, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67,
+	0x53, 0x65, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x44, 0x65, 0x6e, 0x6f,
+	0x6d, 0x1a, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63,
+	0x65, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x92, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x07, 0x54,
+	0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b,
+	0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4f, 0x58, 0xaa, 0x02,
+	0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02,
+	0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02,
+	0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47,
+	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b,
+	0x3a, 0x3a, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2876,26 +3905,30 @@ func file_ark_oracle_v1_tx_proto_rawDescGZIP() []byte {
 	return file_ark_oracle_v1_tx_proto_rawDescData
 }
 
-var file_ark_oracle_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_ark_oracle_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_ark_oracle_v1_tx_proto_goTypes = []interface{}{
-	(*MsgUpdateParams)(nil),         // 0: ark.oracle.v1.MsgUpdateParams
-	(*MsgUpdateParamsResponse)(nil), // 1: ark.oracle.v1.MsgUpdateParamsResponse
-	(*MsgAddFeed)(nil),              // 2: ark.oracle.v1.MsgAddFeed
-	(*MsgAddFeedResponse)(nil),      // 3: ark.oracle.v1.MsgAddFeedResponse
-	(*MsgRemoveFeed)(nil),           // 4: ark.oracle.v1.MsgRemoveFeed
-	(*MsgRemoveFeedResponse)(nil),   // 5: ark.oracle.v1.MsgRemoveFeedResponse
-	(*Params)(nil),                  // 6: ark.oracle.v1.Params
+	(*MsgUpdateParams)(nil),              // 0: ark.oracle.v1.MsgUpdateParams
+	(*MsgUpdateParamsResponse)(nil),      // 1: ark.oracle.v1.MsgUpdateParamsResponse
+	(*MsgAddFeed)(nil),                   // 2: ark.oracle.v1.MsgAddFeed
+	(*MsgAddFeedResponse)(nil),           // 3: ark.oracle.v1.MsgAddFeedResponse
+	(*MsgRemoveFeed)(nil),                // 4: ark.oracle.v1.MsgRemoveFeed
+	(*MsgRemoveFeedResponse)(nil),        // 5: ark.oracle.v1.MsgRemoveFeedResponse
+	(*MsgSetReferenceDenom)(nil),         // 6: ark.oracle.v1.MsgSetReferenceDenom
+	(*MsgSetReferenceDenomResponse)(nil), // 7: ark.oracle.v1.MsgSetReferenceDenomResponse
+	(*Params)(nil),                       // 8: ark.oracle.v1.Params
 }
 var file_ark_oracle_v1_tx_proto_depIdxs = []int32{
-	6, // 0: ark.oracle.v1.MsgUpdateParams.params:type_name -> ark.oracle.v1.Params
+	8, // 0: ark.oracle.v1.MsgUpdateParams.params:type_name -> ark.oracle.v1.Params
 	0, // 1: ark.oracle.v1.Msg.UpdateParams:input_type -> ark.oracle.v1.MsgUpdateParams
 	2, // 2: ark.oracle.v1.Msg.AddFeed:input_type -> ark.oracle.v1.MsgAddFeed
 	4, // 3: ark.oracle.v1.Msg.RemoveFeed:input_type -> ark.oracle.v1.MsgRemoveFeed
-	1, // 4: ark.oracle.v1.Msg.UpdateParams:output_type -> ark.oracle.v1.MsgUpdateParamsResponse
-	3, // 5: ark.oracle.v1.Msg.AddFeed:output_type -> ark.oracle.v1.MsgAddFeedResponse
-	5, // 6: ark.oracle.v1.Msg.RemoveFeed:output_type -> ark.oracle.v1.MsgRemoveFeedResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
+	6, // 4: ark.oracle.v1.Msg.SetReferenceDenom:input_type -> ark.oracle.v1.MsgSetReferenceDenom
+	1, // 5: ark.oracle.v1.Msg.UpdateParams:output_type -> ark.oracle.v1.MsgUpdateParamsResponse
+	3, // 6: ark.oracle.v1.Msg.AddFeed:output_type -> ark.oracle.v1.MsgAddFeedResponse
+	5, // 7: ark.oracle.v1.Msg.RemoveFeed:output_type -> ark.oracle.v1.MsgRemoveFeedResponse
+	7, // 8: ark.oracle.v1.Msg.SetReferenceDenom:output_type -> ark.oracle.v1.MsgSetReferenceDenomResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -2980,6 +4013,30 @@ func file_ark_oracle_v1_tx_proto_init() {
 				return nil
 			}
 		}
+		file_ark_oracle_v1_tx_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetReferenceDenom); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_oracle_v1_tx_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetReferenceDenomResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2987,7 +4044,7 @@ func file_ark_oracle_v1_tx_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_oracle_v1_tx_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

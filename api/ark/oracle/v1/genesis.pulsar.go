@@ -177,6 +177,7 @@ var (
 	fd_GenesisState_attendance_records protoreflect.FieldDescriptor
 	fd_GenesisState_accounting         protoreflect.FieldDescriptor
 	fd_GenesisState_feeds              protoreflect.FieldDescriptor
+	fd_GenesisState_reference_denom    protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -188,6 +189,7 @@ func init() {
 	fd_GenesisState_attendance_records = md_GenesisState.Fields().ByName("attendance_records")
 	fd_GenesisState_accounting = md_GenesisState.Fields().ByName("accounting")
 	fd_GenesisState_feeds = md_GenesisState.Fields().ByName("feeds")
+	fd_GenesisState_reference_denom = md_GenesisState.Fields().ByName("reference_denom")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -291,6 +293,12 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
+	if x.ReferenceDenom != "" {
+		value := protoreflect.ValueOfString(x.ReferenceDenom)
+		if !f(fd_GenesisState_reference_denom, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -318,6 +326,8 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.Accounting != nil
 	case "ark.oracle.v1.GenesisState.feeds":
 		return x.Feeds != nil
+	case "ark.oracle.v1.GenesisState.reference_denom":
+		return x.ReferenceDenom != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -346,6 +356,8 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Accounting = nil
 	case "ark.oracle.v1.GenesisState.feeds":
 		x.Feeds = nil
+	case "ark.oracle.v1.GenesisState.reference_denom":
+		x.ReferenceDenom = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -389,6 +401,9 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.oracle.v1.GenesisState.feeds":
 		value := x.Feeds
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.oracle.v1.GenesisState.reference_denom":
+		value := x.ReferenceDenom
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -427,6 +442,8 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		x.Accounting = value.Message().Interface().(*Accounting)
 	case "ark.oracle.v1.GenesisState.feeds":
 		x.Feeds = value.Message().Interface().(*Feeds)
+	case "ark.oracle.v1.GenesisState.reference_denom":
+		x.ReferenceDenom = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -480,6 +497,8 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.Feeds = new(Feeds)
 		}
 		return protoreflect.ValueOfMessage(x.Feeds.ProtoReflect())
+	case "ark.oracle.v1.GenesisState.reference_denom":
+		panic(fmt.Errorf("field reference_denom of message ark.oracle.v1.GenesisState is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -511,6 +530,8 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.oracle.v1.GenesisState.feeds":
 		m := new(Feeds)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.oracle.v1.GenesisState.reference_denom":
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.GenesisState"))
@@ -610,6 +631,10 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Feeds)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		l = len(x.ReferenceDenom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -638,6 +663,13 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.ReferenceDenom) > 0 {
+			i -= len(x.ReferenceDenom)
+			copy(dAtA[i:], x.ReferenceDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ReferenceDenom)))
+			i--
+			dAtA[i] = 0x3a
 		}
 		if x.Feeds != nil {
 			encoded, err := options.Marshal(x.Feeds)
@@ -987,6 +1019,38 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Feeds); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
+				iNdEx = postIndex
+			case 7:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ReferenceDenom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ReferenceDenom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -3239,6 +3303,12 @@ type GenesisState struct {
 	Accounting        *Accounting         `protobuf:"bytes,5,opt,name=accounting,proto3" json:"accounting,omitempty"`
 	// feeds seeds the active feed set and scheduled transitions.
 	Feeds *Feeds `protobuf:"bytes,6,opt,name=feeds,proto3" json:"feeds,omitempty"`
+	// reference_denom keys the feed whose unit prices Market's base pool and
+	// denominates Treasury's reference tax cap. It names a feed, not necessarily
+	// a listed asset: both consumers read a rate, so an asset sharing the
+	// denomination may suspend while the feed keeps pricing. Empty only before
+	// first configuration; a configured reference is re-pointed, never cleared.
+	ReferenceDenom string `protobuf:"bytes,7,opt,name=reference_denom,json=referenceDenom,proto3" json:"reference_denom,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -3301,6 +3371,13 @@ func (x *GenesisState) GetFeeds() *Feeds {
 		return x.Feeds
 	}
 	return nil
+}
+
+func (x *GenesisState) GetReferenceDenom() string {
+	if x != nil {
+		return x.ReferenceDenom
+	}
+	return ""
 }
 
 // Accounting defines the active reward and attendance periods. Params may
@@ -3539,7 +3616,7 @@ var file_ark_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f,
 	0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69,
-	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbe, 0x03,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xee, 0x03,
 	0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x38,
 	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50,
@@ -3567,7 +3644,10 @@ var file_ark_oracle_v1_genesis_proto_rawDesc = []byte{
 	0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x35, 0x0a, 0x05, 0x66, 0x65, 0x65, 0x64, 0x73,
 	0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6f, 0x72, 0x61,
 	0x63, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x65, 0x65, 0x64, 0x73, 0x42, 0x09, 0xc8, 0xde,
-	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05, 0x66, 0x65, 0x65, 0x64, 0x73, 0x22, 0x9e,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05, 0x66, 0x65, 0x65, 0x64, 0x73, 0x12, 0x2e,
+	0x0a, 0x0f, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x5f, 0x64, 0x65, 0x6e, 0x6f,
+	0x6d, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e,
+	0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x9e,
 	0x02, 0x0a, 0x0a, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x23, 0x0a,
 	0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x57, 0x69, 0x6e, 0x64,

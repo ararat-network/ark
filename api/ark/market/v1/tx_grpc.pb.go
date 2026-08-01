@@ -28,7 +28,7 @@ const (
 	Msg_SetConversionMandate_FullMethodName   = "/ark.market.v1.Msg/SetConversionMandate"
 	Msg_UpdatePolicy_FullMethodName           = "/ark.market.v1.Msg/UpdatePolicy"
 	Msg_CommitteeUpdatePolicy_FullMethodName  = "/ark.market.v1.Msg/CommitteeUpdatePolicy"
-	Msg_CommitteeRaiseTobinTax_FullMethodName = "/ark.market.v1.Msg/CommitteeRaiseTobinTax"
+	Msg_CommitteeSetTobinTax_FullMethodName   = "/ark.market.v1.Msg/CommitteeSetTobinTax"
 )
 
 // MsgClient is the client API for Msg service.
@@ -63,10 +63,10 @@ type MsgClient interface {
 	// CommitteeUpdatePolicy applies one complete conversion candidate as
 	// the conversion committee, inside its mandate bounds.
 	CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error)
-	// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
-	// override as the conversion committee, at or above the current effective
-	// rate and at most the mandate's cap.
-	CommitteeRaiseTobinTax(ctx context.Context, in *MsgCommitteeRaiseTobinTax, opts ...grpc.CallOption) (*MsgCommitteeRaiseTobinTaxResponse, error)
+	// CommitteeSetTobinTax creates or replaces one per-denomination Tobin
+	// override as the conversion committee, inside the band the mandate
+	// delegates.
+	CommitteeSetTobinTax(ctx context.Context, in *MsgCommitteeSetTobinTax, opts ...grpc.CallOption) (*MsgCommitteeSetTobinTaxResponse, error)
 }
 
 type msgClient struct {
@@ -167,10 +167,10 @@ func (c *msgClient) CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeU
 	return out, nil
 }
 
-func (c *msgClient) CommitteeRaiseTobinTax(ctx context.Context, in *MsgCommitteeRaiseTobinTax, opts ...grpc.CallOption) (*MsgCommitteeRaiseTobinTaxResponse, error) {
+func (c *msgClient) CommitteeSetTobinTax(ctx context.Context, in *MsgCommitteeSetTobinTax, opts ...grpc.CallOption) (*MsgCommitteeSetTobinTaxResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCommitteeRaiseTobinTaxResponse)
-	err := c.cc.Invoke(ctx, Msg_CommitteeRaiseTobinTax_FullMethodName, in, out, cOpts...)
+	out := new(MsgCommitteeSetTobinTaxResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeSetTobinTax_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -209,10 +209,10 @@ type MsgServer interface {
 	// CommitteeUpdatePolicy applies one complete conversion candidate as
 	// the conversion committee, inside its mandate bounds.
 	CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error)
-	// CommitteeRaiseTobinTax creates or replaces one per-denomination Tobin
-	// override as the conversion committee, at or above the current effective
-	// rate and at most the mandate's cap.
-	CommitteeRaiseTobinTax(context.Context, *MsgCommitteeRaiseTobinTax) (*MsgCommitteeRaiseTobinTaxResponse, error)
+	// CommitteeSetTobinTax creates or replaces one per-denomination Tobin
+	// override as the conversion committee, inside the band the mandate
+	// delegates.
+	CommitteeSetTobinTax(context.Context, *MsgCommitteeSetTobinTax) (*MsgCommitteeSetTobinTaxResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -250,8 +250,8 @@ func (UnimplementedMsgServer) UpdatePolicy(context.Context, *MsgUpdatePolicy) (*
 func (UnimplementedMsgServer) CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeUpdatePolicy not implemented")
 }
-func (UnimplementedMsgServer) CommitteeRaiseTobinTax(context.Context, *MsgCommitteeRaiseTobinTax) (*MsgCommitteeRaiseTobinTaxResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CommitteeRaiseTobinTax not implemented")
+func (UnimplementedMsgServer) CommitteeSetTobinTax(context.Context, *MsgCommitteeSetTobinTax) (*MsgCommitteeSetTobinTaxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeSetTobinTax not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -436,20 +436,20 @@ func _Msg_CommitteeUpdatePolicy_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CommitteeRaiseTobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCommitteeRaiseTobinTax)
+func _Msg_CommitteeSetTobinTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeSetTobinTax)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CommitteeRaiseTobinTax(ctx, in)
+		return srv.(MsgServer).CommitteeSetTobinTax(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CommitteeRaiseTobinTax_FullMethodName,
+		FullMethod: Msg_CommitteeSetTobinTax_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CommitteeRaiseTobinTax(ctx, req.(*MsgCommitteeRaiseTobinTax))
+		return srv.(MsgServer).CommitteeSetTobinTax(ctx, req.(*MsgCommitteeSetTobinTax))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -498,8 +498,8 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_CommitteeUpdatePolicy_Handler,
 		},
 		{
-			MethodName: "CommitteeRaiseTobinTax",
-			Handler:    _Msg_CommitteeRaiseTobinTax_Handler,
+			MethodName: "CommitteeSetTobinTax",
+			Handler:    _Msg_CommitteeSetTobinTax_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
