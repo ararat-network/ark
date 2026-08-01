@@ -63,6 +63,12 @@ type KeeperTestSuite struct {
 	// stale or never-priced feed — the omission the available-set read makes.
 	rates oracletypes.RateSet
 
+	// lastRates is what the Oracle last stored for a denom whose feed is now
+	// unavailable, keyed by denom. It stands for the store record that outlives
+	// the freshness window, so a member listed here has a history and one left
+	// out was never priced at all.
+	lastRates oracletypes.RateSet
+
 	// ratesErr fails the registry fold outright. Rate unavailability is an
 	// omission, never an error, so this stands for a genuine store or state
 	// fault — the only thing a valuation is allowed to propagate.
@@ -124,6 +130,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.assets = map[string]assettypes.Asset{}
 	s.plans = map[string]assettypes.SettlementPlan{}
 	s.rates = oracletypes.NewRateSet()
+	s.lastRates = oracletypes.NewRateSet()
 	s.ratesErr = nil
 	s.reference = chain.SDRBaseDenom
 	for _, denom := range []string{chain.KRWBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom} {
@@ -203,7 +210,16 @@ func (s *KeeperTestSuite) SetupTest() {
 				// The real derivation, not a copy of it: a change to the
 				// registry's authority table must reach these tests rather
 				// than let the fixture drift into agreeing with itself.
-				pricings[denom] = assettypes.PriceVerdict(asset, rates, plan)
+				verdict := assettypes.PriceVerdict(asset, rates, plan)
+				// Mirrors the registry's second pass: a member whose feed is
+				// unavailable carries whatever the Oracle last stored for it,
+				// and a member absent from lastRates was never priced.
+				if !verdict.Priced && verdict.Reason == assettypes.UnpricedFeedUnavailable {
+					if lastRate, known := s.lastRates[denom]; known {
+						verdict.LastRate = lastRate
+					}
+				}
+				pricings[denom] = verdict
 			}
 			return pricings, nil
 		}).
@@ -274,6 +290,13 @@ func (s *KeeperTestSuite) seedAsset(denom string, status assettypes.AssetStatus)
 // unpriced rather than as an error.
 func (s *KeeperTestSuite) setRates(rates oracletypes.RateSet) {
 	s.rates = oracletypes.NewRateSetFrom(rates)
+}
+
+// setLastKnownRates replaces what the Oracle still holds for members it can no
+// longer price freshly. Leaving a member out of both this and setRates is the
+// never-priced case, which no aggregate may count.
+func (s *KeeperTestSuite) setLastKnownRates(rates oracletypes.RateSet) {
+	s.lastRates = oracletypes.NewRateSetFrom(rates)
 }
 
 // setAssets resets the mock registry to exactly the given denominations, all

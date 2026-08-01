@@ -52,7 +52,7 @@ func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 
 	caps, err := k.buildTaxCaps(ctx, params, denoms)
 	if err != nil {
-		if !isValuationUnavailable(err) {
+		if !isUnusableRateInput(err) {
 			return fmt.Errorf("building tax caps: %w", err)
 		}
 
@@ -183,11 +183,24 @@ func (k Keeper) buildTaxCaps(ctx context.Context, params types.Params, denoms []
 	return caps, nil
 }
 
-// isValuationUnavailable reports whether an error means a rate could not be
-// obtained or applied, rather than that state or arithmetic broke. Only the
-// former degrades gracefully: a feed that is missing, stale, invalid, or whose
-// conversion leaves its domain can return, so the work stays due and retries.
-func isValuationUnavailable(err error) bool {
+// isUnusableRateInput reports whether an error blames the rates a rebuild was
+// handed rather than Treasury's own state. Prices can be unusable in four ways
+// — missing, stale, invalid, or a pair whose cross leaves the representable
+// domain — and all four are statements about this block's price inputs, not
+// about anything Treasury holds.
+//
+// Representability belongs here because of what the cap conversion multiplies:
+// a governance-set reference amount by one rate over another. An out-of-range
+// result is therefore a property of the rate pair, which is redrawn every
+// block, and not of any quantity the protocol minted. That is the whole of the
+// difference from the liability scan, which multiplies supply the protocol
+// issued and treats the same overflow as fatal — there the number is ours, so
+// exceeding the domain is our bug; here the numbers arrive from consensus
+// pricing and the honest response is to keep the previous map and ask again.
+//
+// Keeping it deliberately does not widen to arithmetic generally: a Treasury
+// store or codec failure is not a price and must not be skipped.
+func isUnusableRateInput(err error) bool {
 	return errors.Is(err, oracletypes.ErrUnknownDenom) ||
 		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||
 		errors.Is(err, oracletypes.ErrInvalidExchangeRate) ||

@@ -14,7 +14,6 @@ import (
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"ark/pkg/chain"
-	"ark/pkg/decimal"
 	"ark/x/treasury/types"
 )
 
@@ -135,11 +134,12 @@ func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxR
 }
 
 // FundStatus queries live Treasury balances, the partitioned liability report,
-// and fund targets. It always answers: an unavailable total is reported as the
-// partition that explains it — which exposure is unvaluable and why — with
-// every target zero rather than a guess, because hiding the report behind an
+// and fund targets. It always answers, because hiding the report behind an
 // error during exactly the stress that makes valuation incomplete would blind
-// operators when they most need it.
+// operators when they most need it. An incomplete valuation still reports the
+// claimable aggregate — the figure redemption coverage divides by — beside the
+// partition that explains which exposure it excludes and why, with every target
+// zero rather than a guess.
 func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusRequest) (*types.QueryFundStatusResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -149,39 +149,48 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
-	recognised := math.LegacyZeroDec()
-	available := partition.complete
-	if available {
-		recognised, err = partition.recognizedNoah()
-		if errors.Is(err, decimal.ErrOutOfRange) {
-			recognised = math.LegacyZeroDec()
-			available = false
-		} else if err != nil {
-			return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
-		}
+	// The claimable aggregate is reported whether or not the partition is
+	// complete: it is what redemption coverage divides by, so withholding it
+	// would hide the figure driving payouts during the only stress that makes
+	// it interesting.
+	claimable, err := partition.recognizedNoah()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
-	// A zero recognised liability yields zero targets, so the unavailable case
-	// reports real balances beside targets that claim nothing.
-	fundStatus, err := q.k.calculateFundStatus(ctx, recognised)
+	// Targets are the one consumer that needs the complete figure. An
+	// incomplete partition understates outstanding exposure, and sizing a
+	// target off it would call for less capital exactly when an asset has just
+	// failed, so a zero basis reports real balances beside targets that claim
+	// nothing.
+	targetBasis := math.LegacyZeroDec()
+	if partition.complete {
+		targetBasis = claimable
+	}
+	fundStatus, err := q.k.calculateFundStatus(ctx, targetBasis)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
 	return &types.QueryFundStatusResponse{
 		PricedLiabilityNoahEquivalent:     sdk.NewDecCoinFromDec(chain.NoahBaseDenom, partition.pricedNoah),
 		SettlementLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.NoahBaseDenom, partition.settlementNoah),
-		UntrustedSuspendedSupply:          partition.untrusted,
-		WrittenOffExposure:                partition.writtenOff,
-		TotalLiabilityAvailable:           available,
-		NominalLiabilityNoahEquivalent:    sdk.NewDecCoinFromDec(chain.NoahBaseDenom, recognised),
-		SubsidyPoolBalance:                sdk.NewCoin(chain.NoahBaseDenom, q.k.balance(ctx, types.SubsidyPoolName)),
-		RedemptionBufferBalance:           sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferBalance),
-		RedemptionBufferTarget:            sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferTarget),
-		StrategicReserveBalance:           sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveBalance),
-		StrategicReserveTarget:            sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveTarget),
-		InsuranceBalance:                  sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceBalance),
-		InsuranceReserved:                 sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceReserved),
-		InsuranceUnencumberedBalance:      sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceUnencumbered),
-		InsuranceTarget:                   sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceTarget),
+		StalePricedLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(
+			chain.NoahBaseDenom,
+			partition.staleNoah,
+		),
+		UntrustedSuspendedSupply:       partition.untrusted,
+		WrittenOffExposure:             partition.writtenOff,
+		StaleMemberSupply:              partition.stale,
+		TotalLiabilityAvailable:        partition.complete,
+		NominalLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.NoahBaseDenom, claimable),
+		SubsidyPoolBalance:             sdk.NewCoin(chain.NoahBaseDenom, q.k.balance(ctx, types.SubsidyPoolName)),
+		RedemptionBufferBalance:        sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferBalance),
+		RedemptionBufferTarget:         sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferTarget),
+		StrategicReserveBalance:        sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveBalance),
+		StrategicReserveTarget:         sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveTarget),
+		InsuranceBalance:               sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceBalance),
+		InsuranceReserved:              sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceReserved),
+		InsuranceUnencumberedBalance:   sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceUnencumbered),
+		InsuranceTarget:                sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceTarget),
 	}, nil
 }
 
