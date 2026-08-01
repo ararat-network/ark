@@ -280,6 +280,48 @@ func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 	}, rates)
 }
 
+// TestGetLastKnownRateSetIgnoresStalenessButNotAbsence pins the one difference
+// from the available set: a rate too old to transact at is still returned,
+// because the caller is sizing an aggregate over supply already outstanding
+// rather than quoting. A denom never priced stays absent — bypassing the
+// freshness gate is not licence to invent a rate where none was ever stored.
+func (s *KeeperTestSuite) TestGetLastKnownRateSetIgnoresStalenessButNotAbsence() {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MaxExchangeRateAge = time.Minute
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
+		Rate:           math.LegacyMustNewDecFromStr("1.3"),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+	}))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-24 * time.Hour),
+	}))
+
+	rates, err := s.keeper.GetLastKnownRateSet(
+		s.ctx,
+		chain.USDBaseDenom,
+		chain.SDRBaseDenom,
+		chain.KRWBaseDenom,
+	)
+	s.Require().NoError(err)
+	// asdr is a day stale and comes back anyway; akrw was never priced and does
+	// not. The same call through GetAvailableRateSet omits asdr, which is what
+	// makes the two reads answer different questions.
+	s.Require().Equal(types.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyMustNewDecFromStr("1.3"),
+		chain.SDRBaseDenom:  math.LegacyOneDec(),
+	}, rates)
+
+	available, err := s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom)
+	s.Require().NoError(err)
+	s.Require().NotContains(available, chain.SDRBaseDenom)
+}
+
 func (s *KeeperTestSuite) TestGetRateSetRejectsElapsedTimeStaleness() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
