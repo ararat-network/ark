@@ -2,13 +2,16 @@ package keeper_test
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"testing"
+
+	"github.com/cosmos/gogoproto/proto"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/math"
-
-	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -20,8 +23,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/gogoproto/proto"
 
+	chain "ark/pkg/chain"
+	assettypes "ark/x/asset/types"
+	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/testutil"
 	"ark/x/treasury/types"
@@ -39,8 +44,33 @@ type KeeperTestSuite struct {
 	accountKeeper         *testutil.MockAccountKeeper
 	bankKeeper            *testutil.MockBankKeeper
 	oracleKeeper          *testutil.MockOracleKeeper
+	assetKeeper           *testutil.MockAssetKeeper
 	transientStoreService store.TransientStoreService
 	commitMultiStore      storetypes.CommitMultiStore
+
+	// assets is the mock asset registry every AssetKeeper answer derives from.
+	// SetupTest seeds the historical suite denominations as ACTIVE so tests
+	// that never bend membership keep their old fixtures; a test that cares
+	// about the registry replaces it with setAssets or bends one entry with
+	// seedAsset.
+	assets map[string]assettypes.Asset
+	// plans backs SettlementPlan lookups. The stored plan is served whether or
+	// not it has activated — mirroring the keeper's deliberately ungated read.
+	plans map[string]assettypes.SettlementPlan
+
+	// rates is what the Oracle can currently price, keyed by denom. The
+	// registry fold reads it for members only, so a denom absent here is a
+	// stale or never-priced feed — the omission the available-set read makes.
+	rates oracletypes.RateSet
+
+	// ratesErr fails the registry fold outright. Rate unavailability is an
+	// omission, never an error, so this stands for a genuine store or state
+	// fault — the only thing a valuation is allowed to propagate.
+	ratesErr error
+	// reference is the protocol reference the mock reports. It defaults to
+	// the reference the default params' tax cap is denominated in, matching
+	// the genesis invariant the keeper enforces.
+	reference string
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -69,6 +99,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 	s.oracleKeeper = testutil.NewMockOracleKeeper(ctrl)
+	s.assetKeeper = testutil.NewMockAssetKeeper(ctrl)
 	s.transientStoreService = transientStoreService
 	s.commitMultiStore = testCtx.CMS
 	for _, moduleName := range types.FundAccountNames() {
@@ -86,6 +117,104 @@ func (s *KeeperTestSuite) SetupTest() {
 		Return(authtypes.NewModuleAddress(authtypes.FeeCollectorName)).
 		AnyTimes()
 
+	// The asset mock is permissive by design: membership questions are asked
+	// on many unrelated paths, so every method derives its answer from the
+	// suite fixtures instead of per-test expectations. Strictness stays where
+	// it matters — the bank and oracle mocks still fail on unexpected calls.
+	s.assets = map[string]assettypes.Asset{}
+	s.plans = map[string]assettypes.SettlementPlan{}
+	s.rates = oracletypes.NewRateSet()
+	s.ratesErr = nil
+	s.reference = chain.SDRBaseDenom
+	for _, denom := range []string{chain.KRWBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom} {
+		s.seedAsset(denom, assettypes.AssetStatus_ASSET_STATUS_ACTIVE)
+	}
+	s.assetKeeper.EXPECT().
+		ListAssets(gomock.Any()).
+		DoAndReturn(func(context.Context) ([]assettypes.Asset, error) {
+			// Key order, like the real registry walk. Tests that stub
+			// per-denomination supply reads rely on this order for GetRateSet
+			// argument expectations.
+			listed := make([]assettypes.Asset, 0, len(s.assets))
+			for _, denom := range slices.Sorted(maps.Keys(s.assets)) {
+				listed = append(listed, s.assets[denom])
+			}
+			return listed, nil
+		}).
+		AnyTimes()
+	s.assetKeeper.EXPECT().
+		PricedLiveDenoms(gomock.Any()).
+		DoAndReturn(func(context.Context) ([]string, error) {
+			denoms := make([]string, 0, len(s.assets))
+			for denom, asset := range s.assets {
+				if asset.IsPriceable() {
+					denoms = append(denoms, denom)
+				}
+			}
+			slices.Sort(denoms)
+			return denoms, nil
+		}).
+		AnyTimes()
+	// Pricing verdicts mirror the real registry fold over the suite fixtures,
+	// so a test changes what a denomination is worth by seeding an asset,
+	// a plan, or an Oracle rate — never by stubbing a verdict directly.
+	s.assetKeeper.EXPECT().
+		Pricings(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			overlay oracletypes.RateSet,
+			denoms ...string,
+		) (assettypes.DenomPricings, error) {
+			if s.ratesErr != nil {
+				return nil, s.ratesErr
+			}
+
+			// Capture mirrors the registry's: members the overlay does not
+			// already cover, priced at whatever the suite's Oracle can answer.
+			rates := oracletypes.NewRateSetFrom(overlay)
+			for _, denom := range denoms {
+				asset, listed := s.assets[denom]
+				if !listed || !asset.IsPriceable() {
+					continue
+				}
+				if _, covered := overlay[denom]; covered {
+					continue
+				}
+				if rate, priceable := s.rates[denom]; priceable {
+					rates[denom] = rate
+				}
+			}
+
+			pricings := make(assettypes.DenomPricings, len(denoms)+1)
+			pricings[chain.NoahBaseDenom] = assettypes.NumerairePricing()
+			for _, denom := range denoms {
+				if denom == chain.NoahBaseDenom {
+					continue
+				}
+				asset, listed := s.assets[denom]
+				if !listed {
+					pricings[denom] = assettypes.DenomPricing{Reason: assettypes.UnpricedUnrecognised}
+					continue
+				}
+				var plan *assettypes.SettlementPlan
+				if stored, found := s.plans[denom]; found {
+					plan = &stored
+				}
+				// The real derivation, not a copy of it: a change to the
+				// registry's authority table must reach these tests rather
+				// than let the fixture drift into agreeing with itself.
+				pricings[denom] = assettypes.PriceVerdict(asset, rates, plan)
+			}
+			return pricings, nil
+		}).
+		AnyTimes()
+	s.oracleKeeper.EXPECT().
+		GetReferenceDenom(gomock.Any()).
+		DoAndReturn(func(context.Context) (string, error) {
+			return s.reference, nil
+		}).
+		AnyTimes()
+
 	s.keeper = keeper.NewKeeper(
 		s.cdc,
 		storeService,
@@ -94,6 +223,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.accountKeeper,
 		s.bankKeeper,
 		s.oracleKeeper,
+		s.assetKeeper,
 	)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, types.DefaultMonetaryPolicy()))
@@ -117,6 +247,11 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.ctx,
 		types.DefaultMonetaryMandate(),
 	))
+	// Lower the cadence flag the way InitGenesis does, so the cadence trigger
+	// starts quiet and tests reach a boundary only when they set one. The cap
+	// store is left empty: tests that care about the membership trigger seed
+	// exactly the caps they mean to compare.
+	s.Require().NoError(s.keeper.TaxCapRefreshPending.Set(s.ctx, false))
 
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
@@ -126,6 +261,30 @@ func (s *KeeperTestSuite) SetupTest() {
 
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+}
+
+// seedAsset registers or overwrites one asset in the mock registry. The
+// version is fixed at 1 unless a test overwrites the entry directly.
+func (s *KeeperTestSuite) seedAsset(denom string, status assettypes.AssetStatus) {
+	s.assets[denom] = assettypes.Asset{Denom: denom, Status: status, Version: 1}
+}
+
+// setRates replaces what the Oracle can price. A member left out of the set is
+// one whose feed is stale or was never warmed, which the fold reports as
+// unpriced rather than as an error.
+func (s *KeeperTestSuite) setRates(rates oracletypes.RateSet) {
+	s.rates = oracletypes.NewRateSetFrom(rates)
+}
+
+// setAssets resets the mock registry to exactly the given denominations, all
+// ACTIVE. Liability scans fold over the whole registry and read Bank supply
+// for every entry, so a test that stubs supply expectations must pin the
+// registry to the denominations it stubbed.
+func (s *KeeperTestSuite) setAssets(denoms ...string) {
+	s.assets = map[string]assettypes.Asset{}
+	for _, denom := range denoms {
+		s.seedAsset(denom, assettypes.AssetStatus_ASSET_STATUS_ACTIVE)
+	}
 }
 
 func (s *KeeperTestSuite) clearTransientStore() {
@@ -160,6 +319,17 @@ func (s *KeeperTestSuite) requireTypedEvent(expected proto.Message) {
 		return
 	}
 	s.FailNow("typed event not found", expectedEvent.Type)
+}
+
+// requireNoTypedEvent asserts that no event of the given type was emitted,
+// proving a branch was not taken rather than merely that its effects were
+// absent.
+func (s *KeeperTestSuite) requireNoTypedEvent(unexpected proto.Message) {
+	unexpectedEvent, err := sdk.TypedEventToEvent(unexpected)
+	s.Require().NoError(err)
+	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
+		s.Require().NotEqual(unexpectedEvent.Type, event.Type)
+	}
 }
 
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {

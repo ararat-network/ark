@@ -25,6 +25,7 @@ type Keeper struct {
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
 	oracleKeeper  types.OracleKeeper
+	assetKeeper   types.AssetKeeper
 
 	Schema              collections.Schema
 	Params              collections.Item[types.Params]
@@ -37,6 +38,13 @@ type Keeper struct {
 	RewardFunding       collections.Item[types.RewardFundingState]
 	MonetaryMandate     collections.Item[types.MonetaryMandate]
 	MonetaryPolicy      collections.Item[types.MonetaryPolicy]
+	// TaxCapRefreshPending records that a cadence boundary has passed without
+	// being served. The boundary block raises it and only a successful rebuild
+	// lowers it, so a refresh skipped on stale rates retries every block until
+	// it succeeds — the boundary itself passes once and does not come back.
+	// Membership drift is caught separately by comparing the cap denoms against
+	// the registry, which needs no flag because the registry is ground truth.
+	TaxCapRefreshPending collections.Item[bool]
 }
 
 // NewKeeper creates a Treasury keeper.
@@ -48,6 +56,7 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
+	assetKeeper types.AssetKeeper,
 ) *Keeper {
 	for _, moduleName := range types.FundAccountNames() {
 		if addr := accountKeeper.GetModuleAddress(moduleName); addr == nil {
@@ -67,6 +76,7 @@ func NewKeeper(
 		accountKeeper:         accountKeeper,
 		bankKeeper:            bankKeeper,
 		oracleKeeper:          oracleKeeper,
+		assetKeeper:           assetKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,
@@ -127,6 +137,12 @@ func NewKeeper(
 			types.MonetaryPolicyKey,
 			"monetary_policy",
 			codec.CollValue[types.MonetaryPolicy](cdc),
+		),
+		TaxCapRefreshPending: collections.NewItem(
+			sb,
+			types.TaxCapRefreshPendingKey,
+			"tax_cap_refresh_pending",
+			collections.BoolValue,
 		),
 	}
 
