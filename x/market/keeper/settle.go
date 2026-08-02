@@ -81,7 +81,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	// Truncation is the holder's cost, never the protocol's: a partial anoah
 	// cannot be paid, and rounding it up would mint NOAH the plan never
 	// committed to.
-	entitlement := sdk.NewCoin(chain.NoahBaseDenom, entitlementDec.Amount.TruncateInt())
+	entitlement := chain.NoahCoin(entitlementDec.Amount.TruncateInt())
 	if !entitlement.IsPositive() {
 		return sdk.Coin{}, sdkerrors.Wrapf(
 			types.ErrZeroSwapCoin,
@@ -126,7 +126,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	// The buffer covers what it can and the remainder is minted, so the holder
 	// always receives the whole entitlement: the cost of an orderly failure
 	// lands as bounded NOAH dilution rather than as a haircut on the exit.
-	minted := sdk.NewCoin(chain.NoahBaseDenom, entitlement.Amount.Sub(bufferPaid))
+	minted := chain.NoahCoin(entitlement.Amount.Sub(bufferPaid))
 	if minted.IsPositive() {
 		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
 			return sdk.Coin{}, sdkerrors.Wrapf(err, "minting settlement coins %s", minted)

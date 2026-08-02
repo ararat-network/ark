@@ -351,7 +351,7 @@ func (k Keeper) settleSwap(
 		if err != nil {
 			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, quote.swapCoin)
 		}
-		minted = sdk.NewCoin(chain.NoahBaseDenom, quote.swapCoin.Amount.Sub(bufferPaid))
+		minted = chain.NoahCoin(quote.swapCoin.Amount.Sub(bufferPaid))
 	}
 
 	if !burned.IsZero() {
