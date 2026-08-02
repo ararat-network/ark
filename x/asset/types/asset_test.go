@@ -11,6 +11,57 @@ import (
 	assettypes "ark/x/asset/types"
 )
 
+func TestAssetIsOraclePriced(t *testing.T) {
+	tests := []struct {
+		name           string
+		status         assettypes.AssetStatus
+		oracleRequired bool
+		expected       bool
+	}{
+		{
+			name:           "active",
+			status:         assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
+			oracleRequired: true,
+			expected:       true,
+		},
+		{
+			name:           "retiring",
+			status:         assettypes.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
+			oracleRequired: true,
+			expected:       true,
+		},
+		{
+			name:           "suspended",
+			status:         assettypes.AssetStatus_ASSET_STATUS_SUSPENDED,
+			oracleRequired: true,
+		},
+		{
+			name:           "written off",
+			status:         assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF,
+			oracleRequired: true,
+		},
+		{
+			name:           "retired",
+			status:         assettypes.AssetStatus_ASSET_STATUS_RETIRED,
+			oracleRequired: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			asset := assettypes.DefaultGenesisState().Assets[0]
+			asset.Status = test.status
+
+			require.Equal(t, test.expected, asset.IsOraclePriced())
+		})
+	}
+}
+
+// derivedMetadataErr is the single failure every metadata divergence produces,
+// because the rule is one comparison against the denomination's derivation
+// rather than a list of per-field rules.
+const derivedMetadataErr = "must equal the metadata derived from its denomination"
+
 func TestAssetValidate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -19,18 +70,6 @@ func TestAssetValidate(t *testing.T) {
 	}{
 		{
 			name: "valid priced asset",
-		},
-		{
-			name: "valid unpriced active asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.OracleRequired = false
-			},
-		},
-		{
-			name: "valid delisted priced asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_DELISTED
-			},
 		},
 		{
 			name: "valid written-off priced asset",
@@ -42,47 +81,40 @@ func TestAssetValidate(t *testing.T) {
 			name: "invalid denom",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Denom = "aGOLD"
-				asset.Metadata.Base = "aGOLD"
-				asset.Metadata.DenomUnits[0].Denom = "aGOLD"
 			},
-			expectErr: "canonical lowercase Ark-native base denom",
+			expectErr: "Ark-native base denom matching",
 		},
 		{
 			name: "native denom",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Denom = chain.NoahBaseDenom
-				asset.Metadata.Base = chain.NoahBaseDenom
-				asset.Metadata.DenomUnits[0].Denom = chain.NoahBaseDenom
 			},
-			expectErr: "must not use native denom anoah",
+			expectErr: "is the numeraire and is never priced",
 		},
+		// Metadata is derived from the denomination, so every divergence from
+		// that derivation is the same failure however it is reached: a base
+		// naming another asset, a unit list that is missing, reordered, or
+		// padded, or a description a genesis author wrote by hand.
 		{
 			name: "metadata base mismatch",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Metadata.Base = "asilver"
 			},
-			expectErr: "must match asset denom",
+			expectErr: derivedMetadataErr,
 		},
 		{
 			name: "nil denomination unit",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Metadata.DenomUnits[1] = nil
 			},
-			expectErr: "denomination unit 1 must not be nil",
+			expectErr: derivedMetadataErr,
 		},
 		{
 			name: "missing display denomination unit",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Metadata.DenomUnits = asset.Metadata.DenomUnits[:1]
 			},
-			expectErr: "must contain at least base and display denomination units",
-		},
-		{
-			name: "missing display unit",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Metadata.Display = "gold-token"
-			},
-			expectErr: "metadata must contain a denomination unit",
+			expectErr: derivedMetadataErr,
 		},
 		{
 			name: "nonstandard display denom",
@@ -90,31 +122,53 @@ func TestAssetValidate(t *testing.T) {
 				asset.Metadata.Display = "gold-token"
 				asset.Metadata.DenomUnits[1].Denom = "gold-token"
 			},
-			expectErr: "display denom must be gold",
+			expectErr: derivedMetadataErr,
 		},
 		{
 			name: "nonstandard display exponent",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Metadata.DenomUnits[1].Exponent = 6
 			},
-			expectErr: "display exponent must be 18",
+			expectErr: derivedMetadataErr,
 		},
 		{
-			name: "valid intermediate denomination unit",
+			name: "intermediate denomination unit",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Metadata.DenomUnits = []*banktypes.DenomUnit{
 					asset.Metadata.DenomUnits[0],
-					&banktypes.DenomUnit{Denom: "milligold", Exponent: 15},
+					{Denom: "milligold", Exponent: 15},
 					asset.Metadata.DenomUnits[1],
 				}
 			},
+			expectErr: derivedMetadataErr,
 		},
 		{
 			name: "denomination alias",
 			mutate: func(asset *assettypes.Asset) {
 				asset.Metadata.DenomUnits[0].Aliases = []string{"attogold"}
 			},
-			expectErr: "must not define aliases",
+			expectErr: derivedMetadataErr,
+		},
+		{
+			name: "rewritten description",
+			mutate: func(asset *assettypes.Asset) {
+				asset.Metadata.Description = "Backed by something else entirely."
+			},
+			expectErr: derivedMetadataErr,
+		},
+		{
+			name: "rewritten symbol",
+			mutate: func(asset *assettypes.Asset) {
+				asset.Metadata.Symbol = "GOLD"
+			},
+			expectErr: derivedMetadataErr,
+		},
+		{
+			name: "rewritten name",
+			mutate: func(asset *assettypes.Asset) {
+				asset.Metadata.Name = "Gold Ark"
+			},
+			expectErr: derivedMetadataErr,
 		},
 		{
 			name: "unspecified status",
@@ -137,54 +191,6 @@ func TestAssetValidate(t *testing.T) {
 			},
 			expectErr: "version must be positive",
 		},
-		{
-			name: "unpriced removal pending",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_REMOVAL_PENDING
-				asset.OracleRequired = false
-			},
-			expectErr: "asset must require Oracle pricing",
-		},
-		{
-			name: "unpriced delisted asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_DELISTED
-				asset.OracleRequired = false
-			},
-			expectErr: "asset must require Oracle pricing",
-		},
-		{
-			name: "unpriced settling asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_SETTLING
-				asset.OracleRequired = false
-			},
-			expectErr: "asset must require Oracle pricing",
-		},
-		{
-			name: "unpriced written-off asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF
-				asset.OracleRequired = false
-			},
-			expectErr: "asset must require Oracle pricing",
-		},
-		{
-			name: "unpriced delisting asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_DELISTING
-				asset.OracleRequired = false
-			},
-			expectErr: "asset must require Oracle pricing",
-		},
-		{
-			name: "unpriced relisting asset",
-			mutate: func(asset *assettypes.Asset) {
-				asset.Status = assettypes.AssetStatus_ASSET_STATUS_RELISTING
-				asset.OracleRequired = false
-			},
-			expectErr: "asset must require Oracle pricing",
-		},
 	}
 
 	for _, tt := range tests {
@@ -195,57 +201,6 @@ func TestAssetValidate(t *testing.T) {
 			}
 
 			err := asset.Validate()
-			if tt.expectErr == "" {
-				require.NoError(t, err)
-				return
-			}
-			require.ErrorContains(t, err, tt.expectErr)
-		})
-	}
-}
-
-func TestAssetLockValidate(t *testing.T) {
-	tests := []struct {
-		name      string
-		lock      assettypes.AssetLock
-		expectErr string
-	}{
-		{
-			name: "valid",
-			lock: assettypes.AssetLock{
-				Denom: "agold",
-				Kind:  assettypes.AssetLockKind_ASSET_LOCK_KIND_MARKET_ASSET_POLICY,
-			},
-		},
-		{
-			name: "native denom",
-			lock: assettypes.AssetLock{
-				Denom: chain.NoahBaseDenom,
-				Kind:  assettypes.AssetLockKind_ASSET_LOCK_KIND_MARKET_BASE_POOL,
-			},
-			expectErr: "must not use native denom anoah",
-		},
-		{
-			name: "unspecified kind",
-			lock: assettypes.AssetLock{
-				Denom: "agold",
-				Kind:  assettypes.AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED,
-			},
-			expectErr: "kind must be specified and known",
-		},
-		{
-			name: "unknown kind",
-			lock: assettypes.AssetLock{
-				Denom: "agold",
-				Kind:  assettypes.AssetLockKind(99),
-			},
-			expectErr: "kind must be specified and known",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.lock.Validate()
 			if tt.expectErr == "" {
 				require.NoError(t, err)
 				return

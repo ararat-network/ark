@@ -10,38 +10,36 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete asset message types.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/asset/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgRegisterAsset{}, "ark/x/asset/MsgRegisterAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgSetOracleRequired{}, "ark/x/asset/MsgSetOracleRequired")
-	legacy.RegisterAminoMsg(cdc, &MsgActivateAsset{}, "ark/x/asset/MsgActivateAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgCancelAssetRegistration{}, "ark/x/asset/MsgCancelAssetRegistration")
-	legacy.RegisterAminoMsg(cdc, &MsgBeginRetirement{}, "ark/x/asset/MsgBeginRetirement")
-	legacy.RegisterAminoMsg(cdc, &MsgCancelRetirement{}, "ark/x/asset/MsgCancelRetirement")
-	legacy.RegisterAminoMsg(cdc, &MsgFinalizeRetirement{}, "ark/x/asset/MsgFinalizeRetirement")
-	legacy.RegisterAminoMsg(cdc, &MsgReactivateAsset{}, "ark/x/asset/MsgReactivateAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgBeginDelisting{}, "ark/x/asset/MsgBeginDelisting")
+	legacy.RegisterAminoMsg(cdc, &MsgHaltIssuance{}, "ark/x/asset/MsgHaltIssuance")
+	legacy.RegisterAminoMsg(cdc, &MsgResumeIssuance{}, "ark/x/asset/MsgResumeIssuance")
+	legacy.RegisterAminoMsg(cdc, &MsgSuspendAsset{}, "ark/x/asset/MsgSuspendAsset")
 	legacy.RegisterAminoMsg(cdc, &MsgOpenSettlement{}, "ark/x/asset/MsgOpenSettlement")
 	legacy.RegisterAminoMsg(cdc, &MsgCancelSettlement{}, "ark/x/asset/MsgCancelSettlement")
-	legacy.RegisterAminoMsg(cdc, &MsgBeginRelisting{}, "ark/x/asset/MsgBeginRelisting")
+	legacy.RegisterAminoMsg(cdc, &MsgRecoverAsset{}, "ark/x/asset/MsgRecoverAsset")
 	legacy.RegisterAminoMsg(cdc, &MsgWriteOffAsset{}, "ark/x/asset/MsgWriteOffAsset")
+	legacy.RegisterAminoMsg(cdc, &MsgFinalizeRetirement{}, "ark/x/asset/MsgFinalizeRetirement")
+	legacy.RegisterAminoMsg(cdc, &MsgSetEmergencyMandate{}, "ark/x/asset/MsgSetEmergencyMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgEmergencySuspendAsset{}, "ark/x/asset/MsgEmergencySuspendAsset")
 }
 
 // RegisterInterfaces registers asset message implementations.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
+		&MsgUpdateParams{},
 		&MsgRegisterAsset{},
-		&MsgSetOracleRequired{},
-		&MsgActivateAsset{},
-		&MsgCancelAssetRegistration{},
-		&MsgBeginRetirement{},
-		&MsgCancelRetirement{},
-		&MsgFinalizeRetirement{},
-		&MsgReactivateAsset{},
-		&MsgBeginDelisting{},
+		&MsgHaltIssuance{},
+		&MsgResumeIssuance{},
+		&MsgSuspendAsset{},
 		&MsgOpenSettlement{},
 		&MsgCancelSettlement{},
-		&MsgBeginRelisting{},
+		&MsgRecoverAsset{},
 		&MsgWriteOffAsset{},
+		&MsgFinalizeRetirement{},
+		&MsgSetEmergencyMandate{},
+		&MsgEmergencySuspendAsset{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
