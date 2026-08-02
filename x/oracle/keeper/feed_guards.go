@@ -29,14 +29,16 @@ type FeedReferentGuard interface {
 // owns the set and it holds exactly the foreign consumers that exist: today
 // x/asset, which answers for the registry; basket and reserve guards join with
 // their specs. The protocol reference is not a guard — it is oracle's own state
-// and FeedReferents checks it directly. One entry per consumer, not per claim,
-// because a consumer knows its own reasons. Consumers depend on x/oracle, so
-// the reverse edge is injected at wiring rather than imported.
+// and feedReferents checks it directly; that collector stays unexported so the
+// keeper cannot satisfy this interface and be registered against itself. One
+// entry per consumer, not per claim, because a consumer knows its own reasons.
+// Consumers depend on x/oracle, so the reverse edge is injected at wiring
+// rather than imported.
 func (k *Keeper) SetFeedReferentGuards(guards ...FeedReferentGuard) {
 	k.feedReferentGuards = guards
 }
 
-// FeedReferents collects every claim on a feed. It is the single source of
+// feedReferents collects every claim on a feed. It is the single source of
 // truth for both the removal check and Query/FeedReferents, so what operators
 // inspect is exactly what governance is judged against.
 //
@@ -52,7 +54,7 @@ func (k *Keeper) SetFeedReferentGuards(guards ...FeedReferentGuard) {
 // and it is reported first because it is the strongest: Market's pool and
 // Treasury's cap are denominated in that unit continuously, so removing its
 // feed would leave both priced against something the chain no longer observes.
-func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]types.FeedReferent, error) {
+func (k Keeper) feedReferents(ctx context.Context, denom string) ([]types.FeedReferent, error) {
 	phase, err := k.FeedPhase(ctx, denom)
 	if err != nil {
 		return nil, err
@@ -96,7 +98,7 @@ func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]types.FeedRe
 // while a removal is still in flight stays idempotent — that feed is in phase
 // Removing, so it exists here and no-ops at scheduling as before.
 func (k Keeper) requireFeedUnreferenced(ctx context.Context, denom string) error {
-	referents, err := k.FeedReferents(ctx, denom)
+	referents, err := k.feedReferents(ctx, denom)
 	if err != nil {
 		return err
 	}

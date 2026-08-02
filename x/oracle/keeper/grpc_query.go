@@ -93,7 +93,7 @@ func (q queryServer) FeedReferents(ctx context.Context, req *types.QueryFeedRefe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid denom %q: %v", req.Denom, err)
 	}
 
-	referents, err := q.k.FeedReferents(ctx, req.Denom)
+	referents, err := q.k.feedReferents(ctx, req.Denom)
 	if err != nil {
 		if errors.Is(err, types.ErrFeedNotFound) {
 			return nil, status.Errorf(codes.NotFound, "no active or in-flight feed for denom %s", req.Denom)

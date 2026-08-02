@@ -279,14 +279,16 @@ func (s *KeeperTestSuite) TestSetReferenceDenomExecutorErrorFailsAtomically() {
 func (s *KeeperTestSuite) TestFeedReferentsPinTheProtocolReferenceDenom() {
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
 
-	referents, err := s.keeper.FeedReferents(s.ctx, chain.SDRBaseDenom)
+	resp, err := s.queryClient.FeedReferents(s.ctx, &types.QueryFeedReferentsRequest{
+		Denom: chain.SDRBaseDenom,
+	})
 	s.Require().NoError(err)
 	s.Require().Equal(
 		[]types.FeedReferent{{
 			Consumer: types.ModuleName,
 			Referent: "protocol reference denom",
 		}},
-		referents,
+		resp.Referents,
 	)
 }
 
@@ -296,9 +298,11 @@ func (s *KeeperTestSuite) TestFeedReferentsLeaveUnnamedFeedsUnpinned() {
 	s.seedFeeds(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
 
-	referents, err := s.keeper.FeedReferents(s.ctx, chain.USDBaseDenom)
+	resp, err := s.queryClient.FeedReferents(s.ctx, &types.QueryFeedReferentsRequest{
+		Denom: chain.USDBaseDenom,
+	})
 	s.Require().NoError(err)
-	s.Require().Empty(referents)
+	s.Require().Empty(resp.Referents)
 }
 
 func (s *KeeperTestSuite) requireStoredReferenceDenom(expected string) {
