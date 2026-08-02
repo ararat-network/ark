@@ -45,31 +45,46 @@ func NewRateSetFrom(rates map[string]math.LegacyDec) RateSet {
 // Valuations count such dust as exactly what it is worth, while callers paying
 // out an entitlement must refuse a non-positive payout after truncating to
 // whole units — the granularity bar that actually matters, which this function
-// cannot see. Errors are reserved for invalid inputs, denominations missing
-// from the set, and arithmetic that leaves representable range.
+// cannot see. Errors are reserved for unusable offer amounts, denominations
+// missing from the set, and arithmetic that leaves representable range. A
+// malformed denomination is answered as a missing one rather than as bad input:
+// the set is the authority on what can be converted, and nothing outside it is
+// convertible whatever its shape.
 func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
 	if offerCoin.Amount.IsNil() {
 		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not set", offerCoin.Denom)
 	}
-	if err := offerCoin.Validate(); err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin: %v", err)
+	if offerCoin.Amount.IsNegative() {
+		return sdk.DecCoin{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "negative offer amount: %s", offerCoin)
 	}
 	if !offerCoin.Amount.IsInValidRange() {
 		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not representable", offerCoin.Denom)
 	}
-	if err := sdk.ValidateDenom(askDenom); err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
+
+	// Membership in the set admits a denomination, and it is also what vouches
+	// for it. Every key in a rate set arrives from a source the chain already
+	// gated with chain.ValidatePricedDenom — the exchange-rate store, the feed
+	// list, the asset registry, a settlement plan, params — or is the numeraire
+	// constant, and that rule is strictly tighter than the SDK's denomination
+	// charset. A denomination found here therefore cannot be malformed, and
+	// re-deriving that with a regular expression costs more than the conversion
+	// arithmetic it would be guarding.
+	//
+	// What the invariant needs is that no denomination leaves this function
+	// without having been proven a key, so nothing may return one before both
+	// lookups. That is why the identity case is answered between them rather
+	// than ahead of them: an offer denomination absent from the set is unknown
+	// even when it is also the ask, and returning it early would be the one path
+	// that escapes the proof.
+	offerRate, ok := r[offerCoin.Denom]
+	if !ok {
+		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, offerCoin.Denom)
 	}
 	if offerCoin.Denom == askDenom {
 		return offerCoin, nil
 	}
-	if !offerCoin.IsPositive() {
-		return sdk.DecCoin{}, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
-	}
-
-	offerRate, ok := r[offerCoin.Denom]
-	if !ok {
-		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, offerCoin.Denom)
+	if offerCoin.Amount.IsZero() {
+		return sdk.DecCoin{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "zero offer amount: %s", offerCoin)
 	}
 
 	askRate, ok := r[askDenom]
@@ -77,31 +92,49 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, askDenom)
 	}
 
-	convertedAmount, err := decimal.Mul(offerCoin.Amount, askRate)
-	if err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(
-			ErrConversionOutOfRange,
-			"multiplying %s amount by %s rate: %v",
-			offerCoin.Denom,
-			askDenom,
-			err,
-		)
+	convertedAmount := offerCoin.Amount
+	if !isOne(askRate) {
+		var err error
+		convertedAmount, err = decimal.Mul(offerCoin.Amount, askRate)
+		if err != nil {
+			return sdk.DecCoin{}, sdkerrors.Wrapf(
+				ErrConversionOutOfRange,
+				"multiplying %s amount by %s rate: %v",
+				offerCoin.Denom,
+				askDenom,
+				err,
+			)
+		}
 	}
-	amount, err := decimal.Quo(convertedAmount, offerRate)
-	if err != nil {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(
-			ErrConversionOutOfRange,
-			"dividing converted amount by %s rate: %v",
-			offerCoin.Denom,
-			err,
-		)
+
+	amount := convertedAmount
+	if !isOne(offerRate) {
+		var err error
+		amount, err = decimal.Quo(convertedAmount, offerRate)
+		if err != nil {
+			return sdk.DecCoin{}, sdkerrors.Wrapf(
+				ErrConversionOutOfRange,
+				"dividing converted amount by %s rate: %v",
+				offerCoin.Denom,
+				err,
+			)
+		}
 	}
-	// Rate sets are plain maps whose values this function never validates; a
-	// negative rate would yield a negative amount, which NewDecCoinFromDec
-	// panics on.
 	if amount.IsNegative() {
 		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "conversion of %s to %s is negative", offerCoin, askDenom)
 	}
 
-	return sdk.NewDecCoinFromDec(askDenom, amount), nil
+	return sdk.DecCoin{Denom: askDenom, Amount: amount}, nil
+}
+
+// oneDec is the comparand isOne tests against, held once rather than rebuilt
+// per call: allocating a LegacyDec to decide whether arithmetic can be skipped
+// would spend a good part of what the skip saves. Nothing mutates it, because
+// Equal compares through big.Int.Cmp.
+var oneDec = math.LegacyOneDec()
+
+// isOne reports whether rate is exactly one, and is the guard for skipping a
+// conversion leg.
+func isOne(rate math.LegacyDec) bool {
+	return !rate.IsNil() && rate.Equal(oneDec)
 }
