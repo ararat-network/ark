@@ -116,7 +116,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod:   "SetTobinTaxOverride",
 					Use:         "set-tobin-tax-override-proposal [denom] [tobin-tax]",
 					Short:       "Submit a proposal to set a per-denomination Tobin rate",
-					Long:        "Move one denomination off the default Tobin rate. The denomination must already be registered as an asset, pending included, so a listing proposal can set the override before the asset goes live.",
+					Long:        "Move one denomination off the default Tobin rate. The denomination must already be registered as an asset, whatever its status, so a listing proposal can set the override in the same act that lists the asset.",
 					Example:     fmt.Sprintf("%s tx market set-tobin-tax-override-proposal amnt 0.02", version.AppName),
 					GovProposal: true,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{

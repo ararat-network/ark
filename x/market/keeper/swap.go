@@ -421,7 +421,7 @@ func (k Keeper) requireConvertible(ctx context.Context, offerDenom, askDenom str
 		if err != nil {
 			return err
 		}
-		if !offerAsset.IsPriceable() {
+		if !offerAsset.IsOraclePriced() {
 			return sdkerrors.Wrapf(
 				types.ErrIneligibleAsset,
 				"%s asset %s cannot be offered for conversion",

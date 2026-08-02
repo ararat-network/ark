@@ -127,7 +127,6 @@ func (s *KeeperTestSuite) TestSwapQuoteEligibility() {
 			offerable: true,
 		},
 		{status: assettypes.AssetStatus_ASSET_STATUS_SUSPENDED},
-		{status: assettypes.AssetStatus_ASSET_STATUS_PENDING},
 		{status: assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF},
 		{status: assettypes.AssetStatus_ASSET_STATUS_RETIRED},
 		{status: assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED},

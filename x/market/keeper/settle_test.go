@@ -39,10 +39,11 @@ func (m coinMatcher) String() string {
 // the rates Treasury is handed about routing rather than rounding.
 func settlementPlan(denom string) assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
-		Denom:            denom,
-		RedemptionRate:   math.LegacyNewDec(2),
-		OpenedHeight:     1,
-		ActivationHeight: 2,
+		Denom:                 denom,
+		RedemptionRate:        math.LegacyNewDec(2),
+		OpenedHeight:          1,
+		ActivationHeight:      2,
+		EarliestClosingHeight: 102,
 	}
 }
 
@@ -190,7 +191,6 @@ func (s *KeeperTestSuite) TestSettleRejectsIneligibleStatus() {
 	statuses := []assettypes.AssetStatus{
 		assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
 		assettypes.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
-		assettypes.AssetStatus_ASSET_STATUS_PENDING,
 		assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF,
 		assettypes.AssetStatus_ASSET_STATUS_RETIRED,
 		assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED,

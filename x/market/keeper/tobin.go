@@ -60,13 +60,13 @@ func (k Keeper) GetTobinTaxOverrides(ctx context.Context) ([]types.TobinTaxOverr
 
 // SetTobinTaxOverride records one per-denomination exception.
 //
-// The denomination must identify a registered asset, and PENDING counts: a
-// listing proposal can add the feed, register the asset, and set the override
-// together, so an illiquid listing never spends a block live at a default rate
-// chosen for liquid fiat. The check exists because a dangling override fails
-// silently — the protection governance wrote would simply not apply to the
-// denomination it meant — and a loud proposal failure is the only way that
-// mistake surfaces.
+// The denomination must identify a registered asset, and status is not
+// consulted beyond that: a listing proposal can add the feed, register the
+// asset, and set the override together, so an illiquid listing never spends a
+// block live at a default rate chosen for liquid fiat. The check exists because
+// a dangling override fails silently — the protection governance wrote would
+// simply not apply to the denomination it meant — and a loud proposal failure
+// is the only way that mistake surfaces.
 func (k Keeper) SetTobinTaxOverride(ctx context.Context, denom string, tobinTax math.LegacyDec) error {
 	if err := types.ValidateTobinTax(tobinTax); err != nil {
 		return err

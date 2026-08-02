@@ -154,5 +154,5 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 // every active feed, including feeds whose asset is suspended or not yet
 // listed, and simulation should only offer swaps a real trader could make.
 func (k Keeper) GetActiveDenoms(ctx context.Context) ([]string, error) {
-	return k.assetKeeper.PricedLiveDenoms(ctx)
+	return k.assetKeeper.OraclePricedDenoms(ctx)
 }

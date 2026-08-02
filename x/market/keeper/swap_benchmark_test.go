@@ -158,6 +158,6 @@ func (benchmarkAssetKeeper) ActiveSettlementPlan(
 	return assettypes.SettlementPlan{}, false, nil
 }
 
-func (benchmarkAssetKeeper) PricedLiveDenoms(context.Context) ([]string, error) {
+func (benchmarkAssetKeeper) OraclePricedDenoms(context.Context) ([]string, error) {
 	return nil, nil
 }

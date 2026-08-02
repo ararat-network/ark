@@ -36,7 +36,7 @@ type OracleKeeper interface {
 type AssetKeeper interface {
 	GetAsset(ctx context.Context, denom string) (assettypes.Asset, error)
 	ActiveSettlementPlan(ctx context.Context, denom string) (assettypes.SettlementPlan, bool, error)
-	PricedLiveDenoms(ctx context.Context) ([]string, error)
+	OraclePricedDenoms(ctx context.Context) ([]string, error)
 }
 
 // TreasuryKeeper defines the allocation and liability accounting required by

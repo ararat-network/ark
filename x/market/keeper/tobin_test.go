@@ -121,12 +121,12 @@ func (s *KeeperTestSuite) TestSetTobinTaxOverride() {
 			expectErrIs: assettypes.ErrAssetNotFound,
 		},
 		{
-			// PENDING counts so one proposal can list an illiquid asset and price
-			// its conversion together, rather than spending a block live at a
-			// default rate chosen for liquid fiat.
-			name:     "accepts a pending listing",
+			// Status is not consulted, so one proposal can list an illiquid
+			// asset and price its conversion together, rather than spending a
+			// block live at a default rate chosen for liquid fiat.
+			name:     "accepts a suspended listing",
 			denom:    chain.CNYBaseDenom,
-			statuses: map[string]assettypes.AssetStatus{chain.CNYBaseDenom: assettypes.AssetStatus_ASSET_STATUS_PENDING},
+			statuses: map[string]assettypes.AssetStatus{chain.CNYBaseDenom: assettypes.AssetStatus_ASSET_STATUS_SUSPENDED},
 			tobinTax: math.LegacyNewDecWithPrec(2, 2),
 		},
 		{

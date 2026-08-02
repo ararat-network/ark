@@ -266,19 +266,19 @@ func (mr *MockAssetKeeperMockRecorder) GetAsset(ctx, denom any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockAssetKeeper)(nil).GetAsset), ctx, denom)
 }
 
-// PricedLiveDenoms mocks base method.
-func (m *MockAssetKeeper) PricedLiveDenoms(ctx context.Context) ([]string, error) {
+// OraclePricedDenoms mocks base method.
+func (m *MockAssetKeeper) OraclePricedDenoms(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PricedLiveDenoms", ctx)
+	ret := m.ctrl.Call(m, "OraclePricedDenoms", ctx)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PricedLiveDenoms indicates an expected call of PricedLiveDenoms.
-func (mr *MockAssetKeeperMockRecorder) PricedLiveDenoms(ctx any) *gomock.Call {
+// OraclePricedDenoms indicates an expected call of OraclePricedDenoms.
+func (mr *MockAssetKeeperMockRecorder) OraclePricedDenoms(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PricedLiveDenoms", reflect.TypeOf((*MockAssetKeeper)(nil).PricedLiveDenoms), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OraclePricedDenoms", reflect.TypeOf((*MockAssetKeeper)(nil).OraclePricedDenoms), ctx)
 }
 
 // MockTreasuryKeeper is a mock of TreasuryKeeper interface.
