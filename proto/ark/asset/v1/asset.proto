@@ -2,6 +2,7 @@ syntax = "proto3";
 package ark.asset.v1;
 
 import "amino/amino.proto";
+import "ark/mandate/v1/envelope.proto";
 import "cosmos/bank/v1beta1/bank.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
@@ -9,57 +10,106 @@ import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/asset/types";
 
-// AssetStatus identifies an asset's position in the issuance, pricing, and
-// resolution lifecycle.
+// AssetStatus identifies an asset's economic treatment. Oracle target
+// transitions and settlement-plan presence are represented separately.
 enum AssetStatus {
   // ASSET_STATUS_UNSPECIFIED is not a valid persisted status.
   ASSET_STATUS_UNSPECIFIED = 0;
-  // ASSET_STATUS_PENDING identifies an asset that is registered but cannot
-  // yet be issued.
-  ASSET_STATUS_PENDING = 1;
   // ASSET_STATUS_ACTIVE identifies an asset available for normal policy use.
-  ASSET_STATUS_ACTIVE = 2;
-  // ASSET_STATUS_RETIRING identifies an asset for which new issuance has
-  // stopped while existing supply remains supported.
-  ASSET_STATUS_RETIRING = 3;
-  // ASSET_STATUS_REMOVAL_PENDING identifies a priced asset whose target
-  // removal has been scheduled but has not activated.
-  ASSET_STATUS_REMOVAL_PENDING = 4;
+  ASSET_STATUS_ACTIVE = 1;
+  // ASSET_STATUS_ISSUANCE_HALTED identifies an asset for which new issuance
+  // has stopped while existing supply remains priced, transferable, and
+  // redeemable. The status carries no intent: an asset winding down toward
+  // retirement and one that has just completed emergency recovery are both
+  // ISSUANCE_HALTED.
+  ASSET_STATUS_ISSUANCE_HALTED = 2;
+  // ASSET_STATUS_SUSPENDED identifies an asset whose ordinary protocol
+  // economic operations are disabled without erasing holder balances or
+  // recognized exposure.
+  ASSET_STATUS_SUSPENDED = 3;
+  // ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
+  // governance currently recognizes no protocol redemption obligation.
+  ASSET_STATUS_WRITTEN_OFF = 4;
   // ASSET_STATUS_RETIRED identifies a zero-supply asset retained as a
   // historical tombstone.
   ASSET_STATUS_RETIRED = 5;
-  // ASSET_STATUS_DELISTING identifies an asset whose unsafe economic
-  // operations have stopped while Oracle target removal is pending.
-  ASSET_STATUS_DELISTING = 6;
-  // ASSET_STATUS_DELISTED identifies an outstanding asset without live Oracle
-  // pricing or protocol redemption.
-  ASSET_STATUS_DELISTED = 7;
-  // ASSET_STATUS_SETTLING identifies a delisted or written-off asset with a
-  // governance-defined one-way NOAH redemption plan.
-  ASSET_STATUS_SETTLING = 8;
-  // ASSET_STATUS_RELISTING identifies an asset awaiting restored Oracle
-  // pricing and policy before issuance can resume.
-  ASSET_STATUS_RELISTING = 9;
-  // ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
-  // governance currently recognizes no protocol redemption obligation.
-  ASSET_STATUS_WRITTEN_OFF = 10;
 }
 
-// AssetLockKind identifies a protocol dependency that prevents final
-// retirement.
-enum AssetLockKind {
-  // ASSET_LOCK_KIND_UNSPECIFIED is not a valid persisted lock kind.
-  ASSET_LOCK_KIND_UNSPECIFIED = 0;
-  // ASSET_LOCK_KIND_MARKET_ASSET_POLICY protects Market conversion policy.
-  ASSET_LOCK_KIND_MARKET_ASSET_POLICY = 1;
-  // ASSET_LOCK_KIND_MARKET_BASE_POOL protects Market's base-pool reference.
-  ASSET_LOCK_KIND_MARKET_BASE_POOL = 2;
-  // ASSET_LOCK_KIND_TREASURY_STABLE_POLICY protects Treasury stable-liability
-  // enrollment.
-  ASSET_LOCK_KIND_TREASURY_STABLE_POLICY = 3;
-  // ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP protects Treasury's
-  // reference-tax-cap denomination.
-  ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP = 4;
+// PriceSource identifies the authority a priced denomination rests on.
+enum PriceSource {
+  // PRICE_SOURCE_UNSPECIFIED accompanies every unpriced verdict; read reason
+  // for why nothing stands behind the denomination. It is deliberately not a
+  // valid authority, so a verdict that names no source cannot be mistaken for
+  // one that does.
+  PRICE_SOURCE_UNSPECIFIED = 0;
+  // PRICE_SOURCE_NUMERAIRE is NOAH itself: one by definition rather than by
+  // observation.
+  PRICE_SOURCE_NUMERAIRE = 1;
+  // PRICE_SOURCE_ORACLE is a fresh Oracle rate for a priced-live asset — asset
+  // units per one NOAH, the same value ark.oracle.v1 Query/ExchangeRate
+  // returns.
+  PRICE_SOURCE_ORACLE = 2;
+  // PRICE_SOURCE_SETTLEMENT is the redemption rate of a settlement plan: a
+  // standing governance commitment, not an observation that can go stale, and
+  // not a market quote.
+  PRICE_SOURCE_SETTLEMENT = 3;
+}
+
+// UnpricedReason identifies why no rate stands behind a denomination.
+enum UnpricedReason {
+  // UNPRICED_REASON_UNSPECIFIED accompanies every priced verdict; read source
+  // for the authority behind the rate.
+  UNPRICED_REASON_UNSPECIFIED = 0;
+  // UNPRICED_REASON_FEED_UNAVAILABLE is a priced-live asset the Oracle cannot
+  // currently price: its feed is stale, or no rate is stored. last_rate
+  // carries what was last observed, when anything ever was.
+  UNPRICED_REASON_FEED_UNAVAILABLE = 1;
+  // UNPRICED_REASON_UNTRUSTED is suspended supply with no settlement plan: the
+  // market rate is exactly what stopped being trustworthy, and governance has
+  // not committed to another.
+  UNPRICED_REASON_UNTRUSTED = 2;
+  // UNPRICED_REASON_WRITTEN_OFF is supply carrying no recognized redemption
+  // obligation.
+  UNPRICED_REASON_WRITTEN_OFF = 3;
+  // UNPRICED_REASON_RETIRED is residual supply of a retired asset.
+  UNPRICED_REASON_RETIRED = 4;
+  // UNPRICED_REASON_UNRECOGNISED is a denomination outside the registry, or a
+  // status this fold does not understand.
+  UNPRICED_REASON_UNRECOGNISED = 5;
+}
+
+// ResolutionKind identifies why governance derecognized outstanding supply.
+enum ResolutionKind {
+  // RESOLUTION_KIND_UNSPECIFIED is not a valid persisted resolution kind.
+  RESOLUTION_KIND_UNSPECIFIED = 0;
+  // RESOLUTION_KIND_WRITE_OFF records emergency derecognition of all
+  // recognized obligation on a suspended asset.
+  RESOLUTION_KIND_WRITE_OFF = 1;
+  // RESOLUTION_KIND_RETIREMENT_RESIDUAL records derecognition of bounded
+  // residual supply at final retirement.
+  RESOLUTION_KIND_RETIREMENT_RESIDUAL = 2;
+}
+
+// Params defines the parameters for the asset module.
+message Params {
+  option (gogoproto.equal) = true;
+  option (amino.name) = "ark/x/asset/Params";
+
+  // settlement_activation_delay_blocks is the distance between opening a
+  // settlement plan and the height it activates. It is the designed
+  // correction window: an activated plan commits holders to a
+  // redemption rate and cannot be closed early, so the only remedy for a
+  // mistaken plan is cancelling it before it goes live, and this delay is the
+  // room governance has to notice and pass CancelSettlement.
+  //
+  // It is governed rather than fixed because the window it has to outlast is
+  // itself governed. The value only means anything relative to how long a
+  // proposal currently takes to land, and x/gov's voting period moves without
+  // consulting x/asset — a delay that was ample at launch silently stops being
+  // a correction window at all if voting slows. Treasury's claim cancellation
+  // period is the same quantity for claims and is likewise a parameter.
+  uint64 settlement_activation_delay_blocks = 1
+      [ (amino.dont_omitempty) = true ];
 }
 
 // Asset is the authoritative registry record for one governance-managed Bank
@@ -72,42 +122,29 @@ message Asset {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // status is the asset's current lifecycle status.
   AssetStatus status = 3 [ (amino.dont_omitempty) = true ];
-  // version increases on every lifecycle or Oracle-participation mutation.
+  // version increases on every lifecycle or pricing-mode mutation.
   uint64 version = 4 [ (amino.dont_omitempty) = true ];
-  // oracle_required specifies whether the asset requires a denomination-keyed
-  // Oracle rate normalized as base units of denom per one anoah.
-  bool oracle_required = 5 [ (amino.dont_omitempty) = true ];
 }
 
-// AssetLock records one downstream protocol dependency on an asset.
-message AssetLock {
-  string denom = 1;
-  AssetLockKind kind = 2 [ (amino.dont_omitempty) = true ];
-}
+// The OracleTargets, OracleTargetTransition, and OracleTargetDirection
+// definitions moved to ark.oracle.v1 as the feed registry when price
+// observations were decoupled from asset lifecycle; their names stay burned
+// here. An asset's price feed is keyed by its own denomination, so there is
+// no separate price source to name.
 
-// OracleTargets defines the active vote-target epoch and an optional scheduled
-// replacement. Pending targets become authoritative for vote extensions at
-// activation_vote_height.
-message OracleTargets {
-  repeated string denoms = 1;
-  uint64 version = 2;
-  PendingOracleTargets pending = 3;
-}
-
-// PendingOracleTargets defines a scheduled vote-target epoch.
-message PendingOracleTargets {
-  repeated string denoms = 1;
-  uint64 version = 2;
-  int64 activation_vote_height = 3;
-}
+// ReferenceState followed them to ark.oracle.v1, where it is a plain
+// reference_denom string rather than a message: every rule the protocol
+// reference denom has is a feed rule, so the feed registry owns it. The name
+// stays burned here.
 
 // SettlementPlan defines a governance-approved one-way asset-to-NOAH
 // redemption rate.
 message SettlementPlan {
   // denom identifies the asset accepted for settlement.
   string denom = 1;
-  // redemption_rate is the positive amount of NOAH paid per unit of the
-  // settled asset.
+  // redemption_rate is the positive number of units of the settled asset
+  // redeemed per one NOAH, the same NOAH-quoted orientation as oracle
+  // exchange rates.
   string redemption_rate = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -115,25 +152,98 @@ message SettlementPlan {
     (amino.dont_omitempty) = true
   ];
   // activation_height is the first block height at which redemption is
-  // permitted.
+  // permitted. It is derived when the plan opens, as
+  // Params.SettlementActivationDelayBlocks past the opening height, and stored
+  // rather than recomputed on read so a later parameter change cannot move
+  // terms holders have already been shown.
   int64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  // earliest_closing_height is zero until relisting establishes the earliest
-  // height at which settlement may close. Reaching it does not close
-  // settlement automatically.
+  // earliest_closing_height is the hard commitment to holders: redemption
+  // stays open at least until this height. It is mandatory, is fixed for the
+  // plan's whole life, and is read by exactly one message — WriteOffAsset,
+  // which is refused before it. Reaching it never closes settlement
+  // automatically.
   int64 earliest_closing_height = 4 [ (amino.dont_omitempty) = true ];
-  // version is the asset version that last created or changed this plan.
-  uint64 version = 5 [ (amino.dont_omitempty) = true ];
+  // opened_height records the block height at which governance stored these
+  // terms.
+  int64 opened_height = 5 [ (amino.dont_omitempty) = true ];
 }
 
-// WriteOffRecord is an immutable snapshot appended whenever governance writes
-// off outstanding asset supply.
-message WriteOffRecord {
+// AssetPricing was folded into PricedAsset: it had exactly one embedding site
+// and no standalone use, so the nesting bought a level of indirection and no
+// reuse. Its name stays burned here.
+
+// PricedAsset is the registry's answer about one denomination: the record,
+// where the denomination has one, and the pricing verdict, which every
+// denomination has — what the protocol values it at and on whose authority, or
+// the reason nothing stands behind it. Consumers apply policy to verdicts —
+// defer, disclose, zero, route — and never re-derive the facts.
+//
+// Exactly one of source and reason is set. A denomination the registry does not
+// list — and the numeraire, which is priced by definition rather than by
+// registration — carries a verdict and no record, which is why nothing reads
+// asset without having established the denomination is a member.
+//
+// A verdict answers for the asset registry alone: a denomination priced by some
+// other authority, such as a reserve or basket feed the registry does not list,
+// is UNRECOGNISED here, which is the honest answer rather than a gap, and that
+// authority produces its own verdicts for consumers to merge.
+message PricedAsset {
+  Asset asset = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // rate is unset unless the denomination is priced. Read source before acting
+  // on it: a settlement rate is a standing governance commitment, not a market
+  // quote, and the two must not be conflated.
+  string rate = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec"
+  ];
+  // last_rate is the most recent rate the Oracle stored for a denomination
+  // whose feed is currently unavailable, and is unset for every other verdict.
+  // It is evidence about supply already outstanding, not a price: it failed the
+  // freshness gate, so the verdict stays unpriced and nothing may be quoted,
+  // minted, or paid against it. Consumers that size an aggregate over standing
+  // obligations may read it; consumers that quote, mint, or pay must not.
+  string last_rate = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec"
+  ];
+  PriceSource source = 4 [ (amino.dont_omitempty) = true ];
+  UnpricedReason reason = 5 [ (amino.dont_omitempty) = true ];
+}
+
+// ResolutionRecord is an immutable snapshot appended whenever governance
+// derecognizes outstanding asset supply. A later recovery never erases or
+// reinterprets an earlier record.
+message ResolutionRecord {
   string denom = 1;
-  // version is the asset version produced by the write-off transition.
+  // version is the asset version in effect when governance derecognized the
+  // obligation. Every derecognition is a governance act that advances the
+  // version and records the advanced value; nothing else appends a record, so
+  // there is no path that files one against an unchanged version.
+  // (denom, version) is unique, and an append is rejected rather than
+  // overwriting a record.
   uint64 version = 2 [ (amino.dont_omitempty) = true ];
-  int64 write_off_height = 3 [ (amino.dont_omitempty) = true ];
+  // resolution_height is the block height at which the record was appended.
+  int64 resolution_height = 3 [ (amino.dont_omitempty) = true ];
   cosmos.base.v1beta1.Coin outstanding_supply = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // settlement_plan is present only when a SETTLING asset was written off.
+  // settlement_plan carries final terms only for a write-off that ended an
+  // open settlement.
   SettlementPlan settlement_plan = 5;
+  // kind identifies why the obligation was derecognized.
+  ResolutionKind kind = 6 [ (amino.dont_omitempty) = true ];
+}
+
+// EmergencyMandate stores the governance-appointed committee that may suspend
+// an asset in minutes and restore nothing. Suspension is its only power, so
+// there is no action dimension to name: containment is the whole mandate. It
+// carries exactly the shared appointment envelope; consumed per-term
+// suspensions are separate state keyed by denomination alone.
+message EmergencyMandate {
+  // envelope carries the shared term, committee, and half-open height window.
+  ark.mandate.v1.Envelope envelope = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

@@ -19,19 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_RegisterAsset_FullMethodName           = "/ark.asset.v1.Msg/RegisterAsset"
-	Msg_SetOracleRequired_FullMethodName       = "/ark.asset.v1.Msg/SetOracleRequired"
-	Msg_ActivateAsset_FullMethodName           = "/ark.asset.v1.Msg/ActivateAsset"
-	Msg_CancelAssetRegistration_FullMethodName = "/ark.asset.v1.Msg/CancelAssetRegistration"
-	Msg_BeginRetirement_FullMethodName         = "/ark.asset.v1.Msg/BeginRetirement"
-	Msg_CancelRetirement_FullMethodName        = "/ark.asset.v1.Msg/CancelRetirement"
-	Msg_FinalizeRetirement_FullMethodName      = "/ark.asset.v1.Msg/FinalizeRetirement"
-	Msg_ReactivateAsset_FullMethodName         = "/ark.asset.v1.Msg/ReactivateAsset"
-	Msg_BeginDelisting_FullMethodName          = "/ark.asset.v1.Msg/BeginDelisting"
-	Msg_OpenSettlement_FullMethodName          = "/ark.asset.v1.Msg/OpenSettlement"
-	Msg_CancelSettlement_FullMethodName        = "/ark.asset.v1.Msg/CancelSettlement"
-	Msg_BeginRelisting_FullMethodName          = "/ark.asset.v1.Msg/BeginRelisting"
-	Msg_WriteOffAsset_FullMethodName           = "/ark.asset.v1.Msg/WriteOffAsset"
+	Msg_UpdateParams_FullMethodName          = "/ark.asset.v1.Msg/UpdateParams"
+	Msg_RegisterAsset_FullMethodName         = "/ark.asset.v1.Msg/RegisterAsset"
+	Msg_HaltIssuance_FullMethodName          = "/ark.asset.v1.Msg/HaltIssuance"
+	Msg_ResumeIssuance_FullMethodName        = "/ark.asset.v1.Msg/ResumeIssuance"
+	Msg_SuspendAsset_FullMethodName          = "/ark.asset.v1.Msg/SuspendAsset"
+	Msg_OpenSettlement_FullMethodName        = "/ark.asset.v1.Msg/OpenSettlement"
+	Msg_CancelSettlement_FullMethodName      = "/ark.asset.v1.Msg/CancelSettlement"
+	Msg_RecoverAsset_FullMethodName          = "/ark.asset.v1.Msg/RecoverAsset"
+	Msg_WriteOffAsset_FullMethodName         = "/ark.asset.v1.Msg/WriteOffAsset"
+	Msg_FinalizeRetirement_FullMethodName    = "/ark.asset.v1.Msg/FinalizeRetirement"
+	Msg_SetEmergencyMandate_FullMethodName   = "/ark.asset.v1.Msg/SetEmergencyMandate"
+	Msg_EmergencySuspendAsset_FullMethodName = "/ark.asset.v1.Msg/EmergencySuspendAsset"
 )
 
 // MsgClient is the client API for Msg service.
@@ -40,34 +39,46 @@ const (
 //
 // Msg defines the asset Msg service.
 type MsgClient interface {
+	// UpdateParams updates the governance-owned asset module parameters.
+	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opts ...grpc.CallOption) (*MsgRegisterAssetResponse, error)
-	// SetOracleRequired changes whether an asset requires Oracle target
-	// participation during normal listed operation.
-	SetOracleRequired(ctx context.Context, in *MsgSetOracleRequired, opts ...grpc.CallOption) (*MsgSetOracleRequiredResponse, error)
-	// ActivateAsset enables normal policy use for a pending asset.
-	ActivateAsset(ctx context.Context, in *MsgActivateAsset, opts ...grpc.CallOption) (*MsgActivateAssetResponse, error)
-	// CancelAssetRegistration retires an unscheduled pending registration.
-	CancelAssetRegistration(ctx context.Context, in *MsgCancelAssetRegistration, opts ...grpc.CallOption) (*MsgCancelAssetRegistrationResponse, error)
-	// BeginRetirement stops new issuance for an active asset.
-	BeginRetirement(ctx context.Context, in *MsgBeginRetirement, opts ...grpc.CallOption) (*MsgBeginRetirementResponse, error)
-	// CancelRetirement returns a retiring asset to active status.
-	CancelRetirement(ctx context.Context, in *MsgCancelRetirement, opts ...grpc.CallOption) (*MsgCancelRetirementResponse, error)
-	// FinalizeRetirement retires a zero-supply, unlocked asset.
-	FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error)
-	// ReactivateAsset starts a new pending lifecycle from a retired tombstone.
-	ReactivateAsset(ctx context.Context, in *MsgReactivateAsset, opts ...grpc.CallOption) (*MsgReactivateAssetResponse, error)
-	// BeginDelisting stops unsafe economic operations and starts Oracle target
-	// removal.
-	BeginDelisting(ctx context.Context, in *MsgBeginDelisting, opts ...grpc.CallOption) (*MsgBeginDelistingResponse, error)
+	// The AmendRegistration RPC was removed with the mutable metadata it
+	// amended, and the ActivateAsset RPC with the pending status it ended;
+	// both names stay burned.
+	// HaltIssuance stops new issuance for an active asset.
+	HaltIssuance(ctx context.Context, in *MsgHaltIssuance, opts ...grpc.CallOption) (*MsgHaltIssuanceResponse, error)
+	// ResumeIssuance returns an issuance-halted asset to active status.
+	ResumeIssuance(ctx context.Context, in *MsgResumeIssuance, opts ...grpc.CallOption) (*MsgResumeIssuanceResponse, error)
+	// SuspendAsset stops unsafe ordinary economic operations. It is a pure
+	// status move: the asset's feed keeps running and keeps serving every reader
+	// that is not this asset's economics.
+	SuspendAsset(ctx context.Context, in *MsgSuspendAsset, opts ...grpc.CallOption) (*MsgSuspendAssetResponse, error)
 	// OpenSettlement establishes a one-way asset-to-NOAH redemption plan.
 	OpenSettlement(ctx context.Context, in *MsgOpenSettlement, opts ...grpc.CallOption) (*MsgOpenSettlementResponse, error)
-	// CancelSettlement cancels a settlement before its activation height.
+	// CancelSettlement cancels a settlement that has not yet activated.
 	CancelSettlement(ctx context.Context, in *MsgCancelSettlement, opts ...grpc.CallOption) (*MsgCancelSettlementResponse, error)
-	// BeginRelisting starts restoration of Oracle pricing and economic policy.
-	BeginRelisting(ctx context.Context, in *MsgBeginRelisting, opts ...grpc.CallOption) (*MsgBeginRelistingResponse, error)
+	// RecoverAsset restores a suspended or written-off asset to issuance-halted
+	// status, undoing SuspendAsset.
+	RecoverAsset(ctx context.Context, in *MsgRecoverAsset, opts ...grpc.CallOption) (*MsgRecoverAssetResponse, error)
 	// WriteOffAsset derecognizes outstanding supply without changing balances.
 	WriteOffAsset(ctx context.Context, in *MsgWriteOffAsset, opts ...grpc.CallOption) (*MsgWriteOffAssetResponse, error)
+	// FinalizeRetirement retires an asset within its approved residual bound.
+	// Retirement is terminal: there is no RPC back out of it.
+	FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error)
+	// The ReactivateAsset RPC was removed with the comeback it offered; the name
+	// stays burned. A retired tombstone is final, and the two reversible pairs
+	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
+	// SuspendAsset/RecoverAsset for distress — are what an asset that might
+	// return uses instead.
+	// SetEmergencyMandate replaces or disables the emergency committee mandate.
+	SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error)
+	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
+	// It is the committee's only power: halting issuance contains nothing, so it
+	// stays a governance act.
+	// Suspension is a pure status move: an asset sharing the reference
+	// denomination suspends freely while the feed keeps pricing.
+	EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error)
 }
 
 type msgClient struct {
@@ -76,6 +87,16 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
+}
+
+func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgUpdateParamsResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdateParams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *msgClient) RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opts ...grpc.CallOption) (*MsgRegisterAssetResponse, error) {
@@ -88,80 +109,30 @@ func (c *msgClient) RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opt
 	return out, nil
 }
 
-func (c *msgClient) SetOracleRequired(ctx context.Context, in *MsgSetOracleRequired, opts ...grpc.CallOption) (*MsgSetOracleRequiredResponse, error) {
+func (c *msgClient) HaltIssuance(ctx context.Context, in *MsgHaltIssuance, opts ...grpc.CallOption) (*MsgHaltIssuanceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgSetOracleRequiredResponse)
-	err := c.cc.Invoke(ctx, Msg_SetOracleRequired_FullMethodName, in, out, cOpts...)
+	out := new(MsgHaltIssuanceResponse)
+	err := c.cc.Invoke(ctx, Msg_HaltIssuance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) ActivateAsset(ctx context.Context, in *MsgActivateAsset, opts ...grpc.CallOption) (*MsgActivateAssetResponse, error) {
+func (c *msgClient) ResumeIssuance(ctx context.Context, in *MsgResumeIssuance, opts ...grpc.CallOption) (*MsgResumeIssuanceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgActivateAssetResponse)
-	err := c.cc.Invoke(ctx, Msg_ActivateAsset_FullMethodName, in, out, cOpts...)
+	out := new(MsgResumeIssuanceResponse)
+	err := c.cc.Invoke(ctx, Msg_ResumeIssuance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) CancelAssetRegistration(ctx context.Context, in *MsgCancelAssetRegistration, opts ...grpc.CallOption) (*MsgCancelAssetRegistrationResponse, error) {
+func (c *msgClient) SuspendAsset(ctx context.Context, in *MsgSuspendAsset, opts ...grpc.CallOption) (*MsgSuspendAssetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCancelAssetRegistrationResponse)
-	err := c.cc.Invoke(ctx, Msg_CancelAssetRegistration_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) BeginRetirement(ctx context.Context, in *MsgBeginRetirement, opts ...grpc.CallOption) (*MsgBeginRetirementResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgBeginRetirementResponse)
-	err := c.cc.Invoke(ctx, Msg_BeginRetirement_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) CancelRetirement(ctx context.Context, in *MsgCancelRetirement, opts ...grpc.CallOption) (*MsgCancelRetirementResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCancelRetirementResponse)
-	err := c.cc.Invoke(ctx, Msg_CancelRetirement_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgFinalizeRetirementResponse)
-	err := c.cc.Invoke(ctx, Msg_FinalizeRetirement_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) ReactivateAsset(ctx context.Context, in *MsgReactivateAsset, opts ...grpc.CallOption) (*MsgReactivateAssetResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgReactivateAssetResponse)
-	err := c.cc.Invoke(ctx, Msg_ReactivateAsset_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) BeginDelisting(ctx context.Context, in *MsgBeginDelisting, opts ...grpc.CallOption) (*MsgBeginDelistingResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgBeginDelistingResponse)
-	err := c.cc.Invoke(ctx, Msg_BeginDelisting_FullMethodName, in, out, cOpts...)
+	out := new(MsgSuspendAssetResponse)
+	err := c.cc.Invoke(ctx, Msg_SuspendAsset_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -188,10 +159,10 @@ func (c *msgClient) CancelSettlement(ctx context.Context, in *MsgCancelSettlemen
 	return out, nil
 }
 
-func (c *msgClient) BeginRelisting(ctx context.Context, in *MsgBeginRelisting, opts ...grpc.CallOption) (*MsgBeginRelistingResponse, error) {
+func (c *msgClient) RecoverAsset(ctx context.Context, in *MsgRecoverAsset, opts ...grpc.CallOption) (*MsgRecoverAssetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgBeginRelistingResponse)
-	err := c.cc.Invoke(ctx, Msg_BeginRelisting_FullMethodName, in, out, cOpts...)
+	out := new(MsgRecoverAssetResponse)
+	err := c.cc.Invoke(ctx, Msg_RecoverAsset_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -208,40 +179,82 @@ func (c *msgClient) WriteOffAsset(ctx context.Context, in *MsgWriteOffAsset, opt
 	return out, nil
 }
 
+func (c *msgClient) FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgFinalizeRetirementResponse)
+	err := c.cc.Invoke(ctx, Msg_FinalizeRetirement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgSetEmergencyMandateResponse)
+	err := c.cc.Invoke(ctx, Msg_SetEmergencyMandate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgEmergencySuspendAssetResponse)
+	err := c.cc.Invoke(ctx, Msg_EmergencySuspendAsset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
 //
 // Msg defines the asset Msg service.
 type MsgServer interface {
+	// UpdateParams updates the governance-owned asset module parameters.
+	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(context.Context, *MsgRegisterAsset) (*MsgRegisterAssetResponse, error)
-	// SetOracleRequired changes whether an asset requires Oracle target
-	// participation during normal listed operation.
-	SetOracleRequired(context.Context, *MsgSetOracleRequired) (*MsgSetOracleRequiredResponse, error)
-	// ActivateAsset enables normal policy use for a pending asset.
-	ActivateAsset(context.Context, *MsgActivateAsset) (*MsgActivateAssetResponse, error)
-	// CancelAssetRegistration retires an unscheduled pending registration.
-	CancelAssetRegistration(context.Context, *MsgCancelAssetRegistration) (*MsgCancelAssetRegistrationResponse, error)
-	// BeginRetirement stops new issuance for an active asset.
-	BeginRetirement(context.Context, *MsgBeginRetirement) (*MsgBeginRetirementResponse, error)
-	// CancelRetirement returns a retiring asset to active status.
-	CancelRetirement(context.Context, *MsgCancelRetirement) (*MsgCancelRetirementResponse, error)
-	// FinalizeRetirement retires a zero-supply, unlocked asset.
-	FinalizeRetirement(context.Context, *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error)
-	// ReactivateAsset starts a new pending lifecycle from a retired tombstone.
-	ReactivateAsset(context.Context, *MsgReactivateAsset) (*MsgReactivateAssetResponse, error)
-	// BeginDelisting stops unsafe economic operations and starts Oracle target
-	// removal.
-	BeginDelisting(context.Context, *MsgBeginDelisting) (*MsgBeginDelistingResponse, error)
+	// The AmendRegistration RPC was removed with the mutable metadata it
+	// amended, and the ActivateAsset RPC with the pending status it ended;
+	// both names stay burned.
+	// HaltIssuance stops new issuance for an active asset.
+	HaltIssuance(context.Context, *MsgHaltIssuance) (*MsgHaltIssuanceResponse, error)
+	// ResumeIssuance returns an issuance-halted asset to active status.
+	ResumeIssuance(context.Context, *MsgResumeIssuance) (*MsgResumeIssuanceResponse, error)
+	// SuspendAsset stops unsafe ordinary economic operations. It is a pure
+	// status move: the asset's feed keeps running and keeps serving every reader
+	// that is not this asset's economics.
+	SuspendAsset(context.Context, *MsgSuspendAsset) (*MsgSuspendAssetResponse, error)
 	// OpenSettlement establishes a one-way asset-to-NOAH redemption plan.
 	OpenSettlement(context.Context, *MsgOpenSettlement) (*MsgOpenSettlementResponse, error)
-	// CancelSettlement cancels a settlement before its activation height.
+	// CancelSettlement cancels a settlement that has not yet activated.
 	CancelSettlement(context.Context, *MsgCancelSettlement) (*MsgCancelSettlementResponse, error)
-	// BeginRelisting starts restoration of Oracle pricing and economic policy.
-	BeginRelisting(context.Context, *MsgBeginRelisting) (*MsgBeginRelistingResponse, error)
+	// RecoverAsset restores a suspended or written-off asset to issuance-halted
+	// status, undoing SuspendAsset.
+	RecoverAsset(context.Context, *MsgRecoverAsset) (*MsgRecoverAssetResponse, error)
 	// WriteOffAsset derecognizes outstanding supply without changing balances.
 	WriteOffAsset(context.Context, *MsgWriteOffAsset) (*MsgWriteOffAssetResponse, error)
+	// FinalizeRetirement retires an asset within its approved residual bound.
+	// Retirement is terminal: there is no RPC back out of it.
+	FinalizeRetirement(context.Context, *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error)
+	// The ReactivateAsset RPC was removed with the comeback it offered; the name
+	// stays burned. A retired tombstone is final, and the two reversible pairs
+	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
+	// SuspendAsset/RecoverAsset for distress — are what an asset that might
+	// return uses instead.
+	// SetEmergencyMandate replaces or disables the emergency committee mandate.
+	SetEmergencyMandate(context.Context, *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error)
+	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
+	// It is the committee's only power: halting issuance contains nothing, so it
+	// stays a governance act.
+	// Suspension is a pure status move: an asset sharing the reference
+	// denomination suspends freely while the feed keeps pricing.
+	EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -252,32 +265,20 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
+func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
+}
 func (UnimplementedMsgServer) RegisterAsset(context.Context, *MsgRegisterAsset) (*MsgRegisterAssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RegisterAsset not implemented")
 }
-func (UnimplementedMsgServer) SetOracleRequired(context.Context, *MsgSetOracleRequired) (*MsgSetOracleRequiredResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SetOracleRequired not implemented")
+func (UnimplementedMsgServer) HaltIssuance(context.Context, *MsgHaltIssuance) (*MsgHaltIssuanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method HaltIssuance not implemented")
 }
-func (UnimplementedMsgServer) ActivateAsset(context.Context, *MsgActivateAsset) (*MsgActivateAssetResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ActivateAsset not implemented")
+func (UnimplementedMsgServer) ResumeIssuance(context.Context, *MsgResumeIssuance) (*MsgResumeIssuanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResumeIssuance not implemented")
 }
-func (UnimplementedMsgServer) CancelAssetRegistration(context.Context, *MsgCancelAssetRegistration) (*MsgCancelAssetRegistrationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CancelAssetRegistration not implemented")
-}
-func (UnimplementedMsgServer) BeginRetirement(context.Context, *MsgBeginRetirement) (*MsgBeginRetirementResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method BeginRetirement not implemented")
-}
-func (UnimplementedMsgServer) CancelRetirement(context.Context, *MsgCancelRetirement) (*MsgCancelRetirementResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CancelRetirement not implemented")
-}
-func (UnimplementedMsgServer) FinalizeRetirement(context.Context, *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method FinalizeRetirement not implemented")
-}
-func (UnimplementedMsgServer) ReactivateAsset(context.Context, *MsgReactivateAsset) (*MsgReactivateAssetResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReactivateAsset not implemented")
-}
-func (UnimplementedMsgServer) BeginDelisting(context.Context, *MsgBeginDelisting) (*MsgBeginDelistingResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method BeginDelisting not implemented")
+func (UnimplementedMsgServer) SuspendAsset(context.Context, *MsgSuspendAsset) (*MsgSuspendAssetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SuspendAsset not implemented")
 }
 func (UnimplementedMsgServer) OpenSettlement(context.Context, *MsgOpenSettlement) (*MsgOpenSettlementResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method OpenSettlement not implemented")
@@ -285,11 +286,20 @@ func (UnimplementedMsgServer) OpenSettlement(context.Context, *MsgOpenSettlement
 func (UnimplementedMsgServer) CancelSettlement(context.Context, *MsgCancelSettlement) (*MsgCancelSettlementResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelSettlement not implemented")
 }
-func (UnimplementedMsgServer) BeginRelisting(context.Context, *MsgBeginRelisting) (*MsgBeginRelistingResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method BeginRelisting not implemented")
+func (UnimplementedMsgServer) RecoverAsset(context.Context, *MsgRecoverAsset) (*MsgRecoverAssetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RecoverAsset not implemented")
 }
 func (UnimplementedMsgServer) WriteOffAsset(context.Context, *MsgWriteOffAsset) (*MsgWriteOffAssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WriteOffAsset not implemented")
+}
+func (UnimplementedMsgServer) FinalizeRetirement(context.Context, *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FinalizeRetirement not implemented")
+}
+func (UnimplementedMsgServer) SetEmergencyMandate(context.Context, *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetEmergencyMandate not implemented")
+}
+func (UnimplementedMsgServer) EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EmergencySuspendAsset not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -312,6 +322,24 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 	s.RegisterService(&Msg_ServiceDesc, srv)
 }
 
+func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateParams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdateParams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateParams(ctx, req.(*MsgUpdateParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_RegisterAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgRegisterAsset)
 	if err := dec(in); err != nil {
@@ -330,146 +358,56 @@ func _Msg_RegisterAsset_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_SetOracleRequired_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgSetOracleRequired)
+func _Msg_HaltIssuance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgHaltIssuance)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).SetOracleRequired(ctx, in)
+		return srv.(MsgServer).HaltIssuance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_SetOracleRequired_FullMethodName,
+		FullMethod: Msg_HaltIssuance_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).SetOracleRequired(ctx, req.(*MsgSetOracleRequired))
+		return srv.(MsgServer).HaltIssuance(ctx, req.(*MsgHaltIssuance))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_ActivateAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgActivateAsset)
+func _Msg_ResumeIssuance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgResumeIssuance)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).ActivateAsset(ctx, in)
+		return srv.(MsgServer).ResumeIssuance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_ActivateAsset_FullMethodName,
+		FullMethod: Msg_ResumeIssuance_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ActivateAsset(ctx, req.(*MsgActivateAsset))
+		return srv.(MsgServer).ResumeIssuance(ctx, req.(*MsgResumeIssuance))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CancelAssetRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelAssetRegistration)
+func _Msg_SuspendAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSuspendAsset)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CancelAssetRegistration(ctx, in)
+		return srv.(MsgServer).SuspendAsset(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CancelAssetRegistration_FullMethodName,
+		FullMethod: Msg_SuspendAsset_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelAssetRegistration(ctx, req.(*MsgCancelAssetRegistration))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_BeginRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgBeginRetirement)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).BeginRetirement(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_BeginRetirement_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).BeginRetirement(ctx, req.(*MsgBeginRetirement))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_CancelRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelRetirement)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CancelRetirement(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_CancelRetirement_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelRetirement(ctx, req.(*MsgCancelRetirement))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_FinalizeRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgFinalizeRetirement)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).FinalizeRetirement(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_FinalizeRetirement_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).FinalizeRetirement(ctx, req.(*MsgFinalizeRetirement))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_ReactivateAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgReactivateAsset)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).ReactivateAsset(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_ReactivateAsset_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ReactivateAsset(ctx, req.(*MsgReactivateAsset))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_BeginDelisting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgBeginDelisting)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).BeginDelisting(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_BeginDelisting_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).BeginDelisting(ctx, req.(*MsgBeginDelisting))
+		return srv.(MsgServer).SuspendAsset(ctx, req.(*MsgSuspendAsset))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -510,20 +448,20 @@ func _Msg_CancelSettlement_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_BeginRelisting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgBeginRelisting)
+func _Msg_RecoverAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRecoverAsset)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).BeginRelisting(ctx, in)
+		return srv.(MsgServer).RecoverAsset(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_BeginRelisting_FullMethodName,
+		FullMethod: Msg_RecoverAsset_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).BeginRelisting(ctx, req.(*MsgBeginRelisting))
+		return srv.(MsgServer).RecoverAsset(ctx, req.(*MsgRecoverAsset))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -546,6 +484,60 @@ func _Msg_WriteOffAsset_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_FinalizeRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgFinalizeRetirement)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).FinalizeRetirement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_FinalizeRetirement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).FinalizeRetirement(ctx, req.(*MsgFinalizeRetirement))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetEmergencyMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetEmergencyMandate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetEmergencyMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetEmergencyMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetEmergencyMandate(ctx, req.(*MsgSetEmergencyMandate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_EmergencySuspendAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgEmergencySuspendAsset)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).EmergencySuspendAsset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_EmergencySuspendAsset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).EmergencySuspendAsset(ctx, req.(*MsgEmergencySuspendAsset))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -554,40 +546,24 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "UpdateParams",
+			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
 			MethodName: "RegisterAsset",
 			Handler:    _Msg_RegisterAsset_Handler,
 		},
 		{
-			MethodName: "SetOracleRequired",
-			Handler:    _Msg_SetOracleRequired_Handler,
+			MethodName: "HaltIssuance",
+			Handler:    _Msg_HaltIssuance_Handler,
 		},
 		{
-			MethodName: "ActivateAsset",
-			Handler:    _Msg_ActivateAsset_Handler,
+			MethodName: "ResumeIssuance",
+			Handler:    _Msg_ResumeIssuance_Handler,
 		},
 		{
-			MethodName: "CancelAssetRegistration",
-			Handler:    _Msg_CancelAssetRegistration_Handler,
-		},
-		{
-			MethodName: "BeginRetirement",
-			Handler:    _Msg_BeginRetirement_Handler,
-		},
-		{
-			MethodName: "CancelRetirement",
-			Handler:    _Msg_CancelRetirement_Handler,
-		},
-		{
-			MethodName: "FinalizeRetirement",
-			Handler:    _Msg_FinalizeRetirement_Handler,
-		},
-		{
-			MethodName: "ReactivateAsset",
-			Handler:    _Msg_ReactivateAsset_Handler,
-		},
-		{
-			MethodName: "BeginDelisting",
-			Handler:    _Msg_BeginDelisting_Handler,
+			MethodName: "SuspendAsset",
+			Handler:    _Msg_SuspendAsset_Handler,
 		},
 		{
 			MethodName: "OpenSettlement",
@@ -598,12 +574,24 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_CancelSettlement_Handler,
 		},
 		{
-			MethodName: "BeginRelisting",
-			Handler:    _Msg_BeginRelisting_Handler,
+			MethodName: "RecoverAsset",
+			Handler:    _Msg_RecoverAsset_Handler,
 		},
 		{
 			MethodName: "WriteOffAsset",
 			Handler:    _Msg_WriteOffAsset_Handler,
+		},
+		{
+			MethodName: "FinalizeRetirement",
+			Handler:    _Msg_FinalizeRetirement_Handler,
+		},
+		{
+			MethodName: "SetEmergencyMandate",
+			Handler:    _Msg_SetEmergencyMandate_Handler,
+		},
+		{
+			MethodName: "EmergencySuspendAsset",
+			Handler:    _Msg_EmergencySuspendAsset_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

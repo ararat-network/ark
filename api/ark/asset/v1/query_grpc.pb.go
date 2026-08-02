@@ -19,12 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Asset_FullMethodName           = "/ark.asset.v1.Query/Asset"
-	Query_Assets_FullMethodName          = "/ark.asset.v1.Query/Assets"
-	Query_AssetLocks_FullMethodName      = "/ark.asset.v1.Query/AssetLocks"
-	Query_OracleTargets_FullMethodName   = "/ark.asset.v1.Query/OracleTargets"
-	Query_SettlementPlan_FullMethodName  = "/ark.asset.v1.Query/SettlementPlan"
-	Query_WriteOffHistory_FullMethodName = "/ark.asset.v1.Query/WriteOffHistory"
+	Query_Params_FullMethodName            = "/ark.asset.v1.Query/Params"
+	Query_Asset_FullMethodName             = "/ark.asset.v1.Query/Asset"
+	Query_Assets_FullMethodName            = "/ark.asset.v1.Query/Assets"
+	Query_SettlementPlan_FullMethodName    = "/ark.asset.v1.Query/SettlementPlan"
+	Query_ResolutionHistory_FullMethodName = "/ark.asset.v1.Query/ResolutionHistory"
+	Query_EmergencyMandate_FullMethodName  = "/ark.asset.v1.Query/EmergencyMandate"
 )
 
 // QueryClient is the client API for Query service.
@@ -33,18 +33,20 @@ const (
 //
 // Query defines the gRPC querier service.
 type QueryClient interface {
+	// Params returns the asset module parameters.
+	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Asset returns one registered asset.
 	Asset(ctx context.Context, in *QueryAssetRequest, opts ...grpc.CallOption) (*QueryAssetResponse, error)
-	// Assets returns registered assets with pagination.
+	// Assets returns every registered asset. The registry is governance-bounded,
+	// so it is returned whole rather than paged.
 	Assets(ctx context.Context, in *QueryAssetsRequest, opts ...grpc.CallOption) (*QueryAssetsResponse, error)
-	// AssetLocks returns downstream protocol dependencies for one asset.
-	AssetLocks(ctx context.Context, in *QueryAssetLocksRequest, opts ...grpc.CallOption) (*QueryAssetLocksResponse, error)
-	// OracleTargets returns the active and pending target epochs.
-	OracleTargets(ctx context.Context, in *QueryOracleTargetsRequest, opts ...grpc.CallOption) (*QueryOracleTargetsResponse, error)
 	// SettlementPlan returns the active settlement plan for one asset.
 	SettlementPlan(ctx context.Context, in *QuerySettlementPlanRequest, opts ...grpc.CallOption) (*QuerySettlementPlanResponse, error)
-	// WriteOffHistory returns append-only write-off records for one asset.
-	WriteOffHistory(ctx context.Context, in *QueryWriteOffHistoryRequest, opts ...grpc.CallOption) (*QueryWriteOffHistoryResponse, error)
+	// ResolutionHistory returns append-only resolution records for one asset.
+	ResolutionHistory(ctx context.Context, in *QueryResolutionHistoryRequest, opts ...grpc.CallOption) (*QueryResolutionHistoryResponse, error)
+	// EmergencyMandate returns the committee appointment, its current effective
+	// status, and the actions already consumed under its term.
+	EmergencyMandate(ctx context.Context, in *QueryEmergencyMandateRequest, opts ...grpc.CallOption) (*QueryEmergencyMandateResponse, error)
 }
 
 type queryClient struct {
@@ -53,6 +55,16 @@ type queryClient struct {
 
 func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
 	return &queryClient{cc}
+}
+
+func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryParamsResponse)
+	err := c.cc.Invoke(ctx, Query_Params_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *queryClient) Asset(ctx context.Context, in *QueryAssetRequest, opts ...grpc.CallOption) (*QueryAssetResponse, error) {
@@ -75,26 +87,6 @@ func (c *queryClient) Assets(ctx context.Context, in *QueryAssetsRequest, opts .
 	return out, nil
 }
 
-func (c *queryClient) AssetLocks(ctx context.Context, in *QueryAssetLocksRequest, opts ...grpc.CallOption) (*QueryAssetLocksResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryAssetLocksResponse)
-	err := c.cc.Invoke(ctx, Query_AssetLocks_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) OracleTargets(ctx context.Context, in *QueryOracleTargetsRequest, opts ...grpc.CallOption) (*QueryOracleTargetsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryOracleTargetsResponse)
-	err := c.cc.Invoke(ctx, Query_OracleTargets_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *queryClient) SettlementPlan(ctx context.Context, in *QuerySettlementPlanRequest, opts ...grpc.CallOption) (*QuerySettlementPlanResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QuerySettlementPlanResponse)
@@ -105,10 +97,20 @@ func (c *queryClient) SettlementPlan(ctx context.Context, in *QuerySettlementPla
 	return out, nil
 }
 
-func (c *queryClient) WriteOffHistory(ctx context.Context, in *QueryWriteOffHistoryRequest, opts ...grpc.CallOption) (*QueryWriteOffHistoryResponse, error) {
+func (c *queryClient) ResolutionHistory(ctx context.Context, in *QueryResolutionHistoryRequest, opts ...grpc.CallOption) (*QueryResolutionHistoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryWriteOffHistoryResponse)
-	err := c.cc.Invoke(ctx, Query_WriteOffHistory_FullMethodName, in, out, cOpts...)
+	out := new(QueryResolutionHistoryResponse)
+	err := c.cc.Invoke(ctx, Query_ResolutionHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) EmergencyMandate(ctx context.Context, in *QueryEmergencyMandateRequest, opts ...grpc.CallOption) (*QueryEmergencyMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryEmergencyMandateResponse)
+	err := c.cc.Invoke(ctx, Query_EmergencyMandate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,18 +123,20 @@ func (c *queryClient) WriteOffHistory(ctx context.Context, in *QueryWriteOffHist
 //
 // Query defines the gRPC querier service.
 type QueryServer interface {
+	// Params returns the asset module parameters.
+	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Asset returns one registered asset.
 	Asset(context.Context, *QueryAssetRequest) (*QueryAssetResponse, error)
-	// Assets returns registered assets with pagination.
+	// Assets returns every registered asset. The registry is governance-bounded,
+	// so it is returned whole rather than paged.
 	Assets(context.Context, *QueryAssetsRequest) (*QueryAssetsResponse, error)
-	// AssetLocks returns downstream protocol dependencies for one asset.
-	AssetLocks(context.Context, *QueryAssetLocksRequest) (*QueryAssetLocksResponse, error)
-	// OracleTargets returns the active and pending target epochs.
-	OracleTargets(context.Context, *QueryOracleTargetsRequest) (*QueryOracleTargetsResponse, error)
 	// SettlementPlan returns the active settlement plan for one asset.
 	SettlementPlan(context.Context, *QuerySettlementPlanRequest) (*QuerySettlementPlanResponse, error)
-	// WriteOffHistory returns append-only write-off records for one asset.
-	WriteOffHistory(context.Context, *QueryWriteOffHistoryRequest) (*QueryWriteOffHistoryResponse, error)
+	// ResolutionHistory returns append-only resolution records for one asset.
+	ResolutionHistory(context.Context, *QueryResolutionHistoryRequest) (*QueryResolutionHistoryResponse, error)
+	// EmergencyMandate returns the committee appointment, its current effective
+	// status, and the actions already consumed under its term.
+	EmergencyMandate(context.Context, *QueryEmergencyMandateRequest) (*QueryEmergencyMandateResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -143,23 +147,23 @@ type QueryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedQueryServer struct{}
 
+func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
+}
 func (UnimplementedQueryServer) Asset(context.Context, *QueryAssetRequest) (*QueryAssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Asset not implemented")
 }
 func (UnimplementedQueryServer) Assets(context.Context, *QueryAssetsRequest) (*QueryAssetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Assets not implemented")
 }
-func (UnimplementedQueryServer) AssetLocks(context.Context, *QueryAssetLocksRequest) (*QueryAssetLocksResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AssetLocks not implemented")
-}
-func (UnimplementedQueryServer) OracleTargets(context.Context, *QueryOracleTargetsRequest) (*QueryOracleTargetsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OracleTargets not implemented")
-}
 func (UnimplementedQueryServer) SettlementPlan(context.Context, *QuerySettlementPlanRequest) (*QuerySettlementPlanResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SettlementPlan not implemented")
 }
-func (UnimplementedQueryServer) WriteOffHistory(context.Context, *QueryWriteOffHistoryRequest) (*QueryWriteOffHistoryResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method WriteOffHistory not implemented")
+func (UnimplementedQueryServer) ResolutionHistory(context.Context, *QueryResolutionHistoryRequest) (*QueryResolutionHistoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResolutionHistory not implemented")
+}
+func (UnimplementedQueryServer) EmergencyMandate(context.Context, *QueryEmergencyMandateRequest) (*QueryEmergencyMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EmergencyMandate not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -180,6 +184,24 @@ func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Query_ServiceDesc, srv)
+}
+
+func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryParamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Params(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Params_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Params(ctx, req.(*QueryParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Query_Asset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -218,42 +240,6 @@ func _Query_Assets_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_AssetLocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryAssetLocksRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).AssetLocks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_AssetLocks_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).AssetLocks(ctx, req.(*QueryAssetLocksRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_OracleTargets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryOracleTargetsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).OracleTargets(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_OracleTargets_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).OracleTargets(ctx, req.(*QueryOracleTargetsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Query_SettlementPlan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QuerySettlementPlanRequest)
 	if err := dec(in); err != nil {
@@ -272,20 +258,38 @@ func _Query_SettlementPlan_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_WriteOffHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryWriteOffHistoryRequest)
+func _Query_ResolutionHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryResolutionHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).WriteOffHistory(ctx, in)
+		return srv.(QueryServer).ResolutionHistory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_WriteOffHistory_FullMethodName,
+		FullMethod: Query_ResolutionHistory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).WriteOffHistory(ctx, req.(*QueryWriteOffHistoryRequest))
+		return srv.(QueryServer).ResolutionHistory(ctx, req.(*QueryResolutionHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_EmergencyMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryEmergencyMandateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).EmergencyMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_EmergencyMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).EmergencyMandate(ctx, req.(*QueryEmergencyMandateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -298,6 +302,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Params",
+			Handler:    _Query_Params_Handler,
+		},
+		{
 			MethodName: "Asset",
 			Handler:    _Query_Asset_Handler,
 		},
@@ -306,20 +314,16 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Assets_Handler,
 		},
 		{
-			MethodName: "AssetLocks",
-			Handler:    _Query_AssetLocks_Handler,
-		},
-		{
-			MethodName: "OracleTargets",
-			Handler:    _Query_OracleTargets_Handler,
-		},
-		{
 			MethodName: "SettlementPlan",
 			Handler:    _Query_SettlementPlan_Handler,
 		},
 		{
-			MethodName: "WriteOffHistory",
-			Handler:    _Query_WriteOffHistory_Handler,
+			MethodName: "ResolutionHistory",
+			Handler:    _Query_ResolutionHistory_Handler,
+		},
+		{
+			MethodName: "EmergencyMandate",
+			Handler:    _Query_EmergencyMandate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

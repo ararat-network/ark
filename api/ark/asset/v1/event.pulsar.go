@@ -4,6 +4,7 @@ package assetv1
 import (
 	_ "cosmossdk.io/api/amino"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -1014,2918 +1015,6 @@ func (x *fastReflection_EventAssetStatusChanged) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_EventOracleRequiredChanged                     protoreflect.MessageDescriptor
-	fd_EventOracleRequiredChanged_denom               protoreflect.FieldDescriptor
-	fd_EventOracleRequiredChanged_old_oracle_required protoreflect.FieldDescriptor
-	fd_EventOracleRequiredChanged_new_oracle_required protoreflect.FieldDescriptor
-	fd_EventOracleRequiredChanged_version             protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_event_proto_init()
-	md_EventOracleRequiredChanged = File_ark_asset_v1_event_proto.Messages().ByName("EventOracleRequiredChanged")
-	fd_EventOracleRequiredChanged_denom = md_EventOracleRequiredChanged.Fields().ByName("denom")
-	fd_EventOracleRequiredChanged_old_oracle_required = md_EventOracleRequiredChanged.Fields().ByName("old_oracle_required")
-	fd_EventOracleRequiredChanged_new_oracle_required = md_EventOracleRequiredChanged.Fields().ByName("new_oracle_required")
-	fd_EventOracleRequiredChanged_version = md_EventOracleRequiredChanged.Fields().ByName("version")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventOracleRequiredChanged)(nil)
-
-type fastReflection_EventOracleRequiredChanged EventOracleRequiredChanged
-
-func (x *EventOracleRequiredChanged) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventOracleRequiredChanged)(x)
-}
-
-func (x *EventOracleRequiredChanged) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventOracleRequiredChanged_messageType fastReflection_EventOracleRequiredChanged_messageType
-var _ protoreflect.MessageType = fastReflection_EventOracleRequiredChanged_messageType{}
-
-type fastReflection_EventOracleRequiredChanged_messageType struct{}
-
-func (x fastReflection_EventOracleRequiredChanged_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventOracleRequiredChanged)(nil)
-}
-func (x fastReflection_EventOracleRequiredChanged_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventOracleRequiredChanged)
-}
-func (x fastReflection_EventOracleRequiredChanged_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleRequiredChanged
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventOracleRequiredChanged) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleRequiredChanged
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventOracleRequiredChanged) Type() protoreflect.MessageType {
-	return _fastReflection_EventOracleRequiredChanged_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventOracleRequiredChanged) New() protoreflect.Message {
-	return new(fastReflection_EventOracleRequiredChanged)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventOracleRequiredChanged) Interface() protoreflect.ProtoMessage {
-	return (*EventOracleRequiredChanged)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventOracleRequiredChanged) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_EventOracleRequiredChanged_denom, value) {
-			return
-		}
-	}
-	if x.OldOracleRequired != false {
-		value := protoreflect.ValueOfBool(x.OldOracleRequired)
-		if !f(fd_EventOracleRequiredChanged_old_oracle_required, value) {
-			return
-		}
-	}
-	if x.NewOracleRequired != false {
-		value := protoreflect.ValueOfBool(x.NewOracleRequired)
-		if !f(fd_EventOracleRequiredChanged_new_oracle_required, value) {
-			return
-		}
-	}
-	if x.Version != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.Version)
-		if !f(fd_EventOracleRequiredChanged_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventOracleRequiredChanged) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleRequiredChanged.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.EventOracleRequiredChanged.old_oracle_required":
-		return x.OldOracleRequired != false
-	case "ark.asset.v1.EventOracleRequiredChanged.new_oracle_required":
-		return x.NewOracleRequired != false
-	case "ark.asset.v1.EventOracleRequiredChanged.version":
-		return x.Version != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleRequiredChanged"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleRequiredChanged does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleRequiredChanged) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleRequiredChanged.denom":
-		x.Denom = ""
-	case "ark.asset.v1.EventOracleRequiredChanged.old_oracle_required":
-		x.OldOracleRequired = false
-	case "ark.asset.v1.EventOracleRequiredChanged.new_oracle_required":
-		x.NewOracleRequired = false
-	case "ark.asset.v1.EventOracleRequiredChanged.version":
-		x.Version = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleRequiredChanged"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleRequiredChanged does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventOracleRequiredChanged) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.EventOracleRequiredChanged.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.EventOracleRequiredChanged.old_oracle_required":
-		value := x.OldOracleRequired
-		return protoreflect.ValueOfBool(value)
-	case "ark.asset.v1.EventOracleRequiredChanged.new_oracle_required":
-		value := x.NewOracleRequired
-		return protoreflect.ValueOfBool(value)
-	case "ark.asset.v1.EventOracleRequiredChanged.version":
-		value := x.Version
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleRequiredChanged"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleRequiredChanged does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleRequiredChanged) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleRequiredChanged.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.EventOracleRequiredChanged.old_oracle_required":
-		x.OldOracleRequired = value.Bool()
-	case "ark.asset.v1.EventOracleRequiredChanged.new_oracle_required":
-		x.NewOracleRequired = value.Bool()
-	case "ark.asset.v1.EventOracleRequiredChanged.version":
-		x.Version = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleRequiredChanged"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleRequiredChanged does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleRequiredChanged) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleRequiredChanged.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.EventOracleRequiredChanged is not mutable"))
-	case "ark.asset.v1.EventOracleRequiredChanged.old_oracle_required":
-		panic(fmt.Errorf("field old_oracle_required of message ark.asset.v1.EventOracleRequiredChanged is not mutable"))
-	case "ark.asset.v1.EventOracleRequiredChanged.new_oracle_required":
-		panic(fmt.Errorf("field new_oracle_required of message ark.asset.v1.EventOracleRequiredChanged is not mutable"))
-	case "ark.asset.v1.EventOracleRequiredChanged.version":
-		panic(fmt.Errorf("field version of message ark.asset.v1.EventOracleRequiredChanged is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleRequiredChanged"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleRequiredChanged does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventOracleRequiredChanged) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleRequiredChanged.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.EventOracleRequiredChanged.old_oracle_required":
-		return protoreflect.ValueOfBool(false)
-	case "ark.asset.v1.EventOracleRequiredChanged.new_oracle_required":
-		return protoreflect.ValueOfBool(false)
-	case "ark.asset.v1.EventOracleRequiredChanged.version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleRequiredChanged"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleRequiredChanged does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventOracleRequiredChanged) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventOracleRequiredChanged", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventOracleRequiredChanged) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleRequiredChanged) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventOracleRequiredChanged) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventOracleRequiredChanged) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventOracleRequiredChanged)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.OldOracleRequired {
-			n += 2
-		}
-		if x.NewOracleRequired {
-			n += 2
-		}
-		if x.Version != 0 {
-			n += 1 + runtime.Sov(uint64(x.Version))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleRequiredChanged)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Version != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Version))
-			i--
-			dAtA[i] = 0x20
-		}
-		if x.NewOracleRequired {
-			i--
-			if x.NewOracleRequired {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x18
-		}
-		if x.OldOracleRequired {
-			i--
-			if x.OldOracleRequired {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x10
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleRequiredChanged)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleRequiredChanged: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleRequiredChanged: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OldOracleRequired", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.OldOracleRequired = bool(v != 0)
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NewOracleRequired", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.NewOracleRequired = bool(v != 0)
-			case 4:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-				}
-				x.Version = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Version |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var _ protoreflect.List = (*_EventOracleTargetsScheduled_4_list)(nil)
-
-type _EventOracleTargetsScheduled_4_list struct {
-	list *[]string
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfString((*x.list)[i])
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message EventOracleTargetsScheduled at list field AddedDenoms as it is not of Message kind"))
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) Truncate(n int) {
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) NewElement() protoreflect.Value {
-	v := ""
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_EventOracleTargetsScheduled_4_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_EventOracleTargetsScheduled_5_list)(nil)
-
-type _EventOracleTargetsScheduled_5_list struct {
-	list *[]string
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfString((*x.list)[i])
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message EventOracleTargetsScheduled at list field RemovedDenoms as it is not of Message kind"))
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) Truncate(n int) {
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) NewElement() protoreflect.Value {
-	v := ""
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_EventOracleTargetsScheduled_5_list) IsValid() bool {
-	return x.list != nil
-}
-
-var (
-	md_EventOracleTargetsScheduled                        protoreflect.MessageDescriptor
-	fd_EventOracleTargetsScheduled_active_version         protoreflect.FieldDescriptor
-	fd_EventOracleTargetsScheduled_pending_version        protoreflect.FieldDescriptor
-	fd_EventOracleTargetsScheduled_activation_vote_height protoreflect.FieldDescriptor
-	fd_EventOracleTargetsScheduled_added_denoms           protoreflect.FieldDescriptor
-	fd_EventOracleTargetsScheduled_removed_denoms         protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_event_proto_init()
-	md_EventOracleTargetsScheduled = File_ark_asset_v1_event_proto.Messages().ByName("EventOracleTargetsScheduled")
-	fd_EventOracleTargetsScheduled_active_version = md_EventOracleTargetsScheduled.Fields().ByName("active_version")
-	fd_EventOracleTargetsScheduled_pending_version = md_EventOracleTargetsScheduled.Fields().ByName("pending_version")
-	fd_EventOracleTargetsScheduled_activation_vote_height = md_EventOracleTargetsScheduled.Fields().ByName("activation_vote_height")
-	fd_EventOracleTargetsScheduled_added_denoms = md_EventOracleTargetsScheduled.Fields().ByName("added_denoms")
-	fd_EventOracleTargetsScheduled_removed_denoms = md_EventOracleTargetsScheduled.Fields().ByName("removed_denoms")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventOracleTargetsScheduled)(nil)
-
-type fastReflection_EventOracleTargetsScheduled EventOracleTargetsScheduled
-
-func (x *EventOracleTargetsScheduled) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventOracleTargetsScheduled)(x)
-}
-
-func (x *EventOracleTargetsScheduled) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventOracleTargetsScheduled_messageType fastReflection_EventOracleTargetsScheduled_messageType
-var _ protoreflect.MessageType = fastReflection_EventOracleTargetsScheduled_messageType{}
-
-type fastReflection_EventOracleTargetsScheduled_messageType struct{}
-
-func (x fastReflection_EventOracleTargetsScheduled_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventOracleTargetsScheduled)(nil)
-}
-func (x fastReflection_EventOracleTargetsScheduled_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventOracleTargetsScheduled)
-}
-func (x fastReflection_EventOracleTargetsScheduled_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleTargetsScheduled
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventOracleTargetsScheduled) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleTargetsScheduled
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventOracleTargetsScheduled) Type() protoreflect.MessageType {
-	return _fastReflection_EventOracleTargetsScheduled_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventOracleTargetsScheduled) New() protoreflect.Message {
-	return new(fastReflection_EventOracleTargetsScheduled)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventOracleTargetsScheduled) Interface() protoreflect.ProtoMessage {
-	return (*EventOracleTargetsScheduled)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventOracleTargetsScheduled) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.ActiveVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ActiveVersion)
-		if !f(fd_EventOracleTargetsScheduled_active_version, value) {
-			return
-		}
-	}
-	if x.PendingVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.PendingVersion)
-		if !f(fd_EventOracleTargetsScheduled_pending_version, value) {
-			return
-		}
-	}
-	if x.ActivationVoteHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.ActivationVoteHeight)
-		if !f(fd_EventOracleTargetsScheduled_activation_vote_height, value) {
-			return
-		}
-	}
-	if len(x.AddedDenoms) != 0 {
-		value := protoreflect.ValueOfList(&_EventOracleTargetsScheduled_4_list{list: &x.AddedDenoms})
-		if !f(fd_EventOracleTargetsScheduled_added_denoms, value) {
-			return
-		}
-	}
-	if len(x.RemovedDenoms) != 0 {
-		value := protoreflect.ValueOfList(&_EventOracleTargetsScheduled_5_list{list: &x.RemovedDenoms})
-		if !f(fd_EventOracleTargetsScheduled_removed_denoms, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventOracleTargetsScheduled) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsScheduled.active_version":
-		return x.ActiveVersion != uint64(0)
-	case "ark.asset.v1.EventOracleTargetsScheduled.pending_version":
-		return x.PendingVersion != uint64(0)
-	case "ark.asset.v1.EventOracleTargetsScheduled.activation_vote_height":
-		return x.ActivationVoteHeight != int64(0)
-	case "ark.asset.v1.EventOracleTargetsScheduled.added_denoms":
-		return len(x.AddedDenoms) != 0
-	case "ark.asset.v1.EventOracleTargetsScheduled.removed_denoms":
-		return len(x.RemovedDenoms) != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsScheduled"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsScheduled does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsScheduled) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsScheduled.active_version":
-		x.ActiveVersion = uint64(0)
-	case "ark.asset.v1.EventOracleTargetsScheduled.pending_version":
-		x.PendingVersion = uint64(0)
-	case "ark.asset.v1.EventOracleTargetsScheduled.activation_vote_height":
-		x.ActivationVoteHeight = int64(0)
-	case "ark.asset.v1.EventOracleTargetsScheduled.added_denoms":
-		x.AddedDenoms = nil
-	case "ark.asset.v1.EventOracleTargetsScheduled.removed_denoms":
-		x.RemovedDenoms = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsScheduled"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsScheduled does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventOracleTargetsScheduled) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.EventOracleTargetsScheduled.active_version":
-		value := x.ActiveVersion
-		return protoreflect.ValueOfUint64(value)
-	case "ark.asset.v1.EventOracleTargetsScheduled.pending_version":
-		value := x.PendingVersion
-		return protoreflect.ValueOfUint64(value)
-	case "ark.asset.v1.EventOracleTargetsScheduled.activation_vote_height":
-		value := x.ActivationVoteHeight
-		return protoreflect.ValueOfInt64(value)
-	case "ark.asset.v1.EventOracleTargetsScheduled.added_denoms":
-		if len(x.AddedDenoms) == 0 {
-			return protoreflect.ValueOfList(&_EventOracleTargetsScheduled_4_list{})
-		}
-		listValue := &_EventOracleTargetsScheduled_4_list{list: &x.AddedDenoms}
-		return protoreflect.ValueOfList(listValue)
-	case "ark.asset.v1.EventOracleTargetsScheduled.removed_denoms":
-		if len(x.RemovedDenoms) == 0 {
-			return protoreflect.ValueOfList(&_EventOracleTargetsScheduled_5_list{})
-		}
-		listValue := &_EventOracleTargetsScheduled_5_list{list: &x.RemovedDenoms}
-		return protoreflect.ValueOfList(listValue)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsScheduled"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsScheduled does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsScheduled) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsScheduled.active_version":
-		x.ActiveVersion = value.Uint()
-	case "ark.asset.v1.EventOracleTargetsScheduled.pending_version":
-		x.PendingVersion = value.Uint()
-	case "ark.asset.v1.EventOracleTargetsScheduled.activation_vote_height":
-		x.ActivationVoteHeight = value.Int()
-	case "ark.asset.v1.EventOracleTargetsScheduled.added_denoms":
-		lv := value.List()
-		clv := lv.(*_EventOracleTargetsScheduled_4_list)
-		x.AddedDenoms = *clv.list
-	case "ark.asset.v1.EventOracleTargetsScheduled.removed_denoms":
-		lv := value.List()
-		clv := lv.(*_EventOracleTargetsScheduled_5_list)
-		x.RemovedDenoms = *clv.list
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsScheduled"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsScheduled does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsScheduled) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsScheduled.added_denoms":
-		if x.AddedDenoms == nil {
-			x.AddedDenoms = []string{}
-		}
-		value := &_EventOracleTargetsScheduled_4_list{list: &x.AddedDenoms}
-		return protoreflect.ValueOfList(value)
-	case "ark.asset.v1.EventOracleTargetsScheduled.removed_denoms":
-		if x.RemovedDenoms == nil {
-			x.RemovedDenoms = []string{}
-		}
-		value := &_EventOracleTargetsScheduled_5_list{list: &x.RemovedDenoms}
-		return protoreflect.ValueOfList(value)
-	case "ark.asset.v1.EventOracleTargetsScheduled.active_version":
-		panic(fmt.Errorf("field active_version of message ark.asset.v1.EventOracleTargetsScheduled is not mutable"))
-	case "ark.asset.v1.EventOracleTargetsScheduled.pending_version":
-		panic(fmt.Errorf("field pending_version of message ark.asset.v1.EventOracleTargetsScheduled is not mutable"))
-	case "ark.asset.v1.EventOracleTargetsScheduled.activation_vote_height":
-		panic(fmt.Errorf("field activation_vote_height of message ark.asset.v1.EventOracleTargetsScheduled is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsScheduled"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsScheduled does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventOracleTargetsScheduled) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsScheduled.active_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.asset.v1.EventOracleTargetsScheduled.pending_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.asset.v1.EventOracleTargetsScheduled.activation_vote_height":
-		return protoreflect.ValueOfInt64(int64(0))
-	case "ark.asset.v1.EventOracleTargetsScheduled.added_denoms":
-		list := []string{}
-		return protoreflect.ValueOfList(&_EventOracleTargetsScheduled_4_list{list: &list})
-	case "ark.asset.v1.EventOracleTargetsScheduled.removed_denoms":
-		list := []string{}
-		return protoreflect.ValueOfList(&_EventOracleTargetsScheduled_5_list{list: &list})
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsScheduled"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsScheduled does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventOracleTargetsScheduled) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventOracleTargetsScheduled", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventOracleTargetsScheduled) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsScheduled) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventOracleTargetsScheduled) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventOracleTargetsScheduled) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventOracleTargetsScheduled)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.ActiveVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActiveVersion))
-		}
-		if x.PendingVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.PendingVersion))
-		}
-		if x.ActivationVoteHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationVoteHeight))
-		}
-		if len(x.AddedDenoms) > 0 {
-			for _, s := range x.AddedDenoms {
-				l = len(s)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if len(x.RemovedDenoms) > 0 {
-			for _, s := range x.RemovedDenoms {
-				l = len(s)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleTargetsScheduled)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.RemovedDenoms) > 0 {
-			for iNdEx := len(x.RemovedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.RemovedDenoms[iNdEx])
-				copy(dAtA[i:], x.RemovedDenoms[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RemovedDenoms[iNdEx])))
-				i--
-				dAtA[i] = 0x2a
-			}
-		}
-		if len(x.AddedDenoms) > 0 {
-			for iNdEx := len(x.AddedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.AddedDenoms[iNdEx])
-				copy(dAtA[i:], x.AddedDenoms[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AddedDenoms[iNdEx])))
-				i--
-				dAtA[i] = 0x22
-			}
-		}
-		if x.ActivationVoteHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationVoteHeight))
-			i--
-			dAtA[i] = 0x18
-		}
-		if x.PendingVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.PendingVersion))
-			i--
-			dAtA[i] = 0x10
-		}
-		if x.ActiveVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActiveVersion))
-			i--
-			dAtA[i] = 0x8
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleTargetsScheduled)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleTargetsScheduled: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleTargetsScheduled: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActiveVersion", wireType)
-				}
-				x.ActiveVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ActiveVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PendingVersion", wireType)
-				}
-				x.PendingVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.PendingVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationVoteHeight", wireType)
-				}
-				x.ActivationVoteHeight = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ActivationVoteHeight |= int64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 4:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AddedDenoms", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.AddedDenoms = append(x.AddedDenoms, string(dAtA[iNdEx:postIndex]))
-				iNdEx = postIndex
-			case 5:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RemovedDenoms", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.RemovedDenoms = append(x.RemovedDenoms, string(dAtA[iNdEx:postIndex]))
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var _ protoreflect.List = (*_EventOracleTargetsActivated_2_list)(nil)
-
-type _EventOracleTargetsActivated_2_list struct {
-	list *[]string
-}
-
-func (x *_EventOracleTargetsActivated_2_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EventOracleTargetsActivated_2_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfString((*x.list)[i])
-}
-
-func (x *_EventOracleTargetsActivated_2_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EventOracleTargetsActivated_2_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EventOracleTargetsActivated_2_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message EventOracleTargetsActivated at list field AddedDenoms as it is not of Message kind"))
-}
-
-func (x *_EventOracleTargetsActivated_2_list) Truncate(n int) {
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EventOracleTargetsActivated_2_list) NewElement() protoreflect.Value {
-	v := ""
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_EventOracleTargetsActivated_2_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_EventOracleTargetsActivated_3_list)(nil)
-
-type _EventOracleTargetsActivated_3_list struct {
-	list *[]string
-}
-
-func (x *_EventOracleTargetsActivated_3_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EventOracleTargetsActivated_3_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfString((*x.list)[i])
-}
-
-func (x *_EventOracleTargetsActivated_3_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EventOracleTargetsActivated_3_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EventOracleTargetsActivated_3_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message EventOracleTargetsActivated at list field RemovedDenoms as it is not of Message kind"))
-}
-
-func (x *_EventOracleTargetsActivated_3_list) Truncate(n int) {
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EventOracleTargetsActivated_3_list) NewElement() protoreflect.Value {
-	v := ""
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_EventOracleTargetsActivated_3_list) IsValid() bool {
-	return x.list != nil
-}
-
-var (
-	md_EventOracleTargetsActivated                protoreflect.MessageDescriptor
-	fd_EventOracleTargetsActivated_version        protoreflect.FieldDescriptor
-	fd_EventOracleTargetsActivated_added_denoms   protoreflect.FieldDescriptor
-	fd_EventOracleTargetsActivated_removed_denoms protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_event_proto_init()
-	md_EventOracleTargetsActivated = File_ark_asset_v1_event_proto.Messages().ByName("EventOracleTargetsActivated")
-	fd_EventOracleTargetsActivated_version = md_EventOracleTargetsActivated.Fields().ByName("version")
-	fd_EventOracleTargetsActivated_added_denoms = md_EventOracleTargetsActivated.Fields().ByName("added_denoms")
-	fd_EventOracleTargetsActivated_removed_denoms = md_EventOracleTargetsActivated.Fields().ByName("removed_denoms")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventOracleTargetsActivated)(nil)
-
-type fastReflection_EventOracleTargetsActivated EventOracleTargetsActivated
-
-func (x *EventOracleTargetsActivated) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventOracleTargetsActivated)(x)
-}
-
-func (x *EventOracleTargetsActivated) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventOracleTargetsActivated_messageType fastReflection_EventOracleTargetsActivated_messageType
-var _ protoreflect.MessageType = fastReflection_EventOracleTargetsActivated_messageType{}
-
-type fastReflection_EventOracleTargetsActivated_messageType struct{}
-
-func (x fastReflection_EventOracleTargetsActivated_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventOracleTargetsActivated)(nil)
-}
-func (x fastReflection_EventOracleTargetsActivated_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventOracleTargetsActivated)
-}
-func (x fastReflection_EventOracleTargetsActivated_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleTargetsActivated
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventOracleTargetsActivated) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventOracleTargetsActivated
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventOracleTargetsActivated) Type() protoreflect.MessageType {
-	return _fastReflection_EventOracleTargetsActivated_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventOracleTargetsActivated) New() protoreflect.Message {
-	return new(fastReflection_EventOracleTargetsActivated)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventOracleTargetsActivated) Interface() protoreflect.ProtoMessage {
-	return (*EventOracleTargetsActivated)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventOracleTargetsActivated) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Version != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.Version)
-		if !f(fd_EventOracleTargetsActivated_version, value) {
-			return
-		}
-	}
-	if len(x.AddedDenoms) != 0 {
-		value := protoreflect.ValueOfList(&_EventOracleTargetsActivated_2_list{list: &x.AddedDenoms})
-		if !f(fd_EventOracleTargetsActivated_added_denoms, value) {
-			return
-		}
-	}
-	if len(x.RemovedDenoms) != 0 {
-		value := protoreflect.ValueOfList(&_EventOracleTargetsActivated_3_list{list: &x.RemovedDenoms})
-		if !f(fd_EventOracleTargetsActivated_removed_denoms, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventOracleTargetsActivated) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsActivated.version":
-		return x.Version != uint64(0)
-	case "ark.asset.v1.EventOracleTargetsActivated.added_denoms":
-		return len(x.AddedDenoms) != 0
-	case "ark.asset.v1.EventOracleTargetsActivated.removed_denoms":
-		return len(x.RemovedDenoms) != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsActivated) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsActivated.version":
-		x.Version = uint64(0)
-	case "ark.asset.v1.EventOracleTargetsActivated.added_denoms":
-		x.AddedDenoms = nil
-	case "ark.asset.v1.EventOracleTargetsActivated.removed_denoms":
-		x.RemovedDenoms = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventOracleTargetsActivated) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.EventOracleTargetsActivated.version":
-		value := x.Version
-		return protoreflect.ValueOfUint64(value)
-	case "ark.asset.v1.EventOracleTargetsActivated.added_denoms":
-		if len(x.AddedDenoms) == 0 {
-			return protoreflect.ValueOfList(&_EventOracleTargetsActivated_2_list{})
-		}
-		listValue := &_EventOracleTargetsActivated_2_list{list: &x.AddedDenoms}
-		return protoreflect.ValueOfList(listValue)
-	case "ark.asset.v1.EventOracleTargetsActivated.removed_denoms":
-		if len(x.RemovedDenoms) == 0 {
-			return protoreflect.ValueOfList(&_EventOracleTargetsActivated_3_list{})
-		}
-		listValue := &_EventOracleTargetsActivated_3_list{list: &x.RemovedDenoms}
-		return protoreflect.ValueOfList(listValue)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsActivated does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsActivated) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsActivated.version":
-		x.Version = value.Uint()
-	case "ark.asset.v1.EventOracleTargetsActivated.added_denoms":
-		lv := value.List()
-		clv := lv.(*_EventOracleTargetsActivated_2_list)
-		x.AddedDenoms = *clv.list
-	case "ark.asset.v1.EventOracleTargetsActivated.removed_denoms":
-		lv := value.List()
-		clv := lv.(*_EventOracleTargetsActivated_3_list)
-		x.RemovedDenoms = *clv.list
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsActivated) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsActivated.added_denoms":
-		if x.AddedDenoms == nil {
-			x.AddedDenoms = []string{}
-		}
-		value := &_EventOracleTargetsActivated_2_list{list: &x.AddedDenoms}
-		return protoreflect.ValueOfList(value)
-	case "ark.asset.v1.EventOracleTargetsActivated.removed_denoms":
-		if x.RemovedDenoms == nil {
-			x.RemovedDenoms = []string{}
-		}
-		value := &_EventOracleTargetsActivated_3_list{list: &x.RemovedDenoms}
-		return protoreflect.ValueOfList(value)
-	case "ark.asset.v1.EventOracleTargetsActivated.version":
-		panic(fmt.Errorf("field version of message ark.asset.v1.EventOracleTargetsActivated is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventOracleTargetsActivated) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventOracleTargetsActivated.version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.asset.v1.EventOracleTargetsActivated.added_denoms":
-		list := []string{}
-		return protoreflect.ValueOfList(&_EventOracleTargetsActivated_2_list{list: &list})
-	case "ark.asset.v1.EventOracleTargetsActivated.removed_denoms":
-		list := []string{}
-		return protoreflect.ValueOfList(&_EventOracleTargetsActivated_3_list{list: &list})
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventOracleTargetsActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventOracleTargetsActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventOracleTargetsActivated) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventOracleTargetsActivated", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventOracleTargetsActivated) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventOracleTargetsActivated) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventOracleTargetsActivated) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventOracleTargetsActivated) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventOracleTargetsActivated)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.Version != 0 {
-			n += 1 + runtime.Sov(uint64(x.Version))
-		}
-		if len(x.AddedDenoms) > 0 {
-			for _, s := range x.AddedDenoms {
-				l = len(s)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if len(x.RemovedDenoms) > 0 {
-			for _, s := range x.RemovedDenoms {
-				l = len(s)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleTargetsActivated)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.RemovedDenoms) > 0 {
-			for iNdEx := len(x.RemovedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.RemovedDenoms[iNdEx])
-				copy(dAtA[i:], x.RemovedDenoms[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RemovedDenoms[iNdEx])))
-				i--
-				dAtA[i] = 0x1a
-			}
-		}
-		if len(x.AddedDenoms) > 0 {
-			for iNdEx := len(x.AddedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.AddedDenoms[iNdEx])
-				copy(dAtA[i:], x.AddedDenoms[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AddedDenoms[iNdEx])))
-				i--
-				dAtA[i] = 0x12
-			}
-		}
-		if x.Version != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Version))
-			i--
-			dAtA[i] = 0x8
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventOracleTargetsActivated)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleTargetsActivated: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventOracleTargetsActivated: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-				}
-				x.Version = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Version |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AddedDenoms", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.AddedDenoms = append(x.AddedDenoms, string(dAtA[iNdEx:postIndex]))
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RemovedDenoms", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.RemovedDenoms = append(x.RemovedDenoms, string(dAtA[iNdEx:postIndex]))
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_EventAssetLockAdded       protoreflect.MessageDescriptor
-	fd_EventAssetLockAdded_denom protoreflect.FieldDescriptor
-	fd_EventAssetLockAdded_kind  protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_event_proto_init()
-	md_EventAssetLockAdded = File_ark_asset_v1_event_proto.Messages().ByName("EventAssetLockAdded")
-	fd_EventAssetLockAdded_denom = md_EventAssetLockAdded.Fields().ByName("denom")
-	fd_EventAssetLockAdded_kind = md_EventAssetLockAdded.Fields().ByName("kind")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventAssetLockAdded)(nil)
-
-type fastReflection_EventAssetLockAdded EventAssetLockAdded
-
-func (x *EventAssetLockAdded) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventAssetLockAdded)(x)
-}
-
-func (x *EventAssetLockAdded) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventAssetLockAdded_messageType fastReflection_EventAssetLockAdded_messageType
-var _ protoreflect.MessageType = fastReflection_EventAssetLockAdded_messageType{}
-
-type fastReflection_EventAssetLockAdded_messageType struct{}
-
-func (x fastReflection_EventAssetLockAdded_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventAssetLockAdded)(nil)
-}
-func (x fastReflection_EventAssetLockAdded_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventAssetLockAdded)
-}
-func (x fastReflection_EventAssetLockAdded_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventAssetLockAdded
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventAssetLockAdded) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventAssetLockAdded
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventAssetLockAdded) Type() protoreflect.MessageType {
-	return _fastReflection_EventAssetLockAdded_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventAssetLockAdded) New() protoreflect.Message {
-	return new(fastReflection_EventAssetLockAdded)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventAssetLockAdded) Interface() protoreflect.ProtoMessage {
-	return (*EventAssetLockAdded)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventAssetLockAdded) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_EventAssetLockAdded_denom, value) {
-			return
-		}
-	}
-	if x.Kind != 0 {
-		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.Kind))
-		if !f(fd_EventAssetLockAdded_kind, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventAssetLockAdded) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockAdded.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.EventAssetLockAdded.kind":
-		return x.Kind != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockAdded"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockAdded does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockAdded) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockAdded.denom":
-		x.Denom = ""
-	case "ark.asset.v1.EventAssetLockAdded.kind":
-		x.Kind = 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockAdded"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockAdded does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventAssetLockAdded) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.EventAssetLockAdded.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.EventAssetLockAdded.kind":
-		value := x.Kind
-		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockAdded"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockAdded does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockAdded) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockAdded.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.EventAssetLockAdded.kind":
-		x.Kind = (AssetLockKind)(value.Enum())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockAdded"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockAdded does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockAdded) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockAdded.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.EventAssetLockAdded is not mutable"))
-	case "ark.asset.v1.EventAssetLockAdded.kind":
-		panic(fmt.Errorf("field kind of message ark.asset.v1.EventAssetLockAdded is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockAdded"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockAdded does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventAssetLockAdded) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockAdded.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.EventAssetLockAdded.kind":
-		return protoreflect.ValueOfEnum(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockAdded"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockAdded does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventAssetLockAdded) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventAssetLockAdded", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventAssetLockAdded) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockAdded) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventAssetLockAdded) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventAssetLockAdded) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventAssetLockAdded)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.Kind != 0 {
-			n += 1 + runtime.Sov(uint64(x.Kind))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventAssetLockAdded)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Kind != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Kind))
-			i--
-			dAtA[i] = 0x10
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventAssetLockAdded)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetLockAdded: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetLockAdded: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
-				}
-				x.Kind = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Kind |= AssetLockKind(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_EventAssetLockRemoved       protoreflect.MessageDescriptor
-	fd_EventAssetLockRemoved_denom protoreflect.FieldDescriptor
-	fd_EventAssetLockRemoved_kind  protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_event_proto_init()
-	md_EventAssetLockRemoved = File_ark_asset_v1_event_proto.Messages().ByName("EventAssetLockRemoved")
-	fd_EventAssetLockRemoved_denom = md_EventAssetLockRemoved.Fields().ByName("denom")
-	fd_EventAssetLockRemoved_kind = md_EventAssetLockRemoved.Fields().ByName("kind")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventAssetLockRemoved)(nil)
-
-type fastReflection_EventAssetLockRemoved EventAssetLockRemoved
-
-func (x *EventAssetLockRemoved) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventAssetLockRemoved)(x)
-}
-
-func (x *EventAssetLockRemoved) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventAssetLockRemoved_messageType fastReflection_EventAssetLockRemoved_messageType
-var _ protoreflect.MessageType = fastReflection_EventAssetLockRemoved_messageType{}
-
-type fastReflection_EventAssetLockRemoved_messageType struct{}
-
-func (x fastReflection_EventAssetLockRemoved_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventAssetLockRemoved)(nil)
-}
-func (x fastReflection_EventAssetLockRemoved_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventAssetLockRemoved)
-}
-func (x fastReflection_EventAssetLockRemoved_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventAssetLockRemoved
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventAssetLockRemoved) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventAssetLockRemoved
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventAssetLockRemoved) Type() protoreflect.MessageType {
-	return _fastReflection_EventAssetLockRemoved_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventAssetLockRemoved) New() protoreflect.Message {
-	return new(fastReflection_EventAssetLockRemoved)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventAssetLockRemoved) Interface() protoreflect.ProtoMessage {
-	return (*EventAssetLockRemoved)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventAssetLockRemoved) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_EventAssetLockRemoved_denom, value) {
-			return
-		}
-	}
-	if x.Kind != 0 {
-		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.Kind))
-		if !f(fd_EventAssetLockRemoved_kind, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventAssetLockRemoved) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockRemoved.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.EventAssetLockRemoved.kind":
-		return x.Kind != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockRemoved"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockRemoved does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockRemoved) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockRemoved.denom":
-		x.Denom = ""
-	case "ark.asset.v1.EventAssetLockRemoved.kind":
-		x.Kind = 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockRemoved"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockRemoved does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventAssetLockRemoved) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.EventAssetLockRemoved.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.EventAssetLockRemoved.kind":
-		value := x.Kind
-		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockRemoved"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockRemoved does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockRemoved) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockRemoved.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.EventAssetLockRemoved.kind":
-		x.Kind = (AssetLockKind)(value.Enum())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockRemoved"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockRemoved does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockRemoved) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockRemoved.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.EventAssetLockRemoved is not mutable"))
-	case "ark.asset.v1.EventAssetLockRemoved.kind":
-		panic(fmt.Errorf("field kind of message ark.asset.v1.EventAssetLockRemoved is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockRemoved"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockRemoved does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventAssetLockRemoved) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetLockRemoved.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.EventAssetLockRemoved.kind":
-		return protoreflect.ValueOfEnum(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetLockRemoved"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetLockRemoved does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventAssetLockRemoved) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventAssetLockRemoved", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventAssetLockRemoved) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetLockRemoved) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventAssetLockRemoved) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventAssetLockRemoved) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventAssetLockRemoved)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.Kind != 0 {
-			n += 1 + runtime.Sov(uint64(x.Kind))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventAssetLockRemoved)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Kind != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Kind))
-			i--
-			dAtA[i] = 0x10
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventAssetLockRemoved)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetLockRemoved: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetLockRemoved: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
-				}
-				x.Kind = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Kind |= AssetLockKind(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
 	md_EventSettlementOpened                 protoreflect.MessageDescriptor
 	fd_EventSettlementOpened_settlement_plan protoreflect.FieldDescriptor
 )
@@ -3945,7 +1034,7 @@ func (x *EventSettlementOpened) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventSettlementOpened) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[7]
+	mi := &file_ark_asset_v1_event_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4361,474 +1450,6 @@ func (x *fastReflection_EventSettlementOpened) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_EventSettlementActivated         protoreflect.MessageDescriptor
-	fd_EventSettlementActivated_denom   protoreflect.FieldDescriptor
-	fd_EventSettlementActivated_version protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_event_proto_init()
-	md_EventSettlementActivated = File_ark_asset_v1_event_proto.Messages().ByName("EventSettlementActivated")
-	fd_EventSettlementActivated_denom = md_EventSettlementActivated.Fields().ByName("denom")
-	fd_EventSettlementActivated_version = md_EventSettlementActivated.Fields().ByName("version")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventSettlementActivated)(nil)
-
-type fastReflection_EventSettlementActivated EventSettlementActivated
-
-func (x *EventSettlementActivated) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventSettlementActivated)(x)
-}
-
-func (x *EventSettlementActivated) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventSettlementActivated_messageType fastReflection_EventSettlementActivated_messageType
-var _ protoreflect.MessageType = fastReflection_EventSettlementActivated_messageType{}
-
-type fastReflection_EventSettlementActivated_messageType struct{}
-
-func (x fastReflection_EventSettlementActivated_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventSettlementActivated)(nil)
-}
-func (x fastReflection_EventSettlementActivated_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventSettlementActivated)
-}
-func (x fastReflection_EventSettlementActivated_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventSettlementActivated
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventSettlementActivated) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventSettlementActivated
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventSettlementActivated) Type() protoreflect.MessageType {
-	return _fastReflection_EventSettlementActivated_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventSettlementActivated) New() protoreflect.Message {
-	return new(fastReflection_EventSettlementActivated)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventSettlementActivated) Interface() protoreflect.ProtoMessage {
-	return (*EventSettlementActivated)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventSettlementActivated) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_EventSettlementActivated_denom, value) {
-			return
-		}
-	}
-	if x.Version != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.Version)
-		if !f(fd_EventSettlementActivated_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventSettlementActivated) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementActivated.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.EventSettlementActivated.version":
-		return x.Version != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventSettlementActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventSettlementActivated) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementActivated.denom":
-		x.Denom = ""
-	case "ark.asset.v1.EventSettlementActivated.version":
-		x.Version = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventSettlementActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventSettlementActivated) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.EventSettlementActivated.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.EventSettlementActivated.version":
-		value := x.Version
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventSettlementActivated does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventSettlementActivated) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementActivated.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.EventSettlementActivated.version":
-		x.Version = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventSettlementActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventSettlementActivated) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementActivated.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.EventSettlementActivated is not mutable"))
-	case "ark.asset.v1.EventSettlementActivated.version":
-		panic(fmt.Errorf("field version of message ark.asset.v1.EventSettlementActivated is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventSettlementActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventSettlementActivated) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementActivated.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.EventSettlementActivated.version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementActivated"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.EventSettlementActivated does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventSettlementActivated) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventSettlementActivated", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventSettlementActivated) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventSettlementActivated) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventSettlementActivated) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventSettlementActivated) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventSettlementActivated)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.Version != 0 {
-			n += 1 + runtime.Sov(uint64(x.Version))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventSettlementActivated)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Version != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Version))
-			i--
-			dAtA[i] = 0x10
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventSettlementActivated)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventSettlementActivated: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventSettlementActivated: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-				}
-				x.Version = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Version |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
 	md_EventSettlementCancelled         protoreflect.MessageDescriptor
 	fd_EventSettlementCancelled_denom   protoreflect.FieldDescriptor
 	fd_EventSettlementCancelled_version protoreflect.FieldDescriptor
@@ -4850,7 +1471,7 @@ func (x *EventSettlementCancelled) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventSettlementCancelled) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[9]
+	mi := &file_ark_asset_v1_event_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5297,16 +1918,18 @@ func (x *fastReflection_EventSettlementCancelled) ProtoMethods() *protoiface.Met
 }
 
 var (
-	md_EventSettlementClosed         protoreflect.MessageDescriptor
-	fd_EventSettlementClosed_denom   protoreflect.FieldDescriptor
-	fd_EventSettlementClosed_version protoreflect.FieldDescriptor
+	md_EventSettlementClosed                 protoreflect.MessageDescriptor
+	fd_EventSettlementClosed_settlement_plan protoreflect.FieldDescriptor
+	fd_EventSettlementClosed_version         protoreflect.FieldDescriptor
+	fd_EventSettlementClosed_closed_height   protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_event_proto_init()
 	md_EventSettlementClosed = File_ark_asset_v1_event_proto.Messages().ByName("EventSettlementClosed")
-	fd_EventSettlementClosed_denom = md_EventSettlementClosed.Fields().ByName("denom")
+	fd_EventSettlementClosed_settlement_plan = md_EventSettlementClosed.Fields().ByName("settlement_plan")
 	fd_EventSettlementClosed_version = md_EventSettlementClosed.Fields().ByName("version")
+	fd_EventSettlementClosed_closed_height = md_EventSettlementClosed.Fields().ByName("closed_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventSettlementClosed)(nil)
@@ -5318,7 +1941,7 @@ func (x *EventSettlementClosed) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventSettlementClosed) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[10]
+	mi := &file_ark_asset_v1_event_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5374,15 +1997,21 @@ func (x *fastReflection_EventSettlementClosed) Interface() protoreflect.ProtoMes
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventSettlementClosed) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_EventSettlementClosed_denom, value) {
+	if x.SettlementPlan != nil {
+		value := protoreflect.ValueOfMessage(x.SettlementPlan.ProtoReflect())
+		if !f(fd_EventSettlementClosed_settlement_plan, value) {
 			return
 		}
 	}
 	if x.Version != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.Version)
 		if !f(fd_EventSettlementClosed_version, value) {
+			return
+		}
+	}
+	if x.ClosedHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.ClosedHeight)
+		if !f(fd_EventSettlementClosed_closed_height, value) {
 			return
 		}
 	}
@@ -5401,10 +2030,12 @@ func (x *fastReflection_EventSettlementClosed) Range(f func(protoreflect.FieldDe
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventSettlementClosed) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementClosed.denom":
-		return x.Denom != ""
+	case "ark.asset.v1.EventSettlementClosed.settlement_plan":
+		return x.SettlementPlan != nil
 	case "ark.asset.v1.EventSettlementClosed.version":
 		return x.Version != uint64(0)
+	case "ark.asset.v1.EventSettlementClosed.closed_height":
+		return x.ClosedHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementClosed"))
@@ -5421,10 +2052,12 @@ func (x *fastReflection_EventSettlementClosed) Has(fd protoreflect.FieldDescript
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventSettlementClosed) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementClosed.denom":
-		x.Denom = ""
+	case "ark.asset.v1.EventSettlementClosed.settlement_plan":
+		x.SettlementPlan = nil
 	case "ark.asset.v1.EventSettlementClosed.version":
 		x.Version = uint64(0)
+	case "ark.asset.v1.EventSettlementClosed.closed_height":
+		x.ClosedHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementClosed"))
@@ -5441,12 +2074,15 @@ func (x *fastReflection_EventSettlementClosed) Clear(fd protoreflect.FieldDescri
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventSettlementClosed) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.EventSettlementClosed.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.EventSettlementClosed.settlement_plan":
+		value := x.SettlementPlan
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "ark.asset.v1.EventSettlementClosed.version":
 		value := x.Version
 		return protoreflect.ValueOfUint64(value)
+	case "ark.asset.v1.EventSettlementClosed.closed_height":
+		value := x.ClosedHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementClosed"))
@@ -5467,10 +2103,12 @@ func (x *fastReflection_EventSettlementClosed) Get(descriptor protoreflect.Field
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventSettlementClosed) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementClosed.denom":
-		x.Denom = value.Interface().(string)
+	case "ark.asset.v1.EventSettlementClosed.settlement_plan":
+		x.SettlementPlan = value.Message().Interface().(*SettlementPlan)
 	case "ark.asset.v1.EventSettlementClosed.version":
 		x.Version = value.Uint()
+	case "ark.asset.v1.EventSettlementClosed.closed_height":
+		x.ClosedHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementClosed"))
@@ -5491,10 +2129,15 @@ func (x *fastReflection_EventSettlementClosed) Set(fd protoreflect.FieldDescript
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventSettlementClosed) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementClosed.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.EventSettlementClosed is not mutable"))
+	case "ark.asset.v1.EventSettlementClosed.settlement_plan":
+		if x.SettlementPlan == nil {
+			x.SettlementPlan = new(SettlementPlan)
+		}
+		return protoreflect.ValueOfMessage(x.SettlementPlan.ProtoReflect())
 	case "ark.asset.v1.EventSettlementClosed.version":
 		panic(fmt.Errorf("field version of message ark.asset.v1.EventSettlementClosed is not mutable"))
+	case "ark.asset.v1.EventSettlementClosed.closed_height":
+		panic(fmt.Errorf("field closed_height of message ark.asset.v1.EventSettlementClosed is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementClosed"))
@@ -5508,10 +2151,13 @@ func (x *fastReflection_EventSettlementClosed) Mutable(fd protoreflect.FieldDesc
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventSettlementClosed) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventSettlementClosed.denom":
-		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.EventSettlementClosed.settlement_plan":
+		m := new(SettlementPlan)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.asset.v1.EventSettlementClosed.version":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.asset.v1.EventSettlementClosed.closed_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventSettlementClosed"))
@@ -5581,12 +2227,15 @@ func (x *fastReflection_EventSettlementClosed) ProtoMethods() *protoiface.Method
 		var n int
 		var l int
 		_ = l
-		l = len(x.Denom)
-		if l > 0 {
+		if x.SettlementPlan != nil {
+			l = options.Size(x.SettlementPlan)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.Version != 0 {
 			n += 1 + runtime.Sov(uint64(x.Version))
+		}
+		if x.ClosedHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ClosedHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -5617,15 +2266,27 @@ func (x *fastReflection_EventSettlementClosed) ProtoMethods() *protoiface.Method
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if x.ClosedHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ClosedHeight))
+			i--
+			dAtA[i] = 0x18
+		}
 		if x.Version != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.Version))
 			i--
 			dAtA[i] = 0x10
 		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
+		if x.SettlementPlan != nil {
+			encoded, err := options.Marshal(x.SettlementPlan)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -5680,9 +2341,9 @@ func (x *fastReflection_EventSettlementClosed) ProtoMethods() *protoiface.Method
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SettlementPlan", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -5692,23 +2353,27 @@ func (x *fastReflection_EventSettlementClosed) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
+				if x.SettlementPlan == nil {
+					x.SettlementPlan = &SettlementPlan{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.SettlementPlan); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			case 2:
 				if wireType != 0 {
@@ -5725,6 +2390,25 @@ func (x *fastReflection_EventSettlementClosed) ProtoMethods() *protoiface.Method
 					b := dAtA[iNdEx]
 					iNdEx++
 					x.Version |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClosedHeight", wireType)
+				}
+				x.ClosedHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ClosedHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -5765,26 +2449,26 @@ func (x *fastReflection_EventSettlementClosed) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_EventAssetWrittenOff                  protoreflect.MessageDescriptor
-	fd_EventAssetWrittenOff_write_off_record protoreflect.FieldDescriptor
+	md_EventAssetResolved                   protoreflect.MessageDescriptor
+	fd_EventAssetResolved_resolution_record protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_event_proto_init()
-	md_EventAssetWrittenOff = File_ark_asset_v1_event_proto.Messages().ByName("EventAssetWrittenOff")
-	fd_EventAssetWrittenOff_write_off_record = md_EventAssetWrittenOff.Fields().ByName("write_off_record")
+	md_EventAssetResolved = File_ark_asset_v1_event_proto.Messages().ByName("EventAssetResolved")
+	fd_EventAssetResolved_resolution_record = md_EventAssetResolved.Fields().ByName("resolution_record")
 }
 
-var _ protoreflect.Message = (*fastReflection_EventAssetWrittenOff)(nil)
+var _ protoreflect.Message = (*fastReflection_EventAssetResolved)(nil)
 
-type fastReflection_EventAssetWrittenOff EventAssetWrittenOff
+type fastReflection_EventAssetResolved EventAssetResolved
 
-func (x *EventAssetWrittenOff) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventAssetWrittenOff)(x)
+func (x *EventAssetResolved) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventAssetResolved)(x)
 }
 
-func (x *EventAssetWrittenOff) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_event_proto_msgTypes[11]
+func (x *EventAssetResolved) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_event_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5795,43 +2479,43 @@ func (x *EventAssetWrittenOff) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_EventAssetWrittenOff_messageType fastReflection_EventAssetWrittenOff_messageType
-var _ protoreflect.MessageType = fastReflection_EventAssetWrittenOff_messageType{}
+var _fastReflection_EventAssetResolved_messageType fastReflection_EventAssetResolved_messageType
+var _ protoreflect.MessageType = fastReflection_EventAssetResolved_messageType{}
 
-type fastReflection_EventAssetWrittenOff_messageType struct{}
+type fastReflection_EventAssetResolved_messageType struct{}
 
-func (x fastReflection_EventAssetWrittenOff_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventAssetWrittenOff)(nil)
+func (x fastReflection_EventAssetResolved_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventAssetResolved)(nil)
 }
-func (x fastReflection_EventAssetWrittenOff_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventAssetWrittenOff)
+func (x fastReflection_EventAssetResolved_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventAssetResolved)
 }
-func (x fastReflection_EventAssetWrittenOff_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventAssetWrittenOff
+func (x fastReflection_EventAssetResolved_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventAssetResolved
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_EventAssetWrittenOff) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventAssetWrittenOff
+func (x *fastReflection_EventAssetResolved) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventAssetResolved
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventAssetWrittenOff) Type() protoreflect.MessageType {
-	return _fastReflection_EventAssetWrittenOff_messageType
+func (x *fastReflection_EventAssetResolved) Type() protoreflect.MessageType {
+	return _fastReflection_EventAssetResolved_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventAssetWrittenOff) New() protoreflect.Message {
-	return new(fastReflection_EventAssetWrittenOff)
+func (x *fastReflection_EventAssetResolved) New() protoreflect.Message {
+	return new(fastReflection_EventAssetResolved)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventAssetWrittenOff) Interface() protoreflect.ProtoMessage {
-	return (*EventAssetWrittenOff)(x)
+func (x *fastReflection_EventAssetResolved) Interface() protoreflect.ProtoMessage {
+	return (*EventAssetResolved)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -5839,10 +2523,10 @@ func (x *fastReflection_EventAssetWrittenOff) Interface() protoreflect.ProtoMess
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_EventAssetWrittenOff) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.WriteOffRecord != nil {
-		value := protoreflect.ValueOfMessage(x.WriteOffRecord.ProtoReflect())
-		if !f(fd_EventAssetWrittenOff_write_off_record, value) {
+func (x *fastReflection_EventAssetResolved) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ResolutionRecord != nil {
+		value := protoreflect.ValueOfMessage(x.ResolutionRecord.ProtoReflect())
+		if !f(fd_EventAssetResolved_resolution_record, value) {
 			return
 		}
 	}
@@ -5859,15 +2543,15 @@ func (x *fastReflection_EventAssetWrittenOff) Range(f func(protoreflect.FieldDes
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventAssetWrittenOff) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_EventAssetResolved) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetWrittenOff.write_off_record":
-		return x.WriteOffRecord != nil
+	case "ark.asset.v1.EventAssetResolved.resolution_record":
+		return x.ResolutionRecord != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetWrittenOff"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetResolved"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetWrittenOff does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.EventAssetResolved does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5877,15 +2561,15 @@ func (x *fastReflection_EventAssetWrittenOff) Has(fd protoreflect.FieldDescripto
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetWrittenOff) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_EventAssetResolved) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetWrittenOff.write_off_record":
-		x.WriteOffRecord = nil
+	case "ark.asset.v1.EventAssetResolved.resolution_record":
+		x.ResolutionRecord = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetWrittenOff"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetResolved"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetWrittenOff does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.EventAssetResolved does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5895,16 +2579,16 @@ func (x *fastReflection_EventAssetWrittenOff) Clear(fd protoreflect.FieldDescrip
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventAssetWrittenOff) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventAssetResolved) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.EventAssetWrittenOff.write_off_record":
-		value := x.WriteOffRecord
+	case "ark.asset.v1.EventAssetResolved.resolution_record":
+		value := x.ResolutionRecord
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetWrittenOff"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetResolved"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetWrittenOff does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.EventAssetResolved does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -5918,15 +2602,15 @@ func (x *fastReflection_EventAssetWrittenOff) Get(descriptor protoreflect.FieldD
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetWrittenOff) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_EventAssetResolved) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetWrittenOff.write_off_record":
-		x.WriteOffRecord = value.Message().Interface().(*WriteOffRecord)
+	case "ark.asset.v1.EventAssetResolved.resolution_record":
+		x.ResolutionRecord = value.Message().Interface().(*ResolutionRecord)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetWrittenOff"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetResolved"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetWrittenOff does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.EventAssetResolved does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5940,44 +2624,44 @@ func (x *fastReflection_EventAssetWrittenOff) Set(fd protoreflect.FieldDescripto
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetWrittenOff) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventAssetResolved) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetWrittenOff.write_off_record":
-		if x.WriteOffRecord == nil {
-			x.WriteOffRecord = new(WriteOffRecord)
+	case "ark.asset.v1.EventAssetResolved.resolution_record":
+		if x.ResolutionRecord == nil {
+			x.ResolutionRecord = new(ResolutionRecord)
 		}
-		return protoreflect.ValueOfMessage(x.WriteOffRecord.ProtoReflect())
+		return protoreflect.ValueOfMessage(x.ResolutionRecord.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetWrittenOff"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetResolved"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetWrittenOff does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.EventAssetResolved does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventAssetWrittenOff) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventAssetResolved) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.EventAssetWrittenOff.write_off_record":
-		m := new(WriteOffRecord)
+	case "ark.asset.v1.EventAssetResolved.resolution_record":
+		m := new(ResolutionRecord)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetWrittenOff"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventAssetResolved"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.EventAssetWrittenOff does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.EventAssetResolved does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventAssetWrittenOff) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_EventAssetResolved) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventAssetWrittenOff", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventAssetResolved", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -5985,7 +2669,7 @@ func (x *fastReflection_EventAssetWrittenOff) WhichOneof(d protoreflect.OneofDes
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventAssetWrittenOff) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_EventAssetResolved) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -5996,7 +2680,7 @@ func (x *fastReflection_EventAssetWrittenOff) GetUnknown() protoreflect.RawField
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventAssetWrittenOff) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_EventAssetResolved) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -6008,7 +2692,7 @@ func (x *fastReflection_EventAssetWrittenOff) SetUnknown(fields protoreflect.Raw
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_EventAssetWrittenOff) IsValid() bool {
+func (x *fastReflection_EventAssetResolved) IsValid() bool {
 	return x != nil
 }
 
@@ -6018,9 +2702,9 @@ func (x *fastReflection_EventAssetWrittenOff) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_EventAssetResolved) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventAssetWrittenOff)
+		x := input.Message.Interface().(*EventAssetResolved)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -6032,8 +2716,8 @@ func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods
 		var n int
 		var l int
 		_ = l
-		if x.WriteOffRecord != nil {
-			l = options.Size(x.WriteOffRecord)
+		if x.ResolutionRecord != nil {
+			l = options.Size(x.ResolutionRecord)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -6046,7 +2730,7 @@ func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventAssetWrittenOff)
+		x := input.Message.Interface().(*EventAssetResolved)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -6065,8 +2749,8 @@ func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.WriteOffRecord != nil {
-			encoded, err := options.Marshal(x.WriteOffRecord)
+		if x.ResolutionRecord != nil {
+			encoded, err := options.Marshal(x.ResolutionRecord)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -6090,7 +2774,7 @@ func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventAssetWrittenOff)
+		x := input.Message.Interface().(*EventAssetResolved)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -6122,15 +2806,15 @@ func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetWrittenOff: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetResolved: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetWrittenOff: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventAssetResolved: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field WriteOffRecord", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ResolutionRecord", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -6157,13 +2841,1093 @@ func (x *fastReflection_EventAssetWrittenOff) ProtoMethods() *protoiface.Methods
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.WriteOffRecord == nil {
-					x.WriteOffRecord = &WriteOffRecord{}
+				if x.ResolutionRecord == nil {
+					x.ResolutionRecord = &ResolutionRecord{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.WriteOffRecord); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ResolutionRecord); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_EventEmergencyMandateSet                   protoreflect.MessageDescriptor
+	fd_EventEmergencyMandateSet_term              protoreflect.FieldDescriptor
+	fd_EventEmergencyMandateSet_committee         protoreflect.FieldDescriptor
+	fd_EventEmergencyMandateSet_activation_height protoreflect.FieldDescriptor
+	fd_EventEmergencyMandateSet_expiry_height     protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_event_proto_init()
+	md_EventEmergencyMandateSet = File_ark_asset_v1_event_proto.Messages().ByName("EventEmergencyMandateSet")
+	fd_EventEmergencyMandateSet_term = md_EventEmergencyMandateSet.Fields().ByName("term")
+	fd_EventEmergencyMandateSet_committee = md_EventEmergencyMandateSet.Fields().ByName("committee")
+	fd_EventEmergencyMandateSet_activation_height = md_EventEmergencyMandateSet.Fields().ByName("activation_height")
+	fd_EventEmergencyMandateSet_expiry_height = md_EventEmergencyMandateSet.Fields().ByName("expiry_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventEmergencyMandateSet)(nil)
+
+type fastReflection_EventEmergencyMandateSet EventEmergencyMandateSet
+
+func (x *EventEmergencyMandateSet) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventEmergencyMandateSet)(x)
+}
+
+func (x *EventEmergencyMandateSet) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_event_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventEmergencyMandateSet_messageType fastReflection_EventEmergencyMandateSet_messageType
+var _ protoreflect.MessageType = fastReflection_EventEmergencyMandateSet_messageType{}
+
+type fastReflection_EventEmergencyMandateSet_messageType struct{}
+
+func (x fastReflection_EventEmergencyMandateSet_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventEmergencyMandateSet)(nil)
+}
+func (x fastReflection_EventEmergencyMandateSet_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventEmergencyMandateSet)
+}
+func (x fastReflection_EventEmergencyMandateSet_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventEmergencyMandateSet
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventEmergencyMandateSet) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventEmergencyMandateSet
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventEmergencyMandateSet) Type() protoreflect.MessageType {
+	return _fastReflection_EventEmergencyMandateSet_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventEmergencyMandateSet) New() protoreflect.Message {
+	return new(fastReflection_EventEmergencyMandateSet)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventEmergencyMandateSet) Interface() protoreflect.ProtoMessage {
+	return (*EventEmergencyMandateSet)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventEmergencyMandateSet) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Term != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Term)
+		if !f(fd_EventEmergencyMandateSet_term, value) {
+			return
+		}
+	}
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_EventEmergencyMandateSet_committee, value) {
+			return
+		}
+	}
+	if x.ActivationHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationHeight)
+		if !f(fd_EventEmergencyMandateSet_activation_height, value) {
+			return
+		}
+	}
+	if x.ExpiryHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
+		if !f(fd_EventEmergencyMandateSet_expiry_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventEmergencyMandateSet) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencyMandateSet.term":
+		return x.Term != uint64(0)
+	case "ark.asset.v1.EventEmergencyMandateSet.committee":
+		return x.Committee != ""
+	case "ark.asset.v1.EventEmergencyMandateSet.activation_height":
+		return x.ActivationHeight != uint64(0)
+	case "ark.asset.v1.EventEmergencyMandateSet.expiry_height":
+		return x.ExpiryHeight != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencyMandateSet"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencyMandateSet does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencyMandateSet) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencyMandateSet.term":
+		x.Term = uint64(0)
+	case "ark.asset.v1.EventEmergencyMandateSet.committee":
+		x.Committee = ""
+	case "ark.asset.v1.EventEmergencyMandateSet.activation_height":
+		x.ActivationHeight = uint64(0)
+	case "ark.asset.v1.EventEmergencyMandateSet.expiry_height":
+		x.ExpiryHeight = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencyMandateSet"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencyMandateSet does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventEmergencyMandateSet) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.asset.v1.EventEmergencyMandateSet.term":
+		value := x.Term
+		return protoreflect.ValueOfUint64(value)
+	case "ark.asset.v1.EventEmergencyMandateSet.committee":
+		value := x.Committee
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.EventEmergencyMandateSet.activation_height":
+		value := x.ActivationHeight
+		return protoreflect.ValueOfUint64(value)
+	case "ark.asset.v1.EventEmergencyMandateSet.expiry_height":
+		value := x.ExpiryHeight
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencyMandateSet"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencyMandateSet does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencyMandateSet) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencyMandateSet.term":
+		x.Term = value.Uint()
+	case "ark.asset.v1.EventEmergencyMandateSet.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.asset.v1.EventEmergencyMandateSet.activation_height":
+		x.ActivationHeight = value.Uint()
+	case "ark.asset.v1.EventEmergencyMandateSet.expiry_height":
+		x.ExpiryHeight = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencyMandateSet"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencyMandateSet does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencyMandateSet) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencyMandateSet.term":
+		panic(fmt.Errorf("field term of message ark.asset.v1.EventEmergencyMandateSet is not mutable"))
+	case "ark.asset.v1.EventEmergencyMandateSet.committee":
+		panic(fmt.Errorf("field committee of message ark.asset.v1.EventEmergencyMandateSet is not mutable"))
+	case "ark.asset.v1.EventEmergencyMandateSet.activation_height":
+		panic(fmt.Errorf("field activation_height of message ark.asset.v1.EventEmergencyMandateSet is not mutable"))
+	case "ark.asset.v1.EventEmergencyMandateSet.expiry_height":
+		panic(fmt.Errorf("field expiry_height of message ark.asset.v1.EventEmergencyMandateSet is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencyMandateSet"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencyMandateSet does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventEmergencyMandateSet) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencyMandateSet.term":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.asset.v1.EventEmergencyMandateSet.committee":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.EventEmergencyMandateSet.activation_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.asset.v1.EventEmergencyMandateSet.expiry_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencyMandateSet"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencyMandateSet does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventEmergencyMandateSet) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventEmergencyMandateSet", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventEmergencyMandateSet) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencyMandateSet) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventEmergencyMandateSet) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventEmergencyMandateSet) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventEmergencyMandateSet)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Term != 0 {
+			n += 1 + runtime.Sov(uint64(x.Term))
+		}
+		l = len(x.Committee)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ActivationHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		}
+		if x.ExpiryHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventEmergencyMandateSet)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ExpiryHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.ActivationHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if x.Term != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Term))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventEmergencyMandateSet)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventEmergencyMandateSet: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventEmergencyMandateSet: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+				}
+				x.Term = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Term |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Committee = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+				}
+				x.ActivationHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ActivationHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+				}
+				x.ExpiryHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_EventEmergencySuspended         protoreflect.MessageDescriptor
+	fd_EventEmergencySuspended_denom   protoreflect.FieldDescriptor
+	fd_EventEmergencySuspended_term    protoreflect.FieldDescriptor
+	fd_EventEmergencySuspended_version protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_event_proto_init()
+	md_EventEmergencySuspended = File_ark_asset_v1_event_proto.Messages().ByName("EventEmergencySuspended")
+	fd_EventEmergencySuspended_denom = md_EventEmergencySuspended.Fields().ByName("denom")
+	fd_EventEmergencySuspended_term = md_EventEmergencySuspended.Fields().ByName("term")
+	fd_EventEmergencySuspended_version = md_EventEmergencySuspended.Fields().ByName("version")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventEmergencySuspended)(nil)
+
+type fastReflection_EventEmergencySuspended EventEmergencySuspended
+
+func (x *EventEmergencySuspended) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventEmergencySuspended)(x)
+}
+
+func (x *EventEmergencySuspended) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_event_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventEmergencySuspended_messageType fastReflection_EventEmergencySuspended_messageType
+var _ protoreflect.MessageType = fastReflection_EventEmergencySuspended_messageType{}
+
+type fastReflection_EventEmergencySuspended_messageType struct{}
+
+func (x fastReflection_EventEmergencySuspended_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventEmergencySuspended)(nil)
+}
+func (x fastReflection_EventEmergencySuspended_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventEmergencySuspended)
+}
+func (x fastReflection_EventEmergencySuspended_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventEmergencySuspended
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventEmergencySuspended) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventEmergencySuspended
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventEmergencySuspended) Type() protoreflect.MessageType {
+	return _fastReflection_EventEmergencySuspended_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventEmergencySuspended) New() protoreflect.Message {
+	return new(fastReflection_EventEmergencySuspended)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventEmergencySuspended) Interface() protoreflect.ProtoMessage {
+	return (*EventEmergencySuspended)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventEmergencySuspended) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_EventEmergencySuspended_denom, value) {
+			return
+		}
+	}
+	if x.Term != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Term)
+		if !f(fd_EventEmergencySuspended_term, value) {
+			return
+		}
+	}
+	if x.Version != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Version)
+		if !f(fd_EventEmergencySuspended_version, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventEmergencySuspended) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencySuspended.denom":
+		return x.Denom != ""
+	case "ark.asset.v1.EventEmergencySuspended.term":
+		return x.Term != uint64(0)
+	case "ark.asset.v1.EventEmergencySuspended.version":
+		return x.Version != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencySuspended"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencySuspended does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencySuspended) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencySuspended.denom":
+		x.Denom = ""
+	case "ark.asset.v1.EventEmergencySuspended.term":
+		x.Term = uint64(0)
+	case "ark.asset.v1.EventEmergencySuspended.version":
+		x.Version = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencySuspended"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencySuspended does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventEmergencySuspended) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.asset.v1.EventEmergencySuspended.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.EventEmergencySuspended.term":
+		value := x.Term
+		return protoreflect.ValueOfUint64(value)
+	case "ark.asset.v1.EventEmergencySuspended.version":
+		value := x.Version
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencySuspended"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencySuspended does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencySuspended) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencySuspended.denom":
+		x.Denom = value.Interface().(string)
+	case "ark.asset.v1.EventEmergencySuspended.term":
+		x.Term = value.Uint()
+	case "ark.asset.v1.EventEmergencySuspended.version":
+		x.Version = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencySuspended"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencySuspended does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencySuspended) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencySuspended.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.EventEmergencySuspended is not mutable"))
+	case "ark.asset.v1.EventEmergencySuspended.term":
+		panic(fmt.Errorf("field term of message ark.asset.v1.EventEmergencySuspended is not mutable"))
+	case "ark.asset.v1.EventEmergencySuspended.version":
+		panic(fmt.Errorf("field version of message ark.asset.v1.EventEmergencySuspended is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencySuspended"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencySuspended does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventEmergencySuspended) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.EventEmergencySuspended.denom":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.EventEmergencySuspended.term":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.asset.v1.EventEmergencySuspended.version":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.EventEmergencySuspended"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.EventEmergencySuspended does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventEmergencySuspended) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.EventEmergencySuspended", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventEmergencySuspended) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventEmergencySuspended) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventEmergencySuspended) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventEmergencySuspended) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventEmergencySuspended)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Denom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Term != 0 {
+			n += 1 + runtime.Sov(uint64(x.Term))
+		}
+		if x.Version != 0 {
+			n += 1 + runtime.Sov(uint64(x.Version))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventEmergencySuspended)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Version != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Version))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.Term != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Term))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventEmergencySuspended)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventEmergencySuspended: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventEmergencySuspended: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+				}
+				x.Term = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Term |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+				}
+				x.Version = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Version |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -6308,278 +4072,7 @@ func (x *EventAssetStatusChanged) GetVersion() uint64 {
 	return 0
 }
 
-// EventOracleRequiredChanged is emitted after an asset's Oracle requirement
-// changes.
-type EventOracleRequiredChanged struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Denom             string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	OldOracleRequired bool   `protobuf:"varint,2,opt,name=old_oracle_required,json=oldOracleRequired,proto3" json:"old_oracle_required,omitempty"`
-	NewOracleRequired bool   `protobuf:"varint,3,opt,name=new_oracle_required,json=newOracleRequired,proto3" json:"new_oracle_required,omitempty"`
-	Version           uint64 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
-}
-
-func (x *EventOracleRequiredChanged) Reset() {
-	*x = EventOracleRequiredChanged{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventOracleRequiredChanged) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventOracleRequiredChanged) ProtoMessage() {}
-
-// Deprecated: Use EventOracleRequiredChanged.ProtoReflect.Descriptor instead.
-func (*EventOracleRequiredChanged) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *EventOracleRequiredChanged) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *EventOracleRequiredChanged) GetOldOracleRequired() bool {
-	if x != nil {
-		return x.OldOracleRequired
-	}
-	return false
-}
-
-func (x *EventOracleRequiredChanged) GetNewOracleRequired() bool {
-	if x != nil {
-		return x.NewOracleRequired
-	}
-	return false
-}
-
-func (x *EventOracleRequiredChanged) GetVersion() uint64 {
-	if x != nil {
-		return x.Version
-	}
-	return 0
-}
-
-// EventOracleTargetsScheduled is emitted after the next target epoch is
-// scheduled.
-type EventOracleTargetsScheduled struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ActiveVersion        uint64   `protobuf:"varint,1,opt,name=active_version,json=activeVersion,proto3" json:"active_version,omitempty"`
-	PendingVersion       uint64   `protobuf:"varint,2,opt,name=pending_version,json=pendingVersion,proto3" json:"pending_version,omitempty"`
-	ActivationVoteHeight int64    `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
-	AddedDenoms          []string `protobuf:"bytes,4,rep,name=added_denoms,json=addedDenoms,proto3" json:"added_denoms,omitempty"`
-	RemovedDenoms        []string `protobuf:"bytes,5,rep,name=removed_denoms,json=removedDenoms,proto3" json:"removed_denoms,omitempty"`
-}
-
-func (x *EventOracleTargetsScheduled) Reset() {
-	*x = EventOracleTargetsScheduled{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventOracleTargetsScheduled) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventOracleTargetsScheduled) ProtoMessage() {}
-
-// Deprecated: Use EventOracleTargetsScheduled.ProtoReflect.Descriptor instead.
-func (*EventOracleTargetsScheduled) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *EventOracleTargetsScheduled) GetActiveVersion() uint64 {
-	if x != nil {
-		return x.ActiveVersion
-	}
-	return 0
-}
-
-func (x *EventOracleTargetsScheduled) GetPendingVersion() uint64 {
-	if x != nil {
-		return x.PendingVersion
-	}
-	return 0
-}
-
-func (x *EventOracleTargetsScheduled) GetActivationVoteHeight() int64 {
-	if x != nil {
-		return x.ActivationVoteHeight
-	}
-	return 0
-}
-
-func (x *EventOracleTargetsScheduled) GetAddedDenoms() []string {
-	if x != nil {
-		return x.AddedDenoms
-	}
-	return nil
-}
-
-func (x *EventOracleTargetsScheduled) GetRemovedDenoms() []string {
-	if x != nil {
-		return x.RemovedDenoms
-	}
-	return nil
-}
-
-// EventOracleTargetsActivated is emitted after the pending target epoch becomes
-// active.
-type EventOracleTargetsActivated struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Version       uint64   `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	AddedDenoms   []string `protobuf:"bytes,2,rep,name=added_denoms,json=addedDenoms,proto3" json:"added_denoms,omitempty"`
-	RemovedDenoms []string `protobuf:"bytes,3,rep,name=removed_denoms,json=removedDenoms,proto3" json:"removed_denoms,omitempty"`
-}
-
-func (x *EventOracleTargetsActivated) Reset() {
-	*x = EventOracleTargetsActivated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventOracleTargetsActivated) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventOracleTargetsActivated) ProtoMessage() {}
-
-// Deprecated: Use EventOracleTargetsActivated.ProtoReflect.Descriptor instead.
-func (*EventOracleTargetsActivated) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *EventOracleTargetsActivated) GetVersion() uint64 {
-	if x != nil {
-		return x.Version
-	}
-	return 0
-}
-
-func (x *EventOracleTargetsActivated) GetAddedDenoms() []string {
-	if x != nil {
-		return x.AddedDenoms
-	}
-	return nil
-}
-
-func (x *EventOracleTargetsActivated) GetRemovedDenoms() []string {
-	if x != nil {
-		return x.RemovedDenoms
-	}
-	return nil
-}
-
-// EventAssetLockAdded is emitted after a downstream dependency is recorded.
-type EventAssetLockAdded struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Denom string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Kind  AssetLockKind `protobuf:"varint,2,opt,name=kind,proto3,enum=ark.asset.v1.AssetLockKind" json:"kind,omitempty"`
-}
-
-func (x *EventAssetLockAdded) Reset() {
-	*x = EventAssetLockAdded{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventAssetLockAdded) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventAssetLockAdded) ProtoMessage() {}
-
-// Deprecated: Use EventAssetLockAdded.ProtoReflect.Descriptor instead.
-func (*EventAssetLockAdded) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *EventAssetLockAdded) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *EventAssetLockAdded) GetKind() AssetLockKind {
-	if x != nil {
-		return x.Kind
-	}
-	return AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED
-}
-
-// EventAssetLockRemoved is emitted after a downstream dependency is removed.
-type EventAssetLockRemoved struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Denom string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Kind  AssetLockKind `protobuf:"varint,2,opt,name=kind,proto3,enum=ark.asset.v1.AssetLockKind" json:"kind,omitempty"`
-}
-
-func (x *EventAssetLockRemoved) Reset() {
-	*x = EventAssetLockRemoved{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventAssetLockRemoved) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventAssetLockRemoved) ProtoMessage() {}
-
-// Deprecated: Use EventAssetLockRemoved.ProtoReflect.Descriptor instead.
-func (*EventAssetLockRemoved) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *EventAssetLockRemoved) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *EventAssetLockRemoved) GetKind() AssetLockKind {
-	if x != nil {
-		return x.Kind
-	}
-	return AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED
-}
-
-// EventSettlementOpened is emitted when governance stores a settlement plan.
+// EventSettlementOpened is emitted when governance stores settlement terms.
 type EventSettlementOpened struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6591,7 +4084,7 @@ type EventSettlementOpened struct {
 func (x *EventSettlementOpened) Reset() {
 	*x = EventSettlementOpened{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[7]
+		mi := &file_ark_asset_v1_event_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6605,7 +4098,7 @@ func (*EventSettlementOpened) ProtoMessage() {}
 
 // Deprecated: Use EventSettlementOpened.ProtoReflect.Descriptor instead.
 func (*EventSettlementOpened) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{7}
+	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EventSettlementOpened) GetSettlementPlan() *SettlementPlan {
@@ -6613,51 +4106,6 @@ func (x *EventSettlementOpened) GetSettlementPlan() *SettlementPlan {
 		return x.SettlementPlan
 	}
 	return nil
-}
-
-// EventSettlementActivated is emitted at the first height that permits
-// settlement redemption.
-type EventSettlementActivated struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Denom   string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-}
-
-func (x *EventSettlementActivated) Reset() {
-	*x = EventSettlementActivated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventSettlementActivated) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventSettlementActivated) ProtoMessage() {}
-
-// Deprecated: Use EventSettlementActivated.ProtoReflect.Descriptor instead.
-func (*EventSettlementActivated) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *EventSettlementActivated) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *EventSettlementActivated) GetVersion() uint64 {
-	if x != nil {
-		return x.Version
-	}
-	return 0
 }
 
 // EventSettlementCancelled is emitted when governance cancels a settlement
@@ -6674,7 +4122,7 @@ type EventSettlementCancelled struct {
 func (x *EventSettlementCancelled) Reset() {
 	*x = EventSettlementCancelled{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[9]
+		mi := &file_ark_asset_v1_event_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6688,7 +4136,7 @@ func (*EventSettlementCancelled) ProtoMessage() {}
 
 // Deprecated: Use EventSettlementCancelled.ProtoReflect.Descriptor instead.
 func (*EventSettlementCancelled) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{9}
+	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EventSettlementCancelled) GetDenom() string {
@@ -6705,21 +4153,22 @@ func (x *EventSettlementCancelled) GetVersion() uint64 {
 	return 0
 }
 
-// EventSettlementClosed is emitted when settlement ends through retirement,
-// relisting, or write-off.
+// EventSettlementClosed is emitted when an activated settlement ends, carrying
+// the plan's full terms and both its open and close heights.
 type EventSettlementClosed struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Denom   string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	SettlementPlan *SettlementPlan `protobuf:"bytes,1,opt,name=settlement_plan,json=settlementPlan,proto3" json:"settlement_plan,omitempty"`
+	Version        uint64          `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	ClosedHeight   int64           `protobuf:"varint,3,opt,name=closed_height,json=closedHeight,proto3" json:"closed_height,omitempty"`
 }
 
 func (x *EventSettlementClosed) Reset() {
 	*x = EventSettlementClosed{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[10]
+		mi := &file_ark_asset_v1_event_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6733,14 +4182,14 @@ func (*EventSettlementClosed) ProtoMessage() {}
 
 // Deprecated: Use EventSettlementClosed.ProtoReflect.Descriptor instead.
 func (*EventSettlementClosed) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{10}
+	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *EventSettlementClosed) GetDenom() string {
+func (x *EventSettlementClosed) GetSettlementPlan() *SettlementPlan {
 	if x != nil {
-		return x.Denom
+		return x.SettlementPlan
 	}
-	return ""
+	return nil
 }
 
 func (x *EventSettlementClosed) GetVersion() uint64 {
@@ -6750,40 +4199,164 @@ func (x *EventSettlementClosed) GetVersion() uint64 {
 	return 0
 }
 
-// EventAssetWrittenOff is emitted after a write-off record is appended.
-type EventAssetWrittenOff struct {
+func (x *EventSettlementClosed) GetClosedHeight() int64 {
+	if x != nil {
+		return x.ClosedHeight
+	}
+	return 0
+}
+
+// EventAssetResolved is emitted after a resolution record is appended.
+type EventAssetResolved struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	WriteOffRecord *WriteOffRecord `protobuf:"bytes,1,opt,name=write_off_record,json=writeOffRecord,proto3" json:"write_off_record,omitempty"`
+	ResolutionRecord *ResolutionRecord `protobuf:"bytes,1,opt,name=resolution_record,json=resolutionRecord,proto3" json:"resolution_record,omitempty"`
 }
 
-func (x *EventAssetWrittenOff) Reset() {
-	*x = EventAssetWrittenOff{}
+func (x *EventAssetResolved) Reset() {
+	*x = EventAssetResolved{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_event_proto_msgTypes[11]
+		mi := &file_ark_asset_v1_event_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *EventAssetWrittenOff) String() string {
+func (x *EventAssetResolved) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventAssetWrittenOff) ProtoMessage() {}
+func (*EventAssetResolved) ProtoMessage() {}
 
-// Deprecated: Use EventAssetWrittenOff.ProtoReflect.Descriptor instead.
-func (*EventAssetWrittenOff) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{11}
+// Deprecated: Use EventAssetResolved.ProtoReflect.Descriptor instead.
+func (*EventAssetResolved) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *EventAssetWrittenOff) GetWriteOffRecord() *WriteOffRecord {
+func (x *EventAssetResolved) GetResolutionRecord() *ResolutionRecord {
 	if x != nil {
-		return x.WriteOffRecord
+		return x.ResolutionRecord
 	}
 	return nil
+}
+
+// EventEmergencyMandateSet is emitted after governance replaces or disables
+// the emergency committee appointment.
+type EventEmergencyMandateSet struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	// committee is empty when governance disabled the mandate.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (x *EventEmergencyMandateSet) Reset() {
+	*x = EventEmergencyMandateSet{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_event_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventEmergencyMandateSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventEmergencyMandateSet) ProtoMessage() {}
+
+// Deprecated: Use EventEmergencyMandateSet.ProtoReflect.Descriptor instead.
+func (*EventEmergencyMandateSet) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *EventEmergencyMandateSet) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *EventEmergencyMandateSet) GetCommittee() string {
+	if x != nil {
+		return x.Committee
+	}
+	return ""
+}
+
+func (x *EventEmergencyMandateSet) GetActivationHeight() uint64 {
+	if x != nil {
+		return x.ActivationHeight
+	}
+	return 0
+}
+
+func (x *EventEmergencyMandateSet) GetExpiryHeight() uint64 {
+	if x != nil {
+		return x.ExpiryHeight
+	}
+	return 0
+}
+
+// EventEmergencySuspended is emitted after the committee consumes an asset's
+// per-term suspension.
+type EventEmergencySuspended struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	// term is the mandate term the suspension was executed under.
+	Term uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
+	// version is the asset version produced by the suspension.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+}
+
+func (x *EventEmergencySuspended) Reset() {
+	*x = EventEmergencySuspended{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_event_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventEmergencySuspended) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventEmergencySuspended) ProtoMessage() {}
+
+// Deprecated: Use EventEmergencySuspended.ProtoReflect.Descriptor instead.
+func (*EventEmergencySuspended) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_event_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *EventEmergencySuspended) GetDenom() string {
+	if x != nil {
+		return x.Denom
+	}
+	return ""
+}
+
+func (x *EventEmergencySuspended) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *EventEmergencySuspended) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
 }
 
 var File_ark_asset_v1_event_proto protoreflect.FileDescriptor
@@ -6794,113 +4367,88 @@ var file_ark_asset_v1_event_proto_rawDesc = []byte{
 	0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f,
 	0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18, 0x61, 0x72, 0x6b,
 	0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x4c, 0x0a, 0x14, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
-	0x72, 0x65, 0x64, 0x12, 0x34, 0x0a, 0x05, 0x61, 0x73, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x13, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76,
-	0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x05, 0x61, 0x73, 0x73, 0x65, 0x74, 0x22, 0xd2, 0x01, 0x0a, 0x17, 0x45, 0x76,
-	0x65, 0x6e, 0x74, 0x41, 0x73, 0x73, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x43, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x3f, 0x0a, 0x0a, 0x6f,
-	0x6c, 0x64, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32,
-	0x19, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41,
-	0x73, 0x73, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x09, 0x6f, 0x6c, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x3f, 0x0a, 0x0a,
-	0x6e, 0x65, 0x77, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e,
-	0x32, 0x19, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x41, 0x73, 0x73, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x09, 0x6e, 0x65, 0x77, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1f, 0x0a,
-	0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0xc1,
-	0x01, 0x0a, 0x1a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x12, 0x14, 0x0a,
-	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x12, 0x35, 0x0a, 0x13, 0x6f, 0x6c, 0x64, 0x5f, 0x6f, 0x72, 0x61, 0x63, 0x6c,
-	0x65, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08,
-	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6f, 0x6c, 0x64, 0x4f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x12, 0x35, 0x0a, 0x13, 0x6e, 0x65,
-	0x77, 0x5f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
-	0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11,
-	0x6e, 0x65, 0x77, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
-	0x64, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x22, 0xed, 0x01, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x53, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c,
-	0x65, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x76, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0d, 0x61, 0x63, 0x74, 0x69,
-	0x76, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x27, 0x0a, 0x0f, 0x70, 0x65, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x0e, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x56, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x12, 0x34, 0x0a, 0x16, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x5f, 0x76, 0x6f, 0x74, 0x65, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x03, 0x52, 0x14, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x6f,
-	0x74, 0x65, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x61, 0x64, 0x64, 0x65,
-	0x64, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b,
-	0x61, 0x64, 0x64, 0x65, 0x64, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x72,
-	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x18, 0x05, 0x20,
-	0x03, 0x28, 0x09, 0x52, 0x0d, 0x72, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64, 0x44, 0x65, 0x6e, 0x6f,
-	0x6d, 0x73, 0x22, 0x81, 0x01, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74,
-	0x65, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x21, 0x0a, 0x0c,
-	0x61, 0x64, 0x64, 0x65, 0x64, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x18, 0x02, 0x20, 0x03,
-	0x28, 0x09, 0x52, 0x0b, 0x61, 0x64, 0x64, 0x65, 0x64, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x12,
-	0x25, 0x0a, 0x0e, 0x72, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0d, 0x72, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64,
-	0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x73, 0x22, 0x63, 0x0a, 0x13, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41,
-	0x73, 0x73, 0x65, 0x74, 0x4c, 0x6f, 0x63, 0x6b, 0x41, 0x64, 0x64, 0x65, 0x64, 0x12, 0x14, 0x0a,
-	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x12, 0x36, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0e, 0x32, 0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x4c, 0x6f, 0x63, 0x6b, 0x4b, 0x69, 0x6e, 0x64, 0x42, 0x05,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x22, 0x65, 0x0a, 0x15, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x41, 0x73, 0x73, 0x65, 0x74, 0x4c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x6d,
-	0x6f, 0x76, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x36, 0x0a, 0x04, 0x6b, 0x69,
-	0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61,
-	0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x4c, 0x6f, 0x63,
-	0x6b, 0x4b, 0x69, 0x6e, 0x64, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x6b, 0x69,
-	0x6e, 0x64, 0x22, 0x69, 0x0a, 0x15, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74, 0x74, 0x6c,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x4f, 0x70, 0x65, 0x6e, 0x65, 0x64, 0x12, 0x50, 0x0a, 0x0f, 0x73,
-	0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x70, 0x6c, 0x61, 0x6e, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c,
-	0x61, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x73,
-	0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x22, 0x51, 0x0a,
-	0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x4c, 0x0a, 0x14, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x65, 0x64, 0x12, 0x34,
+	0x0a, 0x05, 0x61, 0x73, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73,
+	0x65, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x22, 0xd2, 0x01, 0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x3f, 0x0a, 0x0a, 0x6f, 0x6c, 0x64, 0x5f, 0x73, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x19, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x53,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x6f, 0x6c,
+	0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x3f, 0x0a, 0x0a, 0x6e, 0x65, 0x77, 0x5f, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x19, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x6e,
+	0x65, 0x77, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x69, 0x0a, 0x15, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x4f, 0x70, 0x65, 0x6e,
+	0x65, 0x64, 0x12, 0x50, 0x0a, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74,
+	0x5f, 0x70, 0x6c, 0x61, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x74, 0x6c,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74,
+	0x50, 0x6c, 0x61, 0x6e, 0x22, 0x51, 0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74,
+	0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x65, 0x64,
+	0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0xb6, 0x01, 0x0a, 0x15, 0x45, 0x76, 0x65, 0x6e,
+	0x74, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x6f, 0x73, 0x65,
+	0x64, 0x12, 0x50, 0x0a, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f,
+	0x70, 0x6c, 0x61, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50,
+	0x6c, 0x61, 0x6e, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x12, 0x2a, 0x0a, 0x0d, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x5f, 0x68,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0c, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x22, 0x6c, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65,
+	0x73, 0x6f, 0x6c, 0x76, 0x65, 0x64, 0x12, 0x56, 0x0a, 0x11, 0x72, 0x65, 0x73, 0x6f, 0x6c, 0x75,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x73, 0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x72,
+	0x64, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x72, 0x65,
+	0x73, 0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x22, 0xcd,
+	0x01, 0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63,
+	0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x74, 0x12, 0x19, 0x0a, 0x04, 0x74,
+	0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x32,
+	0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x6b,
+	0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79,
+	0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
 	0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12,
-	0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
-	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
-	0x22, 0x51, 0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d,
-	0x65, 0x6e, 0x74, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05,
-	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e,
-	0x6f, 0x6d, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73,
-	0x69, 0x6f, 0x6e, 0x22, 0x4e, 0x0a, 0x15, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74, 0x74,
-	0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05,
-	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e,
-	0x6f, 0x6d, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73,
-	0x69, 0x6f, 0x6e, 0x22, 0x69, 0x0a, 0x14, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x73, 0x73, 0x65,
-	0x74, 0x57, 0x72, 0x69, 0x74, 0x74, 0x65, 0x6e, 0x4f, 0x66, 0x66, 0x12, 0x51, 0x0a, 0x10, 0x77,
-	0x72, 0x69, 0x74, 0x65, 0x5f, 0x6f, 0x66, 0x66, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65,
-	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x52, 0x65, 0x63,
-	0x6f, 0x72, 0x64, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e,
-	0x77, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x42, 0x8e,
-	0x01, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
-	0x01, 0x5a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61,
-	0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x73, 0x73, 0x65, 0x74, 0x76, 0x31, 0xa2,
-	0x02, 0x03, 0x41, 0x41, 0x58, 0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x2e, 0x41, 0x73, 0x73, 0x65,
-	0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x5c, 0x56, 0x31, 0xe2, 0x02, 0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c,
-	0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x0e, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x41, 0x73, 0x73, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x1f, 0x0a, 0x07, 0x76, 0x65,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0x8e, 0x01, 0x0a, 0x10,
+	0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1c,
+	0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x73, 0x73, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41,
+	0x41, 0x58, 0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x56,
+	0x31, 0xca, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31,
+	0xe2, 0x02, 0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c,
+	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x41, 0x72,
+	0x6b, 0x3a, 0x3a, 0x41, 0x73, 0x73, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -6915,39 +4463,33 @@ func file_ark_asset_v1_event_proto_rawDescGZIP() []byte {
 	return file_ark_asset_v1_event_proto_rawDescData
 }
 
-var file_ark_asset_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_ark_asset_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_ark_asset_v1_event_proto_goTypes = []interface{}{
-	(*EventAssetRegistered)(nil),        // 0: ark.asset.v1.EventAssetRegistered
-	(*EventAssetStatusChanged)(nil),     // 1: ark.asset.v1.EventAssetStatusChanged
-	(*EventOracleRequiredChanged)(nil),  // 2: ark.asset.v1.EventOracleRequiredChanged
-	(*EventOracleTargetsScheduled)(nil), // 3: ark.asset.v1.EventOracleTargetsScheduled
-	(*EventOracleTargetsActivated)(nil), // 4: ark.asset.v1.EventOracleTargetsActivated
-	(*EventAssetLockAdded)(nil),         // 5: ark.asset.v1.EventAssetLockAdded
-	(*EventAssetLockRemoved)(nil),       // 6: ark.asset.v1.EventAssetLockRemoved
-	(*EventSettlementOpened)(nil),       // 7: ark.asset.v1.EventSettlementOpened
-	(*EventSettlementActivated)(nil),    // 8: ark.asset.v1.EventSettlementActivated
-	(*EventSettlementCancelled)(nil),    // 9: ark.asset.v1.EventSettlementCancelled
-	(*EventSettlementClosed)(nil),       // 10: ark.asset.v1.EventSettlementClosed
-	(*EventAssetWrittenOff)(nil),        // 11: ark.asset.v1.EventAssetWrittenOff
-	(*Asset)(nil),                       // 12: ark.asset.v1.Asset
-	(AssetStatus)(0),                    // 13: ark.asset.v1.AssetStatus
-	(AssetLockKind)(0),                  // 14: ark.asset.v1.AssetLockKind
-	(*SettlementPlan)(nil),              // 15: ark.asset.v1.SettlementPlan
-	(*WriteOffRecord)(nil),              // 16: ark.asset.v1.WriteOffRecord
+	(*EventAssetRegistered)(nil),     // 0: ark.asset.v1.EventAssetRegistered
+	(*EventAssetStatusChanged)(nil),  // 1: ark.asset.v1.EventAssetStatusChanged
+	(*EventSettlementOpened)(nil),    // 2: ark.asset.v1.EventSettlementOpened
+	(*EventSettlementCancelled)(nil), // 3: ark.asset.v1.EventSettlementCancelled
+	(*EventSettlementClosed)(nil),    // 4: ark.asset.v1.EventSettlementClosed
+	(*EventAssetResolved)(nil),       // 5: ark.asset.v1.EventAssetResolved
+	(*EventEmergencyMandateSet)(nil), // 6: ark.asset.v1.EventEmergencyMandateSet
+	(*EventEmergencySuspended)(nil),  // 7: ark.asset.v1.EventEmergencySuspended
+	(*Asset)(nil),                    // 8: ark.asset.v1.Asset
+	(AssetStatus)(0),                 // 9: ark.asset.v1.AssetStatus
+	(*SettlementPlan)(nil),           // 10: ark.asset.v1.SettlementPlan
+	(*ResolutionRecord)(nil),         // 11: ark.asset.v1.ResolutionRecord
 }
 var file_ark_asset_v1_event_proto_depIdxs = []int32{
-	12, // 0: ark.asset.v1.EventAssetRegistered.asset:type_name -> ark.asset.v1.Asset
-	13, // 1: ark.asset.v1.EventAssetStatusChanged.old_status:type_name -> ark.asset.v1.AssetStatus
-	13, // 2: ark.asset.v1.EventAssetStatusChanged.new_status:type_name -> ark.asset.v1.AssetStatus
-	14, // 3: ark.asset.v1.EventAssetLockAdded.kind:type_name -> ark.asset.v1.AssetLockKind
-	14, // 4: ark.asset.v1.EventAssetLockRemoved.kind:type_name -> ark.asset.v1.AssetLockKind
-	15, // 5: ark.asset.v1.EventSettlementOpened.settlement_plan:type_name -> ark.asset.v1.SettlementPlan
-	16, // 6: ark.asset.v1.EventAssetWrittenOff.write_off_record:type_name -> ark.asset.v1.WriteOffRecord
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	8,  // 0: ark.asset.v1.EventAssetRegistered.asset:type_name -> ark.asset.v1.Asset
+	9,  // 1: ark.asset.v1.EventAssetStatusChanged.old_status:type_name -> ark.asset.v1.AssetStatus
+	9,  // 2: ark.asset.v1.EventAssetStatusChanged.new_status:type_name -> ark.asset.v1.AssetStatus
+	10, // 3: ark.asset.v1.EventSettlementOpened.settlement_plan:type_name -> ark.asset.v1.SettlementPlan
+	10, // 4: ark.asset.v1.EventSettlementClosed.settlement_plan:type_name -> ark.asset.v1.SettlementPlan
+	11, // 5: ark.asset.v1.EventAssetResolved.resolution_record:type_name -> ark.asset.v1.ResolutionRecord
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_ark_asset_v1_event_proto_init() }
@@ -6982,66 +4524,6 @@ func file_ark_asset_v1_event_proto_init() {
 			}
 		}
 		file_ark_asset_v1_event_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventOracleRequiredChanged); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventOracleTargetsScheduled); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventOracleTargetsActivated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_event_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventAssetLockAdded); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_event_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventAssetLockRemoved); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_event_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventSettlementOpened); i {
 			case 0:
 				return &v.state
@@ -7053,19 +4535,7 @@ func file_ark_asset_v1_event_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_event_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventSettlementActivated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_event_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventSettlementCancelled); i {
 			case 0:
 				return &v.state
@@ -7077,7 +4547,7 @@ func file_ark_asset_v1_event_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_event_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventSettlementClosed); i {
 			case 0:
 				return &v.state
@@ -7089,8 +4559,32 @@ func file_ark_asset_v1_event_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_event_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventAssetWrittenOff); i {
+		file_ark_asset_v1_event_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventAssetResolved); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_event_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventEmergencyMandateSet); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_event_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventEmergencySuspended); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -7108,7 +4602,7 @@ func file_ark_asset_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_asset_v1_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

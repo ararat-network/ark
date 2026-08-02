@@ -5,6 +5,7 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -138,323 +139,7 @@ func (m *EventAssetStatusChanged) GetVersion() uint64 {
 	return 0
 }
 
-// EventOracleRequiredChanged is emitted after an asset's Oracle requirement
-// changes.
-type EventOracleRequiredChanged struct {
-	Denom             string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	OldOracleRequired bool   `protobuf:"varint,2,opt,name=old_oracle_required,json=oldOracleRequired,proto3" json:"old_oracle_required,omitempty"`
-	NewOracleRequired bool   `protobuf:"varint,3,opt,name=new_oracle_required,json=newOracleRequired,proto3" json:"new_oracle_required,omitempty"`
-	Version           uint64 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
-}
-
-func (m *EventOracleRequiredChanged) Reset()         { *m = EventOracleRequiredChanged{} }
-func (m *EventOracleRequiredChanged) String() string { return proto.CompactTextString(m) }
-func (*EventOracleRequiredChanged) ProtoMessage()    {}
-func (*EventOracleRequiredChanged) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{2}
-}
-func (m *EventOracleRequiredChanged) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventOracleRequiredChanged) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventOracleRequiredChanged.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventOracleRequiredChanged) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventOracleRequiredChanged.Merge(m, src)
-}
-func (m *EventOracleRequiredChanged) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventOracleRequiredChanged) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventOracleRequiredChanged.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventOracleRequiredChanged proto.InternalMessageInfo
-
-func (m *EventOracleRequiredChanged) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *EventOracleRequiredChanged) GetOldOracleRequired() bool {
-	if m != nil {
-		return m.OldOracleRequired
-	}
-	return false
-}
-
-func (m *EventOracleRequiredChanged) GetNewOracleRequired() bool {
-	if m != nil {
-		return m.NewOracleRequired
-	}
-	return false
-}
-
-func (m *EventOracleRequiredChanged) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
-// EventOracleTargetsScheduled is emitted after the next target epoch is
-// scheduled.
-type EventOracleTargetsScheduled struct {
-	ActiveVersion        uint64   `protobuf:"varint,1,opt,name=active_version,json=activeVersion,proto3" json:"active_version,omitempty"`
-	PendingVersion       uint64   `protobuf:"varint,2,opt,name=pending_version,json=pendingVersion,proto3" json:"pending_version,omitempty"`
-	ActivationVoteHeight int64    `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
-	AddedDenoms          []string `protobuf:"bytes,4,rep,name=added_denoms,json=addedDenoms,proto3" json:"added_denoms,omitempty"`
-	RemovedDenoms        []string `protobuf:"bytes,5,rep,name=removed_denoms,json=removedDenoms,proto3" json:"removed_denoms,omitempty"`
-}
-
-func (m *EventOracleTargetsScheduled) Reset()         { *m = EventOracleTargetsScheduled{} }
-func (m *EventOracleTargetsScheduled) String() string { return proto.CompactTextString(m) }
-func (*EventOracleTargetsScheduled) ProtoMessage()    {}
-func (*EventOracleTargetsScheduled) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{3}
-}
-func (m *EventOracleTargetsScheduled) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventOracleTargetsScheduled) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventOracleTargetsScheduled.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventOracleTargetsScheduled) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventOracleTargetsScheduled.Merge(m, src)
-}
-func (m *EventOracleTargetsScheduled) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventOracleTargetsScheduled) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventOracleTargetsScheduled.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventOracleTargetsScheduled proto.InternalMessageInfo
-
-func (m *EventOracleTargetsScheduled) GetActiveVersion() uint64 {
-	if m != nil {
-		return m.ActiveVersion
-	}
-	return 0
-}
-
-func (m *EventOracleTargetsScheduled) GetPendingVersion() uint64 {
-	if m != nil {
-		return m.PendingVersion
-	}
-	return 0
-}
-
-func (m *EventOracleTargetsScheduled) GetActivationVoteHeight() int64 {
-	if m != nil {
-		return m.ActivationVoteHeight
-	}
-	return 0
-}
-
-func (m *EventOracleTargetsScheduled) GetAddedDenoms() []string {
-	if m != nil {
-		return m.AddedDenoms
-	}
-	return nil
-}
-
-func (m *EventOracleTargetsScheduled) GetRemovedDenoms() []string {
-	if m != nil {
-		return m.RemovedDenoms
-	}
-	return nil
-}
-
-// EventOracleTargetsActivated is emitted after the pending target epoch becomes
-// active.
-type EventOracleTargetsActivated struct {
-	Version       uint64   `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	AddedDenoms   []string `protobuf:"bytes,2,rep,name=added_denoms,json=addedDenoms,proto3" json:"added_denoms,omitempty"`
-	RemovedDenoms []string `protobuf:"bytes,3,rep,name=removed_denoms,json=removedDenoms,proto3" json:"removed_denoms,omitempty"`
-}
-
-func (m *EventOracleTargetsActivated) Reset()         { *m = EventOracleTargetsActivated{} }
-func (m *EventOracleTargetsActivated) String() string { return proto.CompactTextString(m) }
-func (*EventOracleTargetsActivated) ProtoMessage()    {}
-func (*EventOracleTargetsActivated) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{4}
-}
-func (m *EventOracleTargetsActivated) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventOracleTargetsActivated) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventOracleTargetsActivated.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventOracleTargetsActivated) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventOracleTargetsActivated.Merge(m, src)
-}
-func (m *EventOracleTargetsActivated) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventOracleTargetsActivated) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventOracleTargetsActivated.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventOracleTargetsActivated proto.InternalMessageInfo
-
-func (m *EventOracleTargetsActivated) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
-func (m *EventOracleTargetsActivated) GetAddedDenoms() []string {
-	if m != nil {
-		return m.AddedDenoms
-	}
-	return nil
-}
-
-func (m *EventOracleTargetsActivated) GetRemovedDenoms() []string {
-	if m != nil {
-		return m.RemovedDenoms
-	}
-	return nil
-}
-
-// EventAssetLockAdded is emitted after a downstream dependency is recorded.
-type EventAssetLockAdded struct {
-	Denom string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Kind  AssetLockKind `protobuf:"varint,2,opt,name=kind,proto3,enum=ark.asset.v1.AssetLockKind" json:"kind,omitempty"`
-}
-
-func (m *EventAssetLockAdded) Reset()         { *m = EventAssetLockAdded{} }
-func (m *EventAssetLockAdded) String() string { return proto.CompactTextString(m) }
-func (*EventAssetLockAdded) ProtoMessage()    {}
-func (*EventAssetLockAdded) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{5}
-}
-func (m *EventAssetLockAdded) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventAssetLockAdded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventAssetLockAdded.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventAssetLockAdded) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventAssetLockAdded.Merge(m, src)
-}
-func (m *EventAssetLockAdded) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventAssetLockAdded) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventAssetLockAdded.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventAssetLockAdded proto.InternalMessageInfo
-
-func (m *EventAssetLockAdded) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *EventAssetLockAdded) GetKind() AssetLockKind {
-	if m != nil {
-		return m.Kind
-	}
-	return AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED
-}
-
-// EventAssetLockRemoved is emitted after a downstream dependency is removed.
-type EventAssetLockRemoved struct {
-	Denom string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Kind  AssetLockKind `protobuf:"varint,2,opt,name=kind,proto3,enum=ark.asset.v1.AssetLockKind" json:"kind,omitempty"`
-}
-
-func (m *EventAssetLockRemoved) Reset()         { *m = EventAssetLockRemoved{} }
-func (m *EventAssetLockRemoved) String() string { return proto.CompactTextString(m) }
-func (*EventAssetLockRemoved) ProtoMessage()    {}
-func (*EventAssetLockRemoved) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{6}
-}
-func (m *EventAssetLockRemoved) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventAssetLockRemoved) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventAssetLockRemoved.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventAssetLockRemoved) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventAssetLockRemoved.Merge(m, src)
-}
-func (m *EventAssetLockRemoved) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventAssetLockRemoved) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventAssetLockRemoved.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventAssetLockRemoved proto.InternalMessageInfo
-
-func (m *EventAssetLockRemoved) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *EventAssetLockRemoved) GetKind() AssetLockKind {
-	if m != nil {
-		return m.Kind
-	}
-	return AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED
-}
-
-// EventSettlementOpened is emitted when governance stores a settlement plan.
+// EventSettlementOpened is emitted when governance stores settlement terms.
 type EventSettlementOpened struct {
 	SettlementPlan SettlementPlan `protobuf:"bytes,1,opt,name=settlement_plan,json=settlementPlan,proto3" json:"settlement_plan"`
 }
@@ -463,7 +148,7 @@ func (m *EventSettlementOpened) Reset()         { *m = EventSettlementOpened{} }
 func (m *EventSettlementOpened) String() string { return proto.CompactTextString(m) }
 func (*EventSettlementOpened) ProtoMessage()    {}
 func (*EventSettlementOpened) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{7}
+	return fileDescriptor_e08802e1c327259f, []int{2}
 }
 func (m *EventSettlementOpened) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -499,60 +184,6 @@ func (m *EventSettlementOpened) GetSettlementPlan() SettlementPlan {
 	return SettlementPlan{}
 }
 
-// EventSettlementActivated is emitted at the first height that permits
-// settlement redemption.
-type EventSettlementActivated struct {
-	Denom   string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-}
-
-func (m *EventSettlementActivated) Reset()         { *m = EventSettlementActivated{} }
-func (m *EventSettlementActivated) String() string { return proto.CompactTextString(m) }
-func (*EventSettlementActivated) ProtoMessage()    {}
-func (*EventSettlementActivated) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{8}
-}
-func (m *EventSettlementActivated) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventSettlementActivated) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventSettlementActivated.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventSettlementActivated) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventSettlementActivated.Merge(m, src)
-}
-func (m *EventSettlementActivated) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventSettlementActivated) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventSettlementActivated.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventSettlementActivated proto.InternalMessageInfo
-
-func (m *EventSettlementActivated) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *EventSettlementActivated) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
 // EventSettlementCancelled is emitted when governance cancels a settlement
 // before activation.
 type EventSettlementCancelled struct {
@@ -564,7 +195,7 @@ func (m *EventSettlementCancelled) Reset()         { *m = EventSettlementCancell
 func (m *EventSettlementCancelled) String() string { return proto.CompactTextString(m) }
 func (*EventSettlementCancelled) ProtoMessage()    {}
 func (*EventSettlementCancelled) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{9}
+	return fileDescriptor_e08802e1c327259f, []int{3}
 }
 func (m *EventSettlementCancelled) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -607,18 +238,19 @@ func (m *EventSettlementCancelled) GetVersion() uint64 {
 	return 0
 }
 
-// EventSettlementClosed is emitted when settlement ends through retirement,
-// relisting, or write-off.
+// EventSettlementClosed is emitted when an activated settlement ends, carrying
+// the plan's full terms and both its open and close heights.
 type EventSettlementClosed struct {
-	Denom   string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	SettlementPlan SettlementPlan `protobuf:"bytes,1,opt,name=settlement_plan,json=settlementPlan,proto3" json:"settlement_plan"`
+	Version        uint64         `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	ClosedHeight   int64          `protobuf:"varint,3,opt,name=closed_height,json=closedHeight,proto3" json:"closed_height,omitempty"`
 }
 
 func (m *EventSettlementClosed) Reset()         { *m = EventSettlementClosed{} }
 func (m *EventSettlementClosed) String() string { return proto.CompactTextString(m) }
 func (*EventSettlementClosed) ProtoMessage()    {}
 func (*EventSettlementClosed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{10}
+	return fileDescriptor_e08802e1c327259f, []int{4}
 }
 func (m *EventSettlementClosed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -647,11 +279,11 @@ func (m *EventSettlementClosed) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventSettlementClosed proto.InternalMessageInfo
 
-func (m *EventSettlementClosed) GetDenom() string {
+func (m *EventSettlementClosed) GetSettlementPlan() SettlementPlan {
 	if m != nil {
-		return m.Denom
+		return m.SettlementPlan
 	}
-	return ""
+	return SettlementPlan{}
 }
 
 func (m *EventSettlementClosed) GetVersion() uint64 {
@@ -661,23 +293,30 @@ func (m *EventSettlementClosed) GetVersion() uint64 {
 	return 0
 }
 
-// EventAssetWrittenOff is emitted after a write-off record is appended.
-type EventAssetWrittenOff struct {
-	WriteOffRecord WriteOffRecord `protobuf:"bytes,1,opt,name=write_off_record,json=writeOffRecord,proto3" json:"write_off_record"`
+func (m *EventSettlementClosed) GetClosedHeight() int64 {
+	if m != nil {
+		return m.ClosedHeight
+	}
+	return 0
 }
 
-func (m *EventAssetWrittenOff) Reset()         { *m = EventAssetWrittenOff{} }
-func (m *EventAssetWrittenOff) String() string { return proto.CompactTextString(m) }
-func (*EventAssetWrittenOff) ProtoMessage()    {}
-func (*EventAssetWrittenOff) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08802e1c327259f, []int{11}
+// EventAssetResolved is emitted after a resolution record is appended.
+type EventAssetResolved struct {
+	ResolutionRecord ResolutionRecord `protobuf:"bytes,1,opt,name=resolution_record,json=resolutionRecord,proto3" json:"resolution_record"`
 }
-func (m *EventAssetWrittenOff) XXX_Unmarshal(b []byte) error {
+
+func (m *EventAssetResolved) Reset()         { *m = EventAssetResolved{} }
+func (m *EventAssetResolved) String() string { return proto.CompactTextString(m) }
+func (*EventAssetResolved) ProtoMessage()    {}
+func (*EventAssetResolved) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e08802e1c327259f, []int{5}
+}
+func (m *EventAssetResolved) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EventAssetWrittenOff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EventAssetResolved) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_EventAssetWrittenOff.Marshal(b, m, deterministic)
+		return xxx_messageInfo_EventAssetResolved.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -687,87 +326,212 @@ func (m *EventAssetWrittenOff) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *EventAssetWrittenOff) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventAssetWrittenOff.Merge(m, src)
+func (m *EventAssetResolved) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventAssetResolved.Merge(m, src)
 }
-func (m *EventAssetWrittenOff) XXX_Size() int {
+func (m *EventAssetResolved) XXX_Size() int {
 	return m.Size()
 }
-func (m *EventAssetWrittenOff) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventAssetWrittenOff.DiscardUnknown(m)
+func (m *EventAssetResolved) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventAssetResolved.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EventAssetWrittenOff proto.InternalMessageInfo
+var xxx_messageInfo_EventAssetResolved proto.InternalMessageInfo
 
-func (m *EventAssetWrittenOff) GetWriteOffRecord() WriteOffRecord {
+func (m *EventAssetResolved) GetResolutionRecord() ResolutionRecord {
 	if m != nil {
-		return m.WriteOffRecord
+		return m.ResolutionRecord
 	}
-	return WriteOffRecord{}
+	return ResolutionRecord{}
+}
+
+// EventEmergencyMandateSet is emitted after governance replaces or disables
+// the emergency committee appointment.
+type EventEmergencyMandateSet struct {
+	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	// committee is empty when governance disabled the mandate.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (m *EventEmergencyMandateSet) Reset()         { *m = EventEmergencyMandateSet{} }
+func (m *EventEmergencyMandateSet) String() string { return proto.CompactTextString(m) }
+func (*EventEmergencyMandateSet) ProtoMessage()    {}
+func (*EventEmergencyMandateSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e08802e1c327259f, []int{6}
+}
+func (m *EventEmergencyMandateSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventEmergencyMandateSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventEmergencyMandateSet.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventEmergencyMandateSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventEmergencyMandateSet.Merge(m, src)
+}
+func (m *EventEmergencyMandateSet) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventEmergencyMandateSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventEmergencyMandateSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventEmergencyMandateSet proto.InternalMessageInfo
+
+func (m *EventEmergencyMandateSet) GetTerm() uint64 {
+	if m != nil {
+		return m.Term
+	}
+	return 0
+}
+
+func (m *EventEmergencyMandateSet) GetCommittee() string {
+	if m != nil {
+		return m.Committee
+	}
+	return ""
+}
+
+func (m *EventEmergencyMandateSet) GetActivationHeight() uint64 {
+	if m != nil {
+		return m.ActivationHeight
+	}
+	return 0
+}
+
+func (m *EventEmergencyMandateSet) GetExpiryHeight() uint64 {
+	if m != nil {
+		return m.ExpiryHeight
+	}
+	return 0
+}
+
+// EventEmergencySuspended is emitted after the committee consumes an asset's
+// per-term suspension.
+type EventEmergencySuspended struct {
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	// term is the mandate term the suspension was executed under.
+	Term uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
+	// version is the asset version produced by the suspension.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+}
+
+func (m *EventEmergencySuspended) Reset()         { *m = EventEmergencySuspended{} }
+func (m *EventEmergencySuspended) String() string { return proto.CompactTextString(m) }
+func (*EventEmergencySuspended) ProtoMessage()    {}
+func (*EventEmergencySuspended) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e08802e1c327259f, []int{7}
+}
+func (m *EventEmergencySuspended) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventEmergencySuspended) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EventEmergencySuspended.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EventEmergencySuspended) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventEmergencySuspended.Merge(m, src)
+}
+func (m *EventEmergencySuspended) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventEmergencySuspended) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventEmergencySuspended.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventEmergencySuspended proto.InternalMessageInfo
+
+func (m *EventEmergencySuspended) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+func (m *EventEmergencySuspended) GetTerm() uint64 {
+	if m != nil {
+		return m.Term
+	}
+	return 0
+}
+
+func (m *EventEmergencySuspended) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
 }
 
 func init() {
 	proto.RegisterType((*EventAssetRegistered)(nil), "ark.asset.v1.EventAssetRegistered")
 	proto.RegisterType((*EventAssetStatusChanged)(nil), "ark.asset.v1.EventAssetStatusChanged")
-	proto.RegisterType((*EventOracleRequiredChanged)(nil), "ark.asset.v1.EventOracleRequiredChanged")
-	proto.RegisterType((*EventOracleTargetsScheduled)(nil), "ark.asset.v1.EventOracleTargetsScheduled")
-	proto.RegisterType((*EventOracleTargetsActivated)(nil), "ark.asset.v1.EventOracleTargetsActivated")
-	proto.RegisterType((*EventAssetLockAdded)(nil), "ark.asset.v1.EventAssetLockAdded")
-	proto.RegisterType((*EventAssetLockRemoved)(nil), "ark.asset.v1.EventAssetLockRemoved")
 	proto.RegisterType((*EventSettlementOpened)(nil), "ark.asset.v1.EventSettlementOpened")
-	proto.RegisterType((*EventSettlementActivated)(nil), "ark.asset.v1.EventSettlementActivated")
 	proto.RegisterType((*EventSettlementCancelled)(nil), "ark.asset.v1.EventSettlementCancelled")
 	proto.RegisterType((*EventSettlementClosed)(nil), "ark.asset.v1.EventSettlementClosed")
-	proto.RegisterType((*EventAssetWrittenOff)(nil), "ark.asset.v1.EventAssetWrittenOff")
+	proto.RegisterType((*EventAssetResolved)(nil), "ark.asset.v1.EventAssetResolved")
+	proto.RegisterType((*EventEmergencyMandateSet)(nil), "ark.asset.v1.EventEmergencyMandateSet")
+	proto.RegisterType((*EventEmergencySuspended)(nil), "ark.asset.v1.EventEmergencySuspended")
 }
 
 func init() { proto.RegisterFile("ark/asset/v1/event.proto", fileDescriptor_e08802e1c327259f) }
 
 var fileDescriptor_e08802e1c327259f = []byte{
-	// 676 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x4f, 0x4f, 0x13, 0x41,
-	0x1c, 0xed, 0xf6, 0x8f, 0xda, 0x01, 0x8a, 0x2c, 0x55, 0x2b, 0x98, 0x52, 0x9b, 0x18, 0x1b, 0x4d,
-	0xda, 0x80, 0xe8, 0xd5, 0x00, 0x9a, 0x98, 0x48, 0x04, 0x16, 0x83, 0x89, 0x97, 0xcd, 0xd8, 0xf9,
-	0x75, 0x3b, 0xe9, 0x76, 0xa6, 0xce, 0x0e, 0x5b, 0x3d, 0xfa, 0x0d, 0xfc, 0x18, 0x1e, 0xfd, 0x0a,
-	0xde, 0x38, 0x12, 0x4f, 0x9e, 0x8c, 0x81, 0x83, 0x27, 0xbf, 0x83, 0x99, 0x99, 0x5d, 0xb6, 0x0b,
-	0xab, 0x12, 0xe2, 0xa5, 0xe9, 0xbe, 0xdf, 0x7b, 0xef, 0x37, 0xef, 0xb7, 0xb3, 0x33, 0xa8, 0x86,
-	0xc5, 0xa0, 0x83, 0x83, 0x00, 0x64, 0x27, 0x5c, 0xee, 0x40, 0x08, 0x4c, 0xb6, 0x47, 0x82, 0x4b,
-	0x6e, 0x4f, 0x63, 0x31, 0x68, 0xeb, 0x4a, 0x3b, 0x5c, 0x5e, 0x98, 0xc3, 0x43, 0xca, 0x78, 0x47,
-	0xff, 0x1a, 0xc2, 0x42, 0x5a, 0x6a, 0x98, 0xa6, 0x52, 0xf5, 0xb8, 0xc7, 0xf5, 0xdf, 0x8e, 0xfa,
-	0x67, 0xd0, 0xe6, 0x26, 0xaa, 0x3e, 0x55, 0xfe, 0x6b, 0x8a, 0xe9, 0x80, 0x47, 0x03, 0x09, 0x02,
-	0x88, 0xbd, 0x8a, 0x4a, 0x5a, 0x5c, 0xb3, 0x1a, 0x56, 0x6b, 0x6a, 0x65, 0xbe, 0x3d, 0xd9, 0xb8,
-	0xad, 0xd9, 0xeb, 0xe5, 0x83, 0xef, 0x4b, 0xb9, 0x4f, 0x3f, 0x3f, 0xdf, 0xb3, 0x1c, 0x43, 0x6e,
-	0x7e, 0xb5, 0xd0, 0x8d, 0xc4, 0x6e, 0x57, 0x62, 0xb9, 0x1f, 0x6c, 0xf4, 0x31, 0xf3, 0x80, 0xd8,
-	0x55, 0x54, 0x22, 0xc0, 0xf8, 0x50, 0x3b, 0x96, 0x1d, 0xf3, 0x60, 0x3f, 0x46, 0x88, 0xfb, 0xc4,
-	0x0d, 0x34, 0xb5, 0x96, 0x6f, 0x58, 0xad, 0xca, 0xca, 0xcd, 0x8c, 0x66, 0xc6, 0x6b, 0xbd, 0x64,
-	0xda, 0x95, 0xb9, 0x4f, 0x0c, 0xa2, 0x0c, 0x18, 0x8c, 0x63, 0x83, 0xc2, 0x79, 0x0d, 0x18, 0x8c,
-	0x23, 0x83, 0x25, 0x74, 0x39, 0x04, 0x11, 0x50, 0xce, 0x6a, 0xc5, 0x86, 0xd5, 0x2a, 0xc6, 0x94,
-	0x18, 0x6d, 0x7e, 0xb1, 0xd0, 0x82, 0x0e, 0xb5, 0x25, 0x70, 0xd7, 0x07, 0x07, 0xde, 0xee, 0x53,
-	0x01, 0xe4, 0xef, 0xb9, 0x1e, 0xa2, 0x79, 0x95, 0x8b, 0x6b, 0x89, 0x2b, 0x22, 0x8d, 0x0e, 0x78,
-	0x25, 0xee, 0x30, 0xc7, 0x7d, 0x92, 0xf6, 0x54, 0x32, 0x95, 0xe6, 0xb4, 0xac, 0x90, 0x92, 0x31,
-	0x18, 0x9f, 0x92, 0xfd, 0x33, 0xc3, 0x2f, 0x0b, 0x2d, 0x4e, 0x64, 0x78, 0x89, 0x85, 0x07, 0x32,
-	0xd8, 0xed, 0xf6, 0x81, 0xec, 0xfb, 0x40, 0xec, 0x3b, 0xa8, 0x82, 0xbb, 0x92, 0x86, 0xe0, 0xc6,
-	0x3e, 0x2a, 0x4d, 0xd1, 0x99, 0x31, 0xe8, 0x9e, 0x01, 0xed, 0xbb, 0x68, 0x76, 0x04, 0x8c, 0x50,
-	0xe6, 0x9d, 0xf0, 0xf2, 0x9a, 0x57, 0x89, 0xe0, 0x98, 0xb8, 0x8a, 0xae, 0x6b, 0x25, 0x96, 0x94,
-	0x33, 0x37, 0xe4, 0x12, 0xdc, 0x3e, 0x50, 0xaf, 0x2f, 0x75, 0x94, 0x82, 0x53, 0x4d, 0xaa, 0x7b,
-	0x5c, 0xc2, 0x33, 0x5d, 0xb3, 0x6f, 0xa3, 0x69, 0x4c, 0x08, 0x10, 0x57, 0xcf, 0x30, 0xa8, 0x15,
-	0x1b, 0x85, 0x56, 0xd9, 0x99, 0xd2, 0xd8, 0x13, 0x0d, 0xa9, 0x85, 0x0a, 0x18, 0xf2, 0x30, 0x21,
-	0x95, 0x34, 0x69, 0x26, 0x42, 0x0d, 0xad, 0xf9, 0x21, 0x33, 0xef, 0x9a, 0x69, 0x0a, 0xc4, 0xae,
-	0x25, 0x03, 0x33, 0x41, 0xe3, 0xc7, 0x33, 0x6b, 0xc8, 0x9f, 0x67, 0x0d, 0x85, 0xac, 0x35, 0x74,
-	0xd1, 0x7c, 0xf2, 0x2d, 0x6c, 0xf2, 0xee, 0x60, 0x4d, 0x79, 0xfc, 0x61, 0xbf, 0x3c, 0x42, 0xc5,
-	0x01, 0x65, 0x24, 0xfa, 0x02, 0x16, 0x33, 0x36, 0xb0, 0x72, 0x78, 0x4e, 0x19, 0x89, 0xdf, 0xad,
-	0xe6, 0x37, 0x01, 0x5d, 0x4b, 0x37, 0x71, 0xcc, 0x1a, 0xfe, 0x73, 0x1b, 0x1a, 0xb5, 0xd9, 0x05,
-	0x29, 0x7d, 0x18, 0xaa, 0xc1, 0x8e, 0x80, 0x01, 0xb1, 0xb7, 0xd1, 0x6c, 0x70, 0x82, 0xb9, 0x23,
-	0x1f, 0xb3, 0xe8, 0xc4, 0xb8, 0x95, 0xf6, 0x4e, 0x84, 0xdb, 0x3e, 0x66, 0x93, 0x47, 0x47, 0x25,
-	0x48, 0x95, 0x9a, 0x3b, 0xa8, 0x76, 0xaa, 0x55, 0xf2, 0xda, 0xb2, 0x43, 0x4d, 0xec, 0xfe, 0x7c,
-	0xe6, 0xee, 0x3f, 0x6b, 0xb9, 0x81, 0x59, 0x17, 0x7c, 0xff, 0xe2, 0x96, 0x2f, 0xce, 0x0c, 0x64,
-	0xc3, 0xe7, 0xc1, 0xc5, 0xfd, 0xe8, 0xe4, 0x39, 0xfc, 0x4a, 0x50, 0x29, 0x81, 0x6d, 0xf5, 0x7a,
-	0xf6, 0x0e, 0xba, 0x3a, 0x16, 0x54, 0x82, 0xcb, 0x7b, 0x3d, 0x57, 0x40, 0x97, 0x0b, 0x92, 0x3d,
-	0x60, 0xa5, 0x81, 0xad, 0x5e, 0xcf, 0xd1, 0x9c, 0xd4, 0x80, 0xc7, 0xe9, 0xd2, 0xfd, 0x83, 0xa3,
-	0xba, 0x75, 0x78, 0x54, 0xb7, 0x7e, 0x1c, 0xd5, 0xad, 0x8f, 0xc7, 0xf5, 0xdc, 0xe1, 0x71, 0x3d,
-	0xf7, 0xed, 0xb8, 0x9e, 0x7b, 0x3d, 0xa7, 0x2e, 0x8f, 0x77, 0xd1, 0xf5, 0x21, 0xdf, 0x8f, 0x20,
-	0x78, 0x73, 0x49, 0x5f, 0x13, 0x0f, 0x7e, 0x07, 0x00, 0x00, 0xff, 0xff, 0xae, 0x3a, 0xa6, 0xa0,
-	0x93, 0x06, 0x00, 0x00,
+	// 583 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0xc1, 0x6e, 0xd3, 0x4a,
+	0x14, 0x8d, 0x9b, 0xe4, 0x3d, 0x65, 0x08, 0xa5, 0x31, 0x41, 0x38, 0x15, 0x72, 0x23, 0xaf, 0xa2,
+	0x22, 0x12, 0x35, 0x20, 0xb6, 0xa8, 0x89, 0x2a, 0xb1, 0x00, 0x51, 0x1c, 0x89, 0x05, 0x9b, 0x68,
+	0xf0, 0x5c, 0x39, 0x56, 0xec, 0x19, 0x6b, 0x66, 0xe2, 0x36, 0x7f, 0xc1, 0x67, 0xb0, 0x64, 0x81,
+	0xf8, 0x86, 0x6e, 0x90, 0xaa, 0xae, 0x58, 0x21, 0x94, 0x2c, 0xf8, 0x0d, 0xe4, 0x19, 0x3b, 0x71,
+	0xda, 0x54, 0xb0, 0x61, 0x63, 0x79, 0xee, 0x39, 0x3e, 0xf7, 0xdc, 0x33, 0xe3, 0x41, 0x16, 0xe6,
+	0xd3, 0x1e, 0x16, 0x02, 0x64, 0x2f, 0x39, 0xea, 0x41, 0x02, 0x54, 0x76, 0x63, 0xce, 0x24, 0x33,
+	0xeb, 0x98, 0x4f, 0xbb, 0x0a, 0xe9, 0x26, 0x47, 0xfb, 0x0d, 0x1c, 0x05, 0x94, 0xf5, 0xd4, 0x53,
+	0x13, 0xf6, 0x37, 0x3f, 0xd5, 0x4c, 0x8d, 0xb4, 0x3c, 0x26, 0x22, 0x26, 0xc6, 0x6a, 0xd5, 0xd3,
+	0x8b, 0x0c, 0x6a, 0xfa, 0xcc, 0x67, 0xba, 0x9e, 0xbe, 0xe9, 0xaa, 0xf3, 0x0a, 0x35, 0x4f, 0xd2,
+	0xd6, 0xc7, 0xa9, 0x88, 0x0b, 0x7e, 0x20, 0x24, 0x70, 0x20, 0xe6, 0x33, 0x54, 0x55, 0xba, 0x96,
+	0xd1, 0x36, 0x3a, 0x77, 0xfa, 0xf7, 0xbb, 0x45, 0x4f, 0x5d, 0xc5, 0x1e, 0xd4, 0x2e, 0x7e, 0x1c,
+	0x94, 0x3e, 0xfd, 0xfa, 0x7c, 0x68, 0xb8, 0x9a, 0xec, 0x5c, 0x19, 0xe8, 0xe1, 0x5a, 0x6e, 0x24,
+	0xb1, 0x9c, 0x89, 0xe1, 0x04, 0x53, 0x1f, 0x88, 0xd9, 0x44, 0x55, 0x02, 0x94, 0x45, 0x4a, 0xb1,
+	0xe6, 0xea, 0x85, 0xf9, 0x02, 0x21, 0x16, 0x92, 0xb1, 0x50, 0x54, 0x6b, 0xa7, 0x6d, 0x74, 0x76,
+	0xfb, 0xad, 0x2d, 0xcd, 0xb4, 0xd6, 0xa0, 0xaa, 0xdb, 0xd5, 0x58, 0x48, 0x74, 0x25, 0x15, 0xa0,
+	0x70, 0x96, 0x0b, 0x94, 0xff, 0x56, 0x80, 0xc2, 0x59, 0x26, 0x70, 0x80, 0xfe, 0x4f, 0x80, 0x8b,
+	0x80, 0x51, 0xab, 0xd2, 0x36, 0x3a, 0x95, 0x9c, 0x92, 0x57, 0x9d, 0x00, 0x3d, 0x50, 0x33, 0x8d,
+	0x40, 0xca, 0x10, 0x22, 0xa0, 0xf2, 0x4d, 0x0c, 0x14, 0x88, 0x79, 0x8a, 0xee, 0x89, 0x55, 0x6d,
+	0x1c, 0x87, 0x98, 0x66, 0x69, 0x3d, 0xda, 0xec, 0xbf, 0xfe, 0xf0, 0x34, 0xc4, 0xb4, 0x18, 0xdb,
+	0xae, 0xd8, 0x80, 0x9c, 0xb7, 0xc8, 0xba, 0xd6, 0x6a, 0x88, 0xa9, 0x07, 0x61, 0x78, 0x6b, 0x7e,
+	0x05, 0xf7, 0x3b, 0x5b, 0xdd, 0x7f, 0x35, 0x6e, 0xd8, 0x1f, 0x86, 0x4c, 0xfc, 0x0b, 0xfb, 0x7f,
+	0x34, 0x63, 0x1e, 0xa2, 0xbb, 0x9e, 0x6a, 0x3e, 0x9e, 0x40, 0xe0, 0x4f, 0xa4, 0xda, 0xaf, 0x72,
+	0x4e, 0xab, 0x6b, 0xec, 0xa5, 0x82, 0x9c, 0x10, 0x99, 0xc5, 0x93, 0x29, 0x58, 0x98, 0x00, 0x31,
+	0xdf, 0xa1, 0x06, 0x4f, 0xdf, 0x67, 0x32, 0x60, 0x74, 0xcc, 0xc1, 0x63, 0x9c, 0x64, 0xb6, 0xed,
+	0x4d, 0xdb, 0xee, 0x8a, 0xe6, 0x2a, 0x56, 0xd1, 0xf8, 0x1e, 0xbf, 0x06, 0x3a, 0xdf, 0x8c, 0x2c,
+	0xfa, 0x93, 0x08, 0xb8, 0x0f, 0xd4, 0x9b, 0xbf, 0xc6, 0x94, 0x60, 0x09, 0x23, 0x90, 0x66, 0x0b,
+	0x55, 0x24, 0x70, 0x9d, 0xfc, 0x6a, 0x28, 0x55, 0x32, 0x9f, 0xa3, 0x9a, 0xc7, 0xa2, 0x28, 0x90,
+	0x12, 0x40, 0x0d, 0x5d, 0x1b, 0x58, 0x57, 0x5f, 0x9e, 0x34, 0xb3, 0x5f, 0xef, 0x98, 0x10, 0x0e,
+	0x42, 0x8c, 0x24, 0x0f, 0xa8, 0xef, 0xae, 0xa9, 0x66, 0x1f, 0x35, 0xb0, 0x27, 0x83, 0x04, 0xab,
+	0x39, 0x0a, 0x69, 0xac, 0xf4, 0xf7, 0xd6, 0xb8, 0x4e, 0x24, 0x4d, 0x0f, 0xce, 0xe3, 0x80, 0xcf,
+	0x73, 0xfe, 0xc6, 0x79, 0xad, 0x6b, 0x2c, 0x4b, 0x6f, 0x9a, 0xfd, 0x88, 0xab, 0x71, 0x46, 0x33,
+	0x11, 0x03, 0x25, 0xb7, 0x1e, 0xa4, 0x7c, 0xc6, 0x9d, 0x9b, 0x33, 0x16, 0xb6, 0xb5, 0xbc, 0x6d,
+	0x5b, 0x07, 0x8f, 0x2f, 0x16, 0xb6, 0x71, 0xb9, 0xb0, 0x8d, 0x9f, 0x0b, 0xdb, 0xf8, 0xb8, 0xb4,
+	0x4b, 0x97, 0x4b, 0xbb, 0xf4, 0x7d, 0x69, 0x97, 0xde, 0x37, 0xd2, 0x9b, 0xea, 0x3c, 0xbb, 0xab,
+	0xe4, 0x3c, 0x06, 0xf1, 0xe1, 0x3f, 0x75, 0xf1, 0x3c, 0xfd, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xc6,
+	0xd8, 0xe7, 0x36, 0x00, 0x05, 0x00, 0x00,
 }
 
 func (m *EventAssetRegistered) Marshal() (dAtA []byte, err error) {
@@ -848,233 +612,6 @@ func (m *EventAssetStatusChanged) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *EventOracleRequiredChanged) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventOracleRequiredChanged) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventOracleRequiredChanged) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Version != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.NewOracleRequired {
-		i--
-		if m.NewOracleRequired {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.OldOracleRequired {
-		i--
-		if m.OldOracleRequired {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventOracleTargetsScheduled) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventOracleTargetsScheduled) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventOracleTargetsScheduled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.RemovedDenoms) > 0 {
-		for iNdEx := len(m.RemovedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.RemovedDenoms[iNdEx])
-			copy(dAtA[i:], m.RemovedDenoms[iNdEx])
-			i = encodeVarintEvent(dAtA, i, uint64(len(m.RemovedDenoms[iNdEx])))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.AddedDenoms) > 0 {
-		for iNdEx := len(m.AddedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.AddedDenoms[iNdEx])
-			copy(dAtA[i:], m.AddedDenoms[iNdEx])
-			i = encodeVarintEvent(dAtA, i, uint64(len(m.AddedDenoms[iNdEx])))
-			i--
-			dAtA[i] = 0x22
-		}
-	}
-	if m.ActivationVoteHeight != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationVoteHeight))
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.PendingVersion != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.PendingVersion))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.ActiveVersion != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ActiveVersion))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventOracleTargetsActivated) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventOracleTargetsActivated) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventOracleTargetsActivated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.RemovedDenoms) > 0 {
-		for iNdEx := len(m.RemovedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.RemovedDenoms[iNdEx])
-			copy(dAtA[i:], m.RemovedDenoms[iNdEx])
-			i = encodeVarintEvent(dAtA, i, uint64(len(m.RemovedDenoms[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	if len(m.AddedDenoms) > 0 {
-		for iNdEx := len(m.AddedDenoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.AddedDenoms[iNdEx])
-			copy(dAtA[i:], m.AddedDenoms[iNdEx])
-			i = encodeVarintEvent(dAtA, i, uint64(len(m.AddedDenoms[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if m.Version != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventAssetLockAdded) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventAssetLockAdded) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventAssetLockAdded) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Kind != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Kind))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventAssetLockRemoved) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventAssetLockRemoved) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventAssetLockRemoved) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Kind != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Kind))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *EventSettlementOpened) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1105,41 +642,6 @@ func (m *EventSettlementOpened) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *EventSettlementActivated) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventSettlementActivated) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventSettlementActivated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Version != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
 	return len(dAtA) - i, nil
 }
 
@@ -1198,8 +700,134 @@ func (m *EventSettlementClosed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ClosedHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClosedHeight))
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.Version != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x10
+	}
+	{
+		size, err := m.SettlementPlan.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *EventAssetResolved) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventAssetResolved) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventAssetResolved) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ResolutionRecord.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintEvent(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *EventEmergencyMandateSet) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventEmergencyMandateSet) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventEmergencyMandateSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExpiryHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ExpiryHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Term != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Term))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventEmergencySuspended) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventEmergencySuspended) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventEmergencySuspended) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Version != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Term != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Term))
 		i--
 		dAtA[i] = 0x10
 	}
@@ -1210,39 +838,6 @@ func (m *EventSettlementClosed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0xa
 	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventAssetWrittenOff) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventAssetWrittenOff) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventAssetWrittenOff) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.WriteOffRecord.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintEvent(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -1290,114 +885,6 @@ func (m *EventAssetStatusChanged) Size() (n int) {
 	return n
 }
 
-func (m *EventOracleRequiredChanged) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	if m.OldOracleRequired {
-		n += 2
-	}
-	if m.NewOracleRequired {
-		n += 2
-	}
-	if m.Version != 0 {
-		n += 1 + sovEvent(uint64(m.Version))
-	}
-	return n
-}
-
-func (m *EventOracleTargetsScheduled) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ActiveVersion != 0 {
-		n += 1 + sovEvent(uint64(m.ActiveVersion))
-	}
-	if m.PendingVersion != 0 {
-		n += 1 + sovEvent(uint64(m.PendingVersion))
-	}
-	if m.ActivationVoteHeight != 0 {
-		n += 1 + sovEvent(uint64(m.ActivationVoteHeight))
-	}
-	if len(m.AddedDenoms) > 0 {
-		for _, s := range m.AddedDenoms {
-			l = len(s)
-			n += 1 + l + sovEvent(uint64(l))
-		}
-	}
-	if len(m.RemovedDenoms) > 0 {
-		for _, s := range m.RemovedDenoms {
-			l = len(s)
-			n += 1 + l + sovEvent(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *EventOracleTargetsActivated) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Version != 0 {
-		n += 1 + sovEvent(uint64(m.Version))
-	}
-	if len(m.AddedDenoms) > 0 {
-		for _, s := range m.AddedDenoms {
-			l = len(s)
-			n += 1 + l + sovEvent(uint64(l))
-		}
-	}
-	if len(m.RemovedDenoms) > 0 {
-		for _, s := range m.RemovedDenoms {
-			l = len(s)
-			n += 1 + l + sovEvent(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *EventAssetLockAdded) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	if m.Kind != 0 {
-		n += 1 + sovEvent(uint64(m.Kind))
-	}
-	return n
-}
-
-func (m *EventAssetLockRemoved) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	if m.Kind != 0 {
-		n += 1 + sovEvent(uint64(m.Kind))
-	}
-	return n
-}
-
 func (m *EventSettlementOpened) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1406,22 +893,6 @@ func (m *EventSettlementOpened) Size() (n int) {
 	_ = l
 	l = m.SettlementPlan.Size()
 	n += 1 + l + sovEvent(uint64(l))
-	return n
-}
-
-func (m *EventSettlementActivated) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	if m.Version != 0 {
-		n += 1 + sovEvent(uint64(m.Version))
-	}
 	return n
 }
 
@@ -1447,24 +918,66 @@ func (m *EventSettlementClosed) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
+	l = m.SettlementPlan.Size()
+	n += 1 + l + sovEvent(uint64(l))
 	if m.Version != 0 {
 		n += 1 + sovEvent(uint64(m.Version))
+	}
+	if m.ClosedHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ClosedHeight))
 	}
 	return n
 }
 
-func (m *EventAssetWrittenOff) Size() (n int) {
+func (m *EventAssetResolved) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.WriteOffRecord.Size()
+	l = m.ResolutionRecord.Size()
 	n += 1 + l + sovEvent(uint64(l))
+	return n
+}
+
+func (m *EventEmergencyMandateSet) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Term != 0 {
+		n += 1 + sovEvent(uint64(m.Term))
+	}
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.ActivationHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ActivationHeight))
+	}
+	if m.ExpiryHeight != 0 {
+		n += 1 + sovEvent(uint64(m.ExpiryHeight))
+	}
+	return n
+}
+
+func (m *EventEmergencySuspended) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.Term != 0 {
+		n += 1 + sovEvent(uint64(m.Term))
+	}
+	if m.Version != 0 {
+		n += 1 + sovEvent(uint64(m.Version))
+	}
 	return n
 }
 
@@ -1696,653 +1209,6 @@ func (m *EventAssetStatusChanged) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EventOracleRequiredChanged) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventOracleRequiredChanged: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventOracleRequiredChanged: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OldOracleRequired", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.OldOracleRequired = bool(v != 0)
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NewOracleRequired", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.NewOracleRequired = bool(v != 0)
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			m.Version = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventOracleTargetsScheduled) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventOracleTargetsScheduled: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventOracleTargetsScheduled: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActiveVersion", wireType)
-			}
-			m.ActiveVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ActiveVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PendingVersion", wireType)
-			}
-			m.PendingVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.PendingVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActivationVoteHeight", wireType)
-			}
-			m.ActivationVoteHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ActivationVoteHeight |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AddedDenoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AddedDenoms = append(m.AddedDenoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RemovedDenoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RemovedDenoms = append(m.RemovedDenoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventOracleTargetsActivated) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventOracleTargetsActivated: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventOracleTargetsActivated: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			m.Version = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AddedDenoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AddedDenoms = append(m.AddedDenoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RemovedDenoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RemovedDenoms = append(m.RemovedDenoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventAssetLockAdded) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventAssetLockAdded: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventAssetLockAdded: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
-			}
-			m.Kind = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Kind |= AssetLockKind(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventAssetLockRemoved) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventAssetLockRemoved: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventAssetLockRemoved: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
-			}
-			m.Kind = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Kind |= AssetLockKind(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *EventSettlementOpened) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2405,107 +1271,6 @@ func (m *EventSettlementOpened) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventSettlementActivated) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventSettlementActivated: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventSettlementActivated: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			m.Version = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -2659,6 +1424,349 @@ func (m *EventSettlementClosed) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SettlementPlan", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.SettlementPlan.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClosedHeight", wireType)
+			}
+			m.ClosedHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClosedHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventAssetResolved) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventAssetResolved: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventAssetResolved: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResolutionRecord", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ResolutionRecord.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventEmergencyMandateSet) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventEmergencyMandateSet: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventEmergencyMandateSet: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+			}
+			m.Term = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Term |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+			}
+			m.ActivationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+			}
+			m.ExpiryHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventEmergencySuspended) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventEmergencySuspended: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventEmergencySuspended: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 			}
 			var stringLen uint64
@@ -2691,6 +1799,25 @@ func (m *EventSettlementClosed) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
+			}
+			m.Term = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Term |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
 			}
 			m.Version = 0
@@ -2708,89 +1835,6 @@ func (m *EventSettlementClosed) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventAssetWrittenOff) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventAssetWrittenOff: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventAssetWrittenOff: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WriteOffRecord", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.WriteOffRecord.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

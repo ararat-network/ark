@@ -12,30 +12,27 @@ option go_package = "ark/x/asset/types";
 
 // Query defines the gRPC querier service.
 service Query {
+  // Params returns the asset module parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/params";
+  }
+
   // Asset returns one registered asset.
   rpc Asset(QueryAssetRequest) returns (QueryAssetResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/asset/v1/assets/{denom}";
   }
 
-  // Assets returns registered assets with pagination.
+  // Assets returns every registered asset. The registry is governance-bounded,
+  // so it is returned whole rather than paged.
   rpc Assets(QueryAssetsRequest) returns (QueryAssetsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/asset/v1/assets";
   }
 
-  // AssetLocks returns downstream protocol dependencies for one asset.
-  rpc AssetLocks(QueryAssetLocksRequest) returns (QueryAssetLocksResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/asset/v1/assets/{denom}/locks";
-  }
-
-  // OracleTargets returns the active and pending target epochs.
-  rpc OracleTargets(QueryOracleTargetsRequest)
-      returns (QueryOracleTargetsResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/asset/v1/oracle_targets";
-  }
+  // The Reference RPC moved to ark.oracle.v1 with the protocol reference
+  // itself, where it is ReferenceDenom; its name stays burned here.
 
   // SettlementPlan returns the active settlement plan for one asset.
   rpc SettlementPlan(QuerySettlementPlanRequest)
@@ -44,12 +41,29 @@ service Query {
     option (google.api.http).get = "/ark/asset/v1/assets/{denom}/settlement";
   }
 
-  // WriteOffHistory returns append-only write-off records for one asset.
-  rpc WriteOffHistory(QueryWriteOffHistoryRequest)
-      returns (QueryWriteOffHistoryResponse) {
+  // ResolutionHistory returns append-only resolution records for one asset.
+  rpc ResolutionHistory(QueryResolutionHistoryRequest)
+      returns (QueryResolutionHistoryResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/asset/v1/assets/{denom}/write_offs";
+    option (google.api.http).get = "/ark/asset/v1/assets/{denom}/resolutions";
   }
+
+  // EmergencyMandate returns the committee appointment, its current effective
+  // status, and the actions already consumed under its term.
+  rpc EmergencyMandate(QueryEmergencyMandateRequest)
+      returns (QueryEmergencyMandateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/asset/v1/emergency_mandate";
+  }
+}
+
+// QueryParamsRequest is the request type for Query/Params.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for Query/Params.
+message QueryParamsResponse {
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryAssetRequest is the request type for Query/Asset.
@@ -57,40 +71,25 @@ message QueryAssetRequest { string denom = 1; }
 
 // QueryAssetResponse is the response type for Query/Asset.
 message QueryAssetResponse {
-  Asset asset = 1
+  PricedAsset priced_asset = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryAssetsRequest is the request type for Query/Assets.
-message QueryAssetsRequest {
-  cosmos.base.query.v1beta1.PageRequest pagination = 1;
-}
+message QueryAssetsRequest {}
 
 // QueryAssetsResponse is the response type for Query/Assets.
 message QueryAssetsResponse {
-  repeated Asset assets = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.query.v1beta1.PageResponse pagination = 2;
-}
-
-// QueryAssetLocksRequest is the request type for Query/AssetLocks.
-message QueryAssetLocksRequest { string denom = 1; }
-
-// QueryAssetLocksResponse is the response type for Query/AssetLocks.
-message QueryAssetLocksResponse {
-  repeated AssetLock locks = 1
+  repeated PricedAsset priced_assets = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryOracleTargetsRequest is the request type for Query/OracleTargets.
-message QueryOracleTargetsRequest {}
+// QueryReferenceRequest and QueryReferenceResponse moved to ark.oracle.v1 with
+// the protocol reference itself, where they are QueryReferenceDenomRequest and
+// QueryReferenceDenomResponse; their names stay burned here.
 
-// QueryOracleTargetsResponse is the response type for Query/OracleTargets.
-message QueryOracleTargetsResponse {
-  // oracle_targets contains the canonical active and pending target epochs.
-  OracleTargets oracle_targets = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
+// The Query/OracleTargets RPC moved to ark.oracle.v1 Query/Feeds with the feed
+// registry; its name stays burned here.
 
 // QuerySettlementPlanRequest is the request type for Query/SettlementPlan.
 message QuerySettlementPlanRequest { string denom = 1; }
@@ -101,16 +100,32 @@ message QuerySettlementPlanResponse {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryWriteOffHistoryRequest is the request type for Query/WriteOffHistory.
-message QueryWriteOffHistoryRequest {
+// QueryResolutionHistoryRequest is the request type for
+// Query/ResolutionHistory.
+message QueryResolutionHistoryRequest {
   string denom = 1;
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
-// QueryWriteOffHistoryResponse returns append-only write-off records ordered by
-// increasing asset version.
-message QueryWriteOffHistoryResponse {
-  repeated WriteOffRecord write_off_records = 1
+// QueryResolutionHistoryResponse returns append-only resolution records
+// ordered by increasing asset version.
+message QueryResolutionHistoryResponse {
+  repeated ResolutionRecord resolution_records = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryEmergencyMandateRequest is the request type for Query/EmergencyMandate.
+message QueryEmergencyMandateRequest {}
+
+// QueryEmergencyMandateResponse returns the committee appointment and its
+// current effective status.
+message QueryEmergencyMandateResponse {
+  EmergencyMandate mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // active reports whether the committee may act at the current height.
+  bool active = 2 [ (amino.dont_omitempty) = true ];
+  // suspended_denoms lists the assets whose per-term suspension the committee
+  // has already consumed under the current term, sorted.
+  repeated string suspended_denoms = 3 [ (amino.dont_omitempty) = true ];
 }

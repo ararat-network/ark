@@ -3,6 +3,7 @@ package ark.asset.v1;
 
 import "amino/amino.proto";
 import "ark/asset/v1/asset.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/asset/types";
@@ -21,56 +22,17 @@ message EventAssetStatusChanged {
   uint64 version = 4 [ (amino.dont_omitempty) = true ];
 }
 
-// EventOracleRequiredChanged is emitted after an asset's Oracle requirement
-// changes.
-message EventOracleRequiredChanged {
-  string denom = 1;
-  bool old_oracle_required = 2 [ (amino.dont_omitempty) = true ];
-  bool new_oracle_required = 3 [ (amino.dont_omitempty) = true ];
-  uint64 version = 4 [ (amino.dont_omitempty) = true ];
-}
+// The EventRegistrationAmended event was removed with the amendment it
+// reported; its name stays burned.
 
-// EventOracleTargetsScheduled is emitted after the next target epoch is
-// scheduled.
-message EventOracleTargetsScheduled {
-  uint64 active_version = 1;
-  uint64 pending_version = 2;
-  int64 activation_vote_height = 3;
-  repeated string added_denoms = 4;
-  repeated string removed_denoms = 5;
-}
+// The EventOracleTargetTransitionScheduled and EventOracleTargetsActivated
+// events moved to ark.oracle.v1 with the feed registry; their names stay
+// burned here.
 
-// EventOracleTargetsActivated is emitted after the pending target epoch becomes
-// active.
-message EventOracleTargetsActivated {
-  uint64 version = 1;
-  repeated string added_denoms = 2;
-  repeated string removed_denoms = 3;
-}
-
-// EventAssetLockAdded is emitted after a downstream dependency is recorded.
-message EventAssetLockAdded {
-  string denom = 1;
-  AssetLockKind kind = 2 [ (amino.dont_omitempty) = true ];
-}
-
-// EventAssetLockRemoved is emitted after a downstream dependency is removed.
-message EventAssetLockRemoved {
-  string denom = 1;
-  AssetLockKind kind = 2 [ (amino.dont_omitempty) = true ];
-}
-
-// EventSettlementOpened is emitted when governance stores a settlement plan.
+// EventSettlementOpened is emitted when governance stores settlement terms.
 message EventSettlementOpened {
   SettlementPlan settlement_plan = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// EventSettlementActivated is emitted at the first height that permits
-// settlement redemption.
-message EventSettlementActivated {
-  string denom = 1;
-  uint64 version = 2 [ (amino.dont_omitempty) = true ];
 }
 
 // EventSettlementCancelled is emitted when governance cancels a settlement
@@ -80,15 +42,40 @@ message EventSettlementCancelled {
   uint64 version = 2 [ (amino.dont_omitempty) = true ];
 }
 
-// EventSettlementClosed is emitted when settlement ends through retirement,
-// relisting, or write-off.
+// EventSettlementClosed is emitted when an activated settlement ends, carrying
+// the plan's full terms and both its open and close heights.
 message EventSettlementClosed {
-  string denom = 1;
+  SettlementPlan settlement_plan = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   uint64 version = 2 [ (amino.dont_omitempty) = true ];
+  int64 closed_height = 3 [ (amino.dont_omitempty) = true ];
 }
 
-// EventAssetWrittenOff is emitted after a write-off record is appended.
-message EventAssetWrittenOff {
-  WriteOffRecord write_off_record = 1
+// EventAssetResolved is emitted after a resolution record is appended.
+message EventAssetResolved {
+  ResolutionRecord resolution_record = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
+
+// EventEmergencyMandateSet is emitted after governance replaces or disables
+// the emergency committee appointment.
+message EventEmergencyMandateSet {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  // committee is empty when governance disabled the mandate.
+  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+}
+
+// EventEmergencySuspended is emitted after the committee consumes an asset's
+// per-term suspension.
+message EventEmergencySuspended {
+  string denom = 1;
+  // term is the mandate term the suspension was executed under.
+  uint64 term = 2 [ (amino.dont_omitempty) = true ];
+  // version is the asset version produced by the suspension.
+  uint64 version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// EventReferenceUpdated moved to ark.oracle.v1 with the protocol reference
+// itself, where it is EventReferenceDenomUpdated; its name stays burned here.

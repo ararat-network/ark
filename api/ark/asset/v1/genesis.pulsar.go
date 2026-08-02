@@ -14,54 +14,54 @@ import (
 	sync "sync"
 )
 
-var _ protoreflect.List = (*_GenesisState_1_list)(nil)
+var _ protoreflect.List = (*_GenesisState_2_list)(nil)
 
-type _GenesisState_1_list struct {
+type _GenesisState_2_list struct {
 	list *[]*Asset
 }
 
-func (x *_GenesisState_1_list) Len() int {
+func (x *_GenesisState_2_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_GenesisState_1_list) Get(i int) protoreflect.Value {
+func (x *_GenesisState_2_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_GenesisState_1_list) Set(i int, value protoreflect.Value) {
+func (x *_GenesisState_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*Asset)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_GenesisState_1_list) Append(value protoreflect.Value) {
+func (x *_GenesisState_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*Asset)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_GenesisState_1_list) AppendMutable() protoreflect.Value {
+func (x *_GenesisState_2_list) AppendMutable() protoreflect.Value {
 	v := new(Asset)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_GenesisState_1_list) Truncate(n int) {
+func (x *_GenesisState_2_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_GenesisState_1_list) NewElement() protoreflect.Value {
+func (x *_GenesisState_2_list) NewElement() protoreflect.Value {
 	v := new(Asset)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_GenesisState_1_list) IsValid() bool {
+func (x *_GenesisState_2_list) IsValid() bool {
 	return x.list != nil
 }
 
@@ -119,7 +119,7 @@ func (x *_GenesisState_3_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_4_list)(nil)
 
 type _GenesisState_4_list struct {
-	list *[]*WriteOffRecord
+	list *[]*ResolutionRecord
 }
 
 func (x *_GenesisState_4_list) Len() int {
@@ -135,18 +135,18 @@ func (x *_GenesisState_4_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_4_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*WriteOffRecord)
+	concreteValue := valueUnwrapped.Interface().(*ResolutionRecord)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_4_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*WriteOffRecord)
+	concreteValue := valueUnwrapped.Interface().(*ResolutionRecord)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_4_list) AppendMutable() protoreflect.Value {
-	v := new(WriteOffRecord)
+	v := new(ResolutionRecord)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -159,7 +159,7 @@ func (x *_GenesisState_4_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_4_list) NewElement() protoreflect.Value {
-	v := new(WriteOffRecord)
+	v := new(ResolutionRecord)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -167,21 +167,71 @@ func (x *_GenesisState_4_list) IsValid() bool {
 	return x.list != nil
 }
 
+var _ protoreflect.List = (*_GenesisState_6_list)(nil)
+
+type _GenesisState_6_list struct {
+	list *[]string
+}
+
+func (x *_GenesisState_6_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_6_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfString((*x.list)[i])
+}
+
+func (x *_GenesisState_6_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_6_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_6_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message GenesisState at list field EmergencySuspensions as it is not of Message kind"))
+}
+
+func (x *_GenesisState_6_list) Truncate(n int) {
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_6_list) NewElement() protoreflect.Value {
+	v := ""
+	return protoreflect.ValueOfString(v)
+}
+
+func (x *_GenesisState_6_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_GenesisState                   protoreflect.MessageDescriptor
-	fd_GenesisState_assets            protoreflect.FieldDescriptor
-	fd_GenesisState_oracle_targets    protoreflect.FieldDescriptor
-	fd_GenesisState_settlement_plans  protoreflect.FieldDescriptor
-	fd_GenesisState_write_off_records protoreflect.FieldDescriptor
+	md_GenesisState                       protoreflect.MessageDescriptor
+	fd_GenesisState_params                protoreflect.FieldDescriptor
+	fd_GenesisState_assets                protoreflect.FieldDescriptor
+	fd_GenesisState_settlement_plans      protoreflect.FieldDescriptor
+	fd_GenesisState_resolution_records    protoreflect.FieldDescriptor
+	fd_GenesisState_emergency_mandate     protoreflect.FieldDescriptor
+	fd_GenesisState_emergency_suspensions protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_genesis_proto_init()
 	md_GenesisState = File_ark_asset_v1_genesis_proto.Messages().ByName("GenesisState")
+	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_assets = md_GenesisState.Fields().ByName("assets")
-	fd_GenesisState_oracle_targets = md_GenesisState.Fields().ByName("oracle_targets")
 	fd_GenesisState_settlement_plans = md_GenesisState.Fields().ByName("settlement_plans")
-	fd_GenesisState_write_off_records = md_GenesisState.Fields().ByName("write_off_records")
+	fd_GenesisState_resolution_records = md_GenesisState.Fields().ByName("resolution_records")
+	fd_GenesisState_emergency_mandate = md_GenesisState.Fields().ByName("emergency_mandate")
+	fd_GenesisState_emergency_suspensions = md_GenesisState.Fields().ByName("emergency_suspensions")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -249,15 +299,15 @@ func (x *fastReflection_GenesisState) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Assets) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_1_list{list: &x.Assets})
-		if !f(fd_GenesisState_assets, value) {
+	if x.Params != nil {
+		value := protoreflect.ValueOfMessage(x.Params.ProtoReflect())
+		if !f(fd_GenesisState_params, value) {
 			return
 		}
 	}
-	if x.OracleTargets != nil {
-		value := protoreflect.ValueOfMessage(x.OracleTargets.ProtoReflect())
-		if !f(fd_GenesisState_oracle_targets, value) {
+	if len(x.Assets) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.Assets})
+		if !f(fd_GenesisState_assets, value) {
 			return
 		}
 	}
@@ -267,9 +317,21 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.WriteOffRecords) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.WriteOffRecords})
-		if !f(fd_GenesisState_write_off_records, value) {
+	if len(x.ResolutionRecords) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.ResolutionRecords})
+		if !f(fd_GenesisState_resolution_records, value) {
+			return
+		}
+	}
+	if x.EmergencyMandate != nil {
+		value := protoreflect.ValueOfMessage(x.EmergencyMandate.ProtoReflect())
+		if !f(fd_GenesisState_emergency_mandate, value) {
+			return
+		}
+	}
+	if len(x.EmergencySuspensions) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.EmergencySuspensions})
+		if !f(fd_GenesisState_emergency_suspensions, value) {
 			return
 		}
 	}
@@ -288,14 +350,18 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
+	case "ark.asset.v1.GenesisState.params":
+		return x.Params != nil
 	case "ark.asset.v1.GenesisState.assets":
 		return len(x.Assets) != 0
-	case "ark.asset.v1.GenesisState.oracle_targets":
-		return x.OracleTargets != nil
 	case "ark.asset.v1.GenesisState.settlement_plans":
 		return len(x.SettlementPlans) != 0
-	case "ark.asset.v1.GenesisState.write_off_records":
-		return len(x.WriteOffRecords) != 0
+	case "ark.asset.v1.GenesisState.resolution_records":
+		return len(x.ResolutionRecords) != 0
+	case "ark.asset.v1.GenesisState.emergency_mandate":
+		return x.EmergencyMandate != nil
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		return len(x.EmergencySuspensions) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -312,14 +378,18 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
+	case "ark.asset.v1.GenesisState.params":
+		x.Params = nil
 	case "ark.asset.v1.GenesisState.assets":
 		x.Assets = nil
-	case "ark.asset.v1.GenesisState.oracle_targets":
-		x.OracleTargets = nil
 	case "ark.asset.v1.GenesisState.settlement_plans":
 		x.SettlementPlans = nil
-	case "ark.asset.v1.GenesisState.write_off_records":
-		x.WriteOffRecords = nil
+	case "ark.asset.v1.GenesisState.resolution_records":
+		x.ResolutionRecords = nil
+	case "ark.asset.v1.GenesisState.emergency_mandate":
+		x.EmergencyMandate = nil
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		x.EmergencySuspensions = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -336,26 +406,35 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
+	case "ark.asset.v1.GenesisState.params":
+		value := x.Params
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "ark.asset.v1.GenesisState.assets":
 		if len(x.Assets) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_1_list{})
+			return protoreflect.ValueOfList(&_GenesisState_2_list{})
 		}
-		listValue := &_GenesisState_1_list{list: &x.Assets}
+		listValue := &_GenesisState_2_list{list: &x.Assets}
 		return protoreflect.ValueOfList(listValue)
-	case "ark.asset.v1.GenesisState.oracle_targets":
-		value := x.OracleTargets
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "ark.asset.v1.GenesisState.settlement_plans":
 		if len(x.SettlementPlans) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_3_list{})
 		}
 		listValue := &_GenesisState_3_list{list: &x.SettlementPlans}
 		return protoreflect.ValueOfList(listValue)
-	case "ark.asset.v1.GenesisState.write_off_records":
-		if len(x.WriteOffRecords) == 0 {
+	case "ark.asset.v1.GenesisState.resolution_records":
+		if len(x.ResolutionRecords) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_4_list{})
 		}
-		listValue := &_GenesisState_4_list{list: &x.WriteOffRecords}
+		listValue := &_GenesisState_4_list{list: &x.ResolutionRecords}
+		return protoreflect.ValueOfList(listValue)
+	case "ark.asset.v1.GenesisState.emergency_mandate":
+		value := x.EmergencyMandate
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		if len(x.EmergencySuspensions) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_6_list{})
+		}
+		listValue := &_GenesisState_6_list{list: &x.EmergencySuspensions}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -377,20 +456,26 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
+	case "ark.asset.v1.GenesisState.params":
+		x.Params = value.Message().Interface().(*Params)
 	case "ark.asset.v1.GenesisState.assets":
 		lv := value.List()
-		clv := lv.(*_GenesisState_1_list)
+		clv := lv.(*_GenesisState_2_list)
 		x.Assets = *clv.list
-	case "ark.asset.v1.GenesisState.oracle_targets":
-		x.OracleTargets = value.Message().Interface().(*OracleTargets)
 	case "ark.asset.v1.GenesisState.settlement_plans":
 		lv := value.List()
 		clv := lv.(*_GenesisState_3_list)
 		x.SettlementPlans = *clv.list
-	case "ark.asset.v1.GenesisState.write_off_records":
+	case "ark.asset.v1.GenesisState.resolution_records":
 		lv := value.List()
 		clv := lv.(*_GenesisState_4_list)
-		x.WriteOffRecords = *clv.list
+		x.ResolutionRecords = *clv.list
+	case "ark.asset.v1.GenesisState.emergency_mandate":
+		x.EmergencyMandate = value.Message().Interface().(*EmergencyMandate)
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		lv := value.List()
+		clv := lv.(*_GenesisState_6_list)
+		x.EmergencySuspensions = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -411,28 +496,39 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "ark.asset.v1.GenesisState.params":
+		if x.Params == nil {
+			x.Params = new(Params)
+		}
+		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
 	case "ark.asset.v1.GenesisState.assets":
 		if x.Assets == nil {
 			x.Assets = []*Asset{}
 		}
-		value := &_GenesisState_1_list{list: &x.Assets}
+		value := &_GenesisState_2_list{list: &x.Assets}
 		return protoreflect.ValueOfList(value)
-	case "ark.asset.v1.GenesisState.oracle_targets":
-		if x.OracleTargets == nil {
-			x.OracleTargets = new(OracleTargets)
-		}
-		return protoreflect.ValueOfMessage(x.OracleTargets.ProtoReflect())
 	case "ark.asset.v1.GenesisState.settlement_plans":
 		if x.SettlementPlans == nil {
 			x.SettlementPlans = []*SettlementPlan{}
 		}
 		value := &_GenesisState_3_list{list: &x.SettlementPlans}
 		return protoreflect.ValueOfList(value)
-	case "ark.asset.v1.GenesisState.write_off_records":
-		if x.WriteOffRecords == nil {
-			x.WriteOffRecords = []*WriteOffRecord{}
+	case "ark.asset.v1.GenesisState.resolution_records":
+		if x.ResolutionRecords == nil {
+			x.ResolutionRecords = []*ResolutionRecord{}
 		}
-		value := &_GenesisState_4_list{list: &x.WriteOffRecords}
+		value := &_GenesisState_4_list{list: &x.ResolutionRecords}
+		return protoreflect.ValueOfList(value)
+	case "ark.asset.v1.GenesisState.emergency_mandate":
+		if x.EmergencyMandate == nil {
+			x.EmergencyMandate = new(EmergencyMandate)
+		}
+		return protoreflect.ValueOfMessage(x.EmergencyMandate.ProtoReflect())
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		if x.EmergencySuspensions == nil {
+			x.EmergencySuspensions = []string{}
+		}
+		value := &_GenesisState_6_list{list: &x.EmergencySuspensions}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
@@ -447,18 +543,24 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "ark.asset.v1.GenesisState.params":
+		m := new(Params)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.asset.v1.GenesisState.assets":
 		list := []*Asset{}
-		return protoreflect.ValueOfList(&_GenesisState_1_list{list: &list})
-	case "ark.asset.v1.GenesisState.oracle_targets":
-		m := new(OracleTargets)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
+		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
 	case "ark.asset.v1.GenesisState.settlement_plans":
 		list := []*SettlementPlan{}
 		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
-	case "ark.asset.v1.GenesisState.write_off_records":
-		list := []*WriteOffRecord{}
+	case "ark.asset.v1.GenesisState.resolution_records":
+		list := []*ResolutionRecord{}
 		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
+	case "ark.asset.v1.GenesisState.emergency_mandate":
+		m := new(EmergencyMandate)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		list := []string{}
+		return protoreflect.ValueOfList(&_GenesisState_6_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -528,15 +630,15 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
+		if x.Params != nil {
+			l = options.Size(x.Params)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if len(x.Assets) > 0 {
 			for _, e := range x.Assets {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
-		}
-		if x.OracleTargets != nil {
-			l = options.Size(x.OracleTargets)
-			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if len(x.SettlementPlans) > 0 {
 			for _, e := range x.SettlementPlans {
@@ -544,9 +646,19 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.WriteOffRecords) > 0 {
-			for _, e := range x.WriteOffRecords {
+		if len(x.ResolutionRecords) > 0 {
+			for _, e := range x.ResolutionRecords {
 				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.EmergencyMandate != nil {
+			l = options.Size(x.EmergencyMandate)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if len(x.EmergencySuspensions) > 0 {
+			for _, s := range x.EmergencySuspensions {
+				l = len(s)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
@@ -579,9 +691,32 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.WriteOffRecords) > 0 {
-			for iNdEx := len(x.WriteOffRecords) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.WriteOffRecords[iNdEx])
+		if len(x.EmergencySuspensions) > 0 {
+			for iNdEx := len(x.EmergencySuspensions) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.EmergencySuspensions[iNdEx])
+				copy(dAtA[i:], x.EmergencySuspensions[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.EmergencySuspensions[iNdEx])))
+				i--
+				dAtA[i] = 0x32
+			}
+		}
+		if x.EmergencyMandate != nil {
+			encoded, err := options.Marshal(x.EmergencyMandate)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.ResolutionRecords) > 0 {
+			for iNdEx := len(x.ResolutionRecords) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ResolutionRecords[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -611,20 +746,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x1a
 			}
 		}
-		if x.OracleTargets != nil {
-			encoded, err := options.Marshal(x.OracleTargets)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
 		if len(x.Assets) > 0 {
 			for iNdEx := len(x.Assets) - 1; iNdEx >= 0; iNdEx-- {
 				encoded, err := options.Marshal(x.Assets[iNdEx])
@@ -638,8 +759,22 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], encoded)
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 				i--
-				dAtA[i] = 0xa
+				dAtA[i] = 0x12
 			}
+		}
+		if x.Params != nil {
+			encoded, err := options.Marshal(x.Params)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -692,6 +827,42 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Params", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Params == nil {
+					x.Params = &Params{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Params); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Assets", wireType)
 				}
 				var msglen int
@@ -721,42 +892,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				}
 				x.Assets = append(x.Assets, &Asset{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Assets[len(x.Assets)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OracleTargets", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.OracleTargets == nil {
-					x.OracleTargets = &OracleTargets{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.OracleTargets); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -796,7 +931,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field WriteOffRecords", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ResolutionRecords", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -823,10 +958,78 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.WriteOffRecords = append(x.WriteOffRecords, &WriteOffRecord{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.WriteOffRecords[len(x.WriteOffRecords)-1]); err != nil {
+				x.ResolutionRecords = append(x.ResolutionRecords, &ResolutionRecord{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ResolutionRecords[len(x.ResolutionRecords)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EmergencyMandate", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.EmergencyMandate == nil {
+					x.EmergencyMandate = &EmergencyMandate{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EmergencyMandate); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EmergencySuspensions", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.EmergencySuspensions = append(x.EmergencySuspensions, string(dAtA[iNdEx:postIndex]))
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -876,17 +1079,24 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// GenesisState defines the asset module's genesis state. Asset locks are
-// rebuilt deterministically from Market and Treasury genesis state.
+// GenesisState defines the asset module's genesis state. The protocol
+// reference moved to ark.oracle.v1's genesis with the reference itself.
 type GenesisState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Assets          []*Asset          `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
-	OracleTargets   *OracleTargets    `protobuf:"bytes,2,opt,name=oracle_targets,json=oracleTargets,proto3" json:"oracle_targets,omitempty"`
-	SettlementPlans []*SettlementPlan `protobuf:"bytes,3,rep,name=settlement_plans,json=settlementPlans,proto3" json:"settlement_plans,omitempty"`
-	WriteOffRecords []*WriteOffRecord `protobuf:"bytes,4,rep,name=write_off_records,json=writeOffRecords,proto3" json:"write_off_records,omitempty"`
+	// params carries the governance-owned module parameters.
+	Params            *Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	Assets            []*Asset            `protobuf:"bytes,2,rep,name=assets,proto3" json:"assets,omitempty"`
+	SettlementPlans   []*SettlementPlan   `protobuf:"bytes,3,rep,name=settlement_plans,json=settlementPlans,proto3" json:"settlement_plans,omitempty"`
+	ResolutionRecords []*ResolutionRecord `protobuf:"bytes,4,rep,name=resolution_records,json=resolutionRecords,proto3" json:"resolution_records,omitempty"`
+	// emergency_mandate seeds the committee appointment or its canonical
+	// disabled state.
+	EmergencyMandate *EmergencyMandate `protobuf:"bytes,5,opt,name=emergency_mandate,json=emergencyMandate,proto3" json:"emergency_mandate,omitempty"`
+	// emergency_suspensions lists the assets whose suspension is already
+	// consumed under the seeded mandate term, sorted and unique.
+	EmergencySuspensions []string `protobuf:"bytes,6,rep,name=emergency_suspensions,json=emergencySuspensions,proto3" json:"emergency_suspensions,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -909,16 +1119,16 @@ func (*GenesisState) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_genesis_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GenesisState) GetAssets() []*Asset {
+func (x *GenesisState) GetParams() *Params {
 	if x != nil {
-		return x.Assets
+		return x.Params
 	}
 	return nil
 }
 
-func (x *GenesisState) GetOracleTargets() *OracleTargets {
+func (x *GenesisState) GetAssets() []*Asset {
 	if x != nil {
-		return x.OracleTargets
+		return x.Assets
 	}
 	return nil
 }
@@ -930,9 +1140,23 @@ func (x *GenesisState) GetSettlementPlans() []*SettlementPlan {
 	return nil
 }
 
-func (x *GenesisState) GetWriteOffRecords() []*WriteOffRecord {
+func (x *GenesisState) GetResolutionRecords() []*ResolutionRecord {
 	if x != nil {
-		return x.WriteOffRecords
+		return x.ResolutionRecords
+	}
+	return nil
+}
+
+func (x *GenesisState) GetEmergencyMandate() *EmergencyMandate {
+	if x != nil {
+		return x.EmergencyMandate
+	}
+	return nil
+}
+
+func (x *GenesisState) GetEmergencySuspensions() []string {
+	if x != nil {
+		return x.EmergencySuspensions
 	}
 	return nil
 }
@@ -946,37 +1170,45 @@ var file_ark_asset_v1_genesis_proto_rawDesc = []byte{
 	0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18, 0x61,
 	0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x61, 0x73, 0x73, 0x65,
 	0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbe, 0x02,
-	0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x36,
-	0x0a, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73,
-	0x73, 0x65, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
-	0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12, 0x4d, 0x0a, 0x0e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
-	0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x72,
-	0x61, 0x63, 0x6c, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f,
-	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x54, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x52, 0x0a, 0x10, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d,
-	0x65, 0x6e, 0x74, 0x5f, 0x70, 0x6c, 0x61, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x53,
-	0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x42, 0x09, 0xc8,
-	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x73, 0x12, 0x53, 0x0a, 0x11, 0x77, 0x72, 0x69,
-	0x74, 0x65, 0x5f, 0x6f, 0x66, 0x66, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x04,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x52, 0x65, 0x63, 0x6f,
-	0x72, 0x64, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x77,
-	0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x42, 0x90,
-	0x01, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74,
-	0x6f, 0x50, 0x01, 0x5a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b,
-	0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x73, 0x73, 0x65, 0x74, 0x76,
-	0x31, 0xa2, 0x02, 0x03, 0x41, 0x41, 0x58, 0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x2e, 0x41, 0x73,
-	0x73, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73,
-	0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65,
-	0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
-	0xea, 0x02, 0x0e, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x41, 0x73, 0x73, 0x65, 0x74, 0x3a, 0x3a, 0x56,
-	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc1, 0x03,
+	0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x37,
+	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x36, 0x0a, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74,
+	0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x12,
+	0x52, 0x0a, 0x10, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x70, 0x6c,
+	0x61, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c,
+	0x61, 0x6e, 0x73, 0x12, 0x58, 0x0a, 0x12, 0x72, 0x65, 0x73, 0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x52,
+	0x65, 0x73, 0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x42,
+	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x72, 0x65, 0x73, 0x6f,
+	0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x56, 0x0a,
+	0x11, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61,
+	0x74, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63,
+	0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x10, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x3a, 0x0a, 0x15, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e,
+	0x63, 0x79, 0x5f, 0x73, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06,
+	0x20, 0x03, 0x28, 0x09, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x65, 0x6d, 0x65,
+	0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e,
+	0x73, 0x42, 0x90, 0x01, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x73, 0x73,
+	0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x41, 0x58, 0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b,
+	0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c,
+	0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x41, 0x73, 0x73, 0x65, 0x74,
+	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -993,22 +1225,24 @@ func file_ark_asset_v1_genesis_proto_rawDescGZIP() []byte {
 
 var file_ark_asset_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_ark_asset_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),   // 0: ark.asset.v1.GenesisState
-	(*Asset)(nil),          // 1: ark.asset.v1.Asset
-	(*OracleTargets)(nil),  // 2: ark.asset.v1.OracleTargets
-	(*SettlementPlan)(nil), // 3: ark.asset.v1.SettlementPlan
-	(*WriteOffRecord)(nil), // 4: ark.asset.v1.WriteOffRecord
+	(*GenesisState)(nil),     // 0: ark.asset.v1.GenesisState
+	(*Params)(nil),           // 1: ark.asset.v1.Params
+	(*Asset)(nil),            // 2: ark.asset.v1.Asset
+	(*SettlementPlan)(nil),   // 3: ark.asset.v1.SettlementPlan
+	(*ResolutionRecord)(nil), // 4: ark.asset.v1.ResolutionRecord
+	(*EmergencyMandate)(nil), // 5: ark.asset.v1.EmergencyMandate
 }
 var file_ark_asset_v1_genesis_proto_depIdxs = []int32{
-	1, // 0: ark.asset.v1.GenesisState.assets:type_name -> ark.asset.v1.Asset
-	2, // 1: ark.asset.v1.GenesisState.oracle_targets:type_name -> ark.asset.v1.OracleTargets
+	1, // 0: ark.asset.v1.GenesisState.params:type_name -> ark.asset.v1.Params
+	2, // 1: ark.asset.v1.GenesisState.assets:type_name -> ark.asset.v1.Asset
 	3, // 2: ark.asset.v1.GenesisState.settlement_plans:type_name -> ark.asset.v1.SettlementPlan
-	4, // 3: ark.asset.v1.GenesisState.write_off_records:type_name -> ark.asset.v1.WriteOffRecord
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	4, // 3: ark.asset.v1.GenesisState.resolution_records:type_name -> ark.asset.v1.ResolutionRecord
+	5, // 4: ark.asset.v1.GenesisState.emergency_mandate:type_name -> ark.asset.v1.EmergencyMandate
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_ark_asset_v1_genesis_proto_init() }

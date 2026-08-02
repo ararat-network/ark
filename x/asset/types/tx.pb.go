@@ -10,7 +10,6 @@ import (
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
-	types "github.com/cosmos/cosmos-sdk/x/bank/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -33,19 +32,113 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MsgRegisterAsset registers a new governance-managed Bank asset. The asset
-// denomination is metadata.base.
+// MsgUpdateParams is the Msg/UpdateParams request type.
+type MsgUpdateParams struct {
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// params defines the x/asset parameters to update. All parameters must be
+	// supplied.
+	Params Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params"`
+}
+
+func (m *MsgUpdateParams) Reset()         { *m = MsgUpdateParams{} }
+func (m *MsgUpdateParams) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateParams) ProtoMessage()    {}
+func (*MsgUpdateParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{0}
+}
+func (m *MsgUpdateParams) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateParams.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateParams.Merge(m, src)
+}
+func (m *MsgUpdateParams) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateParams proto.InternalMessageInfo
+
+func (m *MsgUpdateParams) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgUpdateParams) GetParams() Params {
+	if m != nil {
+		return m.Params
+	}
+	return Params{}
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+type MsgUpdateParamsResponse struct {
+}
+
+func (m *MsgUpdateParamsResponse) Reset()         { *m = MsgUpdateParamsResponse{} }
+func (m *MsgUpdateParamsResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateParamsResponse) ProtoMessage()    {}
+func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{1}
+}
+func (m *MsgUpdateParamsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateParamsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateParamsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateParamsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateParamsResponse.Merge(m, src)
+}
+func (m *MsgUpdateParamsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateParamsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
+
+// MsgRegisterAsset registers a new governance-managed Bank asset and admits it
+// to normal policy use in the same act. The denomination is the whole
+// registration input: Bank metadata is derived from it, so there is nothing
+// else for a proposal to state and nothing that a later message could correct.
 type MsgRegisterAsset struct {
-	Authority      string         `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Metadata       types.Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata"`
-	OracleRequired bool           `protobuf:"varint,3,opt,name=oracle_required,json=oracleRequired,proto3" json:"oracle_required,omitempty"`
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom     string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 }
 
 func (m *MsgRegisterAsset) Reset()         { *m = MsgRegisterAsset{} }
 func (m *MsgRegisterAsset) String() string { return proto.CompactTextString(m) }
 func (*MsgRegisterAsset) ProtoMessage()    {}
 func (*MsgRegisterAsset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{0}
+	return fileDescriptor_90101fc4dd7fa818, []int{2}
 }
 func (m *MsgRegisterAsset) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -81,18 +174,11 @@ func (m *MsgRegisterAsset) GetAuthority() string {
 	return ""
 }
 
-func (m *MsgRegisterAsset) GetMetadata() types.Metadata {
+func (m *MsgRegisterAsset) GetDenom() string {
 	if m != nil {
-		return m.Metadata
+		return m.Denom
 	}
-	return types.Metadata{}
-}
-
-func (m *MsgRegisterAsset) GetOracleRequired() bool {
-	if m != nil {
-		return m.OracleRequired
-	}
-	return false
+	return ""
 }
 
 // MsgRegisterAssetResponse is the response type for MsgRegisterAsset.
@@ -103,7 +189,7 @@ func (m *MsgRegisterAssetResponse) Reset()         { *m = MsgRegisterAssetRespon
 func (m *MsgRegisterAssetResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgRegisterAssetResponse) ProtoMessage()    {}
 func (*MsgRegisterAssetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{1}
+	return fileDescriptor_90101fc4dd7fa818, []int{3}
 }
 func (m *MsgRegisterAssetResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -132,133 +218,26 @@ func (m *MsgRegisterAssetResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgRegisterAssetResponse proto.InternalMessageInfo
 
-// MsgSetOracleRequired changes whether a zero-supply pending or retired asset
-// participates in Oracle target epochs.
-type MsgSetOracleRequired struct {
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	OracleRequired  bool   `protobuf:"varint,3,opt,name=oracle_required,json=oracleRequired,proto3" json:"oracle_required,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,4,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (m *MsgSetOracleRequired) Reset()         { *m = MsgSetOracleRequired{} }
-func (m *MsgSetOracleRequired) String() string { return proto.CompactTextString(m) }
-func (*MsgSetOracleRequired) ProtoMessage()    {}
-func (*MsgSetOracleRequired) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{2}
-}
-func (m *MsgSetOracleRequired) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgSetOracleRequired) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgSetOracleRequired.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgSetOracleRequired) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSetOracleRequired.Merge(m, src)
-}
-func (m *MsgSetOracleRequired) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgSetOracleRequired) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSetOracleRequired.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgSetOracleRequired proto.InternalMessageInfo
-
-func (m *MsgSetOracleRequired) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgSetOracleRequired) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *MsgSetOracleRequired) GetOracleRequired() bool {
-	if m != nil {
-		return m.OracleRequired
-	}
-	return false
-}
-
-func (m *MsgSetOracleRequired) GetExpectedVersion() uint64 {
-	if m != nil {
-		return m.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgSetOracleRequiredResponse is the response type for MsgSetOracleRequired.
-type MsgSetOracleRequiredResponse struct {
-}
-
-func (m *MsgSetOracleRequiredResponse) Reset()         { *m = MsgSetOracleRequiredResponse{} }
-func (m *MsgSetOracleRequiredResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgSetOracleRequiredResponse) ProtoMessage()    {}
-func (*MsgSetOracleRequiredResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{3}
-}
-func (m *MsgSetOracleRequiredResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgSetOracleRequiredResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgSetOracleRequiredResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgSetOracleRequiredResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgSetOracleRequiredResponse.Merge(m, src)
-}
-func (m *MsgSetOracleRequiredResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgSetOracleRequiredResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgSetOracleRequiredResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgSetOracleRequiredResponse proto.InternalMessageInfo
-
-// MsgActivateAsset enables normal policy use, scheduling Oracle target
-// addition first when required.
-type MsgActivateAsset struct {
+// MsgHaltIssuance immediately stops new issuance for an active asset while
+// preserving pricing, liability accounting, transfers, and redemption.
+type MsgHaltIssuance struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (m *MsgActivateAsset) Reset()         { *m = MsgActivateAsset{} }
-func (m *MsgActivateAsset) String() string { return proto.CompactTextString(m) }
-func (*MsgActivateAsset) ProtoMessage()    {}
-func (*MsgActivateAsset) Descriptor() ([]byte, []int) {
+func (m *MsgHaltIssuance) Reset()         { *m = MsgHaltIssuance{} }
+func (m *MsgHaltIssuance) String() string { return proto.CompactTextString(m) }
+func (*MsgHaltIssuance) ProtoMessage()    {}
+func (*MsgHaltIssuance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{4}
 }
-func (m *MsgActivateAsset) XXX_Unmarshal(b []byte) error {
+func (m *MsgHaltIssuance) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgActivateAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgHaltIssuance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgActivateAsset.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgHaltIssuance.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -268,55 +247,55 @@ func (m *MsgActivateAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return b[:n], nil
 	}
 }
-func (m *MsgActivateAsset) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgActivateAsset.Merge(m, src)
+func (m *MsgHaltIssuance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgHaltIssuance.Merge(m, src)
 }
-func (m *MsgActivateAsset) XXX_Size() int {
+func (m *MsgHaltIssuance) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgActivateAsset) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgActivateAsset.DiscardUnknown(m)
+func (m *MsgHaltIssuance) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgHaltIssuance.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgActivateAsset proto.InternalMessageInfo
+var xxx_messageInfo_MsgHaltIssuance proto.InternalMessageInfo
 
-func (m *MsgActivateAsset) GetAuthority() string {
+func (m *MsgHaltIssuance) GetAuthority() string {
 	if m != nil {
 		return m.Authority
 	}
 	return ""
 }
 
-func (m *MsgActivateAsset) GetDenom() string {
+func (m *MsgHaltIssuance) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-func (m *MsgActivateAsset) GetExpectedVersion() uint64 {
+func (m *MsgHaltIssuance) GetExpectedVersion() uint64 {
 	if m != nil {
 		return m.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgActivateAssetResponse is the response type for MsgActivateAsset.
-type MsgActivateAssetResponse struct {
+// MsgHaltIssuanceResponse is the response type for MsgHaltIssuance.
+type MsgHaltIssuanceResponse struct {
 }
 
-func (m *MsgActivateAssetResponse) Reset()         { *m = MsgActivateAssetResponse{} }
-func (m *MsgActivateAssetResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgActivateAssetResponse) ProtoMessage()    {}
-func (*MsgActivateAssetResponse) Descriptor() ([]byte, []int) {
+func (m *MsgHaltIssuanceResponse) Reset()         { *m = MsgHaltIssuanceResponse{} }
+func (m *MsgHaltIssuanceResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgHaltIssuanceResponse) ProtoMessage()    {}
+func (*MsgHaltIssuanceResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{5}
 }
-func (m *MsgActivateAssetResponse) XXX_Unmarshal(b []byte) error {
+func (m *MsgHaltIssuanceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgActivateAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgHaltIssuanceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgActivateAssetResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgHaltIssuanceResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -326,37 +305,38 @@ func (m *MsgActivateAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-func (m *MsgActivateAssetResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgActivateAssetResponse.Merge(m, src)
+func (m *MsgHaltIssuanceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgHaltIssuanceResponse.Merge(m, src)
 }
-func (m *MsgActivateAssetResponse) XXX_Size() int {
+func (m *MsgHaltIssuanceResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgActivateAssetResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgActivateAssetResponse.DiscardUnknown(m)
+func (m *MsgHaltIssuanceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgHaltIssuanceResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgActivateAssetResponse proto.InternalMessageInfo
+var xxx_messageInfo_MsgHaltIssuanceResponse proto.InternalMessageInfo
 
-// MsgCancelAssetRegistration retires an unscheduled pending registration.
-type MsgCancelAssetRegistration struct {
+// MsgResumeIssuance returns an issuance-halted asset to active status without
+// changing Oracle, Market, or Treasury policy.
+type MsgResumeIssuance struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (m *MsgCancelAssetRegistration) Reset()         { *m = MsgCancelAssetRegistration{} }
-func (m *MsgCancelAssetRegistration) String() string { return proto.CompactTextString(m) }
-func (*MsgCancelAssetRegistration) ProtoMessage()    {}
-func (*MsgCancelAssetRegistration) Descriptor() ([]byte, []int) {
+func (m *MsgResumeIssuance) Reset()         { *m = MsgResumeIssuance{} }
+func (m *MsgResumeIssuance) String() string { return proto.CompactTextString(m) }
+func (*MsgResumeIssuance) ProtoMessage()    {}
+func (*MsgResumeIssuance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{6}
 }
-func (m *MsgCancelAssetRegistration) XXX_Unmarshal(b []byte) error {
+func (m *MsgResumeIssuance) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgCancelAssetRegistration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgResumeIssuance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgCancelAssetRegistration.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgResumeIssuance.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -366,56 +346,55 @@ func (m *MsgCancelAssetRegistration) XXX_Marshal(b []byte, deterministic bool) (
 		return b[:n], nil
 	}
 }
-func (m *MsgCancelAssetRegistration) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgCancelAssetRegistration.Merge(m, src)
+func (m *MsgResumeIssuance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgResumeIssuance.Merge(m, src)
 }
-func (m *MsgCancelAssetRegistration) XXX_Size() int {
+func (m *MsgResumeIssuance) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgCancelAssetRegistration) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgCancelAssetRegistration.DiscardUnknown(m)
+func (m *MsgResumeIssuance) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgResumeIssuance.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgCancelAssetRegistration proto.InternalMessageInfo
+var xxx_messageInfo_MsgResumeIssuance proto.InternalMessageInfo
 
-func (m *MsgCancelAssetRegistration) GetAuthority() string {
+func (m *MsgResumeIssuance) GetAuthority() string {
 	if m != nil {
 		return m.Authority
 	}
 	return ""
 }
 
-func (m *MsgCancelAssetRegistration) GetDenom() string {
+func (m *MsgResumeIssuance) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-func (m *MsgCancelAssetRegistration) GetExpectedVersion() uint64 {
+func (m *MsgResumeIssuance) GetExpectedVersion() uint64 {
 	if m != nil {
 		return m.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgCancelAssetRegistrationResponse is the response type for
-// MsgCancelAssetRegistration.
-type MsgCancelAssetRegistrationResponse struct {
+// MsgResumeIssuanceResponse is the response type for MsgResumeIssuance.
+type MsgResumeIssuanceResponse struct {
 }
 
-func (m *MsgCancelAssetRegistrationResponse) Reset()         { *m = MsgCancelAssetRegistrationResponse{} }
-func (m *MsgCancelAssetRegistrationResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgCancelAssetRegistrationResponse) ProtoMessage()    {}
-func (*MsgCancelAssetRegistrationResponse) Descriptor() ([]byte, []int) {
+func (m *MsgResumeIssuanceResponse) Reset()         { *m = MsgResumeIssuanceResponse{} }
+func (m *MsgResumeIssuanceResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgResumeIssuanceResponse) ProtoMessage()    {}
+func (*MsgResumeIssuanceResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{7}
 }
-func (m *MsgCancelAssetRegistrationResponse) XXX_Unmarshal(b []byte) error {
+func (m *MsgResumeIssuanceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgCancelAssetRegistrationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgResumeIssuanceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgCancelAssetRegistrationResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgResumeIssuanceResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -425,37 +404,40 @@ func (m *MsgCancelAssetRegistrationResponse) XXX_Marshal(b []byte, deterministic
 		return b[:n], nil
 	}
 }
-func (m *MsgCancelAssetRegistrationResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgCancelAssetRegistrationResponse.Merge(m, src)
+func (m *MsgResumeIssuanceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgResumeIssuanceResponse.Merge(m, src)
 }
-func (m *MsgCancelAssetRegistrationResponse) XXX_Size() int {
+func (m *MsgResumeIssuanceResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgCancelAssetRegistrationResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgCancelAssetRegistrationResponse.DiscardUnknown(m)
+func (m *MsgResumeIssuanceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgResumeIssuanceResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgCancelAssetRegistrationResponse proto.InternalMessageInfo
+var xxx_messageInfo_MsgResumeIssuanceResponse proto.InternalMessageInfo
 
-// MsgBeginRetirement immediately stops new issuance for an active asset.
-type MsgBeginRetirement struct {
+// MsgSuspendAsset immediately stops unsafe ordinary economic operations for an
+// active or issuance-halted asset. Balances, transfers, and the asset's feed
+// are all untouched: containment is the status gate each consumer applies, not
+// the absence of a rate.
+type MsgSuspendAsset struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (m *MsgBeginRetirement) Reset()         { *m = MsgBeginRetirement{} }
-func (m *MsgBeginRetirement) String() string { return proto.CompactTextString(m) }
-func (*MsgBeginRetirement) ProtoMessage()    {}
-func (*MsgBeginRetirement) Descriptor() ([]byte, []int) {
+func (m *MsgSuspendAsset) Reset()         { *m = MsgSuspendAsset{} }
+func (m *MsgSuspendAsset) String() string { return proto.CompactTextString(m) }
+func (*MsgSuspendAsset) ProtoMessage()    {}
+func (*MsgSuspendAsset) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{8}
 }
-func (m *MsgBeginRetirement) XXX_Unmarshal(b []byte) error {
+func (m *MsgSuspendAsset) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgBeginRetirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgSuspendAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgBeginRetirement.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgSuspendAsset.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -465,55 +447,55 @@ func (m *MsgBeginRetirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *MsgBeginRetirement) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgBeginRetirement.Merge(m, src)
+func (m *MsgSuspendAsset) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSuspendAsset.Merge(m, src)
 }
-func (m *MsgBeginRetirement) XXX_Size() int {
+func (m *MsgSuspendAsset) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgBeginRetirement) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgBeginRetirement.DiscardUnknown(m)
+func (m *MsgSuspendAsset) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSuspendAsset.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgBeginRetirement proto.InternalMessageInfo
+var xxx_messageInfo_MsgSuspendAsset proto.InternalMessageInfo
 
-func (m *MsgBeginRetirement) GetAuthority() string {
+func (m *MsgSuspendAsset) GetAuthority() string {
 	if m != nil {
 		return m.Authority
 	}
 	return ""
 }
 
-func (m *MsgBeginRetirement) GetDenom() string {
+func (m *MsgSuspendAsset) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-func (m *MsgBeginRetirement) GetExpectedVersion() uint64 {
+func (m *MsgSuspendAsset) GetExpectedVersion() uint64 {
 	if m != nil {
 		return m.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgBeginRetirementResponse is the response type for MsgBeginRetirement.
-type MsgBeginRetirementResponse struct {
+// MsgSuspendAssetResponse is the response type for MsgSuspendAsset.
+type MsgSuspendAssetResponse struct {
 }
 
-func (m *MsgBeginRetirementResponse) Reset()         { *m = MsgBeginRetirementResponse{} }
-func (m *MsgBeginRetirementResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgBeginRetirementResponse) ProtoMessage()    {}
-func (*MsgBeginRetirementResponse) Descriptor() ([]byte, []int) {
+func (m *MsgSuspendAssetResponse) Reset()         { *m = MsgSuspendAssetResponse{} }
+func (m *MsgSuspendAssetResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSuspendAssetResponse) ProtoMessage()    {}
+func (*MsgSuspendAssetResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{9}
 }
-func (m *MsgBeginRetirementResponse) XXX_Unmarshal(b []byte) error {
+func (m *MsgSuspendAssetResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgBeginRetirementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgSuspendAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgBeginRetirementResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgSuspendAssetResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -523,37 +505,155 @@ func (m *MsgBeginRetirementResponse) XXX_Marshal(b []byte, deterministic bool) (
 		return b[:n], nil
 	}
 }
-func (m *MsgBeginRetirementResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgBeginRetirementResponse.Merge(m, src)
+func (m *MsgSuspendAssetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSuspendAssetResponse.Merge(m, src)
 }
-func (m *MsgBeginRetirementResponse) XXX_Size() int {
+func (m *MsgSuspendAssetResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgBeginRetirementResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgBeginRetirementResponse.DiscardUnknown(m)
+func (m *MsgSuspendAssetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSuspendAssetResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgBeginRetirementResponse proto.InternalMessageInfo
+var xxx_messageInfo_MsgSuspendAssetResponse proto.InternalMessageInfo
 
-// MsgCancelRetirement returns a retiring asset to active status.
-type MsgCancelRetirement struct {
+// MsgOpenSettlement creates a one-way asset-to-NOAH redemption plan.
+type MsgOpenSettlement struct {
+	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	// redemption_rate is the positive number of units of the settled asset
+	// redeemed per one NOAH, the same NOAH-quoted orientation as oracle
+	// exchange rates.
+	RedemptionRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
+	// earliest_closing_height commits to holders that redemption stays open at
+	// least until that height. It is the only height governance states: the plan
+	// activates SettlementActivationDelayBlocks after this message executes, and
+	// this height must fall after that activation. A settlement always carries a
+	// redemption window, and WriteOffAsset is refused before it.
+	EarliestClosingHeight int64 `protobuf:"varint,5,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
+}
+
+func (m *MsgOpenSettlement) Reset()         { *m = MsgOpenSettlement{} }
+func (m *MsgOpenSettlement) String() string { return proto.CompactTextString(m) }
+func (*MsgOpenSettlement) ProtoMessage()    {}
+func (*MsgOpenSettlement) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{10}
+}
+func (m *MsgOpenSettlement) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgOpenSettlement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgOpenSettlement.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgOpenSettlement) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgOpenSettlement.Merge(m, src)
+}
+func (m *MsgOpenSettlement) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgOpenSettlement) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgOpenSettlement.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgOpenSettlement proto.InternalMessageInfo
+
+func (m *MsgOpenSettlement) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgOpenSettlement) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+func (m *MsgOpenSettlement) GetExpectedVersion() uint64 {
+	if m != nil {
+		return m.ExpectedVersion
+	}
+	return 0
+}
+
+func (m *MsgOpenSettlement) GetEarliestClosingHeight() int64 {
+	if m != nil {
+		return m.EarliestClosingHeight
+	}
+	return 0
+}
+
+// MsgOpenSettlementResponse is the response type for MsgOpenSettlement.
+type MsgOpenSettlementResponse struct {
+}
+
+func (m *MsgOpenSettlementResponse) Reset()         { *m = MsgOpenSettlementResponse{} }
+func (m *MsgOpenSettlementResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgOpenSettlementResponse) ProtoMessage()    {}
+func (*MsgOpenSettlementResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{11}
+}
+func (m *MsgOpenSettlementResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgOpenSettlementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgOpenSettlementResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgOpenSettlementResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgOpenSettlementResponse.Merge(m, src)
+}
+func (m *MsgOpenSettlementResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgOpenSettlementResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgOpenSettlementResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgOpenSettlementResponse proto.InternalMessageInfo
+
+// MsgCancelSettlement cancels a settlement plan before it activates, leaving
+// the asset suspended. From activation onward the plan is a hard commitment:
+// only RecoverAsset, FinalizeRetirement, or a WriteOffAsset past the announced
+// closing height may end it.
+type MsgCancelSettlement struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (m *MsgCancelRetirement) Reset()         { *m = MsgCancelRetirement{} }
-func (m *MsgCancelRetirement) String() string { return proto.CompactTextString(m) }
-func (*MsgCancelRetirement) ProtoMessage()    {}
-func (*MsgCancelRetirement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{10}
+func (m *MsgCancelSettlement) Reset()         { *m = MsgCancelSettlement{} }
+func (m *MsgCancelSettlement) String() string { return proto.CompactTextString(m) }
+func (*MsgCancelSettlement) ProtoMessage()    {}
+func (*MsgCancelSettlement) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{12}
 }
-func (m *MsgCancelRetirement) XXX_Unmarshal(b []byte) error {
+func (m *MsgCancelSettlement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgCancelRetirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgCancelSettlement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgCancelRetirement.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgCancelSettlement.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -563,55 +663,55 @@ func (m *MsgCancelRetirement) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *MsgCancelRetirement) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgCancelRetirement.Merge(m, src)
+func (m *MsgCancelSettlement) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCancelSettlement.Merge(m, src)
 }
-func (m *MsgCancelRetirement) XXX_Size() int {
+func (m *MsgCancelSettlement) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgCancelRetirement) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgCancelRetirement.DiscardUnknown(m)
+func (m *MsgCancelSettlement) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCancelSettlement.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgCancelRetirement proto.InternalMessageInfo
+var xxx_messageInfo_MsgCancelSettlement proto.InternalMessageInfo
 
-func (m *MsgCancelRetirement) GetAuthority() string {
+func (m *MsgCancelSettlement) GetAuthority() string {
 	if m != nil {
 		return m.Authority
 	}
 	return ""
 }
 
-func (m *MsgCancelRetirement) GetDenom() string {
+func (m *MsgCancelSettlement) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-func (m *MsgCancelRetirement) GetExpectedVersion() uint64 {
+func (m *MsgCancelSettlement) GetExpectedVersion() uint64 {
 	if m != nil {
 		return m.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgCancelRetirementResponse is the response type for MsgCancelRetirement.
-type MsgCancelRetirementResponse struct {
+// MsgCancelSettlementResponse is the response type for MsgCancelSettlement.
+type MsgCancelSettlementResponse struct {
 }
 
-func (m *MsgCancelRetirementResponse) Reset()         { *m = MsgCancelRetirementResponse{} }
-func (m *MsgCancelRetirementResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgCancelRetirementResponse) ProtoMessage()    {}
-func (*MsgCancelRetirementResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{11}
+func (m *MsgCancelSettlementResponse) Reset()         { *m = MsgCancelSettlementResponse{} }
+func (m *MsgCancelSettlementResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgCancelSettlementResponse) ProtoMessage()    {}
+func (*MsgCancelSettlementResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{13}
 }
-func (m *MsgCancelRetirementResponse) XXX_Unmarshal(b []byte) error {
+func (m *MsgCancelSettlementResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgCancelRetirementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgCancelSettlementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgCancelRetirementResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgCancelSettlementResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -621,31 +721,244 @@ func (m *MsgCancelRetirementResponse) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *MsgCancelRetirementResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgCancelRetirementResponse.Merge(m, src)
+func (m *MsgCancelSettlementResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCancelSettlementResponse.Merge(m, src)
 }
-func (m *MsgCancelRetirementResponse) XXX_Size() int {
+func (m *MsgCancelSettlementResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgCancelRetirementResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgCancelRetirementResponse.DiscardUnknown(m)
+func (m *MsgCancelSettlementResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCancelSettlementResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgCancelRetirementResponse proto.InternalMessageInfo
+var xxx_messageInfo_MsgCancelSettlementResponse proto.InternalMessageInfo
 
-// MsgFinalizeRetirement retires a zero-supply, unlocked asset, scheduling
-// Oracle target removal first when required.
+// MsgRecoverAsset restores a suspended or written-off asset to issuance-halted
+// status in the block it executes. The asset's feed must already be active and
+// the asset must carry no settlement plan.
+type MsgRecoverAsset struct {
+	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+}
+
+func (m *MsgRecoverAsset) Reset()         { *m = MsgRecoverAsset{} }
+func (m *MsgRecoverAsset) String() string { return proto.CompactTextString(m) }
+func (*MsgRecoverAsset) ProtoMessage()    {}
+func (*MsgRecoverAsset) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{14}
+}
+func (m *MsgRecoverAsset) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRecoverAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRecoverAsset.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRecoverAsset) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRecoverAsset.Merge(m, src)
+}
+func (m *MsgRecoverAsset) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRecoverAsset) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRecoverAsset.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRecoverAsset proto.InternalMessageInfo
+
+func (m *MsgRecoverAsset) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgRecoverAsset) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+func (m *MsgRecoverAsset) GetExpectedVersion() uint64 {
+	if m != nil {
+		return m.ExpectedVersion
+	}
+	return 0
+}
+
+// MsgRecoverAssetResponse is the response type for MsgRecoverAsset.
+type MsgRecoverAssetResponse struct {
+}
+
+func (m *MsgRecoverAssetResponse) Reset()         { *m = MsgRecoverAssetResponse{} }
+func (m *MsgRecoverAssetResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgRecoverAssetResponse) ProtoMessage()    {}
+func (*MsgRecoverAssetResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{15}
+}
+func (m *MsgRecoverAssetResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRecoverAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRecoverAssetResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRecoverAssetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRecoverAssetResponse.Merge(m, src)
+}
+func (m *MsgRecoverAssetResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRecoverAssetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRecoverAssetResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRecoverAssetResponse proto.InternalMessageInfo
+
+// MsgWriteOffAsset derecognizes outstanding SUSPENDED supply without burning,
+// transferring, or repricing holder balances. It is refused before a settlement
+// plan's earliest closing height: the announced window is the one guarantee
+// holders get, and derecognition is the only act that could break it.
+type MsgWriteOffAsset struct {
+	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+}
+
+func (m *MsgWriteOffAsset) Reset()         { *m = MsgWriteOffAsset{} }
+func (m *MsgWriteOffAsset) String() string { return proto.CompactTextString(m) }
+func (*MsgWriteOffAsset) ProtoMessage()    {}
+func (*MsgWriteOffAsset) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{16}
+}
+func (m *MsgWriteOffAsset) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgWriteOffAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgWriteOffAsset.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgWriteOffAsset) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgWriteOffAsset.Merge(m, src)
+}
+func (m *MsgWriteOffAsset) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgWriteOffAsset) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgWriteOffAsset.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgWriteOffAsset proto.InternalMessageInfo
+
+func (m *MsgWriteOffAsset) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgWriteOffAsset) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+func (m *MsgWriteOffAsset) GetExpectedVersion() uint64 {
+	if m != nil {
+		return m.ExpectedVersion
+	}
+	return 0
+}
+
+// MsgWriteOffAssetResponse is the response type for MsgWriteOffAsset.
+type MsgWriteOffAssetResponse struct {
+}
+
+func (m *MsgWriteOffAssetResponse) Reset()         { *m = MsgWriteOffAssetResponse{} }
+func (m *MsgWriteOffAssetResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgWriteOffAssetResponse) ProtoMessage()    {}
+func (*MsgWriteOffAssetResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{17}
+}
+func (m *MsgWriteOffAssetResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgWriteOffAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgWriteOffAssetResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgWriteOffAssetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgWriteOffAssetResponse.Merge(m, src)
+}
+func (m *MsgWriteOffAssetResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgWriteOffAssetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgWriteOffAssetResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgWriteOffAssetResponse proto.InternalMessageInfo
+
+// MsgFinalizeRetirement retires a settlement-free asset. Retirement never
+// consults the protocol reference: a tombstone's feed is the feed layer's
+// concern, and the referent guard pins a referenced feed against removal.
+//
+// It is the lifecycle's only irreversible act, and it spends the denomination
+// permanently: the tombstone keeps the registry entry and the Bank metadata,
+// both of which registration refuses to collide with.
 type MsgFinalizeRetirement struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	// max_residual_supply bounds the outstanding supply governance approves
+	// derecognizing. From ISSUANCE_HALTED, where redemption has been
+	// continuously available, it may be positive and a matching
+	// RETIREMENT_RESIDUAL record discloses the actual residual. From every
+	// other source it must be zero: positive SUSPENDED residual must go through
+	// WriteOffAsset, which names the derecognition honestly.
+	MaxResidualSupply cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=max_residual_supply,json=maxResidualSupply,proto3,customtype=cosmossdk.io/math.Int" json:"max_residual_supply"`
 }
 
 func (m *MsgFinalizeRetirement) Reset()         { *m = MsgFinalizeRetirement{} }
 func (m *MsgFinalizeRetirement) String() string { return proto.CompactTextString(m) }
 func (*MsgFinalizeRetirement) ProtoMessage()    {}
 func (*MsgFinalizeRetirement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{12}
+	return fileDescriptor_90101fc4dd7fa818, []int{18}
 }
 func (m *MsgFinalizeRetirement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -704,7 +1017,7 @@ func (m *MsgFinalizeRetirementResponse) Reset()         { *m = MsgFinalizeRetire
 func (m *MsgFinalizeRetirementResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgFinalizeRetirementResponse) ProtoMessage()    {}
 func (*MsgFinalizeRetirementResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{13}
+	return fileDescriptor_90101fc4dd7fa818, []int{19}
 }
 func (m *MsgFinalizeRetirementResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -733,25 +1046,30 @@ func (m *MsgFinalizeRetirementResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgFinalizeRetirementResponse proto.InternalMessageInfo
 
-// MsgReactivateAsset begins a new pending lifecycle for a retired tombstone.
-type MsgReactivateAsset struct {
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+// MsgSetEmergencyMandate replaces or disables the emergency committee
+// appointment. Every replacement advances the term and clears recorded per-term
+// action usage. An empty committee disables the mandate while retaining the
+// latest term.
+type MsgSetEmergencyMandate struct {
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// committee is the exact threshold-multisig account, empty to disable.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
 }
 
-func (m *MsgReactivateAsset) Reset()         { *m = MsgReactivateAsset{} }
-func (m *MsgReactivateAsset) String() string { return proto.CompactTextString(m) }
-func (*MsgReactivateAsset) ProtoMessage()    {}
-func (*MsgReactivateAsset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{14}
+func (m *MsgSetEmergencyMandate) Reset()         { *m = MsgSetEmergencyMandate{} }
+func (m *MsgSetEmergencyMandate) String() string { return proto.CompactTextString(m) }
+func (*MsgSetEmergencyMandate) ProtoMessage()    {}
+func (*MsgSetEmergencyMandate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_90101fc4dd7fa818, []int{20}
 }
-func (m *MsgReactivateAsset) XXX_Unmarshal(b []byte) error {
+func (m *MsgSetEmergencyMandate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgReactivateAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgSetEmergencyMandate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgReactivateAsset.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgSetEmergencyMandate.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -761,362 +1079,63 @@ func (m *MsgReactivateAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *MsgReactivateAsset) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgReactivateAsset.Merge(m, src)
+func (m *MsgSetEmergencyMandate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetEmergencyMandate.Merge(m, src)
 }
-func (m *MsgReactivateAsset) XXX_Size() int {
+func (m *MsgSetEmergencyMandate) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgReactivateAsset) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgReactivateAsset.DiscardUnknown(m)
+func (m *MsgSetEmergencyMandate) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetEmergencyMandate.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgReactivateAsset proto.InternalMessageInfo
+var xxx_messageInfo_MsgSetEmergencyMandate proto.InternalMessageInfo
 
-func (m *MsgReactivateAsset) GetAuthority() string {
+func (m *MsgSetEmergencyMandate) GetAuthority() string {
 	if m != nil {
 		return m.Authority
 	}
 	return ""
 }
 
-func (m *MsgReactivateAsset) GetDenom() string {
+func (m *MsgSetEmergencyMandate) GetCommittee() string {
 	if m != nil {
-		return m.Denom
+		return m.Committee
 	}
 	return ""
 }
 
-func (m *MsgReactivateAsset) GetExpectedVersion() uint64 {
-	if m != nil {
-		return m.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgReactivateAssetResponse is the response type for MsgReactivateAsset.
-type MsgReactivateAssetResponse struct {
-}
-
-func (m *MsgReactivateAssetResponse) Reset()         { *m = MsgReactivateAssetResponse{} }
-func (m *MsgReactivateAssetResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgReactivateAssetResponse) ProtoMessage()    {}
-func (*MsgReactivateAssetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{15}
-}
-func (m *MsgReactivateAssetResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgReactivateAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgReactivateAssetResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgReactivateAssetResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgReactivateAssetResponse.Merge(m, src)
-}
-func (m *MsgReactivateAssetResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgReactivateAssetResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgReactivateAssetResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgReactivateAssetResponse proto.InternalMessageInfo
-
-// MsgBeginDelisting immediately stops unsafe economic operations and starts
-// Oracle target removal for an active or retiring asset.
-type MsgBeginDelisting struct {
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (m *MsgBeginDelisting) Reset()         { *m = MsgBeginDelisting{} }
-func (m *MsgBeginDelisting) String() string { return proto.CompactTextString(m) }
-func (*MsgBeginDelisting) ProtoMessage()    {}
-func (*MsgBeginDelisting) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{16}
-}
-func (m *MsgBeginDelisting) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgBeginDelisting) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgBeginDelisting.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgBeginDelisting) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgBeginDelisting.Merge(m, src)
-}
-func (m *MsgBeginDelisting) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgBeginDelisting) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgBeginDelisting.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgBeginDelisting proto.InternalMessageInfo
-
-func (m *MsgBeginDelisting) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgBeginDelisting) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *MsgBeginDelisting) GetExpectedVersion() uint64 {
-	if m != nil {
-		return m.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgBeginDelistingResponse is the response type for MsgBeginDelisting.
-type MsgBeginDelistingResponse struct {
-}
-
-func (m *MsgBeginDelistingResponse) Reset()         { *m = MsgBeginDelistingResponse{} }
-func (m *MsgBeginDelistingResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgBeginDelistingResponse) ProtoMessage()    {}
-func (*MsgBeginDelistingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{17}
-}
-func (m *MsgBeginDelistingResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgBeginDelistingResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgBeginDelistingResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgBeginDelistingResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgBeginDelistingResponse.Merge(m, src)
-}
-func (m *MsgBeginDelistingResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgBeginDelistingResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgBeginDelistingResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgBeginDelistingResponse proto.InternalMessageInfo
-
-// MsgOpenSettlement creates a one-way asset-to-NOAH redemption plan.
-type MsgOpenSettlement struct {
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	// redemption_rate is the positive amount of NOAH paid per unit of the
-	// settled asset.
-	RedemptionRate   cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
-	ActivationHeight int64                       `protobuf:"varint,5,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-}
-
-func (m *MsgOpenSettlement) Reset()         { *m = MsgOpenSettlement{} }
-func (m *MsgOpenSettlement) String() string { return proto.CompactTextString(m) }
-func (*MsgOpenSettlement) ProtoMessage()    {}
-func (*MsgOpenSettlement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{18}
-}
-func (m *MsgOpenSettlement) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgOpenSettlement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgOpenSettlement.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgOpenSettlement) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgOpenSettlement.Merge(m, src)
-}
-func (m *MsgOpenSettlement) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgOpenSettlement) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgOpenSettlement.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgOpenSettlement proto.InternalMessageInfo
-
-func (m *MsgOpenSettlement) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgOpenSettlement) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *MsgOpenSettlement) GetExpectedVersion() uint64 {
-	if m != nil {
-		return m.ExpectedVersion
-	}
-	return 0
-}
-
-func (m *MsgOpenSettlement) GetActivationHeight() int64 {
+func (m *MsgSetEmergencyMandate) GetActivationHeight() uint64 {
 	if m != nil {
 		return m.ActivationHeight
 	}
 	return 0
 }
 
-// MsgOpenSettlementResponse is the response type for MsgOpenSettlement.
-type MsgOpenSettlementResponse struct {
-}
-
-func (m *MsgOpenSettlementResponse) Reset()         { *m = MsgOpenSettlementResponse{} }
-func (m *MsgOpenSettlementResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgOpenSettlementResponse) ProtoMessage()    {}
-func (*MsgOpenSettlementResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{19}
-}
-func (m *MsgOpenSettlementResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgOpenSettlementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgOpenSettlementResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgOpenSettlementResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgOpenSettlementResponse.Merge(m, src)
-}
-func (m *MsgOpenSettlementResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgOpenSettlementResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgOpenSettlementResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgOpenSettlementResponse proto.InternalMessageInfo
-
-// MsgCancelSettlement cancels a settlement before its activation height and
-// returns the asset to DELISTED.
-type MsgCancelSettlement struct {
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (m *MsgCancelSettlement) Reset()         { *m = MsgCancelSettlement{} }
-func (m *MsgCancelSettlement) String() string { return proto.CompactTextString(m) }
-func (*MsgCancelSettlement) ProtoMessage()    {}
-func (*MsgCancelSettlement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{20}
-}
-func (m *MsgCancelSettlement) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgCancelSettlement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgCancelSettlement.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgCancelSettlement) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgCancelSettlement.Merge(m, src)
-}
-func (m *MsgCancelSettlement) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgCancelSettlement) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgCancelSettlement.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgCancelSettlement proto.InternalMessageInfo
-
-func (m *MsgCancelSettlement) GetAuthority() string {
+func (m *MsgSetEmergencyMandate) GetExpiryHeight() uint64 {
 	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgCancelSettlement) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *MsgCancelSettlement) GetExpectedVersion() uint64 {
-	if m != nil {
-		return m.ExpectedVersion
+		return m.ExpiryHeight
 	}
 	return 0
 }
 
-// MsgCancelSettlementResponse is the response type for MsgCancelSettlement.
-type MsgCancelSettlementResponse struct {
+// MsgSetEmergencyMandateResponse is the response type for
+// MsgSetEmergencyMandate.
+type MsgSetEmergencyMandateResponse struct {
 }
 
-func (m *MsgCancelSettlementResponse) Reset()         { *m = MsgCancelSettlementResponse{} }
-func (m *MsgCancelSettlementResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgCancelSettlementResponse) ProtoMessage()    {}
-func (*MsgCancelSettlementResponse) Descriptor() ([]byte, []int) {
+func (m *MsgSetEmergencyMandateResponse) Reset()         { *m = MsgSetEmergencyMandateResponse{} }
+func (m *MsgSetEmergencyMandateResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSetEmergencyMandateResponse) ProtoMessage()    {}
+func (*MsgSetEmergencyMandateResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{21}
 }
-func (m *MsgCancelSettlementResponse) XXX_Unmarshal(b []byte) error {
+func (m *MsgSetEmergencyMandateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgCancelSettlementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgSetEmergencyMandateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgCancelSettlementResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgSetEmergencyMandateResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1126,40 +1145,42 @@ func (m *MsgCancelSettlementResponse) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *MsgCancelSettlementResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgCancelSettlementResponse.Merge(m, src)
+func (m *MsgSetEmergencyMandateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetEmergencyMandateResponse.Merge(m, src)
 }
-func (m *MsgCancelSettlementResponse) XXX_Size() int {
+func (m *MsgSetEmergencyMandateResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgCancelSettlementResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgCancelSettlementResponse.DiscardUnknown(m)
+func (m *MsgSetEmergencyMandateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetEmergencyMandateResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgCancelSettlementResponse proto.InternalMessageInfo
+var xxx_messageInfo_MsgSetEmergencyMandateResponse proto.InternalMessageInfo
 
-// MsgBeginRelisting schedules restoration of Oracle pricing. When a settlement
-// is active, earliest_closing_height announces the earliest height at which
-// one-way redemption may close.
-type MsgBeginRelisting struct {
-	Authority             string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom                 string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion       uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	EarliestClosingHeight int64  `protobuf:"varint,4,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
+// MsgEmergencySuspendAsset applies SuspendAsset semantics under a live
+// mandate. Committee messages carry the exact current term instead of an
+// expected asset version: the term is the staleness guard, and status
+// preconditions still apply. It is a pure status move: peg failure of an asset
+// and failure of its unit's price data are different axes, so an asset sharing
+// the reference denomination suspends while the feed keeps pricing.
+type MsgEmergencySuspendAsset struct {
+	Committee    string `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	Denom        string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedTerm uint64 `protobuf:"varint,3,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
 }
 
-func (m *MsgBeginRelisting) Reset()         { *m = MsgBeginRelisting{} }
-func (m *MsgBeginRelisting) String() string { return proto.CompactTextString(m) }
-func (*MsgBeginRelisting) ProtoMessage()    {}
-func (*MsgBeginRelisting) Descriptor() ([]byte, []int) {
+func (m *MsgEmergencySuspendAsset) Reset()         { *m = MsgEmergencySuspendAsset{} }
+func (m *MsgEmergencySuspendAsset) String() string { return proto.CompactTextString(m) }
+func (*MsgEmergencySuspendAsset) ProtoMessage()    {}
+func (*MsgEmergencySuspendAsset) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{22}
 }
-func (m *MsgBeginRelisting) XXX_Unmarshal(b []byte) error {
+func (m *MsgEmergencySuspendAsset) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgBeginRelisting) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgEmergencySuspendAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgBeginRelisting.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgEmergencySuspendAsset.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1169,62 +1190,56 @@ func (m *MsgBeginRelisting) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *MsgBeginRelisting) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgBeginRelisting.Merge(m, src)
+func (m *MsgEmergencySuspendAsset) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgEmergencySuspendAsset.Merge(m, src)
 }
-func (m *MsgBeginRelisting) XXX_Size() int {
+func (m *MsgEmergencySuspendAsset) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgBeginRelisting) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgBeginRelisting.DiscardUnknown(m)
+func (m *MsgEmergencySuspendAsset) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgEmergencySuspendAsset.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgBeginRelisting proto.InternalMessageInfo
+var xxx_messageInfo_MsgEmergencySuspendAsset proto.InternalMessageInfo
 
-func (m *MsgBeginRelisting) GetAuthority() string {
+func (m *MsgEmergencySuspendAsset) GetCommittee() string {
 	if m != nil {
-		return m.Authority
+		return m.Committee
 	}
 	return ""
 }
 
-func (m *MsgBeginRelisting) GetDenom() string {
+func (m *MsgEmergencySuspendAsset) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-func (m *MsgBeginRelisting) GetExpectedVersion() uint64 {
+func (m *MsgEmergencySuspendAsset) GetExpectedTerm() uint64 {
 	if m != nil {
-		return m.ExpectedVersion
+		return m.ExpectedTerm
 	}
 	return 0
 }
 
-func (m *MsgBeginRelisting) GetEarliestClosingHeight() int64 {
-	if m != nil {
-		return m.EarliestClosingHeight
-	}
-	return 0
+// MsgEmergencySuspendAssetResponse is the response type for
+// MsgEmergencySuspendAsset.
+type MsgEmergencySuspendAssetResponse struct {
 }
 
-// MsgBeginRelistingResponse is the response type for MsgBeginRelisting.
-type MsgBeginRelistingResponse struct {
-}
-
-func (m *MsgBeginRelistingResponse) Reset()         { *m = MsgBeginRelistingResponse{} }
-func (m *MsgBeginRelistingResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgBeginRelistingResponse) ProtoMessage()    {}
-func (*MsgBeginRelistingResponse) Descriptor() ([]byte, []int) {
+func (m *MsgEmergencySuspendAssetResponse) Reset()         { *m = MsgEmergencySuspendAssetResponse{} }
+func (m *MsgEmergencySuspendAssetResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgEmergencySuspendAssetResponse) ProtoMessage()    {}
+func (*MsgEmergencySuspendAssetResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90101fc4dd7fa818, []int{23}
 }
-func (m *MsgBeginRelistingResponse) XXX_Unmarshal(b []byte) error {
+func (m *MsgEmergencySuspendAssetResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgBeginRelistingResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgEmergencySuspendAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MsgBeginRelistingResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MsgEmergencySuspendAssetResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1234,217 +1249,119 @@ func (m *MsgBeginRelistingResponse) XXX_Marshal(b []byte, deterministic bool) ([
 		return b[:n], nil
 	}
 }
-func (m *MsgBeginRelistingResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgBeginRelistingResponse.Merge(m, src)
+func (m *MsgEmergencySuspendAssetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgEmergencySuspendAssetResponse.Merge(m, src)
 }
-func (m *MsgBeginRelistingResponse) XXX_Size() int {
+func (m *MsgEmergencySuspendAssetResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *MsgBeginRelistingResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgBeginRelistingResponse.DiscardUnknown(m)
+func (m *MsgEmergencySuspendAssetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgEmergencySuspendAssetResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MsgBeginRelistingResponse proto.InternalMessageInfo
-
-// MsgWriteOffAsset derecognizes outstanding DELISTED or SETTLING supply without
-// burning, transferring, or repricing holder balances.
-type MsgWriteOffAsset struct {
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (m *MsgWriteOffAsset) Reset()         { *m = MsgWriteOffAsset{} }
-func (m *MsgWriteOffAsset) String() string { return proto.CompactTextString(m) }
-func (*MsgWriteOffAsset) ProtoMessage()    {}
-func (*MsgWriteOffAsset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{24}
-}
-func (m *MsgWriteOffAsset) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgWriteOffAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgWriteOffAsset.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgWriteOffAsset) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgWriteOffAsset.Merge(m, src)
-}
-func (m *MsgWriteOffAsset) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgWriteOffAsset) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgWriteOffAsset.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgWriteOffAsset proto.InternalMessageInfo
-
-func (m *MsgWriteOffAsset) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgWriteOffAsset) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *MsgWriteOffAsset) GetExpectedVersion() uint64 {
-	if m != nil {
-		return m.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgWriteOffAssetResponse is the response type for MsgWriteOffAsset.
-type MsgWriteOffAssetResponse struct {
-}
-
-func (m *MsgWriteOffAssetResponse) Reset()         { *m = MsgWriteOffAssetResponse{} }
-func (m *MsgWriteOffAssetResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgWriteOffAssetResponse) ProtoMessage()    {}
-func (*MsgWriteOffAssetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_90101fc4dd7fa818, []int{25}
-}
-func (m *MsgWriteOffAssetResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgWriteOffAssetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgWriteOffAssetResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgWriteOffAssetResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgWriteOffAssetResponse.Merge(m, src)
-}
-func (m *MsgWriteOffAssetResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgWriteOffAssetResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgWriteOffAssetResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgWriteOffAssetResponse proto.InternalMessageInfo
+var xxx_messageInfo_MsgEmergencySuspendAssetResponse proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*MsgUpdateParams)(nil), "ark.asset.v1.MsgUpdateParams")
+	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "ark.asset.v1.MsgUpdateParamsResponse")
 	proto.RegisterType((*MsgRegisterAsset)(nil), "ark.asset.v1.MsgRegisterAsset")
 	proto.RegisterType((*MsgRegisterAssetResponse)(nil), "ark.asset.v1.MsgRegisterAssetResponse")
-	proto.RegisterType((*MsgSetOracleRequired)(nil), "ark.asset.v1.MsgSetOracleRequired")
-	proto.RegisterType((*MsgSetOracleRequiredResponse)(nil), "ark.asset.v1.MsgSetOracleRequiredResponse")
-	proto.RegisterType((*MsgActivateAsset)(nil), "ark.asset.v1.MsgActivateAsset")
-	proto.RegisterType((*MsgActivateAssetResponse)(nil), "ark.asset.v1.MsgActivateAssetResponse")
-	proto.RegisterType((*MsgCancelAssetRegistration)(nil), "ark.asset.v1.MsgCancelAssetRegistration")
-	proto.RegisterType((*MsgCancelAssetRegistrationResponse)(nil), "ark.asset.v1.MsgCancelAssetRegistrationResponse")
-	proto.RegisterType((*MsgBeginRetirement)(nil), "ark.asset.v1.MsgBeginRetirement")
-	proto.RegisterType((*MsgBeginRetirementResponse)(nil), "ark.asset.v1.MsgBeginRetirementResponse")
-	proto.RegisterType((*MsgCancelRetirement)(nil), "ark.asset.v1.MsgCancelRetirement")
-	proto.RegisterType((*MsgCancelRetirementResponse)(nil), "ark.asset.v1.MsgCancelRetirementResponse")
-	proto.RegisterType((*MsgFinalizeRetirement)(nil), "ark.asset.v1.MsgFinalizeRetirement")
-	proto.RegisterType((*MsgFinalizeRetirementResponse)(nil), "ark.asset.v1.MsgFinalizeRetirementResponse")
-	proto.RegisterType((*MsgReactivateAsset)(nil), "ark.asset.v1.MsgReactivateAsset")
-	proto.RegisterType((*MsgReactivateAssetResponse)(nil), "ark.asset.v1.MsgReactivateAssetResponse")
-	proto.RegisterType((*MsgBeginDelisting)(nil), "ark.asset.v1.MsgBeginDelisting")
-	proto.RegisterType((*MsgBeginDelistingResponse)(nil), "ark.asset.v1.MsgBeginDelistingResponse")
+	proto.RegisterType((*MsgHaltIssuance)(nil), "ark.asset.v1.MsgHaltIssuance")
+	proto.RegisterType((*MsgHaltIssuanceResponse)(nil), "ark.asset.v1.MsgHaltIssuanceResponse")
+	proto.RegisterType((*MsgResumeIssuance)(nil), "ark.asset.v1.MsgResumeIssuance")
+	proto.RegisterType((*MsgResumeIssuanceResponse)(nil), "ark.asset.v1.MsgResumeIssuanceResponse")
+	proto.RegisterType((*MsgSuspendAsset)(nil), "ark.asset.v1.MsgSuspendAsset")
+	proto.RegisterType((*MsgSuspendAssetResponse)(nil), "ark.asset.v1.MsgSuspendAssetResponse")
 	proto.RegisterType((*MsgOpenSettlement)(nil), "ark.asset.v1.MsgOpenSettlement")
 	proto.RegisterType((*MsgOpenSettlementResponse)(nil), "ark.asset.v1.MsgOpenSettlementResponse")
 	proto.RegisterType((*MsgCancelSettlement)(nil), "ark.asset.v1.MsgCancelSettlement")
 	proto.RegisterType((*MsgCancelSettlementResponse)(nil), "ark.asset.v1.MsgCancelSettlementResponse")
-	proto.RegisterType((*MsgBeginRelisting)(nil), "ark.asset.v1.MsgBeginRelisting")
-	proto.RegisterType((*MsgBeginRelistingResponse)(nil), "ark.asset.v1.MsgBeginRelistingResponse")
+	proto.RegisterType((*MsgRecoverAsset)(nil), "ark.asset.v1.MsgRecoverAsset")
+	proto.RegisterType((*MsgRecoverAssetResponse)(nil), "ark.asset.v1.MsgRecoverAssetResponse")
 	proto.RegisterType((*MsgWriteOffAsset)(nil), "ark.asset.v1.MsgWriteOffAsset")
 	proto.RegisterType((*MsgWriteOffAssetResponse)(nil), "ark.asset.v1.MsgWriteOffAssetResponse")
+	proto.RegisterType((*MsgFinalizeRetirement)(nil), "ark.asset.v1.MsgFinalizeRetirement")
+	proto.RegisterType((*MsgFinalizeRetirementResponse)(nil), "ark.asset.v1.MsgFinalizeRetirementResponse")
+	proto.RegisterType((*MsgSetEmergencyMandate)(nil), "ark.asset.v1.MsgSetEmergencyMandate")
+	proto.RegisterType((*MsgSetEmergencyMandateResponse)(nil), "ark.asset.v1.MsgSetEmergencyMandateResponse")
+	proto.RegisterType((*MsgEmergencySuspendAsset)(nil), "ark.asset.v1.MsgEmergencySuspendAsset")
+	proto.RegisterType((*MsgEmergencySuspendAssetResponse)(nil), "ark.asset.v1.MsgEmergencySuspendAssetResponse")
 }
 
 func init() { proto.RegisterFile("ark/asset/v1/tx.proto", fileDescriptor_90101fc4dd7fa818) }
 
 var fileDescriptor_90101fc4dd7fa818 = []byte{
-	// 1066 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x58, 0xcf, 0x6f, 0xe3, 0x44,
-	0x14, 0x8e, 0xfb, 0x03, 0x6d, 0x07, 0xba, 0x6d, 0x4c, 0xab, 0x66, 0xdd, 0xd6, 0xc9, 0x1a, 0xb4,
-	0x64, 0xbb, 0x5a, 0xa7, 0xe9, 0xa2, 0x95, 0x58, 0x89, 0x43, 0xb3, 0x15, 0xe2, 0x40, 0x54, 0xc9,
-	0x95, 0x40, 0x45, 0x48, 0xd1, 0xd4, 0x79, 0xeb, 0x8c, 0x1a, 0xdb, 0xc1, 0x33, 0x1b, 0x5a, 0x4e,
-	0x08, 0x71, 0x82, 0x0b, 0x7f, 0x06, 0xc7, 0x1e, 0xf6, 0x3f, 0x40, 0x88, 0xe5, 0x80, 0xb4, 0xda,
-	0x0b, 0x68, 0x0f, 0x2b, 0xd4, 0x1e, 0x7a, 0xe6, 0xcc, 0x05, 0xd9, 0x9e, 0x38, 0xb6, 0x67, 0xb2,
-	0x09, 0x70, 0x68, 0xb8, 0x54, 0xf5, 0x7b, 0x9f, 0xdf, 0xbc, 0xef, 0x9b, 0x37, 0xcf, 0x6f, 0x82,
-	0x56, 0x71, 0x70, 0x5c, 0xc3, 0x94, 0x02, 0xab, 0xf5, 0xeb, 0x35, 0x76, 0x62, 0xf6, 0x02, 0x9f,
-	0xf9, 0xea, 0x1b, 0x38, 0x38, 0x36, 0x23, 0xb3, 0xd9, 0xaf, 0x6b, 0x45, 0xec, 0x12, 0xcf, 0xaf,
-	0x45, 0x7f, 0x63, 0x80, 0xa6, 0xdb, 0x3e, 0x75, 0x7d, 0x5a, 0x3b, 0xc2, 0xde, 0x71, 0xad, 0x5f,
-	0x3f, 0x02, 0x86, 0xeb, 0xd1, 0x03, 0xf7, 0xaf, 0x71, 0xbf, 0x4b, 0x9d, 0x30, 0xb0, 0x4b, 0x1d,
-	0xee, 0xb8, 0x11, 0x3b, 0x5a, 0xd1, 0x53, 0x2d, 0x7e, 0xe0, 0xae, 0x15, 0xc7, 0x77, 0xfc, 0xd8,
-	0x1e, 0xfe, 0x17, 0x5b, 0x8d, 0x3f, 0x15, 0xb4, 0xdc, 0xa4, 0x8e, 0x05, 0x0e, 0xa1, 0x0c, 0x82,
-	0xdd, 0x30, 0x29, 0xf5, 0x3e, 0x5a, 0xc0, 0x8f, 0x59, 0xc7, 0x0f, 0x08, 0x3b, 0x2d, 0x29, 0x15,
-	0xa5, 0xba, 0xd0, 0x28, 0x3d, 0x7f, 0x72, 0x77, 0x85, 0xc7, 0xdb, 0x6d, 0xb7, 0x03, 0xa0, 0xf4,
-	0x80, 0x05, 0xc4, 0x73, 0xac, 0x21, 0x54, 0xdd, 0x43, 0xd7, 0x5c, 0x60, 0xb8, 0x8d, 0x19, 0x2e,
-	0xcd, 0x54, 0x94, 0xea, 0xeb, 0x3b, 0x9b, 0x26, 0x7f, 0x27, 0x4a, 0x9e, 0x33, 0x31, 0x9b, 0x1c,
-	0xd4, 0x58, 0x78, 0xfa, 0xb2, 0x5c, 0xf8, 0xe1, 0xf2, 0x6c, 0x4b, 0xb1, 0x92, 0x37, 0x55, 0x13,
-	0x2d, 0xf9, 0x01, 0xb6, 0xbb, 0xd0, 0x0a, 0xe0, 0xf3, 0xc7, 0x24, 0x80, 0x76, 0x69, 0xb6, 0xa2,
-	0x54, 0xaf, 0x35, 0xe6, 0x63, 0xe4, 0xf5, 0xd8, 0x6b, 0x71, 0xe7, 0x83, 0xda, 0xd7, 0x97, 0x67,
-	0x5b, 0xc3, 0x2c, 0xbe, 0xbd, 0x3c, 0xdb, 0xda, 0x08, 0x75, 0x3f, 0xe1, 0xca, 0xe7, 0xe9, 0x19,
-	0x1a, 0x2a, 0xe5, 0x6d, 0x16, 0xd0, 0x9e, 0xef, 0x51, 0x30, 0xfe, 0x52, 0xd0, 0x4a, 0x93, 0x3a,
-	0x07, 0xc0, 0xf6, 0x33, 0xab, 0xfc, 0x6b, 0x4d, 0x56, 0xd0, 0x7c, 0x1b, 0x3c, 0xdf, 0x8d, 0x04,
-	0x59, 0xb0, 0xe2, 0x87, 0x7f, 0xca, 0x51, 0xdd, 0x46, 0xcb, 0x70, 0xd2, 0x03, 0x9b, 0x41, 0xbb,
-	0xd5, 0x87, 0x80, 0x12, 0xdf, 0x2b, 0xcd, 0x55, 0x94, 0xea, 0xdc, 0xe0, 0x85, 0xa5, 0x81, 0xfb,
-	0xe3, 0xd8, 0xfb, 0xe0, 0x9e, 0xa8, 0x4a, 0x25, 0xa7, 0x8a, 0x40, 0xd2, 0xd0, 0xd1, 0x86, 0xcc,
-	0x9e, 0xa8, 0xf3, 0x63, 0x5c, 0x2d, 0xbb, 0x36, 0x23, 0x7d, 0xcc, 0xe0, 0xbf, 0x55, 0x8b, 0x5c,
-	0x19, 0x19, 0xd3, 0xd9, 0x57, 0x32, 0x9d, 0x60, 0xff, 0x33, 0x09, 0xf3, 0xfd, 0xcf, 0xd8, 0x12,
-	0x86, 0xbf, 0x29, 0x48, 0x6b, 0x52, 0xe7, 0x21, 0xf6, 0x6c, 0xe8, 0x72, 0x57, 0x58, 0x27, 0x01,
-	0x66, 0xc4, 0xf7, 0xae, 0x9c, 0xeb, 0x7b, 0x22, 0xd7, 0x5b, 0x39, 0xae, 0x23, 0x52, 0x37, 0xde,
-	0x46, 0xc6, 0x68, 0x6f, 0xc2, 0xff, 0x67, 0x05, 0xa9, 0x4d, 0xea, 0x34, 0xc0, 0x21, 0x9e, 0x05,
-	0x8c, 0x04, 0xe0, 0x82, 0x77, 0xf5, 0x7b, 0x5c, 0x17, 0x79, 0xeb, 0x39, 0xde, 0xb9, 0x94, 0x8d,
-	0x8d, 0x68, 0x23, 0x73, 0xd6, 0x84, 0xe7, 0x2f, 0x0a, 0x7a, 0x33, 0x91, 0x63, 0x8a, 0x88, 0xee,
-	0x88, 0x44, 0xcb, 0xd2, 0x0d, 0x4e, 0x31, 0xdd, 0x44, 0xeb, 0x12, 0x73, 0x42, 0xf5, 0x57, 0x05,
-	0xad, 0x36, 0xa9, 0xf3, 0x01, 0xf1, 0x70, 0x97, 0x7c, 0x09, 0x53, 0x44, 0xf6, 0x5d, 0x91, 0xec,
-	0xcd, 0x1c, 0x59, 0x31, 0x6b, 0xa3, 0x8c, 0x36, 0xa5, 0x8e, 0x7c, 0x0d, 0x5b, 0x80, 0xa7, 0xaa,
-	0x4f, 0x4d, 0x50, 0xc3, 0xb9, 0x94, 0x79, 0x0d, 0xe7, 0xac, 0x09, 0xcf, 0x9f, 0x14, 0x54, 0x1c,
-	0x94, 0xf8, 0x1e, 0x74, 0x09, 0x65, 0xc4, 0x73, 0xae, 0x9c, 0xe6, 0xb6, 0x48, 0x73, 0x53, 0x76,
-	0x54, 0x93, 0x8c, 0x8d, 0x75, 0x74, 0x43, 0x30, 0x26, 0x24, 0x5f, 0xcc, 0x44, 0x24, 0xf7, 0x7b,
-	0xe0, 0x1d, 0x00, 0x63, 0xdd, 0xa9, 0xa8, 0x5c, 0xb5, 0x85, 0x96, 0x02, 0x68, 0x83, 0xdb, 0x0b,
-	0x9b, 0x67, 0x2b, 0xc0, 0x0c, 0xa2, 0xcf, 0xf1, 0x42, 0xe3, 0x7e, 0x38, 0xd1, 0xbc, 0x78, 0x59,
-	0x5e, 0x8f, 0x33, 0xa1, 0xed, 0x63, 0x93, 0xf8, 0x35, 0x17, 0xb3, 0x8e, 0xf9, 0x11, 0x38, 0xd8,
-	0x3e, 0xdd, 0x03, 0xfb, 0xf9, 0x93, 0xbb, 0x88, 0x27, 0xba, 0x07, 0x36, 0xff, 0xe0, 0x0f, 0xc3,
-	0x59, 0x98, 0x81, 0xba, 0x83, 0x8a, 0x7c, 0xd3, 0xc3, 0x05, 0x3a, 0x40, 0x9c, 0x0e, 0x2b, 0xcd,
-	0x57, 0x94, 0xea, 0xec, 0x20, 0xa7, 0xe5, 0xa1, 0xff, 0xc3, 0xc8, 0x3d, 0x89, 0xf2, 0x59, 0x19,
-	0xb9, 0xf2, 0x59, 0xa3, 0xbc, 0x45, 0x4e, 0x8f, 0xf6, 0x93, 0xb7, 0xc8, 0x14, 0xd1, 0x74, 0x8b,
-	0x94, 0x50, 0xfd, 0x66, 0x66, 0x78, 0x92, 0xac, 0x69, 0x39, 0x49, 0xea, 0xfb, 0x68, 0x0d, 0x70,
-	0xd0, 0x25, 0x40, 0x59, 0xcb, 0xee, 0xfa, 0x94, 0x78, 0xce, 0xa0, 0x12, 0xe6, 0xd2, 0x95, 0xb0,
-	0x3a, 0x40, 0x3d, 0x8c, 0x41, 0x93, 0x97, 0x43, 0x96, 0x70, 0xfa, 0x20, 0x5a, 0xc2, 0x41, 0xe4,
-	0xb3, 0xdf, 0x27, 0x01, 0x61, 0xb0, 0xff, 0xe8, 0xd1, 0xff, 0x66, 0xf6, 0xcb, 0x24, 0xcc, 0x67,
-	0xbf, 0x8c, 0x6d, 0xc0, 0x70, 0xe7, 0x3b, 0x84, 0x66, 0x9b, 0xd4, 0x51, 0x0f, 0xd1, 0x62, 0xf6,
-	0x3e, 0xa4, 0x9b, 0xe9, 0x0b, 0x9b, 0x99, 0xbf, 0x3c, 0x68, 0xb7, 0x5e, 0xed, 0x4f, 0x24, 0x2c,
-	0xa8, 0x80, 0x8a, 0xe2, 0xd5, 0xc2, 0x10, 0x5e, 0x17, 0x30, 0xda, 0xd6, 0x78, 0x4c, 0x6a, 0x99,
-	0x43, 0xb4, 0x98, 0x9d, 0xd1, 0x45, 0x06, 0x19, 0xbf, 0x84, 0x81, 0x7c, 0x3c, 0x2e, 0xa8, 0x5f,
-	0xa0, 0xb5, 0x51, 0xc3, 0x71, 0x55, 0x08, 0x32, 0x02, 0xa9, 0x6d, 0x4f, 0x8a, 0x4c, 0x2d, 0xdc,
-	0x42, 0x4b, 0xf9, 0xa9, 0xb4, 0x22, 0x84, 0xc9, 0x21, 0xb4, 0xea, 0x38, 0x44, 0x6a, 0x81, 0x23,
-	0xb4, 0x2c, 0x8c, 0x83, 0x37, 0x47, 0x24, 0x9a, 0x5a, 0xe2, 0xf6, 0x58, 0x48, 0x6a, 0x8d, 0x0e,
-	0x52, 0x25, 0x73, 0xd8, 0x5b, 0x42, 0x08, 0x11, 0xa4, 0xdd, 0x99, 0x00, 0x94, 0x95, 0x2b, 0x3f,
-	0x00, 0x55, 0x24, 0x65, 0x9a, 0x41, 0x48, 0xe4, 0x1a, 0x35, 0x7b, 0x14, 0xd4, 0xcf, 0xd0, 0xf5,
-	0xdc, 0xe4, 0x51, 0x96, 0x8b, 0x9d, 0x00, 0xb4, 0x77, 0xc6, 0x00, 0xb2, 0xd1, 0x73, 0x9f, 0x7c,
-	0x31, 0x7a, 0x16, 0x20, 0x89, 0x3e, 0xe2, 0xc3, 0x96, 0xda, 0xea, 0x54, 0xfc, 0x51, 0x5b, 0x9d,
-	0x5a, 0xe1, 0xf6, 0x58, 0x88, 0x44, 0x1f, 0x6b, 0x9c, 0x3e, 0xd6, 0x38, 0x7d, 0x2c, 0x89, 0x3e,
-	0x87, 0x68, 0x31, 0xdb, 0x89, 0xc5, 0x13, 0x9e, 0xf1, 0x4b, 0x4e, 0xb8, 0xb4, 0x09, 0x1a, 0x05,
-	0x6d, 0xfe, 0xab, 0xb0, 0xd7, 0x36, 0xee, 0x3c, 0x3d, 0xd7, 0x95, 0x67, 0xe7, 0xba, 0xf2, 0xc7,
-	0xb9, 0xae, 0x7c, 0x7f, 0xa1, 0x17, 0x9e, 0x5d, 0xe8, 0x85, 0xdf, 0x2f, 0xf4, 0xc2, 0xa7, 0xc5,
-	0x74, 0x87, 0x65, 0xa7, 0x3d, 0xa0, 0x47, 0xaf, 0x45, 0xbf, 0x26, 0xdd, 0xfb, 0x3b, 0x00, 0x00,
-	0xff, 0xff, 0x36, 0x92, 0x7e, 0xdd, 0xf1, 0x12, 0x00, 0x00,
+	// 1111 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x58, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xf6, 0xe6, 0x47, 0x25, 0x0f, 0x6e, 0x13, 0x6f, 0x62, 0xe2, 0x6c, 0xf0, 0x8f, 0x2e, 0x05,
+	0x42, 0x4a, 0xed, 0x34, 0x40, 0x2a, 0x59, 0xe2, 0xd0, 0xb4, 0xa0, 0x46, 0xc2, 0x2a, 0x72, 0x20,
+	0x08, 0x84, 0x64, 0xa6, 0xeb, 0xd7, 0xf5, 0x2a, 0xde, 0x1f, 0xec, 0x8c, 0x2d, 0x9b, 0x13, 0xe2,
+	0x88, 0x38, 0xc0, 0x5f, 0xc0, 0x95, 0x1b, 0x11, 0xea, 0x3f, 0x80, 0x10, 0x52, 0x39, 0x20, 0x55,
+	0x3d, 0x21, 0x0e, 0x15, 0x4a, 0x84, 0xf2, 0x6f, 0xa0, 0xdd, 0x59, 0xaf, 0x77, 0x76, 0xa6, 0xa9,
+	0x55, 0x11, 0x91, 0x4b, 0x94, 0x7d, 0xdf, 0x37, 0xb3, 0xdf, 0xf7, 0xe6, 0xed, 0x9b, 0x27, 0xa3,
+	0x02, 0xf6, 0x0f, 0xea, 0x98, 0x10, 0xa0, 0xf5, 0xc1, 0xf5, 0x3a, 0x1d, 0xd6, 0x3c, 0xdf, 0xa5,
+	0xae, 0x9a, 0xc3, 0xfe, 0x41, 0x2d, 0x0c, 0xd7, 0x06, 0xd7, 0xb5, 0x3c, 0xb6, 0x2d, 0xc7, 0xad,
+	0x87, 0x7f, 0x19, 0x41, 0x2b, 0x72, 0xeb, 0x18, 0x93, 0x21, 0x2b, 0x86, 0x4b, 0x6c, 0x97, 0xd4,
+	0x6d, 0x62, 0x06, 0x90, 0x4d, 0xcc, 0x08, 0x58, 0x65, 0x40, 0x3b, 0x7c, 0xaa, 0xb3, 0x87, 0x08,
+	0x5a, 0x36, 0x5d, 0xd3, 0x65, 0xf1, 0xe0, 0x3f, 0x16, 0xd5, 0x7f, 0x56, 0xd0, 0x42, 0x93, 0x98,
+	0x1f, 0x79, 0x1d, 0x4c, 0xe1, 0x03, 0xec, 0x63, 0x9b, 0xa8, 0xdb, 0x28, 0x8b, 0xfb, 0xb4, 0xeb,
+	0xfa, 0x16, 0x1d, 0x15, 0x95, 0xaa, 0xb2, 0x9e, 0xdd, 0x29, 0x3e, 0x7e, 0x70, 0x6d, 0x39, 0xda,
+	0xee, 0x66, 0xa7, 0xe3, 0x03, 0x21, 0x7b, 0xd4, 0xb7, 0x1c, 0xb3, 0x35, 0xa1, 0xaa, 0x37, 0xd0,
+	0x05, 0x2f, 0xdc, 0xa1, 0x38, 0x53, 0x55, 0xd6, 0x5f, 0xd8, 0x5a, 0xae, 0x25, 0x1d, 0xd6, 0xd8,
+	0xee, 0x3b, 0xd9, 0x87, 0x4f, 0x2a, 0x99, 0x1f, 0x4f, 0x0e, 0x37, 0x94, 0x56, 0x44, 0x6f, 0xd4,
+	0xbe, 0x3e, 0x39, 0xdc, 0x98, 0x6c, 0xf4, 0xcd, 0xc9, 0xe1, 0xc6, 0x5a, 0xe0, 0x7d, 0x18, 0xb9,
+	0x4f, 0x09, 0xd4, 0x57, 0xd1, 0x4a, 0x2a, 0xd4, 0x02, 0xe2, 0xb9, 0x0e, 0x01, 0xfd, 0x7b, 0x05,
+	0x2d, 0x36, 0x89, 0xd9, 0x02, 0xd3, 0x22, 0x14, 0xfc, 0x9b, 0xc1, 0xfa, 0xe7, 0x36, 0xb4, 0x8c,
+	0xe6, 0x3b, 0xe0, 0xb8, 0x76, 0xe8, 0x27, 0xdb, 0x62, 0x0f, 0x8d, 0xba, 0xa8, 0xf6, 0xa5, 0x94,
+	0x5a, 0xee, 0xf5, 0xba, 0x86, 0x8a, 0xe9, 0x58, 0xac, 0xf7, 0x17, 0x96, 0xff, 0x3b, 0xb8, 0x47,
+	0x77, 0x09, 0xe9, 0x63, 0xc7, 0x80, 0xff, 0x56, 0xae, 0xba, 0x89, 0x16, 0x61, 0xe8, 0x81, 0x41,
+	0xa1, 0xd3, 0x1e, 0x80, 0x4f, 0x2c, 0xd7, 0x29, 0xce, 0x56, 0x95, 0xf5, 0xb9, 0x9d, 0x79, 0x76,
+	0x0a, 0x0b, 0x63, 0x78, 0x9f, 0xa1, 0xd3, 0x1c, 0x47, 0x52, 0x6f, 0x74, 0x1c, 0xc9, 0x50, 0x6c,
+	0xef, 0x37, 0x05, 0xe5, 0x43, 0xef, 0xa4, 0x6f, 0xc3, 0xb9, 0x31, 0xb8, 0x29, 0x1a, 0x2c, 0x09,
+	0x27, 0x98, 0x54, 0xac, 0xaf, 0xa1, 0x55, 0x21, 0x98, 0x3e, 0xc3, 0xbd, 0x3e, 0xf1, 0xc0, 0xe9,
+	0x9c, 0x41, 0xc9, 0x9d, 0xcd, 0x19, 0x26, 0xf5, 0x46, 0x67, 0x98, 0x0c, 0xc5, 0xf6, 0xfe, 0x99,
+	0x09, 0xcf, 0xf0, 0xae, 0x07, 0xce, 0x1e, 0x50, 0xda, 0x03, 0x1b, 0x9c, 0xff, 0xdd, 0xa0, 0xda,
+	0x46, 0x0b, 0x3e, 0x74, 0xc0, 0xf6, 0xa8, 0xe5, 0x3a, 0x6d, 0x1f, 0x53, 0x28, 0xce, 0x85, 0x2a,
+	0xb6, 0x83, 0xfe, 0xf2, 0xd7, 0x93, 0xca, 0x1a, 0x53, 0x42, 0x3a, 0x07, 0x35, 0xcb, 0xad, 0xdb,
+	0x98, 0x76, 0x6b, 0xef, 0x83, 0x89, 0x8d, 0xd1, 0x6d, 0x30, 0x1e, 0x3f, 0xb8, 0x86, 0x22, 0xa1,
+	0xb7, 0xc1, 0x60, 0x6f, 0xb8, 0x34, 0xd9, 0xae, 0x85, 0x29, 0xa8, 0xef, 0xa0, 0x15, 0xc0, 0x7e,
+	0xcf, 0x02, 0x42, 0xdb, 0x46, 0xcf, 0x25, 0x96, 0x63, 0xb6, 0xbb, 0x60, 0x99, 0x5d, 0x5a, 0x9c,
+	0xaf, 0x2a, 0xeb, 0xb3, 0x63, 0x65, 0x85, 0x31, 0xeb, 0x16, 0x23, 0xdd, 0x09, 0x39, 0xd3, 0xd4,
+	0x18, 0x9f, 0xd1, 0xa8, 0xc6, 0xf8, 0x60, 0x7c, 0x08, 0xbf, 0x2b, 0x68, 0xa9, 0x49, 0xcc, 0x5b,
+	0x41, 0xe1, 0xf5, 0xce, 0xcf, 0x31, 0x34, 0xb6, 0x44, 0x9b, 0x95, 0x94, 0xcd, 0xb4, 0x66, 0xbd,
+	0x84, 0xd6, 0x24, 0xe1, 0xf4, 0xe7, 0xd4, 0x02, 0xc3, 0x1d, 0x9c, 0x49, 0x07, 0x3f, 0x9b, 0xcf,
+	0x29, 0xa9, 0x37, 0xfa, 0x9c, 0x92, 0xa1, 0xd8, 0xde, 0xaf, 0xec, 0x86, 0xfa, 0xd8, 0xb7, 0x28,
+	0xdc, 0xbd, 0x7f, 0xff, 0x7c, 0xf8, 0x9b, 0xe2, 0x4e, 0xe3, 0x04, 0x47, 0x77, 0x1a, 0x17, 0x8b,
+	0x1d, 0xfe, 0x34, 0x83, 0x0a, 0x4d, 0x62, 0xbe, 0x67, 0x39, 0xb8, 0x67, 0x7d, 0x09, 0x2d, 0xa0,
+	0x96, 0x7f, 0x3e, 0x9a, 0xc6, 0xe7, 0x68, 0xc9, 0xc6, 0xc3, 0xb6, 0x0f, 0xc4, 0xea, 0xf4, 0x71,
+	0xaf, 0x4d, 0xfa, 0x9e, 0xd7, 0x1b, 0x45, 0x8d, 0x63, 0x33, 0x6a, 0x1c, 0x05, 0xb1, 0x71, 0xec,
+	0x3a, 0x34, 0xd1, 0x32, 0x76, 0x1d, 0xca, 0xf6, 0xcf, 0xdb, 0x78, 0xd8, 0x8a, 0xf6, 0xda, 0x0b,
+	0xb7, 0x6a, 0xbc, 0x25, 0x26, 0xf2, 0x72, 0x2a, 0x91, 0x62, 0x5e, 0xf4, 0x0a, 0x2a, 0x49, 0x81,
+	0x38, 0xa5, 0x3f, 0xcc, 0xa0, 0x17, 0x83, 0xfe, 0x0c, 0xf4, 0x5d, 0x1b, 0x7c, 0x13, 0x1c, 0x63,
+	0xd4, 0xc4, 0x4e, 0x30, 0xff, 0x3c, 0x77, 0x4e, 0xb7, 0x51, 0xd6, 0x70, 0x6d, 0xdb, 0xa2, 0x14,
+	0x80, 0xe5, 0xf5, 0xb4, 0x75, 0x31, 0x55, 0xdd, 0x42, 0x79, 0x6c, 0x50, 0x6b, 0x80, 0xc3, 0xc6,
+	0x1b, 0x75, 0x44, 0x2e, 0xed, 0x8b, 0x13, 0x9c, 0x35, 0x43, 0x75, 0x03, 0x5d, 0x84, 0xa1, 0x67,
+	0xf9, 0xa3, 0x31, 0x7f, 0x2e, 0xc9, 0xcf, 0x31, 0x2c, 0x6a, 0x9c, 0x6f, 0x8b, 0x19, 0xd4, 0xd3,
+	0x37, 0x97, 0x98, 0x06, 0xbd, 0x8a, 0xca, 0x72, 0x24, 0xce, 0xe1, 0x1f, 0x4a, 0x58, 0xb3, 0x31,
+	0x9e, 0xbe, 0xaf, 0x27, 0xd9, 0x50, 0xa6, 0xcf, 0x86, 0xbc, 0x32, 0x99, 0x5f, 0x56, 0x99, 0x14,
+	0x7c, 0x9b, 0xcf, 0x4f, 0x6e, 0x8c, 0x7d, 0x08, 0xbe, 0xdd, 0xb8, 0x11, 0xfa, 0x8d, 0x77, 0x0c,
+	0xfc, 0x5e, 0x49, 0xf9, 0x95, 0x4a, 0xd6, 0x75, 0x54, 0x7d, 0x1a, 0x36, 0xf6, 0xbc, 0xf5, 0x6d,
+	0x16, 0xcd, 0x36, 0x89, 0xa9, 0xee, 0xa3, 0x1c, 0x37, 0xe2, 0x97, 0xf8, 0xd1, 0x3c, 0x35, 0x4d,
+	0x6b, 0xaf, 0x9c, 0x0a, 0xc7, 0x19, 0xcd, 0xa8, 0x9f, 0xa0, 0x8b, 0xfc, 0xa8, 0x5d, 0x16, 0x56,
+	0x72, 0xb8, 0xf6, 0xea, 0xe9, 0x78, 0x62, 0xeb, 0x7d, 0x94, 0xe3, 0xa6, 0x62, 0x51, 0x72, 0x12,
+	0x96, 0x48, 0x96, 0x0e, 0xa4, 0x19, 0xf5, 0x33, 0x74, 0x29, 0x35, 0x8e, 0x56, 0x24, 0x9a, 0x92,
+	0x04, 0xed, 0xb5, 0x67, 0x10, 0x78, 0xd5, 0x5c, 0x5d, 0x89, 0xaa, 0x93, 0xb0, 0x44, 0xb5, 0x74,
+	0x04, 0x0b, 0x55, 0xa7, 0x06, 0x30, 0x51, 0x35, 0x4f, 0x90, 0xa8, 0x7e, 0xca, 0x6c, 0x91, 0x51,
+	0xef, 0xa1, 0x45, 0x61, 0xb2, 0xb8, 0x2c, 0x2c, 0x4f, 0x53, 0xb4, 0xd7, 0x9f, 0x49, 0xe1, 0x33,
+	0xc3, 0x5d, 0xe9, 0x25, 0x49, 0x52, 0x27, 0xb0, 0x24, 0x33, 0xd2, 0xdb, 0x34, 0x2c, 0x41, 0xfe,
+	0x2e, 0x15, 0x4b, 0x90, 0xc3, 0x25, 0x25, 0x28, 0xbf, 0xc6, 0x32, 0x6a, 0x17, 0xa9, 0x92, 0x4b,
+	0xec, 0x65, 0x61, 0xbd, 0x48, 0xd2, 0xae, 0x4e, 0x41, 0x4a, 0xbc, 0xe9, 0x00, 0x2d, 0xc9, 0x7a,
+	0xfb, 0x15, 0xb1, 0x3c, 0x44, 0x96, 0xf6, 0xc6, 0x34, 0xac, 0xc4, 0xcb, 0xbe, 0x40, 0x05, 0x79,
+	0x13, 0x14, 0x33, 0x23, 0xe5, 0x69, 0xb5, 0xe9, 0x78, 0x93, 0x57, 0x6a, 0xf3, 0x5f, 0x05, 0x9d,
+	0x6f, 0xe7, 0xea, 0xc3, 0xa3, 0xb2, 0xf2, 0xe8, 0xa8, 0xac, 0xfc, 0x7d, 0x54, 0x56, 0xbe, 0x3b,
+	0x2e, 0x67, 0x1e, 0x1d, 0x97, 0x33, 0x7f, 0x1e, 0x97, 0x33, 0x9f, 0xe6, 0x93, 0x2d, 0x8f, 0x8e,
+	0x3c, 0x20, 0xf7, 0x2e, 0x84, 0xbf, 0x50, 0xbc, 0xf9, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x59,
+	0x41, 0xa8, 0xeb, 0x3f, 0x11, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1459,34 +1376,46 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
+	// UpdateParams updates the governance-owned asset module parameters.
+	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opts ...grpc.CallOption) (*MsgRegisterAssetResponse, error)
-	// SetOracleRequired changes whether an asset requires Oracle target
-	// participation during normal listed operation.
-	SetOracleRequired(ctx context.Context, in *MsgSetOracleRequired, opts ...grpc.CallOption) (*MsgSetOracleRequiredResponse, error)
-	// ActivateAsset enables normal policy use for a pending asset.
-	ActivateAsset(ctx context.Context, in *MsgActivateAsset, opts ...grpc.CallOption) (*MsgActivateAssetResponse, error)
-	// CancelAssetRegistration retires an unscheduled pending registration.
-	CancelAssetRegistration(ctx context.Context, in *MsgCancelAssetRegistration, opts ...grpc.CallOption) (*MsgCancelAssetRegistrationResponse, error)
-	// BeginRetirement stops new issuance for an active asset.
-	BeginRetirement(ctx context.Context, in *MsgBeginRetirement, opts ...grpc.CallOption) (*MsgBeginRetirementResponse, error)
-	// CancelRetirement returns a retiring asset to active status.
-	CancelRetirement(ctx context.Context, in *MsgCancelRetirement, opts ...grpc.CallOption) (*MsgCancelRetirementResponse, error)
-	// FinalizeRetirement retires a zero-supply, unlocked asset.
-	FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error)
-	// ReactivateAsset starts a new pending lifecycle from a retired tombstone.
-	ReactivateAsset(ctx context.Context, in *MsgReactivateAsset, opts ...grpc.CallOption) (*MsgReactivateAssetResponse, error)
-	// BeginDelisting stops unsafe economic operations and starts Oracle target
-	// removal.
-	BeginDelisting(ctx context.Context, in *MsgBeginDelisting, opts ...grpc.CallOption) (*MsgBeginDelistingResponse, error)
+	// The AmendRegistration RPC was removed with the mutable metadata it
+	// amended, and the ActivateAsset RPC with the pending status it ended;
+	// both names stay burned.
+	// HaltIssuance stops new issuance for an active asset.
+	HaltIssuance(ctx context.Context, in *MsgHaltIssuance, opts ...grpc.CallOption) (*MsgHaltIssuanceResponse, error)
+	// ResumeIssuance returns an issuance-halted asset to active status.
+	ResumeIssuance(ctx context.Context, in *MsgResumeIssuance, opts ...grpc.CallOption) (*MsgResumeIssuanceResponse, error)
+	// SuspendAsset stops unsafe ordinary economic operations. It is a pure
+	// status move: the asset's feed keeps running and keeps serving every reader
+	// that is not this asset's economics.
+	SuspendAsset(ctx context.Context, in *MsgSuspendAsset, opts ...grpc.CallOption) (*MsgSuspendAssetResponse, error)
 	// OpenSettlement establishes a one-way asset-to-NOAH redemption plan.
 	OpenSettlement(ctx context.Context, in *MsgOpenSettlement, opts ...grpc.CallOption) (*MsgOpenSettlementResponse, error)
-	// CancelSettlement cancels a settlement before its activation height.
+	// CancelSettlement cancels a settlement that has not yet activated.
 	CancelSettlement(ctx context.Context, in *MsgCancelSettlement, opts ...grpc.CallOption) (*MsgCancelSettlementResponse, error)
-	// BeginRelisting starts restoration of Oracle pricing and economic policy.
-	BeginRelisting(ctx context.Context, in *MsgBeginRelisting, opts ...grpc.CallOption) (*MsgBeginRelistingResponse, error)
+	// RecoverAsset restores a suspended or written-off asset to issuance-halted
+	// status, undoing SuspendAsset.
+	RecoverAsset(ctx context.Context, in *MsgRecoverAsset, opts ...grpc.CallOption) (*MsgRecoverAssetResponse, error)
 	// WriteOffAsset derecognizes outstanding supply without changing balances.
 	WriteOffAsset(ctx context.Context, in *MsgWriteOffAsset, opts ...grpc.CallOption) (*MsgWriteOffAssetResponse, error)
+	// FinalizeRetirement retires an asset within its approved residual bound.
+	// Retirement is terminal: there is no RPC back out of it.
+	FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error)
+	// The ReactivateAsset RPC was removed with the comeback it offered; the name
+	// stays burned. A retired tombstone is final, and the two reversible pairs
+	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
+	// SuspendAsset/RecoverAsset for distress — are what an asset that might
+	// return uses instead.
+	// SetEmergencyMandate replaces or disables the emergency committee mandate.
+	SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error)
+	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
+	// It is the committee's only power: halting issuance contains nothing, so it
+	// stays a governance act.
+	// Suspension is a pure status move: an asset sharing the reference
+	// denomination suspends freely while the feed keeps pricing.
+	EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error)
 }
 
 type msgClient struct {
@@ -1495,6 +1424,15 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 	return &msgClient{cc}
+}
+
+func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
+	out := new(MsgUpdateParamsResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/UpdateParams", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *msgClient) RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opts ...grpc.CallOption) (*MsgRegisterAssetResponse, error) {
@@ -1506,72 +1444,27 @@ func (c *msgClient) RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opt
 	return out, nil
 }
 
-func (c *msgClient) SetOracleRequired(ctx context.Context, in *MsgSetOracleRequired, opts ...grpc.CallOption) (*MsgSetOracleRequiredResponse, error) {
-	out := new(MsgSetOracleRequiredResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/SetOracleRequired", in, out, opts...)
+func (c *msgClient) HaltIssuance(ctx context.Context, in *MsgHaltIssuance, opts ...grpc.CallOption) (*MsgHaltIssuanceResponse, error) {
+	out := new(MsgHaltIssuanceResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/HaltIssuance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) ActivateAsset(ctx context.Context, in *MsgActivateAsset, opts ...grpc.CallOption) (*MsgActivateAssetResponse, error) {
-	out := new(MsgActivateAssetResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/ActivateAsset", in, out, opts...)
+func (c *msgClient) ResumeIssuance(ctx context.Context, in *MsgResumeIssuance, opts ...grpc.CallOption) (*MsgResumeIssuanceResponse, error) {
+	out := new(MsgResumeIssuanceResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/ResumeIssuance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) CancelAssetRegistration(ctx context.Context, in *MsgCancelAssetRegistration, opts ...grpc.CallOption) (*MsgCancelAssetRegistrationResponse, error) {
-	out := new(MsgCancelAssetRegistrationResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/CancelAssetRegistration", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) BeginRetirement(ctx context.Context, in *MsgBeginRetirement, opts ...grpc.CallOption) (*MsgBeginRetirementResponse, error) {
-	out := new(MsgBeginRetirementResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/BeginRetirement", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) CancelRetirement(ctx context.Context, in *MsgCancelRetirement, opts ...grpc.CallOption) (*MsgCancelRetirementResponse, error) {
-	out := new(MsgCancelRetirementResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/CancelRetirement", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error) {
-	out := new(MsgFinalizeRetirementResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/FinalizeRetirement", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) ReactivateAsset(ctx context.Context, in *MsgReactivateAsset, opts ...grpc.CallOption) (*MsgReactivateAssetResponse, error) {
-	out := new(MsgReactivateAssetResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/ReactivateAsset", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) BeginDelisting(ctx context.Context, in *MsgBeginDelisting, opts ...grpc.CallOption) (*MsgBeginDelistingResponse, error) {
-	out := new(MsgBeginDelistingResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/BeginDelisting", in, out, opts...)
+func (c *msgClient) SuspendAsset(ctx context.Context, in *MsgSuspendAsset, opts ...grpc.CallOption) (*MsgSuspendAssetResponse, error) {
+	out := new(MsgSuspendAssetResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/SuspendAsset", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1596,9 +1489,9 @@ func (c *msgClient) CancelSettlement(ctx context.Context, in *MsgCancelSettlemen
 	return out, nil
 }
 
-func (c *msgClient) BeginRelisting(ctx context.Context, in *MsgBeginRelisting, opts ...grpc.CallOption) (*MsgBeginRelistingResponse, error) {
-	out := new(MsgBeginRelistingResponse)
-	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/BeginRelisting", in, out, opts...)
+func (c *msgClient) RecoverAsset(ctx context.Context, in *MsgRecoverAsset, opts ...grpc.CallOption) (*MsgRecoverAssetResponse, error) {
+	out := new(MsgRecoverAssetResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/RecoverAsset", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1614,68 +1507,95 @@ func (c *msgClient) WriteOffAsset(ctx context.Context, in *MsgWriteOffAsset, opt
 	return out, nil
 }
 
+func (c *msgClient) FinalizeRetirement(ctx context.Context, in *MsgFinalizeRetirement, opts ...grpc.CallOption) (*MsgFinalizeRetirementResponse, error) {
+	out := new(MsgFinalizeRetirementResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/FinalizeRetirement", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error) {
+	out := new(MsgSetEmergencyMandateResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/SetEmergencyMandate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error) {
+	out := new(MsgEmergencySuspendAssetResponse)
+	err := c.cc.Invoke(ctx, "/ark.asset.v1.Msg/EmergencySuspendAsset", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
+	// UpdateParams updates the governance-owned asset module parameters.
+	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(context.Context, *MsgRegisterAsset) (*MsgRegisterAssetResponse, error)
-	// SetOracleRequired changes whether an asset requires Oracle target
-	// participation during normal listed operation.
-	SetOracleRequired(context.Context, *MsgSetOracleRequired) (*MsgSetOracleRequiredResponse, error)
-	// ActivateAsset enables normal policy use for a pending asset.
-	ActivateAsset(context.Context, *MsgActivateAsset) (*MsgActivateAssetResponse, error)
-	// CancelAssetRegistration retires an unscheduled pending registration.
-	CancelAssetRegistration(context.Context, *MsgCancelAssetRegistration) (*MsgCancelAssetRegistrationResponse, error)
-	// BeginRetirement stops new issuance for an active asset.
-	BeginRetirement(context.Context, *MsgBeginRetirement) (*MsgBeginRetirementResponse, error)
-	// CancelRetirement returns a retiring asset to active status.
-	CancelRetirement(context.Context, *MsgCancelRetirement) (*MsgCancelRetirementResponse, error)
-	// FinalizeRetirement retires a zero-supply, unlocked asset.
-	FinalizeRetirement(context.Context, *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error)
-	// ReactivateAsset starts a new pending lifecycle from a retired tombstone.
-	ReactivateAsset(context.Context, *MsgReactivateAsset) (*MsgReactivateAssetResponse, error)
-	// BeginDelisting stops unsafe economic operations and starts Oracle target
-	// removal.
-	BeginDelisting(context.Context, *MsgBeginDelisting) (*MsgBeginDelistingResponse, error)
+	// The AmendRegistration RPC was removed with the mutable metadata it
+	// amended, and the ActivateAsset RPC with the pending status it ended;
+	// both names stay burned.
+	// HaltIssuance stops new issuance for an active asset.
+	HaltIssuance(context.Context, *MsgHaltIssuance) (*MsgHaltIssuanceResponse, error)
+	// ResumeIssuance returns an issuance-halted asset to active status.
+	ResumeIssuance(context.Context, *MsgResumeIssuance) (*MsgResumeIssuanceResponse, error)
+	// SuspendAsset stops unsafe ordinary economic operations. It is a pure
+	// status move: the asset's feed keeps running and keeps serving every reader
+	// that is not this asset's economics.
+	SuspendAsset(context.Context, *MsgSuspendAsset) (*MsgSuspendAssetResponse, error)
 	// OpenSettlement establishes a one-way asset-to-NOAH redemption plan.
 	OpenSettlement(context.Context, *MsgOpenSettlement) (*MsgOpenSettlementResponse, error)
-	// CancelSettlement cancels a settlement before its activation height.
+	// CancelSettlement cancels a settlement that has not yet activated.
 	CancelSettlement(context.Context, *MsgCancelSettlement) (*MsgCancelSettlementResponse, error)
-	// BeginRelisting starts restoration of Oracle pricing and economic policy.
-	BeginRelisting(context.Context, *MsgBeginRelisting) (*MsgBeginRelistingResponse, error)
+	// RecoverAsset restores a suspended or written-off asset to issuance-halted
+	// status, undoing SuspendAsset.
+	RecoverAsset(context.Context, *MsgRecoverAsset) (*MsgRecoverAssetResponse, error)
 	// WriteOffAsset derecognizes outstanding supply without changing balances.
 	WriteOffAsset(context.Context, *MsgWriteOffAsset) (*MsgWriteOffAssetResponse, error)
+	// FinalizeRetirement retires an asset within its approved residual bound.
+	// Retirement is terminal: there is no RPC back out of it.
+	FinalizeRetirement(context.Context, *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error)
+	// The ReactivateAsset RPC was removed with the comeback it offered; the name
+	// stays burned. A retired tombstone is final, and the two reversible pairs
+	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
+	// SuspendAsset/RecoverAsset for distress — are what an asset that might
+	// return uses instead.
+	// SetEmergencyMandate replaces or disables the emergency committee mandate.
+	SetEmergencyMandate(context.Context, *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error)
+	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
+	// It is the committee's only power: halting issuance contains nothing, so it
+	// stays a governance act.
+	// Suspension is a pure status move: an asset sharing the reference
+	// denomination suspends freely while the feed keeps pricing.
+	EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
 type UnimplementedMsgServer struct {
 }
 
+func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
+}
 func (*UnimplementedMsgServer) RegisterAsset(ctx context.Context, req *MsgRegisterAsset) (*MsgRegisterAssetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterAsset not implemented")
 }
-func (*UnimplementedMsgServer) SetOracleRequired(ctx context.Context, req *MsgSetOracleRequired) (*MsgSetOracleRequiredResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetOracleRequired not implemented")
+func (*UnimplementedMsgServer) HaltIssuance(ctx context.Context, req *MsgHaltIssuance) (*MsgHaltIssuanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HaltIssuance not implemented")
 }
-func (*UnimplementedMsgServer) ActivateAsset(ctx context.Context, req *MsgActivateAsset) (*MsgActivateAssetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ActivateAsset not implemented")
+func (*UnimplementedMsgServer) ResumeIssuance(ctx context.Context, req *MsgResumeIssuance) (*MsgResumeIssuanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResumeIssuance not implemented")
 }
-func (*UnimplementedMsgServer) CancelAssetRegistration(ctx context.Context, req *MsgCancelAssetRegistration) (*MsgCancelAssetRegistrationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelAssetRegistration not implemented")
-}
-func (*UnimplementedMsgServer) BeginRetirement(ctx context.Context, req *MsgBeginRetirement) (*MsgBeginRetirementResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BeginRetirement not implemented")
-}
-func (*UnimplementedMsgServer) CancelRetirement(ctx context.Context, req *MsgCancelRetirement) (*MsgCancelRetirementResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelRetirement not implemented")
-}
-func (*UnimplementedMsgServer) FinalizeRetirement(ctx context.Context, req *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FinalizeRetirement not implemented")
-}
-func (*UnimplementedMsgServer) ReactivateAsset(ctx context.Context, req *MsgReactivateAsset) (*MsgReactivateAssetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReactivateAsset not implemented")
-}
-func (*UnimplementedMsgServer) BeginDelisting(ctx context.Context, req *MsgBeginDelisting) (*MsgBeginDelistingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BeginDelisting not implemented")
+func (*UnimplementedMsgServer) SuspendAsset(ctx context.Context, req *MsgSuspendAsset) (*MsgSuspendAssetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuspendAsset not implemented")
 }
 func (*UnimplementedMsgServer) OpenSettlement(ctx context.Context, req *MsgOpenSettlement) (*MsgOpenSettlementResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OpenSettlement not implemented")
@@ -1683,15 +1603,42 @@ func (*UnimplementedMsgServer) OpenSettlement(ctx context.Context, req *MsgOpenS
 func (*UnimplementedMsgServer) CancelSettlement(ctx context.Context, req *MsgCancelSettlement) (*MsgCancelSettlementResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelSettlement not implemented")
 }
-func (*UnimplementedMsgServer) BeginRelisting(ctx context.Context, req *MsgBeginRelisting) (*MsgBeginRelistingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BeginRelisting not implemented")
+func (*UnimplementedMsgServer) RecoverAsset(ctx context.Context, req *MsgRecoverAsset) (*MsgRecoverAssetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecoverAsset not implemented")
 }
 func (*UnimplementedMsgServer) WriteOffAsset(ctx context.Context, req *MsgWriteOffAsset) (*MsgWriteOffAssetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteOffAsset not implemented")
 }
+func (*UnimplementedMsgServer) FinalizeRetirement(ctx context.Context, req *MsgFinalizeRetirement) (*MsgFinalizeRetirementResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FinalizeRetirement not implemented")
+}
+func (*UnimplementedMsgServer) SetEmergencyMandate(ctx context.Context, req *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetEmergencyMandate not implemented")
+}
+func (*UnimplementedMsgServer) EmergencySuspendAsset(ctx context.Context, req *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EmergencySuspendAsset not implemented")
+}
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
 	s.RegisterService(&_Msg_serviceDesc, srv)
+}
+
+func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateParams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.asset.v1.Msg/UpdateParams",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateParams(ctx, req.(*MsgUpdateParams))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_RegisterAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1712,146 +1659,56 @@ func _Msg_RegisterAsset_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_SetOracleRequired_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgSetOracleRequired)
+func _Msg_HaltIssuance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgHaltIssuance)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).SetOracleRequired(ctx, in)
+		return srv.(MsgServer).HaltIssuance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/SetOracleRequired",
+		FullMethod: "/ark.asset.v1.Msg/HaltIssuance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).SetOracleRequired(ctx, req.(*MsgSetOracleRequired))
+		return srv.(MsgServer).HaltIssuance(ctx, req.(*MsgHaltIssuance))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_ActivateAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgActivateAsset)
+func _Msg_ResumeIssuance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgResumeIssuance)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).ActivateAsset(ctx, in)
+		return srv.(MsgServer).ResumeIssuance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/ActivateAsset",
+		FullMethod: "/ark.asset.v1.Msg/ResumeIssuance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ActivateAsset(ctx, req.(*MsgActivateAsset))
+		return srv.(MsgServer).ResumeIssuance(ctx, req.(*MsgResumeIssuance))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CancelAssetRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelAssetRegistration)
+func _Msg_SuspendAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSuspendAsset)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CancelAssetRegistration(ctx, in)
+		return srv.(MsgServer).SuspendAsset(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/CancelAssetRegistration",
+		FullMethod: "/ark.asset.v1.Msg/SuspendAsset",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelAssetRegistration(ctx, req.(*MsgCancelAssetRegistration))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_BeginRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgBeginRetirement)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).BeginRetirement(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/BeginRetirement",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).BeginRetirement(ctx, req.(*MsgBeginRetirement))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_CancelRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelRetirement)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CancelRetirement(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/CancelRetirement",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelRetirement(ctx, req.(*MsgCancelRetirement))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_FinalizeRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgFinalizeRetirement)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).FinalizeRetirement(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/FinalizeRetirement",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).FinalizeRetirement(ctx, req.(*MsgFinalizeRetirement))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_ReactivateAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgReactivateAsset)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).ReactivateAsset(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/ReactivateAsset",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ReactivateAsset(ctx, req.(*MsgReactivateAsset))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_BeginDelisting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgBeginDelisting)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).BeginDelisting(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/BeginDelisting",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).BeginDelisting(ctx, req.(*MsgBeginDelisting))
+		return srv.(MsgServer).SuspendAsset(ctx, req.(*MsgSuspendAsset))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1892,20 +1749,20 @@ func _Msg_CancelSettlement_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_BeginRelisting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgBeginRelisting)
+func _Msg_RecoverAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRecoverAsset)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).BeginRelisting(ctx, in)
+		return srv.(MsgServer).RecoverAsset(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.asset.v1.Msg/BeginRelisting",
+		FullMethod: "/ark.asset.v1.Msg/RecoverAsset",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).BeginRelisting(ctx, req.(*MsgBeginRelisting))
+		return srv.(MsgServer).RecoverAsset(ctx, req.(*MsgRecoverAsset))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1928,46 +1785,84 @@ func _Msg_WriteOffAsset_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_FinalizeRetirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgFinalizeRetirement)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).FinalizeRetirement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.asset.v1.Msg/FinalizeRetirement",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).FinalizeRetirement(ctx, req.(*MsgFinalizeRetirement))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetEmergencyMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetEmergencyMandate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetEmergencyMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.asset.v1.Msg/SetEmergencyMandate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetEmergencyMandate(ctx, req.(*MsgSetEmergencyMandate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_EmergencySuspendAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgEmergencySuspendAsset)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).EmergencySuspendAsset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.asset.v1.Msg/EmergencySuspendAsset",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).EmergencySuspendAsset(ctx, req.(*MsgEmergencySuspendAsset))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ark.asset.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "UpdateParams",
+			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
 			MethodName: "RegisterAsset",
 			Handler:    _Msg_RegisterAsset_Handler,
 		},
 		{
-			MethodName: "SetOracleRequired",
-			Handler:    _Msg_SetOracleRequired_Handler,
+			MethodName: "HaltIssuance",
+			Handler:    _Msg_HaltIssuance_Handler,
 		},
 		{
-			MethodName: "ActivateAsset",
-			Handler:    _Msg_ActivateAsset_Handler,
+			MethodName: "ResumeIssuance",
+			Handler:    _Msg_ResumeIssuance_Handler,
 		},
 		{
-			MethodName: "CancelAssetRegistration",
-			Handler:    _Msg_CancelAssetRegistration_Handler,
-		},
-		{
-			MethodName: "BeginRetirement",
-			Handler:    _Msg_BeginRetirement_Handler,
-		},
-		{
-			MethodName: "CancelRetirement",
-			Handler:    _Msg_CancelRetirement_Handler,
-		},
-		{
-			MethodName: "FinalizeRetirement",
-			Handler:    _Msg_FinalizeRetirement_Handler,
-		},
-		{
-			MethodName: "ReactivateAsset",
-			Handler:    _Msg_ReactivateAsset_Handler,
-		},
-		{
-			MethodName: "BeginDelisting",
-			Handler:    _Msg_BeginDelisting_Handler,
+			MethodName: "SuspendAsset",
+			Handler:    _Msg_SuspendAsset_Handler,
 		},
 		{
 			MethodName: "OpenSettlement",
@@ -1978,16 +1873,91 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_CancelSettlement_Handler,
 		},
 		{
-			MethodName: "BeginRelisting",
-			Handler:    _Msg_BeginRelisting_Handler,
+			MethodName: "RecoverAsset",
+			Handler:    _Msg_RecoverAsset_Handler,
 		},
 		{
 			MethodName: "WriteOffAsset",
 			Handler:    _Msg_WriteOffAsset_Handler,
 		},
+		{
+			MethodName: "FinalizeRetirement",
+			Handler:    _Msg_FinalizeRetirement_Handler,
+		},
+		{
+			MethodName: "SetEmergencyMandate",
+			Handler:    _Msg_SetEmergencyMandate_Handler,
+		},
+		{
+			MethodName: "EmergencySuspendAsset",
+			Handler:    _Msg_EmergencySuspendAsset_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "ark/asset/v1/tx.proto",
+}
+
+func (m *MsgUpdateParams) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateParams) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateParams) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Params.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateParamsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateParamsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
 }
 
 func (m *MsgRegisterAsset) Marshal() (dAtA []byte, err error) {
@@ -2010,26 +1980,13 @@ func (m *MsgRegisterAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.OracleRequired {
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
 		i--
-		if m.OracleRequired {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x12
 	}
-	{
-		size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintTx(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
 	if len(m.Authority) > 0 {
 		i -= len(m.Authority)
 		copy(dAtA[i:], m.Authority)
@@ -2063,7 +2020,7 @@ func (m *MsgRegisterAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgSetOracleRequired) Marshal() (dAtA []byte, err error) {
+func (m *MsgHaltIssuance) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2073,87 +2030,12 @@ func (m *MsgSetOracleRequired) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgSetOracleRequired) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgHaltIssuance) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgSetOracleRequired) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ExpectedVersion != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.OracleRequired {
-		i--
-		if m.OracleRequired {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgSetOracleRequiredResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgSetOracleRequiredResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgSetOracleRequiredResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgActivateAsset) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgActivateAsset) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgActivateAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgHaltIssuance) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2180,7 +2062,7 @@ func (m *MsgActivateAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgActivateAssetResponse) Marshal() (dAtA []byte, err error) {
+func (m *MsgHaltIssuanceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2190,12 +2072,12 @@ func (m *MsgActivateAssetResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgActivateAssetResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgHaltIssuanceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgActivateAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgHaltIssuanceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2203,7 +2085,7 @@ func (m *MsgActivateAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgCancelAssetRegistration) Marshal() (dAtA []byte, err error) {
+func (m *MsgResumeIssuance) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2213,77 +2095,12 @@ func (m *MsgCancelAssetRegistration) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgCancelAssetRegistration) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgResumeIssuance) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgCancelAssetRegistration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ExpectedVersion != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgCancelAssetRegistrationResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgCancelAssetRegistrationResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgCancelAssetRegistrationResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgBeginRetirement) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgBeginRetirement) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgBeginRetirement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgResumeIssuance) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2310,7 +2127,7 @@ func (m *MsgBeginRetirement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgBeginRetirementResponse) Marshal() (dAtA []byte, err error) {
+func (m *MsgResumeIssuanceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2320,12 +2137,12 @@ func (m *MsgBeginRetirementResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgBeginRetirementResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgResumeIssuanceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgBeginRetirementResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgResumeIssuanceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2333,7 +2150,7 @@ func (m *MsgBeginRetirementResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgCancelRetirement) Marshal() (dAtA []byte, err error) {
+func (m *MsgSuspendAsset) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2343,77 +2160,12 @@ func (m *MsgCancelRetirement) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgCancelRetirement) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgSuspendAsset) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgCancelRetirement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ExpectedVersion != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgCancelRetirementResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgCancelRetirementResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgCancelRetirementResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgFinalizeRetirement) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgFinalizeRetirement) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgFinalizeRetirement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgSuspendAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2440,7 +2192,7 @@ func (m *MsgFinalizeRetirement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgFinalizeRetirementResponse) Marshal() (dAtA []byte, err error) {
+func (m *MsgSuspendAssetResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2450,142 +2202,12 @@ func (m *MsgFinalizeRetirementResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgFinalizeRetirementResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgSuspendAssetResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgFinalizeRetirementResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgReactivateAsset) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgReactivateAsset) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgReactivateAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ExpectedVersion != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgReactivateAssetResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgReactivateAssetResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgReactivateAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgBeginDelisting) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgBeginDelisting) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgBeginDelisting) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ExpectedVersion != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgBeginDelistingResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgBeginDelistingResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgBeginDelistingResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgSuspendAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2613,8 +2235,8 @@ func (m *MsgOpenSettlement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ActivationHeight != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.ActivationHeight))
+	if m.EarliestClosingHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.EarliestClosingHeight))
 		i--
 		dAtA[i] = 0x28
 	}
@@ -2738,7 +2360,7 @@ func (m *MsgCancelSettlementResponse) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgBeginRelisting) Marshal() (dAtA []byte, err error) {
+func (m *MsgRecoverAsset) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2748,21 +2370,16 @@ func (m *MsgBeginRelisting) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgBeginRelisting) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgRecoverAsset) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgBeginRelisting) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgRecoverAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.EarliestClosingHeight != 0 {
-		i = encodeVarintTx(dAtA, i, uint64(m.EarliestClosingHeight))
-		i--
-		dAtA[i] = 0x20
-	}
 	if m.ExpectedVersion != 0 {
 		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
 		i--
@@ -2785,7 +2402,7 @@ func (m *MsgBeginRelisting) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgBeginRelistingResponse) Marshal() (dAtA []byte, err error) {
+func (m *MsgRecoverAssetResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2795,12 +2412,12 @@ func (m *MsgBeginRelistingResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgBeginRelistingResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgRecoverAssetResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgBeginRelistingResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgRecoverAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2873,6 +2490,216 @@ func (m *MsgWriteOffAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgFinalizeRetirement) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgFinalizeRetirement) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgFinalizeRetirement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.MaxResidualSupply.Size()
+		i -= size
+		if _, err := m.MaxResidualSupply.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	if m.ExpectedVersion != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedVersion))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgFinalizeRetirementResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgFinalizeRetirementResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgFinalizeRetirementResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSetEmergencyMandate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetEmergencyMandate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetEmergencyMandate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExpiryHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ExpiryHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ActivationHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ActivationHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSetEmergencyMandateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetEmergencyMandateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetEmergencyMandateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgEmergencySuspendAsset) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgEmergencySuspendAsset) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgEmergencySuspendAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExpectedTerm != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ExpectedTerm))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Committee) > 0 {
+		i -= len(m.Committee)
+		copy(dAtA[i:], m.Committee)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Committee)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgEmergencySuspendAssetResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgEmergencySuspendAssetResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgEmergencySuspendAssetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -2884,6 +2711,30 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *MsgUpdateParams) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.Params.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgUpdateParamsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *MsgRegisterAsset) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2894,10 +2745,9 @@ func (m *MsgRegisterAsset) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
-	l = m.Metadata.Size()
-	n += 1 + l + sovTx(uint64(l))
-	if m.OracleRequired {
-		n += 2
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
 	}
 	return n
 }
@@ -2911,39 +2761,7 @@ func (m *MsgRegisterAssetResponse) Size() (n int) {
 	return n
 }
 
-func (m *MsgSetOracleRequired) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if m.OracleRequired {
-		n += 2
-	}
-	if m.ExpectedVersion != 0 {
-		n += 1 + sovTx(uint64(m.ExpectedVersion))
-	}
-	return n
-}
-
-func (m *MsgSetOracleRequiredResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgActivateAsset) Size() (n int) {
+func (m *MsgHaltIssuance) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2963,7 +2781,7 @@ func (m *MsgActivateAsset) Size() (n int) {
 	return n
 }
 
-func (m *MsgActivateAssetResponse) Size() (n int) {
+func (m *MsgHaltIssuanceResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2972,36 +2790,7 @@ func (m *MsgActivateAssetResponse) Size() (n int) {
 	return n
 }
 
-func (m *MsgCancelAssetRegistration) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if m.ExpectedVersion != 0 {
-		n += 1 + sovTx(uint64(m.ExpectedVersion))
-	}
-	return n
-}
-
-func (m *MsgCancelAssetRegistrationResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgBeginRetirement) Size() (n int) {
+func (m *MsgResumeIssuance) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3021,7 +2810,7 @@ func (m *MsgBeginRetirement) Size() (n int) {
 	return n
 }
 
-func (m *MsgBeginRetirementResponse) Size() (n int) {
+func (m *MsgResumeIssuanceResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3030,36 +2819,7 @@ func (m *MsgBeginRetirementResponse) Size() (n int) {
 	return n
 }
 
-func (m *MsgCancelRetirement) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if m.ExpectedVersion != 0 {
-		n += 1 + sovTx(uint64(m.ExpectedVersion))
-	}
-	return n
-}
-
-func (m *MsgCancelRetirementResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgFinalizeRetirement) Size() (n int) {
+func (m *MsgSuspendAsset) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3079,65 +2839,7 @@ func (m *MsgFinalizeRetirement) Size() (n int) {
 	return n
 }
 
-func (m *MsgFinalizeRetirementResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgReactivateAsset) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if m.ExpectedVersion != 0 {
-		n += 1 + sovTx(uint64(m.ExpectedVersion))
-	}
-	return n
-}
-
-func (m *MsgReactivateAssetResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgBeginDelisting) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	if m.ExpectedVersion != 0 {
-		n += 1 + sovTx(uint64(m.ExpectedVersion))
-	}
-	return n
-}
-
-func (m *MsgBeginDelistingResponse) Size() (n int) {
+func (m *MsgSuspendAssetResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3165,8 +2867,8 @@ func (m *MsgOpenSettlement) Size() (n int) {
 	}
 	l = m.RedemptionRate.Size()
 	n += 1 + l + sovTx(uint64(l))
-	if m.ActivationHeight != 0 {
-		n += 1 + sovTx(uint64(m.ActivationHeight))
+	if m.EarliestClosingHeight != 0 {
+		n += 1 + sovTx(uint64(m.EarliestClosingHeight))
 	}
 	return n
 }
@@ -3209,7 +2911,7 @@ func (m *MsgCancelSettlementResponse) Size() (n int) {
 	return n
 }
 
-func (m *MsgBeginRelisting) Size() (n int) {
+func (m *MsgRecoverAsset) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3226,13 +2928,10 @@ func (m *MsgBeginRelisting) Size() (n int) {
 	if m.ExpectedVersion != 0 {
 		n += 1 + sovTx(uint64(m.ExpectedVersion))
 	}
-	if m.EarliestClosingHeight != 0 {
-		n += 1 + sovTx(uint64(m.EarliestClosingHeight))
-	}
 	return n
 }
 
-func (m *MsgBeginRelistingResponse) Size() (n int) {
+func (m *MsgRecoverAssetResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3270,11 +2969,268 @@ func (m *MsgWriteOffAssetResponse) Size() (n int) {
 	return n
 }
 
+func (m *MsgFinalizeRetirement) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ExpectedVersion != 0 {
+		n += 1 + sovTx(uint64(m.ExpectedVersion))
+	}
+	l = m.MaxResidualSupply.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgFinalizeRetirementResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgSetEmergencyMandate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ActivationHeight != 0 {
+		n += 1 + sovTx(uint64(m.ActivationHeight))
+	}
+	if m.ExpiryHeight != 0 {
+		n += 1 + sovTx(uint64(m.ExpiryHeight))
+	}
+	return n
+}
+
+func (m *MsgSetEmergencyMandateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgEmergencySuspendAsset) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Committee)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ExpectedTerm != 0 {
+		n += 1 + sovTx(uint64(m.ExpectedTerm))
+	}
+	return n
+}
+
+func (m *MsgEmergencySuspendAssetResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func sovTx(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *MsgUpdateParams) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateParams: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateParams: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Params", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Params.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateParamsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateParamsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateParamsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *MsgRegisterAsset) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -3339,9 +3295,9 @@ func (m *MsgRegisterAsset) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTx
@@ -3351,45 +3307,24 @@ func (m *MsgRegisterAsset) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthTx
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthTx
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OracleRequired", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.OracleRequired = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -3461,7 +3396,7 @@ func (m *MsgRegisterAssetResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgSetOracleRequired) Unmarshal(dAtA []byte) error {
+func (m *MsgHaltIssuance) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3484,213 +3419,10 @@ func (m *MsgSetOracleRequired) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSetOracleRequired: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgHaltIssuance: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSetOracleRequired: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OracleRequired", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.OracleRequired = bool(v != 0)
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-			}
-			m.ExpectedVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpectedVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgSetOracleRequiredResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgSetOracleRequiredResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgSetOracleRequiredResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgActivateAsset) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgActivateAsset: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgActivateAsset: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgHaltIssuance: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3797,7 +3529,7 @@ func (m *MsgActivateAsset) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgActivateAssetResponse) Unmarshal(dAtA []byte) error {
+func (m *MsgHaltIssuanceResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3820,10 +3552,10 @@ func (m *MsgActivateAssetResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgActivateAssetResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgHaltIssuanceResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgActivateAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgHaltIssuanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -3847,7 +3579,7 @@ func (m *MsgActivateAssetResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgCancelAssetRegistration) Unmarshal(dAtA []byte) error {
+func (m *MsgResumeIssuance) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3870,193 +3602,10 @@ func (m *MsgCancelAssetRegistration) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgCancelAssetRegistration: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgResumeIssuance: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgCancelAssetRegistration: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-			}
-			m.ExpectedVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpectedVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgCancelAssetRegistrationResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgCancelAssetRegistrationResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgCancelAssetRegistrationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgBeginRetirement) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgBeginRetirement: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgBeginRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgResumeIssuance: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4163,7 +3712,7 @@ func (m *MsgBeginRetirement) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgBeginRetirementResponse) Unmarshal(dAtA []byte) error {
+func (m *MsgResumeIssuanceResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4186,10 +3735,10 @@ func (m *MsgBeginRetirementResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgBeginRetirementResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgResumeIssuanceResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgBeginRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgResumeIssuanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -4213,7 +3762,7 @@ func (m *MsgBeginRetirementResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgCancelRetirement) Unmarshal(dAtA []byte) error {
+func (m *MsgSuspendAsset) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4236,193 +3785,10 @@ func (m *MsgCancelRetirement) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgCancelRetirement: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgSuspendAsset: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgCancelRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-			}
-			m.ExpectedVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpectedVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgCancelRetirementResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgCancelRetirementResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgCancelRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgFinalizeRetirement) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgFinalizeRetirement: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgFinalizeRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgSuspendAsset: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4529,7 +3895,7 @@ func (m *MsgFinalizeRetirement) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgFinalizeRetirementResponse) Unmarshal(dAtA []byte) error {
+func (m *MsgSuspendAssetResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4552,376 +3918,10 @@ func (m *MsgFinalizeRetirementResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgFinalizeRetirementResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgSuspendAssetResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgFinalizeRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgReactivateAsset) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgReactivateAsset: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgReactivateAsset: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-			}
-			m.ExpectedVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpectedVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgReactivateAssetResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgReactivateAssetResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgReactivateAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgBeginDelisting) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgBeginDelisting: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgBeginDelisting: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-			}
-			m.ExpectedVersion = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpectedVersion |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgBeginDelistingResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgBeginDelistingResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgBeginDelistingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgSuspendAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -5093,9 +4093,9 @@ func (m *MsgOpenSettlement) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EarliestClosingHeight", wireType)
 			}
-			m.ActivationHeight = 0
+			m.EarliestClosingHeight = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTx
@@ -5105,7 +4105,7 @@ func (m *MsgOpenSettlement) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ActivationHeight |= int64(b&0x7F) << shift
+				m.EarliestClosingHeight |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5364,7 +4364,7 @@ func (m *MsgCancelSettlementResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgBeginRelisting) Unmarshal(dAtA []byte) error {
+func (m *MsgRecoverAsset) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5387,10 +4387,10 @@ func (m *MsgBeginRelisting) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgBeginRelisting: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgRecoverAsset: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgBeginRelisting: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgRecoverAsset: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5476,25 +4476,6 @@ func (m *MsgBeginRelisting) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EarliestClosingHeight", wireType)
-			}
-			m.EarliestClosingHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.EarliestClosingHeight |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -5516,7 +4497,7 @@ func (m *MsgBeginRelisting) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgBeginRelistingResponse) Unmarshal(dAtA []byte) error {
+func (m *MsgRecoverAssetResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5539,10 +4520,10 @@ func (m *MsgBeginRelistingResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MsgBeginRelistingResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: MsgRecoverAssetResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgBeginRelistingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MsgRecoverAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -5726,6 +4707,608 @@ func (m *MsgWriteOffAssetResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgWriteOffAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgFinalizeRetirement) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgFinalizeRetirement: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgFinalizeRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
+			}
+			m.ExpectedVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedVersion |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxResidualSupply", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MaxResidualSupply.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgFinalizeRetirementResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgFinalizeRetirementResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgFinalizeRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetEmergencyMandate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetEmergencyMandate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetEmergencyMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+			}
+			m.ActivationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+			}
+			m.ExpiryHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetEmergencyMandateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetEmergencyMandateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetEmergencyMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgEmergencySuspendAsset) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgEmergencySuspendAsset: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgEmergencySuspendAsset: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Committee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+			}
+			m.ExpectedTerm = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedTerm |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgEmergencySuspendAssetResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgEmergencySuspendAssetResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgEmergencySuspendAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

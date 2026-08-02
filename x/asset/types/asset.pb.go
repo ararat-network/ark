@@ -4,6 +4,7 @@
 package types
 
 import (
+	mandate "ark/pkg/mandate"
 	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
@@ -28,70 +29,49 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// AssetStatus identifies an asset's position in the issuance, pricing, and
-// resolution lifecycle.
+// AssetStatus identifies an asset's economic treatment. Oracle target
+// transitions and settlement-plan presence are represented separately.
 type AssetStatus int32
 
 const (
 	// ASSET_STATUS_UNSPECIFIED is not a valid persisted status.
 	AssetStatus_ASSET_STATUS_UNSPECIFIED AssetStatus = 0
-	// ASSET_STATUS_PENDING identifies an asset that is registered but cannot
-	// yet be issued.
-	AssetStatus_ASSET_STATUS_PENDING AssetStatus = 1
 	// ASSET_STATUS_ACTIVE identifies an asset available for normal policy use.
-	AssetStatus_ASSET_STATUS_ACTIVE AssetStatus = 2
-	// ASSET_STATUS_RETIRING identifies an asset for which new issuance has
-	// stopped while existing supply remains supported.
-	AssetStatus_ASSET_STATUS_RETIRING AssetStatus = 3
-	// ASSET_STATUS_REMOVAL_PENDING identifies a priced asset whose target
-	// removal has been scheduled but has not activated.
-	AssetStatus_ASSET_STATUS_REMOVAL_PENDING AssetStatus = 4
+	AssetStatus_ASSET_STATUS_ACTIVE AssetStatus = 1
+	// ASSET_STATUS_ISSUANCE_HALTED identifies an asset for which new issuance
+	// has stopped while existing supply remains priced, transferable, and
+	// redeemable. The status carries no intent: an asset winding down toward
+	// retirement and one that has just completed emergency recovery are both
+	// ISSUANCE_HALTED.
+	AssetStatus_ASSET_STATUS_ISSUANCE_HALTED AssetStatus = 2
+	// ASSET_STATUS_SUSPENDED identifies an asset whose ordinary protocol
+	// economic operations are disabled without erasing holder balances or
+	// recognized exposure.
+	AssetStatus_ASSET_STATUS_SUSPENDED AssetStatus = 3
+	// ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
+	// governance currently recognizes no protocol redemption obligation.
+	AssetStatus_ASSET_STATUS_WRITTEN_OFF AssetStatus = 4
 	// ASSET_STATUS_RETIRED identifies a zero-supply asset retained as a
 	// historical tombstone.
 	AssetStatus_ASSET_STATUS_RETIRED AssetStatus = 5
-	// ASSET_STATUS_DELISTING identifies an asset whose unsafe economic
-	// operations have stopped while Oracle target removal is pending.
-	AssetStatus_ASSET_STATUS_DELISTING AssetStatus = 6
-	// ASSET_STATUS_DELISTED identifies an outstanding asset without live Oracle
-	// pricing or protocol redemption.
-	AssetStatus_ASSET_STATUS_DELISTED AssetStatus = 7
-	// ASSET_STATUS_SETTLING identifies a delisted or written-off asset with a
-	// governance-defined one-way NOAH redemption plan.
-	AssetStatus_ASSET_STATUS_SETTLING AssetStatus = 8
-	// ASSET_STATUS_RELISTING identifies an asset awaiting restored Oracle
-	// pricing and policy before issuance can resume.
-	AssetStatus_ASSET_STATUS_RELISTING AssetStatus = 9
-	// ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
-	// governance currently recognizes no protocol redemption obligation.
-	AssetStatus_ASSET_STATUS_WRITTEN_OFF AssetStatus = 10
 )
 
 var AssetStatus_name = map[int32]string{
-	0:  "ASSET_STATUS_UNSPECIFIED",
-	1:  "ASSET_STATUS_PENDING",
-	2:  "ASSET_STATUS_ACTIVE",
-	3:  "ASSET_STATUS_RETIRING",
-	4:  "ASSET_STATUS_REMOVAL_PENDING",
-	5:  "ASSET_STATUS_RETIRED",
-	6:  "ASSET_STATUS_DELISTING",
-	7:  "ASSET_STATUS_DELISTED",
-	8:  "ASSET_STATUS_SETTLING",
-	9:  "ASSET_STATUS_RELISTING",
-	10: "ASSET_STATUS_WRITTEN_OFF",
+	0: "ASSET_STATUS_UNSPECIFIED",
+	1: "ASSET_STATUS_ACTIVE",
+	2: "ASSET_STATUS_ISSUANCE_HALTED",
+	3: "ASSET_STATUS_SUSPENDED",
+	4: "ASSET_STATUS_WRITTEN_OFF",
+	5: "ASSET_STATUS_RETIRED",
 }
 
 var AssetStatus_value = map[string]int32{
 	"ASSET_STATUS_UNSPECIFIED":     0,
-	"ASSET_STATUS_PENDING":         1,
-	"ASSET_STATUS_ACTIVE":          2,
-	"ASSET_STATUS_RETIRING":        3,
-	"ASSET_STATUS_REMOVAL_PENDING": 4,
+	"ASSET_STATUS_ACTIVE":          1,
+	"ASSET_STATUS_ISSUANCE_HALTED": 2,
+	"ASSET_STATUS_SUSPENDED":       3,
+	"ASSET_STATUS_WRITTEN_OFF":     4,
 	"ASSET_STATUS_RETIRED":         5,
-	"ASSET_STATUS_DELISTING":       6,
-	"ASSET_STATUS_DELISTED":        7,
-	"ASSET_STATUS_SETTLING":        8,
-	"ASSET_STATUS_RELISTING":       9,
-	"ASSET_STATUS_WRITTEN_OFF":     10,
 }
 
 func (x AssetStatus) String() string {
@@ -102,47 +82,191 @@ func (AssetStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_df54f258f21f5488, []int{0}
 }
 
-// AssetLockKind identifies a protocol dependency that prevents final
-// retirement.
-type AssetLockKind int32
+// PriceSource identifies the authority a priced denomination rests on.
+type PriceSource int32
 
 const (
-	// ASSET_LOCK_KIND_UNSPECIFIED is not a valid persisted lock kind.
-	AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED AssetLockKind = 0
-	// ASSET_LOCK_KIND_MARKET_ASSET_POLICY protects Market conversion policy.
-	AssetLockKind_ASSET_LOCK_KIND_MARKET_ASSET_POLICY AssetLockKind = 1
-	// ASSET_LOCK_KIND_MARKET_BASE_POOL protects Market's base-pool reference.
-	AssetLockKind_ASSET_LOCK_KIND_MARKET_BASE_POOL AssetLockKind = 2
-	// ASSET_LOCK_KIND_TREASURY_STABLE_POLICY protects Treasury stable-liability
-	// enrollment.
-	AssetLockKind_ASSET_LOCK_KIND_TREASURY_STABLE_POLICY AssetLockKind = 3
-	// ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP protects Treasury's
-	// reference-tax-cap denomination.
-	AssetLockKind_ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP AssetLockKind = 4
+	// PRICE_SOURCE_UNSPECIFIED accompanies every unpriced verdict; read reason
+	// for why nothing stands behind the denomination. It is deliberately not a
+	// valid authority, so a verdict that names no source cannot be mistaken for
+	// one that does.
+	PriceSource_PRICE_SOURCE_UNSPECIFIED PriceSource = 0
+	// PRICE_SOURCE_NUMERAIRE is NOAH itself: one by definition rather than by
+	// observation.
+	PriceSource_PRICE_SOURCE_NUMERAIRE PriceSource = 1
+	// PRICE_SOURCE_ORACLE is a fresh Oracle rate for a priced-live asset — asset
+	// units per one NOAH, the same value ark.oracle.v1 Query/ExchangeRate
+	// returns.
+	PriceSource_PRICE_SOURCE_ORACLE PriceSource = 2
+	// PRICE_SOURCE_SETTLEMENT is the redemption rate of a settlement plan: a
+	// standing governance commitment, not an observation that can go stale, and
+	// not a market quote.
+	PriceSource_PRICE_SOURCE_SETTLEMENT PriceSource = 3
 )
 
-var AssetLockKind_name = map[int32]string{
-	0: "ASSET_LOCK_KIND_UNSPECIFIED",
-	1: "ASSET_LOCK_KIND_MARKET_ASSET_POLICY",
-	2: "ASSET_LOCK_KIND_MARKET_BASE_POOL",
-	3: "ASSET_LOCK_KIND_TREASURY_STABLE_POLICY",
-	4: "ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP",
+var PriceSource_name = map[int32]string{
+	0: "PRICE_SOURCE_UNSPECIFIED",
+	1: "PRICE_SOURCE_NUMERAIRE",
+	2: "PRICE_SOURCE_ORACLE",
+	3: "PRICE_SOURCE_SETTLEMENT",
 }
 
-var AssetLockKind_value = map[string]int32{
-	"ASSET_LOCK_KIND_UNSPECIFIED":                0,
-	"ASSET_LOCK_KIND_MARKET_ASSET_POLICY":        1,
-	"ASSET_LOCK_KIND_MARKET_BASE_POOL":           2,
-	"ASSET_LOCK_KIND_TREASURY_STABLE_POLICY":     3,
-	"ASSET_LOCK_KIND_TREASURY_REFERENCE_TAX_CAP": 4,
+var PriceSource_value = map[string]int32{
+	"PRICE_SOURCE_UNSPECIFIED": 0,
+	"PRICE_SOURCE_NUMERAIRE":   1,
+	"PRICE_SOURCE_ORACLE":      2,
+	"PRICE_SOURCE_SETTLEMENT":  3,
 }
 
-func (x AssetLockKind) String() string {
-	return proto.EnumName(AssetLockKind_name, int32(x))
+func (x PriceSource) String() string {
+	return proto.EnumName(PriceSource_name, int32(x))
 }
 
-func (AssetLockKind) EnumDescriptor() ([]byte, []int) {
+func (PriceSource) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_df54f258f21f5488, []int{1}
+}
+
+// UnpricedReason identifies why no rate stands behind a denomination.
+type UnpricedReason int32
+
+const (
+	// UNPRICED_REASON_UNSPECIFIED accompanies every priced verdict; read source
+	// for the authority behind the rate.
+	UnpricedReason_UNPRICED_REASON_UNSPECIFIED UnpricedReason = 0
+	// UNPRICED_REASON_FEED_UNAVAILABLE is a priced-live asset the Oracle cannot
+	// currently price: its feed is stale, or no rate is stored. last_rate
+	// carries what was last observed, when anything ever was.
+	UnpricedReason_UNPRICED_REASON_FEED_UNAVAILABLE UnpricedReason = 1
+	// UNPRICED_REASON_UNTRUSTED is suspended supply with no settlement plan: the
+	// market rate is exactly what stopped being trustworthy, and governance has
+	// not committed to another.
+	UnpricedReason_UNPRICED_REASON_UNTRUSTED UnpricedReason = 2
+	// UNPRICED_REASON_WRITTEN_OFF is supply carrying no recognized redemption
+	// obligation.
+	UnpricedReason_UNPRICED_REASON_WRITTEN_OFF UnpricedReason = 3
+	// UNPRICED_REASON_RETIRED is residual supply of a retired asset.
+	UnpricedReason_UNPRICED_REASON_RETIRED UnpricedReason = 4
+	// UNPRICED_REASON_UNRECOGNISED is a denomination outside the registry, or a
+	// status this fold does not understand.
+	UnpricedReason_UNPRICED_REASON_UNRECOGNISED UnpricedReason = 5
+)
+
+var UnpricedReason_name = map[int32]string{
+	0: "UNPRICED_REASON_UNSPECIFIED",
+	1: "UNPRICED_REASON_FEED_UNAVAILABLE",
+	2: "UNPRICED_REASON_UNTRUSTED",
+	3: "UNPRICED_REASON_WRITTEN_OFF",
+	4: "UNPRICED_REASON_RETIRED",
+	5: "UNPRICED_REASON_UNRECOGNISED",
+}
+
+var UnpricedReason_value = map[string]int32{
+	"UNPRICED_REASON_UNSPECIFIED":      0,
+	"UNPRICED_REASON_FEED_UNAVAILABLE": 1,
+	"UNPRICED_REASON_UNTRUSTED":        2,
+	"UNPRICED_REASON_WRITTEN_OFF":      3,
+	"UNPRICED_REASON_RETIRED":          4,
+	"UNPRICED_REASON_UNRECOGNISED":     5,
+}
+
+func (x UnpricedReason) String() string {
+	return proto.EnumName(UnpricedReason_name, int32(x))
+}
+
+func (UnpricedReason) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_df54f258f21f5488, []int{2}
+}
+
+// ResolutionKind identifies why governance derecognized outstanding supply.
+type ResolutionKind int32
+
+const (
+	// RESOLUTION_KIND_UNSPECIFIED is not a valid persisted resolution kind.
+	ResolutionKind_RESOLUTION_KIND_UNSPECIFIED ResolutionKind = 0
+	// RESOLUTION_KIND_WRITE_OFF records emergency derecognition of all
+	// recognized obligation on a suspended asset.
+	ResolutionKind_RESOLUTION_KIND_WRITE_OFF ResolutionKind = 1
+	// RESOLUTION_KIND_RETIREMENT_RESIDUAL records derecognition of bounded
+	// residual supply at final retirement.
+	ResolutionKind_RESOLUTION_KIND_RETIREMENT_RESIDUAL ResolutionKind = 2
+)
+
+var ResolutionKind_name = map[int32]string{
+	0: "RESOLUTION_KIND_UNSPECIFIED",
+	1: "RESOLUTION_KIND_WRITE_OFF",
+	2: "RESOLUTION_KIND_RETIREMENT_RESIDUAL",
+}
+
+var ResolutionKind_value = map[string]int32{
+	"RESOLUTION_KIND_UNSPECIFIED":         0,
+	"RESOLUTION_KIND_WRITE_OFF":           1,
+	"RESOLUTION_KIND_RETIREMENT_RESIDUAL": 2,
+}
+
+func (x ResolutionKind) String() string {
+	return proto.EnumName(ResolutionKind_name, int32(x))
+}
+
+func (ResolutionKind) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_df54f258f21f5488, []int{3}
+}
+
+// Params defines the parameters for the asset module.
+type Params struct {
+	// settlement_activation_delay_blocks is the distance between opening a
+	// settlement plan and the height it activates. It is the designed
+	// correction window: an activated plan commits holders to a
+	// redemption rate and cannot be closed early, so the only remedy for a
+	// mistaken plan is cancelling it before it goes live, and this delay is the
+	// room governance has to notice and pass CancelSettlement.
+	//
+	// It is governed rather than fixed because the window it has to outlast is
+	// itself governed. The value only means anything relative to how long a
+	// proposal currently takes to land, and x/gov's voting period moves without
+	// consulting x/asset — a delay that was ample at launch silently stops being
+	// a correction window at all if voting slows. Treasury's claim cancellation
+	// period is the same quantity for claims and is likewise a parameter.
+	SettlementActivationDelayBlocks uint64 `protobuf:"varint,1,opt,name=settlement_activation_delay_blocks,json=settlementActivationDelayBlocks,proto3" json:"settlement_activation_delay_blocks,omitempty"`
+}
+
+func (m *Params) Reset()         { *m = Params{} }
+func (m *Params) String() string { return proto.CompactTextString(m) }
+func (*Params) ProtoMessage()    {}
+func (*Params) Descriptor() ([]byte, []int) {
+	return fileDescriptor_df54f258f21f5488, []int{0}
+}
+func (m *Params) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Params) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Params.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Params) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Params.Merge(m, src)
+}
+func (m *Params) XXX_Size() int {
+	return m.Size()
+}
+func (m *Params) XXX_DiscardUnknown() {
+	xxx_messageInfo_Params.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Params proto.InternalMessageInfo
+
+func (m *Params) GetSettlementActivationDelayBlocks() uint64 {
+	if m != nil {
+		return m.SettlementActivationDelayBlocks
+	}
+	return 0
 }
 
 // Asset is the authoritative registry record for one governance-managed Bank
@@ -154,18 +278,15 @@ type Asset struct {
 	Metadata types.Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata"`
 	// status is the asset's current lifecycle status.
 	Status AssetStatus `protobuf:"varint,3,opt,name=status,proto3,enum=ark.asset.v1.AssetStatus" json:"status,omitempty"`
-	// version increases on every lifecycle or Oracle-participation mutation.
+	// version increases on every lifecycle or pricing-mode mutation.
 	Version uint64 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
-	// oracle_required specifies whether the asset requires a denomination-keyed
-	// Oracle rate normalized as base units of denom per one anoah.
-	OracleRequired bool `protobuf:"varint,5,opt,name=oracle_required,json=oracleRequired,proto3" json:"oracle_required,omitempty"`
 }
 
 func (m *Asset) Reset()         { *m = Asset{} }
 func (m *Asset) String() string { return proto.CompactTextString(m) }
 func (*Asset) ProtoMessage()    {}
 func (*Asset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df54f258f21f5488, []int{0}
+	return fileDescriptor_df54f258f21f5488, []int{1}
 }
 func (m *Asset) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -222,214 +343,37 @@ func (m *Asset) GetVersion() uint64 {
 	return 0
 }
 
-func (m *Asset) GetOracleRequired() bool {
-	if m != nil {
-		return m.OracleRequired
-	}
-	return false
-}
-
-// AssetLock records one downstream protocol dependency on an asset.
-type AssetLock struct {
-	Denom string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Kind  AssetLockKind `protobuf:"varint,2,opt,name=kind,proto3,enum=ark.asset.v1.AssetLockKind" json:"kind,omitempty"`
-}
-
-func (m *AssetLock) Reset()         { *m = AssetLock{} }
-func (m *AssetLock) String() string { return proto.CompactTextString(m) }
-func (*AssetLock) ProtoMessage()    {}
-func (*AssetLock) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df54f258f21f5488, []int{1}
-}
-func (m *AssetLock) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AssetLock) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AssetLock.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AssetLock) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AssetLock.Merge(m, src)
-}
-func (m *AssetLock) XXX_Size() int {
-	return m.Size()
-}
-func (m *AssetLock) XXX_DiscardUnknown() {
-	xxx_messageInfo_AssetLock.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AssetLock proto.InternalMessageInfo
-
-func (m *AssetLock) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *AssetLock) GetKind() AssetLockKind {
-	if m != nil {
-		return m.Kind
-	}
-	return AssetLockKind_ASSET_LOCK_KIND_UNSPECIFIED
-}
-
-// OracleTargets defines the active vote-target epoch and an optional scheduled
-// replacement. Pending targets become authoritative for vote extensions at
-// activation_vote_height.
-type OracleTargets struct {
-	Denoms  []string              `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
-	Version uint64                `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-	Pending *PendingOracleTargets `protobuf:"bytes,3,opt,name=pending,proto3" json:"pending,omitempty"`
-}
-
-func (m *OracleTargets) Reset()         { *m = OracleTargets{} }
-func (m *OracleTargets) String() string { return proto.CompactTextString(m) }
-func (*OracleTargets) ProtoMessage()    {}
-func (*OracleTargets) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df54f258f21f5488, []int{2}
-}
-func (m *OracleTargets) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *OracleTargets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_OracleTargets.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *OracleTargets) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OracleTargets.Merge(m, src)
-}
-func (m *OracleTargets) XXX_Size() int {
-	return m.Size()
-}
-func (m *OracleTargets) XXX_DiscardUnknown() {
-	xxx_messageInfo_OracleTargets.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_OracleTargets proto.InternalMessageInfo
-
-func (m *OracleTargets) GetDenoms() []string {
-	if m != nil {
-		return m.Denoms
-	}
-	return nil
-}
-
-func (m *OracleTargets) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
-func (m *OracleTargets) GetPending() *PendingOracleTargets {
-	if m != nil {
-		return m.Pending
-	}
-	return nil
-}
-
-// PendingOracleTargets defines a scheduled vote-target epoch.
-type PendingOracleTargets struct {
-	Denoms               []string `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
-	Version              uint64   `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-	ActivationVoteHeight int64    `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
-}
-
-func (m *PendingOracleTargets) Reset()         { *m = PendingOracleTargets{} }
-func (m *PendingOracleTargets) String() string { return proto.CompactTextString(m) }
-func (*PendingOracleTargets) ProtoMessage()    {}
-func (*PendingOracleTargets) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df54f258f21f5488, []int{3}
-}
-func (m *PendingOracleTargets) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *PendingOracleTargets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_PendingOracleTargets.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *PendingOracleTargets) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PendingOracleTargets.Merge(m, src)
-}
-func (m *PendingOracleTargets) XXX_Size() int {
-	return m.Size()
-}
-func (m *PendingOracleTargets) XXX_DiscardUnknown() {
-	xxx_messageInfo_PendingOracleTargets.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PendingOracleTargets proto.InternalMessageInfo
-
-func (m *PendingOracleTargets) GetDenoms() []string {
-	if m != nil {
-		return m.Denoms
-	}
-	return nil
-}
-
-func (m *PendingOracleTargets) GetVersion() uint64 {
-	if m != nil {
-		return m.Version
-	}
-	return 0
-}
-
-func (m *PendingOracleTargets) GetActivationVoteHeight() int64 {
-	if m != nil {
-		return m.ActivationVoteHeight
-	}
-	return 0
-}
-
 // SettlementPlan defines a governance-approved one-way asset-to-NOAH
 // redemption rate.
 type SettlementPlan struct {
 	// denom identifies the asset accepted for settlement.
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	// redemption_rate is the positive amount of NOAH paid per unit of the
-	// settled asset.
+	// redemption_rate is the positive number of units of the settled asset
+	// redeemed per one NOAH, the same NOAH-quoted orientation as oracle
+	// exchange rates.
 	RedemptionRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
 	// activation_height is the first block height at which redemption is
-	// permitted.
+	// permitted. It is derived when the plan opens, as
+	// Params.SettlementActivationDelayBlocks past the opening height, and stored
+	// rather than recomputed on read so a later parameter change cannot move
+	// terms holders have already been shown.
 	ActivationHeight int64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	// earliest_closing_height is zero until relisting establishes the earliest
-	// height at which settlement may close. Reaching it does not close
-	// settlement automatically.
+	// earliest_closing_height is the hard commitment to holders: redemption
+	// stays open at least until this height. It is mandatory, is fixed for the
+	// plan's whole life, and is read by exactly one message — WriteOffAsset,
+	// which is refused before it. Reaching it never closes settlement
+	// automatically.
 	EarliestClosingHeight int64 `protobuf:"varint,4,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
-	// version is the asset version that last created or changed this plan.
-	Version uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	// opened_height records the block height at which governance stored these
+	// terms.
+	OpenedHeight int64 `protobuf:"varint,5,opt,name=opened_height,json=openedHeight,proto3" json:"opened_height,omitempty"`
 }
 
 func (m *SettlementPlan) Reset()         { *m = SettlementPlan{} }
 func (m *SettlementPlan) String() string { return proto.CompactTextString(m) }
 func (*SettlementPlan) ProtoMessage()    {}
 func (*SettlementPlan) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df54f258f21f5488, []int{4}
+	return fileDescriptor_df54f258f21f5488, []int{2}
 }
 func (m *SettlementPlan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -479,37 +423,57 @@ func (m *SettlementPlan) GetEarliestClosingHeight() int64 {
 	return 0
 }
 
-func (m *SettlementPlan) GetVersion() uint64 {
+func (m *SettlementPlan) GetOpenedHeight() int64 {
 	if m != nil {
-		return m.Version
+		return m.OpenedHeight
 	}
 	return 0
 }
 
-// WriteOffRecord is an immutable snapshot appended whenever governance writes
-// off outstanding asset supply.
-type WriteOffRecord struct {
-	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	// version is the asset version produced by the write-off transition.
-	Version           uint64      `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-	WriteOffHeight    int64       `protobuf:"varint,3,opt,name=write_off_height,json=writeOffHeight,proto3" json:"write_off_height,omitempty"`
-	OutstandingSupply types1.Coin `protobuf:"bytes,4,opt,name=outstanding_supply,json=outstandingSupply,proto3" json:"outstanding_supply"`
-	// settlement_plan is present only when a SETTLING asset was written off.
-	SettlementPlan *SettlementPlan `protobuf:"bytes,5,opt,name=settlement_plan,json=settlementPlan,proto3" json:"settlement_plan,omitempty"`
+// PricedAsset is the registry's answer about one denomination: the record,
+// where the denomination has one, and the pricing verdict, which every
+// denomination has — what the protocol values it at and on whose authority, or
+// the reason nothing stands behind it. Consumers apply policy to verdicts —
+// defer, disclose, zero, route — and never re-derive the facts.
+//
+// Exactly one of source and reason is set. A denomination the registry does not
+// list — and the numeraire, which is priced by definition rather than by
+// registration — carries a verdict and no record, which is why nothing reads
+// asset without having established the denomination is a member.
+//
+// A verdict answers for the asset registry alone: a denomination priced by some
+// other authority, such as a reserve or basket feed the registry does not list,
+// is UNRECOGNISED here, which is the honest answer rather than a gap, and that
+// authority produces its own verdicts for consumers to merge.
+type PricedAsset struct {
+	Asset Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset"`
+	// rate is unset unless the denomination is priced. Read source before acting
+	// on it: a settlement rate is a standing governance commitment, not a market
+	// quote, and the two must not be conflated.
+	Rate *cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=rate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"rate,omitempty"`
+	// last_rate is the most recent rate the Oracle stored for a denomination
+	// whose feed is currently unavailable, and is unset for every other verdict.
+	// It is evidence about supply already outstanding, not a price: it failed the
+	// freshness gate, so the verdict stays unpriced and nothing may be quoted,
+	// minted, or paid against it. Consumers that size an aggregate over standing
+	// obligations may read it; consumers that quote, mint, or pay must not.
+	LastRate *cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=last_rate,json=lastRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"last_rate,omitempty"`
+	Source   PriceSource                  `protobuf:"varint,4,opt,name=source,proto3,enum=ark.asset.v1.PriceSource" json:"source,omitempty"`
+	Reason   UnpricedReason               `protobuf:"varint,5,opt,name=reason,proto3,enum=ark.asset.v1.UnpricedReason" json:"reason,omitempty"`
 }
 
-func (m *WriteOffRecord) Reset()         { *m = WriteOffRecord{} }
-func (m *WriteOffRecord) String() string { return proto.CompactTextString(m) }
-func (*WriteOffRecord) ProtoMessage()    {}
-func (*WriteOffRecord) Descriptor() ([]byte, []int) {
-	return fileDescriptor_df54f258f21f5488, []int{5}
+func (m *PricedAsset) Reset()         { *m = PricedAsset{} }
+func (m *PricedAsset) String() string { return proto.CompactTextString(m) }
+func (*PricedAsset) ProtoMessage()    {}
+func (*PricedAsset) Descriptor() ([]byte, []int) {
+	return fileDescriptor_df54f258f21f5488, []int{3}
 }
-func (m *WriteOffRecord) XXX_Unmarshal(b []byte) error {
+func (m *PricedAsset) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *WriteOffRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PricedAsset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_WriteOffRecord.Marshal(b, m, deterministic)
+		return xxx_messageInfo_PricedAsset.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -519,127 +483,317 @@ func (m *WriteOffRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, erro
 		return b[:n], nil
 	}
 }
-func (m *WriteOffRecord) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WriteOffRecord.Merge(m, src)
+func (m *PricedAsset) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PricedAsset.Merge(m, src)
 }
-func (m *WriteOffRecord) XXX_Size() int {
+func (m *PricedAsset) XXX_Size() int {
 	return m.Size()
 }
-func (m *WriteOffRecord) XXX_DiscardUnknown() {
-	xxx_messageInfo_WriteOffRecord.DiscardUnknown(m)
+func (m *PricedAsset) XXX_DiscardUnknown() {
+	xxx_messageInfo_PricedAsset.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WriteOffRecord proto.InternalMessageInfo
+var xxx_messageInfo_PricedAsset proto.InternalMessageInfo
 
-func (m *WriteOffRecord) GetDenom() string {
+func (m *PricedAsset) GetAsset() Asset {
+	if m != nil {
+		return m.Asset
+	}
+	return Asset{}
+}
+
+func (m *PricedAsset) GetSource() PriceSource {
+	if m != nil {
+		return m.Source
+	}
+	return PriceSource_PRICE_SOURCE_UNSPECIFIED
+}
+
+func (m *PricedAsset) GetReason() UnpricedReason {
+	if m != nil {
+		return m.Reason
+	}
+	return UnpricedReason_UNPRICED_REASON_UNSPECIFIED
+}
+
+// ResolutionRecord is an immutable snapshot appended whenever governance
+// derecognizes outstanding asset supply. A later recovery never erases or
+// reinterprets an earlier record.
+type ResolutionRecord struct {
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	// version is the asset version in effect when governance derecognized the
+	// obligation. Every derecognition is a governance act that advances the
+	// version and records the advanced value; nothing else appends a record, so
+	// there is no path that files one against an unchanged version.
+	// (denom, version) is unique, and an append is rejected rather than
+	// overwriting a record.
+	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	// resolution_height is the block height at which the record was appended.
+	ResolutionHeight  int64       `protobuf:"varint,3,opt,name=resolution_height,json=resolutionHeight,proto3" json:"resolution_height,omitempty"`
+	OutstandingSupply types1.Coin `protobuf:"bytes,4,opt,name=outstanding_supply,json=outstandingSupply,proto3" json:"outstanding_supply"`
+	// settlement_plan carries final terms only for a write-off that ended an
+	// open settlement.
+	SettlementPlan *SettlementPlan `protobuf:"bytes,5,opt,name=settlement_plan,json=settlementPlan,proto3" json:"settlement_plan,omitempty"`
+	// kind identifies why the obligation was derecognized.
+	Kind ResolutionKind `protobuf:"varint,6,opt,name=kind,proto3,enum=ark.asset.v1.ResolutionKind" json:"kind,omitempty"`
+}
+
+func (m *ResolutionRecord) Reset()         { *m = ResolutionRecord{} }
+func (m *ResolutionRecord) String() string { return proto.CompactTextString(m) }
+func (*ResolutionRecord) ProtoMessage()    {}
+func (*ResolutionRecord) Descriptor() ([]byte, []int) {
+	return fileDescriptor_df54f258f21f5488, []int{4}
+}
+func (m *ResolutionRecord) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResolutionRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResolutionRecord.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ResolutionRecord) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResolutionRecord.Merge(m, src)
+}
+func (m *ResolutionRecord) XXX_Size() int {
+	return m.Size()
+}
+func (m *ResolutionRecord) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResolutionRecord.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResolutionRecord proto.InternalMessageInfo
+
+func (m *ResolutionRecord) GetDenom() string {
 	if m != nil {
 		return m.Denom
 	}
 	return ""
 }
 
-func (m *WriteOffRecord) GetVersion() uint64 {
+func (m *ResolutionRecord) GetVersion() uint64 {
 	if m != nil {
 		return m.Version
 	}
 	return 0
 }
 
-func (m *WriteOffRecord) GetWriteOffHeight() int64 {
+func (m *ResolutionRecord) GetResolutionHeight() int64 {
 	if m != nil {
-		return m.WriteOffHeight
+		return m.ResolutionHeight
 	}
 	return 0
 }
 
-func (m *WriteOffRecord) GetOutstandingSupply() types1.Coin {
+func (m *ResolutionRecord) GetOutstandingSupply() types1.Coin {
 	if m != nil {
 		return m.OutstandingSupply
 	}
 	return types1.Coin{}
 }
 
-func (m *WriteOffRecord) GetSettlementPlan() *SettlementPlan {
+func (m *ResolutionRecord) GetSettlementPlan() *SettlementPlan {
 	if m != nil {
 		return m.SettlementPlan
 	}
 	return nil
 }
 
+func (m *ResolutionRecord) GetKind() ResolutionKind {
+	if m != nil {
+		return m.Kind
+	}
+	return ResolutionKind_RESOLUTION_KIND_UNSPECIFIED
+}
+
+// EmergencyMandate stores the governance-appointed committee that may suspend
+// an asset in minutes and restore nothing. Suspension is its only power, so
+// there is no action dimension to name: containment is the whole mandate. It
+// carries exactly the shared appointment envelope; consumed per-term
+// suspensions are separate state keyed by denomination alone.
+type EmergencyMandate struct {
+	// envelope carries the shared term, committee, and half-open height window.
+	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
+}
+
+func (m *EmergencyMandate) Reset()         { *m = EmergencyMandate{} }
+func (m *EmergencyMandate) String() string { return proto.CompactTextString(m) }
+func (*EmergencyMandate) ProtoMessage()    {}
+func (*EmergencyMandate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_df54f258f21f5488, []int{5}
+}
+func (m *EmergencyMandate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EmergencyMandate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EmergencyMandate.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EmergencyMandate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmergencyMandate.Merge(m, src)
+}
+func (m *EmergencyMandate) XXX_Size() int {
+	return m.Size()
+}
+func (m *EmergencyMandate) XXX_DiscardUnknown() {
+	xxx_messageInfo_EmergencyMandate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EmergencyMandate proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterEnum("ark.asset.v1.AssetStatus", AssetStatus_name, AssetStatus_value)
-	proto.RegisterEnum("ark.asset.v1.AssetLockKind", AssetLockKind_name, AssetLockKind_value)
+	proto.RegisterEnum("ark.asset.v1.PriceSource", PriceSource_name, PriceSource_value)
+	proto.RegisterEnum("ark.asset.v1.UnpricedReason", UnpricedReason_name, UnpricedReason_value)
+	proto.RegisterEnum("ark.asset.v1.ResolutionKind", ResolutionKind_name, ResolutionKind_value)
+	proto.RegisterType((*Params)(nil), "ark.asset.v1.Params")
 	proto.RegisterType((*Asset)(nil), "ark.asset.v1.Asset")
-	proto.RegisterType((*AssetLock)(nil), "ark.asset.v1.AssetLock")
-	proto.RegisterType((*OracleTargets)(nil), "ark.asset.v1.OracleTargets")
-	proto.RegisterType((*PendingOracleTargets)(nil), "ark.asset.v1.PendingOracleTargets")
 	proto.RegisterType((*SettlementPlan)(nil), "ark.asset.v1.SettlementPlan")
-	proto.RegisterType((*WriteOffRecord)(nil), "ark.asset.v1.WriteOffRecord")
+	proto.RegisterType((*PricedAsset)(nil), "ark.asset.v1.PricedAsset")
+	proto.RegisterType((*ResolutionRecord)(nil), "ark.asset.v1.ResolutionRecord")
+	proto.RegisterType((*EmergencyMandate)(nil), "ark.asset.v1.EmergencyMandate")
 }
 
 func init() { proto.RegisterFile("ark/asset/v1/asset.proto", fileDescriptor_df54f258f21f5488) }
 
 var fileDescriptor_df54f258f21f5488 = []byte{
-	// 943 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xcd, 0x6e, 0xeb, 0x44,
-	0x14, 0xae, 0xf3, 0xd3, 0x36, 0x13, 0x6e, 0xea, 0x0e, 0xb9, 0xbd, 0xee, 0x0f, 0x49, 0x14, 0x10,
-	0x44, 0x41, 0x38, 0x6a, 0x40, 0x57, 0x2c, 0x60, 0xe1, 0x24, 0x53, 0x88, 0x9a, 0x26, 0x91, 0xed,
-	0xf6, 0x52, 0x36, 0xd6, 0xd4, 0x99, 0xa6, 0x56, 0x12, 0x4f, 0xf0, 0x4c, 0x73, 0xe9, 0x06, 0x5e,
-	0x81, 0x05, 0x3b, 0x5e, 0x80, 0x25, 0x0b, 0x5e, 0x80, 0xdd, 0x5d, 0x5e, 0xb1, 0x42, 0x20, 0x5d,
-	0xa1, 0x76, 0xc1, 0x8e, 0x67, 0x40, 0x1e, 0x3b, 0x3f, 0x4e, 0x9a, 0x0d, 0x9b, 0x28, 0x67, 0xbe,
-	0xef, 0x3b, 0xe7, 0x3b, 0x67, 0x8e, 0x6d, 0xa0, 0x60, 0x6f, 0x50, 0xc1, 0x8c, 0x11, 0x5e, 0x99,
-	0x1c, 0x07, 0x7f, 0xd4, 0xb1, 0x47, 0x39, 0x85, 0x6f, 0x61, 0x6f, 0xa0, 0x06, 0x07, 0x93, 0xe3,
-	0x83, 0x5d, 0x3c, 0x72, 0x5c, 0x5a, 0x11, 0xbf, 0x01, 0xe1, 0x20, 0x67, 0x53, 0x36, 0xa2, 0xac,
-	0x72, 0x85, 0xdd, 0x41, 0x65, 0x72, 0x7c, 0x45, 0x38, 0x3e, 0x16, 0xc1, 0x0a, 0xce, 0xc8, 0x0c,
-	0xb7, 0xa9, 0xe3, 0x86, 0xf8, 0x7e, 0x80, 0x5b, 0x22, 0xaa, 0x04, 0x41, 0x08, 0x65, 0xfb, 0xb4,
-	0x4f, 0x83, 0x73, 0xff, 0x5f, 0x70, 0x5a, 0xfc, 0x57, 0x02, 0x49, 0xcd, 0x37, 0x04, 0xb3, 0x20,
-	0xd9, 0x23, 0x2e, 0x1d, 0x29, 0x52, 0x41, 0x2a, 0xa5, 0xf4, 0x20, 0x80, 0x0d, 0xb0, 0x3d, 0x22,
-	0x1c, 0xf7, 0x30, 0xc7, 0x4a, 0xac, 0x20, 0x95, 0xd2, 0xd5, 0x77, 0xd4, 0x30, 0xad, 0xb0, 0x15,
-	0x7a, 0x50, 0xcf, 0x42, 0x52, 0x2d, 0xf5, 0xea, 0x4d, 0x7e, 0xe3, 0xe7, 0x7f, 0x7e, 0x29, 0x4b,
-	0xfa, 0x4c, 0x09, 0x3f, 0x05, 0x9b, 0x8c, 0x63, 0x7e, 0xcb, 0x94, 0x78, 0x41, 0x2a, 0x65, 0xaa,
-	0xfb, 0xea, 0xe2, 0x20, 0x54, 0x61, 0xc0, 0x10, 0x84, 0x5a, 0x32, 0xd0, 0x86, 0x7c, 0x98, 0x07,
-	0x5b, 0x13, 0xe2, 0x31, 0x87, 0xba, 0x4a, 0xa2, 0x20, 0x95, 0x12, 0x53, 0x7c, 0x7a, 0x0a, 0x55,
-	0xb0, 0x43, 0x3d, 0x6c, 0x0f, 0x89, 0xe5, 0x91, 0x6f, 0x6e, 0x1d, 0x8f, 0xf4, 0x94, 0x64, 0x41,
-	0x2a, 0x6d, 0x4f, 0x89, 0x99, 0x00, 0xd5, 0x43, 0xb0, 0x78, 0x09, 0x52, 0xa2, 0x5c, 0x8b, 0xda,
-	0x83, 0x35, 0x3d, 0x3f, 0x07, 0x89, 0x81, 0xe3, 0xf6, 0x44, 0xbf, 0x99, 0xea, 0xe1, 0x23, 0x5e,
-	0x7d, 0xf1, 0xa9, 0xe3, 0xf6, 0xa6, 0x45, 0x04, 0xbf, 0xf8, 0x3d, 0x78, 0xd2, 0x11, 0xc5, 0x4c,
-	0xec, 0xf5, 0x09, 0x67, 0x70, 0x0f, 0x6c, 0x8a, 0x8c, 0x4c, 0x91, 0x0a, 0xf1, 0x52, 0x4a, 0x0f,
-	0x23, 0xa8, 0xcc, 0x9b, 0xf2, 0x6b, 0x24, 0xe6, 0xdd, 0x7c, 0x06, 0xb6, 0xc6, 0xc4, 0xed, 0x39,
-	0x6e, 0x5f, 0x4c, 0x2a, 0x5d, 0x2d, 0x46, 0xab, 0x77, 0x03, 0x30, 0x52, 0x46, 0x9f, 0x4a, 0x8a,
-	0xdf, 0x81, 0xec, 0x63, 0x84, 0xff, 0xe1, 0xe3, 0x13, 0xb0, 0x87, 0x6d, 0xee, 0x4c, 0x30, 0x77,
-	0xa8, 0x6b, 0x4d, 0x28, 0x27, 0xd6, 0x0d, 0x71, 0xfa, 0x37, 0x5c, 0xd8, 0x8a, 0xeb, 0xd9, 0x39,
-	0x7a, 0x41, 0x39, 0xf9, 0x52, 0x60, 0xc5, 0x9f, 0x62, 0x20, 0x63, 0x10, 0xce, 0x87, 0x64, 0x44,
-	0x5c, 0xde, 0x1d, 0x62, 0x77, 0xcd, 0x84, 0x2d, 0xb0, 0xe3, 0x91, 0x1e, 0x19, 0x8d, 0x45, 0x7a,
-	0x0f, 0x73, 0x22, 0x0c, 0xa4, 0x6a, 0xcf, 0xfd, 0xed, 0xf9, 0xf3, 0x4d, 0xfe, 0x30, 0xd8, 0x31,
-	0xd6, 0x1b, 0xa8, 0x0e, 0xad, 0x8c, 0x30, 0xbf, 0x51, 0x5b, 0xa4, 0x8f, 0xed, 0xbb, 0x06, 0xb1,
-	0x7f, 0xff, 0xf5, 0x23, 0x10, 0xae, 0x60, 0x83, 0xd8, 0xe1, 0x2d, 0xcf, 0xd3, 0xe9, 0x98, 0x13,
-	0x58, 0x05, 0xbb, 0x0b, 0xfe, 0x17, 0xad, 0x4f, 0xaf, 0x4c, 0x9e, 0xe3, 0x81, 0x7b, 0xf8, 0x39,
-	0x78, 0x46, 0xb0, 0x37, 0x74, 0x08, 0xe3, 0x96, 0x3d, 0xa4, 0xcc, 0x71, 0xfb, 0x53, 0x65, 0x62,
-	0x51, 0xf9, 0x74, 0xca, 0xaa, 0x07, 0xa4, 0x50, 0xbe, 0xb0, 0xa9, 0xc9, 0xc7, 0x36, 0xb5, 0xf8,
-	0x63, 0x0c, 0x64, 0x5e, 0x78, 0x0e, 0x27, 0x9d, 0xeb, 0x6b, 0x9d, 0xd8, 0xd4, 0xeb, 0xad, 0x99,
-	0x4e, 0x7e, 0xe9, 0x5a, 0x56, 0x76, 0xbe, 0x02, 0xe4, 0x97, 0x7e, 0x22, 0x8b, 0x5e, 0x5f, 0x3f,
-	0xda, 0x5c, 0xe6, 0x65, 0x58, 0x27, 0xf4, 0x66, 0x00, 0x48, 0x6f, 0x39, 0xe3, 0x58, 0x2c, 0x87,
-	0xc5, 0x6e, 0xc7, 0xe3, 0xe1, 0x9d, 0xe8, 0x2a, 0x5d, 0xdd, 0x9f, 0x3f, 0xcf, 0x8c, 0xcc, 0x9e,
-	0xe7, 0x3a, 0x75, 0xdc, 0xc5, 0x67, 0x79, 0x77, 0x41, 0x6f, 0x08, 0x39, 0x44, 0x60, 0x87, 0xcd,
-	0x2e, 0xdb, 0x1a, 0x0f, 0x71, 0xd0, 0x78, 0xba, 0x7a, 0x14, 0xdd, 0xd9, 0xe8, 0x46, 0xe8, 0x19,
-	0x16, 0x89, 0xcb, 0xbf, 0xc5, 0x40, 0x7a, 0xe1, 0x05, 0x00, 0x8f, 0x80, 0xa2, 0x19, 0x06, 0x32,
-	0x2d, 0xc3, 0xd4, 0xcc, 0x73, 0xc3, 0x3a, 0x6f, 0x1b, 0x5d, 0x54, 0x6f, 0x9e, 0x34, 0x51, 0x43,
-	0xde, 0x80, 0x0a, 0xc8, 0x46, 0xd0, 0x2e, 0x6a, 0x37, 0x9a, 0xed, 0x2f, 0x64, 0x09, 0x3e, 0x03,
-	0x6f, 0x47, 0x10, 0xad, 0x6e, 0x36, 0x2f, 0x90, 0x1c, 0x83, 0xfb, 0xe0, 0x69, 0x04, 0xd0, 0x91,
-	0xd9, 0xd4, 0x7d, 0x4d, 0x1c, 0x16, 0xc0, 0xd1, 0x12, 0x74, 0xd6, 0xb9, 0xd0, 0x5a, 0xb3, 0xac,
-	0x89, 0x95, 0x7a, 0x42, 0x8c, 0x1a, 0x72, 0x12, 0x1e, 0x80, 0xbd, 0x08, 0xd2, 0x40, 0xad, 0xa6,
-	0x61, 0xfa, 0xaa, 0xcd, 0x95, 0x92, 0x01, 0x86, 0x1a, 0xf2, 0xd6, 0x0a, 0x64, 0x20, 0xd3, 0x6c,
-	0xf9, 0xaa, 0xed, 0x95, 0x8c, 0xfa, 0x2c, 0x63, 0x6a, 0x65, 0x2a, 0x2f, 0xf4, 0xa6, 0x69, 0xa2,
-	0xb6, 0xd5, 0x39, 0x39, 0x91, 0x41, 0xf9, 0x2f, 0x09, 0x3c, 0x89, 0xbc, 0x98, 0x60, 0x1e, 0x1c,
-	0x06, 0xfc, 0x56, 0xa7, 0x7e, 0x6a, 0x9d, 0x36, 0xdb, 0x8d, 0xa5, 0x41, 0x7e, 0x00, 0xde, 0x5d,
-	0x26, 0x9c, 0x69, 0xfa, 0x29, 0x32, 0xad, 0xe0, 0xb8, 0xdb, 0x69, 0x35, 0xeb, 0x97, 0xb2, 0x04,
-	0xdf, 0x03, 0x85, 0x35, 0xc4, 0x9a, 0x66, 0x20, 0xab, 0xdb, 0xe9, 0xb4, 0xe4, 0x18, 0x2c, 0x83,
-	0xf7, 0x97, 0x59, 0xa6, 0x8e, 0x34, 0xe3, 0x5c, 0xbf, 0xf4, 0x2d, 0xd7, 0x5a, 0x68, 0x9a, 0x31,
-	0x0e, 0x55, 0x50, 0x5e, 0xcb, 0xd5, 0xd1, 0x09, 0xd2, 0x51, 0xbb, 0x8e, 0x2c, 0x53, 0xfb, 0xca,
-	0xaa, 0x6b, 0x5d, 0x39, 0x51, 0xfb, 0xf0, 0xd5, 0x7d, 0x4e, 0x7a, 0x7d, 0x9f, 0x93, 0xfe, 0xbe,
-	0xcf, 0x49, 0x3f, 0x3c, 0xe4, 0x36, 0x5e, 0x3f, 0xe4, 0x36, 0xfe, 0x78, 0xc8, 0x6d, 0x7c, 0xbd,
-	0xeb, 0x7f, 0x69, 0xbf, 0x0d, 0xbf, 0xb5, 0xfc, 0x6e, 0x4c, 0xd8, 0xd5, 0xa6, 0xf8, 0xae, 0x7d,
-	0xfc, 0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x24, 0x7e, 0x51, 0x29, 0x85, 0x07, 0x00, 0x00,
+	// 1090 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0x4d, 0x6f, 0xe3, 0x44,
+	0x18, 0xae, 0xf3, 0x51, 0xb6, 0x93, 0xdd, 0xac, 0x3b, 0x5b, 0xb6, 0xe9, 0x57, 0x52, 0x05, 0x24,
+	0xaa, 0xa0, 0x4d, 0xd4, 0x80, 0x00, 0x81, 0x38, 0x38, 0xf1, 0x94, 0x35, 0x9b, 0x3a, 0x91, 0x3f,
+	0x76, 0x25, 0x2e, 0xd6, 0xd4, 0x1e, 0xa5, 0x56, 0x1c, 0x3b, 0xb2, 0xa7, 0x11, 0x39, 0xf0, 0x07,
+	0x38, 0xf1, 0x13, 0x38, 0x21, 0x8e, 0x7b, 0xe0, 0xc4, 0x81, 0xf3, 0x72, 0xab, 0xf6, 0x80, 0x10,
+	0x87, 0x0a, 0xb5, 0x87, 0xe5, 0x67, 0x20, 0xcf, 0x38, 0x89, 0x9d, 0x76, 0x0f, 0x70, 0xa9, 0x3c,
+	0xf3, 0x3c, 0xcf, 0x3b, 0xef, 0xfb, 0xbc, 0xef, 0x4c, 0x03, 0x2a, 0x38, 0x1c, 0xb5, 0x70, 0x14,
+	0x11, 0xda, 0x9a, 0x1e, 0xf3, 0x8f, 0xe6, 0x24, 0x0c, 0x68, 0x00, 0xef, 0xe3, 0x70, 0xd4, 0xe4,
+	0x1b, 0xd3, 0xe3, 0xdd, 0x4d, 0x3c, 0x76, 0xfd, 0xa0, 0xc5, 0xfe, 0x72, 0xc2, 0xee, 0x41, 0x2c,
+	0x1d, 0x63, 0xdf, 0xc1, 0x94, 0xc4, 0x62, 0xe2, 0x4f, 0x89, 0x17, 0x4c, 0x48, 0x02, 0x57, 0xed,
+	0x20, 0x1a, 0x07, 0x51, 0xeb, 0x0c, 0xfb, 0xa3, 0xd6, 0xf4, 0xf8, 0x8c, 0x50, 0x7c, 0xcc, 0x16,
+	0xb7, 0xf0, 0x88, 0x2c, 0x70, 0x3b, 0x70, 0xfd, 0x04, 0xdf, 0xe1, 0xb8, 0xc5, 0x56, 0x2d, 0xbe,
+	0x48, 0xa0, 0xad, 0x61, 0x30, 0x0c, 0xf8, 0x7e, 0xfc, 0xc5, 0x77, 0xeb, 0x33, 0xb0, 0x3e, 0xc0,
+	0x21, 0x1e, 0x47, 0x50, 0x03, 0xf5, 0x88, 0x50, 0xea, 0x91, 0x31, 0xf1, 0xa9, 0x85, 0x6d, 0xea,
+	0x4e, 0x31, 0x75, 0x03, 0xdf, 0x72, 0x88, 0x87, 0x67, 0xd6, 0x99, 0x17, 0xd8, 0xa3, 0xa8, 0x22,
+	0x1c, 0x0a, 0x47, 0x85, 0x4e, 0xf1, 0xe7, 0x37, 0x2f, 0x1b, 0x82, 0x56, 0x5b, 0x0a, 0xa4, 0x05,
+	0x5f, 0x8e, 0xe9, 0x1d, 0xc6, 0xfe, 0x7c, 0xef, 0x9f, 0x1f, 0x6b, 0xc2, 0xf7, 0x6f, 0x5e, 0x36,
+	0x60, 0x5c, 0xf6, 0xb7, 0x89, 0x67, 0xfc, 0xc0, 0xfa, 0x6f, 0x02, 0x28, 0x4a, 0xf1, 0x06, 0xdc,
+	0x02, 0x45, 0x87, 0xf8, 0xc1, 0x98, 0x45, 0xdf, 0xd0, 0xf8, 0x02, 0xca, 0xe0, 0xde, 0x98, 0x50,
+	0xec, 0x60, 0x8a, 0x2b, 0xb9, 0x43, 0xe1, 0xa8, 0xd4, 0x3e, 0x68, 0x26, 0x15, 0x31, 0x47, 0x92,
+	0xf2, 0x9b, 0xa7, 0x09, 0xa9, 0xb3, 0xf1, 0xea, 0xaa, 0xb6, 0xc6, 0x33, 0x5b, 0x28, 0xe1, 0x67,
+	0x60, 0x3d, 0xa2, 0x98, 0x5e, 0x44, 0x95, 0xfc, 0xa1, 0x70, 0x54, 0x6e, 0xef, 0x34, 0xd3, 0x2d,
+	0x6a, 0xb2, 0x04, 0x74, 0x46, 0x98, 0x57, 0x95, 0xf0, 0x61, 0x0d, 0xbc, 0x33, 0x25, 0x61, 0xe4,
+	0x06, 0x7e, 0xa5, 0x90, 0xae, 0x7a, 0xbe, 0x5b, 0xff, 0x29, 0x07, 0xca, 0xfa, 0xc2, 0x81, 0x81,
+	0x87, 0xfd, 0xb7, 0x54, 0x62, 0x81, 0x87, 0x21, 0x71, 0xc8, 0x78, 0xc2, 0xfc, 0x0c, 0x31, 0x25,
+	0xac, 0xa0, 0x8d, 0xce, 0x27, 0x71, 0xc6, 0x7f, 0x5d, 0xd5, 0xf6, 0x78, 0x5d, 0x91, 0x33, 0x6a,
+	0xba, 0x41, 0x6b, 0x8c, 0xe9, 0x79, 0xb3, 0x47, 0x86, 0xd8, 0x9e, 0xc9, 0xc4, 0x7e, 0xfd, 0xcb,
+	0x13, 0x90, 0x94, 0x2d, 0x13, 0x9b, 0xa7, 0x50, 0x5e, 0x86, 0xd3, 0x30, 0x25, 0xb0, 0x0d, 0x36,
+	0x53, 0x0d, 0x3b, 0x27, 0xee, 0xf0, 0x9c, 0xb2, 0x7a, 0xf3, 0xf3, 0xa4, 0xc5, 0x25, 0xfe, 0x94,
+	0xc1, 0xf0, 0x4b, 0xb0, 0x4d, 0x70, 0xe8, 0xb9, 0x24, 0xa2, 0x96, 0xed, 0x05, 0x91, 0xeb, 0x0f,
+	0xe7, 0xca, 0x42, 0x5a, 0xf9, 0xee, 0x9c, 0xd5, 0xe5, 0xa4, 0x44, 0xde, 0x00, 0x0f, 0x82, 0x09,
+	0xf1, 0x89, 0x33, 0x17, 0x15, 0xd3, 0xa2, 0xfb, 0x1c, 0xe3, 0xdc, 0xfa, 0xef, 0x39, 0x50, 0x1a,
+	0x84, 0xae, 0x4d, 0x1c, 0xde, 0xef, 0x8f, 0x41, 0x91, 0x35, 0x80, 0xb9, 0x54, 0x6a, 0x3f, 0xba,
+	0xa3, 0x25, 0xe9, 0x66, 0x72, 0x32, 0x94, 0x40, 0x21, 0x65, 0xdd, 0x93, 0xff, 0x64, 0x9b, 0xc6,
+	0xa4, 0xf0, 0x6b, 0xb0, 0xe1, 0xe1, 0x88, 0xf2, 0x16, 0xe4, 0xff, 0x4f, 0x9c, 0x7b, 0xb1, 0x9e,
+	0x79, 0x1e, 0x0f, 0x56, 0x70, 0x11, 0xda, 0x84, 0xd9, 0x75, 0x6b, 0xb0, 0x58, 0xbd, 0x3a, 0x23,
+	0x2c, 0x07, 0x8b, 0x2d, 0xe1, 0x17, 0x60, 0x3d, 0x24, 0x38, 0x0a, 0x7c, 0xe6, 0x59, 0xb9, 0xbd,
+	0x9f, 0x55, 0x9a, 0xfe, 0x84, 0x79, 0xa5, 0x31, 0xce, 0x42, 0xcc, 0x25, 0xf5, 0xd7, 0x39, 0x20,
+	0x6a, 0x24, 0x0a, 0xbc, 0x0b, 0xd6, 0x7d, 0x62, 0x07, 0xa1, 0xf3, 0x96, 0xb1, 0x4b, 0x0d, 0x70,
+	0xee, 0xae, 0x01, 0x8e, 0xc7, 0x26, 0x5c, 0x84, 0xba, 0x7b, 0x6c, 0x96, 0x78, 0xd2, 0x77, 0x1d,
+	0xc0, 0xe0, 0x82, 0x46, 0x14, 0xfb, 0x4e, 0x3c, 0x31, 0xd1, 0xc5, 0x64, 0xe2, 0xcd, 0x98, 0x05,
+	0xa5, 0xf6, 0xce, 0xf2, 0x7e, 0x46, 0x64, 0x71, 0x3f, 0xbb, 0x81, 0xeb, 0xa7, 0xdb, 0xb9, 0x99,
+	0xd2, 0xeb, 0x4c, 0x0e, 0x11, 0x78, 0x98, 0x7a, 0x7b, 0x26, 0x1e, 0xe6, 0xd6, 0x94, 0x56, 0xad,
+	0xc9, 0xde, 0x36, 0xad, 0x1c, 0x65, 0x6f, 0xdf, 0xa7, 0xa0, 0x30, 0x72, 0x7d, 0xa7, 0xb2, 0x7e,
+	0x97, 0xad, 0x4b, 0xd3, 0x9e, 0xb9, 0xbe, 0x33, 0x2f, 0x90, 0x09, 0xea, 0x2f, 0x80, 0x88, 0xc6,
+	0x24, 0x1c, 0x12, 0xdf, 0x9e, 0x9d, 0xf2, 0xc7, 0x19, 0x76, 0xc1, 0xbd, 0xf9, 0xe3, 0x9c, 0xcc,
+	0x69, 0x85, 0x05, 0x4c, 0x1e, 0xef, 0x38, 0x24, 0x4a, 0xf0, 0xce, 0x83, 0xb8, 0xba, 0xcb, 0xab,
+	0x9a, 0x90, 0xbc, 0x3e, 0x73, 0x61, 0xe3, 0x57, 0x01, 0x94, 0x52, 0x4f, 0x0c, 0xdc, 0x07, 0x15,
+	0x49, 0xd7, 0x91, 0x61, 0xe9, 0x86, 0x64, 0x98, 0xba, 0x65, 0xaa, 0xfa, 0x00, 0x75, 0x95, 0x13,
+	0x05, 0xc9, 0xe2, 0x1a, 0xdc, 0x06, 0x8f, 0x32, 0xa8, 0xd4, 0x35, 0x94, 0xe7, 0x48, 0x14, 0xe0,
+	0x21, 0xd8, 0xcf, 0x00, 0x8a, 0xae, 0x9b, 0x92, 0xda, 0x45, 0xd6, 0x53, 0xa9, 0x67, 0x20, 0x59,
+	0xcc, 0xc1, 0x5d, 0xf0, 0x38, 0xc3, 0xd0, 0x4d, 0x7d, 0x80, 0x54, 0x19, 0xc9, 0x62, 0xfe, 0xd6,
+	0xa1, 0x2f, 0x34, 0xc5, 0x30, 0x90, 0x6a, 0xf5, 0x4f, 0x4e, 0xc4, 0x02, 0xac, 0x80, 0xad, 0x0c,
+	0xaa, 0x21, 0x43, 0xd1, 0x90, 0x2c, 0x16, 0x1b, 0xdf, 0x25, 0xb7, 0x96, 0x4f, 0x71, 0x1c, 0x66,
+	0xa0, 0x29, 0x5d, 0x64, 0xe9, 0x7d, 0x53, 0xeb, 0xa2, 0x95, 0xdc, 0x77, 0xc1, 0xe3, 0x0c, 0xaa,
+	0x9a, 0xa7, 0x48, 0x93, 0x14, 0x2d, 0x4e, 0x7f, 0x1b, 0x3c, 0xca, 0x60, 0x7d, 0x4d, 0xea, 0xf6,
+	0x90, 0x98, 0x83, 0x7b, 0x60, 0x3b, 0x03, 0xe8, 0xc8, 0x30, 0x7a, 0xe8, 0x14, 0xa9, 0x86, 0x98,
+	0x6f, 0xfc, 0x21, 0x80, 0x72, 0xf6, 0x2e, 0xc0, 0x1a, 0xd8, 0x33, 0x55, 0xa6, 0x90, 0x2d, 0x0d,
+	0x49, 0x7a, 0x5f, 0x5d, 0xc9, 0xe2, 0x7d, 0x70, 0xb8, 0x4a, 0x38, 0x41, 0x48, 0xb6, 0x4c, 0x55,
+	0x7a, 0x2e, 0x29, 0x3d, 0xa9, 0xd3, 0x8b, 0xf3, 0x39, 0x00, 0x3b, 0xb7, 0xc3, 0x18, 0x9a, 0xa9,
+	0x73, 0x2f, 0xef, 0x38, 0x25, 0x6d, 0x59, 0x3e, 0x4e, 0x7b, 0x95, 0x30, 0x77, 0xad, 0x10, 0xf7,
+	0xea, 0x76, 0x70, 0x0d, 0x75, 0xfb, 0x5f, 0xa9, 0x8a, 0xce, 0x7c, 0x9d, 0x81, 0x72, 0x76, 0x18,
+	0xe3, 0x13, 0x35, 0xa4, 0xf7, 0x7b, 0xa6, 0xa1, 0xf4, 0x55, 0xeb, 0x99, 0xa2, 0xca, 0x2b, 0x75,
+	0x1d, 0x80, 0x9d, 0x55, 0x42, 0x9c, 0x12, 0x62, 0x09, 0x09, 0xf0, 0x03, 0xf0, 0xde, 0x2a, 0xcc,
+	0x13, 0x8a, 0xad, 0xb4, 0x34, 0xa4, 0x2b, 0xb2, 0x29, 0xf5, 0xc4, 0x5c, 0xe7, 0xc3, 0x57, 0xd7,
+	0x55, 0xe1, 0xf2, 0xba, 0x2a, 0xfc, 0x7d, 0x5d, 0x15, 0x7e, 0xb8, 0xa9, 0xae, 0x5d, 0xde, 0x54,
+	0xd7, 0xfe, 0xbc, 0xa9, 0xae, 0x7d, 0xb3, 0x99, 0xfe, 0x0f, 0x4d, 0x67, 0x13, 0x12, 0x9d, 0xad,
+	0xb3, 0x9f, 0x08, 0x1f, 0xfd, 0x1b, 0x00, 0x00, 0xff, 0xff, 0x97, 0x52, 0xf3, 0x6f, 0xef, 0x08,
+	0x00, 0x00,
+}
+
+func (this *Params) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*Params)
+	if !ok {
+		that2, ok := that.(Params)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.SettlementActivationDelayBlocks != that1.SettlementActivationDelayBlocks {
+		return false
+	}
+	return true
+}
+func (m *Params) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Params) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SettlementActivationDelayBlocks != 0 {
+		i = encodeVarintAsset(dAtA, i, uint64(m.SettlementActivationDelayBlocks))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *Asset) Marshal() (dAtA []byte, err error) {
@@ -662,16 +816,6 @@ func (m *Asset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.OracleRequired {
-		i--
-		if m.OracleRequired {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x28
-	}
 	if m.Version != 0 {
 		i = encodeVarintAsset(dAtA, i, uint64(m.Version))
 		i--
@@ -702,132 +846,6 @@ func (m *Asset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AssetLock) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AssetLock) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AssetLock) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Kind != 0 {
-		i = encodeVarintAsset(dAtA, i, uint64(m.Kind))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintAsset(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *OracleTargets) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *OracleTargets) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *OracleTargets) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Pending != nil {
-		{
-			size, err := m.Pending.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintAsset(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1a
-	}
-	if m.Version != 0 {
-		i = encodeVarintAsset(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denoms) > 0 {
-		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Denoms[iNdEx])
-			copy(dAtA[i:], m.Denoms[iNdEx])
-			i = encodeVarintAsset(dAtA, i, uint64(len(m.Denoms[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *PendingOracleTargets) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PendingOracleTargets) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PendingOracleTargets) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ActivationVoteHeight != 0 {
-		i = encodeVarintAsset(dAtA, i, uint64(m.ActivationVoteHeight))
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.Version != 0 {
-		i = encodeVarintAsset(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Denoms) > 0 {
-		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Denoms[iNdEx])
-			copy(dAtA[i:], m.Denoms[iNdEx])
-			i = encodeVarintAsset(dAtA, i, uint64(len(m.Denoms[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *SettlementPlan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -848,8 +866,8 @@ func (m *SettlementPlan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Version != 0 {
-		i = encodeVarintAsset(dAtA, i, uint64(m.Version))
+	if m.OpenedHeight != 0 {
+		i = encodeVarintAsset(dAtA, i, uint64(m.OpenedHeight))
 		i--
 		dAtA[i] = 0x28
 	}
@@ -883,7 +901,7 @@ func (m *SettlementPlan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *WriteOffRecord) Marshal() (dAtA []byte, err error) {
+func (m *PricedAsset) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -893,16 +911,88 @@ func (m *WriteOffRecord) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *WriteOffRecord) MarshalTo(dAtA []byte) (int, error) {
+func (m *PricedAsset) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *WriteOffRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *PricedAsset) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
+	if m.Reason != 0 {
+		i = encodeVarintAsset(dAtA, i, uint64(m.Reason))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Source != 0 {
+		i = encodeVarintAsset(dAtA, i, uint64(m.Source))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.LastRate != nil {
+		{
+			size := m.LastRate.Size()
+			i -= size
+			if _, err := m.LastRate.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+			i = encodeVarintAsset(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Rate != nil {
+		{
+			size := m.Rate.Size()
+			i -= size
+			if _, err := m.Rate.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+			i = encodeVarintAsset(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	{
+		size, err := m.Asset.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintAsset(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ResolutionRecord) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResolutionRecord) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResolutionRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Kind != 0 {
+		i = encodeVarintAsset(dAtA, i, uint64(m.Kind))
+		i--
+		dAtA[i] = 0x30
+	}
 	if m.SettlementPlan != nil {
 		{
 			size, err := m.SettlementPlan.MarshalToSizedBuffer(dAtA[:i])
@@ -925,8 +1015,8 @@ func (m *WriteOffRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x22
-	if m.WriteOffHeight != 0 {
-		i = encodeVarintAsset(dAtA, i, uint64(m.WriteOffHeight))
+	if m.ResolutionHeight != 0 {
+		i = encodeVarintAsset(dAtA, i, uint64(m.ResolutionHeight))
 		i--
 		dAtA[i] = 0x18
 	}
@@ -945,6 +1035,39 @@ func (m *WriteOffRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *EmergencyMandate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EmergencyMandate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EmergencyMandate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Envelope.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintAsset(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintAsset(dAtA []byte, offset int, v uint64) int {
 	offset -= sovAsset(v)
 	base := offset
@@ -956,6 +1079,18 @@ func encodeVarintAsset(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Params) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SettlementActivationDelayBlocks != 0 {
+		n += 1 + sovAsset(uint64(m.SettlementActivationDelayBlocks))
+	}
+	return n
+}
+
 func (m *Asset) Size() (n int) {
 	if m == nil {
 		return 0
@@ -973,68 +1108,6 @@ func (m *Asset) Size() (n int) {
 	}
 	if m.Version != 0 {
 		n += 1 + sovAsset(uint64(m.Version))
-	}
-	if m.OracleRequired {
-		n += 2
-	}
-	return n
-}
-
-func (m *AssetLock) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovAsset(uint64(l))
-	}
-	if m.Kind != 0 {
-		n += 1 + sovAsset(uint64(m.Kind))
-	}
-	return n
-}
-
-func (m *OracleTargets) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Denoms) > 0 {
-		for _, s := range m.Denoms {
-			l = len(s)
-			n += 1 + l + sovAsset(uint64(l))
-		}
-	}
-	if m.Version != 0 {
-		n += 1 + sovAsset(uint64(m.Version))
-	}
-	if m.Pending != nil {
-		l = m.Pending.Size()
-		n += 1 + l + sovAsset(uint64(l))
-	}
-	return n
-}
-
-func (m *PendingOracleTargets) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Denoms) > 0 {
-		for _, s := range m.Denoms {
-			l = len(s)
-			n += 1 + l + sovAsset(uint64(l))
-		}
-	}
-	if m.Version != 0 {
-		n += 1 + sovAsset(uint64(m.Version))
-	}
-	if m.ActivationVoteHeight != 0 {
-		n += 1 + sovAsset(uint64(m.ActivationVoteHeight))
 	}
 	return n
 }
@@ -1057,13 +1130,38 @@ func (m *SettlementPlan) Size() (n int) {
 	if m.EarliestClosingHeight != 0 {
 		n += 1 + sovAsset(uint64(m.EarliestClosingHeight))
 	}
-	if m.Version != 0 {
-		n += 1 + sovAsset(uint64(m.Version))
+	if m.OpenedHeight != 0 {
+		n += 1 + sovAsset(uint64(m.OpenedHeight))
 	}
 	return n
 }
 
-func (m *WriteOffRecord) Size() (n int) {
+func (m *PricedAsset) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Asset.Size()
+	n += 1 + l + sovAsset(uint64(l))
+	if m.Rate != nil {
+		l = m.Rate.Size()
+		n += 1 + l + sovAsset(uint64(l))
+	}
+	if m.LastRate != nil {
+		l = m.LastRate.Size()
+		n += 1 + l + sovAsset(uint64(l))
+	}
+	if m.Source != 0 {
+		n += 1 + sovAsset(uint64(m.Source))
+	}
+	if m.Reason != 0 {
+		n += 1 + sovAsset(uint64(m.Reason))
+	}
+	return n
+}
+
+func (m *ResolutionRecord) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1076,8 +1174,8 @@ func (m *WriteOffRecord) Size() (n int) {
 	if m.Version != 0 {
 		n += 1 + sovAsset(uint64(m.Version))
 	}
-	if m.WriteOffHeight != 0 {
-		n += 1 + sovAsset(uint64(m.WriteOffHeight))
+	if m.ResolutionHeight != 0 {
+		n += 1 + sovAsset(uint64(m.ResolutionHeight))
 	}
 	l = m.OutstandingSupply.Size()
 	n += 1 + l + sovAsset(uint64(l))
@@ -1085,6 +1183,20 @@ func (m *WriteOffRecord) Size() (n int) {
 		l = m.SettlementPlan.Size()
 		n += 1 + l + sovAsset(uint64(l))
 	}
+	if m.Kind != 0 {
+		n += 1 + sovAsset(uint64(m.Kind))
+	}
+	return n
+}
+
+func (m *EmergencyMandate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Envelope.Size()
+	n += 1 + l + sovAsset(uint64(l))
 	return n
 }
 
@@ -1093,6 +1205,75 @@ func sovAsset(x uint64) (n int) {
 }
 func sozAsset(x uint64) (n int) {
 	return sovAsset(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *Params) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAsset
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Params: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SettlementActivationDelayBlocks", wireType)
+			}
+			m.SettlementActivationDelayBlocks = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SettlementActivationDelayBlocks |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAsset(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *Asset) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1222,384 +1403,6 @@ func (m *Asset) Unmarshal(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OracleRequired", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.OracleRequired = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAsset(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AssetLock) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAsset
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AssetLock: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AssetLock: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAsset
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
-			}
-			m.Kind = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Kind |= AssetLockKind(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAsset(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *OracleTargets) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAsset
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: OracleTargets: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: OracleTargets: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAsset
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			m.Version = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pending", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthAsset
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Pending == nil {
-				m.Pending = &PendingOracleTargets{}
-			}
-			if err := m.Pending.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAsset(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PendingOracleTargets) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAsset
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PendingOracleTargets: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PendingOracleTargets: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAsset
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAsset
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			m.Version = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActivationVoteHeight", wireType)
-			}
-			m.ActivationVoteHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAsset
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ActivationVoteHeight |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1760,9 +1563,9 @@ func (m *SettlementPlan) Unmarshal(dAtA []byte) error {
 			}
 		case 5:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field OpenedHeight", wireType)
 			}
-			m.Version = 0
+			m.OpenedHeight = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowAsset
@@ -1772,7 +1575,7 @@ func (m *SettlementPlan) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Version |= uint64(b&0x7F) << shift
+				m.OpenedHeight |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1798,7 +1601,7 @@ func (m *SettlementPlan) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *WriteOffRecord) Unmarshal(dAtA []byte) error {
+func (m *PricedAsset) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1821,10 +1624,203 @@ func (m *WriteOffRecord) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: WriteOffRecord: wiretype end group for non-group")
+			return fmt.Errorf("proto: PricedAsset: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: WriteOffRecord: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PricedAsset: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Asset", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAsset
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Asset.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAsset
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var v cosmossdk_io_math.LegacyDec
+			m.Rate = &v
+			if err := m.Rate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAsset
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var v cosmossdk_io_math.LegacyDec
+			m.LastRate = &v
+			if err := m.LastRate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Source", wireType)
+			}
+			m.Source = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Source |= PriceSource(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			m.Reason = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Reason |= UnpricedReason(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAsset(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResolutionRecord) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAsset
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResolutionRecord: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResolutionRecord: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1880,9 +1876,9 @@ func (m *WriteOffRecord) Unmarshal(dAtA []byte) error {
 			}
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WriteOffHeight", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ResolutionHeight", wireType)
 			}
-			m.WriteOffHeight = 0
+			m.ResolutionHeight = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowAsset
@@ -1892,7 +1888,7 @@ func (m *WriteOffRecord) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.WriteOffHeight |= int64(b&0x7F) << shift
+				m.ResolutionHeight |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1963,6 +1959,108 @@ func (m *WriteOffRecord) Unmarshal(dAtA []byte) error {
 				m.SettlementPlan = &SettlementPlan{}
 			}
 			if err := m.SettlementPlan.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
+			}
+			m.Kind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Kind |= ResolutionKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAsset(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EmergencyMandate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAsset
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EmergencyMandate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EmergencyMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Envelope", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAsset
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAsset
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAsset
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Envelope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

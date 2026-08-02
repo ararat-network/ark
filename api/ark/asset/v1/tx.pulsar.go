@@ -3,7 +3,6 @@ package assetv1
 
 import (
 	_ "cosmossdk.io/api/amino"
-	v1beta1 "cosmossdk.io/api/cosmos/bank/v1beta1"
 	_ "cosmossdk.io/api/cosmos/msg/v1"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
@@ -18,18 +17,871 @@ import (
 )
 
 var (
-	md_MsgRegisterAsset                 protoreflect.MessageDescriptor
-	fd_MsgRegisterAsset_authority       protoreflect.FieldDescriptor
-	fd_MsgRegisterAsset_metadata        protoreflect.FieldDescriptor
-	fd_MsgRegisterAsset_oracle_required protoreflect.FieldDescriptor
+	md_MsgUpdateParams           protoreflect.MessageDescriptor
+	fd_MsgUpdateParams_authority protoreflect.FieldDescriptor
+	fd_MsgUpdateParams_params    protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgUpdateParams = File_ark_asset_v1_tx_proto.Messages().ByName("MsgUpdateParams")
+	fd_MsgUpdateParams_authority = md_MsgUpdateParams.Fields().ByName("authority")
+	fd_MsgUpdateParams_params = md_MsgUpdateParams.Fields().ByName("params")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgUpdateParams)(nil)
+
+type fastReflection_MsgUpdateParams MsgUpdateParams
+
+func (x *MsgUpdateParams) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParams)(x)
+}
+
+func (x *MsgUpdateParams) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgUpdateParams_messageType fastReflection_MsgUpdateParams_messageType
+var _ protoreflect.MessageType = fastReflection_MsgUpdateParams_messageType{}
+
+type fastReflection_MsgUpdateParams_messageType struct{}
+
+func (x fastReflection_MsgUpdateParams_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParams)(nil)
+}
+func (x fastReflection_MsgUpdateParams_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParams)
+}
+func (x fastReflection_MsgUpdateParams_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParams
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgUpdateParams) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParams
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgUpdateParams) Type() protoreflect.MessageType {
+	return _fastReflection_MsgUpdateParams_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgUpdateParams) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParams)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgUpdateParams) Interface() protoreflect.ProtoMessage {
+	return (*MsgUpdateParams)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgUpdateParams) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgUpdateParams_authority, value) {
+			return
+		}
+	}
+	if x.Params != nil {
+		value := protoreflect.ValueOfMessage(x.Params.ProtoReflect())
+		if !f(fd_MsgUpdateParams_params, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgUpdateParams) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgUpdateParams.authority":
+		return x.Authority != ""
+	case "ark.asset.v1.MsgUpdateParams.params":
+		return x.Params != nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParams"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParams does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParams) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgUpdateParams.authority":
+		x.Authority = ""
+	case "ark.asset.v1.MsgUpdateParams.params":
+		x.Params = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParams"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParams does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgUpdateParams) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.asset.v1.MsgUpdateParams.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgUpdateParams.params":
+		value := x.Params
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParams"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParams does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParams) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgUpdateParams.authority":
+		x.Authority = value.Interface().(string)
+	case "ark.asset.v1.MsgUpdateParams.params":
+		x.Params = value.Message().Interface().(*Params)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParams"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParams does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParams) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgUpdateParams.params":
+		if x.Params == nil {
+			x.Params = new(Params)
+		}
+		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
+	case "ark.asset.v1.MsgUpdateParams.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgUpdateParams is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParams"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParams does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgUpdateParams) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgUpdateParams.authority":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgUpdateParams.params":
+		m := new(Params)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParams"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParams does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgUpdateParams) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgUpdateParams", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgUpdateParams) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParams) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgUpdateParams) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgUpdateParams) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgUpdateParams)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Params != nil {
+			l = options.Size(x.Params)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParams)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Params != nil {
+			encoded, err := options.Marshal(x.Params)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParams)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParams: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParams: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Params", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Params == nil {
+					x.Params = &Params{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Params); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgUpdateParamsResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgUpdateParamsResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgUpdateParamsResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgUpdateParamsResponse)(nil)
+
+type fastReflection_MsgUpdateParamsResponse MsgUpdateParamsResponse
+
+func (x *MsgUpdateParamsResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParamsResponse)(x)
+}
+
+func (x *MsgUpdateParamsResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgUpdateParamsResponse_messageType fastReflection_MsgUpdateParamsResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgUpdateParamsResponse_messageType{}
+
+type fastReflection_MsgUpdateParamsResponse_messageType struct{}
+
+func (x fastReflection_MsgUpdateParamsResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParamsResponse)(nil)
+}
+func (x fastReflection_MsgUpdateParamsResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParamsResponse)
+}
+func (x fastReflection_MsgUpdateParamsResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParamsResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgUpdateParamsResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParamsResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgUpdateParamsResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgUpdateParamsResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgUpdateParamsResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParamsResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgUpdateParamsResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgUpdateParamsResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgUpdateParamsResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgUpdateParamsResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParamsResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParamsResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamsResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParamsResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParamsResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgUpdateParamsResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParamsResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParamsResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamsResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParamsResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParamsResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamsResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParamsResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParamsResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgUpdateParamsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgUpdateParamsResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgUpdateParamsResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgUpdateParamsResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgUpdateParamsResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgUpdateParamsResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamsResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgUpdateParamsResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgUpdateParamsResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgUpdateParamsResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParamsResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParamsResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParamsResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParamsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgRegisterAsset           protoreflect.MessageDescriptor
+	fd_MsgRegisterAsset_authority protoreflect.FieldDescriptor
+	fd_MsgRegisterAsset_denom     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
 	md_MsgRegisterAsset = File_ark_asset_v1_tx_proto.Messages().ByName("MsgRegisterAsset")
 	fd_MsgRegisterAsset_authority = md_MsgRegisterAsset.Fields().ByName("authority")
-	fd_MsgRegisterAsset_metadata = md_MsgRegisterAsset.Fields().ByName("metadata")
-	fd_MsgRegisterAsset_oracle_required = md_MsgRegisterAsset.Fields().ByName("oracle_required")
+	fd_MsgRegisterAsset_denom = md_MsgRegisterAsset.Fields().ByName("denom")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgRegisterAsset)(nil)
@@ -41,7 +893,7 @@ func (x *MsgRegisterAsset) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgRegisterAsset) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[0]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -103,15 +955,9 @@ func (x *fastReflection_MsgRegisterAsset) Range(f func(protoreflect.FieldDescrip
 			return
 		}
 	}
-	if x.Metadata != nil {
-		value := protoreflect.ValueOfMessage(x.Metadata.ProtoReflect())
-		if !f(fd_MsgRegisterAsset_metadata, value) {
-			return
-		}
-	}
-	if x.OracleRequired != false {
-		value := protoreflect.ValueOfBool(x.OracleRequired)
-		if !f(fd_MsgRegisterAsset_oracle_required, value) {
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_MsgRegisterAsset_denom, value) {
 			return
 		}
 	}
@@ -132,10 +978,8 @@ func (x *fastReflection_MsgRegisterAsset) Has(fd protoreflect.FieldDescriptor) b
 	switch fd.FullName() {
 	case "ark.asset.v1.MsgRegisterAsset.authority":
 		return x.Authority != ""
-	case "ark.asset.v1.MsgRegisterAsset.metadata":
-		return x.Metadata != nil
-	case "ark.asset.v1.MsgRegisterAsset.oracle_required":
-		return x.OracleRequired != false
+	case "ark.asset.v1.MsgRegisterAsset.denom":
+		return x.Denom != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRegisterAsset"))
@@ -154,10 +998,8 @@ func (x *fastReflection_MsgRegisterAsset) Clear(fd protoreflect.FieldDescriptor)
 	switch fd.FullName() {
 	case "ark.asset.v1.MsgRegisterAsset.authority":
 		x.Authority = ""
-	case "ark.asset.v1.MsgRegisterAsset.metadata":
-		x.Metadata = nil
-	case "ark.asset.v1.MsgRegisterAsset.oracle_required":
-		x.OracleRequired = false
+	case "ark.asset.v1.MsgRegisterAsset.denom":
+		x.Denom = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRegisterAsset"))
@@ -177,12 +1019,9 @@ func (x *fastReflection_MsgRegisterAsset) Get(descriptor protoreflect.FieldDescr
 	case "ark.asset.v1.MsgRegisterAsset.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgRegisterAsset.metadata":
-		value := x.Metadata
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.asset.v1.MsgRegisterAsset.oracle_required":
-		value := x.OracleRequired
-		return protoreflect.ValueOfBool(value)
+	case "ark.asset.v1.MsgRegisterAsset.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRegisterAsset"))
@@ -205,10 +1044,8 @@ func (x *fastReflection_MsgRegisterAsset) Set(fd protoreflect.FieldDescriptor, v
 	switch fd.FullName() {
 	case "ark.asset.v1.MsgRegisterAsset.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgRegisterAsset.metadata":
-		x.Metadata = value.Message().Interface().(*v1beta1.Metadata)
-	case "ark.asset.v1.MsgRegisterAsset.oracle_required":
-		x.OracleRequired = value.Bool()
+	case "ark.asset.v1.MsgRegisterAsset.denom":
+		x.Denom = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRegisterAsset"))
@@ -229,15 +1066,10 @@ func (x *fastReflection_MsgRegisterAsset) Set(fd protoreflect.FieldDescriptor, v
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgRegisterAsset) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgRegisterAsset.metadata":
-		if x.Metadata == nil {
-			x.Metadata = new(v1beta1.Metadata)
-		}
-		return protoreflect.ValueOfMessage(x.Metadata.ProtoReflect())
 	case "ark.asset.v1.MsgRegisterAsset.authority":
 		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgRegisterAsset is not mutable"))
-	case "ark.asset.v1.MsgRegisterAsset.oracle_required":
-		panic(fmt.Errorf("field oracle_required of message ark.asset.v1.MsgRegisterAsset is not mutable"))
+	case "ark.asset.v1.MsgRegisterAsset.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgRegisterAsset is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRegisterAsset"))
@@ -253,11 +1085,8 @@ func (x *fastReflection_MsgRegisterAsset) NewField(fd protoreflect.FieldDescript
 	switch fd.FullName() {
 	case "ark.asset.v1.MsgRegisterAsset.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgRegisterAsset.metadata":
-		m := new(v1beta1.Metadata)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.asset.v1.MsgRegisterAsset.oracle_required":
-		return protoreflect.ValueOfBool(false)
+	case "ark.asset.v1.MsgRegisterAsset.denom":
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRegisterAsset"))
@@ -331,12 +1160,9 @@ func (x *fastReflection_MsgRegisterAsset) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.Metadata != nil {
-			l = options.Size(x.Metadata)
+		l = len(x.Denom)
+		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.OracleRequired {
-			n += 2
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -367,27 +1193,10 @@ func (x *fastReflection_MsgRegisterAsset) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.OracleRequired {
-			i--
-			if x.OracleRequired {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x18
-		}
-		if x.Metadata != nil {
-			encoded, err := options.Marshal(x.Metadata)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
 			i--
 			dAtA[i] = 0x12
 		}
@@ -481,9 +1290,9 @@ func (x *fastReflection_MsgRegisterAsset) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
 				}
-				var msglen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -493,48 +1302,24 @@ func (x *fastReflection_MsgRegisterAsset) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					msglen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if msglen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + msglen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Metadata == nil {
-					x.Metadata = &v1beta1.Metadata{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Metadata); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OracleRequired", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.OracleRequired = bool(v != 0)
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -588,7 +1373,7 @@ func (x *MsgRegisterAssetResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgRegisterAssetResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[1]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -927,971 +1712,29 @@ func (x *fastReflection_MsgRegisterAssetResponse) ProtoMethods() *protoiface.Met
 }
 
 var (
-	md_MsgSetOracleRequired                  protoreflect.MessageDescriptor
-	fd_MsgSetOracleRequired_authority        protoreflect.FieldDescriptor
-	fd_MsgSetOracleRequired_denom            protoreflect.FieldDescriptor
-	fd_MsgSetOracleRequired_oracle_required  protoreflect.FieldDescriptor
-	fd_MsgSetOracleRequired_expected_version protoreflect.FieldDescriptor
+	md_MsgHaltIssuance                  protoreflect.MessageDescriptor
+	fd_MsgHaltIssuance_authority        protoreflect.FieldDescriptor
+	fd_MsgHaltIssuance_denom            protoreflect.FieldDescriptor
+	fd_MsgHaltIssuance_expected_version protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgSetOracleRequired = File_ark_asset_v1_tx_proto.Messages().ByName("MsgSetOracleRequired")
-	fd_MsgSetOracleRequired_authority = md_MsgSetOracleRequired.Fields().ByName("authority")
-	fd_MsgSetOracleRequired_denom = md_MsgSetOracleRequired.Fields().ByName("denom")
-	fd_MsgSetOracleRequired_oracle_required = md_MsgSetOracleRequired.Fields().ByName("oracle_required")
-	fd_MsgSetOracleRequired_expected_version = md_MsgSetOracleRequired.Fields().ByName("expected_version")
+	md_MsgHaltIssuance = File_ark_asset_v1_tx_proto.Messages().ByName("MsgHaltIssuance")
+	fd_MsgHaltIssuance_authority = md_MsgHaltIssuance.Fields().ByName("authority")
+	fd_MsgHaltIssuance_denom = md_MsgHaltIssuance.Fields().ByName("denom")
+	fd_MsgHaltIssuance_expected_version = md_MsgHaltIssuance.Fields().ByName("expected_version")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSetOracleRequired)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgHaltIssuance)(nil)
 
-type fastReflection_MsgSetOracleRequired MsgSetOracleRequired
+type fastReflection_MsgHaltIssuance MsgHaltIssuance
 
-func (x *MsgSetOracleRequired) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSetOracleRequired)(x)
+func (x *MsgHaltIssuance) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgHaltIssuance)(x)
 }
 
-func (x *MsgSetOracleRequired) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgSetOracleRequired_messageType fastReflection_MsgSetOracleRequired_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSetOracleRequired_messageType{}
-
-type fastReflection_MsgSetOracleRequired_messageType struct{}
-
-func (x fastReflection_MsgSetOracleRequired_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSetOracleRequired)(nil)
-}
-func (x fastReflection_MsgSetOracleRequired_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSetOracleRequired)
-}
-func (x fastReflection_MsgSetOracleRequired_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetOracleRequired
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgSetOracleRequired) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetOracleRequired
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSetOracleRequired) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSetOracleRequired_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSetOracleRequired) New() protoreflect.Message {
-	return new(fastReflection_MsgSetOracleRequired)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSetOracleRequired) Interface() protoreflect.ProtoMessage {
-	return (*MsgSetOracleRequired)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgSetOracleRequired) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Authority != "" {
-		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgSetOracleRequired_authority, value) {
-			return
-		}
-	}
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgSetOracleRequired_denom, value) {
-			return
-		}
-	}
-	if x.OracleRequired != false {
-		value := protoreflect.ValueOfBool(x.OracleRequired)
-		if !f(fd_MsgSetOracleRequired_oracle_required, value) {
-			return
-		}
-	}
-	if x.ExpectedVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgSetOracleRequired_expected_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSetOracleRequired) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgSetOracleRequired.authority":
-		return x.Authority != ""
-	case "ark.asset.v1.MsgSetOracleRequired.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.MsgSetOracleRequired.oracle_required":
-		return x.OracleRequired != false
-	case "ark.asset.v1.MsgSetOracleRequired.expected_version":
-		return x.ExpectedVersion != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequired"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequired does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequired) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgSetOracleRequired.authority":
-		x.Authority = ""
-	case "ark.asset.v1.MsgSetOracleRequired.denom":
-		x.Denom = ""
-	case "ark.asset.v1.MsgSetOracleRequired.oracle_required":
-		x.OracleRequired = false
-	case "ark.asset.v1.MsgSetOracleRequired.expected_version":
-		x.ExpectedVersion = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequired"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequired does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSetOracleRequired) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgSetOracleRequired.authority":
-		value := x.Authority
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgSetOracleRequired.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgSetOracleRequired.oracle_required":
-		value := x.OracleRequired
-		return protoreflect.ValueOfBool(value)
-	case "ark.asset.v1.MsgSetOracleRequired.expected_version":
-		value := x.ExpectedVersion
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequired"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequired does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequired) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgSetOracleRequired.authority":
-		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgSetOracleRequired.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgSetOracleRequired.oracle_required":
-		x.OracleRequired = value.Bool()
-	case "ark.asset.v1.MsgSetOracleRequired.expected_version":
-		x.ExpectedVersion = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequired"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequired does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequired) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgSetOracleRequired.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgSetOracleRequired is not mutable"))
-	case "ark.asset.v1.MsgSetOracleRequired.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgSetOracleRequired is not mutable"))
-	case "ark.asset.v1.MsgSetOracleRequired.oracle_required":
-		panic(fmt.Errorf("field oracle_required of message ark.asset.v1.MsgSetOracleRequired is not mutable"))
-	case "ark.asset.v1.MsgSetOracleRequired.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgSetOracleRequired is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequired"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequired does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSetOracleRequired) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgSetOracleRequired.authority":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgSetOracleRequired.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgSetOracleRequired.oracle_required":
-		return protoreflect.ValueOfBool(false)
-	case "ark.asset.v1.MsgSetOracleRequired.expected_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequired"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequired does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSetOracleRequired) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgSetOracleRequired", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSetOracleRequired) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequired) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSetOracleRequired) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSetOracleRequired) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSetOracleRequired)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Authority)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.OracleRequired {
-			n += 2
-		}
-		if x.ExpectedVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetOracleRequired)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.ExpectedVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
-			i--
-			dAtA[i] = 0x20
-		}
-		if x.OracleRequired {
-			i--
-			if x.OracleRequired {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x18
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Authority) > 0 {
-			i -= len(x.Authority)
-			copy(dAtA[i:], x.Authority)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetOracleRequired)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetOracleRequired: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetOracleRequired: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Authority = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OracleRequired", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.OracleRequired = bool(v != 0)
-			case 4:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-				}
-				x.ExpectedVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ExpectedVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgSetOracleRequiredResponse protoreflect.MessageDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgSetOracleRequiredResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgSetOracleRequiredResponse")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgSetOracleRequiredResponse)(nil)
-
-type fastReflection_MsgSetOracleRequiredResponse MsgSetOracleRequiredResponse
-
-func (x *MsgSetOracleRequiredResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSetOracleRequiredResponse)(x)
-}
-
-func (x *MsgSetOracleRequiredResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgSetOracleRequiredResponse_messageType fastReflection_MsgSetOracleRequiredResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSetOracleRequiredResponse_messageType{}
-
-type fastReflection_MsgSetOracleRequiredResponse_messageType struct{}
-
-func (x fastReflection_MsgSetOracleRequiredResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSetOracleRequiredResponse)(nil)
-}
-func (x fastReflection_MsgSetOracleRequiredResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSetOracleRequiredResponse)
-}
-func (x fastReflection_MsgSetOracleRequiredResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetOracleRequiredResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetOracleRequiredResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSetOracleRequiredResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSetOracleRequiredResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgSetOracleRequiredResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgSetOracleRequiredResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequiredResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequiredResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequiredResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequiredResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequiredResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequiredResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequiredResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequiredResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequiredResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequiredResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequiredResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSetOracleRequiredResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetOracleRequiredResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgSetOracleRequiredResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSetOracleRequiredResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgSetOracleRequiredResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSetOracleRequiredResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetOracleRequiredResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSetOracleRequiredResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSetOracleRequiredResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSetOracleRequiredResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetOracleRequiredResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetOracleRequiredResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetOracleRequiredResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetOracleRequiredResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgActivateAsset                  protoreflect.MessageDescriptor
-	fd_MsgActivateAsset_authority        protoreflect.FieldDescriptor
-	fd_MsgActivateAsset_denom            protoreflect.FieldDescriptor
-	fd_MsgActivateAsset_expected_version protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgActivateAsset = File_ark_asset_v1_tx_proto.Messages().ByName("MsgActivateAsset")
-	fd_MsgActivateAsset_authority = md_MsgActivateAsset.Fields().ByName("authority")
-	fd_MsgActivateAsset_denom = md_MsgActivateAsset.Fields().ByName("denom")
-	fd_MsgActivateAsset_expected_version = md_MsgActivateAsset.Fields().ByName("expected_version")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgActivateAsset)(nil)
-
-type fastReflection_MsgActivateAsset MsgActivateAsset
-
-func (x *MsgActivateAsset) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgActivateAsset)(x)
-}
-
-func (x *MsgActivateAsset) slowProtoReflect() protoreflect.Message {
+func (x *MsgHaltIssuance) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1903,43 +1746,43 @@ func (x *MsgActivateAsset) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgActivateAsset_messageType fastReflection_MsgActivateAsset_messageType
-var _ protoreflect.MessageType = fastReflection_MsgActivateAsset_messageType{}
+var _fastReflection_MsgHaltIssuance_messageType fastReflection_MsgHaltIssuance_messageType
+var _ protoreflect.MessageType = fastReflection_MsgHaltIssuance_messageType{}
 
-type fastReflection_MsgActivateAsset_messageType struct{}
+type fastReflection_MsgHaltIssuance_messageType struct{}
 
-func (x fastReflection_MsgActivateAsset_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgActivateAsset)(nil)
+func (x fastReflection_MsgHaltIssuance_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgHaltIssuance)(nil)
 }
-func (x fastReflection_MsgActivateAsset_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgActivateAsset)
+func (x fastReflection_MsgHaltIssuance_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgHaltIssuance)
 }
-func (x fastReflection_MsgActivateAsset_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgActivateAsset
+func (x fastReflection_MsgHaltIssuance_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgHaltIssuance
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgActivateAsset) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgActivateAsset
+func (x *fastReflection_MsgHaltIssuance) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgHaltIssuance
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgActivateAsset) Type() protoreflect.MessageType {
-	return _fastReflection_MsgActivateAsset_messageType
+func (x *fastReflection_MsgHaltIssuance) Type() protoreflect.MessageType {
+	return _fastReflection_MsgHaltIssuance_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgActivateAsset) New() protoreflect.Message {
-	return new(fastReflection_MsgActivateAsset)
+func (x *fastReflection_MsgHaltIssuance) New() protoreflect.Message {
+	return new(fastReflection_MsgHaltIssuance)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgActivateAsset) Interface() protoreflect.ProtoMessage {
-	return (*MsgActivateAsset)(x)
+func (x *fastReflection_MsgHaltIssuance) Interface() protoreflect.ProtoMessage {
+	return (*MsgHaltIssuance)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1947,22 +1790,22 @@ func (x *fastReflection_MsgActivateAsset) Interface() protoreflect.ProtoMessage 
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgActivateAsset) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgHaltIssuance) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgActivateAsset_authority, value) {
+		if !f(fd_MsgHaltIssuance_authority, value) {
 			return
 		}
 	}
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgActivateAsset_denom, value) {
+		if !f(fd_MsgHaltIssuance_denom, value) {
 			return
 		}
 	}
 	if x.ExpectedVersion != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgActivateAsset_expected_version, value) {
+		if !f(fd_MsgHaltIssuance_expected_version, value) {
 			return
 		}
 	}
@@ -1979,19 +1822,19 @@ func (x *fastReflection_MsgActivateAsset) Range(f func(protoreflect.FieldDescrip
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgActivateAsset) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgHaltIssuance) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgActivateAsset.authority":
+	case "ark.asset.v1.MsgHaltIssuance.authority":
 		return x.Authority != ""
-	case "ark.asset.v1.MsgActivateAsset.denom":
+	case "ark.asset.v1.MsgHaltIssuance.denom":
 		return x.Denom != ""
-	case "ark.asset.v1.MsgActivateAsset.expected_version":
+	case "ark.asset.v1.MsgHaltIssuance.expected_version":
 		return x.ExpectedVersion != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAsset"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAsset does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2001,19 +1844,19 @@ func (x *fastReflection_MsgActivateAsset) Has(fd protoreflect.FieldDescriptor) b
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAsset) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgHaltIssuance) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgActivateAsset.authority":
+	case "ark.asset.v1.MsgHaltIssuance.authority":
 		x.Authority = ""
-	case "ark.asset.v1.MsgActivateAsset.denom":
+	case "ark.asset.v1.MsgHaltIssuance.denom":
 		x.Denom = ""
-	case "ark.asset.v1.MsgActivateAsset.expected_version":
+	case "ark.asset.v1.MsgHaltIssuance.expected_version":
 		x.ExpectedVersion = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAsset"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAsset does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2023,22 +1866,22 @@ func (x *fastReflection_MsgActivateAsset) Clear(fd protoreflect.FieldDescriptor)
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgActivateAsset) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgHaltIssuance) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgActivateAsset.authority":
+	case "ark.asset.v1.MsgHaltIssuance.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgActivateAsset.denom":
+	case "ark.asset.v1.MsgHaltIssuance.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgActivateAsset.expected_version":
+	case "ark.asset.v1.MsgHaltIssuance.expected_version":
 		value := x.ExpectedVersion
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAsset"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAsset does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuance does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2052,19 +1895,19 @@ func (x *fastReflection_MsgActivateAsset) Get(descriptor protoreflect.FieldDescr
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAsset) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgHaltIssuance) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgActivateAsset.authority":
+	case "ark.asset.v1.MsgHaltIssuance.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgActivateAsset.denom":
+	case "ark.asset.v1.MsgHaltIssuance.denom":
 		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgActivateAsset.expected_version":
+	case "ark.asset.v1.MsgHaltIssuance.expected_version":
 		x.ExpectedVersion = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAsset"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAsset does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2078,48 +1921,48 @@ func (x *fastReflection_MsgActivateAsset) Set(fd protoreflect.FieldDescriptor, v
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAsset) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgHaltIssuance) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgActivateAsset.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgActivateAsset is not mutable"))
-	case "ark.asset.v1.MsgActivateAsset.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgActivateAsset is not mutable"))
-	case "ark.asset.v1.MsgActivateAsset.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgActivateAsset is not mutable"))
+	case "ark.asset.v1.MsgHaltIssuance.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgHaltIssuance is not mutable"))
+	case "ark.asset.v1.MsgHaltIssuance.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgHaltIssuance is not mutable"))
+	case "ark.asset.v1.MsgHaltIssuance.expected_version":
+		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgHaltIssuance is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAsset"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAsset does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgActivateAsset) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgHaltIssuance) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgActivateAsset.authority":
+	case "ark.asset.v1.MsgHaltIssuance.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgActivateAsset.denom":
+	case "ark.asset.v1.MsgHaltIssuance.denom":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgActivateAsset.expected_version":
+	case "ark.asset.v1.MsgHaltIssuance.expected_version":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAsset"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAsset does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgActivateAsset) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgHaltIssuance) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgActivateAsset", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgHaltIssuance", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2127,7 +1970,7 @@ func (x *fastReflection_MsgActivateAsset) WhichOneof(d protoreflect.OneofDescrip
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgActivateAsset) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgHaltIssuance) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2138,7 +1981,7 @@ func (x *fastReflection_MsgActivateAsset) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAsset) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgHaltIssuance) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2150,7 +1993,7 @@ func (x *fastReflection_MsgActivateAsset) SetUnknown(fields protoreflect.RawFiel
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgActivateAsset) IsValid() bool {
+func (x *fastReflection_MsgHaltIssuance) IsValid() bool {
 	return x != nil
 }
 
@@ -2160,9 +2003,9 @@ func (x *fastReflection_MsgActivateAsset) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgActivateAsset) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgHaltIssuance) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgActivateAsset)
+		x := input.Message.Interface().(*MsgHaltIssuance)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2195,7 +2038,7 @@ func (x *fastReflection_MsgActivateAsset) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgActivateAsset)
+		x := input.Message.Interface().(*MsgHaltIssuance)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2244,7 +2087,7 @@ func (x *fastReflection_MsgActivateAsset) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgActivateAsset)
+		x := input.Message.Interface().(*MsgHaltIssuance)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2276,10 +2119,10 @@ func (x *fastReflection_MsgActivateAsset) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgActivateAsset: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgHaltIssuance: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgActivateAsset: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgHaltIssuance: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2401,23 +2244,23 @@ func (x *fastReflection_MsgActivateAsset) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgActivateAssetResponse protoreflect.MessageDescriptor
+	md_MsgHaltIssuanceResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgActivateAssetResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgActivateAssetResponse")
+	md_MsgHaltIssuanceResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgHaltIssuanceResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgActivateAssetResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgHaltIssuanceResponse)(nil)
 
-type fastReflection_MsgActivateAssetResponse MsgActivateAssetResponse
+type fastReflection_MsgHaltIssuanceResponse MsgHaltIssuanceResponse
 
-func (x *MsgActivateAssetResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgActivateAssetResponse)(x)
+func (x *MsgHaltIssuanceResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgHaltIssuanceResponse)(x)
 }
 
-func (x *MsgActivateAssetResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgHaltIssuanceResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2429,43 +2272,43 @@ func (x *MsgActivateAssetResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgActivateAssetResponse_messageType fastReflection_MsgActivateAssetResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgActivateAssetResponse_messageType{}
+var _fastReflection_MsgHaltIssuanceResponse_messageType fastReflection_MsgHaltIssuanceResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgHaltIssuanceResponse_messageType{}
 
-type fastReflection_MsgActivateAssetResponse_messageType struct{}
+type fastReflection_MsgHaltIssuanceResponse_messageType struct{}
 
-func (x fastReflection_MsgActivateAssetResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgActivateAssetResponse)(nil)
+func (x fastReflection_MsgHaltIssuanceResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgHaltIssuanceResponse)(nil)
 }
-func (x fastReflection_MsgActivateAssetResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgActivateAssetResponse)
+func (x fastReflection_MsgHaltIssuanceResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgHaltIssuanceResponse)
 }
-func (x fastReflection_MsgActivateAssetResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgActivateAssetResponse
+func (x fastReflection_MsgHaltIssuanceResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgHaltIssuanceResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgActivateAssetResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgActivateAssetResponse
+func (x *fastReflection_MsgHaltIssuanceResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgHaltIssuanceResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgActivateAssetResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgActivateAssetResponse_messageType
+func (x *fastReflection_MsgHaltIssuanceResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgHaltIssuanceResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgActivateAssetResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgActivateAssetResponse)
+func (x *fastReflection_MsgHaltIssuanceResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgHaltIssuanceResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgActivateAssetResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgActivateAssetResponse)(x)
+func (x *fastReflection_MsgHaltIssuanceResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgHaltIssuanceResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2473,7 +2316,7 @@ func (x *fastReflection_MsgActivateAssetResponse) Interface() protoreflect.Proto
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgActivateAssetResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgHaltIssuanceResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -2487,13 +2330,13 @@ func (x *fastReflection_MsgActivateAssetResponse) Range(f func(protoreflect.Fiel
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgActivateAssetResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgHaltIssuanceResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAssetResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAssetResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2503,13 +2346,13 @@ func (x *fastReflection_MsgActivateAssetResponse) Has(fd protoreflect.FieldDescr
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAssetResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgHaltIssuanceResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAssetResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAssetResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2519,13 +2362,13 @@ func (x *fastReflection_MsgActivateAssetResponse) Clear(fd protoreflect.FieldDes
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgActivateAssetResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgHaltIssuanceResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAssetResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAssetResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuanceResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2539,13 +2382,13 @@ func (x *fastReflection_MsgActivateAssetResponse) Get(descriptor protoreflect.Fi
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAssetResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgHaltIssuanceResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAssetResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAssetResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2559,36 +2402,36 @@ func (x *fastReflection_MsgActivateAssetResponse) Set(fd protoreflect.FieldDescr
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAssetResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgHaltIssuanceResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAssetResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAssetResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgActivateAssetResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgHaltIssuanceResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgActivateAssetResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgHaltIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgActivateAssetResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgHaltIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgActivateAssetResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgHaltIssuanceResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgActivateAssetResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgHaltIssuanceResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2596,7 +2439,7 @@ func (x *fastReflection_MsgActivateAssetResponse) WhichOneof(d protoreflect.Oneo
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgActivateAssetResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgHaltIssuanceResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2607,7 +2450,7 @@ func (x *fastReflection_MsgActivateAssetResponse) GetUnknown() protoreflect.RawF
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgActivateAssetResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgHaltIssuanceResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2619,7 +2462,7 @@ func (x *fastReflection_MsgActivateAssetResponse) SetUnknown(fields protoreflect
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgActivateAssetResponse) IsValid() bool {
+func (x *fastReflection_MsgHaltIssuanceResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2629,9 +2472,9 @@ func (x *fastReflection_MsgActivateAssetResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgActivateAssetResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgHaltIssuanceResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgActivateAssetResponse)
+		x := input.Message.Interface().(*MsgHaltIssuanceResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2653,7 +2496,7 @@ func (x *fastReflection_MsgActivateAssetResponse) ProtoMethods() *protoiface.Met
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgActivateAssetResponse)
+		x := input.Message.Interface().(*MsgHaltIssuanceResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2683,7 +2526,7 @@ func (x *fastReflection_MsgActivateAssetResponse) ProtoMethods() *protoiface.Met
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgActivateAssetResponse)
+		x := input.Message.Interface().(*MsgHaltIssuanceResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2715,10 +2558,10 @@ func (x *fastReflection_MsgActivateAssetResponse) ProtoMethods() *protoiface.Met
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgActivateAssetResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgHaltIssuanceResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgActivateAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgHaltIssuanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -2757,29 +2600,29 @@ func (x *fastReflection_MsgActivateAssetResponse) ProtoMethods() *protoiface.Met
 }
 
 var (
-	md_MsgCancelAssetRegistration                  protoreflect.MessageDescriptor
-	fd_MsgCancelAssetRegistration_authority        protoreflect.FieldDescriptor
-	fd_MsgCancelAssetRegistration_denom            protoreflect.FieldDescriptor
-	fd_MsgCancelAssetRegistration_expected_version protoreflect.FieldDescriptor
+	md_MsgResumeIssuance                  protoreflect.MessageDescriptor
+	fd_MsgResumeIssuance_authority        protoreflect.FieldDescriptor
+	fd_MsgResumeIssuance_denom            protoreflect.FieldDescriptor
+	fd_MsgResumeIssuance_expected_version protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgCancelAssetRegistration = File_ark_asset_v1_tx_proto.Messages().ByName("MsgCancelAssetRegistration")
-	fd_MsgCancelAssetRegistration_authority = md_MsgCancelAssetRegistration.Fields().ByName("authority")
-	fd_MsgCancelAssetRegistration_denom = md_MsgCancelAssetRegistration.Fields().ByName("denom")
-	fd_MsgCancelAssetRegistration_expected_version = md_MsgCancelAssetRegistration.Fields().ByName("expected_version")
+	md_MsgResumeIssuance = File_ark_asset_v1_tx_proto.Messages().ByName("MsgResumeIssuance")
+	fd_MsgResumeIssuance_authority = md_MsgResumeIssuance.Fields().ByName("authority")
+	fd_MsgResumeIssuance_denom = md_MsgResumeIssuance.Fields().ByName("denom")
+	fd_MsgResumeIssuance_expected_version = md_MsgResumeIssuance.Fields().ByName("expected_version")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgCancelAssetRegistration)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgResumeIssuance)(nil)
 
-type fastReflection_MsgCancelAssetRegistration MsgCancelAssetRegistration
+type fastReflection_MsgResumeIssuance MsgResumeIssuance
 
-func (x *MsgCancelAssetRegistration) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgCancelAssetRegistration)(x)
+func (x *MsgResumeIssuance) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgResumeIssuance)(x)
 }
 
-func (x *MsgCancelAssetRegistration) slowProtoReflect() protoreflect.Message {
+func (x *MsgResumeIssuance) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2791,43 +2634,43 @@ func (x *MsgCancelAssetRegistration) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgCancelAssetRegistration_messageType fastReflection_MsgCancelAssetRegistration_messageType
-var _ protoreflect.MessageType = fastReflection_MsgCancelAssetRegistration_messageType{}
+var _fastReflection_MsgResumeIssuance_messageType fastReflection_MsgResumeIssuance_messageType
+var _ protoreflect.MessageType = fastReflection_MsgResumeIssuance_messageType{}
 
-type fastReflection_MsgCancelAssetRegistration_messageType struct{}
+type fastReflection_MsgResumeIssuance_messageType struct{}
 
-func (x fastReflection_MsgCancelAssetRegistration_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgCancelAssetRegistration)(nil)
+func (x fastReflection_MsgResumeIssuance_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgResumeIssuance)(nil)
 }
-func (x fastReflection_MsgCancelAssetRegistration_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelAssetRegistration)
+func (x fastReflection_MsgResumeIssuance_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgResumeIssuance)
 }
-func (x fastReflection_MsgCancelAssetRegistration_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelAssetRegistration
+func (x fastReflection_MsgResumeIssuance_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgResumeIssuance
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgCancelAssetRegistration) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelAssetRegistration
+func (x *fastReflection_MsgResumeIssuance) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgResumeIssuance
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgCancelAssetRegistration) Type() protoreflect.MessageType {
-	return _fastReflection_MsgCancelAssetRegistration_messageType
+func (x *fastReflection_MsgResumeIssuance) Type() protoreflect.MessageType {
+	return _fastReflection_MsgResumeIssuance_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgCancelAssetRegistration) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelAssetRegistration)
+func (x *fastReflection_MsgResumeIssuance) New() protoreflect.Message {
+	return new(fastReflection_MsgResumeIssuance)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgCancelAssetRegistration) Interface() protoreflect.ProtoMessage {
-	return (*MsgCancelAssetRegistration)(x)
+func (x *fastReflection_MsgResumeIssuance) Interface() protoreflect.ProtoMessage {
+	return (*MsgResumeIssuance)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2835,22 +2678,22 @@ func (x *fastReflection_MsgCancelAssetRegistration) Interface() protoreflect.Pro
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgCancelAssetRegistration) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgResumeIssuance) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgCancelAssetRegistration_authority, value) {
+		if !f(fd_MsgResumeIssuance_authority, value) {
 			return
 		}
 	}
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgCancelAssetRegistration_denom, value) {
+		if !f(fd_MsgResumeIssuance_denom, value) {
 			return
 		}
 	}
 	if x.ExpectedVersion != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgCancelAssetRegistration_expected_version, value) {
+		if !f(fd_MsgResumeIssuance_expected_version, value) {
 			return
 		}
 	}
@@ -2867,19 +2710,19 @@ func (x *fastReflection_MsgCancelAssetRegistration) Range(f func(protoreflect.Fi
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgCancelAssetRegistration) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgResumeIssuance) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelAssetRegistration.authority":
+	case "ark.asset.v1.MsgResumeIssuance.authority":
 		return x.Authority != ""
-	case "ark.asset.v1.MsgCancelAssetRegistration.denom":
+	case "ark.asset.v1.MsgResumeIssuance.denom":
 		return x.Denom != ""
-	case "ark.asset.v1.MsgCancelAssetRegistration.expected_version":
+	case "ark.asset.v1.MsgResumeIssuance.expected_version":
 		return x.ExpectedVersion != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistration"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistration does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2889,19 +2732,19 @@ func (x *fastReflection_MsgCancelAssetRegistration) Has(fd protoreflect.FieldDes
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistration) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgResumeIssuance) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelAssetRegistration.authority":
+	case "ark.asset.v1.MsgResumeIssuance.authority":
 		x.Authority = ""
-	case "ark.asset.v1.MsgCancelAssetRegistration.denom":
+	case "ark.asset.v1.MsgResumeIssuance.denom":
 		x.Denom = ""
-	case "ark.asset.v1.MsgCancelAssetRegistration.expected_version":
+	case "ark.asset.v1.MsgResumeIssuance.expected_version":
 		x.ExpectedVersion = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistration"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistration does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2911,22 +2754,22 @@ func (x *fastReflection_MsgCancelAssetRegistration) Clear(fd protoreflect.FieldD
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgCancelAssetRegistration) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgResumeIssuance) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgCancelAssetRegistration.authority":
+	case "ark.asset.v1.MsgResumeIssuance.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgCancelAssetRegistration.denom":
+	case "ark.asset.v1.MsgResumeIssuance.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgCancelAssetRegistration.expected_version":
+	case "ark.asset.v1.MsgResumeIssuance.expected_version":
 		value := x.ExpectedVersion
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistration"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistration does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuance does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2940,19 +2783,19 @@ func (x *fastReflection_MsgCancelAssetRegistration) Get(descriptor protoreflect.
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistration) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgResumeIssuance) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelAssetRegistration.authority":
+	case "ark.asset.v1.MsgResumeIssuance.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgCancelAssetRegistration.denom":
+	case "ark.asset.v1.MsgResumeIssuance.denom":
 		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgCancelAssetRegistration.expected_version":
+	case "ark.asset.v1.MsgResumeIssuance.expected_version":
 		x.ExpectedVersion = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistration"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistration does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2966,48 +2809,48 @@ func (x *fastReflection_MsgCancelAssetRegistration) Set(fd protoreflect.FieldDes
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistration) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgResumeIssuance) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelAssetRegistration.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgCancelAssetRegistration is not mutable"))
-	case "ark.asset.v1.MsgCancelAssetRegistration.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgCancelAssetRegistration is not mutable"))
-	case "ark.asset.v1.MsgCancelAssetRegistration.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgCancelAssetRegistration is not mutable"))
+	case "ark.asset.v1.MsgResumeIssuance.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgResumeIssuance is not mutable"))
+	case "ark.asset.v1.MsgResumeIssuance.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgResumeIssuance is not mutable"))
+	case "ark.asset.v1.MsgResumeIssuance.expected_version":
+		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgResumeIssuance is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistration"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistration does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgCancelAssetRegistration) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgResumeIssuance) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelAssetRegistration.authority":
+	case "ark.asset.v1.MsgResumeIssuance.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgCancelAssetRegistration.denom":
+	case "ark.asset.v1.MsgResumeIssuance.denom":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgCancelAssetRegistration.expected_version":
+	case "ark.asset.v1.MsgResumeIssuance.expected_version":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistration"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuance"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistration does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuance does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgCancelAssetRegistration) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgResumeIssuance) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgCancelAssetRegistration", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgResumeIssuance", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -3015,7 +2858,7 @@ func (x *fastReflection_MsgCancelAssetRegistration) WhichOneof(d protoreflect.On
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgCancelAssetRegistration) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgResumeIssuance) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -3026,7 +2869,7 @@ func (x *fastReflection_MsgCancelAssetRegistration) GetUnknown() protoreflect.Ra
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistration) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgResumeIssuance) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -3038,7 +2881,7 @@ func (x *fastReflection_MsgCancelAssetRegistration) SetUnknown(fields protorefle
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgCancelAssetRegistration) IsValid() bool {
+func (x *fastReflection_MsgResumeIssuance) IsValid() bool {
 	return x != nil
 }
 
@@ -3048,9 +2891,9 @@ func (x *fastReflection_MsgCancelAssetRegistration) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgCancelAssetRegistration) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgResumeIssuance) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgCancelAssetRegistration)
+		x := input.Message.Interface().(*MsgResumeIssuance)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3083,7 +2926,7 @@ func (x *fastReflection_MsgCancelAssetRegistration) ProtoMethods() *protoiface.M
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelAssetRegistration)
+		x := input.Message.Interface().(*MsgResumeIssuance)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3132,7 +2975,7 @@ func (x *fastReflection_MsgCancelAssetRegistration) ProtoMethods() *protoiface.M
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelAssetRegistration)
+		x := input.Message.Interface().(*MsgResumeIssuance)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3164,10 +3007,10 @@ func (x *fastReflection_MsgCancelAssetRegistration) ProtoMethods() *protoiface.M
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelAssetRegistration: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgResumeIssuance: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelAssetRegistration: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgResumeIssuance: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -3289,23 +3132,23 @@ func (x *fastReflection_MsgCancelAssetRegistration) ProtoMethods() *protoiface.M
 }
 
 var (
-	md_MsgCancelAssetRegistrationResponse protoreflect.MessageDescriptor
+	md_MsgResumeIssuanceResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgCancelAssetRegistrationResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgCancelAssetRegistrationResponse")
+	md_MsgResumeIssuanceResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgResumeIssuanceResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgCancelAssetRegistrationResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgResumeIssuanceResponse)(nil)
 
-type fastReflection_MsgCancelAssetRegistrationResponse MsgCancelAssetRegistrationResponse
+type fastReflection_MsgResumeIssuanceResponse MsgResumeIssuanceResponse
 
-func (x *MsgCancelAssetRegistrationResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgCancelAssetRegistrationResponse)(x)
+func (x *MsgResumeIssuanceResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgResumeIssuanceResponse)(x)
 }
 
-func (x *MsgCancelAssetRegistrationResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgResumeIssuanceResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3317,43 +3160,43 @@ func (x *MsgCancelAssetRegistrationResponse) slowProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgCancelAssetRegistrationResponse_messageType fastReflection_MsgCancelAssetRegistrationResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgCancelAssetRegistrationResponse_messageType{}
+var _fastReflection_MsgResumeIssuanceResponse_messageType fastReflection_MsgResumeIssuanceResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgResumeIssuanceResponse_messageType{}
 
-type fastReflection_MsgCancelAssetRegistrationResponse_messageType struct{}
+type fastReflection_MsgResumeIssuanceResponse_messageType struct{}
 
-func (x fastReflection_MsgCancelAssetRegistrationResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgCancelAssetRegistrationResponse)(nil)
+func (x fastReflection_MsgResumeIssuanceResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgResumeIssuanceResponse)(nil)
 }
-func (x fastReflection_MsgCancelAssetRegistrationResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelAssetRegistrationResponse)
+func (x fastReflection_MsgResumeIssuanceResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgResumeIssuanceResponse)
 }
-func (x fastReflection_MsgCancelAssetRegistrationResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelAssetRegistrationResponse
+func (x fastReflection_MsgResumeIssuanceResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgResumeIssuanceResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelAssetRegistrationResponse
+func (x *fastReflection_MsgResumeIssuanceResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgResumeIssuanceResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgCancelAssetRegistrationResponse_messageType
+func (x *fastReflection_MsgResumeIssuanceResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgResumeIssuanceResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelAssetRegistrationResponse)
+func (x *fastReflection_MsgResumeIssuanceResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgResumeIssuanceResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgCancelAssetRegistrationResponse)(x)
+func (x *fastReflection_MsgResumeIssuanceResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgResumeIssuanceResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -3361,7 +3204,7 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) Interface() protoref
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgResumeIssuanceResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -3375,13 +3218,13 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) Range(f func(protore
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgResumeIssuanceResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistrationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistrationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3391,13 +3234,13 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) Has(fd protoreflect.
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgResumeIssuanceResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistrationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistrationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3407,13 +3250,13 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) Clear(fd protoreflec
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgResumeIssuanceResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistrationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistrationResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuanceResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -3427,13 +3270,13 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) Get(descriptor proto
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgResumeIssuanceResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistrationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistrationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3447,36 +3290,36 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) Set(fd protoreflect.
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgResumeIssuanceResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistrationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistrationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgResumeIssuanceResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelAssetRegistrationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgResumeIssuanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelAssetRegistrationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgResumeIssuanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgResumeIssuanceResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgCancelAssetRegistrationResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgResumeIssuanceResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -3484,7 +3327,7 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) WhichOneof(d protore
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgResumeIssuanceResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -3495,7 +3338,7 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) GetUnknown() protore
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgResumeIssuanceResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -3507,7 +3350,7 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) SetUnknown(fields pr
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) IsValid() bool {
+func (x *fastReflection_MsgResumeIssuanceResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -3517,9 +3360,9 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgCancelAssetRegistrationResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgResumeIssuanceResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgCancelAssetRegistrationResponse)
+		x := input.Message.Interface().(*MsgResumeIssuanceResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3541,7 +3384,7 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) ProtoMethods() *prot
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelAssetRegistrationResponse)
+		x := input.Message.Interface().(*MsgResumeIssuanceResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3571,7 +3414,7 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) ProtoMethods() *prot
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelAssetRegistrationResponse)
+		x := input.Message.Interface().(*MsgResumeIssuanceResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3603,10 +3446,10 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) ProtoMethods() *prot
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelAssetRegistrationResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgResumeIssuanceResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelAssetRegistrationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgResumeIssuanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -3645,29 +3488,29 @@ func (x *fastReflection_MsgCancelAssetRegistrationResponse) ProtoMethods() *prot
 }
 
 var (
-	md_MsgBeginRetirement                  protoreflect.MessageDescriptor
-	fd_MsgBeginRetirement_authority        protoreflect.FieldDescriptor
-	fd_MsgBeginRetirement_denom            protoreflect.FieldDescriptor
-	fd_MsgBeginRetirement_expected_version protoreflect.FieldDescriptor
+	md_MsgSuspendAsset                  protoreflect.MessageDescriptor
+	fd_MsgSuspendAsset_authority        protoreflect.FieldDescriptor
+	fd_MsgSuspendAsset_denom            protoreflect.FieldDescriptor
+	fd_MsgSuspendAsset_expected_version protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgBeginRetirement = File_ark_asset_v1_tx_proto.Messages().ByName("MsgBeginRetirement")
-	fd_MsgBeginRetirement_authority = md_MsgBeginRetirement.Fields().ByName("authority")
-	fd_MsgBeginRetirement_denom = md_MsgBeginRetirement.Fields().ByName("denom")
-	fd_MsgBeginRetirement_expected_version = md_MsgBeginRetirement.Fields().ByName("expected_version")
+	md_MsgSuspendAsset = File_ark_asset_v1_tx_proto.Messages().ByName("MsgSuspendAsset")
+	fd_MsgSuspendAsset_authority = md_MsgSuspendAsset.Fields().ByName("authority")
+	fd_MsgSuspendAsset_denom = md_MsgSuspendAsset.Fields().ByName("denom")
+	fd_MsgSuspendAsset_expected_version = md_MsgSuspendAsset.Fields().ByName("expected_version")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgBeginRetirement)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgSuspendAsset)(nil)
 
-type fastReflection_MsgBeginRetirement MsgBeginRetirement
+type fastReflection_MsgSuspendAsset MsgSuspendAsset
 
-func (x *MsgBeginRetirement) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgBeginRetirement)(x)
+func (x *MsgSuspendAsset) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSuspendAsset)(x)
 }
 
-func (x *MsgBeginRetirement) slowProtoReflect() protoreflect.Message {
+func (x *MsgSuspendAsset) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3679,43 +3522,43 @@ func (x *MsgBeginRetirement) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgBeginRetirement_messageType fastReflection_MsgBeginRetirement_messageType
-var _ protoreflect.MessageType = fastReflection_MsgBeginRetirement_messageType{}
+var _fastReflection_MsgSuspendAsset_messageType fastReflection_MsgSuspendAsset_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSuspendAsset_messageType{}
 
-type fastReflection_MsgBeginRetirement_messageType struct{}
+type fastReflection_MsgSuspendAsset_messageType struct{}
 
-func (x fastReflection_MsgBeginRetirement_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgBeginRetirement)(nil)
+func (x fastReflection_MsgSuspendAsset_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSuspendAsset)(nil)
 }
-func (x fastReflection_MsgBeginRetirement_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRetirement)
+func (x fastReflection_MsgSuspendAsset_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSuspendAsset)
 }
-func (x fastReflection_MsgBeginRetirement_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRetirement
+func (x fastReflection_MsgSuspendAsset_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSuspendAsset
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgBeginRetirement) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRetirement
+func (x *fastReflection_MsgSuspendAsset) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSuspendAsset
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgBeginRetirement) Type() protoreflect.MessageType {
-	return _fastReflection_MsgBeginRetirement_messageType
+func (x *fastReflection_MsgSuspendAsset) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSuspendAsset_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgBeginRetirement) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRetirement)
+func (x *fastReflection_MsgSuspendAsset) New() protoreflect.Message {
+	return new(fastReflection_MsgSuspendAsset)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgBeginRetirement) Interface() protoreflect.ProtoMessage {
-	return (*MsgBeginRetirement)(x)
+func (x *fastReflection_MsgSuspendAsset) Interface() protoreflect.ProtoMessage {
+	return (*MsgSuspendAsset)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -3723,22 +3566,22 @@ func (x *fastReflection_MsgBeginRetirement) Interface() protoreflect.ProtoMessag
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgBeginRetirement) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgSuspendAsset) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgBeginRetirement_authority, value) {
+		if !f(fd_MsgSuspendAsset_authority, value) {
 			return
 		}
 	}
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgBeginRetirement_denom, value) {
+		if !f(fd_MsgSuspendAsset_denom, value) {
 			return
 		}
 	}
 	if x.ExpectedVersion != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgBeginRetirement_expected_version, value) {
+		if !f(fd_MsgSuspendAsset_expected_version, value) {
 			return
 		}
 	}
@@ -3755,19 +3598,19 @@ func (x *fastReflection_MsgBeginRetirement) Range(f func(protoreflect.FieldDescr
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgBeginRetirement) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgSuspendAsset) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRetirement.authority":
+	case "ark.asset.v1.MsgSuspendAsset.authority":
 		return x.Authority != ""
-	case "ark.asset.v1.MsgBeginRetirement.denom":
+	case "ark.asset.v1.MsgSuspendAsset.denom":
 		return x.Denom != ""
-	case "ark.asset.v1.MsgBeginRetirement.expected_version":
+	case "ark.asset.v1.MsgSuspendAsset.expected_version":
 		return x.ExpectedVersion != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAsset does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3777,19 +3620,19 @@ func (x *fastReflection_MsgBeginRetirement) Has(fd protoreflect.FieldDescriptor)
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirement) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgSuspendAsset) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRetirement.authority":
+	case "ark.asset.v1.MsgSuspendAsset.authority":
 		x.Authority = ""
-	case "ark.asset.v1.MsgBeginRetirement.denom":
+	case "ark.asset.v1.MsgSuspendAsset.denom":
 		x.Denom = ""
-	case "ark.asset.v1.MsgBeginRetirement.expected_version":
+	case "ark.asset.v1.MsgSuspendAsset.expected_version":
 		x.ExpectedVersion = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAsset does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3799,22 +3642,22 @@ func (x *fastReflection_MsgBeginRetirement) Clear(fd protoreflect.FieldDescripto
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgBeginRetirement) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSuspendAsset) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgBeginRetirement.authority":
+	case "ark.asset.v1.MsgSuspendAsset.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgBeginRetirement.denom":
+	case "ark.asset.v1.MsgSuspendAsset.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgBeginRetirement.expected_version":
+	case "ark.asset.v1.MsgSuspendAsset.expected_version":
 		value := x.ExpectedVersion
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirement does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAsset does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -3828,19 +3671,19 @@ func (x *fastReflection_MsgBeginRetirement) Get(descriptor protoreflect.FieldDes
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirement) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgSuspendAsset) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRetirement.authority":
+	case "ark.asset.v1.MsgSuspendAsset.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgBeginRetirement.denom":
+	case "ark.asset.v1.MsgSuspendAsset.denom":
 		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgBeginRetirement.expected_version":
+	case "ark.asset.v1.MsgSuspendAsset.expected_version":
 		x.ExpectedVersion = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAsset does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3854,48 +3697,48 @@ func (x *fastReflection_MsgBeginRetirement) Set(fd protoreflect.FieldDescriptor,
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirement) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSuspendAsset) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRetirement.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgBeginRetirement is not mutable"))
-	case "ark.asset.v1.MsgBeginRetirement.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgBeginRetirement is not mutable"))
-	case "ark.asset.v1.MsgBeginRetirement.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgBeginRetirement is not mutable"))
+	case "ark.asset.v1.MsgSuspendAsset.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgSuspendAsset is not mutable"))
+	case "ark.asset.v1.MsgSuspendAsset.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgSuspendAsset is not mutable"))
+	case "ark.asset.v1.MsgSuspendAsset.expected_version":
+		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgSuspendAsset is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAsset does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgBeginRetirement) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSuspendAsset) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRetirement.authority":
+	case "ark.asset.v1.MsgSuspendAsset.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgBeginRetirement.denom":
+	case "ark.asset.v1.MsgSuspendAsset.denom":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgBeginRetirement.expected_version":
+	case "ark.asset.v1.MsgSuspendAsset.expected_version":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAsset does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgBeginRetirement) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgSuspendAsset) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgBeginRetirement", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgSuspendAsset", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -3903,7 +3746,7 @@ func (x *fastReflection_MsgBeginRetirement) WhichOneof(d protoreflect.OneofDescr
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgBeginRetirement) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgSuspendAsset) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -3914,7 +3757,7 @@ func (x *fastReflection_MsgBeginRetirement) GetUnknown() protoreflect.RawFields 
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirement) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgSuspendAsset) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -3926,7 +3769,7 @@ func (x *fastReflection_MsgBeginRetirement) SetUnknown(fields protoreflect.RawFi
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgBeginRetirement) IsValid() bool {
+func (x *fastReflection_MsgSuspendAsset) IsValid() bool {
 	return x != nil
 }
 
@@ -3936,9 +3779,9 @@ func (x *fastReflection_MsgBeginRetirement) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgBeginRetirement) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgSuspendAsset) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgBeginRetirement)
+		x := input.Message.Interface().(*MsgSuspendAsset)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3971,7 +3814,7 @@ func (x *fastReflection_MsgBeginRetirement) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRetirement)
+		x := input.Message.Interface().(*MsgSuspendAsset)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4020,7 +3863,7 @@ func (x *fastReflection_MsgBeginRetirement) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRetirement)
+		x := input.Message.Interface().(*MsgSuspendAsset)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4052,10 +3895,10 @@ func (x *fastReflection_MsgBeginRetirement) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRetirement: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendAsset: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendAsset: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -4177,23 +4020,23 @@ func (x *fastReflection_MsgBeginRetirement) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgBeginRetirementResponse protoreflect.MessageDescriptor
+	md_MsgSuspendAssetResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgBeginRetirementResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgBeginRetirementResponse")
+	md_MsgSuspendAssetResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgSuspendAssetResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgBeginRetirementResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgSuspendAssetResponse)(nil)
 
-type fastReflection_MsgBeginRetirementResponse MsgBeginRetirementResponse
+type fastReflection_MsgSuspendAssetResponse MsgSuspendAssetResponse
 
-func (x *MsgBeginRetirementResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgBeginRetirementResponse)(x)
+func (x *MsgSuspendAssetResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSuspendAssetResponse)(x)
 }
 
-func (x *MsgBeginRetirementResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgSuspendAssetResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4205,43 +4048,43 @@ func (x *MsgBeginRetirementResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgBeginRetirementResponse_messageType fastReflection_MsgBeginRetirementResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgBeginRetirementResponse_messageType{}
+var _fastReflection_MsgSuspendAssetResponse_messageType fastReflection_MsgSuspendAssetResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSuspendAssetResponse_messageType{}
 
-type fastReflection_MsgBeginRetirementResponse_messageType struct{}
+type fastReflection_MsgSuspendAssetResponse_messageType struct{}
 
-func (x fastReflection_MsgBeginRetirementResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgBeginRetirementResponse)(nil)
+func (x fastReflection_MsgSuspendAssetResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSuspendAssetResponse)(nil)
 }
-func (x fastReflection_MsgBeginRetirementResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRetirementResponse)
+func (x fastReflection_MsgSuspendAssetResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSuspendAssetResponse)
 }
-func (x fastReflection_MsgBeginRetirementResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRetirementResponse
+func (x fastReflection_MsgSuspendAssetResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSuspendAssetResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgBeginRetirementResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRetirementResponse
+func (x *fastReflection_MsgSuspendAssetResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSuspendAssetResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgBeginRetirementResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgBeginRetirementResponse_messageType
+func (x *fastReflection_MsgSuspendAssetResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSuspendAssetResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgBeginRetirementResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRetirementResponse)
+func (x *fastReflection_MsgSuspendAssetResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgSuspendAssetResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgBeginRetirementResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgBeginRetirementResponse)(x)
+func (x *fastReflection_MsgSuspendAssetResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgSuspendAssetResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -4249,7 +4092,7 @@ func (x *fastReflection_MsgBeginRetirementResponse) Interface() protoreflect.Pro
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgBeginRetirementResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgSuspendAssetResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -4263,13 +4106,13 @@ func (x *fastReflection_MsgBeginRetirementResponse) Range(f func(protoreflect.Fi
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgBeginRetirementResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgSuspendAssetResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4279,13 +4122,13 @@ func (x *fastReflection_MsgBeginRetirementResponse) Has(fd protoreflect.FieldDes
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirementResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgSuspendAssetResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4295,13 +4138,13 @@ func (x *fastReflection_MsgBeginRetirementResponse) Clear(fd protoreflect.FieldD
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgBeginRetirementResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSuspendAssetResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirementResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAssetResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -4315,13 +4158,13 @@ func (x *fastReflection_MsgBeginRetirementResponse) Get(descriptor protoreflect.
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirementResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgSuspendAssetResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4335,36 +4178,36 @@ func (x *fastReflection_MsgBeginRetirementResponse) Set(fd protoreflect.FieldDes
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirementResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSuspendAssetResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgBeginRetirementResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSuspendAssetResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSuspendAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgSuspendAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgBeginRetirementResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgSuspendAssetResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgBeginRetirementResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgSuspendAssetResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -4372,7 +4215,7 @@ func (x *fastReflection_MsgBeginRetirementResponse) WhichOneof(d protoreflect.On
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgBeginRetirementResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgSuspendAssetResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -4383,7 +4226,7 @@ func (x *fastReflection_MsgBeginRetirementResponse) GetUnknown() protoreflect.Ra
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRetirementResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgSuspendAssetResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -4395,7 +4238,7 @@ func (x *fastReflection_MsgBeginRetirementResponse) SetUnknown(fields protorefle
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgBeginRetirementResponse) IsValid() bool {
+func (x *fastReflection_MsgSuspendAssetResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -4405,9 +4248,9 @@ func (x *fastReflection_MsgBeginRetirementResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgBeginRetirementResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgSuspendAssetResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgBeginRetirementResponse)
+		x := input.Message.Interface().(*MsgSuspendAssetResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4429,7 +4272,7 @@ func (x *fastReflection_MsgBeginRetirementResponse) ProtoMethods() *protoiface.M
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRetirementResponse)
+		x := input.Message.Interface().(*MsgSuspendAssetResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4459,7 +4302,7 @@ func (x *fastReflection_MsgBeginRetirementResponse) ProtoMethods() *protoiface.M
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRetirementResponse)
+		x := input.Message.Interface().(*MsgSuspendAssetResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4491,10 +4334,10 @@ func (x *fastReflection_MsgBeginRetirementResponse) ProtoMethods() *protoiface.M
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRetirementResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendAssetResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -4533,3564 +4376,12 @@ func (x *fastReflection_MsgBeginRetirementResponse) ProtoMethods() *protoiface.M
 }
 
 var (
-	md_MsgCancelRetirement                  protoreflect.MessageDescriptor
-	fd_MsgCancelRetirement_authority        protoreflect.FieldDescriptor
-	fd_MsgCancelRetirement_denom            protoreflect.FieldDescriptor
-	fd_MsgCancelRetirement_expected_version protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgCancelRetirement = File_ark_asset_v1_tx_proto.Messages().ByName("MsgCancelRetirement")
-	fd_MsgCancelRetirement_authority = md_MsgCancelRetirement.Fields().ByName("authority")
-	fd_MsgCancelRetirement_denom = md_MsgCancelRetirement.Fields().ByName("denom")
-	fd_MsgCancelRetirement_expected_version = md_MsgCancelRetirement.Fields().ByName("expected_version")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgCancelRetirement)(nil)
-
-type fastReflection_MsgCancelRetirement MsgCancelRetirement
-
-func (x *MsgCancelRetirement) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgCancelRetirement)(x)
-}
-
-func (x *MsgCancelRetirement) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgCancelRetirement_messageType fastReflection_MsgCancelRetirement_messageType
-var _ protoreflect.MessageType = fastReflection_MsgCancelRetirement_messageType{}
-
-type fastReflection_MsgCancelRetirement_messageType struct{}
-
-func (x fastReflection_MsgCancelRetirement_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgCancelRetirement)(nil)
-}
-func (x fastReflection_MsgCancelRetirement_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelRetirement)
-}
-func (x fastReflection_MsgCancelRetirement_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelRetirement
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgCancelRetirement) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelRetirement
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgCancelRetirement) Type() protoreflect.MessageType {
-	return _fastReflection_MsgCancelRetirement_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgCancelRetirement) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelRetirement)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgCancelRetirement) Interface() protoreflect.ProtoMessage {
-	return (*MsgCancelRetirement)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgCancelRetirement) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Authority != "" {
-		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgCancelRetirement_authority, value) {
-			return
-		}
-	}
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgCancelRetirement_denom, value) {
-			return
-		}
-	}
-	if x.ExpectedVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgCancelRetirement_expected_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgCancelRetirement) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelRetirement.authority":
-		return x.Authority != ""
-	case "ark.asset.v1.MsgCancelRetirement.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.MsgCancelRetirement.expected_version":
-		return x.ExpectedVersion != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirement) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelRetirement.authority":
-		x.Authority = ""
-	case "ark.asset.v1.MsgCancelRetirement.denom":
-		x.Denom = ""
-	case "ark.asset.v1.MsgCancelRetirement.expected_version":
-		x.ExpectedVersion = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgCancelRetirement) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgCancelRetirement.authority":
-		value := x.Authority
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgCancelRetirement.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgCancelRetirement.expected_version":
-		value := x.ExpectedVersion
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirement does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirement) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelRetirement.authority":
-		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgCancelRetirement.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgCancelRetirement.expected_version":
-		x.ExpectedVersion = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirement) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelRetirement.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgCancelRetirement is not mutable"))
-	case "ark.asset.v1.MsgCancelRetirement.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgCancelRetirement is not mutable"))
-	case "ark.asset.v1.MsgCancelRetirement.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgCancelRetirement is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgCancelRetirement) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgCancelRetirement.authority":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgCancelRetirement.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgCancelRetirement.expected_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgCancelRetirement) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgCancelRetirement", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgCancelRetirement) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirement) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgCancelRetirement) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgCancelRetirement) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgCancelRetirement)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Authority)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.ExpectedVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelRetirement)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.ExpectedVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
-			i--
-			dAtA[i] = 0x18
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Authority) > 0 {
-			i -= len(x.Authority)
-			copy(dAtA[i:], x.Authority)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelRetirement)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelRetirement: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Authority = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-				}
-				x.ExpectedVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ExpectedVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgCancelRetirementResponse protoreflect.MessageDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgCancelRetirementResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgCancelRetirementResponse")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgCancelRetirementResponse)(nil)
-
-type fastReflection_MsgCancelRetirementResponse MsgCancelRetirementResponse
-
-func (x *MsgCancelRetirementResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgCancelRetirementResponse)(x)
-}
-
-func (x *MsgCancelRetirementResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgCancelRetirementResponse_messageType fastReflection_MsgCancelRetirementResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgCancelRetirementResponse_messageType{}
-
-type fastReflection_MsgCancelRetirementResponse_messageType struct{}
-
-func (x fastReflection_MsgCancelRetirementResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgCancelRetirementResponse)(nil)
-}
-func (x fastReflection_MsgCancelRetirementResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelRetirementResponse)
-}
-func (x fastReflection_MsgCancelRetirementResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelRetirementResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgCancelRetirementResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgCancelRetirementResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgCancelRetirementResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgCancelRetirementResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgCancelRetirementResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgCancelRetirementResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgCancelRetirementResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgCancelRetirementResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgCancelRetirementResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgCancelRetirementResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirementResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgCancelRetirementResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirementResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirementResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirementResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgCancelRetirementResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgCancelRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgCancelRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgCancelRetirementResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgCancelRetirementResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgCancelRetirementResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgCancelRetirementResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgCancelRetirementResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgCancelRetirementResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgCancelRetirementResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelRetirementResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgCancelRetirementResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelRetirementResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCancelRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgFinalizeRetirement                  protoreflect.MessageDescriptor
-	fd_MsgFinalizeRetirement_authority        protoreflect.FieldDescriptor
-	fd_MsgFinalizeRetirement_denom            protoreflect.FieldDescriptor
-	fd_MsgFinalizeRetirement_expected_version protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgFinalizeRetirement = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinalizeRetirement")
-	fd_MsgFinalizeRetirement_authority = md_MsgFinalizeRetirement.Fields().ByName("authority")
-	fd_MsgFinalizeRetirement_denom = md_MsgFinalizeRetirement.Fields().ByName("denom")
-	fd_MsgFinalizeRetirement_expected_version = md_MsgFinalizeRetirement.Fields().ByName("expected_version")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgFinalizeRetirement)(nil)
-
-type fastReflection_MsgFinalizeRetirement MsgFinalizeRetirement
-
-func (x *MsgFinalizeRetirement) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirement)(x)
-}
-
-func (x *MsgFinalizeRetirement) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgFinalizeRetirement_messageType fastReflection_MsgFinalizeRetirement_messageType
-var _ protoreflect.MessageType = fastReflection_MsgFinalizeRetirement_messageType{}
-
-type fastReflection_MsgFinalizeRetirement_messageType struct{}
-
-func (x fastReflection_MsgFinalizeRetirement_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirement)(nil)
-}
-func (x fastReflection_MsgFinalizeRetirement_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirement)
-}
-func (x fastReflection_MsgFinalizeRetirement_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirement
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgFinalizeRetirement) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirement
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgFinalizeRetirement) Type() protoreflect.MessageType {
-	return _fastReflection_MsgFinalizeRetirement_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgFinalizeRetirement) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirement)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgFinalizeRetirement) Interface() protoreflect.ProtoMessage {
-	return (*MsgFinalizeRetirement)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgFinalizeRetirement) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Authority != "" {
-		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgFinalizeRetirement_authority, value) {
-			return
-		}
-	}
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgFinalizeRetirement_denom, value) {
-			return
-		}
-	}
-	if x.ExpectedVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgFinalizeRetirement_expected_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgFinalizeRetirement) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		return x.Authority != ""
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		return x.ExpectedVersion != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		x.Authority = ""
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		x.Denom = ""
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		x.ExpectedVersion = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgFinalizeRetirement) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		value := x.Authority
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		value := x.ExpectedVersion
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		x.ExpectedVersion = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgFinalizeRetirement) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgFinalizeRetirement) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinalizeRetirement", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgFinalizeRetirement) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgFinalizeRetirement) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgFinalizeRetirement)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Authority)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.ExpectedVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirement)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.ExpectedVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
-			i--
-			dAtA[i] = 0x18
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Authority) > 0 {
-			i -= len(x.Authority)
-			copy(dAtA[i:], x.Authority)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirement)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirement: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Authority = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-				}
-				x.ExpectedVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ExpectedVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgFinalizeRetirementResponse protoreflect.MessageDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgFinalizeRetirementResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinalizeRetirementResponse")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgFinalizeRetirementResponse)(nil)
-
-type fastReflection_MsgFinalizeRetirementResponse MsgFinalizeRetirementResponse
-
-func (x *MsgFinalizeRetirementResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirementResponse)(x)
-}
-
-func (x *MsgFinalizeRetirementResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgFinalizeRetirementResponse_messageType fastReflection_MsgFinalizeRetirementResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgFinalizeRetirementResponse_messageType{}
-
-type fastReflection_MsgFinalizeRetirementResponse_messageType struct{}
-
-func (x fastReflection_MsgFinalizeRetirementResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirementResponse)(nil)
-}
-func (x fastReflection_MsgFinalizeRetirementResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirementResponse)
-}
-func (x fastReflection_MsgFinalizeRetirementResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirementResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirementResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgFinalizeRetirementResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgFinalizeRetirementResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirementResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgFinalizeRetirementResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgFinalizeRetirementResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgFinalizeRetirementResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinalizeRetirementResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgFinalizeRetirementResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgFinalizeRetirementResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgFinalizeRetirementResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirementResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgReactivateAsset                  protoreflect.MessageDescriptor
-	fd_MsgReactivateAsset_authority        protoreflect.FieldDescriptor
-	fd_MsgReactivateAsset_denom            protoreflect.FieldDescriptor
-	fd_MsgReactivateAsset_expected_version protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgReactivateAsset = File_ark_asset_v1_tx_proto.Messages().ByName("MsgReactivateAsset")
-	fd_MsgReactivateAsset_authority = md_MsgReactivateAsset.Fields().ByName("authority")
-	fd_MsgReactivateAsset_denom = md_MsgReactivateAsset.Fields().ByName("denom")
-	fd_MsgReactivateAsset_expected_version = md_MsgReactivateAsset.Fields().ByName("expected_version")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgReactivateAsset)(nil)
-
-type fastReflection_MsgReactivateAsset MsgReactivateAsset
-
-func (x *MsgReactivateAsset) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgReactivateAsset)(x)
-}
-
-func (x *MsgReactivateAsset) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgReactivateAsset_messageType fastReflection_MsgReactivateAsset_messageType
-var _ protoreflect.MessageType = fastReflection_MsgReactivateAsset_messageType{}
-
-type fastReflection_MsgReactivateAsset_messageType struct{}
-
-func (x fastReflection_MsgReactivateAsset_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgReactivateAsset)(nil)
-}
-func (x fastReflection_MsgReactivateAsset_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgReactivateAsset)
-}
-func (x fastReflection_MsgReactivateAsset_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgReactivateAsset
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgReactivateAsset) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgReactivateAsset
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgReactivateAsset) Type() protoreflect.MessageType {
-	return _fastReflection_MsgReactivateAsset_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgReactivateAsset) New() protoreflect.Message {
-	return new(fastReflection_MsgReactivateAsset)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgReactivateAsset) Interface() protoreflect.ProtoMessage {
-	return (*MsgReactivateAsset)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgReactivateAsset) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Authority != "" {
-		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgReactivateAsset_authority, value) {
-			return
-		}
-	}
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgReactivateAsset_denom, value) {
-			return
-		}
-	}
-	if x.ExpectedVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgReactivateAsset_expected_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgReactivateAsset) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgReactivateAsset.authority":
-		return x.Authority != ""
-	case "ark.asset.v1.MsgReactivateAsset.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.MsgReactivateAsset.expected_version":
-		return x.ExpectedVersion != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAsset"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAsset does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAsset) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgReactivateAsset.authority":
-		x.Authority = ""
-	case "ark.asset.v1.MsgReactivateAsset.denom":
-		x.Denom = ""
-	case "ark.asset.v1.MsgReactivateAsset.expected_version":
-		x.ExpectedVersion = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAsset"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAsset does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgReactivateAsset) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgReactivateAsset.authority":
-		value := x.Authority
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgReactivateAsset.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgReactivateAsset.expected_version":
-		value := x.ExpectedVersion
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAsset"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAsset does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAsset) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgReactivateAsset.authority":
-		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgReactivateAsset.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgReactivateAsset.expected_version":
-		x.ExpectedVersion = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAsset"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAsset does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAsset) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgReactivateAsset.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgReactivateAsset is not mutable"))
-	case "ark.asset.v1.MsgReactivateAsset.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgReactivateAsset is not mutable"))
-	case "ark.asset.v1.MsgReactivateAsset.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgReactivateAsset is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAsset"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAsset does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgReactivateAsset) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgReactivateAsset.authority":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgReactivateAsset.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgReactivateAsset.expected_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAsset"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAsset does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgReactivateAsset) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgReactivateAsset", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgReactivateAsset) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAsset) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgReactivateAsset) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgReactivateAsset) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgReactivateAsset)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Authority)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.ExpectedVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgReactivateAsset)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.ExpectedVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
-			i--
-			dAtA[i] = 0x18
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Authority) > 0 {
-			i -= len(x.Authority)
-			copy(dAtA[i:], x.Authority)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgReactivateAsset)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgReactivateAsset: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgReactivateAsset: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Authority = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-				}
-				x.ExpectedVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ExpectedVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgReactivateAssetResponse protoreflect.MessageDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgReactivateAssetResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgReactivateAssetResponse")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgReactivateAssetResponse)(nil)
-
-type fastReflection_MsgReactivateAssetResponse MsgReactivateAssetResponse
-
-func (x *MsgReactivateAssetResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgReactivateAssetResponse)(x)
-}
-
-func (x *MsgReactivateAssetResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgReactivateAssetResponse_messageType fastReflection_MsgReactivateAssetResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgReactivateAssetResponse_messageType{}
-
-type fastReflection_MsgReactivateAssetResponse_messageType struct{}
-
-func (x fastReflection_MsgReactivateAssetResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgReactivateAssetResponse)(nil)
-}
-func (x fastReflection_MsgReactivateAssetResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgReactivateAssetResponse)
-}
-func (x fastReflection_MsgReactivateAssetResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgReactivateAssetResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgReactivateAssetResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgReactivateAssetResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgReactivateAssetResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgReactivateAssetResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgReactivateAssetResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgReactivateAssetResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgReactivateAssetResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgReactivateAssetResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgReactivateAssetResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgReactivateAssetResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAssetResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAssetResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAssetResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAssetResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAssetResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgReactivateAssetResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAssetResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAssetResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAssetResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAssetResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAssetResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAssetResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAssetResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAssetResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgReactivateAssetResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgReactivateAssetResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgReactivateAssetResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgReactivateAssetResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgReactivateAssetResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgReactivateAssetResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgReactivateAssetResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgReactivateAssetResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgReactivateAssetResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgReactivateAssetResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgReactivateAssetResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgReactivateAssetResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgReactivateAssetResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgReactivateAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgBeginDelisting                  protoreflect.MessageDescriptor
-	fd_MsgBeginDelisting_authority        protoreflect.FieldDescriptor
-	fd_MsgBeginDelisting_denom            protoreflect.FieldDescriptor
-	fd_MsgBeginDelisting_expected_version protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgBeginDelisting = File_ark_asset_v1_tx_proto.Messages().ByName("MsgBeginDelisting")
-	fd_MsgBeginDelisting_authority = md_MsgBeginDelisting.Fields().ByName("authority")
-	fd_MsgBeginDelisting_denom = md_MsgBeginDelisting.Fields().ByName("denom")
-	fd_MsgBeginDelisting_expected_version = md_MsgBeginDelisting.Fields().ByName("expected_version")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgBeginDelisting)(nil)
-
-type fastReflection_MsgBeginDelisting MsgBeginDelisting
-
-func (x *MsgBeginDelisting) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgBeginDelisting)(x)
-}
-
-func (x *MsgBeginDelisting) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgBeginDelisting_messageType fastReflection_MsgBeginDelisting_messageType
-var _ protoreflect.MessageType = fastReflection_MsgBeginDelisting_messageType{}
-
-type fastReflection_MsgBeginDelisting_messageType struct{}
-
-func (x fastReflection_MsgBeginDelisting_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgBeginDelisting)(nil)
-}
-func (x fastReflection_MsgBeginDelisting_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginDelisting)
-}
-func (x fastReflection_MsgBeginDelisting_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginDelisting
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgBeginDelisting) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginDelisting
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgBeginDelisting) Type() protoreflect.MessageType {
-	return _fastReflection_MsgBeginDelisting_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgBeginDelisting) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginDelisting)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgBeginDelisting) Interface() protoreflect.ProtoMessage {
-	return (*MsgBeginDelisting)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgBeginDelisting) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Authority != "" {
-		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgBeginDelisting_authority, value) {
-			return
-		}
-	}
-	if x.Denom != "" {
-		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgBeginDelisting_denom, value) {
-			return
-		}
-	}
-	if x.ExpectedVersion != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgBeginDelisting_expected_version, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgBeginDelisting) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginDelisting.authority":
-		return x.Authority != ""
-	case "ark.asset.v1.MsgBeginDelisting.denom":
-		return x.Denom != ""
-	case "ark.asset.v1.MsgBeginDelisting.expected_version":
-		return x.ExpectedVersion != uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelisting"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelisting does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelisting) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginDelisting.authority":
-		x.Authority = ""
-	case "ark.asset.v1.MsgBeginDelisting.denom":
-		x.Denom = ""
-	case "ark.asset.v1.MsgBeginDelisting.expected_version":
-		x.ExpectedVersion = uint64(0)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelisting"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelisting does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgBeginDelisting) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgBeginDelisting.authority":
-		value := x.Authority
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgBeginDelisting.denom":
-		value := x.Denom
-		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgBeginDelisting.expected_version":
-		value := x.ExpectedVersion
-		return protoreflect.ValueOfUint64(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelisting"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelisting does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelisting) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginDelisting.authority":
-		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgBeginDelisting.denom":
-		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgBeginDelisting.expected_version":
-		x.ExpectedVersion = value.Uint()
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelisting"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelisting does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelisting) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginDelisting.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgBeginDelisting is not mutable"))
-	case "ark.asset.v1.MsgBeginDelisting.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgBeginDelisting is not mutable"))
-	case "ark.asset.v1.MsgBeginDelisting.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgBeginDelisting is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelisting"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelisting does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgBeginDelisting) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginDelisting.authority":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgBeginDelisting.denom":
-		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgBeginDelisting.expected_version":
-		return protoreflect.ValueOfUint64(uint64(0))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelisting"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelisting does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgBeginDelisting) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgBeginDelisting", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgBeginDelisting) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelisting) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgBeginDelisting) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgBeginDelisting) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgBeginDelisting)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Authority)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.Denom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.ExpectedVersion != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginDelisting)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.ExpectedVersion != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
-			i--
-			dAtA[i] = 0x18
-		}
-		if len(x.Denom) > 0 {
-			i -= len(x.Denom)
-			copy(dAtA[i:], x.Denom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Authority) > 0 {
-			i -= len(x.Authority)
-			copy(dAtA[i:], x.Authority)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginDelisting)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginDelisting: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginDelisting: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Authority = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Denom = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
-				}
-				x.ExpectedVersion = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.ExpectedVersion |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgBeginDelistingResponse protoreflect.MessageDescriptor
-)
-
-func init() {
-	file_ark_asset_v1_tx_proto_init()
-	md_MsgBeginDelistingResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgBeginDelistingResponse")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgBeginDelistingResponse)(nil)
-
-type fastReflection_MsgBeginDelistingResponse MsgBeginDelistingResponse
-
-func (x *MsgBeginDelistingResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgBeginDelistingResponse)(x)
-}
-
-func (x *MsgBeginDelistingResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgBeginDelistingResponse_messageType fastReflection_MsgBeginDelistingResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgBeginDelistingResponse_messageType{}
-
-type fastReflection_MsgBeginDelistingResponse_messageType struct{}
-
-func (x fastReflection_MsgBeginDelistingResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgBeginDelistingResponse)(nil)
-}
-func (x fastReflection_MsgBeginDelistingResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginDelistingResponse)
-}
-func (x fastReflection_MsgBeginDelistingResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginDelistingResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgBeginDelistingResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginDelistingResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgBeginDelistingResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgBeginDelistingResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgBeginDelistingResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginDelistingResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgBeginDelistingResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgBeginDelistingResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgBeginDelistingResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgBeginDelistingResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelistingResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelistingResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelistingResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelistingResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelistingResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgBeginDelistingResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelistingResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelistingResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelistingResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelistingResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelistingResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelistingResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelistingResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelistingResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgBeginDelistingResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginDelistingResponse"))
-		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginDelistingResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgBeginDelistingResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgBeginDelistingResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgBeginDelistingResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginDelistingResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgBeginDelistingResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgBeginDelistingResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgBeginDelistingResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginDelistingResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginDelistingResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginDelistingResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginDelistingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgOpenSettlement                   protoreflect.MessageDescriptor
-	fd_MsgOpenSettlement_authority         protoreflect.FieldDescriptor
-	fd_MsgOpenSettlement_denom             protoreflect.FieldDescriptor
-	fd_MsgOpenSettlement_expected_version  protoreflect.FieldDescriptor
-	fd_MsgOpenSettlement_redemption_rate   protoreflect.FieldDescriptor
-	fd_MsgOpenSettlement_activation_height protoreflect.FieldDescriptor
+	md_MsgOpenSettlement                         protoreflect.MessageDescriptor
+	fd_MsgOpenSettlement_authority               protoreflect.FieldDescriptor
+	fd_MsgOpenSettlement_denom                   protoreflect.FieldDescriptor
+	fd_MsgOpenSettlement_expected_version        protoreflect.FieldDescriptor
+	fd_MsgOpenSettlement_redemption_rate         protoreflect.FieldDescriptor
+	fd_MsgOpenSettlement_earliest_closing_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -8100,7 +4391,7 @@ func init() {
 	fd_MsgOpenSettlement_denom = md_MsgOpenSettlement.Fields().ByName("denom")
 	fd_MsgOpenSettlement_expected_version = md_MsgOpenSettlement.Fields().ByName("expected_version")
 	fd_MsgOpenSettlement_redemption_rate = md_MsgOpenSettlement.Fields().ByName("redemption_rate")
-	fd_MsgOpenSettlement_activation_height = md_MsgOpenSettlement.Fields().ByName("activation_height")
+	fd_MsgOpenSettlement_earliest_closing_height = md_MsgOpenSettlement.Fields().ByName("earliest_closing_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgOpenSettlement)(nil)
@@ -8112,7 +4403,7 @@ func (x *MsgOpenSettlement) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgOpenSettlement) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[18]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8192,9 +4483,9 @@ func (x *fastReflection_MsgOpenSettlement) Range(f func(protoreflect.FieldDescri
 			return
 		}
 	}
-	if x.ActivationHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.ActivationHeight)
-		if !f(fd_MsgOpenSettlement_activation_height, value) {
+	if x.EarliestClosingHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.EarliestClosingHeight)
+		if !f(fd_MsgOpenSettlement_earliest_closing_height, value) {
 			return
 		}
 	}
@@ -8221,8 +4512,8 @@ func (x *fastReflection_MsgOpenSettlement) Has(fd protoreflect.FieldDescriptor) 
 		return x.ExpectedVersion != uint64(0)
 	case "ark.asset.v1.MsgOpenSettlement.redemption_rate":
 		return x.RedemptionRate != ""
-	case "ark.asset.v1.MsgOpenSettlement.activation_height":
-		return x.ActivationHeight != int64(0)
+	case "ark.asset.v1.MsgOpenSettlement.earliest_closing_height":
+		return x.EarliestClosingHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgOpenSettlement"))
@@ -8247,8 +4538,8 @@ func (x *fastReflection_MsgOpenSettlement) Clear(fd protoreflect.FieldDescriptor
 		x.ExpectedVersion = uint64(0)
 	case "ark.asset.v1.MsgOpenSettlement.redemption_rate":
 		x.RedemptionRate = ""
-	case "ark.asset.v1.MsgOpenSettlement.activation_height":
-		x.ActivationHeight = int64(0)
+	case "ark.asset.v1.MsgOpenSettlement.earliest_closing_height":
+		x.EarliestClosingHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgOpenSettlement"))
@@ -8277,8 +4568,8 @@ func (x *fastReflection_MsgOpenSettlement) Get(descriptor protoreflect.FieldDesc
 	case "ark.asset.v1.MsgOpenSettlement.redemption_rate":
 		value := x.RedemptionRate
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgOpenSettlement.activation_height":
-		value := x.ActivationHeight
+	case "ark.asset.v1.MsgOpenSettlement.earliest_closing_height":
+		value := x.EarliestClosingHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -8308,8 +4599,8 @@ func (x *fastReflection_MsgOpenSettlement) Set(fd protoreflect.FieldDescriptor, 
 		x.ExpectedVersion = value.Uint()
 	case "ark.asset.v1.MsgOpenSettlement.redemption_rate":
 		x.RedemptionRate = value.Interface().(string)
-	case "ark.asset.v1.MsgOpenSettlement.activation_height":
-		x.ActivationHeight = value.Int()
+	case "ark.asset.v1.MsgOpenSettlement.earliest_closing_height":
+		x.EarliestClosingHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgOpenSettlement"))
@@ -8338,8 +4629,8 @@ func (x *fastReflection_MsgOpenSettlement) Mutable(fd protoreflect.FieldDescript
 		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgOpenSettlement is not mutable"))
 	case "ark.asset.v1.MsgOpenSettlement.redemption_rate":
 		panic(fmt.Errorf("field redemption_rate of message ark.asset.v1.MsgOpenSettlement is not mutable"))
-	case "ark.asset.v1.MsgOpenSettlement.activation_height":
-		panic(fmt.Errorf("field activation_height of message ark.asset.v1.MsgOpenSettlement is not mutable"))
+	case "ark.asset.v1.MsgOpenSettlement.earliest_closing_height":
+		panic(fmt.Errorf("field earliest_closing_height of message ark.asset.v1.MsgOpenSettlement is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgOpenSettlement"))
@@ -8361,7 +4652,7 @@ func (x *fastReflection_MsgOpenSettlement) NewField(fd protoreflect.FieldDescrip
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.asset.v1.MsgOpenSettlement.redemption_rate":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgOpenSettlement.activation_height":
+	case "ark.asset.v1.MsgOpenSettlement.earliest_closing_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
@@ -8447,8 +4738,8 @@ func (x *fastReflection_MsgOpenSettlement) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.ActivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		if x.EarliestClosingHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EarliestClosingHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -8479,8 +4770,8 @@ func (x *fastReflection_MsgOpenSettlement) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.ActivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+		if x.EarliestClosingHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EarliestClosingHeight))
 			i--
 			dAtA[i] = 0x28
 		}
@@ -8676,9 +4967,9 @@ func (x *fastReflection_MsgOpenSettlement) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 5:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EarliestClosingHeight", wireType)
 				}
-				x.ActivationHeight = 0
+				x.EarliestClosingHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -8688,7 +4979,7 @@ func (x *fastReflection_MsgOpenSettlement) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationHeight |= int64(b&0x7F) << shift
+					x.EarliestClosingHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -8746,7 +5037,7 @@ func (x *MsgOpenSettlementResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgOpenSettlementResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[19]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9108,7 +5399,7 @@ func (x *MsgCancelSettlement) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCancelSettlement) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[20]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9634,7 +5925,7 @@ func (x *MsgCancelSettlementResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCancelSettlementResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[21]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9973,32 +6264,30 @@ func (x *fastReflection_MsgCancelSettlementResponse) ProtoMethods() *protoiface.
 }
 
 var (
-	md_MsgBeginRelisting                         protoreflect.MessageDescriptor
-	fd_MsgBeginRelisting_authority               protoreflect.FieldDescriptor
-	fd_MsgBeginRelisting_denom                   protoreflect.FieldDescriptor
-	fd_MsgBeginRelisting_expected_version        protoreflect.FieldDescriptor
-	fd_MsgBeginRelisting_earliest_closing_height protoreflect.FieldDescriptor
+	md_MsgRecoverAsset                  protoreflect.MessageDescriptor
+	fd_MsgRecoverAsset_authority        protoreflect.FieldDescriptor
+	fd_MsgRecoverAsset_denom            protoreflect.FieldDescriptor
+	fd_MsgRecoverAsset_expected_version protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgBeginRelisting = File_ark_asset_v1_tx_proto.Messages().ByName("MsgBeginRelisting")
-	fd_MsgBeginRelisting_authority = md_MsgBeginRelisting.Fields().ByName("authority")
-	fd_MsgBeginRelisting_denom = md_MsgBeginRelisting.Fields().ByName("denom")
-	fd_MsgBeginRelisting_expected_version = md_MsgBeginRelisting.Fields().ByName("expected_version")
-	fd_MsgBeginRelisting_earliest_closing_height = md_MsgBeginRelisting.Fields().ByName("earliest_closing_height")
+	md_MsgRecoverAsset = File_ark_asset_v1_tx_proto.Messages().ByName("MsgRecoverAsset")
+	fd_MsgRecoverAsset_authority = md_MsgRecoverAsset.Fields().ByName("authority")
+	fd_MsgRecoverAsset_denom = md_MsgRecoverAsset.Fields().ByName("denom")
+	fd_MsgRecoverAsset_expected_version = md_MsgRecoverAsset.Fields().ByName("expected_version")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgBeginRelisting)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgRecoverAsset)(nil)
 
-type fastReflection_MsgBeginRelisting MsgBeginRelisting
+type fastReflection_MsgRecoverAsset MsgRecoverAsset
 
-func (x *MsgBeginRelisting) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgBeginRelisting)(x)
+func (x *MsgRecoverAsset) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgRecoverAsset)(x)
 }
 
-func (x *MsgBeginRelisting) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[22]
+func (x *MsgRecoverAsset) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10009,43 +6298,43 @@ func (x *MsgBeginRelisting) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgBeginRelisting_messageType fastReflection_MsgBeginRelisting_messageType
-var _ protoreflect.MessageType = fastReflection_MsgBeginRelisting_messageType{}
+var _fastReflection_MsgRecoverAsset_messageType fastReflection_MsgRecoverAsset_messageType
+var _ protoreflect.MessageType = fastReflection_MsgRecoverAsset_messageType{}
 
-type fastReflection_MsgBeginRelisting_messageType struct{}
+type fastReflection_MsgRecoverAsset_messageType struct{}
 
-func (x fastReflection_MsgBeginRelisting_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgBeginRelisting)(nil)
+func (x fastReflection_MsgRecoverAsset_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgRecoverAsset)(nil)
 }
-func (x fastReflection_MsgBeginRelisting_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRelisting)
+func (x fastReflection_MsgRecoverAsset_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgRecoverAsset)
 }
-func (x fastReflection_MsgBeginRelisting_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRelisting
+func (x fastReflection_MsgRecoverAsset_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgRecoverAsset
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgBeginRelisting) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRelisting
+func (x *fastReflection_MsgRecoverAsset) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgRecoverAsset
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgBeginRelisting) Type() protoreflect.MessageType {
-	return _fastReflection_MsgBeginRelisting_messageType
+func (x *fastReflection_MsgRecoverAsset) Type() protoreflect.MessageType {
+	return _fastReflection_MsgRecoverAsset_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgBeginRelisting) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRelisting)
+func (x *fastReflection_MsgRecoverAsset) New() protoreflect.Message {
+	return new(fastReflection_MsgRecoverAsset)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgBeginRelisting) Interface() protoreflect.ProtoMessage {
-	return (*MsgBeginRelisting)(x)
+func (x *fastReflection_MsgRecoverAsset) Interface() protoreflect.ProtoMessage {
+	return (*MsgRecoverAsset)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -10053,28 +6342,22 @@ func (x *fastReflection_MsgBeginRelisting) Interface() protoreflect.ProtoMessage
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgBeginRelisting) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgRecoverAsset) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgBeginRelisting_authority, value) {
+		if !f(fd_MsgRecoverAsset_authority, value) {
 			return
 		}
 	}
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgBeginRelisting_denom, value) {
+		if !f(fd_MsgRecoverAsset_denom, value) {
 			return
 		}
 	}
 	if x.ExpectedVersion != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgBeginRelisting_expected_version, value) {
-			return
-		}
-	}
-	if x.EarliestClosingHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.EarliestClosingHeight)
-		if !f(fd_MsgBeginRelisting_earliest_closing_height, value) {
+		if !f(fd_MsgRecoverAsset_expected_version, value) {
 			return
 		}
 	}
@@ -10091,21 +6374,19 @@ func (x *fastReflection_MsgBeginRelisting) Range(f func(protoreflect.FieldDescri
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgBeginRelisting) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgRecoverAsset) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRelisting.authority":
+	case "ark.asset.v1.MsgRecoverAsset.authority":
 		return x.Authority != ""
-	case "ark.asset.v1.MsgBeginRelisting.denom":
+	case "ark.asset.v1.MsgRecoverAsset.denom":
 		return x.Denom != ""
-	case "ark.asset.v1.MsgBeginRelisting.expected_version":
+	case "ark.asset.v1.MsgRecoverAsset.expected_version":
 		return x.ExpectedVersion != uint64(0)
-	case "ark.asset.v1.MsgBeginRelisting.earliest_closing_height":
-		return x.EarliestClosingHeight != int64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelisting"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelisting does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAsset does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -10115,21 +6396,19 @@ func (x *fastReflection_MsgBeginRelisting) Has(fd protoreflect.FieldDescriptor) 
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelisting) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgRecoverAsset) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRelisting.authority":
+	case "ark.asset.v1.MsgRecoverAsset.authority":
 		x.Authority = ""
-	case "ark.asset.v1.MsgBeginRelisting.denom":
+	case "ark.asset.v1.MsgRecoverAsset.denom":
 		x.Denom = ""
-	case "ark.asset.v1.MsgBeginRelisting.expected_version":
+	case "ark.asset.v1.MsgRecoverAsset.expected_version":
 		x.ExpectedVersion = uint64(0)
-	case "ark.asset.v1.MsgBeginRelisting.earliest_closing_height":
-		x.EarliestClosingHeight = int64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelisting"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelisting does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAsset does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -10139,25 +6418,22 @@ func (x *fastReflection_MsgBeginRelisting) Clear(fd protoreflect.FieldDescriptor
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgBeginRelisting) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgRecoverAsset) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgBeginRelisting.authority":
+	case "ark.asset.v1.MsgRecoverAsset.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgBeginRelisting.denom":
+	case "ark.asset.v1.MsgRecoverAsset.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgBeginRelisting.expected_version":
+	case "ark.asset.v1.MsgRecoverAsset.expected_version":
 		value := x.ExpectedVersion
 		return protoreflect.ValueOfUint64(value)
-	case "ark.asset.v1.MsgBeginRelisting.earliest_closing_height":
-		value := x.EarliestClosingHeight
-		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelisting"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelisting does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAsset does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -10171,21 +6447,19 @@ func (x *fastReflection_MsgBeginRelisting) Get(descriptor protoreflect.FieldDesc
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelisting) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgRecoverAsset) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRelisting.authority":
+	case "ark.asset.v1.MsgRecoverAsset.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgBeginRelisting.denom":
+	case "ark.asset.v1.MsgRecoverAsset.denom":
 		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgBeginRelisting.expected_version":
+	case "ark.asset.v1.MsgRecoverAsset.expected_version":
 		x.ExpectedVersion = value.Uint()
-	case "ark.asset.v1.MsgBeginRelisting.earliest_closing_height":
-		x.EarliestClosingHeight = value.Int()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelisting"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelisting does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAsset does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -10199,52 +6473,48 @@ func (x *fastReflection_MsgBeginRelisting) Set(fd protoreflect.FieldDescriptor, 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelisting) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgRecoverAsset) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRelisting.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgBeginRelisting is not mutable"))
-	case "ark.asset.v1.MsgBeginRelisting.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgBeginRelisting is not mutable"))
-	case "ark.asset.v1.MsgBeginRelisting.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgBeginRelisting is not mutable"))
-	case "ark.asset.v1.MsgBeginRelisting.earliest_closing_height":
-		panic(fmt.Errorf("field earliest_closing_height of message ark.asset.v1.MsgBeginRelisting is not mutable"))
+	case "ark.asset.v1.MsgRecoverAsset.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgRecoverAsset is not mutable"))
+	case "ark.asset.v1.MsgRecoverAsset.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgRecoverAsset is not mutable"))
+	case "ark.asset.v1.MsgRecoverAsset.expected_version":
+		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgRecoverAsset is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelisting"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelisting does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAsset does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgBeginRelisting) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgRecoverAsset) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgBeginRelisting.authority":
+	case "ark.asset.v1.MsgRecoverAsset.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgBeginRelisting.denom":
+	case "ark.asset.v1.MsgRecoverAsset.denom":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgBeginRelisting.expected_version":
+	case "ark.asset.v1.MsgRecoverAsset.expected_version":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.asset.v1.MsgBeginRelisting.earliest_closing_height":
-		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelisting"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAsset"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelisting does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAsset does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgBeginRelisting) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgRecoverAsset) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgBeginRelisting", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgRecoverAsset", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -10252,7 +6522,7 @@ func (x *fastReflection_MsgBeginRelisting) WhichOneof(d protoreflect.OneofDescri
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgBeginRelisting) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgRecoverAsset) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -10263,7 +6533,7 @@ func (x *fastReflection_MsgBeginRelisting) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelisting) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgRecoverAsset) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -10275,7 +6545,7 @@ func (x *fastReflection_MsgBeginRelisting) SetUnknown(fields protoreflect.RawFie
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgBeginRelisting) IsValid() bool {
+func (x *fastReflection_MsgRecoverAsset) IsValid() bool {
 	return x != nil
 }
 
@@ -10285,9 +6555,9 @@ func (x *fastReflection_MsgBeginRelisting) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgRecoverAsset) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgBeginRelisting)
+		x := input.Message.Interface().(*MsgRecoverAsset)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -10310,9 +6580,6 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 		if x.ExpectedVersion != 0 {
 			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
 		}
-		if x.EarliestClosingHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.EarliestClosingHeight))
-		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -10323,7 +6590,7 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRelisting)
+		x := input.Message.Interface().(*MsgRecoverAsset)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -10341,11 +6608,6 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.EarliestClosingHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.EarliestClosingHeight))
-			i--
-			dAtA[i] = 0x20
 		}
 		if x.ExpectedVersion != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
@@ -10377,7 +6639,7 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRelisting)
+		x := input.Message.Interface().(*MsgRecoverAsset)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -10409,10 +6671,10 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRelisting: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRecoverAsset: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRelisting: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRecoverAsset: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -10498,25 +6760,6 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 4:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EarliestClosingHeight", wireType)
-				}
-				x.EarliestClosingHeight = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.EarliestClosingHeight |= int64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -10553,24 +6796,24 @@ func (x *fastReflection_MsgBeginRelisting) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgBeginRelistingResponse protoreflect.MessageDescriptor
+	md_MsgRecoverAssetResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgBeginRelistingResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgBeginRelistingResponse")
+	md_MsgRecoverAssetResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgRecoverAssetResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgBeginRelistingResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgRecoverAssetResponse)(nil)
 
-type fastReflection_MsgBeginRelistingResponse MsgBeginRelistingResponse
+type fastReflection_MsgRecoverAssetResponse MsgRecoverAssetResponse
 
-func (x *MsgBeginRelistingResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgBeginRelistingResponse)(x)
+func (x *MsgRecoverAssetResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgRecoverAssetResponse)(x)
 }
 
-func (x *MsgBeginRelistingResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[23]
+func (x *MsgRecoverAssetResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10581,43 +6824,43 @@ func (x *MsgBeginRelistingResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgBeginRelistingResponse_messageType fastReflection_MsgBeginRelistingResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgBeginRelistingResponse_messageType{}
+var _fastReflection_MsgRecoverAssetResponse_messageType fastReflection_MsgRecoverAssetResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgRecoverAssetResponse_messageType{}
 
-type fastReflection_MsgBeginRelistingResponse_messageType struct{}
+type fastReflection_MsgRecoverAssetResponse_messageType struct{}
 
-func (x fastReflection_MsgBeginRelistingResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgBeginRelistingResponse)(nil)
+func (x fastReflection_MsgRecoverAssetResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgRecoverAssetResponse)(nil)
 }
-func (x fastReflection_MsgBeginRelistingResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRelistingResponse)
+func (x fastReflection_MsgRecoverAssetResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgRecoverAssetResponse)
 }
-func (x fastReflection_MsgBeginRelistingResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRelistingResponse
+func (x fastReflection_MsgRecoverAssetResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgRecoverAssetResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgBeginRelistingResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgBeginRelistingResponse
+func (x *fastReflection_MsgRecoverAssetResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgRecoverAssetResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgBeginRelistingResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgBeginRelistingResponse_messageType
+func (x *fastReflection_MsgRecoverAssetResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgRecoverAssetResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgBeginRelistingResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgBeginRelistingResponse)
+func (x *fastReflection_MsgRecoverAssetResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgRecoverAssetResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgBeginRelistingResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgBeginRelistingResponse)(x)
+func (x *fastReflection_MsgRecoverAssetResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgRecoverAssetResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -10625,7 +6868,7 @@ func (x *fastReflection_MsgBeginRelistingResponse) Interface() protoreflect.Prot
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgBeginRelistingResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgRecoverAssetResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -10639,13 +6882,13 @@ func (x *fastReflection_MsgBeginRelistingResponse) Range(f func(protoreflect.Fie
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgBeginRelistingResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgRecoverAssetResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelistingResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelistingResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -10655,13 +6898,13 @@ func (x *fastReflection_MsgBeginRelistingResponse) Has(fd protoreflect.FieldDesc
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelistingResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgRecoverAssetResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelistingResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelistingResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -10671,13 +6914,13 @@ func (x *fastReflection_MsgBeginRelistingResponse) Clear(fd protoreflect.FieldDe
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgBeginRelistingResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgRecoverAssetResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelistingResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelistingResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAssetResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -10691,13 +6934,13 @@ func (x *fastReflection_MsgBeginRelistingResponse) Get(descriptor protoreflect.F
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelistingResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgRecoverAssetResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelistingResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelistingResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -10711,36 +6954,36 @@ func (x *fastReflection_MsgBeginRelistingResponse) Set(fd protoreflect.FieldDesc
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelistingResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgRecoverAssetResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelistingResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelistingResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgBeginRelistingResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgRecoverAssetResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgBeginRelistingResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgRecoverAssetResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgBeginRelistingResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgRecoverAssetResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgBeginRelistingResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgRecoverAssetResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgBeginRelistingResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgRecoverAssetResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -10748,7 +6991,7 @@ func (x *fastReflection_MsgBeginRelistingResponse) WhichOneof(d protoreflect.One
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgBeginRelistingResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgRecoverAssetResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -10759,7 +7002,7 @@ func (x *fastReflection_MsgBeginRelistingResponse) GetUnknown() protoreflect.Raw
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgBeginRelistingResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgRecoverAssetResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -10771,7 +7014,7 @@ func (x *fastReflection_MsgBeginRelistingResponse) SetUnknown(fields protoreflec
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgBeginRelistingResponse) IsValid() bool {
+func (x *fastReflection_MsgRecoverAssetResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -10781,9 +7024,9 @@ func (x *fastReflection_MsgBeginRelistingResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgBeginRelistingResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgRecoverAssetResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgBeginRelistingResponse)
+		x := input.Message.Interface().(*MsgRecoverAssetResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -10805,7 +7048,7 @@ func (x *fastReflection_MsgBeginRelistingResponse) ProtoMethods() *protoiface.Me
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRelistingResponse)
+		x := input.Message.Interface().(*MsgRecoverAssetResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -10835,7 +7078,7 @@ func (x *fastReflection_MsgBeginRelistingResponse) ProtoMethods() *protoiface.Me
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgBeginRelistingResponse)
+		x := input.Message.Interface().(*MsgRecoverAssetResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -10867,10 +7110,10 @@ func (x *fastReflection_MsgBeginRelistingResponse) ProtoMethods() *protoiface.Me
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRelistingResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRecoverAssetResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBeginRelistingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRecoverAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -10932,7 +7175,7 @@ func (x *MsgWriteOffAsset) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgWriteOffAsset) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[24]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11458,7 +7701,7 @@ func (x *MsgWriteOffAssetResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgWriteOffAssetResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_asset_v1_tx_proto_msgTypes[25]
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11796,6 +8039,2782 @@ func (x *fastReflection_MsgWriteOffAssetResponse) ProtoMethods() *protoiface.Met
 	}
 }
 
+var (
+	md_MsgFinalizeRetirement                     protoreflect.MessageDescriptor
+	fd_MsgFinalizeRetirement_authority           protoreflect.FieldDescriptor
+	fd_MsgFinalizeRetirement_denom               protoreflect.FieldDescriptor
+	fd_MsgFinalizeRetirement_expected_version    protoreflect.FieldDescriptor
+	fd_MsgFinalizeRetirement_max_residual_supply protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgFinalizeRetirement = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinalizeRetirement")
+	fd_MsgFinalizeRetirement_authority = md_MsgFinalizeRetirement.Fields().ByName("authority")
+	fd_MsgFinalizeRetirement_denom = md_MsgFinalizeRetirement.Fields().ByName("denom")
+	fd_MsgFinalizeRetirement_expected_version = md_MsgFinalizeRetirement.Fields().ByName("expected_version")
+	fd_MsgFinalizeRetirement_max_residual_supply = md_MsgFinalizeRetirement.Fields().ByName("max_residual_supply")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgFinalizeRetirement)(nil)
+
+type fastReflection_MsgFinalizeRetirement MsgFinalizeRetirement
+
+func (x *MsgFinalizeRetirement) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgFinalizeRetirement)(x)
+}
+
+func (x *MsgFinalizeRetirement) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgFinalizeRetirement_messageType fastReflection_MsgFinalizeRetirement_messageType
+var _ protoreflect.MessageType = fastReflection_MsgFinalizeRetirement_messageType{}
+
+type fastReflection_MsgFinalizeRetirement_messageType struct{}
+
+func (x fastReflection_MsgFinalizeRetirement_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgFinalizeRetirement)(nil)
+}
+func (x fastReflection_MsgFinalizeRetirement_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgFinalizeRetirement)
+}
+func (x fastReflection_MsgFinalizeRetirement_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinalizeRetirement
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgFinalizeRetirement) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinalizeRetirement
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgFinalizeRetirement) Type() protoreflect.MessageType {
+	return _fastReflection_MsgFinalizeRetirement_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgFinalizeRetirement) New() protoreflect.Message {
+	return new(fastReflection_MsgFinalizeRetirement)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgFinalizeRetirement) Interface() protoreflect.ProtoMessage {
+	return (*MsgFinalizeRetirement)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgFinalizeRetirement) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgFinalizeRetirement_authority, value) {
+			return
+		}
+	}
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_MsgFinalizeRetirement_denom, value) {
+			return
+		}
+	}
+	if x.ExpectedVersion != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
+		if !f(fd_MsgFinalizeRetirement_expected_version, value) {
+			return
+		}
+	}
+	if x.MaxResidualSupply != "" {
+		value := protoreflect.ValueOfString(x.MaxResidualSupply)
+		if !f(fd_MsgFinalizeRetirement_max_residual_supply, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgFinalizeRetirement) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+		return x.Authority != ""
+	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+		return x.Denom != ""
+	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+		return x.ExpectedVersion != uint64(0)
+	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+		return x.MaxResidualSupply != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirement) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+		x.Authority = ""
+	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+		x.Denom = ""
+	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+		x.ExpectedVersion = uint64(0)
+	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+		x.MaxResidualSupply = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgFinalizeRetirement) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+		value := x.ExpectedVersion
+		return protoreflect.ValueOfUint64(value)
+	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+		value := x.MaxResidualSupply
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirement) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+		x.Authority = value.Interface().(string)
+	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+		x.Denom = value.Interface().(string)
+	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+		x.ExpectedVersion = value.Uint()
+	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+		x.MaxResidualSupply = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirement) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+		panic(fmt.Errorf("field max_residual_supply of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgFinalizeRetirement) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgFinalizeRetirement) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinalizeRetirement", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgFinalizeRetirement) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirement) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgFinalizeRetirement) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgFinalizeRetirement)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Denom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExpectedVersion != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpectedVersion))
+		}
+		l = len(x.MaxResidualSupply)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgFinalizeRetirement)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.MaxResidualSupply) > 0 {
+			i -= len(x.MaxResidualSupply)
+			copy(dAtA[i:], x.MaxResidualSupply)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MaxResidualSupply)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if x.ExpectedVersion != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedVersion))
+			i--
+			dAtA[i] = 0x18
+		}
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgFinalizeRetirement)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirement: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedVersion", wireType)
+				}
+				x.ExpectedVersion = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpectedVersion |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaxResidualSupply", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MaxResidualSupply = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgFinalizeRetirementResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgFinalizeRetirementResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinalizeRetirementResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgFinalizeRetirementResponse)(nil)
+
+type fastReflection_MsgFinalizeRetirementResponse MsgFinalizeRetirementResponse
+
+func (x *MsgFinalizeRetirementResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgFinalizeRetirementResponse)(x)
+}
+
+func (x *MsgFinalizeRetirementResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgFinalizeRetirementResponse_messageType fastReflection_MsgFinalizeRetirementResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgFinalizeRetirementResponse_messageType{}
+
+type fastReflection_MsgFinalizeRetirementResponse_messageType struct{}
+
+func (x fastReflection_MsgFinalizeRetirementResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgFinalizeRetirementResponse)(nil)
+}
+func (x fastReflection_MsgFinalizeRetirementResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgFinalizeRetirementResponse)
+}
+func (x fastReflection_MsgFinalizeRetirementResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinalizeRetirementResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinalizeRetirementResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgFinalizeRetirementResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgFinalizeRetirementResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgFinalizeRetirementResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgFinalizeRetirementResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirementResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgFinalizeRetirementResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgFinalizeRetirementResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinalizeRetirementResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgFinalizeRetirementResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgFinalizeRetirementResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgFinalizeRetirementResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgFinalizeRetirementResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirementResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgSetEmergencyMandate                   protoreflect.MessageDescriptor
+	fd_MsgSetEmergencyMandate_authority         protoreflect.FieldDescriptor
+	fd_MsgSetEmergencyMandate_committee         protoreflect.FieldDescriptor
+	fd_MsgSetEmergencyMandate_activation_height protoreflect.FieldDescriptor
+	fd_MsgSetEmergencyMandate_expiry_height     protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgSetEmergencyMandate = File_ark_asset_v1_tx_proto.Messages().ByName("MsgSetEmergencyMandate")
+	fd_MsgSetEmergencyMandate_authority = md_MsgSetEmergencyMandate.Fields().ByName("authority")
+	fd_MsgSetEmergencyMandate_committee = md_MsgSetEmergencyMandate.Fields().ByName("committee")
+	fd_MsgSetEmergencyMandate_activation_height = md_MsgSetEmergencyMandate.Fields().ByName("activation_height")
+	fd_MsgSetEmergencyMandate_expiry_height = md_MsgSetEmergencyMandate.Fields().ByName("expiry_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgSetEmergencyMandate)(nil)
+
+type fastReflection_MsgSetEmergencyMandate MsgSetEmergencyMandate
+
+func (x *MsgSetEmergencyMandate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetEmergencyMandate)(x)
+}
+
+func (x *MsgSetEmergencyMandate) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgSetEmergencyMandate_messageType fastReflection_MsgSetEmergencyMandate_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetEmergencyMandate_messageType{}
+
+type fastReflection_MsgSetEmergencyMandate_messageType struct{}
+
+func (x fastReflection_MsgSetEmergencyMandate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetEmergencyMandate)(nil)
+}
+func (x fastReflection_MsgSetEmergencyMandate_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEmergencyMandate)
+}
+func (x fastReflection_MsgSetEmergencyMandate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEmergencyMandate
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgSetEmergencyMandate) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEmergencyMandate
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgSetEmergencyMandate) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetEmergencyMandate_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgSetEmergencyMandate) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEmergencyMandate)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgSetEmergencyMandate) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetEmergencyMandate)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgSetEmergencyMandate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgSetEmergencyMandate_authority, value) {
+			return
+		}
+	}
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_MsgSetEmergencyMandate_committee, value) {
+			return
+		}
+	}
+	if x.ActivationHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationHeight)
+		if !f(fd_MsgSetEmergencyMandate_activation_height, value) {
+			return
+		}
+	}
+	if x.ExpiryHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
+		if !f(fd_MsgSetEmergencyMandate_expiry_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgSetEmergencyMandate) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgSetEmergencyMandate.authority":
+		return x.Authority != ""
+	case "ark.asset.v1.MsgSetEmergencyMandate.committee":
+		return x.Committee != ""
+	case "ark.asset.v1.MsgSetEmergencyMandate.activation_height":
+		return x.ActivationHeight != uint64(0)
+	case "ark.asset.v1.MsgSetEmergencyMandate.expiry_height":
+		return x.ExpiryHeight != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandate"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandate) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgSetEmergencyMandate.authority":
+		x.Authority = ""
+	case "ark.asset.v1.MsgSetEmergencyMandate.committee":
+		x.Committee = ""
+	case "ark.asset.v1.MsgSetEmergencyMandate.activation_height":
+		x.ActivationHeight = uint64(0)
+	case "ark.asset.v1.MsgSetEmergencyMandate.expiry_height":
+		x.ExpiryHeight = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandate"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgSetEmergencyMandate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.asset.v1.MsgSetEmergencyMandate.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgSetEmergencyMandate.committee":
+		value := x.Committee
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgSetEmergencyMandate.activation_height":
+		value := x.ActivationHeight
+		return protoreflect.ValueOfUint64(value)
+	case "ark.asset.v1.MsgSetEmergencyMandate.expiry_height":
+		value := x.ExpiryHeight
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandate"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandate does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgSetEmergencyMandate.authority":
+		x.Authority = value.Interface().(string)
+	case "ark.asset.v1.MsgSetEmergencyMandate.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.asset.v1.MsgSetEmergencyMandate.activation_height":
+		x.ActivationHeight = value.Uint()
+	case "ark.asset.v1.MsgSetEmergencyMandate.expiry_height":
+		x.ExpiryHeight = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandate"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgSetEmergencyMandate.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgSetEmergencyMandate is not mutable"))
+	case "ark.asset.v1.MsgSetEmergencyMandate.committee":
+		panic(fmt.Errorf("field committee of message ark.asset.v1.MsgSetEmergencyMandate is not mutable"))
+	case "ark.asset.v1.MsgSetEmergencyMandate.activation_height":
+		panic(fmt.Errorf("field activation_height of message ark.asset.v1.MsgSetEmergencyMandate is not mutable"))
+	case "ark.asset.v1.MsgSetEmergencyMandate.expiry_height":
+		panic(fmt.Errorf("field expiry_height of message ark.asset.v1.MsgSetEmergencyMandate is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandate"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgSetEmergencyMandate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgSetEmergencyMandate.authority":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgSetEmergencyMandate.committee":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgSetEmergencyMandate.activation_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.asset.v1.MsgSetEmergencyMandate.expiry_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandate"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgSetEmergencyMandate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgSetEmergencyMandate", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgSetEmergencyMandate) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandate) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgSetEmergencyMandate) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgSetEmergencyMandate) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgSetEmergencyMandate)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Committee)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ActivationHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		}
+		if x.ExpiryHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetEmergencyMandate)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ExpiryHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.ActivationHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetEmergencyMandate)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEmergencyMandate: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEmergencyMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Committee = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+				}
+				x.ActivationHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ActivationHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+				}
+				x.ExpiryHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgSetEmergencyMandateResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgSetEmergencyMandateResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgSetEmergencyMandateResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgSetEmergencyMandateResponse)(nil)
+
+type fastReflection_MsgSetEmergencyMandateResponse MsgSetEmergencyMandateResponse
+
+func (x *MsgSetEmergencyMandateResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetEmergencyMandateResponse)(x)
+}
+
+func (x *MsgSetEmergencyMandateResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgSetEmergencyMandateResponse_messageType fastReflection_MsgSetEmergencyMandateResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetEmergencyMandateResponse_messageType{}
+
+type fastReflection_MsgSetEmergencyMandateResponse_messageType struct{}
+
+func (x fastReflection_MsgSetEmergencyMandateResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetEmergencyMandateResponse)(nil)
+}
+func (x fastReflection_MsgSetEmergencyMandateResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEmergencyMandateResponse)
+}
+func (x fastReflection_MsgSetEmergencyMandateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEmergencyMandateResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEmergencyMandateResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetEmergencyMandateResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEmergencyMandateResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetEmergencyMandateResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandateResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgSetEmergencyMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgSetEmergencyMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgSetEmergencyMandateResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgSetEmergencyMandateResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgSetEmergencyMandateResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetEmergencyMandateResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetEmergencyMandateResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEmergencyMandateResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEmergencyMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgEmergencySuspendAsset               protoreflect.MessageDescriptor
+	fd_MsgEmergencySuspendAsset_committee     protoreflect.FieldDescriptor
+	fd_MsgEmergencySuspendAsset_denom         protoreflect.FieldDescriptor
+	fd_MsgEmergencySuspendAsset_expected_term protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgEmergencySuspendAsset = File_ark_asset_v1_tx_proto.Messages().ByName("MsgEmergencySuspendAsset")
+	fd_MsgEmergencySuspendAsset_committee = md_MsgEmergencySuspendAsset.Fields().ByName("committee")
+	fd_MsgEmergencySuspendAsset_denom = md_MsgEmergencySuspendAsset.Fields().ByName("denom")
+	fd_MsgEmergencySuspendAsset_expected_term = md_MsgEmergencySuspendAsset.Fields().ByName("expected_term")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgEmergencySuspendAsset)(nil)
+
+type fastReflection_MsgEmergencySuspendAsset MsgEmergencySuspendAsset
+
+func (x *MsgEmergencySuspendAsset) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgEmergencySuspendAsset)(x)
+}
+
+func (x *MsgEmergencySuspendAsset) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgEmergencySuspendAsset_messageType fastReflection_MsgEmergencySuspendAsset_messageType
+var _ protoreflect.MessageType = fastReflection_MsgEmergencySuspendAsset_messageType{}
+
+type fastReflection_MsgEmergencySuspendAsset_messageType struct{}
+
+func (x fastReflection_MsgEmergencySuspendAsset_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgEmergencySuspendAsset)(nil)
+}
+func (x fastReflection_MsgEmergencySuspendAsset_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgEmergencySuspendAsset)
+}
+func (x fastReflection_MsgEmergencySuspendAsset_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgEmergencySuspendAsset
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgEmergencySuspendAsset) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgEmergencySuspendAsset
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgEmergencySuspendAsset) Type() protoreflect.MessageType {
+	return _fastReflection_MsgEmergencySuspendAsset_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgEmergencySuspendAsset) New() protoreflect.Message {
+	return new(fastReflection_MsgEmergencySuspendAsset)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgEmergencySuspendAsset) Interface() protoreflect.ProtoMessage {
+	return (*MsgEmergencySuspendAsset)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgEmergencySuspendAsset) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_MsgEmergencySuspendAsset_committee, value) {
+			return
+		}
+	}
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_MsgEmergencySuspendAsset_denom, value) {
+			return
+		}
+	}
+	if x.ExpectedTerm != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpectedTerm)
+		if !f(fd_MsgEmergencySuspendAsset_expected_term, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgEmergencySuspendAsset) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgEmergencySuspendAsset.committee":
+		return x.Committee != ""
+	case "ark.asset.v1.MsgEmergencySuspendAsset.denom":
+		return x.Denom != ""
+	case "ark.asset.v1.MsgEmergencySuspendAsset.expected_term":
+		return x.ExpectedTerm != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAsset"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAsset does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAsset) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgEmergencySuspendAsset.committee":
+		x.Committee = ""
+	case "ark.asset.v1.MsgEmergencySuspendAsset.denom":
+		x.Denom = ""
+	case "ark.asset.v1.MsgEmergencySuspendAsset.expected_term":
+		x.ExpectedTerm = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAsset"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAsset does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgEmergencySuspendAsset) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.asset.v1.MsgEmergencySuspendAsset.committee":
+		value := x.Committee
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgEmergencySuspendAsset.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
+	case "ark.asset.v1.MsgEmergencySuspendAsset.expected_term":
+		value := x.ExpectedTerm
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAsset"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAsset does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAsset) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgEmergencySuspendAsset.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.asset.v1.MsgEmergencySuspendAsset.denom":
+		x.Denom = value.Interface().(string)
+	case "ark.asset.v1.MsgEmergencySuspendAsset.expected_term":
+		x.ExpectedTerm = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAsset"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAsset does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAsset) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgEmergencySuspendAsset.committee":
+		panic(fmt.Errorf("field committee of message ark.asset.v1.MsgEmergencySuspendAsset is not mutable"))
+	case "ark.asset.v1.MsgEmergencySuspendAsset.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgEmergencySuspendAsset is not mutable"))
+	case "ark.asset.v1.MsgEmergencySuspendAsset.expected_term":
+		panic(fmt.Errorf("field expected_term of message ark.asset.v1.MsgEmergencySuspendAsset is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAsset"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAsset does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgEmergencySuspendAsset) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.asset.v1.MsgEmergencySuspendAsset.committee":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgEmergencySuspendAsset.denom":
+		return protoreflect.ValueOfString("")
+	case "ark.asset.v1.MsgEmergencySuspendAsset.expected_term":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAsset"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAsset does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgEmergencySuspendAsset) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgEmergencySuspendAsset", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgEmergencySuspendAsset) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAsset) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgEmergencySuspendAsset) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgEmergencySuspendAsset) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgEmergencySuspendAsset)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Committee)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Denom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExpectedTerm != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpectedTerm))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgEmergencySuspendAsset)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ExpectedTerm != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedTerm))
+			i--
+			dAtA[i] = 0x18
+		}
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgEmergencySuspendAsset)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgEmergencySuspendAsset: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgEmergencySuspendAsset: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Committee = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+				}
+				x.ExpectedTerm = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpectedTerm |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgEmergencySuspendAssetResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_asset_v1_tx_proto_init()
+	md_MsgEmergencySuspendAssetResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgEmergencySuspendAssetResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgEmergencySuspendAssetResponse)(nil)
+
+type fastReflection_MsgEmergencySuspendAssetResponse MsgEmergencySuspendAssetResponse
+
+func (x *MsgEmergencySuspendAssetResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgEmergencySuspendAssetResponse)(x)
+}
+
+func (x *MsgEmergencySuspendAssetResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_asset_v1_tx_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgEmergencySuspendAssetResponse_messageType fastReflection_MsgEmergencySuspendAssetResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgEmergencySuspendAssetResponse_messageType{}
+
+type fastReflection_MsgEmergencySuspendAssetResponse_messageType struct{}
+
+func (x fastReflection_MsgEmergencySuspendAssetResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgEmergencySuspendAssetResponse)(nil)
+}
+func (x fastReflection_MsgEmergencySuspendAssetResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgEmergencySuspendAssetResponse)
+}
+func (x fastReflection_MsgEmergencySuspendAssetResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgEmergencySuspendAssetResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgEmergencySuspendAssetResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgEmergencySuspendAssetResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgEmergencySuspendAssetResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgEmergencySuspendAssetResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAssetResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAssetResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAssetResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAssetResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAssetResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAssetResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAssetResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAssetResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAssetResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAssetResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgEmergencySuspendAssetResponse"))
+		}
+		panic(fmt.Errorf("message ark.asset.v1.MsgEmergencySuspendAssetResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgEmergencySuspendAssetResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgEmergencySuspendAssetResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgEmergencySuspendAssetResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgEmergencySuspendAssetResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgEmergencySuspendAssetResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgEmergencySuspendAssetResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgEmergencySuspendAssetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -11809,22 +10828,97 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// MsgRegisterAsset registers a new governance-managed Bank asset. The asset
-// denomination is metadata.base.
+// MsgUpdateParams is the Msg/UpdateParams request type.
+type MsgUpdateParams struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// params defines the x/asset parameters to update. All parameters must be
+	// supplied.
+	Params *Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+}
+
+func (x *MsgUpdateParams) Reset() {
+	*x = MsgUpdateParams{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgUpdateParams) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgUpdateParams) ProtoMessage() {}
+
+// Deprecated: Use MsgUpdateParams.ProtoReflect.Descriptor instead.
+func (*MsgUpdateParams) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *MsgUpdateParams) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgUpdateParams) GetParams() *Params {
+	if x != nil {
+		return x.Params
+	}
+	return nil
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+type MsgUpdateParamsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgUpdateParamsResponse) Reset() {
+	*x = MsgUpdateParamsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgUpdateParamsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgUpdateParamsResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgUpdateParamsResponse.ProtoReflect.Descriptor instead.
+func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{1}
+}
+
+// MsgRegisterAsset registers a new governance-managed Bank asset and admits it
+// to normal policy use in the same act. The denomination is the whole
+// registration input: Bank metadata is derived from it, so there is nothing
+// else for a proposal to state and nothing that a later message could correct.
 type MsgRegisterAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Authority      string            `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Metadata       *v1beta1.Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	OracleRequired bool              `protobuf:"varint,3,opt,name=oracle_required,json=oracleRequired,proto3" json:"oracle_required,omitempty"`
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom     string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 }
 
 func (x *MsgRegisterAsset) Reset() {
 	*x = MsgRegisterAsset{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[0]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11838,7 +10932,7 @@ func (*MsgRegisterAsset) ProtoMessage() {}
 
 // Deprecated: Use MsgRegisterAsset.ProtoReflect.Descriptor instead.
 func (*MsgRegisterAsset) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{0}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MsgRegisterAsset) GetAuthority() string {
@@ -11848,18 +10942,11 @@ func (x *MsgRegisterAsset) GetAuthority() string {
 	return ""
 }
 
-func (x *MsgRegisterAsset) GetMetadata() *v1beta1.Metadata {
+func (x *MsgRegisterAsset) GetDenom() string {
 	if x != nil {
-		return x.Metadata
+		return x.Denom
 	}
-	return nil
-}
-
-func (x *MsgRegisterAsset) GetOracleRequired() bool {
-	if x != nil {
-		return x.OracleRequired
-	}
-	return false
+	return ""
 }
 
 // MsgRegisterAssetResponse is the response type for MsgRegisterAsset.
@@ -11872,7 +10959,7 @@ type MsgRegisterAssetResponse struct {
 func (x *MsgRegisterAssetResponse) Reset() {
 	*x = MsgRegisterAssetResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[1]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11886,100 +10973,12 @@ func (*MsgRegisterAssetResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgRegisterAssetResponse.ProtoReflect.Descriptor instead.
 func (*MsgRegisterAssetResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{1}
-}
-
-// MsgSetOracleRequired changes whether a zero-supply pending or retired asset
-// participates in Oracle target epochs.
-type MsgSetOracleRequired struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	OracleRequired  bool   `protobuf:"varint,3,opt,name=oracle_required,json=oracleRequired,proto3" json:"oracle_required,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,4,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (x *MsgSetOracleRequired) Reset() {
-	*x = MsgSetOracleRequired{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgSetOracleRequired) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgSetOracleRequired) ProtoMessage() {}
-
-// Deprecated: Use MsgSetOracleRequired.ProtoReflect.Descriptor instead.
-func (*MsgSetOracleRequired) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *MsgSetOracleRequired) GetAuthority() string {
-	if x != nil {
-		return x.Authority
-	}
-	return ""
-}
-
-func (x *MsgSetOracleRequired) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *MsgSetOracleRequired) GetOracleRequired() bool {
-	if x != nil {
-		return x.OracleRequired
-	}
-	return false
-}
-
-func (x *MsgSetOracleRequired) GetExpectedVersion() uint64 {
-	if x != nil {
-		return x.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgSetOracleRequiredResponse is the response type for MsgSetOracleRequired.
-type MsgSetOracleRequiredResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MsgSetOracleRequiredResponse) Reset() {
-	*x = MsgSetOracleRequiredResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgSetOracleRequiredResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgSetOracleRequiredResponse) ProtoMessage() {}
-
-// Deprecated: Use MsgSetOracleRequiredResponse.ProtoReflect.Descriptor instead.
-func (*MsgSetOracleRequiredResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{3}
 }
 
-// MsgActivateAsset enables normal policy use, scheduling Oracle target
-// addition first when required.
-type MsgActivateAsset struct {
+// MsgHaltIssuance immediately stops new issuance for an active asset while
+// preserving pricing, liability accounting, transfers, and redemption.
+type MsgHaltIssuance struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -11989,8 +10988,8 @@ type MsgActivateAsset struct {
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (x *MsgActivateAsset) Reset() {
-	*x = MsgActivateAsset{}
+func (x *MsgHaltIssuance) Reset() {
+	*x = MsgHaltIssuance{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -11998,47 +10997,47 @@ func (x *MsgActivateAsset) Reset() {
 	}
 }
 
-func (x *MsgActivateAsset) String() string {
+func (x *MsgHaltIssuance) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgActivateAsset) ProtoMessage() {}
+func (*MsgHaltIssuance) ProtoMessage() {}
 
-// Deprecated: Use MsgActivateAsset.ProtoReflect.Descriptor instead.
-func (*MsgActivateAsset) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgHaltIssuance.ProtoReflect.Descriptor instead.
+func (*MsgHaltIssuance) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *MsgActivateAsset) GetAuthority() string {
+func (x *MsgHaltIssuance) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgActivateAsset) GetDenom() string {
+func (x *MsgHaltIssuance) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *MsgActivateAsset) GetExpectedVersion() uint64 {
+func (x *MsgHaltIssuance) GetExpectedVersion() uint64 {
 	if x != nil {
 		return x.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgActivateAssetResponse is the response type for MsgActivateAsset.
-type MsgActivateAssetResponse struct {
+// MsgHaltIssuanceResponse is the response type for MsgHaltIssuance.
+type MsgHaltIssuanceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgActivateAssetResponse) Reset() {
-	*x = MsgActivateAssetResponse{}
+func (x *MsgHaltIssuanceResponse) Reset() {
+	*x = MsgHaltIssuanceResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12046,19 +11045,20 @@ func (x *MsgActivateAssetResponse) Reset() {
 	}
 }
 
-func (x *MsgActivateAssetResponse) String() string {
+func (x *MsgHaltIssuanceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgActivateAssetResponse) ProtoMessage() {}
+func (*MsgHaltIssuanceResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgActivateAssetResponse.ProtoReflect.Descriptor instead.
-func (*MsgActivateAssetResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgHaltIssuanceResponse.ProtoReflect.Descriptor instead.
+func (*MsgHaltIssuanceResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
-// MsgCancelAssetRegistration retires an unscheduled pending registration.
-type MsgCancelAssetRegistration struct {
+// MsgResumeIssuance returns an issuance-halted asset to active status without
+// changing Oracle, Market, or Treasury policy.
+type MsgResumeIssuance struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -12068,8 +11068,8 @@ type MsgCancelAssetRegistration struct {
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (x *MsgCancelAssetRegistration) Reset() {
-	*x = MsgCancelAssetRegistration{}
+func (x *MsgResumeIssuance) Reset() {
+	*x = MsgResumeIssuance{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12077,48 +11077,47 @@ func (x *MsgCancelAssetRegistration) Reset() {
 	}
 }
 
-func (x *MsgCancelAssetRegistration) String() string {
+func (x *MsgResumeIssuance) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgCancelAssetRegistration) ProtoMessage() {}
+func (*MsgResumeIssuance) ProtoMessage() {}
 
-// Deprecated: Use MsgCancelAssetRegistration.ProtoReflect.Descriptor instead.
-func (*MsgCancelAssetRegistration) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgResumeIssuance.ProtoReflect.Descriptor instead.
+func (*MsgResumeIssuance) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *MsgCancelAssetRegistration) GetAuthority() string {
+func (x *MsgResumeIssuance) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgCancelAssetRegistration) GetDenom() string {
+func (x *MsgResumeIssuance) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *MsgCancelAssetRegistration) GetExpectedVersion() uint64 {
+func (x *MsgResumeIssuance) GetExpectedVersion() uint64 {
 	if x != nil {
 		return x.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgCancelAssetRegistrationResponse is the response type for
-// MsgCancelAssetRegistration.
-type MsgCancelAssetRegistrationResponse struct {
+// MsgResumeIssuanceResponse is the response type for MsgResumeIssuance.
+type MsgResumeIssuanceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgCancelAssetRegistrationResponse) Reset() {
-	*x = MsgCancelAssetRegistrationResponse{}
+func (x *MsgResumeIssuanceResponse) Reset() {
+	*x = MsgResumeIssuanceResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12126,19 +11125,22 @@ func (x *MsgCancelAssetRegistrationResponse) Reset() {
 	}
 }
 
-func (x *MsgCancelAssetRegistrationResponse) String() string {
+func (x *MsgResumeIssuanceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgCancelAssetRegistrationResponse) ProtoMessage() {}
+func (*MsgResumeIssuanceResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgCancelAssetRegistrationResponse.ProtoReflect.Descriptor instead.
-func (*MsgCancelAssetRegistrationResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgResumeIssuanceResponse.ProtoReflect.Descriptor instead.
+func (*MsgResumeIssuanceResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{7}
 }
 
-// MsgBeginRetirement immediately stops new issuance for an active asset.
-type MsgBeginRetirement struct {
+// MsgSuspendAsset immediately stops unsafe ordinary economic operations for an
+// active or issuance-halted asset. Balances, transfers, and the asset's feed
+// are all untouched: containment is the status gate each consumer applies, not
+// the absence of a rate.
+type MsgSuspendAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -12148,8 +11150,8 @@ type MsgBeginRetirement struct {
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (x *MsgBeginRetirement) Reset() {
-	*x = MsgBeginRetirement{}
+func (x *MsgSuspendAsset) Reset() {
+	*x = MsgSuspendAsset{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12157,47 +11159,47 @@ func (x *MsgBeginRetirement) Reset() {
 	}
 }
 
-func (x *MsgBeginRetirement) String() string {
+func (x *MsgSuspendAsset) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgBeginRetirement) ProtoMessage() {}
+func (*MsgSuspendAsset) ProtoMessage() {}
 
-// Deprecated: Use MsgBeginRetirement.ProtoReflect.Descriptor instead.
-func (*MsgBeginRetirement) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgSuspendAsset.ProtoReflect.Descriptor instead.
+func (*MsgSuspendAsset) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *MsgBeginRetirement) GetAuthority() string {
+func (x *MsgSuspendAsset) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgBeginRetirement) GetDenom() string {
+func (x *MsgSuspendAsset) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *MsgBeginRetirement) GetExpectedVersion() uint64 {
+func (x *MsgSuspendAsset) GetExpectedVersion() uint64 {
 	if x != nil {
 		return x.ExpectedVersion
 	}
 	return 0
 }
 
-// MsgBeginRetirementResponse is the response type for MsgBeginRetirement.
-type MsgBeginRetirementResponse struct {
+// MsgSuspendAssetResponse is the response type for MsgSuspendAsset.
+type MsgSuspendAssetResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgBeginRetirementResponse) Reset() {
-	*x = MsgBeginRetirementResponse{}
+func (x *MsgSuspendAssetResponse) Reset() {
+	*x = MsgSuspendAssetResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12205,334 +11207,15 @@ func (x *MsgBeginRetirementResponse) Reset() {
 	}
 }
 
-func (x *MsgBeginRetirementResponse) String() string {
+func (x *MsgSuspendAssetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgBeginRetirementResponse) ProtoMessage() {}
+func (*MsgSuspendAssetResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgBeginRetirementResponse.ProtoReflect.Descriptor instead.
-func (*MsgBeginRetirementResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgSuspendAssetResponse.ProtoReflect.Descriptor instead.
+func (*MsgSuspendAssetResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{9}
-}
-
-// MsgCancelRetirement returns a retiring asset to active status.
-type MsgCancelRetirement struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (x *MsgCancelRetirement) Reset() {
-	*x = MsgCancelRetirement{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgCancelRetirement) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgCancelRetirement) ProtoMessage() {}
-
-// Deprecated: Use MsgCancelRetirement.ProtoReflect.Descriptor instead.
-func (*MsgCancelRetirement) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *MsgCancelRetirement) GetAuthority() string {
-	if x != nil {
-		return x.Authority
-	}
-	return ""
-}
-
-func (x *MsgCancelRetirement) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *MsgCancelRetirement) GetExpectedVersion() uint64 {
-	if x != nil {
-		return x.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgCancelRetirementResponse is the response type for MsgCancelRetirement.
-type MsgCancelRetirementResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MsgCancelRetirementResponse) Reset() {
-	*x = MsgCancelRetirementResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgCancelRetirementResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgCancelRetirementResponse) ProtoMessage() {}
-
-// Deprecated: Use MsgCancelRetirementResponse.ProtoReflect.Descriptor instead.
-func (*MsgCancelRetirementResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{11}
-}
-
-// MsgFinalizeRetirement retires a zero-supply, unlocked asset, scheduling
-// Oracle target removal first when required.
-type MsgFinalizeRetirement struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (x *MsgFinalizeRetirement) Reset() {
-	*x = MsgFinalizeRetirement{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgFinalizeRetirement) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgFinalizeRetirement) ProtoMessage() {}
-
-// Deprecated: Use MsgFinalizeRetirement.ProtoReflect.Descriptor instead.
-func (*MsgFinalizeRetirement) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *MsgFinalizeRetirement) GetAuthority() string {
-	if x != nil {
-		return x.Authority
-	}
-	return ""
-}
-
-func (x *MsgFinalizeRetirement) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *MsgFinalizeRetirement) GetExpectedVersion() uint64 {
-	if x != nil {
-		return x.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgFinalizeRetirementResponse is the response type for
-// MsgFinalizeRetirement.
-type MsgFinalizeRetirementResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MsgFinalizeRetirementResponse) Reset() {
-	*x = MsgFinalizeRetirementResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgFinalizeRetirementResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgFinalizeRetirementResponse) ProtoMessage() {}
-
-// Deprecated: Use MsgFinalizeRetirementResponse.ProtoReflect.Descriptor instead.
-func (*MsgFinalizeRetirementResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{13}
-}
-
-// MsgReactivateAsset begins a new pending lifecycle for a retired tombstone.
-type MsgReactivateAsset struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (x *MsgReactivateAsset) Reset() {
-	*x = MsgReactivateAsset{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgReactivateAsset) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgReactivateAsset) ProtoMessage() {}
-
-// Deprecated: Use MsgReactivateAsset.ProtoReflect.Descriptor instead.
-func (*MsgReactivateAsset) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *MsgReactivateAsset) GetAuthority() string {
-	if x != nil {
-		return x.Authority
-	}
-	return ""
-}
-
-func (x *MsgReactivateAsset) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *MsgReactivateAsset) GetExpectedVersion() uint64 {
-	if x != nil {
-		return x.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgReactivateAssetResponse is the response type for MsgReactivateAsset.
-type MsgReactivateAssetResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MsgReactivateAssetResponse) Reset() {
-	*x = MsgReactivateAssetResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgReactivateAssetResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgReactivateAssetResponse) ProtoMessage() {}
-
-// Deprecated: Use MsgReactivateAssetResponse.ProtoReflect.Descriptor instead.
-func (*MsgReactivateAssetResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{15}
-}
-
-// MsgBeginDelisting immediately stops unsafe economic operations and starts
-// Oracle target removal for an active or retiring asset.
-type MsgBeginDelisting struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-}
-
-func (x *MsgBeginDelisting) Reset() {
-	*x = MsgBeginDelisting{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgBeginDelisting) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgBeginDelisting) ProtoMessage() {}
-
-// Deprecated: Use MsgBeginDelisting.ProtoReflect.Descriptor instead.
-func (*MsgBeginDelisting) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *MsgBeginDelisting) GetAuthority() string {
-	if x != nil {
-		return x.Authority
-	}
-	return ""
-}
-
-func (x *MsgBeginDelisting) GetDenom() string {
-	if x != nil {
-		return x.Denom
-	}
-	return ""
-}
-
-func (x *MsgBeginDelisting) GetExpectedVersion() uint64 {
-	if x != nil {
-		return x.ExpectedVersion
-	}
-	return 0
-}
-
-// MsgBeginDelistingResponse is the response type for MsgBeginDelisting.
-type MsgBeginDelistingResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MsgBeginDelistingResponse) Reset() {
-	*x = MsgBeginDelistingResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgBeginDelistingResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgBeginDelistingResponse) ProtoMessage() {}
-
-// Deprecated: Use MsgBeginDelistingResponse.ProtoReflect.Descriptor instead.
-func (*MsgBeginDelistingResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{17}
 }
 
 // MsgOpenSettlement creates a one-way asset-to-NOAH redemption plan.
@@ -12544,16 +11227,22 @@ type MsgOpenSettlement struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	// redemption_rate is the positive amount of NOAH paid per unit of the
-	// settled asset.
-	RedemptionRate   string `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3" json:"redemption_rate,omitempty"`
-	ActivationHeight int64  `protobuf:"varint,5,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	// redemption_rate is the positive number of units of the settled asset
+	// redeemed per one NOAH, the same NOAH-quoted orientation as oracle
+	// exchange rates.
+	RedemptionRate string `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3" json:"redemption_rate,omitempty"`
+	// earliest_closing_height commits to holders that redemption stays open at
+	// least until that height. It is the only height governance states: the plan
+	// activates SettlementActivationDelayBlocks after this message executes, and
+	// this height must fall after that activation. A settlement always carries a
+	// redemption window, and WriteOffAsset is refused before it.
+	EarliestClosingHeight int64 `protobuf:"varint,5,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
 }
 
 func (x *MsgOpenSettlement) Reset() {
 	*x = MsgOpenSettlement{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[18]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12567,7 +11256,7 @@ func (*MsgOpenSettlement) ProtoMessage() {}
 
 // Deprecated: Use MsgOpenSettlement.ProtoReflect.Descriptor instead.
 func (*MsgOpenSettlement) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{18}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MsgOpenSettlement) GetAuthority() string {
@@ -12598,9 +11287,9 @@ func (x *MsgOpenSettlement) GetRedemptionRate() string {
 	return ""
 }
 
-func (x *MsgOpenSettlement) GetActivationHeight() int64 {
+func (x *MsgOpenSettlement) GetEarliestClosingHeight() int64 {
 	if x != nil {
-		return x.ActivationHeight
+		return x.EarliestClosingHeight
 	}
 	return 0
 }
@@ -12615,7 +11304,7 @@ type MsgOpenSettlementResponse struct {
 func (x *MsgOpenSettlementResponse) Reset() {
 	*x = MsgOpenSettlementResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[19]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12629,11 +11318,13 @@ func (*MsgOpenSettlementResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgOpenSettlementResponse.ProtoReflect.Descriptor instead.
 func (*MsgOpenSettlementResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{19}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{11}
 }
 
-// MsgCancelSettlement cancels a settlement before its activation height and
-// returns the asset to DELISTED.
+// MsgCancelSettlement cancels a settlement plan before it activates, leaving
+// the asset suspended. From activation onward the plan is a hard commitment:
+// only RecoverAsset, FinalizeRetirement, or a WriteOffAsset past the announced
+// closing height may end it.
 type MsgCancelSettlement struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12647,7 +11338,7 @@ type MsgCancelSettlement struct {
 func (x *MsgCancelSettlement) Reset() {
 	*x = MsgCancelSettlement{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[20]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12661,7 +11352,7 @@ func (*MsgCancelSettlement) ProtoMessage() {}
 
 // Deprecated: Use MsgCancelSettlement.ProtoReflect.Descriptor instead.
 func (*MsgCancelSettlement) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{20}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MsgCancelSettlement) GetAuthority() string {
@@ -12695,7 +11386,7 @@ type MsgCancelSettlementResponse struct {
 func (x *MsgCancelSettlementResponse) Reset() {
 	*x = MsgCancelSettlementResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[21]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12709,100 +11400,94 @@ func (*MsgCancelSettlementResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgCancelSettlementResponse.ProtoReflect.Descriptor instead.
 func (*MsgCancelSettlementResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{21}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{13}
 }
 
-// MsgBeginRelisting schedules restoration of Oracle pricing. When a settlement
-// is active, earliest_closing_height announces the earliest height at which
-// one-way redemption may close.
-type MsgBeginRelisting struct {
+// MsgRecoverAsset restores a suspended or written-off asset to issuance-halted
+// status in the block it executes. The asset's feed must already be active and
+// the asset must carry no settlement plan.
+type MsgRecoverAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Authority             string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Denom                 string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
-	ExpectedVersion       uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	EarliestClosingHeight int64  `protobuf:"varint,4,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
+	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
 }
 
-func (x *MsgBeginRelisting) Reset() {
-	*x = MsgBeginRelisting{}
+func (x *MsgRecoverAsset) Reset() {
+	*x = MsgRecoverAsset{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[22]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MsgBeginRelisting) String() string {
+func (x *MsgRecoverAsset) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgBeginRelisting) ProtoMessage() {}
+func (*MsgRecoverAsset) ProtoMessage() {}
 
-// Deprecated: Use MsgBeginRelisting.ProtoReflect.Descriptor instead.
-func (*MsgBeginRelisting) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{22}
+// Deprecated: Use MsgRecoverAsset.ProtoReflect.Descriptor instead.
+func (*MsgRecoverAsset) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *MsgBeginRelisting) GetAuthority() string {
+func (x *MsgRecoverAsset) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgBeginRelisting) GetDenom() string {
+func (x *MsgRecoverAsset) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *MsgBeginRelisting) GetExpectedVersion() uint64 {
+func (x *MsgRecoverAsset) GetExpectedVersion() uint64 {
 	if x != nil {
 		return x.ExpectedVersion
 	}
 	return 0
 }
 
-func (x *MsgBeginRelisting) GetEarliestClosingHeight() int64 {
-	if x != nil {
-		return x.EarliestClosingHeight
-	}
-	return 0
-}
-
-// MsgBeginRelistingResponse is the response type for MsgBeginRelisting.
-type MsgBeginRelistingResponse struct {
+// MsgRecoverAssetResponse is the response type for MsgRecoverAsset.
+type MsgRecoverAssetResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgBeginRelistingResponse) Reset() {
-	*x = MsgBeginRelistingResponse{}
+func (x *MsgRecoverAssetResponse) Reset() {
+	*x = MsgRecoverAssetResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[23]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MsgBeginRelistingResponse) String() string {
+func (x *MsgRecoverAssetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgBeginRelistingResponse) ProtoMessage() {}
+func (*MsgRecoverAssetResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgBeginRelistingResponse.ProtoReflect.Descriptor instead.
-func (*MsgBeginRelistingResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{23}
+// Deprecated: Use MsgRecoverAssetResponse.ProtoReflect.Descriptor instead.
+func (*MsgRecoverAssetResponse) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{15}
 }
 
-// MsgWriteOffAsset derecognizes outstanding DELISTED or SETTLING supply without
-// burning, transferring, or repricing holder balances.
+// MsgWriteOffAsset derecognizes outstanding SUSPENDED supply without burning,
+// transferring, or repricing holder balances. It is refused before a settlement
+// plan's earliest closing height: the announced window is the one guarantee
+// holders get, and derecognition is the only act that could break it.
 type MsgWriteOffAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12816,7 +11501,7 @@ type MsgWriteOffAsset struct {
 func (x *MsgWriteOffAsset) Reset() {
 	*x = MsgWriteOffAsset{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[24]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12830,7 +11515,7 @@ func (*MsgWriteOffAsset) ProtoMessage() {}
 
 // Deprecated: Use MsgWriteOffAsset.ProtoReflect.Descriptor instead.
 func (*MsgWriteOffAsset) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{24}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MsgWriteOffAsset) GetAuthority() string {
@@ -12864,7 +11549,7 @@ type MsgWriteOffAssetResponse struct {
 func (x *MsgWriteOffAssetResponse) Reset() {
 	*x = MsgWriteOffAssetResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_asset_v1_tx_proto_msgTypes[25]
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12878,7 +11563,284 @@ func (*MsgWriteOffAssetResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgWriteOffAssetResponse.ProtoReflect.Descriptor instead.
 func (*MsgWriteOffAssetResponse) Descriptor() ([]byte, []int) {
-	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{25}
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{17}
+}
+
+// MsgFinalizeRetirement retires a settlement-free asset. Retirement never
+// consults the protocol reference: a tombstone's feed is the feed layer's
+// concern, and the referent guard pins a referenced feed against removal.
+//
+// It is the lifecycle's only irreversible act, and it spends the denomination
+// permanently: the tombstone keeps the registry entry and the Bank metadata,
+// both of which registration refuses to collide with.
+type MsgFinalizeRetirement struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	// max_residual_supply bounds the outstanding supply governance approves
+	// derecognizing. From ISSUANCE_HALTED, where redemption has been
+	// continuously available, it may be positive and a matching
+	// RETIREMENT_RESIDUAL record discloses the actual residual. From every
+	// other source it must be zero: positive SUSPENDED residual must go through
+	// WriteOffAsset, which names the derecognition honestly.
+	MaxResidualSupply string `protobuf:"bytes,4,opt,name=max_residual_supply,json=maxResidualSupply,proto3" json:"max_residual_supply,omitempty"`
+}
+
+func (x *MsgFinalizeRetirement) Reset() {
+	*x = MsgFinalizeRetirement{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgFinalizeRetirement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgFinalizeRetirement) ProtoMessage() {}
+
+// Deprecated: Use MsgFinalizeRetirement.ProtoReflect.Descriptor instead.
+func (*MsgFinalizeRetirement) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *MsgFinalizeRetirement) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgFinalizeRetirement) GetDenom() string {
+	if x != nil {
+		return x.Denom
+	}
+	return ""
+}
+
+func (x *MsgFinalizeRetirement) GetExpectedVersion() uint64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+func (x *MsgFinalizeRetirement) GetMaxResidualSupply() string {
+	if x != nil {
+		return x.MaxResidualSupply
+	}
+	return ""
+}
+
+// MsgFinalizeRetirementResponse is the response type for
+// MsgFinalizeRetirement.
+type MsgFinalizeRetirementResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgFinalizeRetirementResponse) Reset() {
+	*x = MsgFinalizeRetirementResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgFinalizeRetirementResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgFinalizeRetirementResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgFinalizeRetirementResponse.ProtoReflect.Descriptor instead.
+func (*MsgFinalizeRetirementResponse) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{19}
+}
+
+// MsgSetEmergencyMandate replaces or disables the emergency committee
+// appointment. Every replacement advances the term and clears recorded per-term
+// action usage. An empty committee disables the mandate while retaining the
+// latest term.
+type MsgSetEmergencyMandate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// committee is the exact threshold-multisig account, empty to disable.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (x *MsgSetEmergencyMandate) Reset() {
+	*x = MsgSetEmergencyMandate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgSetEmergencyMandate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetEmergencyMandate) ProtoMessage() {}
+
+// Deprecated: Use MsgSetEmergencyMandate.ProtoReflect.Descriptor instead.
+func (*MsgSetEmergencyMandate) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *MsgSetEmergencyMandate) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgSetEmergencyMandate) GetCommittee() string {
+	if x != nil {
+		return x.Committee
+	}
+	return ""
+}
+
+func (x *MsgSetEmergencyMandate) GetActivationHeight() uint64 {
+	if x != nil {
+		return x.ActivationHeight
+	}
+	return 0
+}
+
+func (x *MsgSetEmergencyMandate) GetExpiryHeight() uint64 {
+	if x != nil {
+		return x.ExpiryHeight
+	}
+	return 0
+}
+
+// MsgSetEmergencyMandateResponse is the response type for
+// MsgSetEmergencyMandate.
+type MsgSetEmergencyMandateResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgSetEmergencyMandateResponse) Reset() {
+	*x = MsgSetEmergencyMandateResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgSetEmergencyMandateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetEmergencyMandateResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgSetEmergencyMandateResponse.ProtoReflect.Descriptor instead.
+func (*MsgSetEmergencyMandateResponse) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{21}
+}
+
+// MsgEmergencySuspendAsset applies SuspendAsset semantics under a live
+// mandate. Committee messages carry the exact current term instead of an
+// expected asset version: the term is the staleness guard, and status
+// preconditions still apply. It is a pure status move: peg failure of an asset
+// and failure of its unit's price data are different axes, so an asset sharing
+// the reference denomination suspends while the feed keeps pricing.
+type MsgEmergencySuspendAsset struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Committee    string `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	Denom        string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
+	ExpectedTerm uint64 `protobuf:"varint,3,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
+}
+
+func (x *MsgEmergencySuspendAsset) Reset() {
+	*x = MsgEmergencySuspendAsset{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgEmergencySuspendAsset) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgEmergencySuspendAsset) ProtoMessage() {}
+
+// Deprecated: Use MsgEmergencySuspendAsset.ProtoReflect.Descriptor instead.
+func (*MsgEmergencySuspendAsset) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *MsgEmergencySuspendAsset) GetCommittee() string {
+	if x != nil {
+		return x.Committee
+	}
+	return ""
+}
+
+func (x *MsgEmergencySuspendAsset) GetDenom() string {
+	if x != nil {
+		return x.Denom
+	}
+	return ""
+}
+
+func (x *MsgEmergencySuspendAsset) GetExpectedTerm() uint64 {
+	if x != nil {
+		return x.ExpectedTerm
+	}
+	return 0
+}
+
+// MsgEmergencySuspendAssetResponse is the response type for
+// MsgEmergencySuspendAsset.
+type MsgEmergencySuspendAssetResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgEmergencySuspendAssetResponse) Reset() {
+	*x = MsgEmergencySuspendAssetResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_asset_v1_tx_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgEmergencySuspendAssetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgEmergencySuspendAssetResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgEmergencySuspendAssetResponse.ProtoReflect.Descriptor instead.
+func (*MsgEmergencySuspendAssetResponse) Descriptor() ([]byte, []int) {
+	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{23}
 }
 
 var File_ark_asset_v1_tx_proto protoreflect.FileDescriptor
@@ -12887,65 +11849,53 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x0a, 0x15, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x74,
 	0x78, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0c, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73,
 	0x65, 0x74, 0x2e, 0x76, 0x31, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69,
-	0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2f, 0x62, 0x61, 0x6e, 0x6b, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x62, 0x61,
-	0x6e, 0x6b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x17, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2f, 0x6d, 0x73, 0x67, 0x2f, 0x76, 0x31, 0x2f, 0x6d, 0x73, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f,
-	0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0xf1, 0x01, 0x0a, 0x10, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
-	0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12,
-	0x44, 0x0a, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x1d, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x6e, 0x6b, 0x2e,
-	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
-	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x6d, 0x65, 0x74,
-	0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x2e, 0x0a, 0x0f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5f,
-	0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x69, 0x72, 0x65, 0x64, 0x3a, 0x2f, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
-	0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f,
-	0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
-	0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0xfb, 0x01, 0x0a, 0x14, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x09, 0x61,
-	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
-	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
-	0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x2e, 0x0a, 0x0f, 0x6f, 0x72, 0x61,
-	0x63, 0x6c, 0x65, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6f, 0x72, 0x61, 0x63, 0x6c,
-	0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70,
-	0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65,
-	0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x33, 0x82, 0xe7, 0xb0,
-	0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x20,
-	0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53,
-	0x65, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64,
-	0x22, 0x1e, 0x0a, 0x1c, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0xc3, 0x01, 0x0a, 0x10, 0x4d, 0x73, 0x67, 0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65,
-	0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
-	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a,
-	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f,
-	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65,
-	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x2f, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
-	0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f,
-	0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74,
-	0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x41, 0x63, 0x74,
-	0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0xd7, 0x01, 0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c,
-	0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
+	0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x1a, 0x17, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x6d, 0x73, 0x67, 0x2f, 0x76,
+	0x31, 0x2f, 0x6d, 0x73, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb2, 0x01, 0x0a,
+	0x0f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x37, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09,
+	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x3a, 0x2e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1b, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x2f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x91, 0x01, 0x0a,
+	0x10, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x73, 0x73, 0x65,
+	0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
+	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
+	0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x3a,
+	0x2f, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a,
+	0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f,
+	0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74,
+	0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc1, 0x01, 0x0a,
+	0x0f, 0x4d, 0x73, 0x67, 0x48, 0x61, 0x6c, 0x74, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65,
+	0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f,
+	0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30,
+	0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x3a, 0x2e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x8a, 0xe7, 0xb0, 0x2a, 0x1b, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74,
+	0x2f, 0x4d, 0x73, 0x67, 0x48, 0x61, 0x6c, 0x74, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65,
+	0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x48, 0x61, 0x6c, 0x74, 0x49, 0x73, 0x73, 0x75, 0x61,
+	0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc5, 0x01, 0x0a, 0x11,
+	0x4d, 0x73, 0x67, 0x52, 0x65, 0x73, 0x75, 0x6d, 0x65, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63,
+	0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
 	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
 	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
@@ -12953,73 +11903,13 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73,
 	0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
 	0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x3a, 0x39, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
-	0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x26, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65,
-	0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x24, 0x0a, 0x22,
-	0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65,
-	0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0xc7, 0x01, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52,
-	0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74,
-	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
-	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
-	0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63,
-	0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74,
-	0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x31, 0x82, 0xe7, 0xb0, 0x2a, 0x09,
-	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1e, 0x61, 0x72,
-	0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67,
-	0x69, 0x6e, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1c, 0x0a, 0x1a,
-	0x4d, 0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc9, 0x01, 0x0a, 0x13, 0x4d,
-	0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x3a, 0x32, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
-	0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1f, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73,
-	0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x74, 0x69,
-	0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1d, 0x0a, 0x1b, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e,
-	0x63, 0x65, 0x6c, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xcd, 0x01, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e,
-	0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12,
-	0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75,
-	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a,
-	0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f,
-	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a,
-	0x34, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a,
-	0xe7, 0xb0, 0x2a, 0x21, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f,
-	0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1f, 0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61,
-	0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc7, 0x01, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x52, 0x65,
-	0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x36, 0x0a,
-	0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68,
-	0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65,
-	0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78,
-	0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x31, 0x82,
-	0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0,
-	0x2a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73,
-	0x67, 0x52, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x22, 0x1c, 0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74,
-	0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc5,
-	0x01, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x44, 0x65, 0x6c, 0x69, 0x73,
-	0x74, 0x69, 0x6e, 0x67, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
+	0x6e, 0x3a, 0x30, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x73, 0x75, 0x6d, 0x65, 0x49, 0x73, 0x73, 0x75, 0x61,
+	0x6e, 0x63, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x73, 0x75, 0x6d, 0x65,
+	0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0xc1, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
 	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73,
 	0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e,
 	0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05,
@@ -13027,36 +11917,12 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76,
 	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x30, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
-	0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61,
-	0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x44, 0x65, 0x6c,
-	0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x22, 0x1b, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67,
-	0x69, 0x6e, 0x44, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0xda, 0x02, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53,
-	0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74,
-	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
-	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
-	0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63,
-	0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74,
-	0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x5f, 0x0a, 0x0f, 0x72, 0x65, 0x64,
-	0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65,
-	0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x72, 0x65, 0x64, 0x65,
-	0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x61, 0x74, 0x65, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x63,
-	0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x63,
-	0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 0x30,
-	0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7,
-	0xb0, 0x2a, 0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d,
-	0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x22, 0x1b, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc9, 0x01,
-	0x0a, 0x13, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c,
+	0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x2e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
+	0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1b, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65,
+	0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0xe5, 0x02, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c,
 	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
 	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
 	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
@@ -13065,135 +11931,203 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f,
 	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
 	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65,
-	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x32, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
-	0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1f, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f,
-	0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53,
-	0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1d, 0x0a, 0x1b, 0x4d, 0x73, 0x67,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x5f, 0x0a, 0x0f, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x61, 0x74, 0x65, 0x12, 0x3d, 0x0a, 0x17, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65,
+	0x73, 0x74, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x69, 0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x15,
+	0x65, 0x61, 0x72, 0x6c, 0x69, 0x65, 0x73, 0x74, 0x43, 0x6c, 0x6f, 0x73, 0x69, 0x6e, 0x67, 0x48,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 0x30, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
+	0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74,
+	0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1b, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x4f, 0x70,
+	0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc9, 0x01, 0x0a, 0x13, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63,
+	0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09,
+	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
+	0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78,
+	0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70,
+	0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x3a, 0x32, 0x82, 0xe7,
+	0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a,
+	0x1f, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67,
 	0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x84, 0x02, 0x0a, 0x11, 0x4d, 0x73, 0x67,
-	0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x36,
+	0x22, 0x1d, 0x0a, 0x1b, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53, 0x65, 0x74,
+	0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0xc1, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64,
+	0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f,
+	0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x3a, 0x2e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
+	0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1b, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65,
+	0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc3,
+	0x01, 0x0a, 0x10, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64,
+	0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f,
+	0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x3a, 0x2f, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
+	0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65,
+	0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0xaf, 0x02, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65,
+	0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75,
+	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
+	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65,
+	0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63,
+	0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x60, 0x0a, 0x13, 0x6d, 0x61,
+	0x78, 0x5f, 0x72, 0x65, 0x73, 0x69, 0x64, 0x75, 0x61, 0x6c, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c,
+	0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6d, 0x61, 0x78, 0x52, 0x65,
+	0x73, 0x69, 0x64, 0x75, 0x61, 0x6c, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x3a, 0x34, 0x82, 0xe7,
+	0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a,
+	0x21, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67,
+	0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x22, 0x1f, 0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a,
+	0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x9f, 0x02, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x6d,
+	0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x36,
 	0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
 	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74,
-	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x30, 0x0a, 0x10,
-	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65,
-	0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x3d,
-	0x0a, 0x17, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65, 0x73, 0x74, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x69,
-	0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x42,
-	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x15, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65, 0x73, 0x74,
-	0x43, 0x6c, 0x6f, 0x73, 0x69, 0x6e, 0x67, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 0x30, 0x82,
-	0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0,
-	0x2a, 0x1d, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73,
-	0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x22,
-	0x1b, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x6c, 0x69, 0x73,
-	0x74, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc3, 0x01, 0x0a,
-	0x10, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65,
-	0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
-	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
-	0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12,
-	0x30, 0x0a, 0x10, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x76, 0x65, 0x72, 0x73,
-	0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x0f, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x3a, 0x2f, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
-	0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65,
-	0x74, 0x2f, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73,
-	0x65, 0x74, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66,
-	0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x8b,
-	0x0a, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x59, 0x0a, 0x0d, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
-	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
-	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x65, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x12, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73,
-	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x61, 0x63,
-	0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x1a, 0x2a, 0x2e, 0x61, 0x72, 0x6b,
+	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x32,
+	0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 0x35,
+	0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7,
+	0xb0, 0x2a, 0x22, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d,
+	0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x22, 0x20, 0x0a, 0x1e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45,
+	0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xcd, 0x01, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x45,
+	0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e,
+	0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x14, 0x0a, 0x05,
+	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e,
+	0x6f, 0x6d, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x74,
+	0x65, 0x72, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0c, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x3a, 0x37,
+	0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x8a, 0xe7,
+	0xb0, 0x2a, 0x24, 0x61, 0x72, 0x6b, 0x2f, 0x78, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d,
+	0x73, 0x67, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73, 0x70, 0x65,
+	0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x22, 0x22, 0x0a, 0x20, 0x4d, 0x73, 0x67, 0x45, 0x6d,
+	0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41, 0x73,
+	0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x8c, 0x09, 0x0a, 0x03,
+	0x4d, 0x73, 0x67, 0x12, 0x56, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x12, 0x1d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e,
+	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x1a, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x59, 0x0a, 0x0d, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1e, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x26, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56, 0x0a, 0x0c, 0x48, 0x61, 0x6c, 0x74, 0x49, 0x73,
+	0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x1d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x48, 0x61, 0x6c, 0x74, 0x49, 0x73, 0x73,
+	0x75, 0x61, 0x6e, 0x63, 0x65, 0x1a, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x48, 0x61, 0x6c, 0x74, 0x49, 0x73, 0x73, 0x75,
+	0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5c,
+	0x0a, 0x0e, 0x52, 0x65, 0x73, 0x75, 0x6d, 0x65, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65,
+	0x12, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x4d, 0x73, 0x67, 0x52, 0x65, 0x73, 0x75, 0x6d, 0x65, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63,
+	0x65, 0x1a, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x73, 0x75, 0x6d, 0x65, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e,
+	0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56, 0x0a, 0x0c,
+	0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1d, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53,
+	0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x25, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x75,
+	0x73, 0x70, 0x65, 0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x5c, 0x0a, 0x0e, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74, 0x74,
+	0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74,
+	0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65,
+	0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x12, 0x62, 0x0a, 0x10, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53, 0x65, 0x74, 0x74,
+	0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53,
+	0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63,
+	0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56, 0x0a, 0x0c, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65,
+	0x72, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72,
+	0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x59,
+	0x0a, 0x0d, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12,
+	0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a,
+	0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x68, 0x0a, 0x12, 0x46, 0x69, 0x6e,
+	0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12,
+	0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52,
+	0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x6b, 0x0a, 0x13, 0x53, 0x65, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65,
+	0x6e, 0x63, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
-	0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x59, 0x0a, 0x0d, 0x41, 0x63, 0x74, 0x69,
-	0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x63, 0x74, 0x69,
-	0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x63, 0x74, 0x69,
-	0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x17, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x41, 0x73, 0x73,
-	0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x28,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x30, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61,
-	0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65,
-	0x6c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5f, 0x0a, 0x0f,
-	0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12,
-	0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d,
-	0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x62, 0x0a,
-	0x10, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x52, 0x65, 0x74,
-	0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x68, 0x0a, 0x12, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74,
-	0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
-	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69,
-	0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x2b, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x46,
-	0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5f, 0x0a, 0x0f, 0x52,
-	0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x20,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x52, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x4d, 0x73, 0x67, 0x52, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73,
-	0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5c, 0x0a, 0x0e,
-	0x42, 0x65, 0x67, 0x69, 0x6e, 0x44, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x1f,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x44, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x1a,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x44, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5c, 0x0a, 0x0e, 0x4f, 0x70,
-	0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x1f, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x4f,
-	0x70, 0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x27, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67,
-	0x4f, 0x70, 0x65, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x62, 0x0a, 0x10, 0x43, 0x61, 0x6e, 0x63,
-	0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x21, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43,
-	0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a,
-	0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5c, 0x0a, 0x0e,
-	0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x1f,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x1a,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x69, 0x6e, 0x67,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x59, 0x0a, 0x0d, 0x57, 0x72,
-	0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x1e, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x57, 0x72,
-	0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x26, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x57, 0x72,
-	0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x8b, 0x01, 0x0a,
-	0x10, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76,
-	0x31, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1c, 0x61, 0x72,
-	0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f,
-	0x76, 0x31, 0x3b, 0x61, 0x73, 0x73, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x41, 0x58,
-	0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca,
-	0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02,
-	0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
-	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x41, 0x72, 0x6b, 0x3a,
-	0x3a, 0x41, 0x73, 0x73, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
+	0x1a, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d,
+	0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x71, 0x0a, 0x15, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73,
+	0x70, 0x65, 0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x45, 0x6d, 0x65, 0x72,
+	0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x41, 0x73, 0x73, 0x65,
+	0x74, 0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73,
+	0x70, 0x65, 0x6e, 0x64, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x8b, 0x01, 0x0a, 0x10, 0x63,
+	0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42,
+	0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1c, 0x61, 0x72, 0x6b, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31,
+	0x3b, 0x61, 0x73, 0x73, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x41, 0x58, 0xaa, 0x02,
+	0x0c, 0x41, 0x72, 0x6b, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0c,
+	0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x18, 0x41,
+	0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -13208,66 +12142,62 @@ func file_ark_asset_v1_tx_proto_rawDescGZIP() []byte {
 	return file_ark_asset_v1_tx_proto_rawDescData
 }
 
-var file_ark_asset_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_ark_asset_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_ark_asset_v1_tx_proto_goTypes = []interface{}{
-	(*MsgRegisterAsset)(nil),                   // 0: ark.asset.v1.MsgRegisterAsset
-	(*MsgRegisterAssetResponse)(nil),           // 1: ark.asset.v1.MsgRegisterAssetResponse
-	(*MsgSetOracleRequired)(nil),               // 2: ark.asset.v1.MsgSetOracleRequired
-	(*MsgSetOracleRequiredResponse)(nil),       // 3: ark.asset.v1.MsgSetOracleRequiredResponse
-	(*MsgActivateAsset)(nil),                   // 4: ark.asset.v1.MsgActivateAsset
-	(*MsgActivateAssetResponse)(nil),           // 5: ark.asset.v1.MsgActivateAssetResponse
-	(*MsgCancelAssetRegistration)(nil),         // 6: ark.asset.v1.MsgCancelAssetRegistration
-	(*MsgCancelAssetRegistrationResponse)(nil), // 7: ark.asset.v1.MsgCancelAssetRegistrationResponse
-	(*MsgBeginRetirement)(nil),                 // 8: ark.asset.v1.MsgBeginRetirement
-	(*MsgBeginRetirementResponse)(nil),         // 9: ark.asset.v1.MsgBeginRetirementResponse
-	(*MsgCancelRetirement)(nil),                // 10: ark.asset.v1.MsgCancelRetirement
-	(*MsgCancelRetirementResponse)(nil),        // 11: ark.asset.v1.MsgCancelRetirementResponse
-	(*MsgFinalizeRetirement)(nil),              // 12: ark.asset.v1.MsgFinalizeRetirement
-	(*MsgFinalizeRetirementResponse)(nil),      // 13: ark.asset.v1.MsgFinalizeRetirementResponse
-	(*MsgReactivateAsset)(nil),                 // 14: ark.asset.v1.MsgReactivateAsset
-	(*MsgReactivateAssetResponse)(nil),         // 15: ark.asset.v1.MsgReactivateAssetResponse
-	(*MsgBeginDelisting)(nil),                  // 16: ark.asset.v1.MsgBeginDelisting
-	(*MsgBeginDelistingResponse)(nil),          // 17: ark.asset.v1.MsgBeginDelistingResponse
-	(*MsgOpenSettlement)(nil),                  // 18: ark.asset.v1.MsgOpenSettlement
-	(*MsgOpenSettlementResponse)(nil),          // 19: ark.asset.v1.MsgOpenSettlementResponse
-	(*MsgCancelSettlement)(nil),                // 20: ark.asset.v1.MsgCancelSettlement
-	(*MsgCancelSettlementResponse)(nil),        // 21: ark.asset.v1.MsgCancelSettlementResponse
-	(*MsgBeginRelisting)(nil),                  // 22: ark.asset.v1.MsgBeginRelisting
-	(*MsgBeginRelistingResponse)(nil),          // 23: ark.asset.v1.MsgBeginRelistingResponse
-	(*MsgWriteOffAsset)(nil),                   // 24: ark.asset.v1.MsgWriteOffAsset
-	(*MsgWriteOffAssetResponse)(nil),           // 25: ark.asset.v1.MsgWriteOffAssetResponse
-	(*v1beta1.Metadata)(nil),                   // 26: cosmos.bank.v1beta1.Metadata
+	(*MsgUpdateParams)(nil),                  // 0: ark.asset.v1.MsgUpdateParams
+	(*MsgUpdateParamsResponse)(nil),          // 1: ark.asset.v1.MsgUpdateParamsResponse
+	(*MsgRegisterAsset)(nil),                 // 2: ark.asset.v1.MsgRegisterAsset
+	(*MsgRegisterAssetResponse)(nil),         // 3: ark.asset.v1.MsgRegisterAssetResponse
+	(*MsgHaltIssuance)(nil),                  // 4: ark.asset.v1.MsgHaltIssuance
+	(*MsgHaltIssuanceResponse)(nil),          // 5: ark.asset.v1.MsgHaltIssuanceResponse
+	(*MsgResumeIssuance)(nil),                // 6: ark.asset.v1.MsgResumeIssuance
+	(*MsgResumeIssuanceResponse)(nil),        // 7: ark.asset.v1.MsgResumeIssuanceResponse
+	(*MsgSuspendAsset)(nil),                  // 8: ark.asset.v1.MsgSuspendAsset
+	(*MsgSuspendAssetResponse)(nil),          // 9: ark.asset.v1.MsgSuspendAssetResponse
+	(*MsgOpenSettlement)(nil),                // 10: ark.asset.v1.MsgOpenSettlement
+	(*MsgOpenSettlementResponse)(nil),        // 11: ark.asset.v1.MsgOpenSettlementResponse
+	(*MsgCancelSettlement)(nil),              // 12: ark.asset.v1.MsgCancelSettlement
+	(*MsgCancelSettlementResponse)(nil),      // 13: ark.asset.v1.MsgCancelSettlementResponse
+	(*MsgRecoverAsset)(nil),                  // 14: ark.asset.v1.MsgRecoverAsset
+	(*MsgRecoverAssetResponse)(nil),          // 15: ark.asset.v1.MsgRecoverAssetResponse
+	(*MsgWriteOffAsset)(nil),                 // 16: ark.asset.v1.MsgWriteOffAsset
+	(*MsgWriteOffAssetResponse)(nil),         // 17: ark.asset.v1.MsgWriteOffAssetResponse
+	(*MsgFinalizeRetirement)(nil),            // 18: ark.asset.v1.MsgFinalizeRetirement
+	(*MsgFinalizeRetirementResponse)(nil),    // 19: ark.asset.v1.MsgFinalizeRetirementResponse
+	(*MsgSetEmergencyMandate)(nil),           // 20: ark.asset.v1.MsgSetEmergencyMandate
+	(*MsgSetEmergencyMandateResponse)(nil),   // 21: ark.asset.v1.MsgSetEmergencyMandateResponse
+	(*MsgEmergencySuspendAsset)(nil),         // 22: ark.asset.v1.MsgEmergencySuspendAsset
+	(*MsgEmergencySuspendAssetResponse)(nil), // 23: ark.asset.v1.MsgEmergencySuspendAssetResponse
+	(*Params)(nil),                           // 24: ark.asset.v1.Params
 }
 var file_ark_asset_v1_tx_proto_depIdxs = []int32{
-	26, // 0: ark.asset.v1.MsgRegisterAsset.metadata:type_name -> cosmos.bank.v1beta1.Metadata
-	0,  // 1: ark.asset.v1.Msg.RegisterAsset:input_type -> ark.asset.v1.MsgRegisterAsset
-	2,  // 2: ark.asset.v1.Msg.SetOracleRequired:input_type -> ark.asset.v1.MsgSetOracleRequired
-	4,  // 3: ark.asset.v1.Msg.ActivateAsset:input_type -> ark.asset.v1.MsgActivateAsset
-	6,  // 4: ark.asset.v1.Msg.CancelAssetRegistration:input_type -> ark.asset.v1.MsgCancelAssetRegistration
-	8,  // 5: ark.asset.v1.Msg.BeginRetirement:input_type -> ark.asset.v1.MsgBeginRetirement
-	10, // 6: ark.asset.v1.Msg.CancelRetirement:input_type -> ark.asset.v1.MsgCancelRetirement
-	12, // 7: ark.asset.v1.Msg.FinalizeRetirement:input_type -> ark.asset.v1.MsgFinalizeRetirement
-	14, // 8: ark.asset.v1.Msg.ReactivateAsset:input_type -> ark.asset.v1.MsgReactivateAsset
-	16, // 9: ark.asset.v1.Msg.BeginDelisting:input_type -> ark.asset.v1.MsgBeginDelisting
-	18, // 10: ark.asset.v1.Msg.OpenSettlement:input_type -> ark.asset.v1.MsgOpenSettlement
-	20, // 11: ark.asset.v1.Msg.CancelSettlement:input_type -> ark.asset.v1.MsgCancelSettlement
-	22, // 12: ark.asset.v1.Msg.BeginRelisting:input_type -> ark.asset.v1.MsgBeginRelisting
-	24, // 13: ark.asset.v1.Msg.WriteOffAsset:input_type -> ark.asset.v1.MsgWriteOffAsset
-	1,  // 14: ark.asset.v1.Msg.RegisterAsset:output_type -> ark.asset.v1.MsgRegisterAssetResponse
-	3,  // 15: ark.asset.v1.Msg.SetOracleRequired:output_type -> ark.asset.v1.MsgSetOracleRequiredResponse
-	5,  // 16: ark.asset.v1.Msg.ActivateAsset:output_type -> ark.asset.v1.MsgActivateAssetResponse
-	7,  // 17: ark.asset.v1.Msg.CancelAssetRegistration:output_type -> ark.asset.v1.MsgCancelAssetRegistrationResponse
-	9,  // 18: ark.asset.v1.Msg.BeginRetirement:output_type -> ark.asset.v1.MsgBeginRetirementResponse
-	11, // 19: ark.asset.v1.Msg.CancelRetirement:output_type -> ark.asset.v1.MsgCancelRetirementResponse
-	13, // 20: ark.asset.v1.Msg.FinalizeRetirement:output_type -> ark.asset.v1.MsgFinalizeRetirementResponse
-	15, // 21: ark.asset.v1.Msg.ReactivateAsset:output_type -> ark.asset.v1.MsgReactivateAssetResponse
-	17, // 22: ark.asset.v1.Msg.BeginDelisting:output_type -> ark.asset.v1.MsgBeginDelistingResponse
-	19, // 23: ark.asset.v1.Msg.OpenSettlement:output_type -> ark.asset.v1.MsgOpenSettlementResponse
-	21, // 24: ark.asset.v1.Msg.CancelSettlement:output_type -> ark.asset.v1.MsgCancelSettlementResponse
-	23, // 25: ark.asset.v1.Msg.BeginRelisting:output_type -> ark.asset.v1.MsgBeginRelistingResponse
-	25, // 26: ark.asset.v1.Msg.WriteOffAsset:output_type -> ark.asset.v1.MsgWriteOffAssetResponse
-	14, // [14:27] is the sub-list for method output_type
-	1,  // [1:14] is the sub-list for method input_type
+	24, // 0: ark.asset.v1.MsgUpdateParams.params:type_name -> ark.asset.v1.Params
+	0,  // 1: ark.asset.v1.Msg.UpdateParams:input_type -> ark.asset.v1.MsgUpdateParams
+	2,  // 2: ark.asset.v1.Msg.RegisterAsset:input_type -> ark.asset.v1.MsgRegisterAsset
+	4,  // 3: ark.asset.v1.Msg.HaltIssuance:input_type -> ark.asset.v1.MsgHaltIssuance
+	6,  // 4: ark.asset.v1.Msg.ResumeIssuance:input_type -> ark.asset.v1.MsgResumeIssuance
+	8,  // 5: ark.asset.v1.Msg.SuspendAsset:input_type -> ark.asset.v1.MsgSuspendAsset
+	10, // 6: ark.asset.v1.Msg.OpenSettlement:input_type -> ark.asset.v1.MsgOpenSettlement
+	12, // 7: ark.asset.v1.Msg.CancelSettlement:input_type -> ark.asset.v1.MsgCancelSettlement
+	14, // 8: ark.asset.v1.Msg.RecoverAsset:input_type -> ark.asset.v1.MsgRecoverAsset
+	16, // 9: ark.asset.v1.Msg.WriteOffAsset:input_type -> ark.asset.v1.MsgWriteOffAsset
+	18, // 10: ark.asset.v1.Msg.FinalizeRetirement:input_type -> ark.asset.v1.MsgFinalizeRetirement
+	20, // 11: ark.asset.v1.Msg.SetEmergencyMandate:input_type -> ark.asset.v1.MsgSetEmergencyMandate
+	22, // 12: ark.asset.v1.Msg.EmergencySuspendAsset:input_type -> ark.asset.v1.MsgEmergencySuspendAsset
+	1,  // 13: ark.asset.v1.Msg.UpdateParams:output_type -> ark.asset.v1.MsgUpdateParamsResponse
+	3,  // 14: ark.asset.v1.Msg.RegisterAsset:output_type -> ark.asset.v1.MsgRegisterAssetResponse
+	5,  // 15: ark.asset.v1.Msg.HaltIssuance:output_type -> ark.asset.v1.MsgHaltIssuanceResponse
+	7,  // 16: ark.asset.v1.Msg.ResumeIssuance:output_type -> ark.asset.v1.MsgResumeIssuanceResponse
+	9,  // 17: ark.asset.v1.Msg.SuspendAsset:output_type -> ark.asset.v1.MsgSuspendAssetResponse
+	11, // 18: ark.asset.v1.Msg.OpenSettlement:output_type -> ark.asset.v1.MsgOpenSettlementResponse
+	13, // 19: ark.asset.v1.Msg.CancelSettlement:output_type -> ark.asset.v1.MsgCancelSettlementResponse
+	15, // 20: ark.asset.v1.Msg.RecoverAsset:output_type -> ark.asset.v1.MsgRecoverAssetResponse
+	17, // 21: ark.asset.v1.Msg.WriteOffAsset:output_type -> ark.asset.v1.MsgWriteOffAssetResponse
+	19, // 22: ark.asset.v1.Msg.FinalizeRetirement:output_type -> ark.asset.v1.MsgFinalizeRetirementResponse
+	21, // 23: ark.asset.v1.Msg.SetEmergencyMandate:output_type -> ark.asset.v1.MsgSetEmergencyMandateResponse
+	23, // 24: ark.asset.v1.Msg.EmergencySuspendAsset:output_type -> ark.asset.v1.MsgEmergencySuspendAssetResponse
+	13, // [13:25] is the sub-list for method output_type
+	1,  // [1:13] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -13278,9 +12208,10 @@ func file_ark_asset_v1_tx_proto_init() {
 	if File_ark_asset_v1_tx_proto != nil {
 		return
 	}
+	file_ark_asset_v1_asset_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_ark_asset_v1_tx_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgRegisterAsset); i {
+			switch v := v.(*MsgUpdateParams); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13292,7 +12223,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgRegisterAssetResponse); i {
+			switch v := v.(*MsgUpdateParamsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13304,7 +12235,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetOracleRequired); i {
+			switch v := v.(*MsgRegisterAsset); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13316,7 +12247,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetOracleRequiredResponse); i {
+			switch v := v.(*MsgRegisterAssetResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13328,7 +12259,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgActivateAsset); i {
+			switch v := v.(*MsgHaltIssuance); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13340,7 +12271,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgActivateAssetResponse); i {
+			switch v := v.(*MsgHaltIssuanceResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13352,7 +12283,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCancelAssetRegistration); i {
+			switch v := v.(*MsgResumeIssuance); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13364,7 +12295,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCancelAssetRegistrationResponse); i {
+			switch v := v.(*MsgResumeIssuanceResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13376,7 +12307,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgBeginRetirement); i {
+			switch v := v.(*MsgSuspendAsset); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13388,7 +12319,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgBeginRetirementResponse); i {
+			switch v := v.(*MsgSuspendAssetResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13400,102 +12331,6 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCancelRetirement); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCancelRetirementResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgFinalizeRetirement); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgFinalizeRetirementResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgReactivateAsset); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgReactivateAssetResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgBeginDelisting); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgBeginDelistingResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ark_asset_v1_tx_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgOpenSettlement); i {
 			case 0:
 				return &v.state
@@ -13507,7 +12342,7 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_tx_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgOpenSettlementResponse); i {
 			case 0:
 				return &v.state
@@ -13519,7 +12354,7 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_tx_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgCancelSettlement); i {
 			case 0:
 				return &v.state
@@ -13531,7 +12366,7 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_tx_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgCancelSettlementResponse); i {
 			case 0:
 				return &v.state
@@ -13543,8 +12378,8 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgBeginRelisting); i {
+		file_ark_asset_v1_tx_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgRecoverAsset); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13555,8 +12390,8 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgBeginRelistingResponse); i {
+		file_ark_asset_v1_tx_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgRecoverAssetResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13567,7 +12402,7 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_tx_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgWriteOffAsset); i {
 			case 0:
 				return &v.state
@@ -13579,8 +12414,80 @@ func file_ark_asset_v1_tx_proto_init() {
 				return nil
 			}
 		}
-		file_ark_asset_v1_tx_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+		file_ark_asset_v1_tx_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgWriteOffAssetResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_tx_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgFinalizeRetirement); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_tx_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgFinalizeRetirementResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_tx_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetEmergencyMandate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_tx_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetEmergencyMandateResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_tx_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgEmergencySuspendAsset); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_asset_v1_tx_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgEmergencySuspendAssetResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -13598,7 +12505,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_asset_v1_tx_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

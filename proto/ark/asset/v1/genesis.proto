@@ -7,15 +7,23 @@ import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/asset/types";
 
-// GenesisState defines the asset module's genesis state. Asset locks are
-// rebuilt deterministically from Market and Treasury genesis state.
+// GenesisState defines the asset module's genesis state. The protocol
+// reference moved to ark.oracle.v1's genesis with the reference itself.
 message GenesisState {
-  repeated Asset assets = 1
+  // params carries the governance-owned module parameters.
+  Params params = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  OracleTargets oracle_targets = 2
+  repeated Asset assets = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated SettlementPlan settlement_plans = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated WriteOffRecord write_off_records = 4
+  repeated ResolutionRecord resolution_records = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // emergency_mandate seeds the committee appointment or its canonical
+  // disabled state.
+  EmergencyMandate emergency_mandate = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // emergency_suspensions lists the assets whose suspension is already
+  // consumed under the seeded mandate term, sorted and unique.
+  repeated string emergency_suspensions = 6 [ (amino.dont_omitempty) = true ];
 }

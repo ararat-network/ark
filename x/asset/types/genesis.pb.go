@@ -24,13 +24,20 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// GenesisState defines the asset module's genesis state. Asset locks are
-// rebuilt deterministically from Market and Treasury genesis state.
+// GenesisState defines the asset module's genesis state. The protocol
+// reference moved to ark.oracle.v1's genesis with the reference itself.
 type GenesisState struct {
-	Assets          []Asset          `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets"`
-	OracleTargets   OracleTargets    `protobuf:"bytes,2,opt,name=oracle_targets,json=oracleTargets,proto3" json:"oracle_targets"`
-	SettlementPlans []SettlementPlan `protobuf:"bytes,3,rep,name=settlement_plans,json=settlementPlans,proto3" json:"settlement_plans"`
-	WriteOffRecords []WriteOffRecord `protobuf:"bytes,4,rep,name=write_off_records,json=writeOffRecords,proto3" json:"write_off_records"`
+	// params carries the governance-owned module parameters.
+	Params            Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
+	Assets            []Asset            `protobuf:"bytes,2,rep,name=assets,proto3" json:"assets"`
+	SettlementPlans   []SettlementPlan   `protobuf:"bytes,3,rep,name=settlement_plans,json=settlementPlans,proto3" json:"settlement_plans"`
+	ResolutionRecords []ResolutionRecord `protobuf:"bytes,4,rep,name=resolution_records,json=resolutionRecords,proto3" json:"resolution_records"`
+	// emergency_mandate seeds the committee appointment or its canonical
+	// disabled state.
+	EmergencyMandate EmergencyMandate `protobuf:"bytes,5,opt,name=emergency_mandate,json=emergencyMandate,proto3" json:"emergency_mandate"`
+	// emergency_suspensions lists the assets whose suspension is already
+	// consumed under the seeded mandate term, sorted and unique.
+	EmergencySuspensions []string `protobuf:"bytes,6,rep,name=emergency_suspensions,json=emergencySuspensions,proto3" json:"emergency_suspensions,omitempty"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -66,18 +73,18 @@ func (m *GenesisState) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GenesisState proto.InternalMessageInfo
 
+func (m *GenesisState) GetParams() Params {
+	if m != nil {
+		return m.Params
+	}
+	return Params{}
+}
+
 func (m *GenesisState) GetAssets() []Asset {
 	if m != nil {
 		return m.Assets
 	}
 	return nil
-}
-
-func (m *GenesisState) GetOracleTargets() OracleTargets {
-	if m != nil {
-		return m.OracleTargets
-	}
-	return OracleTargets{}
 }
 
 func (m *GenesisState) GetSettlementPlans() []SettlementPlan {
@@ -87,9 +94,23 @@ func (m *GenesisState) GetSettlementPlans() []SettlementPlan {
 	return nil
 }
 
-func (m *GenesisState) GetWriteOffRecords() []WriteOffRecord {
+func (m *GenesisState) GetResolutionRecords() []ResolutionRecord {
 	if m != nil {
-		return m.WriteOffRecords
+		return m.ResolutionRecords
+	}
+	return nil
+}
+
+func (m *GenesisState) GetEmergencyMandate() EmergencyMandate {
+	if m != nil {
+		return m.EmergencyMandate
+	}
+	return EmergencyMandate{}
+}
+
+func (m *GenesisState) GetEmergencySuspensions() []string {
+	if m != nil {
+		return m.EmergencySuspensions
 	}
 	return nil
 }
@@ -101,27 +122,30 @@ func init() {
 func init() { proto.RegisterFile("ark/asset/v1/genesis.proto", fileDescriptor_a3f9eaad362b1535) }
 
 var fileDescriptor_a3f9eaad362b1535 = []byte{
-	// 310 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x4a, 0x2c, 0xca, 0xd6,
-	0x4f, 0x2c, 0x2e, 0x4e, 0x2d, 0xd1, 0x2f, 0x33, 0xd4, 0x4f, 0x4f, 0xcd, 0x4b, 0x2d, 0xce, 0x2c,
-	0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x49, 0x2c, 0xca, 0xd6, 0x03, 0xcb, 0xe9, 0x95,
-	0x19, 0x4a, 0x09, 0x26, 0xe6, 0x66, 0xe6, 0xe5, 0xeb, 0x83, 0x49, 0x88, 0x02, 0x29, 0x09, 0x14,
-	0xcd, 0x10, 0x95, 0x10, 0x19, 0x91, 0xf4, 0xfc, 0xf4, 0x7c, 0x30, 0x53, 0x1f, 0xc4, 0x82, 0x88,
-	0x2a, 0xed, 0x63, 0xe2, 0xe2, 0x71, 0x87, 0x58, 0x11, 0x5c, 0x92, 0x58, 0x92, 0x2a, 0x64, 0xc6,
-	0xc5, 0x06, 0xd6, 0x55, 0x2c, 0xc1, 0xa8, 0xc0, 0xac, 0xc1, 0x6d, 0x24, 0xac, 0x87, 0x6c, 0xa5,
-	0x9e, 0x23, 0x88, 0xe1, 0xc4, 0x79, 0xe2, 0x9e, 0x3c, 0xc3, 0x8a, 0xe7, 0x1b, 0xb4, 0x18, 0x83,
-	0xa0, 0xaa, 0x85, 0x7c, 0xb9, 0xf8, 0xf2, 0x8b, 0x12, 0x93, 0x73, 0x52, 0xe3, 0x4b, 0x12, 0x8b,
-	0xd2, 0x41, 0xfa, 0x99, 0x14, 0x18, 0x35, 0xb8, 0x8d, 0xa4, 0x51, 0xf5, 0xfb, 0x83, 0xd5, 0x84,
-	0x40, 0x94, 0x20, 0x9b, 0xc3, 0x9b, 0x8f, 0x2c, 0x23, 0x14, 0xc4, 0x25, 0x50, 0x9c, 0x5a, 0x52,
-	0x92, 0x93, 0x9a, 0x9b, 0x9a, 0x57, 0x12, 0x5f, 0x90, 0x93, 0x98, 0x57, 0x2c, 0xc1, 0x0c, 0x76,
-	0x90, 0x0c, 0xaa, 0x81, 0xc1, 0x70, 0x55, 0x01, 0x39, 0x89, 0x79, 0xc8, 0x26, 0xf2, 0x17, 0xa3,
-	0x48, 0x15, 0x0b, 0x05, 0x73, 0x09, 0x96, 0x17, 0x65, 0x96, 0xa4, 0xc6, 0xe7, 0xa7, 0xa5, 0xc5,
-	0x17, 0xa5, 0x26, 0xe7, 0x17, 0xa5, 0x14, 0x4b, 0xb0, 0x60, 0x33, 0x34, 0x1c, 0xa4, 0xcc, 0x3f,
-	0x2d, 0x2d, 0x08, 0xac, 0x08, 0xc5, 0xd0, 0x72, 0x14, 0xa9, 0x62, 0x27, 0xed, 0x13, 0x8f, 0xe4,
-	0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f,
-	0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0x12, 0x04, 0x45, 0x45, 0x05, 0x34, 0x32, 0x4a, 0x2a,
-	0x0b, 0x52, 0x8b, 0x93, 0xd8, 0xc0, 0x81, 0x6e, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0xe7, 0x2a,
-	0x90, 0x08, 0xe3, 0x01, 0x00, 0x00,
+	// 366 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x92, 0x41, 0x8b, 0xda, 0x40,
+	0x14, 0xc7, 0x93, 0xa6, 0x06, 0x1c, 0x85, 0x9a, 0xa9, 0x85, 0x20, 0x25, 0x95, 0x9e, 0xa4, 0x85,
+	0x04, 0x2d, 0xb4, 0xd0, 0x5b, 0x85, 0xd2, 0x53, 0x41, 0x22, 0x2c, 0xcb, 0x5e, 0x64, 0x56, 0x1f,
+	0x21, 0x98, 0xcc, 0x84, 0x79, 0xa3, 0xac, 0xdf, 0x62, 0x3f, 0xc6, 0x1e, 0xf7, 0x2b, 0xec, 0xcd,
+	0xa3, 0xc7, 0x3d, 0x2d, 0x8b, 0x1e, 0xf6, 0x6b, 0x2c, 0xce, 0xb8, 0x9a, 0x78, 0x09, 0x8f, 0xfc,
+	0x7f, 0xff, 0xdf, 0x83, 0xe4, 0x91, 0x0e, 0x93, 0xf3, 0x88, 0x21, 0x82, 0x8a, 0x96, 0xfd, 0x28,
+	0x01, 0x0e, 0x98, 0x62, 0x58, 0x48, 0xa1, 0x04, 0x6d, 0x32, 0x39, 0x0f, 0x75, 0x16, 0x2e, 0xfb,
+	0x1d, 0x8f, 0xe5, 0x29, 0x17, 0x91, 0x7e, 0x1a, 0xa0, 0xe3, 0x57, 0xca, 0x86, 0x34, 0x49, 0x3b,
+	0x11, 0x89, 0xd0, 0x63, 0xb4, 0x9f, 0xcc, 0xdb, 0xaf, 0x0f, 0x0e, 0x69, 0xfe, 0x33, 0x2b, 0xc6,
+	0x8a, 0x29, 0xa0, 0xbf, 0x88, 0x5b, 0x30, 0xc9, 0x72, 0xf4, 0xed, 0xae, 0xdd, 0x6b, 0x0c, 0xda,
+	0x61, 0x79, 0x65, 0x38, 0xd2, 0xd9, 0xb0, 0xbe, 0x7e, 0xfa, 0x62, 0xdd, 0xbd, 0xdc, 0x7f, 0xb3,
+	0xe3, 0x03, 0x4e, 0x7f, 0x12, 0x57, 0x53, 0xe8, 0xbf, 0xeb, 0x3a, 0xbd, 0xc6, 0xe0, 0x63, 0xb5,
+	0xf8, 0x67, 0x3f, 0x54, 0x7a, 0x86, 0xa6, 0x31, 0x69, 0x21, 0x28, 0x95, 0x41, 0x0e, 0x5c, 0x4d,
+	0x8a, 0x8c, 0x71, 0xf4, 0x1d, 0x6d, 0xf8, 0x5c, 0x35, 0x8c, 0x8f, 0xd4, 0x28, 0x63, 0xbc, 0xac,
+	0xfa, 0x80, 0x95, 0x08, 0xe9, 0x25, 0xa1, 0x12, 0x50, 0x64, 0x0b, 0x95, 0x0a, 0x3e, 0x91, 0x30,
+	0x15, 0x72, 0x86, 0xfe, 0x7b, 0x6d, 0x0d, 0xaa, 0xd6, 0xf8, 0xc8, 0xc5, 0x1a, 0x2b, 0x7b, 0x3d,
+	0x79, 0x16, 0x22, 0xbd, 0x20, 0x1e, 0xe4, 0x20, 0x13, 0xe0, 0xd3, 0xd5, 0x24, 0x67, 0x7c, 0xc6,
+	0x14, 0xf8, 0x35, 0xfd, 0xa5, 0xce, 0xc4, 0x7f, 0xdf, 0xb0, 0xff, 0x86, 0x2a, 0x8b, 0x5b, 0x70,
+	0x16, 0xd2, 0xdf, 0xe4, 0xd3, 0xc9, 0x8b, 0x0b, 0x2c, 0x80, 0x63, 0x2a, 0x38, 0xfa, 0x6e, 0xd7,
+	0xe9, 0xd5, 0x87, 0x35, 0xd3, 0x6b, 0x1f, 0x99, 0xf1, 0x09, 0x19, 0x7e, 0x5f, 0x6f, 0x03, 0x7b,
+	0xb3, 0x0d, 0xec, 0xe7, 0x6d, 0x60, 0xdf, 0xee, 0x02, 0x6b, 0xb3, 0x0b, 0xac, 0xc7, 0x5d, 0x60,
+	0x5d, 0x79, 0xfb, 0x6b, 0xb8, 0x39, 0xdc, 0x83, 0x5a, 0x15, 0x80, 0xd7, 0xae, 0xfe, 0xef, 0x3f,
+	0x5e, 0x03, 0x00, 0x00, 0xff, 0xff, 0x0b, 0xdf, 0x58, 0xc2, 0x66, 0x02, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -144,10 +168,29 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.WriteOffRecords) > 0 {
-		for iNdEx := len(m.WriteOffRecords) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.EmergencySuspensions) > 0 {
+		for iNdEx := len(m.EmergencySuspensions) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.EmergencySuspensions[iNdEx])
+			copy(dAtA[i:], m.EmergencySuspensions[iNdEx])
+			i = encodeVarintGenesis(dAtA, i, uint64(len(m.EmergencySuspensions[iNdEx])))
+			i--
+			dAtA[i] = 0x32
+		}
+	}
+	{
+		size, err := m.EmergencyMandate.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	if len(m.ResolutionRecords) > 0 {
+		for iNdEx := len(m.ResolutionRecords) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.WriteOffRecords[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.ResolutionRecords[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -172,16 +215,6 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x1a
 		}
 	}
-	{
-		size, err := m.OracleTargets.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
 	if len(m.Assets) > 0 {
 		for iNdEx := len(m.Assets) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -193,9 +226,19 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0xa
+			dAtA[i] = 0x12
 		}
 	}
+	{
+		size, err := m.Params.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -216,23 +259,31 @@ func (m *GenesisState) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = m.Params.Size()
+	n += 1 + l + sovGenesis(uint64(l))
 	if len(m.Assets) > 0 {
 		for _, e := range m.Assets {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	l = m.OracleTargets.Size()
-	n += 1 + l + sovGenesis(uint64(l))
 	if len(m.SettlementPlans) > 0 {
 		for _, e := range m.SettlementPlans {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.WriteOffRecords) > 0 {
-		for _, e := range m.WriteOffRecords {
+	if len(m.ResolutionRecords) > 0 {
+		for _, e := range m.ResolutionRecords {
 			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	l = m.EmergencyMandate.Size()
+	n += 1 + l + sovGenesis(uint64(l))
+	if len(m.EmergencySuspensions) > 0 {
+		for _, s := range m.EmergencySuspensions {
+			l = len(s)
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
@@ -276,6 +327,39 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Params", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Params.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Assets", wireType)
 			}
 			var msglen int
@@ -305,39 +389,6 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			}
 			m.Assets = append(m.Assets, Asset{})
 			if err := m.Assets[len(m.Assets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OracleTargets", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.OracleTargets.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -377,7 +428,7 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WriteOffRecords", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ResolutionRecords", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -404,10 +455,75 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.WriteOffRecords = append(m.WriteOffRecords, WriteOffRecord{})
-			if err := m.WriteOffRecords[len(m.WriteOffRecords)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.ResolutionRecords = append(m.ResolutionRecords, ResolutionRecord{})
+			if err := m.ResolutionRecords[len(m.ResolutionRecords)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EmergencyMandate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.EmergencyMandate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EmergencySuspensions", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EmergencySuspensions = append(m.EmergencySuspensions, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
