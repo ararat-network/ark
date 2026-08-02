@@ -17,7 +17,6 @@ import (
 	oraclemetrics "ark/abci/oracle/metrics"
 	arkabcitypes "ark/abci/types"
 	"ark/abci/voteextension"
-	oracletypes "ark/x/oracle/types"
 )
 
 // Handler is responsible for aggregating oracle data from each
@@ -26,10 +25,6 @@ import (
 type Handler struct {
 	// oracleKeeper provides the oracle state used during preblock processing.
 	oracleKeeper arkabcitypes.OracleKeeper
-
-	// assetKeeper completes asset lifecycle transitions that were waiting on a
-	// price for their feed.
-	assetKeeper arkabcitypes.AssetKeeper
 
 	// treasuryKeeper primes block-local treasury valuations once oracle prices
 	// for the block are final.
@@ -40,12 +35,10 @@ type Handler struct {
 // is responsible for writing oracle data included in vote extensions to state.
 func NewHandler(
 	oracleKeeper arkabcitypes.OracleKeeper,
-	assetKeeper arkabcitypes.AssetKeeper,
 	treasuryKeeper arkabcitypes.TreasuryKeeper,
 ) *Handler {
 	return &Handler{
 		oracleKeeper:   oracleKeeper,
-		assetKeeper:    assetKeeper,
 		treasuryKeeper: treasuryKeeper,
 	}
 }
@@ -114,20 +107,6 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			)
 		}
 
-		// Completions consume only rates aggregated in this block: activation
-		// and recovery ride on consensus evidence produced after governance
-		// requested them, never on the tail of the freshness window.
-		if len(prices) > 0 {
-			if err = h.assetKeeper.CompleteLifecycle(ctx, oracletypes.NewRateSetFrom(prices)); err != nil {
-				return response, fmt.Errorf(
-					"%w: complete asset lifecycle for height %d: %w",
-					arkabcitypes.ErrAssetKeeper,
-					req.Height,
-					err,
-				)
-			}
-		}
-
 		// Prices and feeds for the block are final here; prime the
 		// treasury liability snapshot so transactions never rescan.
 		if err = h.treasuryKeeper.PrimeLiabilitySnapshot(ctx); err != nil {
@@ -157,8 +136,6 @@ func preblockStatus(err error) arkmetrics.Status {
 		return arkmetrics.StatusCodec
 	case errors.Is(err, arkabcitypes.ErrMissingCommitInfo):
 		return arkmetrics.StatusMissingCommitInfo
-	case errors.Is(err, arkabcitypes.ErrAssetKeeper):
-		return arkmetrics.StatusAssetKeeper
 	case errors.Is(err, arkabcitypes.ErrTreasuryKeeper):
 		return arkmetrics.StatusTreasuryKeeper
 	default:

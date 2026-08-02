@@ -83,7 +83,6 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 
 	preBlocker := preblock.NewHandler(
 		keeper,
-		noopAssetKeeper{},
 		noopTreasuryKeeper{},
 	).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
@@ -181,7 +180,6 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 
 	preBlocker := preblock.NewHandler(
 		keeper,
-		noopAssetKeeper{},
 		noopTreasuryKeeper{},
 	).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
@@ -252,7 +250,6 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 
 	preBlocker := preblock.NewHandler(
 		keeper,
-		noopAssetKeeper{},
 		noopTreasuryKeeper{},
 	).WrappedPreBlocker(managerWith())
 	request := finalizeRequest(t, activationVoteHeight, sdk.ConsAddress("validator"), response.VoteExtension)
@@ -287,12 +284,6 @@ func (c staticOracleClient) Prices(
 type noopTreasuryKeeper struct{}
 
 func (noopTreasuryKeeper) PrimeLiabilitySnapshot(context.Context) error { return nil }
-
-// noopAssetKeeper stands in for the asset registry in the same tests;
-// completions are covered in preblock_test.go.
-type noopAssetKeeper struct{}
-
-func (noopAssetKeeper) CompleteLifecycle(context.Context, oracletypes.RateSet) error { return nil }
 
 type transitionOracleKeeper struct {
 	params   oracletypes.Params

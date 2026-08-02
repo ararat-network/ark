@@ -18,7 +18,6 @@ const (
 	StatusInvalidOraclePrices      Status = "InvalidOraclePricesError"
 	StatusVoteExtensionValidation  Status = "VoteExtensionValidationError"
 	StatusOracleKeeper             Status = "OracleKeeperError"
-	StatusAssetKeeper              Status = "AssetKeeperError"
 	StatusTreasuryKeeper           Status = "TreasuryKeeperError"
 )
 

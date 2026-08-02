@@ -117,44 +117,6 @@ func (mr *MockOracleKeeperMockRecorder) SetExchangeRateWithEvent(ctx, exchangeRa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRateWithEvent", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRateWithEvent), ctx, exchangeRate)
 }
 
-// MockAssetKeeper is a mock of AssetKeeper interface.
-type MockAssetKeeper struct {
-	ctrl     *gomock.Controller
-	recorder *MockAssetKeeperMockRecorder
-	isgomock struct{}
-}
-
-// MockAssetKeeperMockRecorder is the mock recorder for MockAssetKeeper.
-type MockAssetKeeperMockRecorder struct {
-	mock *MockAssetKeeper
-}
-
-// NewMockAssetKeeper creates a new mock instance.
-func NewMockAssetKeeper(ctrl *gomock.Controller) *MockAssetKeeper {
-	mock := &MockAssetKeeper{ctrl: ctrl}
-	mock.recorder = &MockAssetKeeperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockAssetKeeper) EXPECT() *MockAssetKeeperMockRecorder {
-	return m.recorder
-}
-
-// CompleteLifecycle mocks base method.
-func (m *MockAssetKeeper) CompleteLifecycle(ctx context.Context, updatedRates types0.RateSet) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CompleteLifecycle", ctx, updatedRates)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CompleteLifecycle indicates an expected call of CompleteLifecycle.
-func (mr *MockAssetKeeperMockRecorder) CompleteLifecycle(ctx, updatedRates any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteLifecycle", reflect.TypeOf((*MockAssetKeeper)(nil).CompleteLifecycle), ctx, updatedRates)
-}
-
 // MockTreasuryKeeper is a mock of TreasuryKeeper interface.
 type MockTreasuryKeeper struct {
 	ctrl     *gomock.Controller

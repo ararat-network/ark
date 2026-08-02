@@ -23,12 +23,6 @@ type OracleKeeper interface {
 	AdvanceFeeds(ctx context.Context) error
 }
 
-// AssetKeeper exposes the one asset-side hook the preblock drives: lifecycle
-// completions made eligible by rates aggregated in this block.
-type AssetKeeper interface {
-	CompleteLifecycle(ctx context.Context, updatedRates oracletypes.RateSet) error
-}
-
 // TreasuryKeeper exposes the treasury state primed during preblock processing.
 type TreasuryKeeper interface {
 	PrimeLiabilitySnapshot(ctx context.Context) error
