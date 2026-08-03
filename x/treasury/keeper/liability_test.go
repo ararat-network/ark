@@ -135,15 +135,11 @@ func (s *KeeperTestSuite) TestLiabilityIncompleteValuationCachesClaimableAggrega
 
 // TestLiabilityFeedOutageLeavesCoverageUnchanged pins the property the last
 // known rate exists for: a member losing its feed must not change what anyone
-// else's redemption is worth.
-//
-// akrw is priced at one and then loses its feed with the same rate on record.
-// Its holders cannot redeem while the feed is down, but their claim on the
-// Buffer is untouched, so the aggregate stays 200 and an ausd redemption pays
-// exactly what it paid before the outage. Dropping akrw would make the
-// denominator 100 and double this payment — handing akrw's share of the Buffer
-// to whoever transacts during the outage, and leaving less for akrw's holders
-// when the feed returns.
+// else's redemption is worth. akrw is priced at one and then loses its feed
+// with the same rate on record, so the aggregate stays 200 and an ausd
+// redemption pays exactly what it paid before the outage. Dropping akrw would
+// halve the denominator and double this payment, handing akrw's share of the
+// Buffer to whoever transacts during the outage.
 func (s *KeeperTestSuite) TestLiabilityFeedOutageLeavesCoverageUnchanged() {
 	drawOnce := func() math.Int {
 		s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -252,6 +248,10 @@ func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotStoresCompleteValuation() {
 	)
 	s.Require().NoError(err)
 	s.requireLiabilitySnapshot(math.LegacyNewDec(200), true)
+	// A complete valuation is the ordinary case and discloses nothing. Emitting
+	// every block would bury the blocks that matter under the blocks that do
+	// not.
+	s.requireNoTypedEvent(&types.EventLiabilityIncomplete{})
 }
 
 // TestPrimeLiabilitySnapshotRecognizesSettlementPricedSupply proves the
@@ -380,6 +380,14 @@ func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotExcludesUnpricedMemberFromCl
 	// aggregate it would have paid 2.
 	s.Require().Equal(math.NewInt(5), bufferPaid)
 	s.requireLiabilitySnapshot(math.LegacyNewDec(100), false)
+	// The prime disclosed the degraded valuation, naming akrw and the 100 the
+	// draw above divided by. The draw could not have disclosed it a second
+	// time: the Times(1) supply expectations above already pin it to reusing
+	// the snapshot rather than rebuilding one.
+	s.requireTypedEvent(&types.EventLiabilityIncomplete{
+		ClaimableLiability: chain.NoahDecCoin(math.LegacyNewDec(100)),
+		StaleMemberSupply:  []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 100)},
+	})
 }
 
 func (s *KeeperTestSuite) TestPrimeLiabilitySnapshotOverridesEarlierPrime() {
@@ -506,7 +514,7 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 					chain.USDBaseDenom: math.LegacyOneDec(),
 				})
 			},
-			wantPriced:    "150",
+			wantPriced: "150",
 		},
 		{
 			name: "issuance-halted supply stays priced",
@@ -518,7 +526,7 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			expectRates: func() {
 				s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 			},
-			wantPriced:    "100",
+			wantPriced: "100",
 		},
 		{
 			// The fixture plan's activation height is far in the future: an
@@ -561,14 +569,14 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED)
 				s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_RETIRED)
 			},
-			supplies:      map[string]int64{chain.KRWBaseDenom: 50, chain.USDBaseDenom: 70},
+			supplies: map[string]int64{chain.KRWBaseDenom: 50, chain.USDBaseDenom: 70},
 		},
 		{
 			name: "zero supply is skipped entirely",
 			seed: func() {
 				s.setAssets(chain.USDBaseDenom)
 			},
-			supplies:      map[string]int64{chain.USDBaseDenom: 0},
+			supplies: map[string]int64{chain.USDBaseDenom: 0},
 		},
 		{
 			name: "priced and settlement-priced sum into the recognised total",

@@ -133,12 +133,13 @@ func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxR
 }
 
 // FundStatus queries live Treasury balances, the partitioned liability report,
-// and fund targets. It always answers, because hiding the report behind an
-// error during exactly the stress that makes valuation incomplete would blind
-// operators when they most need it. An incomplete valuation still reports the
-// claimable aggregate — the figure redemption coverage divides by — beside the
-// partition that explains which exposure it excludes and why, with every target
-// zero rather than a guess.
+// and fund targets. It always answers, because hiding the report during exactly
+// the stress that makes valuation incomplete would blind operators when they
+// most need it: an incomplete valuation still reports the claimable aggregate
+// beside the partition explaining what it excludes, with every target zero
+// rather than a guess. It is also the one caller that builds a partition
+// without disclosing a degraded one, since a query reports a partition rather
+// than recording one.
 func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusRequest) (*types.QueryFundStatusResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

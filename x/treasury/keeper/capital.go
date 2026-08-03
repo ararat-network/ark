@@ -26,29 +26,24 @@ type fundStatus struct {
 	insuranceTarget  math.Int
 }
 
-// RouteExpansion derives and executes the complete expansion-principal
-// waterfall from Market's escrow and returns the NOAH Market must burn: the
-// quote spread plus whatever principal overflowed every funded target.
-// Treasury itself neither mints nor burns.
-//
-// The credit split behind that total stays execution-local and reaches
-// observers through EventExpansionAllocated rather than the caller. Market owns
-// burn, mint, and payout, never a decision about which fund was short; handing
-// it the split would invite settlement to branch on Treasury policy. The total
-// is exactly the residue left in Market's account once the credits are sent, so
-// burning it settles the escrow rather than acting on that policy.
-//
-// The stable output is whatever Market's ask leg produced, so it is already
-// ACTIVE: eligibility is decided at quote time and nothing outside Market can
-// hold a quote and settle it.
+// RouteExpansion derives and executes the expansion-principal waterfall from
+// Market's escrow and returns the NOAH Market must burn: the quote spread plus
+// whatever principal overflowed every funded target. The credit split behind
+// that total stays execution-local and reaches observers through
+// EventExpansionAllocated rather than the caller, because handing Market the
+// split would invite settlement to branch on Treasury policy. The stable output
+// is whatever Market's ask leg produced, so it is already ACTIVE.
 func (k Keeper) RouteExpansion(
 	ctx context.Context,
 	grossOffer sdk.Coin,
 	stableOutput sdk.Coin,
 	quoteRates oracletypes.RateSet,
 ) (sdk.Coin, error) {
-	if err := validatePositiveNoahCoin(grossOffer); err != nil {
+	if err := grossOffer.Validate(); err != nil {
 		return sdk.Coin{}, fmt.Errorf("invalid gross offer: %w", err)
+	}
+	if grossOffer.Denom != chain.NoahBaseDenom || !grossOffer.IsPositive() {
+		return sdk.Coin{}, fmt.Errorf("invalid gross offer: coin must be positive %s", chain.NoahBaseDenom)
 	}
 	if err := stableOutput.Validate(); err != nil {
 		return sdk.Coin{}, fmt.Errorf("invalid stable output: %w", err)
@@ -76,27 +71,16 @@ func (k Keeper) RouteExpansion(
 		return sdk.Coin{}, err
 	}
 
-	// Targets derive from a complete valuation only, which is why the waterfall
-	// runs solely under the branch below. Incompleteness says no fresh rate
-	// stood behind part of the total, and both ways that happens disqualify the
-	// figure: suspended and never-priced supply is absent from the aggregate
-	// outright, so a target sized on it would call for less capital exactly when
-	// an asset has just failed, while stale supply is carried only on a rate the
-	// freshness gate has already rejected. Neither answers what capital a fund
-	// is owed.
-	//
-	// The whole eligible principal therefore parks in the Reserve rather than
-	// overflowing into a burn sized off an exposure this thin. What makes the
-	// Reserve the right custodian is that its allocation stays revisable: the
-	// commitment to the Buffer is authority-gated and reads nothing but the
-	// Reserve's own balance (§6.4), so it still executes while valuation is
-	// broken, and once a complete valuation shows the real gaps an operator can
-	// move the principal to the Buffer or leave it as Reserve capital. The
-	// Buffer has no such exit — it has no operator, and its only outflow is a
-	// redemption draw — so principal parked there is committed for good. That
-	// asymmetry decides it: crediting the wrong fund under a valuation this thin
-	// is recoverable, and later expansions fill whichever gap persists, while
-	// committing principal irreversibly on it is not, and burning it is less so.
+	// Targets derive from a complete valuation only, so the waterfall runs
+	// solely under the branch below: an incomplete aggregate either omits failed
+	// supply outright or carries it on a rate the freshness gate rejected, and
+	// neither answers what capital a fund is owed. The whole eligible principal
+	// therefore parks in the Reserve, whose allocation stays revisable — its
+	// Buffer commitment is authority-gated and reads only its own balance
+	// (§6.4), so an operator can still move the principal once valuation
+	// recovers. The Buffer has no such exit, so crediting the Reserve wrongly is
+	// recoverable where committing principal to the Buffer is not, and burning
+	// it is less so.
 	bufferCredit := math.ZeroInt()
 	reserveCredit := eligible
 	insuranceCredit := math.ZeroInt()
@@ -149,13 +133,12 @@ func (k Keeper) RouteExpansion(
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventExpansionAllocated{
-		Denom:                   chain.NoahBaseDenom,
-		RedemptionBufferCredit:  bufferCredit,
-		StrategicReserveCredit:  reserveCredit,
-		InsuranceCredit:         insuranceCredit,
-		SpreadAndDustBurn:       spread,
-		OverflowBurn:            overflowBurn,
-		TargetValuationComplete: complete,
+		Denom:                  chain.NoahBaseDenom,
+		RedemptionBufferCredit: bufferCredit,
+		StrategicReserveCredit: reserveCredit,
+		InsuranceCredit:        insuranceCredit,
+		SpreadAndDustBurn:      spread,
+		OverflowBurn:           overflowBurn,
 	}); err != nil {
 		return sdk.Coin{}, fmt.Errorf("emitting Treasury expansion allocation event: %w", err)
 	}
@@ -164,27 +147,16 @@ func (k Keeper) RouteExpansion(
 }
 
 // DrawRedemptionBuffer funds the current Buffer coverage share of the quoted
-// NOAH output using pre-burn claimable liability and Buffer state.
-//
-// The redeemed denomination arrives already recognised as liability: Market
-// converts out of oracle-priced assets only, and routes a suspended asset through
-// settlement, which requires an activated plan. Neither path can reach here with
-// a denomination Treasury does not carry.
-//
-// The draw runs whether or not valuation is complete. The claimable aggregate
-// excludes exactly the supply that cannot currently redeem — a member whose
-// feed is stale cannot quote, and suspension without an activated plan closes
-// both exits — so nothing the excluded supply will later claim is being spent,
-// and the exits still open are the ones the Buffer exists to dampen. A
-// suspension elsewhere therefore raises coverage for the healthy exits instead
-// of switching the Buffer off during exactly the contagion it was built for;
-// the completeness flag is audit disclosure, never a kill switch.
-//
-// The draw returns the payment alone. The liability figures behind the share,
-// and the completeness flag itself, stay execution-local and reach observers
-// through EventRedemptionBufferDrawn rather than the caller: handing settlement
-// a completeness flag would invite it to branch on valuation state, which is
-// the coupling the claimable-liability denominator exists to remove.
+// NOAH output using pre-burn claimable liability and Buffer state; the redeemed
+// denomination arrives already recognised, since Market converts out of
+// oracle-priced assets only and routes a suspended asset through settlement.
+// The draw runs whether or not valuation is complete and never reads the flag,
+// because the claimable aggregate already excludes the supply that cannot
+// redeem — a suspension elsewhere raises coverage for healthy exits instead of
+// switching the Buffer off during the contagion it was built for. Disclosure
+// belongs to EventLiabilityIncomplete, and the draw returns the payment alone:
+// handing settlement a completeness flag would invite it to branch on valuation
+// state.
 func (k Keeper) DrawRedemptionBuffer(
 	ctx context.Context,
 	redeemedStable sdk.Coin,
@@ -215,7 +187,7 @@ func (k Keeper) DrawRedemptionBuffer(
 		)
 	}
 
-	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, quoteRates)
+	liabilityNoah, _, err := k.cachedLiabilityValue(ctx, quoteRates)
 	if err != nil {
 		return math.Int{}, err
 	}
@@ -253,9 +225,8 @@ func (k Keeper) DrawRedemptionBuffer(
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventRedemptionBufferDrawn{
-		Denom:                      chain.NoahBaseDenom,
-		Payment:                    bufferPaid,
-		AggregateValuationComplete: complete,
+		Denom:   chain.NoahBaseDenom,
+		Payment: bufferPaid,
 	}); err != nil {
 		return math.Int{}, fmt.Errorf("emitting Treasury redemption buffer event: %w", err)
 	}
@@ -270,12 +241,9 @@ func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.Lega
 	// Both committee-operated funds report their own recognised capital (§7.2);
 	// Treasury owns only the requirement each is measured against, and asks each
 	// operator what its fund is worth rather than reading the module account
-	// behind its back. Insurance currently differs from its raw balance because
-	// an approved pending claim is encumbered and cannot also cover another
-	// loss — the reservation is x/claims state, served by its own
-	// Query/ClaimsMandate. Reserve currently does not differ, but it holds
-	// written-off tax residue that earns no credit, and it gains haircut
-	// external value in §20.1 — which is exactly why the figure is asked for
+	// behind its back. Insurance already differs from its raw balance because an
+	// approved pending claim is encumbered, and Reserve will once it gains
+	// haircut external value in §20.1 — which is why the figure is asked for
 	// rather than read. The Buffer keeps a direct balance read: it has no
 	// operator, so Treasury is its operator.
 	insuranceBalance, err := k.claimsKeeper.RecognisedCapital(ctx)
