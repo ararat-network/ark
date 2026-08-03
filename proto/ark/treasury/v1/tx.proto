@@ -3,7 +3,6 @@ package ark.treasury.v1;
 
 import "amino/amino.proto";
 import "ark/treasury/v1/treasury.proto";
-import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
@@ -27,29 +26,6 @@ service Msg {
   // candidate as the monetary-policy committee, inside its mandate bounds.
   rpc CommitteeUpdatePolicy(MsgCommitteeUpdatePolicy)
       returns (MsgCommitteeUpdatePolicyResponse) {}
-  // SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
-  // committee.
-  rpc SetClaimsMandate(MsgSetClaimsMandate)
-      returns (MsgSetClaimsMandateResponse) {}
-  // SubmitClaim records a governance-submitted pending claim, which never
-  // consumes the committee allowance.
-  rpc SubmitClaim(MsgSubmitClaim) returns (MsgSubmitClaimResponse) {}
-  // CommitteeSubmitClaim records a committee-submitted pending claim against
-  // the current term allowance.
-  rpc CommitteeSubmitClaim(MsgCommitteeSubmitClaim)
-      returns (MsgCommitteeSubmitClaimResponse) {}
-  // CancelClaim cancels any pending claim as the governance authority during
-  // its cancellation period.
-  rpc CancelClaim(MsgCancelClaim) returns (MsgCancelClaimResponse) {}
-  // CommitteeCancelClaim cancels one pending non-governance claim as the
-  // Claims committee during its cancellation period.
-  rpc CommitteeCancelClaim(MsgCommitteeCancelClaim)
-      returns (MsgCommitteeCancelClaimResponse) {}
-  // ExecuteClaim pays a pending claim after its cancellation period.
-  rpc ExecuteClaim(MsgExecuteClaim) returns (MsgExecuteClaimResponse) {}
-  // TransferReserveToBuffer commits strategic Reserve NOAH to the Buffer.
-  rpc TransferReserveToBuffer(MsgTransferReserveToBuffer)
-      returns (MsgTransferReserveToBufferResponse) {}
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -121,130 +97,3 @@ message MsgCommitteeUpdatePolicy {
 // MsgCommitteeUpdatePolicyResponse is the response for one committee
 // monetary-policy update.
 message MsgCommitteeUpdatePolicyResponse {}
-
-// MsgSetClaimsMandate is the request for a complete Claims committee mandate.
-// The committee claim limit is a fixed gross base-unit NOAH allowance for the
-// new term.
-message MsgSetClaimsMandate {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgSetClaimsMandate";
-
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
-  string committee_claim_limit = 5 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
-
-// MsgSetClaimsMandateResponse is the response for a Claims committee mandate.
-message MsgSetClaimsMandateResponse {}
-
-// MsgSubmitClaim is a governance-signed exact claim submission. It never
-// consumes the committee term allowance and does not depend on the Claims
-// mandate; the cancellation period comes from Treasury params.
-message MsgSubmitClaim {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgSubmitClaim";
-
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string incident_reference = 2;
-  string recipient = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin amount = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string evidence_reference = 5;
-}
-
-// MsgSubmitClaimResponse is the response for a governance claim submission.
-message MsgSubmitClaimResponse {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
-}
-
-// MsgCommitteeSubmitClaim is an exact committee-signed claim submission. It
-// permanently consumes the current term's gross claim allowance.
-message MsgCommitteeSubmitClaim {
-  option (cosmos.msg.v1.signer) = "committee";
-  option (amino.name) = "ark/x/treasury/MsgCommitteeSubmitClaim";
-
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  string incident_reference = 3;
-  string recipient = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin amount = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string evidence_reference = 6;
-}
-
-// MsgCommitteeSubmitClaimResponse is the response for a committee claim
-// submission.
-message MsgCommitteeSubmitClaimResponse {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
-}
-
-// MsgCancelClaim is a governance-authorized cancellation of any pending claim
-// during its cancellation period. It carries no expected term because
-// governance cancellation does not depend on the current committee mandate.
-message MsgCancelClaim {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgCancelClaim";
-
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 claim_id = 2 [ (amino.dont_omitempty) = true ];
-  string reason = 3;
-  string reference = 4;
-}
-
-// MsgCancelClaimResponse is the response for governance claim cancellation.
-message MsgCancelClaimResponse {}
-
-// MsgCommitteeCancelClaim is an exact committee-authorized cancellation during
-// the claim's cancellation period. expected_term protects committee
-// cancellations from stale signatures, and the committee may cancel only a
-// claim whose immutable origin is not governance.
-message MsgCommitteeCancelClaim {
-  option (cosmos.msg.v1.signer) = "committee";
-  option (amino.name) = "ark/x/treasury/MsgCommitteeCancelClaim";
-
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 claim_id = 3 [ (amino.dont_omitempty) = true ];
-  string reason = 4;
-  string reference = 5;
-}
-
-// MsgCommitteeCancelClaimResponse is the response for committee claim
-// cancellation.
-message MsgCommitteeCancelClaimResponse {}
-
-// MsgExecuteClaim requests execution of one immutable pending claim.
-message MsgExecuteClaim {
-  option (cosmos.msg.v1.signer) = "caller";
-  option (amino.name) = "ark/x/treasury/MsgExecuteClaim";
-
-  string caller = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 claim_id = 2 [ (amino.dont_omitempty) = true ];
-}
-
-// MsgExecuteClaimResponse is the response for claim execution.
-message MsgExecuteClaimResponse {}
-
-// MsgTransferReserveToBuffer defines one governance-authorized
-// strategic Reserve commitment.
-message MsgTransferReserveToBuffer {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgTransferToBuffer";
-
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin amount = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// MsgTransferReserveToBufferResponse is the response for a strategic
-// Reserve commitment.
-message MsgTransferReserveToBufferResponse {}

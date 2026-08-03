@@ -3,7 +3,6 @@ package ark.treasury.v1;
 
 import "amino/amino.proto";
 import "ark/treasury/v1/treasury.proto";
-import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/treasury/types";
@@ -14,32 +13,14 @@ message GenesisState {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   repeated TaxCap tax_caps = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  ClaimsMandate claims_mandate = 3
+  RewardFundingState reward_funding = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string claims_allowance_used = 4 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string insurance_reserved = 5 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  // next_claim_id is the next globally available Treasury claim identifier.
-  uint64 next_claim_id = 6 [ (amino.dont_omitempty) = true ];
-  repeated Claim claims = 7
+  MonetaryMandate monetary_mandate = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  RewardFundingState reward_funding = 8
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryMandate monetary_mandate = 9
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryPolicy monetary_policy = 10
+  MonetaryPolicy monetary_policy = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // tax_cap_refresh_pending records a cadence boundary that passed without a
   // successful tax-cap rebuild, so an owed refresh survives export and import
   // instead of being forgiven by the migration.
-  bool tax_cap_refresh_pending = 11 [ (amino.dont_omitempty) = true ];
+  bool tax_cap_refresh_pending = 6 [ (amino.dont_omitempty) = true ];
 }

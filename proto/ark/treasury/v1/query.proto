@@ -3,7 +3,6 @@ package ark.treasury.v1;
 
 import "amino/amino.proto";
 import "ark/treasury/v1/treasury.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
@@ -68,26 +67,6 @@ service Query {
       returns (QueryRewardFundingResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/reward_funding";
-  }
-
-  // ClaimsMandate queries the committee mandate, allowance usage, and
-  // Insurance reservation.
-  rpc ClaimsMandate(QueryClaimsMandateRequest)
-      returns (QueryClaimsMandateResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/claims/mandate";
-  }
-
-  // Claim queries one claim by its permanent identifier.
-  rpc Claim(QueryClaimRequest) returns (QueryClaimResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/claims/{claim_id}";
-  }
-
-  // Claims queries the paginated claim audit record.
-  rpc Claims(QueryClaimsRequest) returns (QueryClaimsResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/claims";
   }
 }
 
@@ -167,81 +146,99 @@ message QueryFundStatusRequest {}
 
 // QueryFundStatusResponse is the response type for Query/FundStatus.
 // Liability reporting is partitioned by asset lifecycle status. The response
-// always answers: when the total is unavailable, the partition says exactly
-// which exposure is unvaluable and every target is zero rather than a guess.
-// Each valued bucket carries what this block could price, and every exclusion
-// from it is enumerated beside it, so a partial total is never silently short.
+// always answers: each valued bucket carries what this block could price, and
+// every exclusion from it is enumerated beside it, so a partial total is never
+// silently short.
+//
+// The valuation is complete exactly when untrusted_suspended_supply and
+// stale_member_supply are both empty. written_off_exposure does not bear on it,
+// because a write-off extinguishes the obligation rather than leaving it
+// unvalued. Callers must check those two lists before reading any target below:
+// an incomplete valuation understates outstanding exposure, so every target is
+// reported as zero rather than sized off a basis known to be short.
 message QueryFundStatusResponse {
-  // priced_liability_noah_equivalent values ACTIVE and ISSUANCE_HALTED supply
-  // at fresh Oracle rates. It excludes any member listed in
-  // stale_member_supply.
-  cosmos.base.v1beta1.DecCoin priced_liability_noah_equivalent = 1
+  // What this block could value, in descending order of the rate behind it.
+  // Every liability figure is member supply converted to anoah, carried as a
+  // DecCoin because a conversion rarely lands on a whole unit; the supply lists
+  // further down stay in each member's own denomination. Fields 1 through 3 are
+  // the addends of field 4.
+
+  // priced_liability values ACTIVE and ISSUANCE_HALTED supply at fresh Oracle
+  // rates. It excludes any member listed in stale_member_supply.
+  cosmos.base.v1beta1.DecCoin priced_liability = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // settlement_liability_noah_equivalent values SUSPENDED supply carrying an
-  // open settlement plan at the plan's committed rate.
-  cosmos.base.v1beta1.DecCoin settlement_liability_noah_equivalent = 2
+  // settlement_liability values SUSPENDED supply carrying an open settlement
+  // plan at the plan's committed rate.
+  cosmos.base.v1beta1.DecCoin settlement_liability = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // untrusted_suspended_supply is SUSPENDED supply with no open settlement:
-  // explicit exposure, never zero, valuable by no honest rate.
-  repeated cosmos.base.v1beta1.Coin untrusted_suspended_supply = 3 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
-  ];
-  // written_off_exposure is derecognized supply, disclosed but excluded from
-  // recognized liability.
-  repeated WrittenOffExposure written_off_exposure = 4
+  // stale_priced_liability values stale_member_supply at the last rate the
+  // Oracle stored for each denomination. It is reported apart from
+  // priced_liability because the rate behind it failed the freshness gate: good
+  // enough to keep a standing obligation in the total that redemption coverage
+  // divides by, never good enough to size a fund target on — which is why a
+  // non-empty stale_member_supply zeroes every target below. It is zero
+  // whenever that list is empty, and excludes any member the Oracle has never
+  // priced, for which no last rate exists.
+  cosmos.base.v1beta1.DecCoin stale_priced_liability = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // nominal_liability is the sum of the three above: the claimable aggregate
+  // this block could value, and the denominator redemption coverage divides by.
+  // It is always reported, so a partial total is visible rather than withheld;
+  // whether it also covers every recognized liability — which is what the
+  // targets below require — is what the exclusion lists below answer.
+  cosmos.base.v1beta1.DecCoin nominal_liability = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+
+  // What the total above excludes, in ascending order of permanence: a stale
+  // feed is transient, a suspension holds until settlement, a write-off is
+  // final. The first two zero every target; the third does not.
+
   // stale_member_supply is ACTIVE or ISSUANCE_HALTED supply the Oracle could
   // not price this block: recognized liability whose feed is stale or absent,
-  // so priced_liability_noah_equivalent excludes it. Unlike the two lists
-  // above it is expected to be transient, and a returning feed moves the same
-  // supply back into the priced bucket without any lifecycle action. Because
-  // the obligation is untouched, this supply is still counted in the nominal
-  // total at its last known rate — see
-  // stale_priced_liability_noah_equivalent — rather than dropped from it.
+  // so priced_liability excludes it. Unlike the two lists below it is expected
+  // to be transient, and a returning feed moves the same supply back into the
+  // priced bucket without any lifecycle action. Because the obligation is
+  // untouched, this supply is still counted in the nominal total at its last
+  // known rate — see stale_priced_liability — rather than dropped from it.
   repeated cosmos.base.v1beta1.Coin stale_member_supply = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
     (amino.encoding) = "legacy_coins"
   ];
-  // total_liability_available reports whether every recognized liability was
-  // valued. Targets below are meaningful only when true.
-  bool total_liability_available = 6;
-  // nominal_liability_noah_equivalent is priced plus settlement-priced: the
-  // claimable aggregate this block could value, and the denominator redemption
-  // coverage divides by. It is always reported, so a partial total is visible
-  // rather than withheld; total_liability_available says whether it also covers
-  // every recognized liability, which is what the targets below require.
-  cosmos.base.v1beta1.DecCoin nominal_liability_noah_equivalent = 7
+  // untrusted_suspended_supply is SUSPENDED supply with no open settlement:
+  // explicit exposure, never zero, valuable by no honest rate.
+  repeated cosmos.base.v1beta1.Coin untrusted_suspended_supply = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
+  ];
+  // written_off_exposure is derecognized supply, disclosed but excluded from
+  // recognized liability. It does not make the valuation incomplete.
+  repeated WrittenOffExposure written_off_exposure = 7
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin subsidy_pool_balance = 8
+
+  // Each fund's recognized capital against the requirement Treasury sizes for
+  // it. Committee-operated funds report what their own operator recognizes,
+  // which is not the module account balance.
+
+  cosmos.base.v1beta1.Coin redemption_buffer_balance = 8
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_balance = 9
+  cosmos.base.v1beta1.Coin redemption_buffer_target = 9
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_target = 10
+  cosmos.base.v1beta1.Coin strategic_reserve_balance = 10
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_balance = 11
+  cosmos.base.v1beta1.Coin strategic_reserve_target = 11
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_target = 12
+  // insurance_balance is the capital x/claims recognizes toward its target,
+  // which excludes the reservation held against approved pending claims. The
+  // reservation itself is x/claims state, served by Query/ClaimsMandate.
+  cosmos.base.v1beta1.Coin insurance_balance = 12
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_balance = 13
+  cosmos.base.v1beta1.Coin insurance_target = 13
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_reserved = 14
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_unencumbered_balance = 15
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_target = 16
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // stale_priced_liability_noah_equivalent values stale_member_supply at the
-  // last rate the Oracle stored for each denomination. It is reported apart
-  // from priced_liability_noah_equivalent because the rate behind it failed the
-  // freshness gate: good enough to keep a standing obligation in the total that
-  // redemption coverage divides by, never good enough to size a fund target on,
-  // which is what total_liability_available above exists to say. It is zero
-  // whenever that flag is true, and excludes any member the Oracle has never
-  // priced, for which no last rate exists.
-  cosmos.base.v1beta1.DecCoin stale_priced_liability_noah_equivalent = 17
+  // subsidy_pool_balance carries no target: it funds reward subsidy rather than
+  // backing liability, so no ratio sizes it.
+  cosmos.base.v1beta1.Coin subsidy_pool_balance = 14
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
@@ -252,55 +249,4 @@ message QueryRewardFundingRequest {}
 message QueryRewardFundingResponse {
   RewardFundingState reward_funding = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// QueryClaimsMandateRequest is the request type for Query/ClaimsMandate.
-message QueryClaimsMandateRequest {}
-
-// QueryClaimsMandateResponse is the response type for Query/ClaimsMandate.
-message QueryClaimsMandateResponse {
-  ClaimsMandate mandate = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string insurance_reserved = 2 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  bool active = 3 [ (amino.dont_omitempty) = true ];
-  string allowance_used = 4 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string allowance_remaining = 5 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
-
-// QueryClaimRequest is the request type for Query/Claim.
-message QueryClaimRequest {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
-}
-
-// QueryClaimResponse is the response type for Query/Claim.
-message QueryClaimResponse {
-  Claim claim = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// QueryClaimsRequest is the request type for Query/Claims.
-message QueryClaimsRequest {
-  cosmos.base.query.v1beta1.PageRequest pagination = 1;
-}
-
-// QueryClaimsResponse is the response type for Query/Claims.
-message QueryClaimsResponse {
-  repeated Claim claims = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

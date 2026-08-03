@@ -4,7 +4,6 @@ package treasuryv1
 import (
 	_ "cosmossdk.io/api/amino"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -66,66 +65,10 @@ func (x *_GenesisState_2_list) IsValid() bool {
 	return x.list != nil
 }
 
-var _ protoreflect.List = (*_GenesisState_7_list)(nil)
-
-type _GenesisState_7_list struct {
-	list *[]*Claim
-}
-
-func (x *_GenesisState_7_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_7_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_7_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Claim)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_7_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Claim)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_7_list) AppendMutable() protoreflect.Value {
-	v := new(Claim)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_7_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_7_list) NewElement() protoreflect.Value {
-	v := new(Claim)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_7_list) IsValid() bool {
-	return x.list != nil
-}
-
 var (
 	md_GenesisState                         protoreflect.MessageDescriptor
 	fd_GenesisState_params                  protoreflect.FieldDescriptor
 	fd_GenesisState_tax_caps                protoreflect.FieldDescriptor
-	fd_GenesisState_claims_mandate          protoreflect.FieldDescriptor
-	fd_GenesisState_claims_allowance_used   protoreflect.FieldDescriptor
-	fd_GenesisState_insurance_reserved      protoreflect.FieldDescriptor
-	fd_GenesisState_next_claim_id           protoreflect.FieldDescriptor
-	fd_GenesisState_claims                  protoreflect.FieldDescriptor
 	fd_GenesisState_reward_funding          protoreflect.FieldDescriptor
 	fd_GenesisState_monetary_mandate        protoreflect.FieldDescriptor
 	fd_GenesisState_monetary_policy         protoreflect.FieldDescriptor
@@ -137,11 +80,6 @@ func init() {
 	md_GenesisState = File_ark_treasury_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_tax_caps = md_GenesisState.Fields().ByName("tax_caps")
-	fd_GenesisState_claims_mandate = md_GenesisState.Fields().ByName("claims_mandate")
-	fd_GenesisState_claims_allowance_used = md_GenesisState.Fields().ByName("claims_allowance_used")
-	fd_GenesisState_insurance_reserved = md_GenesisState.Fields().ByName("insurance_reserved")
-	fd_GenesisState_next_claim_id = md_GenesisState.Fields().ByName("next_claim_id")
-	fd_GenesisState_claims = md_GenesisState.Fields().ByName("claims")
 	fd_GenesisState_reward_funding = md_GenesisState.Fields().ByName("reward_funding")
 	fd_GenesisState_monetary_mandate = md_GenesisState.Fields().ByName("monetary_mandate")
 	fd_GenesisState_monetary_policy = md_GenesisState.Fields().ByName("monetary_policy")
@@ -225,36 +163,6 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if x.ClaimsMandate != nil {
-		value := protoreflect.ValueOfMessage(x.ClaimsMandate.ProtoReflect())
-		if !f(fd_GenesisState_claims_mandate, value) {
-			return
-		}
-	}
-	if x.ClaimsAllowanceUsed != "" {
-		value := protoreflect.ValueOfString(x.ClaimsAllowanceUsed)
-		if !f(fd_GenesisState_claims_allowance_used, value) {
-			return
-		}
-	}
-	if x.InsuranceReserved != "" {
-		value := protoreflect.ValueOfString(x.InsuranceReserved)
-		if !f(fd_GenesisState_insurance_reserved, value) {
-			return
-		}
-	}
-	if x.NextClaimId != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NextClaimId)
-		if !f(fd_GenesisState_next_claim_id, value) {
-			return
-		}
-	}
-	if len(x.Claims) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_7_list{list: &x.Claims})
-		if !f(fd_GenesisState_claims, value) {
-			return
-		}
-	}
 	if x.RewardFunding != nil {
 		value := protoreflect.ValueOfMessage(x.RewardFunding.ProtoReflect())
 		if !f(fd_GenesisState_reward_funding, value) {
@@ -298,16 +206,6 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.Params != nil
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		return len(x.TaxCaps) != 0
-	case "ark.treasury.v1.GenesisState.claims_mandate":
-		return x.ClaimsMandate != nil
-	case "ark.treasury.v1.GenesisState.claims_allowance_used":
-		return x.ClaimsAllowanceUsed != ""
-	case "ark.treasury.v1.GenesisState.insurance_reserved":
-		return x.InsuranceReserved != ""
-	case "ark.treasury.v1.GenesisState.next_claim_id":
-		return x.NextClaimId != uint64(0)
-	case "ark.treasury.v1.GenesisState.claims":
-		return len(x.Claims) != 0
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		return x.RewardFunding != nil
 	case "ark.treasury.v1.GenesisState.monetary_mandate":
@@ -336,16 +234,6 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Params = nil
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		x.TaxCaps = nil
-	case "ark.treasury.v1.GenesisState.claims_mandate":
-		x.ClaimsMandate = nil
-	case "ark.treasury.v1.GenesisState.claims_allowance_used":
-		x.ClaimsAllowanceUsed = ""
-	case "ark.treasury.v1.GenesisState.insurance_reserved":
-		x.InsuranceReserved = ""
-	case "ark.treasury.v1.GenesisState.next_claim_id":
-		x.NextClaimId = uint64(0)
-	case "ark.treasury.v1.GenesisState.claims":
-		x.Claims = nil
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		x.RewardFunding = nil
 	case "ark.treasury.v1.GenesisState.monetary_mandate":
@@ -378,24 +266,6 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 			return protoreflect.ValueOfList(&_GenesisState_2_list{})
 		}
 		listValue := &_GenesisState_2_list{list: &x.TaxCaps}
-		return protoreflect.ValueOfList(listValue)
-	case "ark.treasury.v1.GenesisState.claims_mandate":
-		value := x.ClaimsMandate
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.claims_allowance_used":
-		value := x.ClaimsAllowanceUsed
-		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.GenesisState.insurance_reserved":
-		value := x.InsuranceReserved
-		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.GenesisState.next_claim_id":
-		value := x.NextClaimId
-		return protoreflect.ValueOfUint64(value)
-	case "ark.treasury.v1.GenesisState.claims":
-		if len(x.Claims) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_7_list{})
-		}
-		listValue := &_GenesisState_7_list{list: &x.Claims}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		value := x.RewardFunding
@@ -435,18 +305,6 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		lv := value.List()
 		clv := lv.(*_GenesisState_2_list)
 		x.TaxCaps = *clv.list
-	case "ark.treasury.v1.GenesisState.claims_mandate":
-		x.ClaimsMandate = value.Message().Interface().(*ClaimsMandate)
-	case "ark.treasury.v1.GenesisState.claims_allowance_used":
-		x.ClaimsAllowanceUsed = value.Interface().(string)
-	case "ark.treasury.v1.GenesisState.insurance_reserved":
-		x.InsuranceReserved = value.Interface().(string)
-	case "ark.treasury.v1.GenesisState.next_claim_id":
-		x.NextClaimId = value.Uint()
-	case "ark.treasury.v1.GenesisState.claims":
-		lv := value.List()
-		clv := lv.(*_GenesisState_7_list)
-		x.Claims = *clv.list
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		x.RewardFunding = value.Message().Interface().(*RewardFundingState)
 	case "ark.treasury.v1.GenesisState.monetary_mandate":
@@ -486,17 +344,6 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		}
 		value := &_GenesisState_2_list{list: &x.TaxCaps}
 		return protoreflect.ValueOfList(value)
-	case "ark.treasury.v1.GenesisState.claims_mandate":
-		if x.ClaimsMandate == nil {
-			x.ClaimsMandate = new(ClaimsMandate)
-		}
-		return protoreflect.ValueOfMessage(x.ClaimsMandate.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.claims":
-		if x.Claims == nil {
-			x.Claims = []*Claim{}
-		}
-		value := &_GenesisState_7_list{list: &x.Claims}
-		return protoreflect.ValueOfList(value)
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		if x.RewardFunding == nil {
 			x.RewardFunding = new(RewardFundingState)
@@ -512,12 +359,6 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.MonetaryPolicy = new(MonetaryPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.MonetaryPolicy.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.claims_allowance_used":
-		panic(fmt.Errorf("field claims_allowance_used of message ark.treasury.v1.GenesisState is not mutable"))
-	case "ark.treasury.v1.GenesisState.insurance_reserved":
-		panic(fmt.Errorf("field insurance_reserved of message ark.treasury.v1.GenesisState is not mutable"))
-	case "ark.treasury.v1.GenesisState.next_claim_id":
-		panic(fmt.Errorf("field next_claim_id of message ark.treasury.v1.GenesisState is not mutable"))
 	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
 		panic(fmt.Errorf("field tax_cap_refresh_pending of message ark.treasury.v1.GenesisState is not mutable"))
 	default:
@@ -539,18 +380,6 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.treasury.v1.GenesisState.tax_caps":
 		list := []*TaxCap{}
 		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
-	case "ark.treasury.v1.GenesisState.claims_mandate":
-		m := new(ClaimsMandate)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.claims_allowance_used":
-		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.GenesisState.insurance_reserved":
-		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.GenesisState.next_claim_id":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.treasury.v1.GenesisState.claims":
-		list := []*Claim{}
-		return protoreflect.ValueOfList(&_GenesisState_7_list{list: &list})
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		m := new(RewardFundingState)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
@@ -641,27 +470,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if x.ClaimsMandate != nil {
-			l = options.Size(x.ClaimsMandate)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.ClaimsAllowanceUsed)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.InsuranceReserved)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.NextClaimId != 0 {
-			n += 1 + runtime.Sov(uint64(x.NextClaimId))
-		}
-		if len(x.Claims) > 0 {
-			for _, e := range x.Claims {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
 		if x.RewardFunding != nil {
 			l = options.Size(x.RewardFunding)
 			n += 1 + l + runtime.Sov(uint64(l))
@@ -714,7 +522,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0
 			}
 			i--
-			dAtA[i] = 0x58
+			dAtA[i] = 0x30
 		}
 		if x.MonetaryPolicy != nil {
 			encoded, err := options.Marshal(x.MonetaryPolicy)
@@ -728,7 +536,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x52
+			dAtA[i] = 0x2a
 		}
 		if x.MonetaryMandate != nil {
 			encoded, err := options.Marshal(x.MonetaryMandate)
@@ -742,59 +550,10 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x4a
+			dAtA[i] = 0x22
 		}
 		if x.RewardFunding != nil {
 			encoded, err := options.Marshal(x.RewardFunding)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x42
-		}
-		if len(x.Claims) > 0 {
-			for iNdEx := len(x.Claims) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Claims[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x3a
-			}
-		}
-		if x.NextClaimId != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NextClaimId))
-			i--
-			dAtA[i] = 0x30
-		}
-		if len(x.InsuranceReserved) > 0 {
-			i -= len(x.InsuranceReserved)
-			copy(dAtA[i:], x.InsuranceReserved)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.InsuranceReserved)))
-			i--
-			dAtA[i] = 0x2a
-		}
-		if len(x.ClaimsAllowanceUsed) > 0 {
-			i -= len(x.ClaimsAllowanceUsed)
-			copy(dAtA[i:], x.ClaimsAllowanceUsed)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ClaimsAllowanceUsed)))
-			i--
-			dAtA[i] = 0x22
-		}
-		if x.ClaimsMandate != nil {
-			encoded, err := options.Marshal(x.ClaimsMandate)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -958,159 +717,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimsMandate", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.ClaimsMandate == nil {
-					x.ClaimsMandate = &ClaimsMandate{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimsMandate); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 4:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimsAllowanceUsed", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.ClaimsAllowanceUsed = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 5:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field InsuranceReserved", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.InsuranceReserved = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 6:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NextClaimId", wireType)
-				}
-				x.NextClaimId = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.NextClaimId |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 7:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Claims", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Claims = append(x.Claims, &Claim{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Claims[len(x.Claims)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 8:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardFunding", wireType)
 				}
 				var msglen int
@@ -1145,7 +751,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 9:
+			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonetaryMandate", wireType)
 				}
@@ -1181,7 +787,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 10:
+			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonetaryPolicy", wireType)
 				}
@@ -1217,7 +823,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 11:
+			case 6:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxCapRefreshPending", wireType)
 				}
@@ -1291,21 +897,15 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params              *Params        `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	TaxCaps             []*TaxCap      `protobuf:"bytes,2,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
-	ClaimsMandate       *ClaimsMandate `protobuf:"bytes,3,opt,name=claims_mandate,json=claimsMandate,proto3" json:"claims_mandate,omitempty"`
-	ClaimsAllowanceUsed string         `protobuf:"bytes,4,opt,name=claims_allowance_used,json=claimsAllowanceUsed,proto3" json:"claims_allowance_used,omitempty"`
-	InsuranceReserved   string         `protobuf:"bytes,5,opt,name=insurance_reserved,json=insuranceReserved,proto3" json:"insurance_reserved,omitempty"`
-	// next_claim_id is the next globally available Treasury claim identifier.
-	NextClaimId     uint64              `protobuf:"varint,6,opt,name=next_claim_id,json=nextClaimId,proto3" json:"next_claim_id,omitempty"`
-	Claims          []*Claim            `protobuf:"bytes,7,rep,name=claims,proto3" json:"claims,omitempty"`
-	RewardFunding   *RewardFundingState `protobuf:"bytes,8,opt,name=reward_funding,json=rewardFunding,proto3" json:"reward_funding,omitempty"`
-	MonetaryMandate *MonetaryMandate    `protobuf:"bytes,9,opt,name=monetary_mandate,json=monetaryMandate,proto3" json:"monetary_mandate,omitempty"`
-	MonetaryPolicy  *MonetaryPolicy     `protobuf:"bytes,10,opt,name=monetary_policy,json=monetaryPolicy,proto3" json:"monetary_policy,omitempty"`
+	Params          *Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	TaxCaps         []*TaxCap           `protobuf:"bytes,2,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
+	RewardFunding   *RewardFundingState `protobuf:"bytes,3,opt,name=reward_funding,json=rewardFunding,proto3" json:"reward_funding,omitempty"`
+	MonetaryMandate *MonetaryMandate    `protobuf:"bytes,4,opt,name=monetary_mandate,json=monetaryMandate,proto3" json:"monetary_mandate,omitempty"`
+	MonetaryPolicy  *MonetaryPolicy     `protobuf:"bytes,5,opt,name=monetary_policy,json=monetaryPolicy,proto3" json:"monetary_policy,omitempty"`
 	// tax_cap_refresh_pending records a cadence boundary that passed without a
 	// successful tax-cap rebuild, so an owed refresh survives export and import
 	// instead of being forgiven by the migration.
-	TaxCapRefreshPending bool `protobuf:"varint,11,opt,name=tax_cap_refresh_pending,json=taxCapRefreshPending,proto3" json:"tax_cap_refresh_pending,omitempty"`
+	TaxCapRefreshPending bool `protobuf:"varint,6,opt,name=tax_cap_refresh_pending,json=taxCapRefreshPending,proto3" json:"tax_cap_refresh_pending,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -1338,41 +938,6 @@ func (x *GenesisState) GetParams() *Params {
 func (x *GenesisState) GetTaxCaps() []*TaxCap {
 	if x != nil {
 		return x.TaxCaps
-	}
-	return nil
-}
-
-func (x *GenesisState) GetClaimsMandate() *ClaimsMandate {
-	if x != nil {
-		return x.ClaimsMandate
-	}
-	return nil
-}
-
-func (x *GenesisState) GetClaimsAllowanceUsed() string {
-	if x != nil {
-		return x.ClaimsAllowanceUsed
-	}
-	return ""
-}
-
-func (x *GenesisState) GetInsuranceReserved() string {
-	if x != nil {
-		return x.InsuranceReserved
-	}
-	return ""
-}
-
-func (x *GenesisState) GetNextClaimId() uint64 {
-	if x != nil {
-		return x.NextClaimId
-	}
-	return 0
-}
-
-func (x *GenesisState) GetClaims() []*Claim {
-	if x != nil {
-		return x.Claims
 	}
 	return nil
 }
@@ -1414,74 +979,48 @@ var file_ark_treasury_v1_genesis_proto_rawDesc = []byte{
 	0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
 	0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14,
-	0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xca, 0x06, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
-	0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3a, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09,
-	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x12, 0x3d, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x18, 0x02, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x42, 0x09, 0xc8, 0xde,
-	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73,
-	0x12, 0x50, 0x0a, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61,
-	0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d,
-	0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61,
-	0x74, 0x65, 0x12, 0x64, 0x0a, 0x15, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x5f, 0x61, 0x6c, 0x6c,
-	0x6f, 0x77, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x75, 0x73, 0x65, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74,
-	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x13, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x41, 0x6c, 0x6c, 0x6f, 0x77,
-	0x61, 0x6e, 0x63, 0x65, 0x55, 0x73, 0x65, 0x64, 0x12, 0x5f, 0x0a, 0x12, 0x69, 0x6e, 0x73, 0x75,
-	0x72, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18, 0x05,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e,
-	0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e,
-	0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63,
-	0x65, 0x52, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x12, 0x29, 0x0a, 0x0d, 0x6e, 0x65, 0x78,
-	0x74, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x69, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04,
-	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x6e, 0x65, 0x78, 0x74, 0x43, 0x6c, 0x61,
-	0x69, 0x6d, 0x49, 0x64, 0x12, 0x39, 0x0a, 0x06, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x18, 0x07,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
-	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xc8, 0xde,
-	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x12,
-	0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x66, 0x75, 0x6e, 0x64, 0x69, 0x6e,
-	0x67, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64,
-	0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde,
-	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46,
-	0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
-	0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61,
-	0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x6d,
-	0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x53,
-	0x0a, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63,
-	0x79, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
-	0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c,
-	0x69, 0x63, 0x79, 0x12, 0x3c, 0x0a, 0x17, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x5f, 0x72,
-	0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x5f, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x0b,
-	0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x74, 0x61, 0x78,
-	0x43, 0x61, 0x70, 0x52, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
-	0x67, 0x42, 0xa5, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73,
-	0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61,
-	0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f,
-	0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03,
-	0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
-	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65,
-	0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67,
+	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xcb, 0x03, 0x0a, 0x0c, 0x47, 0x65,
+	0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3a, 0x0a, 0x06, 0x70, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
+	0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x3d, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61,
+	0x70, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x78, 0x43, 0x61,
+	0x70, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61,
+	0x78, 0x43, 0x61, 0x70, 0x73, 0x12, 0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f,
+	0x66, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
+	0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61,
+	0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72,
+	0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10,
+	0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65,
+	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72,
+	0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e,
+	0x64, 0x61, 0x74, 0x65, 0x12, 0x53, 0x0a, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79,
+	0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
+	0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09,
+	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x6f, 0x6e, 0x65, 0x74,
+	0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x3c, 0x0a, 0x17, 0x74, 0x61, 0x78,
+	0x5f, 0x63, 0x61, 0x70, 0x5f, 0x72, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x5f, 0x70, 0x65, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x14, 0x74, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68,
+	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0xa5, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x42,
+	0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65,
+	0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e,
+	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72,
+	0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b,
+	0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c,
+	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72,
+	0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1501,25 +1040,21 @@ var file_ark_treasury_v1_genesis_proto_goTypes = []interface{}{
 	(*GenesisState)(nil),       // 0: ark.treasury.v1.GenesisState
 	(*Params)(nil),             // 1: ark.treasury.v1.Params
 	(*TaxCap)(nil),             // 2: ark.treasury.v1.TaxCap
-	(*ClaimsMandate)(nil),      // 3: ark.treasury.v1.ClaimsMandate
-	(*Claim)(nil),              // 4: ark.treasury.v1.Claim
-	(*RewardFundingState)(nil), // 5: ark.treasury.v1.RewardFundingState
-	(*MonetaryMandate)(nil),    // 6: ark.treasury.v1.MonetaryMandate
-	(*MonetaryPolicy)(nil),     // 7: ark.treasury.v1.MonetaryPolicy
+	(*RewardFundingState)(nil), // 3: ark.treasury.v1.RewardFundingState
+	(*MonetaryMandate)(nil),    // 4: ark.treasury.v1.MonetaryMandate
+	(*MonetaryPolicy)(nil),     // 5: ark.treasury.v1.MonetaryPolicy
 }
 var file_ark_treasury_v1_genesis_proto_depIdxs = []int32{
 	1, // 0: ark.treasury.v1.GenesisState.params:type_name -> ark.treasury.v1.Params
 	2, // 1: ark.treasury.v1.GenesisState.tax_caps:type_name -> ark.treasury.v1.TaxCap
-	3, // 2: ark.treasury.v1.GenesisState.claims_mandate:type_name -> ark.treasury.v1.ClaimsMandate
-	4, // 3: ark.treasury.v1.GenesisState.claims:type_name -> ark.treasury.v1.Claim
-	5, // 4: ark.treasury.v1.GenesisState.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
-	6, // 5: ark.treasury.v1.GenesisState.monetary_mandate:type_name -> ark.treasury.v1.MonetaryMandate
-	7, // 6: ark.treasury.v1.GenesisState.monetary_policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	3, // 2: ark.treasury.v1.GenesisState.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
+	4, // 3: ark.treasury.v1.GenesisState.monetary_mandate:type_name -> ark.treasury.v1.MonetaryMandate
+	5, // 4: ark.treasury.v1.GenesisState.monetary_policy:type_name -> ark.treasury.v1.MonetaryPolicy
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_ark_treasury_v1_genesis_proto_init() }

@@ -27,9 +27,6 @@ const (
 	Query_ComputeTax_FullMethodName      = "/ark.treasury.v1.Query/ComputeTax"
 	Query_FundStatus_FullMethodName      = "/ark.treasury.v1.Query/FundStatus"
 	Query_RewardFunding_FullMethodName   = "/ark.treasury.v1.Query/RewardFunding"
-	Query_ClaimsMandate_FullMethodName   = "/ark.treasury.v1.Query/ClaimsMandate"
-	Query_Claim_FullMethodName           = "/ark.treasury.v1.Query/Claim"
-	Query_Claims_FullMethodName          = "/ark.treasury.v1.Query/Claims"
 )
 
 // QueryClient is the client API for Query service.
@@ -55,13 +52,6 @@ type QueryClient interface {
 	FundStatus(ctx context.Context, in *QueryFundStatusRequest, opts ...grpc.CallOption) (*QueryFundStatusResponse, error)
 	// RewardFunding queries the active reward-funding accounting.
 	RewardFunding(ctx context.Context, in *QueryRewardFundingRequest, opts ...grpc.CallOption) (*QueryRewardFundingResponse, error)
-	// ClaimsMandate queries the committee mandate, allowance usage, and
-	// Insurance reservation.
-	ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error)
-	// Claim queries one claim by its permanent identifier.
-	Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error)
-	// Claims queries the paginated claim audit record.
-	Claims(ctx context.Context, in *QueryClaimsRequest, opts ...grpc.CallOption) (*QueryClaimsResponse, error)
 }
 
 type queryClient struct {
@@ -152,36 +142,6 @@ func (c *queryClient) RewardFunding(ctx context.Context, in *QueryRewardFundingR
 	return out, nil
 }
 
-func (c *queryClient) ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryClaimsMandateResponse)
-	err := c.cc.Invoke(ctx, Query_ClaimsMandate_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryClaimResponse)
-	err := c.cc.Invoke(ctx, Query_Claim_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Claims(ctx context.Context, in *QueryClaimsRequest, opts ...grpc.CallOption) (*QueryClaimsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryClaimsResponse)
-	err := c.cc.Invoke(ctx, Query_Claims_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -205,13 +165,6 @@ type QueryServer interface {
 	FundStatus(context.Context, *QueryFundStatusRequest) (*QueryFundStatusResponse, error)
 	// RewardFunding queries the active reward-funding accounting.
 	RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error)
-	// ClaimsMandate queries the committee mandate, allowance usage, and
-	// Insurance reservation.
-	ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error)
-	// Claim queries one claim by its permanent identifier.
-	Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error)
-	// Claims queries the paginated claim audit record.
-	Claims(context.Context, *QueryClaimsRequest) (*QueryClaimsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -245,15 +198,6 @@ func (UnimplementedQueryServer) FundStatus(context.Context, *QueryFundStatusRequ
 }
 func (UnimplementedQueryServer) RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RewardFunding not implemented")
-}
-func (UnimplementedQueryServer) ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ClaimsMandate not implemented")
-}
-func (UnimplementedQueryServer) Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Claim not implemented")
-}
-func (UnimplementedQueryServer) Claims(context.Context, *QueryClaimsRequest) (*QueryClaimsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Claims not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -420,60 +364,6 @@ func _Query_RewardFunding_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_ClaimsMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryClaimsMandateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).ClaimsMandate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_ClaimsMandate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ClaimsMandate(ctx, req.(*QueryClaimsMandateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Claim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryClaimRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Claim(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Claim_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Claim(ctx, req.(*QueryClaimRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Claims_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryClaimsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Claims(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Claims_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Claims(ctx, req.(*QueryClaimsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -512,18 +402,6 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RewardFunding",
 			Handler:    _Query_RewardFunding_Handler,
-		},
-		{
-			MethodName: "ClaimsMandate",
-			Handler:    _Query_ClaimsMandate_Handler,
-		},
-		{
-			MethodName: "Claim",
-			Handler:    _Query_Claim_Handler,
-		},
-		{
-			MethodName: "Claims",
-			Handler:    _Query_Claims_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -9,30 +9,6 @@ import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/treasury/types";
 
-// ClaimStatus defines the lifecycle state of a claim.
-enum ClaimStatus {
-  // CLAIM_STATUS_UNSPECIFIED is invalid.
-  CLAIM_STATUS_UNSPECIFIED = 0;
-  // CLAIM_STATUS_PENDING identifies a committee- or governance-submitted,
-  // encumbered claim in its cancellation period.
-  CLAIM_STATUS_PENDING = 1;
-  // CLAIM_STATUS_PAID identifies a settled claim.
-  CLAIM_STATUS_PAID = 2;
-  // CLAIM_STATUS_CANCELLED identifies a claim cancelled by the committee or
-  // governance authority during its cancellation period.
-  CLAIM_STATUS_CANCELLED = 3;
-}
-
-// ClaimOrigin records which authority domain submitted an immutable claim.
-enum ClaimOrigin {
-  // CLAIM_ORIGIN_UNSPECIFIED is invalid.
-  CLAIM_ORIGIN_UNSPECIFIED = 0;
-  // CLAIM_ORIGIN_COMMITTEE identifies a Claims committee submission.
-  CLAIM_ORIGIN_COMMITTEE = 1;
-  // CLAIM_ORIGIN_GOVERNANCE identifies a Treasury governance submission.
-  CLAIM_ORIGIN_GOVERNANCE = 2;
-}
-
 // Params defines the parameters for the treasury module.
 message Params {
   option (gogoproto.equal) = true;
@@ -45,9 +21,6 @@ message Params {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // reward_funding_window initializes each new funding countdown.
   uint64 reward_funding_window = 2 [ (amino.dont_omitempty) = true ];
-  // claim_cancellation_period_blocks is the shared veto window between any
-  // claim's submission and its executable height, for both origins.
-  uint64 claim_cancellation_period_blocks = 3 [ (amino.dont_omitempty) = true ];
   // tax_cap_refresh_period_blocks is how often the derived per-denomination
   // caps are trued up against rate drift. Membership changes refresh the map on
   // their own, so this cadence exists only for the drift between them: the
@@ -56,7 +29,7 @@ message Params {
   // moving after the map is built. A shorter period tracks the ceiling
   // governance voted for more closely and rebuilds the map more often; a longer
   // one lets the real ceiling drift further from it.
-  uint64 tax_cap_refresh_period_blocks = 4 [ (amino.dont_omitempty) = true ];
+  uint64 tax_cap_refresh_period_blocks = 3 [ (amino.dont_omitempty) = true ];
 }
 
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
@@ -162,46 +135,4 @@ message WrittenOffExposure {
   cosmos.base.v1beta1.Coin outstanding_supply = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   uint64 write_off_version = 2;
-}
-
-// ClaimsMandate stores one governance-created, height-scoped Claims committee
-// appointment and the fixed gross claim limit delegated to that committee for
-// the term. An empty committee identifies a disabled mandate; term still
-// increases on replacement so old committee transactions cannot become valid
-// again.
-message ClaimsMandate {
-  // envelope carries the shared term, committee, and half-open height window.
-  ark.mandate.v1.Envelope envelope = 1 [
-    (gogoproto.embed) = true,
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string committee_claim_limit = 2 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
-
-// Claim stores an immutable submitted claim and its final state.
-message Claim {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
-  string submitter = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  ClaimOrigin origin = 3;
-  // mandate_term records the committee appointment that authorized the claim;
-  // zero for governance claims, which do not depend on the Claims mandate.
-  uint64 mandate_term = 4 [ (amino.dont_omitempty) = true ];
-  string incident_reference = 5;
-  string recipient = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin amount = 7
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  string evidence_reference = 8;
-  ClaimStatus status = 9;
-  uint64 submitted_height = 10;
-  uint64 executable_height = 11;
-  uint64 finalized_height = 12;
-  string finalized_by = 13 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string cancellation_reason = 14;
-  string cancellation_reference = 15;
 }

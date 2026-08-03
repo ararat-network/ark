@@ -10,7 +10,7 @@ import (
 	_ "github.com/cosmos/cosmos-proto"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
-	query "github.com/cosmos/cosmos-sdk/types/query"
+	_ "github.com/cosmos/cosmos-sdk/types/query"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
@@ -589,60 +589,64 @@ var xxx_messageInfo_QueryFundStatusRequest proto.InternalMessageInfo
 
 // QueryFundStatusResponse is the response type for Query/FundStatus.
 // Liability reporting is partitioned by asset lifecycle status. The response
-// always answers: when the total is unavailable, the partition says exactly
-// which exposure is unvaluable and every target is zero rather than a guess.
-// Each valued bucket carries what this block could price, and every exclusion
-// from it is enumerated beside it, so a partial total is never silently short.
+// always answers: each valued bucket carries what this block could price, and
+// every exclusion from it is enumerated beside it, so a partial total is never
+// silently short.
+//
+// The valuation is complete exactly when untrusted_suspended_supply and
+// stale_member_supply are both empty. written_off_exposure does not bear on it,
+// because a write-off extinguishes the obligation rather than leaving it
+// unvalued. Callers must check those two lists before reading any target below:
+// an incomplete valuation understates outstanding exposure, so every target is
+// reported as zero rather than sized off a basis known to be short.
 type QueryFundStatusResponse struct {
-	// priced_liability_noah_equivalent values ACTIVE and ISSUANCE_HALTED supply
-	// at fresh Oracle rates. It excludes any member listed in
-	// stale_member_supply.
-	PricedLiabilityNoahEquivalent types.DecCoin `protobuf:"bytes,1,opt,name=priced_liability_noah_equivalent,json=pricedLiabilityNoahEquivalent,proto3" json:"priced_liability_noah_equivalent"`
-	// settlement_liability_noah_equivalent values SUSPENDED supply carrying an
-	// open settlement plan at the plan's committed rate.
-	SettlementLiabilityNoahEquivalent types.DecCoin `protobuf:"bytes,2,opt,name=settlement_liability_noah_equivalent,json=settlementLiabilityNoahEquivalent,proto3" json:"settlement_liability_noah_equivalent"`
-	// untrusted_suspended_supply is SUSPENDED supply with no open settlement:
-	// explicit exposure, never zero, valuable by no honest rate.
-	UntrustedSuspendedSupply []types.Coin `protobuf:"bytes,3,rep,name=untrusted_suspended_supply,json=untrustedSuspendedSupply,proto3" json:"untrusted_suspended_supply"`
-	// written_off_exposure is derecognized supply, disclosed but excluded from
-	// recognized liability.
-	WrittenOffExposure []WrittenOffExposure `protobuf:"bytes,4,rep,name=written_off_exposure,json=writtenOffExposure,proto3" json:"written_off_exposure"`
+	// priced_liability values ACTIVE and ISSUANCE_HALTED supply at fresh Oracle
+	// rates. It excludes any member listed in stale_member_supply.
+	PricedLiability types.DecCoin `protobuf:"bytes,1,opt,name=priced_liability,json=pricedLiability,proto3" json:"priced_liability"`
+	// settlement_liability values SUSPENDED supply carrying an open settlement
+	// plan at the plan's committed rate.
+	SettlementLiability types.DecCoin `protobuf:"bytes,2,opt,name=settlement_liability,json=settlementLiability,proto3" json:"settlement_liability"`
+	// stale_priced_liability values stale_member_supply at the last rate the
+	// Oracle stored for each denomination. It is reported apart from
+	// priced_liability because the rate behind it failed the freshness gate: good
+	// enough to keep a standing obligation in the total that redemption coverage
+	// divides by, never good enough to size a fund target on — which is why a
+	// non-empty stale_member_supply zeroes every target below. It is zero
+	// whenever that list is empty, and excludes any member the Oracle has never
+	// priced, for which no last rate exists.
+	StalePricedLiability types.DecCoin `protobuf:"bytes,3,opt,name=stale_priced_liability,json=stalePricedLiability,proto3" json:"stale_priced_liability"`
+	// nominal_liability is the sum of the three above: the claimable aggregate
+	// this block could value, and the denominator redemption coverage divides by.
+	// It is always reported, so a partial total is visible rather than withheld;
+	// whether it also covers every recognized liability — which is what the
+	// targets below require — is what the exclusion lists below answer.
+	NominalLiability types.DecCoin `protobuf:"bytes,4,opt,name=nominal_liability,json=nominalLiability,proto3" json:"nominal_liability"`
 	// stale_member_supply is ACTIVE or ISSUANCE_HALTED supply the Oracle could
 	// not price this block: recognized liability whose feed is stale or absent,
-	// so priced_liability_noah_equivalent excludes it. Unlike the two lists
-	// above it is expected to be transient, and a returning feed moves the same
-	// supply back into the priced bucket without any lifecycle action. Because
-	// the obligation is untouched, this supply is still counted in the nominal
-	// total at its last known rate — see
-	// stale_priced_liability_noah_equivalent — rather than dropped from it.
+	// so priced_liability excludes it. Unlike the two lists below it is expected
+	// to be transient, and a returning feed moves the same supply back into the
+	// priced bucket without any lifecycle action. Because the obligation is
+	// untouched, this supply is still counted in the nominal total at its last
+	// known rate — see stale_priced_liability — rather than dropped from it.
 	StaleMemberSupply []types.Coin `protobuf:"bytes,5,rep,name=stale_member_supply,json=staleMemberSupply,proto3" json:"stale_member_supply"`
-	// total_liability_available reports whether every recognized liability was
-	// valued. Targets below are meaningful only when true.
-	TotalLiabilityAvailable bool `protobuf:"varint,6,opt,name=total_liability_available,json=totalLiabilityAvailable,proto3" json:"total_liability_available,omitempty"`
-	// nominal_liability_noah_equivalent is priced plus settlement-priced: the
-	// claimable aggregate this block could value, and the denominator redemption
-	// coverage divides by. It is always reported, so a partial total is visible
-	// rather than withheld; total_liability_available says whether it also covers
-	// every recognized liability, which is what the targets below require.
-	NominalLiabilityNoahEquivalent types.DecCoin `protobuf:"bytes,7,opt,name=nominal_liability_noah_equivalent,json=nominalLiabilityNoahEquivalent,proto3" json:"nominal_liability_noah_equivalent"`
-	SubsidyPoolBalance             types.Coin    `protobuf:"bytes,8,opt,name=subsidy_pool_balance,json=subsidyPoolBalance,proto3" json:"subsidy_pool_balance"`
-	RedemptionBufferBalance        types.Coin    `protobuf:"bytes,9,opt,name=redemption_buffer_balance,json=redemptionBufferBalance,proto3" json:"redemption_buffer_balance"`
-	RedemptionBufferTarget         types.Coin    `protobuf:"bytes,10,opt,name=redemption_buffer_target,json=redemptionBufferTarget,proto3" json:"redemption_buffer_target"`
-	StrategicReserveBalance        types.Coin    `protobuf:"bytes,11,opt,name=strategic_reserve_balance,json=strategicReserveBalance,proto3" json:"strategic_reserve_balance"`
-	StrategicReserveTarget         types.Coin    `protobuf:"bytes,12,opt,name=strategic_reserve_target,json=strategicReserveTarget,proto3" json:"strategic_reserve_target"`
-	InsuranceBalance               types.Coin    `protobuf:"bytes,13,opt,name=insurance_balance,json=insuranceBalance,proto3" json:"insurance_balance"`
-	InsuranceReserved              types.Coin    `protobuf:"bytes,14,opt,name=insurance_reserved,json=insuranceReserved,proto3" json:"insurance_reserved"`
-	InsuranceUnencumberedBalance   types.Coin    `protobuf:"bytes,15,opt,name=insurance_unencumbered_balance,json=insuranceUnencumberedBalance,proto3" json:"insurance_unencumbered_balance"`
-	InsuranceTarget                types.Coin    `protobuf:"bytes,16,opt,name=insurance_target,json=insuranceTarget,proto3" json:"insurance_target"`
-	// stale_priced_liability_noah_equivalent values stale_member_supply at the
-	// last rate the Oracle stored for each denomination. It is reported apart
-	// from priced_liability_noah_equivalent because the rate behind it failed the
-	// freshness gate: good enough to keep a standing obligation in the total that
-	// redemption coverage divides by, never good enough to size a fund target on,
-	// which is what total_liability_available above exists to say. It is zero
-	// whenever that flag is true, and excludes any member the Oracle has never
-	// priced, for which no last rate exists.
-	StalePricedLiabilityNoahEquivalent types.DecCoin `protobuf:"bytes,17,opt,name=stale_priced_liability_noah_equivalent,json=stalePricedLiabilityNoahEquivalent,proto3" json:"stale_priced_liability_noah_equivalent"`
+	// untrusted_suspended_supply is SUSPENDED supply with no open settlement:
+	// explicit exposure, never zero, valuable by no honest rate.
+	UntrustedSuspendedSupply []types.Coin `protobuf:"bytes,6,rep,name=untrusted_suspended_supply,json=untrustedSuspendedSupply,proto3" json:"untrusted_suspended_supply"`
+	// written_off_exposure is derecognized supply, disclosed but excluded from
+	// recognized liability. It does not make the valuation incomplete.
+	WrittenOffExposure      []WrittenOffExposure `protobuf:"bytes,7,rep,name=written_off_exposure,json=writtenOffExposure,proto3" json:"written_off_exposure"`
+	RedemptionBufferBalance types.Coin           `protobuf:"bytes,8,opt,name=redemption_buffer_balance,json=redemptionBufferBalance,proto3" json:"redemption_buffer_balance"`
+	RedemptionBufferTarget  types.Coin           `protobuf:"bytes,9,opt,name=redemption_buffer_target,json=redemptionBufferTarget,proto3" json:"redemption_buffer_target"`
+	StrategicReserveBalance types.Coin           `protobuf:"bytes,10,opt,name=strategic_reserve_balance,json=strategicReserveBalance,proto3" json:"strategic_reserve_balance"`
+	StrategicReserveTarget  types.Coin           `protobuf:"bytes,11,opt,name=strategic_reserve_target,json=strategicReserveTarget,proto3" json:"strategic_reserve_target"`
+	// insurance_balance is the capital x/claims recognizes toward its target,
+	// which excludes the reservation held against approved pending claims. The
+	// reservation itself is x/claims state, served by Query/ClaimsMandate.
+	InsuranceBalance types.Coin `protobuf:"bytes,12,opt,name=insurance_balance,json=insuranceBalance,proto3" json:"insurance_balance"`
+	InsuranceTarget  types.Coin `protobuf:"bytes,13,opt,name=insurance_target,json=insuranceTarget,proto3" json:"insurance_target"`
+	// subsidy_pool_balance carries no target: it funds reward subsidy rather than
+	// backing liability, so no ratio sizes it.
+	SubsidyPoolBalance types.Coin `protobuf:"bytes,14,opt,name=subsidy_pool_balance,json=subsidyPoolBalance,proto3" json:"subsidy_pool_balance"`
 }
 
 func (m *QueryFundStatusResponse) Reset()         { *m = QueryFundStatusResponse{} }
@@ -678,18 +682,39 @@ func (m *QueryFundStatusResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryFundStatusResponse proto.InternalMessageInfo
 
-func (m *QueryFundStatusResponse) GetPricedLiabilityNoahEquivalent() types.DecCoin {
+func (m *QueryFundStatusResponse) GetPricedLiability() types.DecCoin {
 	if m != nil {
-		return m.PricedLiabilityNoahEquivalent
+		return m.PricedLiability
 	}
 	return types.DecCoin{}
 }
 
-func (m *QueryFundStatusResponse) GetSettlementLiabilityNoahEquivalent() types.DecCoin {
+func (m *QueryFundStatusResponse) GetSettlementLiability() types.DecCoin {
 	if m != nil {
-		return m.SettlementLiabilityNoahEquivalent
+		return m.SettlementLiability
 	}
 	return types.DecCoin{}
+}
+
+func (m *QueryFundStatusResponse) GetStalePricedLiability() types.DecCoin {
+	if m != nil {
+		return m.StalePricedLiability
+	}
+	return types.DecCoin{}
+}
+
+func (m *QueryFundStatusResponse) GetNominalLiability() types.DecCoin {
+	if m != nil {
+		return m.NominalLiability
+	}
+	return types.DecCoin{}
+}
+
+func (m *QueryFundStatusResponse) GetStaleMemberSupply() []types.Coin {
+	if m != nil {
+		return m.StaleMemberSupply
+	}
+	return nil
 }
 
 func (m *QueryFundStatusResponse) GetUntrustedSuspendedSupply() []types.Coin {
@@ -704,34 +729,6 @@ func (m *QueryFundStatusResponse) GetWrittenOffExposure() []WrittenOffExposure {
 		return m.WrittenOffExposure
 	}
 	return nil
-}
-
-func (m *QueryFundStatusResponse) GetStaleMemberSupply() []types.Coin {
-	if m != nil {
-		return m.StaleMemberSupply
-	}
-	return nil
-}
-
-func (m *QueryFundStatusResponse) GetTotalLiabilityAvailable() bool {
-	if m != nil {
-		return m.TotalLiabilityAvailable
-	}
-	return false
-}
-
-func (m *QueryFundStatusResponse) GetNominalLiabilityNoahEquivalent() types.DecCoin {
-	if m != nil {
-		return m.NominalLiabilityNoahEquivalent
-	}
-	return types.DecCoin{}
-}
-
-func (m *QueryFundStatusResponse) GetSubsidyPoolBalance() types.Coin {
-	if m != nil {
-		return m.SubsidyPoolBalance
-	}
-	return types.Coin{}
 }
 
 func (m *QueryFundStatusResponse) GetRedemptionBufferBalance() types.Coin {
@@ -769,20 +766,6 @@ func (m *QueryFundStatusResponse) GetInsuranceBalance() types.Coin {
 	return types.Coin{}
 }
 
-func (m *QueryFundStatusResponse) GetInsuranceReserved() types.Coin {
-	if m != nil {
-		return m.InsuranceReserved
-	}
-	return types.Coin{}
-}
-
-func (m *QueryFundStatusResponse) GetInsuranceUnencumberedBalance() types.Coin {
-	if m != nil {
-		return m.InsuranceUnencumberedBalance
-	}
-	return types.Coin{}
-}
-
 func (m *QueryFundStatusResponse) GetInsuranceTarget() types.Coin {
 	if m != nil {
 		return m.InsuranceTarget
@@ -790,11 +773,11 @@ func (m *QueryFundStatusResponse) GetInsuranceTarget() types.Coin {
 	return types.Coin{}
 }
 
-func (m *QueryFundStatusResponse) GetStalePricedLiabilityNoahEquivalent() types.DecCoin {
+func (m *QueryFundStatusResponse) GetSubsidyPoolBalance() types.Coin {
 	if m != nil {
-		return m.StalePricedLiabilityNoahEquivalent
+		return m.SubsidyPoolBalance
 	}
-	return types.DecCoin{}
+	return types.Coin{}
 }
 
 // QueryRewardFundingRequest is the request type for Query/RewardFunding.
@@ -879,287 +862,6 @@ func (m *QueryRewardFundingResponse) GetRewardFunding() RewardFundingState {
 	return RewardFundingState{}
 }
 
-// QueryClaimsMandateRequest is the request type for Query/ClaimsMandate.
-type QueryClaimsMandateRequest struct {
-}
-
-func (m *QueryClaimsMandateRequest) Reset()         { *m = QueryClaimsMandateRequest{} }
-func (m *QueryClaimsMandateRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryClaimsMandateRequest) ProtoMessage()    {}
-func (*QueryClaimsMandateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_28f78cac9180399d, []int{16}
-}
-func (m *QueryClaimsMandateRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryClaimsMandateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryClaimsMandateRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryClaimsMandateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryClaimsMandateRequest.Merge(m, src)
-}
-func (m *QueryClaimsMandateRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryClaimsMandateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryClaimsMandateRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryClaimsMandateRequest proto.InternalMessageInfo
-
-// QueryClaimsMandateResponse is the response type for Query/ClaimsMandate.
-type QueryClaimsMandateResponse struct {
-	Mandate            ClaimsMandate         `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
-	InsuranceReserved  cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=insurance_reserved,json=insuranceReserved,proto3,customtype=cosmossdk.io/math.Int" json:"insurance_reserved"`
-	Active             bool                  `protobuf:"varint,3,opt,name=active,proto3" json:"active,omitempty"`
-	AllowanceUsed      cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=allowance_used,json=allowanceUsed,proto3,customtype=cosmossdk.io/math.Int" json:"allowance_used"`
-	AllowanceRemaining cosmossdk_io_math.Int `protobuf:"bytes,5,opt,name=allowance_remaining,json=allowanceRemaining,proto3,customtype=cosmossdk.io/math.Int" json:"allowance_remaining"`
-}
-
-func (m *QueryClaimsMandateResponse) Reset()         { *m = QueryClaimsMandateResponse{} }
-func (m *QueryClaimsMandateResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryClaimsMandateResponse) ProtoMessage()    {}
-func (*QueryClaimsMandateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_28f78cac9180399d, []int{17}
-}
-func (m *QueryClaimsMandateResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryClaimsMandateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryClaimsMandateResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryClaimsMandateResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryClaimsMandateResponse.Merge(m, src)
-}
-func (m *QueryClaimsMandateResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryClaimsMandateResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryClaimsMandateResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryClaimsMandateResponse proto.InternalMessageInfo
-
-func (m *QueryClaimsMandateResponse) GetMandate() ClaimsMandate {
-	if m != nil {
-		return m.Mandate
-	}
-	return ClaimsMandate{}
-}
-
-func (m *QueryClaimsMandateResponse) GetActive() bool {
-	if m != nil {
-		return m.Active
-	}
-	return false
-}
-
-// QueryClaimRequest is the request type for Query/Claim.
-type QueryClaimRequest struct {
-	ClaimId uint64 `protobuf:"varint,1,opt,name=claim_id,json=claimId,proto3" json:"claim_id,omitempty"`
-}
-
-func (m *QueryClaimRequest) Reset()         { *m = QueryClaimRequest{} }
-func (m *QueryClaimRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryClaimRequest) ProtoMessage()    {}
-func (*QueryClaimRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_28f78cac9180399d, []int{18}
-}
-func (m *QueryClaimRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryClaimRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryClaimRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryClaimRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryClaimRequest.Merge(m, src)
-}
-func (m *QueryClaimRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryClaimRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryClaimRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryClaimRequest proto.InternalMessageInfo
-
-func (m *QueryClaimRequest) GetClaimId() uint64 {
-	if m != nil {
-		return m.ClaimId
-	}
-	return 0
-}
-
-// QueryClaimResponse is the response type for Query/Claim.
-type QueryClaimResponse struct {
-	Claim Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-}
-
-func (m *QueryClaimResponse) Reset()         { *m = QueryClaimResponse{} }
-func (m *QueryClaimResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryClaimResponse) ProtoMessage()    {}
-func (*QueryClaimResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_28f78cac9180399d, []int{19}
-}
-func (m *QueryClaimResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryClaimResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryClaimResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryClaimResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryClaimResponse.Merge(m, src)
-}
-func (m *QueryClaimResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryClaimResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryClaimResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryClaimResponse proto.InternalMessageInfo
-
-func (m *QueryClaimResponse) GetClaim() Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return Claim{}
-}
-
-// QueryClaimsRequest is the request type for Query/Claims.
-type QueryClaimsRequest struct {
-	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
-}
-
-func (m *QueryClaimsRequest) Reset()         { *m = QueryClaimsRequest{} }
-func (m *QueryClaimsRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryClaimsRequest) ProtoMessage()    {}
-func (*QueryClaimsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_28f78cac9180399d, []int{20}
-}
-func (m *QueryClaimsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryClaimsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryClaimsRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryClaimsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryClaimsRequest.Merge(m, src)
-}
-func (m *QueryClaimsRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryClaimsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryClaimsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryClaimsRequest proto.InternalMessageInfo
-
-func (m *QueryClaimsRequest) GetPagination() *query.PageRequest {
-	if m != nil {
-		return m.Pagination
-	}
-	return nil
-}
-
-// QueryClaimsResponse is the response type for Query/Claims.
-type QueryClaimsResponse struct {
-	Claims     []Claim             `protobuf:"bytes,1,rep,name=claims,proto3" json:"claims"`
-	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
-}
-
-func (m *QueryClaimsResponse) Reset()         { *m = QueryClaimsResponse{} }
-func (m *QueryClaimsResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryClaimsResponse) ProtoMessage()    {}
-func (*QueryClaimsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_28f78cac9180399d, []int{21}
-}
-func (m *QueryClaimsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *QueryClaimsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_QueryClaimsResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *QueryClaimsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryClaimsResponse.Merge(m, src)
-}
-func (m *QueryClaimsResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *QueryClaimsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryClaimsResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_QueryClaimsResponse proto.InternalMessageInfo
-
-func (m *QueryClaimsResponse) GetClaims() []Claim {
-	if m != nil {
-		return m.Claims
-	}
-	return nil
-}
-
-func (m *QueryClaimsResponse) GetPagination() *query.PageResponse {
-	if m != nil {
-		return m.Pagination
-	}
-	return nil
-}
-
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "ark.treasury.v1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "ark.treasury.v1.QueryParamsResponse")
@@ -1177,124 +879,94 @@ func init() {
 	proto.RegisterType((*QueryFundStatusResponse)(nil), "ark.treasury.v1.QueryFundStatusResponse")
 	proto.RegisterType((*QueryRewardFundingRequest)(nil), "ark.treasury.v1.QueryRewardFundingRequest")
 	proto.RegisterType((*QueryRewardFundingResponse)(nil), "ark.treasury.v1.QueryRewardFundingResponse")
-	proto.RegisterType((*QueryClaimsMandateRequest)(nil), "ark.treasury.v1.QueryClaimsMandateRequest")
-	proto.RegisterType((*QueryClaimsMandateResponse)(nil), "ark.treasury.v1.QueryClaimsMandateResponse")
-	proto.RegisterType((*QueryClaimRequest)(nil), "ark.treasury.v1.QueryClaimRequest")
-	proto.RegisterType((*QueryClaimResponse)(nil), "ark.treasury.v1.QueryClaimResponse")
-	proto.RegisterType((*QueryClaimsRequest)(nil), "ark.treasury.v1.QueryClaimsRequest")
-	proto.RegisterType((*QueryClaimsResponse)(nil), "ark.treasury.v1.QueryClaimsResponse")
 }
 
 func init() { proto.RegisterFile("ark/treasury/v1/query.proto", fileDescriptor_28f78cac9180399d) }
 
 var fileDescriptor_28f78cac9180399d = []byte{
-	// 1683 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x58, 0xdb, 0x6f, 0x1b, 0x4f,
-	0x15, 0xce, 0x26, 0x8d, 0x93, 0xce, 0xaf, 0x49, 0x9a, 0xa9, 0xdb, 0xd8, 0x4e, 0xea, 0x24, 0xdb,
-	0xd0, 0x86, 0xb4, 0xd9, 0x25, 0x45, 0x08, 0x51, 0x89, 0x87, 0x3a, 0xb4, 0x28, 0x12, 0xa1, 0xa9,
-	0xd3, 0x50, 0x09, 0x21, 0xb6, 0x63, 0xef, 0xd8, 0x59, 0xb2, 0xb7, 0xee, 0xcc, 0x26, 0xb6, 0xaa,
-	0x22, 0x71, 0x79, 0x40, 0x48, 0x20, 0x24, 0x10, 0x12, 0x95, 0xe0, 0x19, 0xf1, 0x54, 0xa4, 0xfe,
-	0x11, 0x15, 0x4f, 0x15, 0xbc, 0x20, 0x1e, 0x0a, 0x6a, 0x91, 0xfa, 0x6f, 0xa0, 0x9d, 0xcb, 0xae,
-	0xd7, 0xbb, 0xb6, 0xe3, 0xf2, 0xd2, 0x66, 0x67, 0xce, 0xf9, 0xbe, 0xef, 0xcc, 0x99, 0x99, 0x33,
-	0xc7, 0x60, 0x19, 0x05, 0x27, 0x3a, 0x0d, 0x30, 0x22, 0x61, 0xd0, 0xd5, 0x4f, 0x77, 0xf4, 0xe7,
-	0x21, 0x0e, 0xba, 0x9a, 0x1f, 0x78, 0xd4, 0x83, 0x0b, 0x28, 0x38, 0xd1, 0xe4, 0xa4, 0x76, 0xba,
-	0x53, 0x59, 0x44, 0x8e, 0xe5, 0x7a, 0x3a, 0xfb, 0x97, 0xdb, 0x54, 0xaa, 0xfd, 0x00, 0xb1, 0x3d,
-	0x9f, 0xdf, 0x6a, 0x7a, 0xc4, 0xf1, 0x88, 0xde, 0x40, 0x04, 0x73, 0x70, 0xfd, 0x74, 0xa7, 0x81,
-	0x29, 0xda, 0xd1, 0x7d, 0xd4, 0xb6, 0x5c, 0x44, 0x2d, 0xcf, 0x95, 0x58, 0xbd, 0xb6, 0xd2, 0xaa,
-	0xe9, 0x59, 0x72, 0x7e, 0x59, 0xcc, 0x4b, 0x98, 0x5e, 0xb1, 0x95, 0x32, 0x9f, 0x34, 0xd8, 0x97,
-	0xce, 0x3f, 0xc4, 0x54, 0xb1, 0xed, 0xb5, 0x3d, 0x3e, 0x1e, 0xfd, 0x25, 0x46, 0x57, 0xda, 0x9e,
-	0xd7, 0xb6, 0xb1, 0x8e, 0x7c, 0x4b, 0x47, 0xae, 0xeb, 0x51, 0x26, 0x45, 0xfa, 0x94, 0xc5, 0x2c,
-	0xfb, 0x6a, 0x84, 0x2d, 0x1d, 0xb9, 0x82, 0x49, 0x2d, 0x02, 0xf8, 0x38, 0x22, 0x3e, 0x40, 0x01,
-	0x72, 0x48, 0x1d, 0x3f, 0x0f, 0x31, 0xa1, 0xea, 0x63, 0x70, 0x25, 0x35, 0x4a, 0x7c, 0xcf, 0x25,
-	0x18, 0xde, 0x03, 0x05, 0x9f, 0x8d, 0x94, 0x94, 0x35, 0x65, 0xf3, 0x8b, 0xbb, 0x4b, 0x5a, 0xdf,
-	0xa2, 0x6a, 0xdc, 0xa1, 0x76, 0xf1, 0xed, 0xfb, 0xd5, 0x89, 0x3f, 0x7f, 0x7a, 0xbd, 0xa5, 0xd4,
-	0x85, 0x87, 0xba, 0x02, 0x2a, 0x0c, 0x72, 0xdf, 0x73, 0x31, 0x45, 0x41, 0xf7, 0xc0, 0xb3, 0xad,
-	0x66, 0x57, 0x12, 0x22, 0xb0, 0x9c, 0x3b, 0x2b, 0x88, 0x6b, 0xa0, 0xe0, 0xb3, 0x11, 0x41, 0xbc,
-	0x9a, 0x21, 0x4e, 0x3b, 0xa6, 0x05, 0xb0, 0x21, 0xf5, 0x7a, 0x1f, 0xc5, 0x3e, 0x72, 0x4d, 0x44,
-	0xb1, 0x54, 0xf0, 0x73, 0x05, 0xac, 0xe4, 0xcf, 0x0b, 0x0d, 0x0f, 0xc0, 0x8c, 0xc3, 0x87, 0x84,
-	0x88, 0xb5, 0x81, 0x22, 0x84, 0x6b, 0xaf, 0x0a, 0xe9, 0x0b, 0xaf, 0x83, 0x02, 0x6a, 0x52, 0xeb,
-	0x14, 0x97, 0x26, 0xd7, 0x94, 0xcd, 0xd9, 0xda, 0xb4, 0x50, 0xc9, 0x07, 0xd5, 0x2d, 0x91, 0x8f,
-	0x27, 0xa8, 0xb3, 0x8b, 0x7c, 0x21, 0x0e, 0x16, 0xc1, 0xb4, 0x89, 0x5d, 0xcf, 0x61, 0xcc, 0x17,
-	0xeb, 0xfc, 0x43, 0x7d, 0x26, 0xb2, 0x24, 0x6d, 0x85, 0xd0, 0x3d, 0x30, 0x43, 0x51, 0xc7, 0x68,
-	0x22, 0x9f, 0x9b, 0xd7, 0xbe, 0x12, 0xc9, 0xf8, 0xd7, 0xfb, 0xd5, 0xab, 0x7c, 0x23, 0x11, 0xf3,
-	0x44, 0xb3, 0x3c, 0xdd, 0x41, 0xf4, 0x58, 0xdb, 0x73, 0xe9, 0xdf, 0xdf, 0x6c, 0x03, 0xb1, 0xc3,
-	0xf6, 0x5c, 0x2a, 0xd4, 0x50, 0x06, 0xa9, 0x5e, 0x4d, 0x31, 0xc4, 0xdb, 0xe3, 0x08, 0x14, 0xd3,
-	0xc3, 0x82, 0xf9, 0x9b, 0x60, 0x56, 0x30, 0x47, 0x3b, 0x64, 0x2a, 0x77, 0x87, 0x70, 0x9f, 0xd4,
-	0xd2, 0x70, 0x32, 0xa2, 0xb6, 0xc1, 0x35, 0x06, 0xbb, 0xeb, 0x39, 0x7e, 0x48, 0xf1, 0x13, 0xd4,
-	0x91, 0xf1, 0xef, 0x83, 0x59, 0x07, 0x13, 0x82, 0xda, 0x58, 0x02, 0x17, 0x35, 0xbe, 0xa7, 0x35,
-	0xb9, 0xa7, 0xb5, 0xfb, 0x6e, 0xb7, 0xb6, 0xfc, 0xb7, 0x37, 0xdb, 0x4b, 0x22, 0x98, 0xe8, 0xe0,
-	0x69, 0xe2, 0xe0, 0x69, 0xfb, 0xa4, 0x5d, 0x8f, 0x21, 0xd4, 0x5f, 0x2b, 0x60, 0x29, 0xc3, 0x24,
-	0x62, 0x20, 0x60, 0x8a, 0xa2, 0x8e, 0x60, 0x29, 0x6b, 0x79, 0x60, 0xbb, 0x9e, 0xe5, 0xd6, 0x1e,
-	0x46, 0x01, 0xfc, 0xe5, 0xdf, 0xab, 0x9b, 0x6d, 0x8b, 0x1e, 0x87, 0x0d, 0xad, 0xe9, 0x39, 0xe2,
-	0xa0, 0x8a, 0xff, 0xb6, 0x89, 0x79, 0xa2, 0xd3, 0xae, 0x8f, 0x09, 0x73, 0x20, 0xaf, 0x3e, 0xbd,
-	0xde, 0xba, 0x64, 0xe3, 0x36, 0x6a, 0x76, 0x8d, 0xe8, 0x1e, 0x20, 0x3c, 0xfa, 0x88, 0x4d, 0x2d,
-	0x89, 0xc8, 0x1f, 0x86, 0xae, 0x79, 0x48, 0x11, 0x0d, 0xe3, 0xa5, 0xfe, 0xeb, 0x9c, 0x90, 0xda,
-	0x3b, 0x25, 0xa4, 0xfa, 0x60, 0xcd, 0x0f, 0xac, 0x26, 0x36, 0x0d, 0xdb, 0x42, 0x0d, 0xcb, 0xb6,
-	0x68, 0xd7, 0x70, 0x3d, 0x74, 0x6c, 0xe0, 0xe7, 0xa1, 0x75, 0x8a, 0x6c, 0xec, 0x52, 0xb1, 0x55,
-	0x57, 0x72, 0xe3, 0xf8, 0x16, 0x6e, 0xb2, 0x50, 0x7a, 0x72, 0x71, 0x9d, 0x03, 0x7e, 0x47, 0xe2,
-	0x7d, 0xd7, 0x43, 0xc7, 0x0f, 0x62, 0x34, 0xd8, 0x01, 0x1b, 0x04, 0x53, 0x6a, 0x63, 0x07, 0xbb,
-	0x74, 0x08, 0xeb, 0xe4, 0x78, 0xac, 0xeb, 0x09, 0xe8, 0x20, 0x66, 0x02, 0x2a, 0xa1, 0x4b, 0x83,
-	0x90, 0x50, 0x6c, 0x1a, 0x24, 0x24, 0x3e, 0x76, 0x4d, 0xf6, 0x97, 0xef, 0xdb, 0xdd, 0xd2, 0xd4,
-	0xa8, 0x6c, 0x55, 0x22, 0xb2, 0x01, 0x19, 0x28, 0xc5, 0xc0, 0x87, 0x12, 0xf7, 0x90, 0xc1, 0xc2,
-	0x67, 0xa0, 0x78, 0x16, 0x58, 0x94, 0x62, 0xd7, 0xf0, 0x5a, 0x2d, 0x03, 0x77, 0x7c, 0x8f, 0x84,
-	0x01, 0x2e, 0x5d, 0x60, 0x74, 0x37, 0x32, 0x7b, 0xfb, 0x29, 0x37, 0x7e, 0xd4, 0x6a, 0x3d, 0x10,
-	0xa6, 0xbd, 0x51, 0xc2, 0xb3, 0xcc, 0x34, 0xc4, 0xe0, 0x0a, 0xa1, 0xc8, 0xc6, 0x86, 0x83, 0x9d,
-	0x06, 0x0e, 0x64, 0x3c, 0xd3, 0xff, 0x4f, 0x3c, 0x8b, 0x0c, 0x71, 0x9f, 0x01, 0x8a, 0x40, 0xee,
-	0x81, 0x32, 0xf5, 0x28, 0xb2, 0x7b, 0x52, 0x86, 0x4e, 0x91, 0x65, 0xa3, 0x86, 0x8d, 0x4b, 0x85,
-	0xe8, 0x1e, 0xaa, 0x2f, 0x31, 0x83, 0x78, 0xf9, 0xef, 0xcb, 0x69, 0x18, 0x80, 0x75, 0xd7, 0x73,
-	0x2c, 0x37, 0xe5, 0xdd, 0x9f, 0xf0, 0x99, 0xf1, 0x12, 0x5e, 0x15, 0x88, 0x83, 0xb2, 0xfd, 0x3d,
-	0x50, 0x24, 0x61, 0x83, 0x58, 0x66, 0xd7, 0xf0, 0x3d, 0xcf, 0x36, 0x1a, 0xc8, 0x46, 0x6e, 0x13,
-	0x97, 0x66, 0x19, 0xcd, 0x90, 0x75, 0xe9, 0x5d, 0x6e, 0x81, 0x70, 0xe0, 0x79, 0x76, 0x8d, 0xfb,
-	0xc3, 0x67, 0xa0, 0x1c, 0x60, 0x13, 0x3b, 0x7e, 0x54, 0x1d, 0x8d, 0x46, 0xd8, 0x6a, 0xe1, 0x20,
-	0x06, 0xbf, 0x38, 0x06, 0xf8, 0x52, 0x02, 0x53, 0x63, 0x28, 0x92, 0xe1, 0x87, 0xa0, 0x94, 0x65,
-	0xa0, 0x28, 0x68, 0x63, 0x5a, 0x02, 0x63, 0x10, 0x5c, 0xeb, 0x27, 0x78, 0xc2, 0x30, 0xa2, 0x08,
-	0x08, 0x0d, 0x10, 0xc5, 0x6d, 0xab, 0x69, 0x04, 0x98, 0xe0, 0xe0, 0x14, 0xc7, 0x11, 0x7c, 0x31,
-	0x4e, 0x04, 0x31, 0x4c, 0x9d, 0xa3, 0xf4, 0x44, 0x90, 0x65, 0x10, 0x11, 0x5c, 0x1a, 0x27, 0x82,
-	0x7e, 0x02, 0x11, 0xc1, 0x63, 0xb0, 0x68, 0xb9, 0x24, 0x0c, 0x22, 0xb2, 0x58, 0xf9, 0xdc, 0x18,
-	0xc0, 0x97, 0x63, 0x77, 0x29, 0xf9, 0x10, 0xc0, 0x04, 0x52, 0x48, 0x36, 0x4b, 0xf3, 0x63, 0x60,
-	0x26, 0x92, 0x84, 0x58, 0x13, 0xfe, 0x08, 0x54, 0x13, 0xd0, 0xd0, 0xc5, 0x6e, 0x33, 0x8c, 0x4e,
-	0x14, 0x36, 0x63, 0xd1, 0x0b, 0x63, 0x10, 0xac, 0xc4, 0x58, 0x47, 0x3d, 0x50, 0x32, 0x80, 0x47,
-	0x20, 0x09, 0x4a, 0xae, 0xf5, 0xe5, 0x31, 0xd0, 0x17, 0x62, 0x6f, 0xb1, 0xc8, 0x2f, 0xc0, 0x4d,
-	0x7e, 0xaf, 0x8c, 0x2c, 0x10, 0x8b, 0xe3, 0x9d, 0x5c, 0x95, 0xc1, 0x1e, 0x0c, 0xab, 0x12, 0xea,
-	0x32, 0x28, 0xb3, 0x92, 0x55, 0xc7, 0x67, 0x28, 0x30, 0xa3, 0xc2, 0x65, 0xb9, 0x6d, 0x59, 0xd0,
-	0x88, 0x78, 0x07, 0xf6, 0x4d, 0x8a, 0x92, 0x76, 0x04, 0xe6, 0x03, 0x36, 0x61, 0xb4, 0xf8, 0x8c,
-	0x28, 0x60, 0xd9, 0xbb, 0x36, 0xe5, 0x1f, 0x15, 0xc6, 0xd4, 0x5d, 0x3b, 0x17, 0xf4, 0x4e, 0xc7,
-	0x8a, 0x76, 0x6d, 0x64, 0x39, 0xa4, 0xef, 0xe5, 0xf7, 0xc7, 0x29, 0x21, 0xa9, 0x6f, 0x56, 0x48,
-	0xda, 0xed, 0x7f, 0xf7, 0x55, 0x33, 0x5a, 0x52, 0x8e, 0xb9, 0xaf, 0x3e, 0x23, 0x77, 0x87, 0x4e,
-	0x7e, 0xe6, 0xf3, 0x2c, 0x67, 0xb7, 0x26, 0xcf, 0xca, 0xa9, 0x9c, 0x67, 0x25, 0x7c, 0x0a, 0xe6,
-	0x91, 0x6d, 0x7b, 0x67, 0x7c, 0x33, 0x13, 0x6c, 0x96, 0x2e, 0x7c, 0x26, 0xf7, 0x5c, 0x8c, 0x73,
-	0x44, 0xb0, 0x09, 0x11, 0xb8, 0x92, 0x00, 0x07, 0xd8, 0x41, 0x96, 0x1b, 0x65, 0x6d, 0xfa, 0x33,
-	0xd1, 0x61, 0x0c, 0x56, 0x97, 0x58, 0xea, 0xd7, 0xc0, 0x62, 0x92, 0x1e, 0xf9, 0x22, 0x5c, 0x03,
-	0xb3, 0xcd, 0xe8, 0xdb, 0xb0, 0x4c, 0x96, 0x96, 0x0b, 0x32, 0xe2, 0x19, 0x36, 0xbc, 0x67, 0xaa,
-	0xfb, 0xe2, 0x25, 0x2d, 0xdc, 0x44, 0x36, 0xbf, 0x0e, 0xa6, 0x99, 0x81, 0xc8, 0xe5, 0xb5, 0xfc,
-	0x5c, 0xf6, 0xe6, 0x90, 0xdb, 0xab, 0x3f, 0xe8, 0x85, 0x93, 0xcf, 0x33, 0xf8, 0x10, 0x80, 0xa4,
-	0xf3, 0x13, 0x98, 0x37, 0x53, 0x67, 0x89, 0xb7, 0x75, 0xf2, 0x44, 0x1d, 0xa0, 0xb6, 0xdc, 0x77,
-	0xf5, 0x1e, 0x4f, 0xf5, 0x0f, 0x8a, 0x78, 0x69, 0x4b, 0x78, 0x21, 0xf7, 0x1b, 0xa0, 0xc0, 0xe8,
-	0xe5, 0xb3, 0xf7, 0x1c, 0x7a, 0x85, 0x03, 0xfc, 0x76, 0x4a, 0x1a, 0x7f, 0x91, 0xdd, 0x1a, 0x29,
-	0x8d, 0xf3, 0xf6, 0x6a, 0xbb, 0xfb, 0xbb, 0x4b, 0x60, 0x9a, 0x69, 0x83, 0x5d, 0x50, 0xe0, 0x0d,
-	0x1e, 0xcc, 0x9e, 0xc7, 0x6c, 0x17, 0x59, 0xd9, 0x18, 0x6e, 0xc4, 0xa9, 0xd4, 0x8d, 0x5f, 0x44,
-	0xb2, 0x7f, 0xfa, 0x8f, 0xff, 0xfe, 0x76, 0xb2, 0x0c, 0x97, 0xf4, 0xfe, 0x16, 0x9c, 0xb7, 0x8f,
-	0xf0, 0x95, 0x02, 0xe6, 0xd3, 0x3d, 0x1e, 0xbc, 0x9d, 0x0f, 0x9f, 0xdb, 0x60, 0x56, 0xee, 0x9c,
-	0xcf, 0x58, 0x68, 0xda, 0x4e, 0x34, 0xa9, 0x70, 0x2d, 0xa3, 0xc9, 0x11, 0x5e, 0x06, 0x6f, 0x2d,
-	0xe1, 0x9f, 0x14, 0xb0, 0xd0, 0xd7, 0xfb, 0xc1, 0x11, 0x84, 0xe9, 0x3b, 0xa8, 0xb2, 0x7d, 0x4e,
-	0x6b, 0xa1, 0x4f, 0x4b, 0xf4, 0xdd, 0x80, 0xeb, 0x83, 0xf5, 0xc9, 0xeb, 0xe7, 0x67, 0x0a, 0x28,
-	0xf0, 0xc6, 0x6b, 0x50, 0xe6, 0x52, 0xfd, 0xe6, 0xa0, 0xcc, 0xa5, 0x1b, 0xcd, 0x51, 0x2a, 0x64,
-	0x2b, 0xa8, 0xbf, 0x60, 0xed, 0xea, 0x4b, 0xf8, 0x63, 0x30, 0x23, 0x3a, 0x46, 0x38, 0x94, 0x20,
-	0xde, 0x40, 0x5f, 0x1a, 0x61, 0x25, 0x74, 0xdc, 0x4c, 0x74, 0x2c, 0xc3, 0xf2, 0x40, 0x1d, 0xf0,
-	0x57, 0x0a, 0x00, 0x49, 0xc7, 0x07, 0x6f, 0xe5, 0xa3, 0x67, 0xba, 0xcf, 0xca, 0xe6, 0x68, 0x43,
-	0xa1, 0xe4, 0x4e, 0xa2, 0x64, 0xfd, 0x9e, 0xb2, 0xa5, 0xae, 0x64, 0xc4, 0x34, 0xb9, 0x93, 0x41,
-	0x51, 0x07, 0xfe, 0x52, 0x01, 0x20, 0x69, 0xeb, 0x06, 0xe9, 0xc9, 0xf4, 0x84, 0x83, 0xf4, 0x64,
-	0x3b, 0x44, 0xf5, 0xcb, 0x89, 0x9e, 0x2a, 0xcc, 0x8a, 0x89, 0x6a, 0xac, 0x41, 0x38, 0xfb, 0xef,
-	0x15, 0x30, 0x97, 0xaa, 0xa9, 0x70, 0x2b, 0x9f, 0x26, 0xaf, 0xaa, 0x57, 0x6e, 0x9f, 0xcb, 0x36,
-	0x67, 0x95, 0xe0, 0x6a, 0x46, 0x55, 0xfa, 0x01, 0xc0, 0x84, 0xa5, 0x0a, 0xec, 0x20, 0x61, 0x79,
-	0xc5, 0x7d, 0x90, 0xb0, 0xdc, 0x52, 0x3f, 0x4a, 0x18, 0xbf, 0x58, 0x75, 0x79, 0xa8, 0x7e, 0xa2,
-	0x80, 0x69, 0x86, 0x03, 0xd5, 0x21, 0x24, 0x52, 0xc8, 0x8d, 0xa1, 0x36, 0x42, 0x80, 0x9e, 0x08,
-	0xd8, 0x80, 0xea, 0x20, 0x01, 0x2f, 0x64, 0xe5, 0x7b, 0x19, 0xdd, 0xc8, 0x3c, 0x14, 0x38, 0x0c,
-	0x7f, 0xd4, 0x8d, 0x9c, 0x2e, 0x3a, 0xa3, 0x6e, 0x64, 0xae, 0xa2, 0xa6, 0xbd, 0xfd, 0x50, 0x55,
-	0xde, 0x7d, 0xa8, 0x2a, 0xff, 0xf9, 0x50, 0x55, 0x7e, 0xf3, 0xb1, 0x3a, 0xf1, 0xee, 0x63, 0x75,
-	0xe2, 0x9f, 0x1f, 0xab, 0x13, 0xdf, 0x2f, 0x46, 0x1e, 0x9d, 0xc4, 0x87, 0xfd, 0x08, 0xd2, 0x28,
-	0xb0, 0x5f, 0x6a, 0xbe, 0xfa, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x42, 0xf9, 0x16, 0x25, 0xa6,
-	0x15, 0x00, 0x00,
+	// 1303 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0xcd, 0x8f, 0x14, 0xc5,
+	0x1b, 0xde, 0x86, 0xdf, 0xce, 0x2e, 0xc5, 0xc7, 0xb2, 0xc5, 0xc0, 0xce, 0xc7, 0x32, 0xbb, 0x34,
+	0xfc, 0x74, 0x5d, 0xd8, 0x6e, 0x17, 0x6f, 0x24, 0x1e, 0x1c, 0x84, 0x84, 0xc4, 0x0d, 0xcb, 0xb0,
+	0x68, 0x42, 0xa2, 0x4d, 0xcd, 0x4c, 0xcd, 0xd0, 0xd9, 0xe9, 0xaa, 0xa6, 0xab, 0x7a, 0x99, 0x89,
+	0xd1, 0x83, 0x7a, 0x30, 0x26, 0x1a, 0x13, 0x13, 0x0f, 0x1c, 0x3c, 0x1b, 0x4f, 0x1c, 0x38, 0xfa,
+	0x07, 0x10, 0x4f, 0x44, 0x2f, 0xc6, 0x03, 0x1a, 0x30, 0xe1, 0x9f, 0xf0, 0x60, 0xba, 0xea, 0xed,
+	0xee, 0xe9, 0xe9, 0x19, 0x96, 0x89, 0x17, 0x98, 0xae, 0xf7, 0x7d, 0x9f, 0xe7, 0x79, 0xeb, 0xe3,
+	0xdd, 0x07, 0x55, 0x49, 0xb0, 0x6b, 0xcb, 0x80, 0x12, 0x11, 0x06, 0x03, 0x7b, 0x6f, 0xd3, 0xbe,
+	0x17, 0xd2, 0x60, 0x60, 0xf9, 0x01, 0x97, 0x1c, 0x2f, 0x90, 0x60, 0xd7, 0x8a, 0x83, 0xd6, 0xde,
+	0x66, 0x65, 0x91, 0x78, 0x2e, 0xe3, 0xb6, 0xfa, 0x57, 0xe7, 0x54, 0x6a, 0xa3, 0x00, 0x49, 0x3e,
+	0xc4, 0x5b, 0x5c, 0x78, 0x5c, 0xd8, 0x4d, 0x22, 0xa8, 0xbd, 0xb7, 0xd9, 0xa4, 0x92, 0x6c, 0xda,
+	0x2d, 0xee, 0x32, 0x88, 0x57, 0x21, 0xae, 0x78, 0x47, 0x04, 0x54, 0xca, 0x3a, 0xe8, 0xa8, 0x2f,
+	0x5b, 0x7f, 0x40, 0xa8, 0xd8, 0xe5, 0x5d, 0xae, 0xd7, 0xa3, 0x5f, 0xb0, 0xba, 0xdc, 0xe5, 0xbc,
+	0xdb, 0xa3, 0x36, 0xf1, 0x5d, 0x9b, 0x30, 0xc6, 0x25, 0x91, 0x2e, 0x67, 0x71, 0x4d, 0x19, 0xa2,
+	0xea, 0xab, 0x19, 0x76, 0x6c, 0xc2, 0x80, 0xc9, 0x2c, 0x22, 0x7c, 0x23, 0x22, 0xde, 0x26, 0x01,
+	0xf1, 0x44, 0x83, 0xde, 0x0b, 0xa9, 0x90, 0xe6, 0x0d, 0x74, 0x22, 0xb3, 0x2a, 0x7c, 0xce, 0x04,
+	0xc5, 0x97, 0x50, 0xc1, 0x57, 0x2b, 0x25, 0x63, 0xd5, 0x58, 0x3b, 0x7c, 0x71, 0xc9, 0x1a, 0xd9,
+	0x28, 0x4b, 0x17, 0xd4, 0x0f, 0x3d, 0x7e, 0xba, 0x32, 0xf3, 0xe3, 0x8b, 0x87, 0xeb, 0x46, 0x03,
+	0x2a, 0xcc, 0x65, 0x54, 0x51, 0x90, 0x5b, 0x9c, 0x51, 0x49, 0x82, 0xc1, 0x36, 0xef, 0xb9, 0xad,
+	0x41, 0x4c, 0x48, 0x50, 0x75, 0x6c, 0x14, 0x88, 0xeb, 0xa8, 0xe0, 0xab, 0x15, 0x20, 0x5e, 0xc9,
+	0x11, 0x67, 0x0b, 0xb3, 0x02, 0xd4, 0x92, 0x79, 0x7a, 0x84, 0x62, 0x8b, 0xb0, 0x36, 0x91, 0x34,
+	0x56, 0xf0, 0x85, 0x81, 0x96, 0xc7, 0xc7, 0x41, 0xc3, 0x15, 0x34, 0xe7, 0xe9, 0x25, 0x10, 0xb1,
+	0x3a, 0x51, 0x04, 0x94, 0x0e, 0xab, 0x88, 0x6b, 0xf1, 0x69, 0x54, 0x20, 0x2d, 0xe9, 0xee, 0xd1,
+	0xd2, 0x81, 0x55, 0x63, 0x6d, 0xbe, 0x3e, 0x0b, 0x2a, 0xf5, 0xa2, 0xb9, 0x0e, 0xe7, 0xb1, 0x43,
+	0xfa, 0x97, 0x89, 0x0f, 0xe2, 0x70, 0x11, 0xcd, 0xb6, 0x29, 0xe3, 0x9e, 0x62, 0x3e, 0xd4, 0xd0,
+	0x1f, 0xe6, 0x1d, 0x38, 0xa5, 0x38, 0x17, 0x84, 0x5e, 0x43, 0x73, 0x92, 0xf4, 0x9d, 0x16, 0xf1,
+	0x75, 0x7a, 0xfd, 0xcd, 0x48, 0xc6, 0x1f, 0x4f, 0x57, 0x4e, 0xea, 0x8b, 0x24, 0xda, 0xbb, 0x96,
+	0xcb, 0x6d, 0x8f, 0xc8, 0xbb, 0xd6, 0x35, 0x26, 0x7f, 0x7d, 0xb4, 0x81, 0xe0, 0x86, 0x5d, 0x63,
+	0x12, 0xd4, 0x48, 0x05, 0x69, 0x9e, 0xcc, 0x30, 0x24, 0xd7, 0xe3, 0x16, 0x2a, 0x66, 0x97, 0x81,
+	0xf9, 0x6d, 0x34, 0x0f, 0xcc, 0xd1, 0x0d, 0x39, 0x38, 0xf6, 0x86, 0xe8, 0x9a, 0xcc, 0xd6, 0x68,
+	0x32, 0x61, 0x76, 0xd1, 0x29, 0x05, 0x7b, 0x99, 0x7b, 0x7e, 0x28, 0xe9, 0x0e, 0xe9, 0xc7, 0xfd,
+	0x6f, 0xa1, 0x79, 0x8f, 0x0a, 0x41, 0xba, 0x34, 0x06, 0x2e, 0x5a, 0xfa, 0x4e, 0x5b, 0xf1, 0x9d,
+	0xb6, 0xde, 0x61, 0x83, 0x7a, 0xf5, 0x97, 0x47, 0x1b, 0x4b, 0xd0, 0x4c, 0xf4, 0xf0, 0x2c, 0x78,
+	0x78, 0xd6, 0x96, 0xe8, 0x36, 0x12, 0x08, 0xf3, 0x1b, 0x03, 0x2d, 0xe5, 0x98, 0xa0, 0x07, 0x81,
+	0x0e, 0x4a, 0xd2, 0x07, 0x96, 0xb2, 0x35, 0x0e, 0xec, 0x32, 0x77, 0x59, 0xfd, 0x6a, 0xd4, 0xc0,
+	0x4f, 0x7f, 0xae, 0xac, 0x75, 0x5d, 0x79, 0x37, 0x6c, 0x5a, 0x2d, 0xee, 0xc1, 0x43, 0x85, 0xff,
+	0x36, 0x44, 0x7b, 0xd7, 0x96, 0x03, 0x9f, 0x0a, 0x55, 0x20, 0x1e, 0xbc, 0x78, 0xb8, 0x7e, 0xa4,
+	0x47, 0xbb, 0xa4, 0x35, 0x70, 0xa2, 0x39, 0x20, 0x74, 0xf7, 0x11, 0x9b, 0x59, 0x82, 0xce, 0xaf,
+	0x86, 0xac, 0x7d, 0x53, 0x12, 0x19, 0x26, 0x5b, 0xfd, 0x33, 0x02, 0xa9, 0xc3, 0x21, 0x90, 0xda,
+	0x40, 0xc7, 0xfd, 0xc0, 0x6d, 0xd1, 0xb6, 0xd3, 0x73, 0x49, 0xd3, 0xed, 0xb9, 0x32, 0x7e, 0x1f,
+	0xcb, 0x63, 0x75, 0xbf, 0x4b, 0x5b, 0x4a, 0xfa, 0xd0, 0xde, 0x2f, 0x68, 0x80, 0xf7, 0xe2, 0x7a,
+	0x7c, 0x1b, 0x15, 0x05, 0x95, 0xb2, 0x47, 0x3d, 0xca, 0xe4, 0x10, 0xee, 0x81, 0xe9, 0x70, 0x4f,
+	0xa4, 0x20, 0x29, 0xf6, 0x87, 0xe8, 0x94, 0x90, 0xa4, 0x47, 0x9d, 0x9c, 0xea, 0x83, 0xd3, 0xa1,
+	0x17, 0x15, 0xcc, 0xf6, 0x88, 0xf4, 0x1d, 0xb4, 0xc8, 0xb8, 0xe7, 0x32, 0xd2, 0x1b, 0x42, 0xfe,
+	0xdf, 0x74, 0xc8, 0xc7, 0x01, 0x21, 0x45, 0xa5, 0xe8, 0x84, 0x16, 0xed, 0x51, 0xaf, 0x49, 0x03,
+	0x47, 0x84, 0xbe, 0xdf, 0x1b, 0x94, 0x66, 0xf7, 0xbb, 0x1f, 0x95, 0x08, 0x74, 0xc2, 0x99, 0x2f,
+	0x2a, 0xc4, 0x2d, 0x05, 0x78, 0x53, 0xe1, 0x61, 0x81, 0x2a, 0x21, 0x93, 0x41, 0x28, 0x24, 0x6d,
+	0x3b, 0x22, 0x14, 0x3e, 0x65, 0x6d, 0xf5, 0x4b, 0xb1, 0x15, 0xfe, 0x0b, 0x5b, 0x29, 0x01, 0xbe,
+	0x19, 0xe3, 0x02, 0xe9, 0x1d, 0x54, 0xbc, 0x1f, 0xb8, 0x52, 0x52, 0xe6, 0xf0, 0x4e, 0xc7, 0xa1,
+	0x7d, 0x9f, 0x8b, 0x30, 0xa0, 0xa5, 0x39, 0x45, 0x77, 0x36, 0xf7, 0x76, 0x3f, 0xd0, 0xc9, 0xd7,
+	0x3b, 0x9d, 0x2b, 0x90, 0x3a, 0xbc, 0x77, 0xf8, 0x7e, 0x2e, 0x8c, 0xef, 0xa0, 0x72, 0x40, 0xdb,
+	0xd4, 0xf3, 0xa3, 0x3f, 0x47, 0x4e, 0x33, 0xec, 0x74, 0x68, 0xe0, 0x34, 0x49, 0x8f, 0xb0, 0x16,
+	0x2d, 0xcd, 0xab, 0xb3, 0x79, 0x49, 0x57, 0x43, 0xe0, 0x4b, 0x29, 0x4c, 0x5d, 0xa1, 0xd4, 0x35,
+	0x08, 0xfe, 0x08, 0x95, 0xf2, 0x0c, 0x92, 0x04, 0x5d, 0x2a, 0x4b, 0x87, 0xa6, 0x20, 0x38, 0x35,
+	0x4a, 0xb0, 0xa3, 0x30, 0xa2, 0x0e, 0x84, 0x0c, 0x88, 0xa4, 0x5d, 0xb7, 0xe5, 0x04, 0x54, 0xd0,
+	0x60, 0x8f, 0x26, 0x1d, 0xa0, 0x69, 0x3a, 0x48, 0x60, 0x1a, 0x1a, 0x65, 0xa8, 0x83, 0x3c, 0x03,
+	0x74, 0x70, 0x78, 0x9a, 0x0e, 0x46, 0x09, 0xa0, 0x83, 0x1b, 0x68, 0xd1, 0x65, 0x22, 0x0c, 0x22,
+	0xb2, 0x44, 0xf9, 0x91, 0x29, 0x80, 0x8f, 0x27, 0xe5, 0xb1, 0xe4, 0xeb, 0x28, 0x5d, 0x8b, 0xa5,
+	0x1e, 0x9d, 0x02, 0x71, 0x21, 0xa9, 0x06, 0x8d, 0xef, 0xa3, 0xa2, 0x08, 0x9b, 0xc2, 0x6d, 0x0f,
+	0x1c, 0x9f, 0xf3, 0x5e, 0x22, 0xf3, 0xd8, 0x14, 0xa0, 0x18, 0x10, 0xb6, 0x39, 0xef, 0x81, 0x50,
+	0xb3, 0x8a, 0xca, 0x6a, 0x7a, 0x36, 0xe8, 0x7d, 0x12, 0xb4, 0xa3, 0x19, 0xea, 0xb2, 0x6e, 0x3c,
+	0x5b, 0x05, 0x58, 0x92, 0x91, 0x20, 0x4c, 0xd7, 0x5b, 0xe8, 0x58, 0xa0, 0x02, 0x4e, 0x47, 0x47,
+	0x60, 0xb6, 0xe6, 0x9f, 0x45, 0xa6, 0x3e, 0x9a, 0xd1, 0x99, 0x67, 0x71, 0x34, 0x18, 0x0e, 0x5f,
+	0xfc, 0x67, 0x1e, 0xcd, 0x2a, 0x56, 0x3c, 0x40, 0x05, 0x6d, 0x97, 0x70, 0x1e, 0x32, 0xef, 0xc9,
+	0x2a, 0xe7, 0x5e, 0x9e, 0xa4, 0x55, 0x9b, 0xe7, 0xbe, 0x8c, 0x48, 0x3f, 0xfb, 0xed, 0xef, 0xef,
+	0x0e, 0x94, 0xf1, 0x92, 0x3d, 0x6a, 0x52, 0xb5, 0x19, 0xc3, 0x0f, 0x0c, 0x74, 0x2c, 0xeb, 0x98,
+	0xf0, 0xf9, 0xf1, 0xf0, 0x63, 0xed, 0x5a, 0xe5, 0xc2, 0xab, 0x25, 0x83, 0xa6, 0x8d, 0x54, 0x93,
+	0x89, 0x57, 0x73, 0x9a, 0x3c, 0xa8, 0x72, 0xb4, 0x51, 0xc3, 0x3f, 0x18, 0x68, 0x61, 0xc4, 0x49,
+	0xe1, 0x7d, 0x08, 0xb3, 0x5e, 0xae, 0xb2, 0xf1, 0x8a, 0xd9, 0xa0, 0xcf, 0x4a, 0xf5, 0x9d, 0xc5,
+	0x67, 0x26, 0xeb, 0x8b, 0x2d, 0xdc, 0xe7, 0x06, 0x2a, 0x68, 0x1b, 0x33, 0xe9, 0xe4, 0x32, 0xee,
+	0x6d, 0xd2, 0xc9, 0x65, 0x6d, 0xdb, 0x7e, 0x2a, 0x62, 0x63, 0x65, 0x7f, 0xac, 0xcc, 0xdf, 0x27,
+	0xf8, 0x53, 0x34, 0x07, 0xfe, 0x0b, 0xbf, 0x94, 0x20, 0xb9, 0x40, 0xff, 0xdf, 0x27, 0x0b, 0x74,
+	0xbc, 0x96, 0xea, 0xa8, 0xe2, 0xf2, 0x44, 0x1d, 0xf8, 0x6b, 0x03, 0xa1, 0xd4, 0x3f, 0xe1, 0xd7,
+	0xc7, 0xa3, 0xe7, 0xbc, 0x5c, 0x65, 0x6d, 0xff, 0x44, 0x50, 0x72, 0x21, 0x55, 0x72, 0xe6, 0x92,
+	0xb1, 0x6e, 0x2e, 0xe7, 0xc4, 0xb4, 0x74, 0x91, 0x23, 0x49, 0x1f, 0x7f, 0x65, 0x20, 0x94, 0x9a,
+	0xa4, 0x49, 0x7a, 0x72, 0x0e, 0x6b, 0x92, 0x9e, 0xbc, 0xdf, 0x32, 0xdf, 0x48, 0xf5, 0xd4, 0x70,
+	0x5e, 0x4c, 0x34, 0x26, 0x1c, 0xa1, 0xd9, 0xbf, 0x37, 0xd0, 0xd1, 0xcc, 0x58, 0xc0, 0xeb, 0xe3,
+	0x69, 0xc6, 0x0d, 0xa6, 0xca, 0xf9, 0x57, 0xca, 0x1d, 0xb3, 0x4b, 0x78, 0x25, 0xa7, 0x2a, 0x3b,
+	0xc3, 0xea, 0xd6, 0xe3, 0x67, 0x35, 0xe3, 0xc9, 0xb3, 0x9a, 0xf1, 0xd7, 0xb3, 0x9a, 0xf1, 0xed,
+	0xf3, 0xda, 0xcc, 0x93, 0xe7, 0xb5, 0x99, 0xdf, 0x9f, 0xd7, 0x66, 0x6e, 0x17, 0xa3, 0xca, 0x7e,
+	0x5a, 0xab, 0xac, 0x6b, 0xb3, 0xa0, 0xfc, 0xf5, 0x5b, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0xe6,
+	0x3f, 0x02, 0x72, 0x30, 0x0f, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1326,13 +998,6 @@ type QueryClient interface {
 	FundStatus(ctx context.Context, in *QueryFundStatusRequest, opts ...grpc.CallOption) (*QueryFundStatusResponse, error)
 	// RewardFunding queries the active reward-funding accounting.
 	RewardFunding(ctx context.Context, in *QueryRewardFundingRequest, opts ...grpc.CallOption) (*QueryRewardFundingResponse, error)
-	// ClaimsMandate queries the committee mandate, allowance usage, and
-	// Insurance reservation.
-	ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error)
-	// Claim queries one claim by its permanent identifier.
-	Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error)
-	// Claims queries the paginated claim audit record.
-	Claims(ctx context.Context, in *QueryClaimsRequest, opts ...grpc.CallOption) (*QueryClaimsResponse, error)
 }
 
 type queryClient struct {
@@ -1415,33 +1080,6 @@ func (c *queryClient) RewardFunding(ctx context.Context, in *QueryRewardFundingR
 	return out, nil
 }
 
-func (c *queryClient) ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error) {
-	out := new(QueryClaimsMandateResponse)
-	err := c.cc.Invoke(ctx, "/ark.treasury.v1.Query/ClaimsMandate", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error) {
-	out := new(QueryClaimResponse)
-	err := c.cc.Invoke(ctx, "/ark.treasury.v1.Query/Claim", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Claims(ctx context.Context, in *QueryClaimsRequest, opts ...grpc.CallOption) (*QueryClaimsResponse, error) {
-	out := new(QueryClaimsResponse)
-	err := c.cc.Invoke(ctx, "/ark.treasury.v1.Query/Claims", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Params queries the treasury parameters.
@@ -1461,13 +1099,6 @@ type QueryServer interface {
 	FundStatus(context.Context, *QueryFundStatusRequest) (*QueryFundStatusResponse, error)
 	// RewardFunding queries the active reward-funding accounting.
 	RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error)
-	// ClaimsMandate queries the committee mandate, allowance usage, and
-	// Insurance reservation.
-	ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error)
-	// Claim queries one claim by its permanent identifier.
-	Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error)
-	// Claims queries the paginated claim audit record.
-	Claims(context.Context, *QueryClaimsRequest) (*QueryClaimsResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -1497,15 +1128,6 @@ func (*UnimplementedQueryServer) FundStatus(ctx context.Context, req *QueryFundS
 }
 func (*UnimplementedQueryServer) RewardFunding(ctx context.Context, req *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RewardFunding not implemented")
-}
-func (*UnimplementedQueryServer) ClaimsMandate(ctx context.Context, req *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ClaimsMandate not implemented")
-}
-func (*UnimplementedQueryServer) Claim(ctx context.Context, req *QueryClaimRequest) (*QueryClaimResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Claim not implemented")
-}
-func (*UnimplementedQueryServer) Claims(ctx context.Context, req *QueryClaimsRequest) (*QueryClaimsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Claims not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -1656,60 +1278,6 @@ func _Query_RewardFunding_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_ClaimsMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryClaimsMandateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).ClaimsMandate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.treasury.v1.Query/ClaimsMandate",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ClaimsMandate(ctx, req.(*QueryClaimsMandateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Claim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryClaimRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Claim(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.treasury.v1.Query/Claim",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Claim(ctx, req.(*QueryClaimRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Claims_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryClaimsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Claims(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ark.treasury.v1.Query/Claims",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Claims(ctx, req.(*QueryClaimsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ark.treasury.v1.Query",
@@ -1746,18 +1314,6 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RewardFunding",
 			Handler:    _Query_RewardFunding_Handler,
-		},
-		{
-			MethodName: "ClaimsMandate",
-			Handler:    _Query_ClaimsMandate_Handler,
-		},
-		{
-			MethodName: "Claim",
-			Handler:    _Query_Claim_Handler,
-		},
-		{
-			MethodName: "Claims",
-			Handler:    _Query_Claims_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -2183,41 +1739,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	var l int
 	_ = l
 	{
-		size, err := m.StalePricedLiabilityNoahEquivalent.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x8a
-	{
-		size, err := m.InsuranceTarget.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x82
-	{
-		size, err := m.InsuranceUnencumberedBalance.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x7a
-	{
-		size, err := m.InsuranceReserved.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.SubsidyPoolBalance.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2227,7 +1749,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x72
 	{
-		size, err := m.InsuranceBalance.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.InsuranceTarget.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2237,7 +1759,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x6a
 	{
-		size, err := m.StrategicReserveTarget.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.InsuranceBalance.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2247,7 +1769,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x62
 	{
-		size, err := m.StrategicReserveBalance.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.StrategicReserveTarget.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2257,7 +1779,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x5a
 	{
-		size, err := m.RedemptionBufferTarget.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.StrategicReserveBalance.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2267,7 +1789,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x52
 	{
-		size, err := m.RedemptionBufferBalance.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.RedemptionBufferTarget.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2277,7 +1799,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x4a
 	{
-		size, err := m.SubsidyPoolBalance.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.RedemptionBufferBalance.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2286,25 +1808,33 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	i--
 	dAtA[i] = 0x42
-	{
-		size, err := m.NominalLiabilityNoahEquivalent.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if len(m.WrittenOffExposure) > 0 {
+		for iNdEx := len(m.WrittenOffExposure) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.WrittenOffExposure[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
 		}
-		i -= size
-		i = encodeVarintQuery(dAtA, i, uint64(size))
 	}
-	i--
-	dAtA[i] = 0x3a
-	if m.TotalLiabilityAvailable {
-		i--
-		if m.TotalLiabilityAvailable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if len(m.UntrustedSuspendedSupply) > 0 {
+		for iNdEx := len(m.UntrustedSuspendedSupply) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.UntrustedSuspendedSupply[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
 		}
-		i--
-		dAtA[i] = 0x30
 	}
 	if len(m.StaleMemberSupply) > 0 {
 		for iNdEx := len(m.StaleMemberSupply) - 1; iNdEx >= 0; iNdEx-- {
@@ -2320,36 +1850,28 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 			dAtA[i] = 0x2a
 		}
 	}
-	if len(m.WrittenOffExposure) > 0 {
-		for iNdEx := len(m.WrittenOffExposure) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.WrittenOffExposure[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintQuery(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x22
-		}
-	}
-	if len(m.UntrustedSuspendedSupply) > 0 {
-		for iNdEx := len(m.UntrustedSuspendedSupply) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.UntrustedSuspendedSupply[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintQuery(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
 	{
-		size, err := m.SettlementLiabilityNoahEquivalent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.NominalLiability.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size, err := m.StalePricedLiability.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size, err := m.SettlementLiability.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2359,7 +1881,7 @@ func (m *QueryFundStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i--
 	dAtA[i] = 0x12
 	{
-		size, err := m.PricedLiabilityNoahEquivalent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.PricedLiability.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2424,247 +1946,6 @@ func (m *QueryRewardFundingResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	}
 	i--
 	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryClaimsMandateRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryClaimsMandateRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryClaimsMandateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryClaimsMandateResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryClaimsMandateResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryClaimsMandateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size := m.AllowanceRemaining.Size()
-		i -= size
-		if _, err := m.AllowanceRemaining.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x2a
-	{
-		size := m.AllowanceUsed.Size()
-		i -= size
-		if _, err := m.AllowanceUsed.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x22
-	if m.Active {
-		i--
-		if m.Active {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	{
-		size := m.InsuranceReserved.Size()
-		i -= size
-		if _, err := m.InsuranceReserved.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	{
-		size, err := m.Mandate.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryClaimRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryClaimRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryClaimRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ClaimId != 0 {
-		i = encodeVarintQuery(dAtA, i, uint64(m.ClaimId))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryClaimResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryClaimResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryClaimResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintQuery(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryClaimsRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryClaimsRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryClaimsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Pagination != nil {
-		{
-			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintQuery(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *QueryClaimsResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *QueryClaimsResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *QueryClaimsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Pagination != nil {
-		{
-			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintQuery(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Claims) > 0 {
-		for iNdEx := len(m.Claims) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Claims[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintQuery(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
 	return len(dAtA) - i, nil
 }
 
@@ -2835,10 +2116,20 @@ func (m *QueryFundStatusResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.PricedLiabilityNoahEquivalent.Size()
+	l = m.PricedLiability.Size()
 	n += 1 + l + sovQuery(uint64(l))
-	l = m.SettlementLiabilityNoahEquivalent.Size()
+	l = m.SettlementLiability.Size()
 	n += 1 + l + sovQuery(uint64(l))
+	l = m.StalePricedLiability.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.NominalLiability.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if len(m.StaleMemberSupply) > 0 {
+		for _, e := range m.StaleMemberSupply {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
 	if len(m.UntrustedSuspendedSupply) > 0 {
 		for _, e := range m.UntrustedSuspendedSupply {
 			l = e.Size()
@@ -2851,19 +2142,6 @@ func (m *QueryFundStatusResponse) Size() (n int) {
 			n += 1 + l + sovQuery(uint64(l))
 		}
 	}
-	if len(m.StaleMemberSupply) > 0 {
-		for _, e := range m.StaleMemberSupply {
-			l = e.Size()
-			n += 1 + l + sovQuery(uint64(l))
-		}
-	}
-	if m.TotalLiabilityAvailable {
-		n += 2
-	}
-	l = m.NominalLiabilityNoahEquivalent.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	l = m.SubsidyPoolBalance.Size()
-	n += 1 + l + sovQuery(uint64(l))
 	l = m.RedemptionBufferBalance.Size()
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.RedemptionBufferTarget.Size()
@@ -2874,14 +2152,10 @@ func (m *QueryFundStatusResponse) Size() (n int) {
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.InsuranceBalance.Size()
 	n += 1 + l + sovQuery(uint64(l))
-	l = m.InsuranceReserved.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	l = m.InsuranceUnencumberedBalance.Size()
-	n += 1 + l + sovQuery(uint64(l))
 	l = m.InsuranceTarget.Size()
-	n += 2 + l + sovQuery(uint64(l))
-	l = m.StalePricedLiabilityNoahEquivalent.Size()
-	n += 2 + l + sovQuery(uint64(l))
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.SubsidyPoolBalance.Size()
+	n += 1 + l + sovQuery(uint64(l))
 	return n
 }
 
@@ -2902,90 +2176,6 @@ func (m *QueryRewardFundingResponse) Size() (n int) {
 	_ = l
 	l = m.RewardFunding.Size()
 	n += 1 + l + sovQuery(uint64(l))
-	return n
-}
-
-func (m *QueryClaimsMandateRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *QueryClaimsMandateResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Mandate.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	l = m.InsuranceReserved.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	if m.Active {
-		n += 2
-	}
-	l = m.AllowanceUsed.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	l = m.AllowanceRemaining.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	return n
-}
-
-func (m *QueryClaimRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ClaimId != 0 {
-		n += 1 + sovQuery(uint64(m.ClaimId))
-	}
-	return n
-}
-
-func (m *QueryClaimResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Claim.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	return n
-}
-
-func (m *QueryClaimsRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Pagination != nil {
-		l = m.Pagination.Size()
-		n += 1 + l + sovQuery(uint64(l))
-	}
-	return n
-}
-
-func (m *QueryClaimsResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Claims) > 0 {
-		for _, e := range m.Claims {
-			l = e.Size()
-			n += 1 + l + sovQuery(uint64(l))
-		}
-	}
-	if m.Pagination != nil {
-		l = m.Pagination.Size()
-		n += 1 + l + sovQuery(uint64(l))
-	}
 	return n
 }
 
@@ -3963,7 +3153,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PricedLiabilityNoahEquivalent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PricedLiability", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3990,13 +3180,13 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.PricedLiabilityNoahEquivalent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PricedLiability.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SettlementLiabilityNoahEquivalent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SettlementLiability", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4023,13 +3213,13 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.SettlementLiabilityNoahEquivalent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SettlementLiability.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UntrustedSuspendedSupply", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StalePricedLiability", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4056,14 +3246,13 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UntrustedSuspendedSupply = append(m.UntrustedSuspendedSupply, types.Coin{})
-			if err := m.UntrustedSuspendedSupply[len(m.UntrustedSuspendedSupply)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.StalePricedLiability.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WrittenOffExposure", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NominalLiability", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4090,8 +3279,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.WrittenOffExposure = append(m.WrittenOffExposure, WrittenOffExposure{})
-			if err := m.WrittenOffExposure[len(m.WrittenOffExposure)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.NominalLiability.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4130,28 +3318,8 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TotalLiabilityAvailable", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.TotalLiabilityAvailable = bool(v != 0)
-		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NominalLiabilityNoahEquivalent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field UntrustedSuspendedSupply", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4178,44 +3346,46 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.NominalLiabilityNoahEquivalent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.UntrustedSuspendedSupply = append(m.UntrustedSuspendedSupply, types.Coin{})
+			if err := m.UntrustedSuspendedSupply[len(m.UntrustedSuspendedSupply)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WrittenOffExposure", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.WrittenOffExposure = append(m.WrittenOffExposure, WrittenOffExposure{})
+			if err := m.WrittenOffExposure[len(m.WrittenOffExposure)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SubsidyPoolBalance", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.SubsidyPoolBalance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RedemptionBufferBalance", wireType)
 			}
@@ -4248,7 +3418,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 10:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RedemptionBufferTarget", wireType)
 			}
@@ -4281,7 +3451,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StrategicReserveBalance", wireType)
 			}
@@ -4314,7 +3484,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
+		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StrategicReserveTarget", wireType)
 			}
@@ -4347,7 +3517,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 13:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field InsuranceBalance", wireType)
 			}
@@ -4380,73 +3550,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 14:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InsuranceReserved", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.InsuranceReserved.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 15:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InsuranceUnencumberedBalance", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.InsuranceUnencumberedBalance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 16:
+		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field InsuranceTarget", wireType)
 			}
@@ -4479,9 +3583,9 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 17:
+		case 14:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StalePricedLiabilityNoahEquivalent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SubsidyPoolBalance", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4508,7 +3612,7 @@ func (m *QueryFundStatusResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.StalePricedLiabilityNoahEquivalent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SubsidyPoolBalance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4642,619 +3746,6 @@ func (m *QueryRewardFundingResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.RewardFunding.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryClaimsMandateRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryClaimsMandateRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryClaimsMandateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryClaimsMandateResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryClaimsMandateResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryClaimsMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Mandate", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Mandate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InsuranceReserved", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.InsuranceReserved.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Active", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Active = bool(v != 0)
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AllowanceUsed", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.AllowanceUsed.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AllowanceRemaining", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.AllowanceRemaining.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryClaimRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryClaimRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryClaimRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimId", wireType)
-			}
-			m.ClaimId = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ClaimId |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryClaimResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryClaimResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryClaimResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryClaimsRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryClaimsRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryClaimsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Pagination == nil {
-				m.Pagination = &query.PageRequest{}
-			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipQuery(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *QueryClaimsResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowQuery
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: QueryClaimsResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryClaimsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claims", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Claims = append(m.Claims, Claim{})
-			if err := m.Claims[len(m.Claims)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Pagination == nil {
-				m.Pagination = &query.PageResponse{}
-			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
