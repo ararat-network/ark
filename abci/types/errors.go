@@ -13,6 +13,4 @@ var (
 	ErrMissingCommitInfo = errors.New("missing commit info")
 	// ErrOracleKeeper identifies an oracle keeper state access or mutation failure.
 	ErrOracleKeeper = errors.New("oracle keeper error")
-	// ErrTreasuryKeeper identifies a treasury keeper state access or mutation failure.
-	ErrTreasuryKeeper = errors.New("treasury keeper error")
 )

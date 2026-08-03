@@ -26,7 +26,6 @@ func TestStatusString(t *testing.T) {
 		{name: "invalid oracle prices", got: metrics.StatusInvalidOraclePrices.String(), want: "InvalidOraclePricesError"},
 		{name: "vote extension validation", got: metrics.StatusVoteExtensionValidation.String(), want: "VoteExtensionValidationError"},
 		{name: "oracle keeper", got: metrics.StatusOracleKeeper.String(), want: "OracleKeeperError"},
-		{name: "treasury keeper", got: metrics.StatusTreasuryKeeper.String(), want: "TreasuryKeeperError"},
 	}
 
 	for _, tt := range tests {

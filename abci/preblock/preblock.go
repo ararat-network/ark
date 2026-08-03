@@ -25,22 +25,12 @@ import (
 type Handler struct {
 	// oracleKeeper provides the oracle state used during preblock processing.
 	oracleKeeper arkabcitypes.OracleKeeper
-
-	// treasuryKeeper primes block-local treasury valuations once oracle prices
-	// for the block are final.
-	treasuryKeeper arkabcitypes.TreasuryKeeper
 }
 
 // NewHandler returns a new Handler. The handler
 // is responsible for writing oracle data included in vote extensions to state.
-func NewHandler(
-	oracleKeeper arkabcitypes.OracleKeeper,
-	treasuryKeeper arkabcitypes.TreasuryKeeper,
-) *Handler {
-	return &Handler{
-		oracleKeeper:   oracleKeeper,
-		treasuryKeeper: treasuryKeeper,
-	}
+func NewHandler(oracleKeeper arkabcitypes.OracleKeeper) *Handler {
+	return &Handler{oracleKeeper: oracleKeeper}
 }
 
 // WrappedPreBlocker is called by the base app before the block is finalised. It
@@ -107,17 +97,10 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			)
 		}
 
-		// Prices and feeds for the block are final here; prime the
-		// treasury liability snapshot so transactions never rescan.
-		if err = h.treasuryKeeper.PrimeLiabilitySnapshot(ctx); err != nil {
-			return response, fmt.Errorf(
-				"%w: prime liability snapshot for height %d: %w",
-				arkabcitypes.ErrTreasuryKeeper,
-				req.Height,
-				err,
-			)
-		}
-
+		// Prices and feeds for the block are final here. Consumers that derive
+		// block-local state from them — Treasury's liability snapshot among
+		// them — do so in their own BeginBlocker, which the ABCI lifecycle
+		// already sequences after every PreBlocker.
 		return response, nil
 	}
 }
@@ -136,8 +119,6 @@ func preblockStatus(err error) arkmetrics.Status {
 		return arkmetrics.StatusCodec
 	case errors.Is(err, arkabcitypes.ErrMissingCommitInfo):
 		return arkmetrics.StatusMissingCommitInfo
-	case errors.Is(err, arkabcitypes.ErrTreasuryKeeper):
-		return arkmetrics.StatusTreasuryKeeper
 	default:
 		return arkmetrics.StatusFailure
 	}

@@ -81,10 +81,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, krwRate.IsZero())
 
-	preBlocker := preblock.NewHandler(
-		keeper,
-		noopTreasuryKeeper{},
-	).WrappedPreBlocker(managerWith())
+	preBlocker := preblock.NewHandler(keeper).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
 
 	// FinalizeBlock A aggregates the extension for A-1 against the old epoch,
@@ -178,10 +175,7 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 		require.Equal(t, want.denoms, sortedKeys(voteExtension.Rates))
 	}
 
-	preBlocker := preblock.NewHandler(
-		keeper,
-		noopTreasuryKeeper{},
-	).WrappedPreBlocker(managerWith())
+	preBlocker := preblock.NewHandler(keeper).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
 
 	// Each finalise block tallies the extension produced for the previous
@@ -248,10 +242,7 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 	// ExtendVote reads feeds too; only the preblock's calls are under test.
 	keeper.calls = nil
 
-	preBlocker := preblock.NewHandler(
-		keeper,
-		noopTreasuryKeeper{},
-	).WrappedPreBlocker(managerWith())
+	preBlocker := preblock.NewHandler(keeper).WrappedPreBlocker(managerWith())
 	request := finalizeRequest(t, activationVoteHeight, sdk.ConsAddress("validator"), response.VoteExtension)
 	_, err = preBlocker(
 		abcitestutil.NewSDKContext(activationVoteHeight, 1, sdk.ExecModeFinalize).
@@ -278,12 +269,6 @@ func (c staticOracleClient) Prices(
 ) (*transporttypes.OraclePricesResponse, error) {
 	return &transporttypes.OraclePricesResponse{Prices: c.prices}, nil
 }
-
-// noopTreasuryKeeper stands in for Treasury in tests that exercise oracle feed
-// transitions; liability priming is covered in preblock_test.go.
-type noopTreasuryKeeper struct{}
-
-func (noopTreasuryKeeper) PrimeLiabilitySnapshot(context.Context) error { return nil }
 
 type transitionOracleKeeper struct {
 	params   oracletypes.Params
