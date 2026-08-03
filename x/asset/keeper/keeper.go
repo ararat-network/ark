@@ -25,13 +25,16 @@ type Keeper struct {
 	// is the only transition that lands while its block is still being read.
 	registryCacheInvalidators []types.RegistryCacheInvalidator
 
-	Schema               collections.Schema
-	Params               collections.Item[types.Params]
-	Assets               collections.Map[string, types.Asset]
-	SettlementPlans      collections.Map[string, types.SettlementPlan]
-	ResolutionRecords    collections.Map[collections.Pair[string, uint64], types.ResolutionRecord]
-	EmergencyMandate     collections.Item[types.EmergencyMandate]
-	EmergencySuspensions collections.KeySet[string]
+	Schema            collections.Schema
+	Params            collections.Item[types.Params]
+	Assets            collections.Map[string, types.Asset]
+	SettlementPlans   collections.Map[string, types.SettlementPlan]
+	ResolutionRecords collections.Map[collections.Pair[string, uint64], types.ResolutionRecord]
+	EmergencyMandate  collections.Item[types.EmergencyMandate]
+	// EmergencyActions records the assets whose per-term committee action is
+	// spent. Both powers draw on it, which is what keeps a halt from being a
+	// cheap look before a suspension.
+	EmergencyActions collections.KeySet[string]
 }
 
 // NewKeeper constructs an asset keeper.
@@ -82,10 +85,10 @@ func NewKeeper(
 			"emergency_mandate",
 			codec.CollValue[types.EmergencyMandate](cdc),
 		),
-		EmergencySuspensions: collections.NewKeySet(
+		EmergencyActions: collections.NewKeySet(
 			sb,
-			types.EmergencySuspensionsKey,
-			"emergency_suspensions",
+			types.EmergencyActionsKey,
+			"emergency_actions",
 			collections.StringKey,
 		),
 	}

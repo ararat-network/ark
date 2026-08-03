@@ -65,21 +65,16 @@ func (k Keeper) getAssetAtVersion(ctx context.Context, denom string, expectedVer
 // advanceAsset stores a governance mutation of an asset, advancing the
 // lifecycle version so that every governance change is visible to
 // expected_version. The caller builds the mutated asset — status, requested
-// completion, metadata — and this emits the status change when the mutation
-// moved the status.
+// completion, metadata — and this emits the status event for every advance,
+// including version-only ones where the status is unchanged, so that every
+// version bump is announced and consumers tracking expected_version need not
+// know which mutations happen to move status.
 func (k Keeper) advanceAsset(ctx context.Context, before types.Asset, after types.Asset) error {
 	after.Version = before.Version + 1
 	if err := k.Assets.Set(ctx, after.Denom, after); err != nil {
 		return fmt.Errorf("advancing asset %s: %w", after.Denom, err)
 	}
 
-	return emitAssetStatusChanged(ctx, before, after)
-}
-
-func emitAssetStatusChanged(ctx context.Context, before types.Asset, after types.Asset) error {
-	if before.Status == after.Status {
-		return nil
-	}
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
 		&types.EventAssetStatusChanged{
 			Denom:     after.Denom,

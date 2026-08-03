@@ -212,3 +212,14 @@ func (m msgServer) EmergencySuspendAsset(ctx context.Context, msg *types.MsgEmer
 
 	return &types.MsgEmergencySuspendAssetResponse{}, nil
 }
+
+func (m msgServer) EmergencyHaltIssuance(ctx context.Context, msg *types.MsgEmergencyHaltIssuance) (*types.MsgEmergencyHaltIssuanceResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil emergency halt issuance message")
+	}
+	if err := m.k.EmergencyHaltIssuance(ctx, msg.Committee, msg.Denom, msg.ExpectedTerm); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgEmergencyHaltIssuanceResponse{}, nil
+}

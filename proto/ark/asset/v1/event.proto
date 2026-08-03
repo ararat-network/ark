@@ -67,13 +67,25 @@ message EventEmergencyMandateSet {
   uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
 }
 
-// EventEmergencySuspended is emitted after the committee consumes an asset's
-// per-term suspension.
+// EventEmergencySuspended is emitted after the committee spends an asset's
+// per-term action on a suspension.
 message EventEmergencySuspended {
   string denom = 1;
   // term is the mandate term the suspension was executed under.
   uint64 term = 2 [ (amino.dont_omitempty) = true ];
   // version is the asset version produced by the suspension.
+  uint64 version = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// EventEmergencyHalted is emitted after the committee spends an asset's
+// per-term action on an issuance halt. The status the halt lands in is shared
+// with wind-downs and recoveries and therefore says nothing about intent; this
+// event is where a committee halt is distinguishable from either.
+message EventEmergencyHalted {
+  string denom = 1;
+  // term is the mandate term the halt was executed under.
+  uint64 term = 2 [ (amino.dont_omitempty) = true ];
+  // version is the asset version produced by the halt.
   uint64 version = 3 [ (amino.dont_omitempty) = true ];
 }
 

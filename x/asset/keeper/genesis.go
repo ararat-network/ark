@@ -80,10 +80,10 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.EmergencyMandate.Set(ctx, data.EmergencyMandate); err != nil {
 		return fmt.Errorf("setting genesis emergency mandate: %w", err)
 	}
-	for _, denom := range data.EmergencySuspensions {
-		if err := k.EmergencySuspensions.Set(ctx, denom); err != nil {
+	for _, denom := range data.EmergencyActions {
+		if err := k.EmergencyActions.Set(ctx, denom); err != nil {
 			return fmt.Errorf(
-				"setting genesis emergency suspension for asset %s: %w",
+				"setting genesis emergency action for asset %s: %w",
 				denom,
 				err,
 			)
@@ -138,24 +138,24 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("getting emergency mandate: %w", err)
 	}
 
-	emergencySuspensions := []string{}
-	if err := k.EmergencySuspensions.Walk(
+	emergencyActions := []string{}
+	if err := k.EmergencyActions.Walk(
 		ctx,
 		nil,
 		func(denom string) (bool, error) {
-			emergencySuspensions = append(emergencySuspensions, denom)
+			emergencyActions = append(emergencyActions, denom)
 			return false, nil
 		},
 	); err != nil {
-		return nil, fmt.Errorf("iterating emergency suspensions: %w", err)
+		return nil, fmt.Errorf("iterating emergency actions: %w", err)
 	}
 
 	return &types.GenesisState{
-		Params:               params,
-		Assets:               assets,
-		SettlementPlans:      settlementPlans,
-		ResolutionRecords:    resolutionRecords,
-		EmergencyMandate:     emergencyMandate,
-		EmergencySuspensions: emergencySuspensions,
+		Params:            params,
+		Assets:            assets,
+		SettlementPlans:   settlementPlans,
+		ResolutionRecords: resolutionRecords,
+		EmergencyMandate:  emergencyMandate,
+		EmergencyActions:  emergencyActions,
 	}, nil
 }

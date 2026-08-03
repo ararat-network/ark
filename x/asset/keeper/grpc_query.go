@@ -214,7 +214,7 @@ func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryReso
 }
 
 // EmergencyMandate returns the committee appointment, its current effective
-// status, and the suspensions already consumed under its term.
+// status, and the assets whose action is already spent under its term.
 func (q queryServer) EmergencyMandate(ctx context.Context, req *types.QueryEmergencyMandateRequest) (*types.QueryEmergencyMandateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -229,18 +229,18 @@ func (q queryServer) EmergencyMandate(ctx context.Context, req *types.QueryEmerg
 		)
 	}
 
-	suspendedDenoms := []string{}
-	if err := q.k.EmergencySuspensions.Walk(
+	consumedDenoms := []string{}
+	if err := q.k.EmergencyActions.Walk(
 		ctx,
 		nil,
 		func(denom string) (bool, error) {
-			suspendedDenoms = append(suspendedDenoms, denom)
+			consumedDenoms = append(consumedDenoms, denom)
 			return false, nil
 		},
 	); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
-			"listing consumed emergency suspensions: %v",
+			"listing consumed emergency actions: %v",
 			err,
 		)
 	}
@@ -248,8 +248,8 @@ func (q queryServer) EmergencyMandate(ctx context.Context, req *types.QueryEmerg
 	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 
 	return &types.QueryEmergencyMandateResponse{
-		Mandate:         emergencyMandate,
-		Active:          emergencyMandate.IsActive(uint64(blockHeight)),
-		SuspendedDenoms: suspendedDenoms,
+		Mandate:        emergencyMandate,
+		Active:         emergencyMandate.IsActive(uint64(blockHeight)),
+		ConsumedDenoms: consumedDenoms,
 	}, nil
 }

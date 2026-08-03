@@ -420,7 +420,7 @@ func (s *KeeperTestSuite) TestQueryEmergencyMandate() {
 	s.Require().NoError(err)
 	s.Require().True(response.Mandate.IsDisabled())
 	s.Require().False(response.Active)
-	s.Require().Empty(response.SuspendedDenoms)
+	s.Require().Empty(response.ConsumedDenoms)
 
 	term := s.seedLiveMandate()
 	asset := assettypes.DefaultGenesisState().Assets[0]
@@ -439,5 +439,5 @@ func (s *KeeperTestSuite) TestQueryEmergencyMandate() {
 	s.Require().NoError(err)
 	s.Require().Equal(emergencyCommittee(), response.Mandate.Committee)
 	s.Require().True(response.Active)
-	s.Require().Equal([]string{asset.Denom}, response.SuspendedDenoms)
+	s.Require().Equal([]string{asset.Denom}, response.ConsumedDenoms)
 }

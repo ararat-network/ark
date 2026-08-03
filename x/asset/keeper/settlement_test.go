@@ -43,6 +43,12 @@ func (s *KeeperTestSuite) TestOpenSettlement() {
 	}, plan)
 	s.requireTypedEvents(
 		sdk.UnwrapSDKContext(s.ctx).EventManager().Events(),
+		&types.EventAssetStatusChanged{
+			Denom:     asset.Denom,
+			OldStatus: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			NewStatus: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			Version:   asset.Version + 1,
+		},
 		&types.EventSettlementOpened{
 			SettlementPlan: plan,
 		},
@@ -213,6 +219,12 @@ func (s *KeeperTestSuite) TestCancelSettlementBeforeActivation() {
 	s.Require().False(hasPlan)
 	s.requireTypedEvents(
 		sdk.UnwrapSDKContext(s.ctx).EventManager().Events(),
+		&types.EventAssetStatusChanged{
+			Denom:     asset.Denom,
+			OldStatus: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			NewStatus: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			Version:   asset.Version + 1,
+		},
 		&types.EventSettlementCancelled{
 			Denom:   asset.Denom,
 			Version: asset.Version + 1,

@@ -40,12 +40,21 @@ type OracleKeeper interface {
 // safe by ordering alone and is rebuilt before anything reads it again.
 //
 // The emergency committee is the single exception: it acts in an ordinary
-// transaction, so its suspension can land while the block is still being read,
-// leaving a consumer's fold describing a registry that no longer exists. That
-// one path invalidates; nothing else has to. The premise — that suspension is
-// the committee's only power and the only non-governance mutation — is pinned
-// by TestAutoCLIOptionsCoverAssetServices, which asserts the complete message
-// set and marks exactly one command as committee-signed.
+// transaction, so its transitions land while the block is still being read,
+// leaving a consumer's fold describing a registry that no longer exists.
+//
+// Of its two powers only suspension invalidates, and the asymmetry is a fact
+// about the fold rather than about the timing. Consumers partition supply by
+// lifecycle status, and an issuance halt moves an asset from ACTIVE to
+// ISSUANCE_HALTED — both inside oracle-priced membership — so a fold taken
+// before it is still true after it. Suspension moves supply out of that
+// membership, so it is not. A third committee power, or a halt that ever came
+// to change the partition, would have to be re-examined against exactly this.
+//
+// The committee-signed message set is pinned by
+// TestAutoCLIOptionsCoverAssetServices, which asserts the complete message set
+// and names every command that reaches consensus outside x/gov's EndBlocker, so
+// no new one ships unnoticed.
 //
 // Consumers depend on x/asset, so the reverse edge is injected at wiring rather
 // than imported, the same shape as x/oracle's feed referent guards.

@@ -249,6 +249,13 @@ func (s *KeeperTestSuite) TestMsgServerRejectsNilLifecycleMessages() {
 			},
 		},
 		{
+			name: "emergency halt issuance",
+			call: func() error {
+				_, err := server.EmergencyHaltIssuance(s.ctx, nil)
+				return err
+			},
+		},
+		{
 			name: "halt issuance",
 			call: func() error {
 				_, err := server.HaltIssuance(s.ctx, nil)
