@@ -14,8 +14,10 @@ import (
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
 	assettypes "ark/x/asset/types"
+	claimstypes "ark/x/claims/types"
 	markettypes "ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
@@ -105,17 +107,11 @@ func (s *KeeperTestSuite) TestRouteExpansionSkipsZeroCredits() {
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
 	s.setRates(oracletypes.RateSet{chain.KRWBaseDenom: math.LegacyOneDec()})
-	for _, moduleName := range []string{
-		types.RedemptionBufferName,
-		types.StrategicReserveName,
-		types.InsuranceName,
-	} {
-		s.bankKeeper.EXPECT().GetBalance(
-			gomock.Any(),
-			authtypes.NewModuleAddress(moduleName),
-			chain.NoahBaseDenom,
-		).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
-	}
+	s.bankKeeper.EXPECT().GetBalance(
+		gomock.Any(),
+		authtypes.NewModuleAddress(types.RedemptionBufferName),
+		chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 
 	quoteRates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -152,24 +148,17 @@ func (s *KeeperTestSuite) TestRouteExpansionUsesTargetWaterfall() {
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 40))
-	for _, moduleName := range []string{
-		types.RedemptionBufferName,
-		types.StrategicReserveName,
-		types.InsuranceName,
-	} {
-		s.bankKeeper.EXPECT().GetBalance(
-			gomock.Any(),
-			authtypes.NewModuleAddress(moduleName),
-			chain.NoahBaseDenom,
-		).
-			Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
-	}
+	s.bankKeeper.EXPECT().GetBalance(
+		gomock.Any(),
+		authtypes.NewModuleAddress(types.RedemptionBufferName),
+		chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 50)),
 	).Return(nil)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-		gomock.Any(), markettypes.ModuleName, types.StrategicReserveName,
+		gomock.Any(), markettypes.ModuleName, reservetypes.StrategicReserveName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
 	).Return(nil)
 
@@ -206,17 +195,11 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
-	for _, moduleName := range []string{
-		types.RedemptionBufferName,
-		types.StrategicReserveName,
-		types.InsuranceName,
-	} {
-		s.bankKeeper.EXPECT().GetBalance(
-			gomock.Any(),
-			authtypes.NewModuleAddress(moduleName),
-			chain.NoahBaseDenom,
-		).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
-	}
+	s.bankKeeper.EXPECT().GetBalance(
+		gomock.Any(),
+		authtypes.NewModuleAddress(types.RedemptionBufferName),
+		chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
@@ -247,7 +230,13 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 	})
 }
 
-func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRate() {
+// TestRouteExpansionParksPrincipalInReserveOnUnrelatedStaleRate pins the
+// custody choice an incomplete valuation forces. A member the quote never
+// touched has no rate, so no target can be sized, and the whole eligible
+// principal goes to the one fund whose allocation an operator can still revise
+// once valuation recovers. No fund status is read, which the mock enforces by
+// expecting no balance lookup.
+func (s *KeeperTestSuite) TestRouteExpansionParksPrincipalInReserveOnUnrelatedStaleRate() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 10))
@@ -255,7 +244,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
 	s.setRates(oracletypes.RateSet{})
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
+		gomock.Any(), markettypes.ModuleName, reservetypes.StrategicReserveName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 60)),
 	).Return(nil)
 
@@ -270,12 +259,12 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 	)
 	s.Require().NoError(err)
 	// An incomplete valuation parks the whole 60 of eligible principal in the
-	// Buffer, so nothing overflows and only the 40 spread burns.
+	// Reserve, so nothing overflows and only the 40 spread burns.
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 40), burned)
 	s.requireTypedEvent(&types.EventExpansionAllocated{
 		Denom:                   chain.NoahBaseDenom,
-		RedemptionBufferCredit:  math.NewInt(60),
-		StrategicReserveCredit:  math.ZeroInt(),
+		RedemptionBufferCredit:  math.ZeroInt(),
+		StrategicReserveCredit:  math.NewInt(60),
 		InsuranceCredit:         math.ZeroInt(),
 		SpreadAndDustBurn:       math.NewInt(40),
 		OverflowBurn:            math.ZeroInt(),
@@ -288,7 +277,7 @@ func (s *KeeperTestSuite) TestRouteExpansionFallsBackToBufferOnUnrelatedStaleRat
 // each value inside Dec range while their sum does not, so nothing here is
 // unpriced — the valuation is complete and the arithmetic is out of domain,
 // which the conversion declines to route around. The whole swap rolls back
-// instead of silently sending every principal to the Buffer on a liability
+// instead of silently parking every principal in the Reserve on a liability
 // figure the chain could not compute.
 func (s *KeeperTestSuite) TestRouteExpansionFailsOnAggregateOverflow() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
@@ -319,8 +308,8 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 		failModule string
 	}{
 		{name: "redemption buffer", failModule: types.RedemptionBufferName},
-		{name: "strategic reserve", failModule: types.StrategicReserveName},
-		{name: "insurance", failModule: types.InsuranceName},
+		{name: "strategic reserve", failModule: reservetypes.StrategicReserveName},
+		{name: "insurance", failModule: claimstypes.InsuranceName},
 	}
 
 	for _, test := range tests {
@@ -334,24 +323,18 @@ func (s *KeeperTestSuite) TestRouteExpansionPropagatesEachFixedTransferFailure()
 			s.setAssets(chain.USDBaseDenom)
 			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 0))
-			for _, moduleName := range []string{
-				types.RedemptionBufferName,
-				types.StrategicReserveName,
-				types.InsuranceName,
-			} {
-				s.bankKeeper.EXPECT().GetBalance(
-					gomock.Any(),
-					authtypes.NewModuleAddress(moduleName),
-					chain.NoahBaseDenom,
-				).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
-			}
+			s.bankKeeper.EXPECT().GetBalance(
+				gomock.Any(),
+				authtypes.NewModuleAddress(types.RedemptionBufferName),
+				chain.NoahBaseDenom,
+			).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0))
 			credits := []struct {
 				module string
 				amount int64
 			}{
 				{types.RedemptionBufferName, 34},
-				{types.StrategicReserveName, 33},
-				{types.InsuranceName, 33},
+				{reservetypes.StrategicReserveName, 33},
+				{claimstypes.InsuranceName, 33},
 			}
 			for _, credit := range credits {
 				call := s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -644,9 +627,10 @@ func (s *KeeperTestSuite) TestDrawRedemptionBufferDrawsForSuspendedDenomWithOpen
 // also exercising the ungated plan read.
 func usdSettlementPlan() assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
-		Denom:            chain.USDBaseDenom,
-		RedemptionRate:   math.LegacyNewDecWithPrec(5, 1),
-		OpenedHeight:     1,
-		ActivationHeight: 1_000,
+		Denom:                 chain.USDBaseDenom,
+		RedemptionRate:        math.LegacyNewDecWithPrec(5, 1),
+		OpenedHeight:          1,
+		ActivationHeight:      1_000,
+		EarliestClosingHeight: 1100,
 	}
 }

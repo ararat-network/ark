@@ -15,9 +15,88 @@ import (
 	context "context"
 	reflect "reflect"
 
+	math "cosmossdk.io/math"
 	types1 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 )
+
+// MockClaimsKeeper is a mock of ClaimsKeeper interface.
+type MockClaimsKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockClaimsKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockClaimsKeeperMockRecorder is the mock recorder for MockClaimsKeeper.
+type MockClaimsKeeperMockRecorder struct {
+	mock *MockClaimsKeeper
+}
+
+// NewMockClaimsKeeper creates a new mock instance.
+func NewMockClaimsKeeper(ctrl *gomock.Controller) *MockClaimsKeeper {
+	mock := &MockClaimsKeeper{ctrl: ctrl}
+	mock.recorder = &MockClaimsKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockClaimsKeeper) EXPECT() *MockClaimsKeeperMockRecorder {
+	return m.recorder
+}
+
+// RecognisedCapital mocks base method.
+func (m *MockClaimsKeeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecognisedCapital", ctx)
+	ret0, _ := ret[0].(math.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecognisedCapital indicates an expected call of RecognisedCapital.
+func (mr *MockClaimsKeeperMockRecorder) RecognisedCapital(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecognisedCapital", reflect.TypeOf((*MockClaimsKeeper)(nil).RecognisedCapital), ctx)
+}
+
+// MockReserveKeeper is a mock of ReserveKeeper interface.
+type MockReserveKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockReserveKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockReserveKeeperMockRecorder is the mock recorder for MockReserveKeeper.
+type MockReserveKeeperMockRecorder struct {
+	mock *MockReserveKeeper
+}
+
+// NewMockReserveKeeper creates a new mock instance.
+func NewMockReserveKeeper(ctrl *gomock.Controller) *MockReserveKeeper {
+	mock := &MockReserveKeeper{ctrl: ctrl}
+	mock.recorder = &MockReserveKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockReserveKeeper) EXPECT() *MockReserveKeeperMockRecorder {
+	return m.recorder
+}
+
+// RecognisedCapital mocks base method.
+func (m *MockReserveKeeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecognisedCapital", ctx)
+	ret0, _ := ret[0].(math.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecognisedCapital indicates an expected call of RecognisedCapital.
+func (mr *MockReserveKeeperMockRecorder) RecognisedCapital(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecognisedCapital", reflect.TypeOf((*MockReserveKeeper)(nil).RecognisedCapital), ctx)
+}
 
 // MockAccountKeeper is a mock of AccountKeeper interface.
 type MockAccountKeeper struct {
@@ -262,45 +341,46 @@ func (m *MockAssetKeeper) EXPECT() *MockAssetKeeperMockRecorder {
 	return m.recorder
 }
 
-// ListAssets mocks base method.
-func (m *MockAssetKeeper) ListAssets(ctx context.Context) ([]types.Asset, error) {
+// OraclePricedDenoms mocks base method.
+func (m *MockAssetKeeper) OraclePricedDenoms(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAssets", ctx)
-	ret0, _ := ret[0].([]types.Asset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListAssets indicates an expected call of ListAssets.
-func (mr *MockAssetKeeperMockRecorder) ListAssets(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAssets", reflect.TypeOf((*MockAssetKeeper)(nil).ListAssets), ctx)
-}
-
-// PricedLiveDenoms mocks base method.
-func (m *MockAssetKeeper) PricedLiveDenoms(ctx context.Context) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PricedLiveDenoms", ctx)
+	ret := m.ctrl.Call(m, "OraclePricedDenoms", ctx)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PricedLiveDenoms indicates an expected call of PricedLiveDenoms.
-func (mr *MockAssetKeeperMockRecorder) PricedLiveDenoms(ctx any) *gomock.Call {
+// OraclePricedDenoms indicates an expected call of OraclePricedDenoms.
+func (mr *MockAssetKeeperMockRecorder) OraclePricedDenoms(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PricedLiveDenoms", reflect.TypeOf((*MockAssetKeeper)(nil).PricedLiveDenoms), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OraclePricedDenoms", reflect.TypeOf((*MockAssetKeeper)(nil).OraclePricedDenoms), ctx)
+}
+
+// PricedAssets mocks base method.
+func (m *MockAssetKeeper) PricedAssets(ctx context.Context, overlay types0.RateSet) ([]string, types.AssetPricings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PricedAssets", ctx, overlay)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(types.AssetPricings)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// PricedAssets indicates an expected call of PricedAssets.
+func (mr *MockAssetKeeperMockRecorder) PricedAssets(ctx, overlay any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PricedAssets", reflect.TypeOf((*MockAssetKeeper)(nil).PricedAssets), ctx, overlay)
 }
 
 // Pricings mocks base method.
-func (m *MockAssetKeeper) Pricings(ctx context.Context, overlay types0.RateSet, denoms ...string) (types.DenomPricings, error) {
+func (m *MockAssetKeeper) Pricings(ctx context.Context, overlay types0.RateSet, denoms ...string) (types.AssetPricings, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, overlay}
 	for _, a := range denoms {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Pricings", varargs...)
-	ret0, _ := ret[0].(types.DenomPricings)
+	ret0, _ := ret[0].(types.AssetPricings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

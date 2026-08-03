@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/cosmos/gogoproto/proto"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,12 +12,10 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"ark/pkg/chain"
-	"ark/pkg/mandate"
 	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
@@ -84,27 +81,6 @@ func (s *KeeperTestSuite) TestQueryNilRequests() {
 			name: "reward funding",
 			call: func() error {
 				_, err := server.RewardFunding(s.ctx, nil)
-				return err
-			},
-		},
-		{
-			name: "claims mandate",
-			call: func() error {
-				_, err := server.ClaimsMandate(s.ctx, nil)
-				return err
-			},
-		},
-		{
-			name: "claim",
-			call: func() error {
-				_, err := server.Claim(s.ctx, nil)
-				return err
-			},
-		},
-		{
-			name: "claims",
-			call: func() error {
-				_, err := server.Claims(s.ctx, nil)
 				return err
 			},
 		},
@@ -312,12 +288,16 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
 
 func (s *KeeperTestSuite) TestQueryFundStatus() {
 	s.setAssets()
-	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(7)))
+	// Both committee-operated funds report through their own keeper rather than
+	// through a Bank stub: Treasury asks each operator, never the account.
+	// Insurance holds 40 with 7 encumbered by pending claims, which x/claims
+	// reports as 33 recognised — the encumbered 7 is claims state, served by its
+	// own Query/ClaimsMandate, and Treasury never sees it.
+	s.setInsuranceRecognised(33)
+	s.setReserveRecognised(30)
 	balances := map[string]int64{
 		treasurytypes.SubsidyPoolName:      10,
 		treasurytypes.RedemptionBufferName: 20,
-		treasurytypes.StrategicReserveName: 30,
-		treasurytypes.InsuranceName:        40,
 	}
 	for moduleName, amount := range balances {
 		address := authtypes.NewModuleAddress(moduleName)
@@ -330,19 +310,20 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 		&treasurytypes.QueryFundStatusRequest{},
 	)
 	s.Require().NoError(err)
-	// An empty registry is a complete valuation of nothing.
-	s.Require().True(response.TotalLiabilityAvailable)
-	s.Require().True(response.PricedLiabilityNoahEquivalent.IsZero())
-	s.Require().True(response.SettlementLiabilityNoahEquivalent.IsZero())
+	// An empty registry is a complete valuation of nothing: both exclusion
+	// lists empty is what says every recognised liability was valued.
 	s.Require().Empty(response.UntrustedSuspendedSupply)
+	s.Require().Empty(response.StaleMemberSupply)
+	s.Require().True(response.PricedLiability.IsZero())
+	s.Require().True(response.SettlementLiability.IsZero())
 	s.Require().Empty(response.WrittenOffExposure)
-	s.Require().True(response.NominalLiabilityNoahEquivalent.IsZero())
+	s.Require().True(response.NominalLiability.IsZero())
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 10), response.SubsidyPoolBalance)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 20), response.RedemptionBufferBalance)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 30), response.StrategicReserveBalance)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 40), response.InsuranceBalance)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 7), response.InsuranceReserved)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 33), response.InsuranceUnencumberedBalance)
+	// The reported Insurance balance is what x/claims recognises, not the 40 the
+	// module account holds.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 33), response.InsuranceBalance)
 }
 
 func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognizedLiability() {
@@ -355,18 +336,21 @@ func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognizedLiabil
 	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	// Two Bank reads remain: the Subsidy Pool and the Redemption Buffer. Both
+	// committee-operated funds answer through their own keeper.
 	s.bankKeeper.EXPECT().GetBalance(s.ctx, gomock.Any(), chain.NoahBaseDenom).
-		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(4)
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
 
 	response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
 		s.ctx,
 		&treasurytypes.QueryFundStatusRequest{},
 	)
 	s.Require().NoError(err)
-	s.Require().True(response.TotalLiabilityAvailable)
+	s.Require().Empty(response.UntrustedSuspendedSupply)
+	s.Require().Empty(response.StaleMemberSupply)
 	s.Require().Equal(
 		sdk.NewDecCoinFromDec(chain.NoahBaseDenom, math.LegacyNewDec(100)),
-		response.NominalLiabilityNoahEquivalent,
+		response.NominalLiability,
 	)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 50), response.RedemptionBufferTarget)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 25), response.StrategicReserveTarget)
@@ -401,22 +385,21 @@ func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplet
 				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 			s.setRates(oracletypes.RateSet{})
 			s.bankKeeper.EXPECT().GetBalance(s.ctx, gomock.Any(), chain.NoahBaseDenom).
-				Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)).Times(4)
+				Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)).Times(2)
 
 			response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
 				s.ctx,
 				&treasurytypes.QueryFundStatusRequest{},
 			)
 			s.Require().NoError(err)
-			s.Require().False(response.TotalLiabilityAvailable)
-			s.Require().True(response.PricedLiabilityNoahEquivalent.IsZero())
+			s.Require().True(response.PricedLiability.IsZero())
 			s.Require().Equal(
 				[]sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
 				response.UntrustedSuspendedSupply,
 			)
 			// Zero recognised liability yields zero targets: the report never
 			// guesses, while the balances stay real.
-			s.Require().True(response.NominalLiabilityNoahEquivalent.IsZero())
+			s.Require().True(response.NominalLiability.IsZero())
 			s.Require().True(response.RedemptionBufferTarget.IsZero())
 			s.Require().True(response.StrategicReserveTarget.IsZero())
 			s.Require().True(response.InsuranceTarget.IsZero())
@@ -427,8 +410,9 @@ func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplet
 
 func (s *KeeperTestSuite) TestQueryFundStatusClassifiesUnexpectedStateError() {
 	s.setAssets(chain.USDBaseDenom)
-	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
-		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	// No supply read is stubbed, and none is expected: the partition prices the
+	// registry before it asks what is outstanding, so a fold that cannot price
+	// fails without reading supply at all.
 	s.ratesErr = errors.New("oracle store failure")
 
 	response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
@@ -453,101 +437,4 @@ func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
 	)
 	s.Require().NoError(err)
 	s.Require().Equal(funding, response.RewardFunding)
-}
-
-func (s *KeeperTestSuite) TestQueryClaimsMandate() {
-	server := keeper.NewQueryServerImpl(s.keeper)
-	response, err := server.ClaimsMandate(
-		s.ctx,
-		&treasurytypes.QueryClaimsMandateRequest{},
-	)
-	s.Require().NoError(err)
-	expectedMandate := treasurytypes.DefaultClaimsMandate()
-	s.Require().True(proto.Equal(&response.Mandate, &expectedMandate))
-	s.Require().True(response.InsuranceReserved.IsZero())
-	s.Require().True(response.AllowanceUsed.IsZero())
-	s.Require().True(response.AllowanceRemaining.IsZero())
-	s.False(response.Active)
-
-	claimsMandate := treasurytypes.ClaimsMandate{
-		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
-			ActivationHeight: 10,
-			ExpiryHeight:     20,
-		},
-		CommitteeClaimLimit: math.NewInt(100),
-	}
-	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, claimsMandate))
-	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(40)))
-	s.setBlockHeight(10)
-	response, err = server.ClaimsMandate(s.ctx, &treasurytypes.QueryClaimsMandateRequest{})
-	s.Require().NoError(err)
-	s.Require().Equal(claimsMandate, response.Mandate)
-	s.Require().Equal(math.NewInt(40), response.AllowanceUsed)
-	s.Require().Equal(math.NewInt(60), response.AllowanceRemaining)
-	s.True(response.Active)
-}
-
-func (s *KeeperTestSuite) TestQueryClaim() {
-	claim := treasurytypes.Claim{
-		ClaimId: 1,
-		Amount:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-	}
-	s.Require().NoError(s.keeper.Claims.Set(s.ctx, claim.ClaimId, claim))
-	server := keeper.NewQueryServerImpl(s.keeper)
-
-	response, err := server.Claim(
-		s.ctx,
-		&treasurytypes.QueryClaimRequest{ClaimId: claim.ClaimId},
-	)
-	s.Require().NoError(err)
-	s.Require().Equal(claim, response.Claim)
-
-	_, err = server.Claim(
-		s.ctx,
-		&treasurytypes.QueryClaimRequest{ClaimId: 999},
-	)
-	s.Require().Error(err)
-	s.Require().Equal(codes.NotFound, status.Code(err))
-
-	_, err = server.Claim(s.ctx, &treasurytypes.QueryClaimRequest{})
-	s.Require().Error(err)
-	s.Require().Equal(codes.InvalidArgument, status.Code(err))
-}
-
-func (s *KeeperTestSuite) TestQueryClaimsPagination() {
-	for _, claimID := range []uint64{1, 2, 3} {
-		claim := treasurytypes.Claim{ClaimId: claimID}
-		s.Require().NoError(s.keeper.Claims.Set(s.ctx, claimID, claim))
-	}
-	server := keeper.NewQueryServerImpl(s.keeper)
-
-	first, err := server.Claims(s.ctx, &treasurytypes.QueryClaimsRequest{
-		Pagination: &querytypes.PageRequest{Limit: 2, CountTotal: true},
-	})
-	s.Require().NoError(err)
-	s.Require().Equal([]uint64{1, 2}, claimIDs(first.Claims))
-	s.Require().Equal(uint64(3), first.Pagination.Total)
-	s.Require().NotEmpty(first.Pagination.NextKey)
-
-	second, err := server.Claims(s.ctx, &treasurytypes.QueryClaimsRequest{
-		Pagination: &querytypes.PageRequest{Key: first.Pagination.NextKey, Limit: 2},
-	})
-	s.Require().NoError(err)
-	s.Require().Equal([]uint64{3}, claimIDs(second.Claims))
-
-	_, err = server.Claims(s.ctx, &treasurytypes.QueryClaimsRequest{
-		Pagination: &querytypes.PageRequest{Key: first.Pagination.NextKey, Offset: 1},
-	})
-	s.Require().Error(err)
-	s.Require().Equal(codes.InvalidArgument, status.Code(err))
-}
-
-func claimIDs(claims []treasurytypes.Claim) []uint64 {
-	ids := make([]uint64, len(claims))
-	for i, claim := range claims {
-		ids[i] = claim.ClaimId
-	}
-	return ids
 }

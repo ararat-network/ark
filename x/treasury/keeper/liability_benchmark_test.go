@@ -164,6 +164,8 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		treasuryBankKeeper,
 		oracleKeeper,
 		benchAssetKeeper{denoms: denoms},
+		stubFund{},
+		stubFund{},
 	)
 
 	return &liabilityBenchFixture{

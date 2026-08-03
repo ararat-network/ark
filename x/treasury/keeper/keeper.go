@@ -15,7 +15,8 @@ import (
 	"ark/x/treasury/types"
 )
 
-// Keeper owns Treasury policy and claims state. Fund custody remains in Bank.
+// Keeper owns Treasury policy state. Fund custody remains in Bank, and each
+// committee-operated fund is owned by its own module.
 type Keeper struct {
 	cdc                   codec.BinaryCodec
 	storeService          store.KVStoreService
@@ -26,18 +27,15 @@ type Keeper struct {
 	bankKeeper    types.BankKeeper
 	oracleKeeper  types.OracleKeeper
 	assetKeeper   types.AssetKeeper
+	claimsKeeper  types.ClaimsKeeper
+	reserveKeeper types.ReserveKeeper
 
-	Schema              collections.Schema
-	Params              collections.Item[types.Params]
-	TaxCaps             collections.Map[string, math.Int]
-	ClaimsMandate       collections.Item[types.ClaimsMandate]
-	ClaimsAllowanceUsed collections.Item[math.Int]
-	InsuranceReserved   collections.Item[math.Int]
-	NextClaimID         collections.Sequence
-	Claims              collections.Map[uint64, types.Claim]
-	RewardFunding       collections.Item[types.RewardFundingState]
-	MonetaryMandate     collections.Item[types.MonetaryMandate]
-	MonetaryPolicy      collections.Item[types.MonetaryPolicy]
+	Schema          collections.Schema
+	Params          collections.Item[types.Params]
+	TaxCaps         collections.Map[string, math.Int]
+	RewardFunding   collections.Item[types.RewardFundingState]
+	MonetaryMandate collections.Item[types.MonetaryMandate]
+	MonetaryPolicy  collections.Item[types.MonetaryPolicy]
 	// TaxCapRefreshPending records that a cadence boundary has passed without
 	// being served. The boundary block raises it and only a successful rebuild
 	// lowers it, so a refresh skipped on stale rates retries every block until
@@ -57,6 +55,8 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 	assetKeeper types.AssetKeeper,
+	claimsKeeper types.ClaimsKeeper,
+	reserveKeeper types.ReserveKeeper,
 ) *Keeper {
 	for _, moduleName := range types.FundAccountNames() {
 		if addr := accountKeeper.GetModuleAddress(moduleName); addr == nil {
@@ -77,6 +77,8 @@ func NewKeeper(
 		bankKeeper:            bankKeeper,
 		oracleKeeper:          oracleKeeper,
 		assetKeeper:           assetKeeper,
+		claimsKeeper:          claimsKeeper,
+		reserveKeeper:         reserveKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,
@@ -89,36 +91,6 @@ func NewKeeper(
 			"tax_caps",
 			collections.StringKey,
 			sdk.IntValue,
-		),
-		ClaimsMandate: collections.NewItem(
-			sb,
-			types.ClaimsMandateKey,
-			"claims_mandate",
-			codec.CollValue[types.ClaimsMandate](cdc),
-		),
-		ClaimsAllowanceUsed: collections.NewItem(
-			sb,
-			types.ClaimsAllowanceUsedKey,
-			"claims_allowance_used",
-			sdk.IntValue,
-		),
-		InsuranceReserved: collections.NewItem(
-			sb,
-			types.InsuranceReservedKey,
-			"insurance_reserved",
-			sdk.IntValue,
-		),
-		NextClaimID: collections.NewSequence(
-			sb,
-			types.NextClaimIDKey,
-			"next_claim_id",
-		),
-		Claims: collections.NewMap(
-			sb,
-			types.ClaimsKey,
-			"claims",
-			collections.Uint64Key,
-			codec.CollValue[types.Claim](cdc),
 		),
 		RewardFunding: collections.NewItem(
 			sb,

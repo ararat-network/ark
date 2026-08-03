@@ -42,7 +42,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 	}
 
 	// The tax base is the cap set: a denomination is taxed exactly when
-	// Treasury holds a cap for it. Caps are derived from priced-live
+	// Treasury holds a cap for it. Caps are derived from oracle-priced
 	// membership and then kept, so lifecycle status governs what a cap is
 	// worth and never whether transfers of outstanding supply are taxed —
 	// suspended, written-off, and retirement-residual supply all still move

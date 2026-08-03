@@ -15,6 +15,7 @@ import (
 	"ark/pkg/decimal"
 	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
@@ -65,7 +66,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDefersWindowChangeUntilNextWindow() {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.expectValidatorFees(sdk.NewCoins())
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(1), funding.BlocksRemaining)
@@ -76,12 +77,12 @@ func (s *KeeperTestSuite) TestBeginBlockerDefersWindowChangeUntilNextWindow() {
 	s.expectValidatorFees(sdk.NewCoins())
 	s.expectStabilityTaxBalance(sdk.NewCoins())
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireDefaultRewardFunding()
 
 	s.setBlockHeight(4)
 	s.expectValidatorFees(sdk.NewCoins())
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	funding, err = s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(2), funding.BlocksRemaining)
@@ -95,7 +96,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSettlesSingleBlockWindow() {
 	s.expectValidatorFees(sdk.NewCoins())
 	s.expectStabilityTaxBalance(sdk.NewCoins())
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireDefaultRewardFunding()
 }
 
@@ -107,14 +108,14 @@ func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 	s.setRewardFunding(rewardFunding(2, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	s.setBlockHeight(3)
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 200)))
 	s.expectStabilityTaxBalance(sdk.NewCoins())
 	s.expectSubsidyBalance(20)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireDefaultRewardFunding()
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
 		Denom:            chain.NoahBaseDenom,
@@ -293,7 +294,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingMovesWrittenOffTaxToReserve() {
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.expectUnconfiguredRewardValuation()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-		gomock.Any(), types.StabilityTaxCollectorName, types.StrategicReserveName, stabilityTax,
+		gomock.Any(), types.StabilityTaxCollectorName, reservetypes.StrategicReserveName, stabilityTax,
 	).Return(nil)
 	s.expectSubsidyBalance(10)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -301,7 +302,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingMovesWrittenOffTaxToReserve() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
 	).Return(nil)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
 		Moved: stabilityTax,
 	})
@@ -330,7 +331,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersSuspendedTax() {
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.expectUnconfiguredRewardValuation()
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
 		Deferred: stabilityTax,
 	})
@@ -366,7 +367,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPricesSettlingTaxAtPlanRate() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	).Return(nil)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireNoTypedEvent(&types.EventUnpricedStabilityTaxRouted{})
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
 		Denom:            chain.NoahBaseDenom,
@@ -394,7 +395,7 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingValuesSettlingFeesAtPlanRate() 
 	))
 	s.expectUnconfiguredRewardValuation()
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
@@ -402,7 +403,7 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingValuesSettlingFeesAtPlanRate() 
 }
 
 // TestUpdateRewardFundingCountsUnpricedFeeDenomsAsZero pins the per-denom
-// skip: a priced-live member whose feed is stale is omitted from the available
+// skip: an oracle-priced member whose feed is stale is omitted from the available
 // rate set, so its fees count as zero while the priced remainder still
 // accrues. Dust of a stale-feed member in the fee collector must not suppress
 // a whole window's top-ups.
@@ -558,7 +559,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDoesNotClearAfterAllocationFailure() {
 		gomock.Any(), types.StabilityTaxCollectorName, oracletypes.ModuleName, stabilityTax,
 	).Return(errors.New("bank failure"))
 
-	err := s.keeper.BeginBlocker(s.ctx)
+	err := s.beginBlock()
 	s.Require().ErrorContains(err, "allocating stability tax to Oracle")
 	funding, getErr := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(getErr)
@@ -568,7 +569,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDoesNotClearAfterAllocationFailure() {
 
 func (s *KeeperTestSuite) advanceRewardFunding(denoms ...string) error {
 	s.expectRewardFundingConfiguration(denoms)
-	return s.keeper.BeginBlocker(s.ctx)
+	return s.beginBlock()
 }
 
 func (s *KeeperTestSuite) runRewardFundingSettlement(
@@ -582,7 +583,7 @@ func (s *KeeperTestSuite) runRewardFundingSettlement(
 	return s.advanceRewardFunding(denoms...)
 }
 
-// expectRewardFundingConfiguration pins the priced-live membership — the set
+// expectRewardFundingConfiguration pins the oracle-priced membership — the set
 // reward valuation admits — to exactly the given denominations and gives each
 // an uncapped tax cap. The epoch seeded in SetupTest still matches, so the
 // narrowed membership does not trigger a cap rebuild mid-test.

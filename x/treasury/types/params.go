@@ -12,19 +12,17 @@ import (
 )
 
 const (
-	DefaultReferenceTaxCapDenom          = chain.SDRBaseDenom
-	DefaultRewardFundingWindow           = chain.BlocksPerWeek
-	DefaultClaimCancellationPeriodBlocks = chain.BlocksPerWeek
-	DefaultTaxCapRefreshPeriodBlocks     = chain.BlocksPerWeek
+	DefaultReferenceTaxCapDenom      = chain.SDRBaseDenom
+	DefaultRewardFundingWindow       = chain.BlocksPerWeek
+	DefaultTaxCapRefreshPeriodBlocks = chain.BlocksPerWeek
 )
 
 // DefaultParams returns the safe launch defaults for Treasury.
 func DefaultParams() Params {
 	return Params{
-		ReferenceTaxCap:               sdk.NewCoin(DefaultReferenceTaxCapDenom, math.ZeroInt()),
-		RewardFundingWindow:           DefaultRewardFundingWindow,
-		ClaimCancellationPeriodBlocks: DefaultClaimCancellationPeriodBlocks,
-		TaxCapRefreshPeriodBlocks:     DefaultTaxCapRefreshPeriodBlocks,
+		ReferenceTaxCap:           sdk.NewCoin(DefaultReferenceTaxCapDenom, math.ZeroInt()),
+		RewardFundingWindow:       DefaultRewardFundingWindow,
+		TaxCapRefreshPeriodBlocks: DefaultTaxCapRefreshPeriodBlocks,
 	}
 }
 
@@ -40,9 +38,6 @@ func (p Params) Validate() error {
 	}
 	if p.RewardFundingWindow == 0 {
 		return errors.New("treasury parameter RewardFundingWindow must be positive")
-	}
-	if p.ClaimCancellationPeriodBlocks == 0 {
-		return errors.New("treasury parameter ClaimCancellationPeriodBlocks must be positive")
 	}
 	if p.TaxCapRefreshPeriodBlocks == 0 {
 		return errors.New("treasury parameter TaxCapRefreshPeriodBlocks must be positive")

@@ -38,6 +38,12 @@ type ModuleInputs struct {
 	BankKeeper    types.BankKeeper
 	OracleKeeper  types.OracleKeeper
 	AssetKeeper   types.AssetKeeper
+	// ClaimsKeeper and ReserveKeeper report the two committee-operated funds'
+	// recognised capital. Both satisfy the same method set, so depinject cannot
+	// tell them apart by scanning provided types: app wiring binds each named
+	// interface to its concrete keeper with depinject.BindInterface.
+	ClaimsKeeper  types.ClaimsKeeper
+	ReserveKeeper types.ReserveKeeper
 }
 
 type ModuleOutputs struct {
@@ -58,6 +64,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.OracleKeeper,
 		in.AssetKeeper,
+		in.ClaimsKeeper,
+		in.ReserveKeeper,
 	)
 
 	m := NewAppModule(k)

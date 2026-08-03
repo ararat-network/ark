@@ -84,7 +84,7 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 }
 
 // TestComputeTaxTaxesDepartedDenomWithKeptCap pins the tax base to the cap set
-// rather than to lifecycle status: ausd has left priced-live membership, but
+// rather than to lifecycle status: ausd has left oracle-priced membership, but
 // its outstanding supply is still transferable and its kept cap still bounds
 // the tax on that transfer.
 func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {

@@ -14,9 +14,9 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simulation.RandomisedGenState(simState)
 }
 
-// ProposalMsgsX registers only the generally safe parameter proposal. Claims
-// policy, cancellation, and Reserve messages require exact governed state and
-// are covered by integration tests rather than random single-key signing.
+// ProposalMsgsX registers only the generally safe parameter proposal. Policy
+// and Reserve messages require exact governed state and are covered by
+// integration tests rather than random single-key signing.
 func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
 }

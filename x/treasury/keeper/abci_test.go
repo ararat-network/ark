@@ -16,8 +16,63 @@ import (
 func (s *KeeperTestSuite) TestBeginBlockerSkipsRewardFundingAtGenesisHeight() {
 	s.setBlockHeight(1)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireDefaultRewardFunding()
+}
+
+// TestBeginBlockerPrimesLiabilitySnapshot pins the valuation this module now
+// owns. It moved out of the ABCI preblocker, so BeginBlocker is the sole place
+// the block's claimable aggregate is established, and transaction-time callers
+// depend on finding it already there rather than rescanning the registry.
+func (s *KeeperTestSuite) TestBeginBlockerPrimesLiabilitySnapshot() {
+	s.setBlockHeight(2)
+	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
+		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
+	s.setRates(oracletypes.RateSet{
+		chain.USDBaseDenom: math.LegacyOneDec(),
+		chain.KRWBaseDenom: math.LegacyOneDec(),
+	})
+	s.expectValidatorFees(sdk.NewCoins())
+
+	s.Require().NoError(s.beginBlock())
+	s.requireLiabilitySnapshot(math.LegacyNewDec(200), true)
+}
+
+// TestBeginBlockerPrimesLiabilityAtGenesisHeight pins priming outside the
+// height gate that gets reward funding. The preblocker primed unconditionally,
+// and the first block values liability exactly as every later one does, so a
+// transaction in it must not be the one call that pays for a registry scan.
+func (s *KeeperTestSuite) TestBeginBlockerPrimesLiabilityAtGenesisHeight() {
+	s.setBlockHeight(1)
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 50)).Times(1)
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+
+	s.Require().NoError(s.beginBlock())
+	s.requireLiabilitySnapshot(math.LegacyNewDec(50), true)
+	s.requireDefaultRewardFunding()
+}
+
+// TestBeginBlockerFailsBlockWhenPrimingFails keeps priming's failure semantics
+// across the move: valuation arithmetic leaving the supported domain halts the
+// block rather than degrading, and it does so before any later BeginBlocker
+// step observes state built on it.
+func (s *KeeperTestSuite) TestBeginBlockerFailsBlockWhenPrimingFails() {
+	s.setBlockHeight(2)
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewCoin(chain.USDBaseDenom, math.NewIntWithDecimal(1, 60))).Times(1)
+	s.setRates(oracletypes.RateSet{
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(1, 18),
+	})
+
+	err := s.beginBlock()
+	s.Require().ErrorContains(err, "priming liability snapshot")
+	s.Require().ErrorIs(err, oracletypes.ErrConversionOutOfRange)
 }
 
 func (s *KeeperTestSuite) TestBeginBlockerAccruesRewardFunding() {
@@ -26,21 +81,21 @@ func (s *KeeperTestSuite) TestBeginBlockerAccruesRewardFunding() {
 
 	// The default reference cap is zero, so the refresh is rate-free and this
 	// block is observably pure reward-funding accrual.
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
 }
 
-func (s *KeeperTestSuite) TestBeginBlockerValuesStableFeesAgainstPricedLiveMembership() {
+func (s *KeeperTestSuite) TestBeginBlockerValuesStableFeesAgainstOraclePricedMembership() {
 	s.setBlockHeight(2)
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 5)))
-	// asdr is priced-live by the suite defaults, so the fee is valued; the
+	// asdr is oracle-priced by the suite defaults, so the fee is valued; the
 	// membership set that admits it comes from the asset registry, not from
 	// any Treasury- or Oracle-owned list.
 	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(5), funding.ValidatorFeeValue)
@@ -61,7 +116,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRebuildsDriftedCapsMidPeriod() {
 	// The lone member is the reference itself, so the rebuild needs no rates:
 	// the strict oracle mock stays unprogrammed and the stored caps are the
 	// whole observable effect.
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
@@ -91,7 +146,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsOnMembershipChange() {
 		chain.USDBaseDenom: math.LegacyNewDec(2),
 	}, nil)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
@@ -127,7 +182,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsCapsWhenMembershipShrinks() {
 	// The suite leaves the cadence flag down and this height closes no period,
 	// so coverage is the only trigger under test.
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -153,7 +208,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRefreshCadenceFollowsParams() {
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	staleCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
@@ -165,7 +220,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRefreshCadenceFollowsParams() {
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
@@ -183,7 +238,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsAtWeeklyBoundaryWithUnchan
 	s.setAssets(chain.SDRBaseDenom)
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(7)))
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
@@ -213,7 +268,7 @@ func (s *KeeperTestSuite) TestBeginBlockerBuildsCapsForMembersOnlyWhenReferenceI
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
@@ -245,7 +300,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnavailableTaxCapRates() {
 		chain.USDBaseDenom,
 	).Return(nil, oracletypes.ErrStaleExchangeRate)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	// The skip is silent on the event stream — it is logged, not evented — so
 	// the stored caps are its whole observable effect: the member that never
 	// got one still has none.
@@ -299,10 +354,10 @@ func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedRefreshNextBlock() {
 		}, nil),
 	)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(false)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(false)
 	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -325,7 +380,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnrepresentableTaxCapConversion()
 		chain.USDBaseDenom,
 	).Return(nil, oracletypes.ErrConversionOutOfRange)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	_, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().Error(err)
 	s.requireTaxCapRefreshPending(false)
@@ -353,7 +408,7 @@ func (s *KeeperTestSuite) TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit() {
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 
 	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -402,7 +457,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedCadenceRefreshAfterBound
 	s.setBlockHeight(9)
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(true)
 	staleCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -414,7 +469,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedCadenceRefreshAfterBound
 	s.setBlockHeight(10)
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
-	s.Require().NoError(s.keeper.BeginBlocker(s.ctx))
+	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(false)
 	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)

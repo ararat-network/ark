@@ -10,20 +10,20 @@ import (
 
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
+	claimstypes "ark/x/claims/types"
 	markettypes "ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
 type fundStatus struct {
-	bufferBalance         math.Int
-	bufferTarget          math.Int
-	reserveBalance        math.Int
-	reserveTarget         math.Int
-	insuranceBalance      math.Int
-	insuranceReserved     math.Int
-	insuranceUnencumbered math.Int
-	insuranceTarget       math.Int
+	bufferBalance    math.Int
+	bufferTarget     math.Int
+	reserveBalance   math.Int
+	reserveTarget    math.Int
+	insuranceBalance math.Int
+	insuranceTarget  math.Int
 }
 
 // RouteExpansion derives and executes the complete expansion-principal
@@ -65,7 +65,7 @@ func (k Keeper) RouteExpansion(
 	if eligible.GT(grossOffer.Amount) {
 		return sdk.Coin{}, fmt.Errorf(
 			"stable output value %s exceeds gross offer %s",
-			sdk.NewCoin(chain.NoahBaseDenom, eligible),
+			chain.NoahCoin(eligible),
 			grossOffer,
 		)
 	}
@@ -75,43 +75,47 @@ func (k Keeper) RouteExpansion(
 	if err != nil {
 		return sdk.Coin{}, err
 	}
-	if complete {
-		liabilityNoah, err = decimal.Add(liabilityNoah, convertedOutput.Amount)
-		if err != nil {
-			return sdk.Coin{}, fmt.Errorf("adding stable output to aggregate liability: %w", err)
-		}
-	}
 
 	// Targets derive from a complete valuation only, which is why the waterfall
-	// runs solely under the branch below: there the claimable aggregate and full
-	// outstanding exposure are the same number. They part company the moment
-	// some supply cannot be valued, and then they answer opposite questions
-	// about it — coverage asks what can show up and claim, so unclaimable supply
-	// is rightly excluded, while a target asks what capital is owed against an
-	// obligation, and a suspended or unpriced asset is still an obligation, the
-	// kind Insurance and the Reserve exist for. Sizing a target off the
-	// claimable figure would call for less capital exactly when an asset has
-	// just failed.
+	// runs solely under the branch below. Incompleteness says no fresh rate
+	// stood behind part of the total, and both ways that happens disqualify the
+	// figure: suspended and never-priced supply is absent from the aggregate
+	// outright, so a target sized on it would call for less capital exactly when
+	// an asset has just failed, while stale supply is carried only on a rate the
+	// freshness gate has already rejected. Neither answers what capital a fund
+	// is owed.
 	//
-	// The exposure a target would need is exactly what could not be valued, so
-	// there is no honest basis to size one against. The whole eligible principal
-	// therefore parks in the Buffer rather than overflowing into a burn sized
-	// off an understated exposure. The asymmetry in the errors decides it:
-	// under-crediting Reserve and Insurance here is temporary, because their
-	// gaps persist and later expansions fill them, while burning principal we
-	// only thought was surplus is not.
-	bufferCredit := eligible
-	reserveCredit := math.ZeroInt()
+	// The whole eligible principal therefore parks in the Reserve rather than
+	// overflowing into a burn sized off an exposure this thin. What makes the
+	// Reserve the right custodian is that its allocation stays revisable: the
+	// commitment to the Buffer is authority-gated and reads nothing but the
+	// Reserve's own balance (§6.4), so it still executes while valuation is
+	// broken, and once a complete valuation shows the real gaps an operator can
+	// move the principal to the Buffer or leave it as Reserve capital. The
+	// Buffer has no such exit — it has no operator, and its only outflow is a
+	// redemption draw — so principal parked there is committed for good. That
+	// asymmetry decides it: crediting the wrong fund under a valuation this thin
+	// is recoverable, and later expansions fill whichever gap persists, while
+	// committing principal irreversibly on it is not, and burning it is less so.
+	bufferCredit := math.ZeroInt()
+	reserveCredit := eligible
 	insuranceCredit := math.ZeroInt()
 	overflowBurn := math.ZeroInt()
 	if complete {
-		status, err := k.calculateFundStatus(ctx, liabilityNoah)
+		// The mint this expansion is about to perform is itself liability the
+		// targets must answer for, so the waterfall sizes against post-mint
+		// exposure rather than the snapshot the quote was drawn under.
+		postMintLiability, err := decimal.Add(liabilityNoah, convertedOutput.Amount)
+		if err != nil {
+			return sdk.Coin{}, fmt.Errorf("adding stable output to aggregate liability: %w", err)
+		}
+		status, err := k.calculateFundStatus(ctx, postMintLiability)
 		if err != nil {
 			return sdk.Coin{}, err
 		}
 		bufferGap := shortfall(status.bufferTarget, status.bufferBalance)
 		reserveGap := shortfall(status.reserveTarget, status.reserveBalance)
-		insuranceGap := shortfall(status.insuranceTarget, status.insuranceUnencumbered)
+		insuranceGap := shortfall(status.insuranceTarget, status.insuranceBalance)
 		remaining := eligible
 		bufferCredit = math.MinInt(remaining, bufferGap)
 		remaining = remaining.Sub(bufferCredit)
@@ -127,8 +131,8 @@ func (k Keeper) RouteExpansion(
 		amount math.Int
 	}{
 		{types.RedemptionBufferName, bufferCredit},
-		{types.StrategicReserveName, reserveCredit},
-		{types.InsuranceName, insuranceCredit},
+		{reservetypes.StrategicReserveName, reserveCredit},
+		{claimstypes.InsuranceName, insuranceCredit},
 	}
 	for _, credit := range credits {
 		if credit.amount.IsZero() {
@@ -138,7 +142,7 @@ func (k Keeper) RouteExpansion(
 			ctx,
 			markettypes.ModuleName,
 			credit.module,
-			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, credit.amount)),
+			chain.NoahCoins(credit.amount),
 		); err != nil {
 			return sdk.Coin{}, fmt.Errorf("crediting %s: %w", credit.module, err)
 		}
@@ -156,14 +160,14 @@ func (k Keeper) RouteExpansion(
 		return sdk.Coin{}, fmt.Errorf("emitting Treasury expansion allocation event: %w", err)
 	}
 
-	return sdk.NewCoin(chain.NoahBaseDenom, spread.Add(overflowBurn)), nil
+	return chain.NoahCoin(spread.Add(overflowBurn)), nil
 }
 
 // DrawRedemptionBuffer funds the current Buffer coverage share of the quoted
 // NOAH output using pre-burn claimable liability and Buffer state.
 //
 // The redeemed denomination arrives already recognised as liability: Market
-// converts out of priced-live assets only, and routes a suspended asset through
+// converts out of oracle-priced assets only, and routes a suspended asset through
 // settlement, which requires an activated plan. Neither path can reach here with
 // a denomination Treasury does not carry.
 //
@@ -242,7 +246,7 @@ func (k Keeper) DrawRedemptionBuffer(
 			ctx,
 			types.RedemptionBufferName,
 			markettypes.ModuleName,
-			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, bufferPaid)),
+			chain.NoahCoins(bufferPaid),
 		); err != nil {
 			return math.Int{}, fmt.Errorf("drawing redemption buffer: %w", err)
 		}
@@ -263,26 +267,36 @@ func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.Lega
 	if err != nil {
 		return fundStatus{}, fmt.Errorf("getting monetary policy: %w", err)
 	}
-	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
+	// Both committee-operated funds report their own recognised capital (§7.2);
+	// Treasury owns only the requirement each is measured against, and asks each
+	// operator what its fund is worth rather than reading the module account
+	// behind its back. Insurance currently differs from its raw balance because
+	// an approved pending claim is encumbered and cannot also cover another
+	// loss — the reservation is x/claims state, served by its own
+	// Query/ClaimsMandate. Reserve currently does not differ, but it holds
+	// written-off tax residue that earns no credit, and it gains haircut
+	// external value in §20.1 — which is exactly why the figure is asked for
+	// rather than read. The Buffer keeps a direct balance read: it has no
+	// operator, so Treasury is its operator.
+	insuranceBalance, err := k.claimsKeeper.RecognisedCapital(ctx)
 	if err != nil {
-		return fundStatus{}, fmt.Errorf("getting Insurance reservation: %w", err)
+		return fundStatus{}, fmt.Errorf("getting Insurance recognised capital: %w", err)
+	}
+	reserveBalance, err := k.reserveKeeper.RecognisedCapital(ctx)
+	if err != nil {
+		return fundStatus{}, fmt.Errorf("getting Reserve recognised capital: %w", err)
 	}
 	bufferBalance := k.balance(ctx, types.RedemptionBufferName)
-	reserveBalance := k.balance(ctx, types.StrategicReserveName)
-	insuranceBalance := k.balance(ctx, types.InsuranceName)
-	insuranceUnencumbered := insuranceBalance.Sub(insuranceReserved)
 	bufferTarget := policy.RedemptionBufferTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt()
 	reserveTarget := policy.StrategicReserveTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt()
 	insuranceTarget := policy.InsuranceTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt()
 	return fundStatus{
-		bufferBalance:         bufferBalance,
-		bufferTarget:          bufferTarget,
-		reserveBalance:        reserveBalance,
-		reserveTarget:         reserveTarget,
-		insuranceBalance:      insuranceBalance,
-		insuranceReserved:     insuranceReserved,
-		insuranceUnencumbered: insuranceUnencumbered,
-		insuranceTarget:       insuranceTarget,
+		bufferBalance:    bufferBalance,
+		bufferTarget:     bufferTarget,
+		reserveBalance:   reserveBalance,
+		reserveTarget:    reserveTarget,
+		insuranceBalance: insuranceBalance,
+		insuranceTarget:  insuranceTarget,
 	}, nil
 }
 

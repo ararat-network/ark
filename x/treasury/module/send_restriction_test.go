@@ -21,8 +21,6 @@ func TestTreasurySendRestriction(t *testing.T) {
 	fundAddresses := []sdk.AccAddress{
 		authtypes.NewModuleAddress(types.SubsidyPoolName),
 		authtypes.NewModuleAddress(types.RedemptionBufferName),
-		authtypes.NewModuleAddress(types.StrategicReserveName),
-		authtypes.NewModuleAddress(types.InsuranceName),
 	}
 	anoah := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
 
@@ -42,56 +40,10 @@ func TestTreasurySendRestriction(t *testing.T) {
 	require.Equal(t, unrelated, got)
 }
 
-// TestTreasurySendRestrictionExemptsTaxCollectorToReserve pins the one exempt
-// pair: settlement routing of derecognized stability tax from the collector
-// into Reserve custody carries non-NOAH coins — possibly several denominations
-// in one send — and must pass. The exemption is the pair, not the sender: the
-// collector still cannot reach any other fund with non-NOAH coins, and no
-// other sender inherits the Reserve exemption.
-func TestTreasurySendRestrictionExemptsTaxCollectorToReserve(t *testing.T) {
-	collector := authtypes.NewModuleAddress(types.StabilityTaxCollectorName)
-	reserve := authtypes.NewModuleAddress(types.StrategicReserveName)
-
-	for _, amount := range []sdk.Coins{
-		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
-		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1), sdk.NewInt64Coin("ausd", 2)),
-	} {
-		got, err := TreasurySendRestriction(context.Background(), collector, reserve, amount)
-		require.NoError(t, err)
-		require.Equal(t, reserve, got)
-	}
-
-	for _, otherFund := range []string{
-		types.SubsidyPoolName,
-		types.RedemptionBufferName,
-		types.InsuranceName,
-	} {
-		got, err := TreasurySendRestriction(
-			context.Background(),
-			collector,
-			authtypes.NewModuleAddress(otherFund),
-			sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
-		)
-		require.ErrorIs(t, err, errortypes.ErrInvalidCoins)
-		require.Nil(t, got)
-	}
-
-	got, err := TreasurySendRestriction(
-		context.Background(),
-		sdk.AccAddress{1},
-		reserve,
-		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
-	)
-	require.ErrorIs(t, err, errortypes.ErrInvalidCoins)
-	require.Nil(t, got)
-}
-
 func TestTreasurySendRestrictionRejectsInvalidFundDeposits(t *testing.T) {
 	fundNames := []string{
 		types.SubsidyPoolName,
 		types.RedemptionBufferName,
-		types.StrategicReserveName,
-		types.InsuranceName,
 	}
 	tests := []struct {
 		name   string

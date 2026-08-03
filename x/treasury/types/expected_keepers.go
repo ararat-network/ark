@@ -3,11 +3,52 @@ package types
 import (
 	"context"
 
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
 )
+
+// ClaimsKeeper reports what x/claims' committee-operated fund is worth toward
+// the capital requirement Treasury computes for it.
+//
+// The split follows the redesign plan's §7.2 accounting contract:
+//
+//	required_capital   = target_ratio * covered_risk_exposure
+//	recognised_capital = liquid_unencumbered_anoah + risk_adjusted_external
+//	capital_gap        = max(required_capital - recognised_capital, 0)
+//
+// Treasury owns the left side, because it needs consolidated liability and the
+// governed target ratio. The operating module owns the right side, because it
+// needs the fund's own encumbrance, and later its eligibility entries,
+// haircuts, and concentration caps. Assets held by a fund satisfy its
+// requirement and never define it (§20.1), which is what keeps the two
+// separable. Treasury never reads a claim record and never pays one.
+//
+// The return widens to a total/liquid pair when a fund's first non-NOAH asset
+// is approved and §7.2's liquid_gap becomes real. Until then every recognised
+// balance is immediately usable and the two are equal.
+//
+// ReserveKeeper states the same contract for x/reserve. The signature is
+// written twice rather than shared through one embedded interface because
+// depinject resolves ModuleInputs fields by type, and two fields of a single
+// interface type would bind to the same keeper. Two named types are what make
+// them separately addressable; app wiring then binds each to its keeper with
+// depinject.BindInterface. The names alone are not sufficient — Go interfaces
+// are structural, so both keepers satisfy both — which is why the bindings are
+// what actually disambiguate.
+type ClaimsKeeper interface {
+	RecognisedCapital(ctx context.Context) (math.Int, error)
+}
+
+// ReserveKeeper reports what x/reserve's committee-operated fund is worth
+// toward its capital requirement. See ClaimsKeeper for the accounting contract
+// both funds answer to.
+type ReserveKeeper interface {
+	RecognisedCapital(ctx context.Context) (math.Int, error)
+}
 
 // AccountKeeper defines the auth functionality required by Treasury.
 type AccountKeeper interface {
@@ -33,7 +74,7 @@ type BankKeeper interface {
 //
 // What remains is cap derivation, which is deliberately feed-based rather than
 // verdict-based: the reference unit need not be a registered member, and a cap
-// set is one coherent artifact restating the same parity per denom. It needs
+// set is one coherent artefact restating the same parity per denom. It needs
 // every requested rate or none, and it reports which rate failed and why on
 // its skip event, so it takes the all-or-nothing read.
 type OracleKeeper interface {
@@ -51,7 +92,7 @@ type OracleKeeper interface {
 // lifecycle state; Treasury owns only what to do about the answer — defer,
 // disclose, zero, or route.
 type AssetKeeper interface {
-	Pricings(ctx context.Context, overlay oracletypes.RateSet, denoms ...string) (assettypes.DenomPricings, error)
-	ListAssets(ctx context.Context) ([]assettypes.Asset, error)
-	PricedLiveDenoms(ctx context.Context) ([]string, error)
+	Pricings(ctx context.Context, overlay oracletypes.RateSet, denoms ...string) (assettypes.AssetPricings, error)
+	PricedAssets(ctx context.Context, overlay oracletypes.RateSet) ([]string, assettypes.AssetPricings, error)
+	OraclePricedDenoms(ctx context.Context) ([]string, error)
 }

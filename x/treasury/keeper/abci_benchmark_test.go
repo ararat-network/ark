@@ -45,47 +45,52 @@ func (b benchAssetKeeper) Pricings(
 	_ context.Context,
 	overlay oracletypes.RateSet,
 	denoms ...string,
-) (assettypes.DenomPricings, error) {
-	pricings := make(assettypes.DenomPricings, len(denoms)+1)
-	pricings[chain.NoahBaseDenom] = assettypes.NumerairePricing()
+) (assettypes.AssetPricings, error) {
+	pricings := make(assettypes.AssetPricings, len(denoms)+1)
+	pricings[chain.NoahBaseDenom] = assettypes.NumeraireVerdict()
 	for _, denom := range denoms {
 		if denom == chain.NoahBaseDenom {
 			continue
 		}
 		if !slices.Contains(b.denoms, denom) {
-			pricings[denom] = assettypes.DenomPricing{Reason: assettypes.UnpricedUnrecognised}
+			pricings[denom] = assettypes.PricedAsset{
+				Reason: assettypes.UnpricedReason_UNPRICED_REASON_UNRECOGNISED,
+			}
 			continue
 		}
 		rate, rated := overlay[denom]
 		if !rated {
 			rate = math.LegacyOneDec()
 		}
-		pricings[denom] = assettypes.DenomPricing{
-			Rate:   rate,
-			Source: assettypes.PriceSourceOracle,
-			Priced: true,
+		pricings[denom] = assettypes.PricedAsset{
+			Asset: assettypes.Asset{
+				Denom:   denom,
+				Status:  assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
+				Version: 1,
+			},
+			Rate:   &rate,
+			Source: assettypes.PriceSource_PRICE_SOURCE_ORACLE,
 		}
 	}
 	return pricings, nil
 }
 
-func (b benchAssetKeeper) ListAssets(context.Context) ([]assettypes.Asset, error) {
-	assets := make([]assettypes.Asset, 0, len(b.denoms))
-	for _, denom := range b.denoms {
-		assets = append(assets, assettypes.Asset{
-			Denom:   denom,
-			Status:  assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
-			Version: 1,
-		})
+func (b benchAssetKeeper) PricedAssets(
+	ctx context.Context,
+	overlay oracletypes.RateSet,
+) ([]string, assettypes.AssetPricings, error) {
+	pricings, err := b.Pricings(ctx, overlay, b.denoms...)
+	if err != nil {
+		return nil, nil, err
 	}
-	return assets, nil
+	return slices.Clone(b.denoms), pricings, nil
 }
 
 func (benchAssetKeeper) SettlementPlan(context.Context, string) (assettypes.SettlementPlan, bool, error) {
 	return assettypes.SettlementPlan{}, false, nil
 }
 
-func (b benchAssetKeeper) PricedLiveDenoms(context.Context) ([]string, error) {
+func (b benchAssetKeeper) OraclePricedDenoms(context.Context) ([]string, error) {
 	return slices.Clone(b.denoms), nil
 }
 
@@ -198,6 +203,8 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 		treasuryBankKeeper,
 		oracleKeeper,
 		benchAssetKeeper{denoms: denoms},
+		stubFund{},
+		stubFund{},
 	)
 	if err := keeper.Params.Set(ctx, treasurytypes.DefaultParams()); err != nil {
 		b.Fatal(err)

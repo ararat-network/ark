@@ -13,6 +13,7 @@ import (
 	"ark/pkg/decimal"
 	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
@@ -135,7 +136,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 			ctx,
 			types.SubsidyPoolName,
 			authtypes.FeeCollectorName,
-			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, validatorSubsidy)),
+			chain.NoahCoins(validatorSubsidy),
 		); err != nil {
 			return fmt.Errorf("topping up validator rewards: %w", err)
 		}
@@ -145,7 +146,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 			ctx,
 			types.SubsidyPoolName,
 			oracletypes.ModuleName,
-			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, oracleSubsidy)),
+			chain.NoahCoins(oracleSubsidy),
 		); err != nil {
 			return fmt.Errorf("topping up Oracle rewards: %w", err)
 		}
@@ -196,14 +197,14 @@ func (k Keeper) allocateStabilityTax(ctx context.Context, validator, oracle sdk.
 // may yet recover — stays in the collector for a window that can price it.
 // Unrecognised denominations defer, because value never moves on a state this
 // function does not understand.
-func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pricings assettypes.DenomPricings) (sdk.Coins, error) {
+func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pricings assettypes.AssetPricings) (sdk.Coins, error) {
 	var priced, deferred, moved sdk.Coins
 	for _, coin := range stabilityTax {
-		pricing := pricings[coin.Denom]
+		verdict := pricings[coin.Denom]
 		switch {
-		case pricing.Priced:
+		case verdict.IsPriced():
 			priced = append(priced, coin)
-		case pricing.Reason == assettypes.UnpricedWrittenOff || pricing.Reason == assettypes.UnpricedRetired:
+		case verdict.Reason == assettypes.UnpricedReason_UNPRICED_REASON_WRITTEN_OFF || verdict.Reason == assettypes.UnpricedReason_UNPRICED_REASON_RETIRED:
 			moved = append(moved, coin)
 		default:
 			deferred = append(deferred, coin)
@@ -217,7 +218,7 @@ func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pr
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			types.StabilityTaxCollectorName,
-			types.StrategicReserveName,
+			reservetypes.StrategicReserveName,
 			moved,
 		); err != nil {
 			return nil, fmt.Errorf("moving written-off stability tax to the strategic reserve: %w", err)
@@ -241,10 +242,10 @@ func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pr
 // are an expected degraded mode with a retry to return to: those paths have a
 // conservative fallback to degrade into, while a reward window valued from a
 // partially summed pot would misallocate rather than degrade.
-func valueRewards(rewards sdk.Coins, pricings assettypes.DenomPricings) (math.Int, error) {
+func valueRewards(rewards sdk.Coins, pricings assettypes.AssetPricings) (math.Int, error) {
 	value := math.LegacyZeroDec()
 	for _, coin := range rewards {
-		if !pricings[coin.Denom].Priced {
+		if !pricings[coin.Denom].IsPriced() {
 			continue
 		}
 		converted, err := pricings.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
@@ -266,14 +267,14 @@ func shortfall(target, actual math.Int) math.Int {
 	return target.Sub(actual)
 }
 
-func allocateValidatorTax(tax sdk.Coins, pricings assettypes.DenomPricings, validatorValue, totalValue math.Int) sdk.Coins {
+func allocateValidatorTax(tax sdk.Coins, pricings assettypes.AssetPricings, validatorValue, totalValue math.Int) sdk.Coins {
 	if !validatorValue.IsPositive() || !totalValue.IsPositive() {
 		return sdk.NewCoins()
 	}
 
 	validatorTax := make(sdk.Coins, 0, len(tax))
 	for _, coin := range tax {
-		if !pricings[coin.Denom].Priced {
+		if !pricings[coin.Denom].IsPriced() {
 			continue
 		}
 		amount := coin.Amount.Mul(validatorValue).Quo(totalValue)

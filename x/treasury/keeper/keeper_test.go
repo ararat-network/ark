@@ -26,6 +26,7 @@ import (
 
 	chain "ark/pkg/chain"
 	assettypes "ark/x/asset/types"
+	claimstypes "ark/x/claims/types"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/testutil"
@@ -35,16 +36,27 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx                   context.Context
-	cdc                   codec.Codec
-	keeper                *keeper.Keeper
-	msgServer             types.MsgServer
-	queryClient           types.QueryClient
-	authority             string
-	accountKeeper         *testutil.MockAccountKeeper
-	bankKeeper            *testutil.MockBankKeeper
-	oracleKeeper          *testutil.MockOracleKeeper
-	assetKeeper           *testutil.MockAssetKeeper
+	ctx           context.Context
+	cdc           codec.Codec
+	keeper        *keeper.Keeper
+	msgServer     types.MsgServer
+	queryClient   types.QueryClient
+	authority     string
+	accountKeeper *testutil.MockAccountKeeper
+	bankKeeper    *testutil.MockBankKeeper
+	oracleKeeper  *testutil.MockOracleKeeper
+	assetKeeper   *testutil.MockAssetKeeper
+	claimsKeeper  *testutil.MockClaimsKeeper
+	reserveKeeper *testutil.MockReserveKeeper
+	// insuranceRecognised and reserveRecognised are what the two funds report.
+	// Both default to zero so a test that never funds either keeps its old
+	// shape; a test that does calls the matching setter. These replace the Bank
+	// balance stubs those funds used before they moved out.
+	insuranceRecognised math.Int
+	reserveRecognised   math.Int
+	// primingStubbed records that beginBlock has registered its zero-supply
+	// fallback, so repeated calls within one test add only one expectation.
+	primingStubbed        bool
 	transientStoreService store.TransientStoreService
 	commitMultiStore      storetypes.CommitMultiStore
 
@@ -106,6 +118,22 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 	s.oracleKeeper = testutil.NewMockOracleKeeper(ctrl)
 	s.assetKeeper = testutil.NewMockAssetKeeper(ctrl)
+	s.claimsKeeper = testutil.NewMockClaimsKeeper(ctrl)
+	s.reserveKeeper = testutil.NewMockReserveKeeper(ctrl)
+	s.insuranceRecognised = math.ZeroInt()
+	s.reserveRecognised = math.ZeroInt()
+	s.claimsKeeper.EXPECT().
+		RecognisedCapital(gomock.Any()).
+		DoAndReturn(func(context.Context) (math.Int, error) {
+			return s.insuranceRecognised, nil
+		}).
+		AnyTimes()
+	s.reserveKeeper.EXPECT().
+		RecognisedCapital(gomock.Any()).
+		DoAndReturn(func(context.Context) (math.Int, error) {
+			return s.reserveRecognised, nil
+		}).
+		AnyTimes()
 	s.transientStoreService = transientStoreService
 	s.commitMultiStore = testCtx.CMS
 	for _, moduleName := range types.FundAccountNames() {
@@ -114,6 +142,12 @@ func (s *KeeperTestSuite) SetupTest() {
 			Return(authtypes.NewModuleAddress(moduleName)).
 			AnyTimes()
 	}
+	// Insurance is no longer a Treasury fund account, but Treasury still reads
+	// its balance to report it in FundStatus.
+	s.accountKeeper.EXPECT().
+		GetModuleAddress(claimstypes.InsuranceName).
+		Return(authtypes.NewModuleAddress(claimstypes.InsuranceName)).
+		AnyTimes()
 	s.accountKeeper.EXPECT().
 		GetModuleAddress(types.StabilityTaxCollectorName).
 		Return(authtypes.NewModuleAddress(types.StabilityTaxCollectorName)).
@@ -127,6 +161,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	// on many unrelated paths, so every method derives its answer from the
 	// suite fixtures instead of per-test expectations. Strictness stays where
 	// it matters — the bank and oracle mocks still fail on unexpected calls.
+	s.primingStubbed = false
 	s.assets = map[string]assettypes.Asset{}
 	s.plans = map[string]assettypes.SettlementPlan{}
 	s.rates = oracletypes.NewRateSet()
@@ -137,24 +172,11 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.seedAsset(denom, assettypes.AssetStatus_ASSET_STATUS_ACTIVE)
 	}
 	s.assetKeeper.EXPECT().
-		ListAssets(gomock.Any()).
-		DoAndReturn(func(context.Context) ([]assettypes.Asset, error) {
-			// Key order, like the real registry walk. Tests that stub
-			// per-denomination supply reads rely on this order for GetRateSet
-			// argument expectations.
-			listed := make([]assettypes.Asset, 0, len(s.assets))
-			for _, denom := range slices.Sorted(maps.Keys(s.assets)) {
-				listed = append(listed, s.assets[denom])
-			}
-			return listed, nil
-		}).
-		AnyTimes()
-	s.assetKeeper.EXPECT().
-		PricedLiveDenoms(gomock.Any()).
+		OraclePricedDenoms(gomock.Any()).
 		DoAndReturn(func(context.Context) ([]string, error) {
 			denoms := make([]string, 0, len(s.assets))
 			for denom, asset := range s.assets {
-				if asset.IsPriceable() {
+				if asset.IsOraclePriced() {
 					denoms = append(denoms, denom)
 				}
 			}
@@ -171,57 +193,27 @@ func (s *KeeperTestSuite) SetupTest() {
 			_ context.Context,
 			overlay oracletypes.RateSet,
 			denoms ...string,
-		) (assettypes.DenomPricings, error) {
-			if s.ratesErr != nil {
-				return nil, s.ratesErr
+		) (assettypes.AssetPricings, error) {
+			return s.pricingsFor(overlay, denoms)
+		}).
+		AnyTimes()
+	// The registry-wide fold answers from the same derivation as the
+	// denomination-keyed one, over every fixture asset in key order, so the two
+	// entry points cannot disagree here any more than they can in the registry.
+	s.assetKeeper.EXPECT().
+		PricedAssets(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			overlay oracletypes.RateSet,
+		) ([]string, assettypes.AssetPricings, error) {
+			// Key order, like the real registry walk. Tests that stub
+			// per-denomination supply reads rely on this order.
+			denoms := slices.Sorted(maps.Keys(s.assets))
+			pricings, err := s.pricingsFor(overlay, denoms)
+			if err != nil {
+				return nil, nil, err
 			}
-
-			// Capture mirrors the registry's: members the overlay does not
-			// already cover, priced at whatever the suite's Oracle can answer.
-			rates := oracletypes.NewRateSetFrom(overlay)
-			for _, denom := range denoms {
-				asset, listed := s.assets[denom]
-				if !listed || !asset.IsPriceable() {
-					continue
-				}
-				if _, covered := overlay[denom]; covered {
-					continue
-				}
-				if rate, priceable := s.rates[denom]; priceable {
-					rates[denom] = rate
-				}
-			}
-
-			pricings := make(assettypes.DenomPricings, len(denoms)+1)
-			pricings[chain.NoahBaseDenom] = assettypes.NumerairePricing()
-			for _, denom := range denoms {
-				if denom == chain.NoahBaseDenom {
-					continue
-				}
-				asset, listed := s.assets[denom]
-				if !listed {
-					pricings[denom] = assettypes.DenomPricing{Reason: assettypes.UnpricedUnrecognised}
-					continue
-				}
-				var plan *assettypes.SettlementPlan
-				if stored, found := s.plans[denom]; found {
-					plan = &stored
-				}
-				// The real derivation, not a copy of it: a change to the
-				// registry's authority table must reach these tests rather
-				// than let the fixture drift into agreeing with itself.
-				verdict := assettypes.PriceVerdict(asset, rates, plan)
-				// Mirrors the registry's second pass: a member whose feed is
-				// unavailable carries whatever the Oracle last stored for it,
-				// and a member absent from lastRates was never priced.
-				if !verdict.Priced && verdict.Reason == assettypes.UnpricedFeedUnavailable {
-					if lastRate, known := s.lastRates[denom]; known {
-						verdict.LastRate = lastRate
-					}
-				}
-				pricings[denom] = verdict
-			}
-			return pricings, nil
+			return denoms, pricings, nil
 		}).
 		AnyTimes()
 	s.oracleKeeper.EXPECT().
@@ -240,21 +232,11 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.bankKeeper,
 		s.oracleKeeper,
 		s.assetKeeper,
+		s.claimsKeeper,
+		s.reserveKeeper,
 	)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, types.DefaultMonetaryPolicy()))
-	s.Require().NoError(s.keeper.ClaimsMandate.Set(
-		s.ctx,
-		types.DefaultClaimsMandate(),
-	))
-	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(
-		s.ctx,
-		math.ZeroInt(),
-	))
-	s.Require().NoError(s.keeper.InsuranceReserved.Set(
-		s.ctx,
-		math.ZeroInt(),
-	))
 	s.Require().NoError(s.keeper.RewardFunding.Set(
 		s.ctx,
 		types.DefaultRewardFundingState(),
@@ -275,8 +257,108 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
 
+// pricingsFor mirrors the registry's fold over the suite fixtures for the named
+// denominations. Both asset-keeper pricing stubs answer through it, so the
+// registry-wide entry point and the denomination-keyed one cannot drift apart
+// in the fixtures the way they cannot in the registry.
+func (s *KeeperTestSuite) pricingsFor(
+	overlay oracletypes.RateSet,
+	denoms []string,
+) (assettypes.AssetPricings, error) {
+	if s.ratesErr != nil {
+		return nil, s.ratesErr
+	}
+
+	// Capture mirrors the registry's: members the overlay does not already
+	// cover, priced at whatever the suite's Oracle can answer.
+	rates := oracletypes.NewRateSetFrom(overlay)
+	for _, denom := range denoms {
+		asset, listed := s.assets[denom]
+		if !listed || !asset.IsOraclePriced() {
+			continue
+		}
+		if _, covered := overlay[denom]; covered {
+			continue
+		}
+		if rate, priceable := s.rates[denom]; priceable {
+			rates[denom] = rate
+		}
+	}
+
+	pricings := make(assettypes.AssetPricings, len(denoms)+1)
+	pricings[chain.NoahBaseDenom] = assettypes.NumeraireVerdict()
+	for _, denom := range denoms {
+		if denom == chain.NoahBaseDenom {
+			continue
+		}
+		asset, listed := s.assets[denom]
+		if !listed {
+			pricings[denom] = assettypes.PricedAsset{
+				Reason: assettypes.UnpricedReason_UNPRICED_REASON_UNRECOGNISED,
+			}
+			continue
+		}
+		var plan *assettypes.SettlementPlan
+		if stored, found := s.plans[denom]; found {
+			plan = &stored
+		}
+		// The real derivation, not a copy of it: a change to the registry's
+		// authority table must reach these tests rather than let the fixture
+		// drift into agreeing with itself.
+		verdict := assettypes.PriceVerdict(asset, rates, plan)
+		// Mirrors the registry's second pass: a member whose feed is
+		// unavailable carries whatever the Oracle last stored for it, and a
+		// member absent from lastRates was never priced.
+		if !verdict.IsPriced() && verdict.Reason == assettypes.UnpricedReason_UNPRICED_REASON_FEED_UNAVAILABLE {
+			if lastRate, known := s.lastRates[denom]; known {
+				verdict.LastRate = &lastRate
+			}
+		}
+		pricings[denom] = verdict
+	}
+
+	return pricings, nil
+}
+
+// setInsuranceRecognised sets what x/claims reports for Insurance. Treasury
+// derives the displayed reservation as balance minus this.
+func (s *KeeperTestSuite) setInsuranceRecognised(amount int64) {
+	s.insuranceRecognised = math.NewInt(amount)
+}
+
+// setReserveRecognised sets what x/reserve reports for the strategic Reserve.
+// At launch that is simply its NOAH balance.
+func (s *KeeperTestSuite) setReserveRecognised(amount int64) {
+	s.reserveRecognised = math.NewInt(amount)
+}
+
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+}
+
+// beginBlock runs BeginBlocker with the liability priming it now performs
+// absorbed. Priming scans the fixture registry for supply, which reward-funding
+// and tax-cap assertions are indifferent to, so unstubbed denominations report
+// zero rather than forcing every such test to describe a supply it does not
+// care about.
+//
+// The fallback is registered here rather than in SetupTest so it cannot shadow
+// a test that stubs supply itself: gomock serves the first unexhausted match,
+// so a specific expectation registered earlier in the test still answers first
+// and keeps its exact call count. Tests asserting on the primed value must
+// therefore stub GetSupply before calling this.
+func (s *KeeperTestSuite) beginBlock() error {
+	if !s.primingStubbed {
+		s.primingStubbed = true
+		s.bankKeeper.EXPECT().
+			GetSupply(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, denom string) sdk.Coin {
+				return sdk.NewCoin(denom, math.ZeroInt())
+			}).
+			AnyTimes()
+	}
+
+	return s.keeper.BeginBlocker(s.ctx)
 }
 
 // seedAsset registers or overwrites one asset in the mock registry. The

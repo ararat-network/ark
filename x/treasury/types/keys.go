@@ -8,26 +8,22 @@ const (
 
 	SubsidyPoolName           = "treasury_subsidy_pool"
 	RedemptionBufferName      = "treasury_redemption_buffer"
-	StrategicReserveName      = "treasury_strategic_reserve"
-	InsuranceName             = "treasury_insurance"
 	StabilityTaxCollectorName = "stability_tax_collector"
 )
 
 var (
 	ParamsKey               = collections.NewPrefix(0)
 	TaxCapsKey              = collections.NewPrefix(1)
-	ClaimsMandateKey        = collections.NewPrefix(2)
-	ClaimsAllowanceUsedKey  = collections.NewPrefix(3)
-	InsuranceReservedKey    = collections.NewPrefix(4)
-	NextClaimIDKey          = collections.NewPrefix(5)
-	ClaimsKey               = collections.NewPrefix(6)
-	RewardFundingKey        = collections.NewPrefix(7)
-	MonetaryMandateKey      = collections.NewPrefix(8)
-	MonetaryPolicyKey       = collections.NewPrefix(9)
-	TaxCapRefreshPendingKey = collections.NewPrefix(10)
+	RewardFundingKey        = collections.NewPrefix(2)
+	MonetaryMandateKey      = collections.NewPrefix(3)
+	MonetaryPolicyKey       = collections.NewPrefix(4)
+	TaxCapRefreshPendingKey = collections.NewPrefix(5)
 )
 
-// FundAccountNames returns all launch Treasury custody module accounts.
+// FundAccountNames returns the custody accounts Treasury itself operates.
+// Insurance and the strategic Reserve are deliberately absent: each belongs to
+// the module whose committee operates it. Treasury still credits both during
+// the expansion waterfall, which needs only their names.
 func FundAccountNames() []string {
-	return []string{SubsidyPoolName, RedemptionBufferName, StrategicReserveName, InsuranceName}
+	return []string{SubsidyPoolName, RedemptionBufferName}
 }

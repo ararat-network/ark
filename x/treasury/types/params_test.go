@@ -24,11 +24,6 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardFundingWindow must be positive",
 		},
 		{
-			name:      "zero claim cancellation period",
-			mutate:    func(p *types.Params) { p.ClaimCancellationPeriodBlocks = 0 },
-			expectErr: "ClaimCancellationPeriodBlocks must be positive",
-		},
-		{
 			// Zero would divide by zero in the modular cadence check.
 			name:      "zero tax cap refresh period",
 			mutate:    func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = 0 },

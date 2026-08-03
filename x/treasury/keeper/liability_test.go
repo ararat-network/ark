@@ -493,7 +493,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 		wantUntrusted   []sdk.Coin
 		wantWrittenOff  []types.WrittenOffExposure
 		wantStaleSupply []sdk.Coin
-		wantAvailable   bool
 	}{
 		{
 			name: "all active supply is oracle-priced",
@@ -508,7 +507,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				})
 			},
 			wantPriced:    "150",
-			wantAvailable: true,
 		},
 		{
 			name: "issuance-halted supply stays priced",
@@ -521,7 +519,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 			},
 			wantPriced:    "100",
-			wantAvailable: true,
 		},
 		{
 			// The fixture plan's activation height is far in the future: an
@@ -535,7 +532,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			},
 			supplies:       map[string]int64{chain.USDBaseDenom: 100},
 			wantSettlement: "200",
-			wantAvailable:  true,
 		},
 		{
 			name: "suspended supply without a plan is untrusted exposure",
@@ -545,7 +541,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			},
 			supplies:      map[string]int64{chain.USDBaseDenom: 100},
 			wantUntrusted: []sdk.Coin{sdk.NewInt64Coin(chain.USDBaseDenom, 100)},
-			wantAvailable: false,
 		},
 		{
 			name: "written-off supply is disclosed but stays derecognized",
@@ -555,19 +550,18 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			},
 			supplies:       map[string]int64{chain.USDBaseDenom: 60},
 			wantWrittenOff: []types.WrittenOffExposure{writeOff(chain.USDBaseDenom, 60)},
-			wantAvailable:  true,
 		},
 		{
-			// Positive PENDING or RETIRED supply cannot exist in practice;
-			// if it ever does, it must not leak into any bucket.
-			name: "pending and retired supply is invisible",
+			// Positive RETIRED supply, or supply under a status this fold does
+			// not recognise, cannot exist in practice; if it ever does, it must
+			// not leak into any bucket.
+			name: "retired and unrecognised supply is invisible",
 			seed: func() {
 				s.setAssets()
-				s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_PENDING)
+				s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED)
 				s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_RETIRED)
 			},
 			supplies:      map[string]int64{chain.KRWBaseDenom: 50, chain.USDBaseDenom: 70},
-			wantAvailable: true,
 		},
 		{
 			name: "zero supply is skipped entirely",
@@ -575,7 +569,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				s.setAssets(chain.USDBaseDenom)
 			},
 			supplies:      map[string]int64{chain.USDBaseDenom: 0},
-			wantAvailable: true,
 		},
 		{
 			name: "priced and settlement-priced sum into the recognised total",
@@ -583,10 +576,11 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				s.setAssets(chain.USDBaseDenom)
 				s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 				s.plans[chain.KRWBaseDenom] = assettypes.SettlementPlan{
-					Denom:            chain.KRWBaseDenom,
-					RedemptionRate:   math.LegacyNewDecWithPrec(5, 1),
-					OpenedHeight:     1,
-					ActivationHeight: 1_000,
+					Denom:                 chain.KRWBaseDenom,
+					RedemptionRate:        math.LegacyNewDecWithPrec(5, 1),
+					OpenedHeight:          1,
+					ActivationHeight:      1_000,
+					EarliestClosingHeight: 1100,
 				}
 			},
 			supplies: map[string]int64{chain.KRWBaseDenom: 50, chain.USDBaseDenom: 100},
@@ -595,7 +589,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			},
 			wantPriced:     "100",
 			wantSettlement: "100",
-			wantAvailable:  true,
 		},
 		{
 			name: "a stale member is disclosed beside the surviving lists",
@@ -615,7 +608,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			wantUntrusted:   []sdk.Coin{sdk.NewInt64Coin(chain.SDRBaseDenom, 40)},
 			wantWrittenOff:  []types.WrittenOffExposure{writeOff(chain.USDBaseDenom, 60)},
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 100)},
-			wantAvailable:   false,
 		},
 		{
 			// The routine degradation: one feed lapses and every other member
@@ -631,7 +623,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			},
 			wantPriced:      "100",
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
-			wantAvailable:   false,
 		},
 		{
 			// The same lapse, but the Oracle still holds what akrw was worth.
@@ -653,7 +644,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			wantPriced:      "100",
 			wantStale:       "80",
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
-			wantAvailable:   false,
 		},
 		{
 			// Same shape with the stale member at the other end of the
@@ -671,7 +661,6 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			},
 			wantPriced:      "100",
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.USDBaseDenom, 40)},
-			wantAvailable:   false,
 		},
 	}
 
@@ -686,8 +675,10 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			if test.expectRates != nil {
 				test.expectRates()
 			}
+			// The Subsidy Pool and the Redemption Buffer, the only two funds
+			// Treasury reads from Bank directly.
 			s.bankKeeper.EXPECT().GetBalance(s.ctx, gomock.Any(), chain.NoahBaseDenom).
-				Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(4)
+				Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
 
 			response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
 				s.ctx,
@@ -709,15 +700,15 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			}
 			s.Require().Equal(
 				sdk.NewDecCoinFromDec(chain.NoahBaseDenom, wantStale),
-				response.StalePricedLiabilityNoahEquivalent,
+				response.StalePricedLiability,
 			)
 			s.Require().Equal(
 				sdk.NewDecCoinFromDec(chain.NoahBaseDenom, wantPriced),
-				response.PricedLiabilityNoahEquivalent,
+				response.PricedLiability,
 			)
 			s.Require().Equal(
 				sdk.NewDecCoinFromDec(chain.NoahBaseDenom, wantSettlement),
-				response.SettlementLiabilityNoahEquivalent,
+				response.SettlementLiability,
 			)
 			wantUntrusted := test.wantUntrusted
 			if wantUntrusted == nil {
@@ -734,17 +725,17 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				wantStaleSupply = []sdk.Coin{}
 			}
 			s.Require().Equal(wantStaleSupply, response.StaleMemberSupply)
-			s.Require().Equal(test.wantAvailable, response.TotalLiabilityAvailable)
 
-			// The claimable aggregate is priced plus settlement-priced, and is
-			// reported whether or not it covers every recognised liability:
-			// it is the denominator redemption coverage divides by, so an
-			// incomplete valuation must still disclose it rather than report a
-			// zero that no draw uses. TotalLiabilityAvailable above is the flag
-			// that qualifies it.
+			// The claimable aggregate is priced plus settlement-priced plus
+			// stale-priced, and is reported whether or not it covers every
+			// recognised liability: it is the denominator redemption coverage
+			// divides by, so an incomplete valuation must still disclose it
+			// rather than report a zero that no draw uses. The two exclusion
+			// lists asserted above are what qualify it — both empty is what
+			// says the valuation covered everything recognised.
 			s.Require().Equal(
 				sdk.NewDecCoinFromDec(chain.NoahBaseDenom, wantPriced.Add(wantSettlement).Add(wantStale)),
-				response.NominalLiabilityNoahEquivalent,
+				response.NominalLiability,
 			)
 		})
 	}

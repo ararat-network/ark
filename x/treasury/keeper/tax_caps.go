@@ -22,8 +22,8 @@ import (
 // BeginBlock, so an asset activated this block is a member in this block's
 // refresh.
 //
-// Coverage is containment, not equality. A denom that leaves priced-live keeps
-// the cap it was last derived with, because its outstanding supply stays
+// Coverage is containment, not equality. A denom that leaves the oracle-priced
+// set keeps the cap it was last derived with, because its outstanding supply stays
 // transferable and taxable — retirement itself can leave a residual — and its
 // feed may never return to re-derive one. An arrival is therefore a rebuild
 // trigger and a departure is not.
@@ -37,9 +37,9 @@ func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
 	}
-	denoms, err := k.assetKeeper.PricedLiveDenoms(ctx)
+	denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 	if err != nil {
-		return fmt.Errorf("getting priced-live denominations: %w", err)
+		return fmt.Errorf("getting oracle-priced denominations: %w", err)
 	}
 
 	owed, err := k.taxCapRefreshOwed(ctx, params, denoms)
@@ -128,7 +128,7 @@ func (k Keeper) taxCapRefreshOwed(ctx context.Context, params types.Params, deno
 	return false, nil
 }
 
-// buildTaxCaps derives one cap per given priced-live denomination from the
+// buildTaxCaps derives one cap per given oracle-priced denomination from the
 // reference cap. The reference unit is the protocol reference by invariant —
 // genesis pins it, UpdateParams refuses to move it, and RebaseTaxCap is the
 // only denom-moving path — so it is not re-checked here. It need not itself be

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"cosmossdk.io/math"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"ark/pkg/chain"
@@ -15,11 +13,6 @@ import (
 func NewGenesisState(
 	params Params,
 	taxCaps []TaxCap,
-	claimsMandate ClaimsMandate,
-	claimsAllowanceUsed math.Int,
-	insuranceReserved math.Int,
-	nextClaimID uint64,
-	claims []Claim,
 	rewardFunding RewardFundingState,
 	monetaryMandate MonetaryMandate,
 	monetaryPolicy MonetaryPolicy,
@@ -28,11 +21,6 @@ func NewGenesisState(
 	return &GenesisState{
 		Params:               params,
 		TaxCaps:              append([]TaxCap(nil), taxCaps...),
-		ClaimsMandate:        claimsMandate,
-		ClaimsAllowanceUsed:  claimsAllowanceUsed,
-		InsuranceReserved:    insuranceReserved,
-		NextClaimId:          nextClaimID,
-		Claims:               append([]Claim(nil), claims...),
 		RewardFunding:        rewardFunding,
 		MonetaryMandate:      monetaryMandate,
 		MonetaryPolicy:       monetaryPolicy,
@@ -45,11 +33,6 @@ func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
 		[]TaxCap{},
-		DefaultClaimsMandate(),
-		math.ZeroInt(),
-		math.ZeroInt(),
-		1,
-		[]Claim{},
 		DefaultRewardFundingState(),
 		DefaultMonetaryMandate(),
 		DefaultMonetaryPolicy(),
@@ -79,7 +62,7 @@ func (gs GenesisState) Validate() error {
 		}
 		// A cap is deliberately not compared against the reference tax cap.
 		// Only caps derived under the current reference agree with it: caps
-		// kept after a denomination leaves priced-live are anchored to
+		// kept after a denomination leaves the oracle-priced set are anchored to
 		// whatever the reference was when they were last derived, so a
 		// later policy move — including one to or from the zero uncapped
 		// sentinel — leaves them disagreeing by design.
@@ -88,9 +71,6 @@ func (gs GenesisState) Validate() error {
 		}
 	}
 
-	if err := gs.validateClaims(); err != nil {
-		return err
-	}
 	if err := gs.validateRewardFunding(); err != nil {
 		return err
 	}

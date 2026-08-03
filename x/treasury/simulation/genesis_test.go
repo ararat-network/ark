@@ -63,10 +63,6 @@ func TestRandomisedGenState(t *testing.T) {
 	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.GT(math.LegacyOneDec()))
 
 	require.Empty(t, treasuryGenesis.TaxCaps)
-	require.Equal(t, types.DefaultClaimsMandate(), treasuryGenesis.ClaimsMandate)
-	require.True(t, treasuryGenesis.ClaimsAllowanceUsed.IsZero())
-	require.True(t, treasuryGenesis.InsuranceReserved.IsZero())
-	require.Empty(t, treasuryGenesis.Claims)
 }
 
 func TestRandomisedMonetaryPolicyDeterministic(t *testing.T) {

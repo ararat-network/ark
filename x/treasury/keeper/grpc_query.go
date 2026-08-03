@@ -11,7 +11,6 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"ark/pkg/chain"
 	"ark/x/treasury/types"
@@ -171,26 +170,20 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
 	return &types.QueryFundStatusResponse{
-		PricedLiabilityNoahEquivalent:     sdk.NewDecCoinFromDec(chain.NoahBaseDenom, partition.pricedNoah),
-		SettlementLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.NoahBaseDenom, partition.settlementNoah),
-		StalePricedLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(
-			chain.NoahBaseDenom,
-			partition.staleNoah,
-		),
-		UntrustedSuspendedSupply:       partition.untrusted,
-		WrittenOffExposure:             partition.writtenOff,
-		StaleMemberSupply:              partition.stale,
-		TotalLiabilityAvailable:        partition.complete,
-		NominalLiabilityNoahEquivalent: sdk.NewDecCoinFromDec(chain.NoahBaseDenom, claimable),
-		SubsidyPoolBalance:             sdk.NewCoin(chain.NoahBaseDenom, q.k.balance(ctx, types.SubsidyPoolName)),
-		RedemptionBufferBalance:        sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferBalance),
-		RedemptionBufferTarget:         sdk.NewCoin(chain.NoahBaseDenom, fundStatus.bufferTarget),
-		StrategicReserveBalance:        sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveBalance),
-		StrategicReserveTarget:         sdk.NewCoin(chain.NoahBaseDenom, fundStatus.reserveTarget),
-		InsuranceBalance:               sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceBalance),
-		InsuranceReserved:              sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceReserved),
-		InsuranceUnencumberedBalance:   sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceUnencumbered),
-		InsuranceTarget:                sdk.NewCoin(chain.NoahBaseDenom, fundStatus.insuranceTarget),
+		PricedLiability:          chain.NoahDecCoin(partition.pricedNoah),
+		SettlementLiability:      chain.NoahDecCoin(partition.settlementNoah),
+		StalePricedLiability:     chain.NoahDecCoin(partition.staleNoah),
+		UntrustedSuspendedSupply: partition.untrusted,
+		WrittenOffExposure:       partition.writtenOff,
+		StaleMemberSupply:        partition.stale,
+		NominalLiability:         chain.NoahDecCoin(claimable),
+		SubsidyPoolBalance:       chain.NoahCoin(q.k.balance(ctx, types.SubsidyPoolName)),
+		RedemptionBufferBalance:  chain.NoahCoin(fundStatus.bufferBalance),
+		RedemptionBufferTarget:   chain.NoahCoin(fundStatus.bufferTarget),
+		StrategicReserveBalance:  chain.NoahCoin(fundStatus.reserveBalance),
+		StrategicReserveTarget:   chain.NoahCoin(fundStatus.reserveTarget),
+		InsuranceBalance:         chain.NoahCoin(fundStatus.insuranceBalance),
+		InsuranceTarget:          chain.NoahCoin(fundStatus.insuranceTarget),
 	}, nil
 }
 
@@ -205,91 +198,4 @@ func (q queryServer) RewardFunding(ctx context.Context, req *types.QueryRewardFu
 		return nil, status.Errorf(codes.Internal, "getting reward funding: %v", err)
 	}
 	return &types.QueryRewardFundingResponse{RewardFunding: funding}, nil
-}
-
-// ClaimsMandate queries the stored committee mandate, allowance usage, and
-// Insurance reservation.
-func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMandateRequest) (*types.QueryClaimsMandateResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid request")
-	}
-
-	mandate, err := q.k.ClaimsMandate.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Claims mandate: %v", err)
-	}
-	insuranceReserved, err := q.k.InsuranceReserved.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Insurance reservation: %v", err)
-	}
-	allowanceUsed, err := q.k.ClaimsAllowanceUsed.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Claims allowance usage: %v", err)
-	}
-	allowanceRemaining, err := mandate.CommitteeClaimLimit.SafeSub(allowanceUsed)
-	if err != nil || allowanceRemaining.IsNegative() {
-		return nil, status.Errorf(
-			codes.Internal,
-			"Claims allowance usage %s exceeds mandate limit %s",
-			allowanceUsed,
-			mandate.CommitteeClaimLimit,
-		)
-	}
-
-	return &types.QueryClaimsMandateResponse{
-		Mandate:            mandate,
-		InsuranceReserved:  insuranceReserved,
-		Active:             mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
-		AllowanceUsed:      allowanceUsed,
-		AllowanceRemaining: allowanceRemaining,
-	}, nil
-}
-
-// Claim queries one permanent claim record.
-func (q queryServer) Claim(ctx context.Context, req *types.QueryClaimRequest) (*types.QueryClaimResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid request")
-	}
-	if req.ClaimId == 0 {
-		return nil, status.Error(codes.InvalidArgument, "claim ID must be positive")
-	}
-
-	claim, err := q.k.Claims.Get(ctx, req.ClaimId)
-	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "claim %d not found", req.ClaimId)
-		}
-		return nil, status.Errorf(codes.Internal, "getting claim %d: %v", req.ClaimId, err)
-	}
-	return &types.QueryClaimResponse{Claim: claim}, nil
-}
-
-// Claims queries the paginated permanent claim record.
-func (q queryServer) Claims(ctx context.Context, req *types.QueryClaimsRequest) (*types.QueryClaimsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid request")
-	}
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			"pagination must not specify both key and offset",
-		)
-	}
-
-	claims, pageResponse, err := sdkquery.CollectionPaginate(
-		ctx,
-		q.k.Claims,
-		req.Pagination,
-		func(_ uint64, claim types.Claim) (types.Claim, error) {
-			return claim, nil
-		},
-	)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing claims: %v", err)
-	}
-
-	return &types.QueryClaimsResponse{
-		Claims:     claims,
-		Pagination: pageResponse,
-	}, nil
 }

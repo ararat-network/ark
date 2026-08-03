@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"fmt"
 
-	"github.com/cosmos/gogoproto/proto"
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -14,6 +13,7 @@ import (
 	chain "ark/pkg/chain"
 	"ark/pkg/mandate"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
@@ -27,7 +27,6 @@ func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coin
 
 func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis := types.DefaultGenesisState()
-	genesis.NextClaimId = 7
 	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
 	genesis.TaxCaps = []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
@@ -37,10 +36,9 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis.TaxCapRefreshPending = true
 	s.setAssets(chain.SDRBaseDenom)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
-		types.SubsidyPoolName:      sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
-		types.RedemptionBufferName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)),
-		types.StrategicReserveName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 7)),
-		types.InsuranceName:        sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 11)),
+		types.SubsidyPoolName:             sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
+		types.RedemptionBufferName:        sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)),
+		reservetypes.StrategicReserveName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 7)),
 	})
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
@@ -49,11 +47,6 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Equal(genesis.Params, exported.Params)
 	s.Require().True(genesis.MonetaryPolicy.Equal(exported.MonetaryPolicy))
 	s.Require().Equal(genesis.TaxCaps, exported.TaxCaps)
-	s.Require().True(proto.Equal(&genesis.ClaimsMandate, &exported.ClaimsMandate))
-	s.Require().Equal(genesis.ClaimsAllowanceUsed, exported.ClaimsAllowanceUsed)
-	s.Require().Equal(genesis.InsuranceReserved, exported.InsuranceReserved)
-	s.Require().Equal(genesis.NextClaimId, exported.NextClaimId)
-	s.Require().Empty(exported.Claims)
 	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
 	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
 	s.Require().Equal(genesis.TaxCapRefreshPending, exported.TaxCapRefreshPending)
@@ -76,7 +69,7 @@ func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	// One capture: sorted priced-live members. The reference is already a
+	// One capture: sorted oracle-priced members. The reference is already a
 	// member, so nothing is appended.
 	s.oracleKeeper.EXPECT().GetRateSet(
 		s.ctx,
@@ -169,7 +162,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutCaps() {
 func (s *KeeperTestSuite) TestInitGenesisAcceptsCapsBeyondMembership() {
 	s.setAssets(chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
-	// asdr is the reference and is not itself priced-live; akrw has left
+	// asdr is the reference and is not itself oracle-priced; akrw has left
 	// membership altogether. Neither is a member, both carry a cap, and
 	// neither amount matches the reference.
 	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(3)
@@ -222,121 +215,12 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 	s.Require().ErrorContains(err, "unsupported genesis denom")
 }
 
-func (s *KeeperTestSuite) TestInitGenesisRejectsReservationAboveInsuranceBalance() {
-	genesis := types.DefaultGenesisState()
-	genesis.ClaimsMandate = types.ClaimsMandate{
-		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
-		},
-		CommitteeClaimLimit: math.NewInt(10),
-	}
-	genesis.ClaimsAllowanceUsed = math.NewInt(2)
-	genesis.InsuranceReserved = math.NewInt(2)
-	// The matching pending claim makes the pure genesis state internally
-	// consistent; the keeper then rejects the insufficient Bank balance.
-	genesis.Claims = []types.Claim{pendingClaimForGenesis(2)}
-	genesis.NextClaimId = 2
-	recipient, err := sdk.AccAddressFromBech32(genesis.Claims[0].Recipient)
-	s.Require().NoError(err)
-	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(false)
-	s.setAssets(chain.SDRBaseDenom)
-	s.expectGenesisFundBalances(map[string]sdk.Coins{
-		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
-	})
-
-	err = s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorContains(err, "exceeds Insurance balance")
-}
-
-func (s *KeeperTestSuite) TestInitGenesisRejectsBlockedPendingClaimRecipient() {
-	genesis := types.DefaultGenesisState()
-	genesis.ClaimsMandate = types.ClaimsMandate{
-		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
-		},
-		CommitteeClaimLimit: math.NewInt(2),
-	}
-	genesis.ClaimsAllowanceUsed = math.NewInt(2)
-	genesis.InsuranceReserved = math.NewInt(2)
-	genesis.Claims = []types.Claim{pendingClaimForGenesis(2)}
-	genesis.NextClaimId = 2
-	recipient, err := sdk.AccAddressFromBech32(genesis.Claims[0].Recipient)
-	s.Require().NoError(err)
-	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(true)
-
-	err = s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorContains(err, "invalid pending claim")
-	s.Require().ErrorContains(err, "blocked from receiving funds")
-}
-
-func (s *KeeperTestSuite) TestInitGenesisAllowsBlockedFinalizedClaimAuditRecord() {
-	genesis := types.DefaultGenesisState()
-	genesis.ClaimsMandate = types.ClaimsMandate{
-		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        authtypes.NewModuleAddress("claims-committee").String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
-		},
-		CommitteeClaimLimit: math.NewInt(2),
-	}
-	claim := pendingClaimForGenesis(2)
-	claim.Origin = types.ClaimOrigin_CLAIM_ORIGIN_GOVERNANCE
-	claim.MandateTerm = 0
-	claim.Status = types.ClaimStatus_CLAIM_STATUS_PAID
-	claim.FinalizedHeight = claim.ExecutableHeight
-	claim.FinalizedBy = authtypes.NewModuleAddress("claim-executor").String()
-	genesis.Claims = []types.Claim{claim}
-	genesis.NextClaimId = 2
-	recipient, err := sdk.AccAddressFromBech32(claim.Recipient)
-	s.Require().NoError(err)
-	s.bankKeeper.EXPECT().BlockedAddr(recipient).Return(true).Times(0)
-	s.setAssets(chain.SDRBaseDenom)
-	s.expectGenesisFundBalances(map[string]sdk.Coins{
-		types.InsuranceName: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
-	})
-
-	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-}
-
-func pendingClaimForGenesis(amount int64) types.Claim {
-	return types.Claim{
-		ClaimId:           1,
-		Submitter:         authtypes.NewModuleAddress("claims-committee").String(),
-		Origin:            types.ClaimOrigin_CLAIM_ORIGIN_COMMITTEE,
-		MandateTerm:       1,
-		IncidentReference: "incident",
-		Recipient:         authtypes.NewModuleAddress("claim-recipient").String(),
-		Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, amount),
-		EvidenceReference: "evidence",
-		Status:            types.ClaimStatus_CLAIM_STATUS_PENDING,
-		SubmittedHeight:   1,
-		ExecutableHeight:  2,
-	}
-}
-
-func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittees() {
-	genesis := types.DefaultGenesisState()
-	genesis.ClaimsMandate = types.ClaimsMandate{
-		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        s.authority,
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
-		},
-		CommitteeClaimLimit: math.NewInt(10),
-	}
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
-
+// TestInitGenesisRejectsAuthorityCommittee pins that the monetary committee
+// cannot be the Treasury authority. The equivalent Claims rule moved with the
+// mandate and is asserted in x/claims.
+func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittee() {
 	minimum, maximum := monetaryPolicyBounds()
-	genesis = types.DefaultGenesisState()
+	genesis := types.DefaultGenesisState()
 	genesis.MonetaryMandate = types.MonetaryMandate{
 		Envelope: mandate.Envelope{
 			Term:             1,
@@ -347,6 +231,6 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittees() {
 		MinimumPolicy: minimum,
 		MaximumPolicy: maximum,
 	}
-	err = s.keeper.InitGenesis(s.ctx, genesis)
+	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().ErrorContains(err, "distinct from Treasury authority")
 }
