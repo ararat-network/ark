@@ -151,11 +151,11 @@ func TestAutoCLIOptionsCoverAssetServices(t *testing.T) {
 	// The expected sets are read off the service descriptors rather than
 	// transcribed, so a new RPC fails this test until it is described here.
 	// That is what makes the assertion below a real pin on the committee's
-	// powers: a third committee-signed message cannot ship unnoticed, and
+	// powers: a second committee-signed message cannot ship unnoticed, and
 	// assettypes.RegistryCacheInvalidator cites this test for exactly that
-	// premise — committee messages are the only mutations reaching consensus
-	// outside x/gov's EndBlocker, so they are the only ones that can invalidate
-	// a consumer's block-scoped fold of the registry mid-block.
+	// premise — suspension is the only mutation reaching consensus outside
+	// x/gov's EndBlocker, so it is the only one that must invalidate a
+	// consumer's block-scoped fold of the registry.
 	require.Equal(
 		t,
 		serviceMethods(assetv1.Query_ServiceDesc),
@@ -167,11 +167,9 @@ func TestAutoCLIOptionsCoverAssetServices(t *testing.T) {
 		rpcMethods(options.Tx.RpcCommandOptions),
 	)
 	// Committee messages are signed by the mandate committee, never submitted
-	// as governance proposals. The committee has exactly two powers, and they
-	// share one per-term action per asset so neither can precede the other.
+	// as governance proposals. Suspension is the committee's only power.
 	committeeCommands := map[string]bool{
 		"EmergencySuspendAsset": true,
-		"EmergencyHaltIssuance": true,
 	}
 	for _, command := range options.Tx.RpcCommandOptions {
 		require.Equal(

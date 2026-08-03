@@ -113,7 +113,19 @@ func (k Keeper) HaltIssuance(ctx context.Context, denom string, expectedVersion 
 		return err
 	}
 
-	return k.haltIssuance(ctx, asset)
+	if asset.Status != types.AssetStatus_ASSET_STATUS_ACTIVE {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidAssetTransition,
+			"%s asset %s cannot halt issuance",
+			asset.Status,
+			asset.Denom,
+		)
+	}
+
+	updated := asset
+	updated.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
+
+	return k.advanceAsset(ctx, asset, updated)
 }
 
 // ResumeIssuance returns an issuance-halted asset to active status. The status
@@ -364,29 +376,6 @@ func (k Keeper) FinalizeRetirement(ctx context.Context, denom string, expectedVe
 	}
 
 	return k.writeResolutionRecord(ctx, *residual)
-}
-
-// haltIssuance closes the entry leg and nothing else. The emergency committee
-// reaches the same semantics through the mandate.
-//
-// ACTIVE is the only source, which is what makes the halt and the suspension a
-// pair the committee chooses between rather than a ladder it climbs: a halted
-// asset can still be suspended, but the shared per-term action means no
-// committee ever does both.
-func (k Keeper) haltIssuance(ctx context.Context, asset types.Asset) error {
-	if asset.Status != types.AssetStatus_ASSET_STATUS_ACTIVE {
-		return sdkerrors.Wrapf(
-			types.ErrInvalidAssetTransition,
-			"%s asset %s cannot halt issuance",
-			asset.Status,
-			asset.Denom,
-		)
-	}
-
-	updated := asset
-	updated.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
-
-	return k.advanceAsset(ctx, asset, updated)
 }
 
 // suspendAsset closes the only unbounded transmission channel from an asset

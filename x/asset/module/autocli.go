@@ -179,19 +179,6 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 						{ProtoField: "expected_term"},
 					},
 				},
-				{
-					RpcMethod: "EmergencyHaltIssuance",
-					Use:       "emergency-halt-issuance [denom] [expected-term]",
-					Short:     "Halt an asset's issuance as the emergency committee",
-					Long: "Halt an asset's issuance as the emergency committee. This spends the " +
-						"asset's single action for the term, so the committee cannot suspend the " +
-						"same asset afterwards: use it only when the asset is sound and its entry " +
-						"leg is not.",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "denom"},
-						{ProtoField: "expected_term"},
-					},
-				},
 			},
 			EnhanceCustomCommand: true,
 		},

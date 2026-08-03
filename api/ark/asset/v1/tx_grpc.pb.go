@@ -31,7 +31,6 @@ const (
 	Msg_FinalizeRetirement_FullMethodName    = "/ark.asset.v1.Msg/FinalizeRetirement"
 	Msg_SetEmergencyMandate_FullMethodName   = "/ark.asset.v1.Msg/SetEmergencyMandate"
 	Msg_EmergencySuspendAsset_FullMethodName = "/ark.asset.v1.Msg/EmergencySuspendAsset"
-	Msg_EmergencyHaltIssuance_FullMethodName = "/ark.asset.v1.Msg/EmergencyHaltIssuance"
 )
 
 // MsgClient is the client API for Msg service.
@@ -75,19 +74,11 @@ type MsgClient interface {
 	// SetEmergencyMandate replaces or disables the emergency committee mandate.
 	SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error)
 	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-	// It is the answer to an impaired asset, where the exit leg is the leak.
+	// It is the committee's only power: halting issuance contains nothing, so it
+	// stays a governance act.
 	// Suspension is a pure status move: an asset sharing the reference
 	// denomination suspends freely while the feed keeps pricing.
 	EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error)
-	// EmergencyHaltIssuance applies HaltIssuance semantics under a live mandate.
-	// It answers the crisis suspension is the wrong instrument for: the asset is
-	// sound and the entry leg is not. A conversion is a two-sided trade at one
-	// oracle rate, so value leaks on whichever side the rate is wrong — an asset
-	// over-valued against NOAH leaks through the exit, and NOAH over-valued
-	// against the asset leaks through the entry, which is this. It is never a
-	// first rung: a halt and a suspension draw on the same per-term action, so
-	// the committee cannot halt to buy a look and suspend once it has one.
-	EmergencyHaltIssuance(ctx context.Context, in *MsgEmergencyHaltIssuance, opts ...grpc.CallOption) (*MsgEmergencyHaltIssuanceResponse, error)
 }
 
 type msgClient struct {
@@ -218,16 +209,6 @@ func (c *msgClient) EmergencySuspendAsset(ctx context.Context, in *MsgEmergencyS
 	return out, nil
 }
 
-func (c *msgClient) EmergencyHaltIssuance(ctx context.Context, in *MsgEmergencyHaltIssuance, opts ...grpc.CallOption) (*MsgEmergencyHaltIssuanceResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgEmergencyHaltIssuanceResponse)
-	err := c.cc.Invoke(ctx, Msg_EmergencyHaltIssuance_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
@@ -269,19 +250,11 @@ type MsgServer interface {
 	// SetEmergencyMandate replaces or disables the emergency committee mandate.
 	SetEmergencyMandate(context.Context, *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error)
 	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-	// It is the answer to an impaired asset, where the exit leg is the leak.
+	// It is the committee's only power: halting issuance contains nothing, so it
+	// stays a governance act.
 	// Suspension is a pure status move: an asset sharing the reference
 	// denomination suspends freely while the feed keeps pricing.
 	EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error)
-	// EmergencyHaltIssuance applies HaltIssuance semantics under a live mandate.
-	// It answers the crisis suspension is the wrong instrument for: the asset is
-	// sound and the entry leg is not. A conversion is a two-sided trade at one
-	// oracle rate, so value leaks on whichever side the rate is wrong — an asset
-	// over-valued against NOAH leaks through the exit, and NOAH over-valued
-	// against the asset leaks through the entry, which is this. It is never a
-	// first rung: a halt and a suspension draw on the same per-term action, so
-	// the committee cannot halt to buy a look and suspend once it has one.
-	EmergencyHaltIssuance(context.Context, *MsgEmergencyHaltIssuance) (*MsgEmergencyHaltIssuanceResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -327,9 +300,6 @@ func (UnimplementedMsgServer) SetEmergencyMandate(context.Context, *MsgSetEmerge
 }
 func (UnimplementedMsgServer) EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EmergencySuspendAsset not implemented")
-}
-func (UnimplementedMsgServer) EmergencyHaltIssuance(context.Context, *MsgEmergencyHaltIssuance) (*MsgEmergencyHaltIssuanceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method EmergencyHaltIssuance not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -568,24 +538,6 @@ func _Msg_EmergencySuspendAsset_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_EmergencyHaltIssuance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgEmergencyHaltIssuance)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).EmergencyHaltIssuance(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_EmergencyHaltIssuance_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).EmergencyHaltIssuance(ctx, req.(*MsgEmergencyHaltIssuance))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -640,10 +592,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EmergencySuspendAsset",
 			Handler:    _Msg_EmergencySuspendAsset_Handler,
-		},
-		{
-			MethodName: "EmergencyHaltIssuance",
-			Handler:    _Msg_EmergencyHaltIssuance_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

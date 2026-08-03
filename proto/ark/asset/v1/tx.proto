@@ -51,21 +51,12 @@ service Msg {
   rpc SetEmergencyMandate(MsgSetEmergencyMandate)
       returns (MsgSetEmergencyMandateResponse) {}
   // EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-  // It is the answer to an impaired asset, where the exit leg is the leak.
+  // It is the committee's only power: halting issuance contains nothing, so it
+  // stays a governance act.
   // Suspension is a pure status move: an asset sharing the reference
   // denomination suspends freely while the feed keeps pricing.
   rpc EmergencySuspendAsset(MsgEmergencySuspendAsset)
       returns (MsgEmergencySuspendAssetResponse) {}
-  // EmergencyHaltIssuance applies HaltIssuance semantics under a live mandate.
-  // It answers the crisis suspension is the wrong instrument for: the asset is
-  // sound and the entry leg is not. A conversion is a two-sided trade at one
-  // oracle rate, so value leaks on whichever side the rate is wrong — an asset
-  // over-valued against NOAH leaks through the exit, and NOAH over-valued
-  // against the asset leaks through the entry, which is this. It is never a
-  // first rung: a halt and a suspension draw on the same per-term action, so
-  // the committee cannot halt to buy a look and suspend once it has one.
-  rpc EmergencyHaltIssuance(MsgEmergencyHaltIssuance)
-      returns (MsgEmergencyHaltIssuanceResponse) {}
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -299,21 +290,3 @@ message MsgEmergencySuspendAsset {
 // MsgEmergencySuspendAssetResponse is the response type for
 // MsgEmergencySuspendAsset.
 message MsgEmergencySuspendAssetResponse {}
-
-// MsgEmergencyHaltIssuance applies HaltIssuance semantics under a live mandate,
-// closing the entry leg while every exit stays open. It carries the exact
-// current term for the same reason its sibling does, and draws on the same
-// per-term action, which is what stops it being a cheap look before a
-// suspension.
-message MsgEmergencyHaltIssuance {
-  option (cosmos.msg.v1.signer) = "committee";
-  option (amino.name) = "ark/x/asset/MsgEmergencyHaltIssuance";
-
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string denom = 2;
-  uint64 expected_term = 3 [ (amino.dont_omitempty) = true ];
-}
-
-// MsgEmergencyHaltIssuanceResponse is the response type for
-// MsgEmergencyHaltIssuance.
-message MsgEmergencyHaltIssuanceResponse {}

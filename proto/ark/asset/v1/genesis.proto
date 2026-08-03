@@ -23,9 +23,7 @@ message GenesisState {
   // disabled state.
   EmergencyMandate emergency_mandate = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // emergency_actions lists the assets whose per-term committee action is
-  // already spent under the seeded mandate term, sorted and unique. One entry
-  // covers both powers: a halt and a suspension draw on the same budget, so
-  // which one was spent is history the event log carries, not state.
-  repeated string emergency_actions = 6 [ (amino.dont_omitempty) = true ];
+  // emergency_suspensions lists the assets whose suspension is already
+  // consumed under the seeded mandate term, sorted and unique.
+  repeated string emergency_suspensions = 6 [ (amino.dont_omitempty) = true ];
 }

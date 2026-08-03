@@ -240,7 +240,7 @@ func fullGenesisState() *types.GenesisState {
 			OutstandingSupply: sdk.NewInt64Coin(genesis.Assets[0].Denom, 100),
 		},
 	}
-	genesis.EmergencyActions = []string{}
+	genesis.EmergencySuspensions = []string{}
 
 	return genesis
 }

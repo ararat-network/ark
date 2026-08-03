@@ -104,12 +104,12 @@ func (gs GenesisState) Validate() error {
 	if err := gs.EmergencyMandate.Validate(); err != nil {
 		return err
 	}
-	for i, denom := range gs.EmergencyActions {
-		if i > 0 && denom <= gs.EmergencyActions[i-1] {
-			return fmt.Errorf("genesis emergency actions must be sorted by unique denom")
+	for i, denom := range gs.EmergencySuspensions {
+		if i > 0 && denom <= gs.EmergencySuspensions[i-1] {
+			return fmt.Errorf("genesis emergency suspensions must be sorted by unique denom")
 		}
 		if _, exists := assets[denom]; !exists {
-			return fmt.Errorf("emergency action %s has no registered asset", denom)
+			return fmt.Errorf("emergency suspension %s has no registered asset", denom)
 		}
 	}
 

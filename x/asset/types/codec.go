@@ -22,7 +22,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgFinalizeRetirement{}, "ark/x/asset/MsgFinalizeRetirement")
 	legacy.RegisterAminoMsg(cdc, &MsgSetEmergencyMandate{}, "ark/x/asset/MsgSetEmergencyMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgEmergencySuspendAsset{}, "ark/x/asset/MsgEmergencySuspendAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgEmergencyHaltIssuance{}, "ark/x/asset/MsgEmergencyHaltIssuance")
 }
 
 // RegisterInterfaces registers asset message implementations.
@@ -41,7 +40,6 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgFinalizeRetirement{},
 		&MsgSetEmergencyMandate{},
 		&MsgEmergencySuspendAsset{},
-		&MsgEmergencyHaltIssuance{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

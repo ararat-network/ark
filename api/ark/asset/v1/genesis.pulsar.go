@@ -197,7 +197,7 @@ func (x *_GenesisState_6_list) Append(value protoreflect.Value) {
 }
 
 func (x *_GenesisState_6_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message GenesisState at list field EmergencyActions as it is not of Message kind"))
+	panic(fmt.Errorf("AppendMutable can not be called on message GenesisState at list field EmergencySuspensions as it is not of Message kind"))
 }
 
 func (x *_GenesisState_6_list) Truncate(n int) {
@@ -214,13 +214,13 @@ func (x *_GenesisState_6_list) IsValid() bool {
 }
 
 var (
-	md_GenesisState                    protoreflect.MessageDescriptor
-	fd_GenesisState_params             protoreflect.FieldDescriptor
-	fd_GenesisState_assets             protoreflect.FieldDescriptor
-	fd_GenesisState_settlement_plans   protoreflect.FieldDescriptor
-	fd_GenesisState_resolution_records protoreflect.FieldDescriptor
-	fd_GenesisState_emergency_mandate  protoreflect.FieldDescriptor
-	fd_GenesisState_emergency_actions  protoreflect.FieldDescriptor
+	md_GenesisState                       protoreflect.MessageDescriptor
+	fd_GenesisState_params                protoreflect.FieldDescriptor
+	fd_GenesisState_assets                protoreflect.FieldDescriptor
+	fd_GenesisState_settlement_plans      protoreflect.FieldDescriptor
+	fd_GenesisState_resolution_records    protoreflect.FieldDescriptor
+	fd_GenesisState_emergency_mandate     protoreflect.FieldDescriptor
+	fd_GenesisState_emergency_suspensions protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -231,7 +231,7 @@ func init() {
 	fd_GenesisState_settlement_plans = md_GenesisState.Fields().ByName("settlement_plans")
 	fd_GenesisState_resolution_records = md_GenesisState.Fields().ByName("resolution_records")
 	fd_GenesisState_emergency_mandate = md_GenesisState.Fields().ByName("emergency_mandate")
-	fd_GenesisState_emergency_actions = md_GenesisState.Fields().ByName("emergency_actions")
+	fd_GenesisState_emergency_suspensions = md_GenesisState.Fields().ByName("emergency_suspensions")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -329,9 +329,9 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.EmergencyActions) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.EmergencyActions})
-		if !f(fd_GenesisState_emergency_actions, value) {
+	if len(x.EmergencySuspensions) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.EmergencySuspensions})
+		if !f(fd_GenesisState_emergency_suspensions, value) {
 			return
 		}
 	}
@@ -360,8 +360,8 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return len(x.ResolutionRecords) != 0
 	case "ark.asset.v1.GenesisState.emergency_mandate":
 		return x.EmergencyMandate != nil
-	case "ark.asset.v1.GenesisState.emergency_actions":
-		return len(x.EmergencyActions) != 0
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		return len(x.EmergencySuspensions) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -388,8 +388,8 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.ResolutionRecords = nil
 	case "ark.asset.v1.GenesisState.emergency_mandate":
 		x.EmergencyMandate = nil
-	case "ark.asset.v1.GenesisState.emergency_actions":
-		x.EmergencyActions = nil
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		x.EmergencySuspensions = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -430,11 +430,11 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.asset.v1.GenesisState.emergency_mandate":
 		value := x.EmergencyMandate
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.asset.v1.GenesisState.emergency_actions":
-		if len(x.EmergencyActions) == 0 {
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		if len(x.EmergencySuspensions) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_6_list{})
 		}
-		listValue := &_GenesisState_6_list{list: &x.EmergencyActions}
+		listValue := &_GenesisState_6_list{list: &x.EmergencySuspensions}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -472,10 +472,10 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		x.ResolutionRecords = *clv.list
 	case "ark.asset.v1.GenesisState.emergency_mandate":
 		x.EmergencyMandate = value.Message().Interface().(*EmergencyMandate)
-	case "ark.asset.v1.GenesisState.emergency_actions":
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
 		lv := value.List()
 		clv := lv.(*_GenesisState_6_list)
-		x.EmergencyActions = *clv.list
+		x.EmergencySuspensions = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.GenesisState"))
@@ -524,11 +524,11 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.EmergencyMandate = new(EmergencyMandate)
 		}
 		return protoreflect.ValueOfMessage(x.EmergencyMandate.ProtoReflect())
-	case "ark.asset.v1.GenesisState.emergency_actions":
-		if x.EmergencyActions == nil {
-			x.EmergencyActions = []string{}
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
+		if x.EmergencySuspensions == nil {
+			x.EmergencySuspensions = []string{}
 		}
-		value := &_GenesisState_6_list{list: &x.EmergencyActions}
+		value := &_GenesisState_6_list{list: &x.EmergencySuspensions}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
@@ -558,7 +558,7 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.asset.v1.GenesisState.emergency_mandate":
 		m := new(EmergencyMandate)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.asset.v1.GenesisState.emergency_actions":
+	case "ark.asset.v1.GenesisState.emergency_suspensions":
 		list := []string{}
 		return protoreflect.ValueOfList(&_GenesisState_6_list{list: &list})
 	default:
@@ -656,8 +656,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.EmergencyMandate)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if len(x.EmergencyActions) > 0 {
-			for _, s := range x.EmergencyActions {
+		if len(x.EmergencySuspensions) > 0 {
+			for _, s := range x.EmergencySuspensions {
 				l = len(s)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -691,11 +691,11 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.EmergencyActions) > 0 {
-			for iNdEx := len(x.EmergencyActions) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.EmergencyActions[iNdEx])
-				copy(dAtA[i:], x.EmergencyActions[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.EmergencyActions[iNdEx])))
+		if len(x.EmergencySuspensions) > 0 {
+			for iNdEx := len(x.EmergencySuspensions) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.EmergencySuspensions[iNdEx])
+				copy(dAtA[i:], x.EmergencySuspensions[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.EmergencySuspensions[iNdEx])))
 				i--
 				dAtA[i] = 0x32
 			}
@@ -1001,7 +1001,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 6:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EmergencyActions", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EmergencySuspensions", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1029,7 +1029,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.EmergencyActions = append(x.EmergencyActions, string(dAtA[iNdEx:postIndex]))
+				x.EmergencySuspensions = append(x.EmergencySuspensions, string(dAtA[iNdEx:postIndex]))
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1094,11 +1094,9 @@ type GenesisState struct {
 	// emergency_mandate seeds the committee appointment or its canonical
 	// disabled state.
 	EmergencyMandate *EmergencyMandate `protobuf:"bytes,5,opt,name=emergency_mandate,json=emergencyMandate,proto3" json:"emergency_mandate,omitempty"`
-	// emergency_actions lists the assets whose per-term committee action is
-	// already spent under the seeded mandate term, sorted and unique. One entry
-	// covers both powers: a halt and a suspension draw on the same budget, so
-	// which one was spent is history the event log carries, not state.
-	EmergencyActions []string `protobuf:"bytes,6,rep,name=emergency_actions,json=emergencyActions,proto3" json:"emergency_actions,omitempty"`
+	// emergency_suspensions lists the assets whose suspension is already
+	// consumed under the seeded mandate term, sorted and unique.
+	EmergencySuspensions []string `protobuf:"bytes,6,rep,name=emergency_suspensions,json=emergencySuspensions,proto3" json:"emergency_suspensions,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -1156,9 +1154,9 @@ func (x *GenesisState) GetEmergencyMandate() *EmergencyMandate {
 	return nil
 }
 
-func (x *GenesisState) GetEmergencyActions() []string {
+func (x *GenesisState) GetEmergencySuspensions() []string {
 	if x != nil {
-		return x.EmergencyActions
+		return x.EmergencySuspensions
 	}
 	return nil
 }
@@ -1172,7 +1170,7 @@ var file_ark_asset_v1_genesis_proto_rawDesc = []byte{
 	0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18, 0x61,
 	0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x61, 0x73, 0x73, 0x65,
 	0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb9, 0x03,
+	0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc1, 0x03,
 	0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x37,
 	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61,
@@ -1197,20 +1195,20 @@ var file_ark_asset_v1_genesis_proto_rawDesc = []byte{
 	0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63,
 	0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x10, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61,
-	0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x32, 0x0a, 0x11, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e,
-	0x63, 0x79, 0x5f, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x09,
-	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e,
-	0x63, 0x79, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x42, 0x90, 0x01, 0x0a, 0x10, 0x63, 0x6f,
-	0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c,
-	0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1c,
-	0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65,
-	0x74, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x73, 0x73, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41,
-	0x41, 0x58, 0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x56,
-	0x31, 0xca, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31,
-	0xe2, 0x02, 0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c,
-	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x41, 0x72,
-	0x6b, 0x3a, 0x3a, 0x41, 0x73, 0x73, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x3a, 0x0a, 0x15, 0x65, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e,
+	0x63, 0x79, 0x5f, 0x73, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06,
+	0x20, 0x03, 0x28, 0x09, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x65, 0x6d, 0x65,
+	0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e,
+	0x73, 0x42, 0x90, 0x01, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
+	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x73, 0x73,
+	0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x41, 0x58, 0xaa, 0x02, 0x0c, 0x41, 0x72, 0x6b,
+	0x2e, 0x41, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0c, 0x41, 0x72, 0x6b, 0x5c,
+	0x41, 0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x18, 0x41, 0x72, 0x6b, 0x5c, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x41, 0x73, 0x73, 0x65, 0x74,
+	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

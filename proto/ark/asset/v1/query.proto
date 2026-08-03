@@ -125,8 +125,7 @@ message QueryEmergencyMandateResponse {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // active reports whether the committee may act at the current height.
   bool active = 2 [ (amino.dont_omitempty) = true ];
-  // consumed_denoms lists the assets whose per-term action the committee has
-  // already spent under the current term, sorted. Both powers draw on it, so
-  // an entry means the committee is done with that asset for the term.
-  repeated string consumed_denoms = 3 [ (amino.dont_omitempty) = true ];
+  // suspended_denoms lists the assets whose per-term suspension the committee
+  // has already consumed under the current term, sorted.
+  repeated string suspended_denoms = 3 [ (amino.dont_omitempty) = true ];
 }
