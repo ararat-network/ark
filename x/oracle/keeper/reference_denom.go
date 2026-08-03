@@ -36,11 +36,7 @@ func (k Keeper) GetReferenceDenom(ctx context.Context) (string, error) {
 //
 // A non-nil outgoingRate is the rate the outgoing unit is converted out of,
 // replacing whatever the store holds. Nil reads the stored rate instead.
-func (k Keeper) SetReferenceDenom(
-	ctx context.Context,
-	referenceDenom string,
-	outgoingRate math.LegacyDec,
-) error {
+func (k Keeper) SetReferenceDenom(ctx context.Context, referenceDenom string, outgoingRate math.LegacyDec) error {
 	// Clearing a configured reference is rejected for the same reason an empty
 	// one cannot be set: consumers hold state denominated in it.
 	if referenceDenom == "" {
@@ -52,7 +48,7 @@ func (k Keeper) SetReferenceDenom(
 	if err := chain.ValidatePricedDenom(referenceDenom); err != nil {
 		return sdkerrors.Wrapf(types.ErrInvalidReferenceDenom, "reference denom %v", err)
 	}
-	if err := k.requireReferenceDenomEligible(ctx, referenceDenom); err != nil {
+	if err := k.requireFeedActive(ctx, referenceDenom); err != nil {
 		return err
 	}
 
@@ -80,18 +76,11 @@ func (k Keeper) SetReferenceDenom(
 	return nil
 }
 
-// requireReferenceDenomEligible enforces the only rule the reference has: its feed
+// requireFeedActive enforces the only rule the reference has: its feed
 // is Active. Both consumers read a rate, so nothing here consults the asset
 // registry — a reference unit need not be a listed asset, and an asset sharing
 // the denomination may be in any status.
-//
-// Adding-phase feeds are excluded because they have no rate yet, and
-// Removing-phase feeds because naming the reference is a referent-creating
-// path that must not race an in-flight removal the guard already cleared.
-// Freshness is deliberately not an eligibility predicate: staleness is a
-// use-time concern, which is why genesis may import a reference before the
-// chain has aggregated a single rate.
-func (k Keeper) requireReferenceDenomEligible(ctx context.Context, denom string) error {
+func (k Keeper) requireFeedActive(ctx context.Context, denom string) error {
 	phase, err := k.FeedPhase(ctx, denom)
 	if err != nil {
 		return fmt.Errorf("getting feed phase for reference denom %s: %w", denom, err)
@@ -126,12 +115,7 @@ func (k Keeper) requireReferenceDenomEligible(ctx context.Context, denom string)
 // stale, pruned, or never-priced outgoing unit fails the action by name, and
 // governance resubmits stating the rate it means, so that conversion is voted
 // on rather than inherited.
-func (k Keeper) rebaseReferenceDenom(
-	ctx context.Context,
-	from string,
-	to string,
-	outgoingRate math.LegacyDec,
-) error {
+func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string, outgoingRate math.LegacyDec) error {
 	if k.marketReferenceKeeper == nil || k.treasuryReferenceKeeper == nil {
 		return sdkerrors.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,

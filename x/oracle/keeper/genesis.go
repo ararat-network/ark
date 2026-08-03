@@ -107,7 +107,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// imported. Freshness is not checked here on purpose — a genesis reference denom
 	// is legitimate before the chain has aggregated a single rate.
 	if data.ReferenceDenom != "" {
-		if err := k.requireReferenceDenomEligible(ctx, data.ReferenceDenom); err != nil {
+		if err := k.requireFeedActive(ctx, data.ReferenceDenom); err != nil {
 			return fmt.Errorf("invalid genesis reference denom: %w", err)
 		}
 	}
