@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	chain "ark/pkg/chain"
 	"ark/x/treasury/types"
 )
 
@@ -131,4 +132,21 @@ func NewKeeper(
 func (k Keeper) Logger(ctx context.Context) log.Logger {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// balance reads a module account's NOAH holding. Treasury sizes funds and
+// subsidies in NOAH throughout, so no caller needs the full coin set.
+func (k Keeper) balance(ctx context.Context, moduleName string) math.Int {
+	addr := k.accountKeeper.GetModuleAddress(moduleName)
+	return k.bankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
+}
+
+// shortfall returns how far actual falls below target, and zero once it does
+// not. Every gap Treasury funds — fund capital, block rewards — is one-sided:
+// an overshoot is not a negative requirement to be netted off elsewhere.
+func shortfall(target, actual math.Int) math.Int {
+	if target.LTE(actual) {
+		return math.ZeroInt()
+	}
+	return target.Sub(actual)
 }

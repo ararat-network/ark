@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	arkmetrics "ark/pkg/metrics"
 	"ark/x/treasury/types"
 )
@@ -22,7 +20,9 @@ import (
 //
 // Only the cap refresh reads the membership list. Reward funding asks the
 // registry for pricing verdicts instead, so it never sees a membership
-// snapshot it would have to keep honest.
+// snapshot it would have to keep honest. It also owns its own genesis-height
+// skip, so the hook states the block's work without restating either module's
+// accrual rules.
 func (k Keeper) BeginBlocker(ctx context.Context) error {
 	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.BeginBlock)()
 
@@ -34,21 +34,5 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 		return err
 	}
 
-	if sdk.UnwrapSDKContext(ctx).BlockHeight() > 1 {
-		funding, err := k.updateRewardFunding(ctx)
-		if err != nil {
-			return err
-		}
-		if funding.BlocksRemaining > 0 {
-			return nil
-		}
-		if err := k.settleRewardFunding(ctx, funding); err != nil {
-			return err
-		}
-		if err := k.RewardFunding.Set(ctx, types.DefaultRewardFundingState()); err != nil {
-			return fmt.Errorf("resetting reward funding state: %w", err)
-		}
-	}
-
-	return nil
+	return k.advanceRewardFunding(ctx)
 }

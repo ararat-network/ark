@@ -267,18 +267,3 @@ func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.Lega
 		insuranceTarget:  insuranceTarget,
 	}, nil
 }
-
-func (k Keeper) balance(ctx context.Context, moduleName string) math.Int {
-	addr := k.accountKeeper.GetModuleAddress(moduleName)
-	return k.bankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
-}
-
-func validatePositiveNoahCoin(coin sdk.Coin) error {
-	if err := coin.Validate(); err != nil {
-		return err
-	}
-	if coin.Denom != chain.NoahBaseDenom || !coin.IsPositive() {
-		return fmt.Errorf("coin must be positive %s", chain.NoahBaseDenom)
-	}
-	return nil
-}
