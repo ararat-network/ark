@@ -1946,15 +1946,725 @@ func (x *fastReflection_EventUnpricedStabilityTaxRouted) ProtoMethods() *protoif
 	}
 }
 
+var _ protoreflect.List = (*_EventLiabilityIncomplete_2_list)(nil)
+
+type _EventLiabilityIncomplete_2_list struct {
+	list *[]*v1beta1.Coin
+}
+
+func (x *_EventLiabilityIncomplete_2_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_EventLiabilityIncomplete_2_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_EventLiabilityIncomplete_2_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_EventLiabilityIncomplete_2_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_EventLiabilityIncomplete_2_list) AppendMutable() protoreflect.Value {
+	v := new(v1beta1.Coin)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_EventLiabilityIncomplete_2_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_EventLiabilityIncomplete_2_list) NewElement() protoreflect.Value {
+	v := new(v1beta1.Coin)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_EventLiabilityIncomplete_2_list) IsValid() bool {
+	return x.list != nil
+}
+
+var _ protoreflect.List = (*_EventLiabilityIncomplete_3_list)(nil)
+
+type _EventLiabilityIncomplete_3_list struct {
+	list *[]*v1beta1.Coin
+}
+
+func (x *_EventLiabilityIncomplete_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_EventLiabilityIncomplete_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_EventLiabilityIncomplete_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_EventLiabilityIncomplete_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.Coin)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_EventLiabilityIncomplete_3_list) AppendMutable() protoreflect.Value {
+	v := new(v1beta1.Coin)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_EventLiabilityIncomplete_3_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_EventLiabilityIncomplete_3_list) NewElement() protoreflect.Value {
+	v := new(v1beta1.Coin)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_EventLiabilityIncomplete_3_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_EventExpansionAllocated                           protoreflect.MessageDescriptor
-	fd_EventExpansionAllocated_denom                     protoreflect.FieldDescriptor
-	fd_EventExpansionAllocated_redemption_buffer_credit  protoreflect.FieldDescriptor
-	fd_EventExpansionAllocated_strategic_reserve_credit  protoreflect.FieldDescriptor
-	fd_EventExpansionAllocated_insurance_credit          protoreflect.FieldDescriptor
-	fd_EventExpansionAllocated_spread_and_dust_burn      protoreflect.FieldDescriptor
-	fd_EventExpansionAllocated_overflow_burn             protoreflect.FieldDescriptor
-	fd_EventExpansionAllocated_target_valuation_complete protoreflect.FieldDescriptor
+	md_EventLiabilityIncomplete                            protoreflect.MessageDescriptor
+	fd_EventLiabilityIncomplete_claimable_liability        protoreflect.FieldDescriptor
+	fd_EventLiabilityIncomplete_stale_member_supply        protoreflect.FieldDescriptor
+	fd_EventLiabilityIncomplete_untrusted_suspended_supply protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_treasury_v1_event_proto_init()
+	md_EventLiabilityIncomplete = File_ark_treasury_v1_event_proto.Messages().ByName("EventLiabilityIncomplete")
+	fd_EventLiabilityIncomplete_claimable_liability = md_EventLiabilityIncomplete.Fields().ByName("claimable_liability")
+	fd_EventLiabilityIncomplete_stale_member_supply = md_EventLiabilityIncomplete.Fields().ByName("stale_member_supply")
+	fd_EventLiabilityIncomplete_untrusted_suspended_supply = md_EventLiabilityIncomplete.Fields().ByName("untrusted_suspended_supply")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventLiabilityIncomplete)(nil)
+
+type fastReflection_EventLiabilityIncomplete EventLiabilityIncomplete
+
+func (x *EventLiabilityIncomplete) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventLiabilityIncomplete)(x)
+}
+
+func (x *EventLiabilityIncomplete) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_treasury_v1_event_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventLiabilityIncomplete_messageType fastReflection_EventLiabilityIncomplete_messageType
+var _ protoreflect.MessageType = fastReflection_EventLiabilityIncomplete_messageType{}
+
+type fastReflection_EventLiabilityIncomplete_messageType struct{}
+
+func (x fastReflection_EventLiabilityIncomplete_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventLiabilityIncomplete)(nil)
+}
+func (x fastReflection_EventLiabilityIncomplete_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventLiabilityIncomplete)
+}
+func (x fastReflection_EventLiabilityIncomplete_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventLiabilityIncomplete
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventLiabilityIncomplete) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventLiabilityIncomplete
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventLiabilityIncomplete) Type() protoreflect.MessageType {
+	return _fastReflection_EventLiabilityIncomplete_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventLiabilityIncomplete) New() protoreflect.Message {
+	return new(fastReflection_EventLiabilityIncomplete)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventLiabilityIncomplete) Interface() protoreflect.ProtoMessage {
+	return (*EventLiabilityIncomplete)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventLiabilityIncomplete) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ClaimableLiability != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimableLiability.ProtoReflect())
+		if !f(fd_EventLiabilityIncomplete_claimable_liability, value) {
+			return
+		}
+	}
+	if len(x.StaleMemberSupply) != 0 {
+		value := protoreflect.ValueOfList(&_EventLiabilityIncomplete_2_list{list: &x.StaleMemberSupply})
+		if !f(fd_EventLiabilityIncomplete_stale_member_supply, value) {
+			return
+		}
+	}
+	if len(x.UntrustedSuspendedSupply) != 0 {
+		value := protoreflect.ValueOfList(&_EventLiabilityIncomplete_3_list{list: &x.UntrustedSuspendedSupply})
+		if !f(fd_EventLiabilityIncomplete_untrusted_suspended_supply, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventLiabilityIncomplete) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventLiabilityIncomplete.claimable_liability":
+		return x.ClaimableLiability != nil
+	case "ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply":
+		return len(x.StaleMemberSupply) != 0
+	case "ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply":
+		return len(x.UntrustedSuspendedSupply) != 0
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventLiabilityIncomplete"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventLiabilityIncomplete does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventLiabilityIncomplete) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventLiabilityIncomplete.claimable_liability":
+		x.ClaimableLiability = nil
+	case "ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply":
+		x.StaleMemberSupply = nil
+	case "ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply":
+		x.UntrustedSuspendedSupply = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventLiabilityIncomplete"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventLiabilityIncomplete does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventLiabilityIncomplete) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.treasury.v1.EventLiabilityIncomplete.claimable_liability":
+		value := x.ClaimableLiability
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply":
+		if len(x.StaleMemberSupply) == 0 {
+			return protoreflect.ValueOfList(&_EventLiabilityIncomplete_2_list{})
+		}
+		listValue := &_EventLiabilityIncomplete_2_list{list: &x.StaleMemberSupply}
+		return protoreflect.ValueOfList(listValue)
+	case "ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply":
+		if len(x.UntrustedSuspendedSupply) == 0 {
+			return protoreflect.ValueOfList(&_EventLiabilityIncomplete_3_list{})
+		}
+		listValue := &_EventLiabilityIncomplete_3_list{list: &x.UntrustedSuspendedSupply}
+		return protoreflect.ValueOfList(listValue)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventLiabilityIncomplete"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventLiabilityIncomplete does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventLiabilityIncomplete) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventLiabilityIncomplete.claimable_liability":
+		x.ClaimableLiability = value.Message().Interface().(*v1beta1.DecCoin)
+	case "ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply":
+		lv := value.List()
+		clv := lv.(*_EventLiabilityIncomplete_2_list)
+		x.StaleMemberSupply = *clv.list
+	case "ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply":
+		lv := value.List()
+		clv := lv.(*_EventLiabilityIncomplete_3_list)
+		x.UntrustedSuspendedSupply = *clv.list
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventLiabilityIncomplete"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventLiabilityIncomplete does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventLiabilityIncomplete) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventLiabilityIncomplete.claimable_liability":
+		if x.ClaimableLiability == nil {
+			x.ClaimableLiability = new(v1beta1.DecCoin)
+		}
+		return protoreflect.ValueOfMessage(x.ClaimableLiability.ProtoReflect())
+	case "ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply":
+		if x.StaleMemberSupply == nil {
+			x.StaleMemberSupply = []*v1beta1.Coin{}
+		}
+		value := &_EventLiabilityIncomplete_2_list{list: &x.StaleMemberSupply}
+		return protoreflect.ValueOfList(value)
+	case "ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply":
+		if x.UntrustedSuspendedSupply == nil {
+			x.UntrustedSuspendedSupply = []*v1beta1.Coin{}
+		}
+		value := &_EventLiabilityIncomplete_3_list{list: &x.UntrustedSuspendedSupply}
+		return protoreflect.ValueOfList(value)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventLiabilityIncomplete"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventLiabilityIncomplete does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventLiabilityIncomplete) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventLiabilityIncomplete.claimable_liability":
+		m := new(v1beta1.DecCoin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply":
+		list := []*v1beta1.Coin{}
+		return protoreflect.ValueOfList(&_EventLiabilityIncomplete_2_list{list: &list})
+	case "ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply":
+		list := []*v1beta1.Coin{}
+		return protoreflect.ValueOfList(&_EventLiabilityIncomplete_3_list{list: &list})
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventLiabilityIncomplete"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventLiabilityIncomplete does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventLiabilityIncomplete) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.EventLiabilityIncomplete", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventLiabilityIncomplete) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventLiabilityIncomplete) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventLiabilityIncomplete) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventLiabilityIncomplete) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventLiabilityIncomplete)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.ClaimableLiability != nil {
+			l = options.Size(x.ClaimableLiability)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if len(x.StaleMemberSupply) > 0 {
+			for _, e := range x.StaleMemberSupply {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if len(x.UntrustedSuspendedSupply) > 0 {
+			for _, e := range x.UntrustedSuspendedSupply {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventLiabilityIncomplete)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.UntrustedSuspendedSupply) > 0 {
+			for iNdEx := len(x.UntrustedSuspendedSupply) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.UntrustedSuspendedSupply[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x1a
+			}
+		}
+		if len(x.StaleMemberSupply) > 0 {
+			for iNdEx := len(x.StaleMemberSupply) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.StaleMemberSupply[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x12
+			}
+		}
+		if x.ClaimableLiability != nil {
+			encoded, err := options.Marshal(x.ClaimableLiability)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventLiabilityIncomplete)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventLiabilityIncomplete: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventLiabilityIncomplete: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimableLiability", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ClaimableLiability == nil {
+					x.ClaimableLiability = &v1beta1.DecCoin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimableLiability); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field StaleMemberSupply", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.StaleMemberSupply = append(x.StaleMemberSupply, &v1beta1.Coin{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.StaleMemberSupply[len(x.StaleMemberSupply)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UntrustedSuspendedSupply", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.UntrustedSuspendedSupply = append(x.UntrustedSuspendedSupply, &v1beta1.Coin{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.UntrustedSuspendedSupply[len(x.UntrustedSuspendedSupply)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_EventExpansionAllocated                          protoreflect.MessageDescriptor
+	fd_EventExpansionAllocated_denom                    protoreflect.FieldDescriptor
+	fd_EventExpansionAllocated_redemption_buffer_credit protoreflect.FieldDescriptor
+	fd_EventExpansionAllocated_strategic_reserve_credit protoreflect.FieldDescriptor
+	fd_EventExpansionAllocated_insurance_credit         protoreflect.FieldDescriptor
+	fd_EventExpansionAllocated_spread_and_dust_burn     protoreflect.FieldDescriptor
+	fd_EventExpansionAllocated_overflow_burn            protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1966,7 +2676,6 @@ func init() {
 	fd_EventExpansionAllocated_insurance_credit = md_EventExpansionAllocated.Fields().ByName("insurance_credit")
 	fd_EventExpansionAllocated_spread_and_dust_burn = md_EventExpansionAllocated.Fields().ByName("spread_and_dust_burn")
 	fd_EventExpansionAllocated_overflow_burn = md_EventExpansionAllocated.Fields().ByName("overflow_burn")
-	fd_EventExpansionAllocated_target_valuation_complete = md_EventExpansionAllocated.Fields().ByName("target_valuation_complete")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventExpansionAllocated)(nil)
@@ -1978,7 +2687,7 @@ func (x *EventExpansionAllocated) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventExpansionAllocated) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_event_proto_msgTypes[3]
+	mi := &file_ark_treasury_v1_event_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2070,12 +2779,6 @@ func (x *fastReflection_EventExpansionAllocated) Range(f func(protoreflect.Field
 			return
 		}
 	}
-	if x.TargetValuationComplete != false {
-		value := protoreflect.ValueOfBool(x.TargetValuationComplete)
-		if !f(fd_EventExpansionAllocated_target_valuation_complete, value) {
-			return
-		}
-	}
 }
 
 // Has reports whether a field is populated.
@@ -2103,8 +2806,6 @@ func (x *fastReflection_EventExpansionAllocated) Has(fd protoreflect.FieldDescri
 		return x.SpreadAndDustBurn != ""
 	case "ark.treasury.v1.EventExpansionAllocated.overflow_burn":
 		return x.OverflowBurn != ""
-	case "ark.treasury.v1.EventExpansionAllocated.target_valuation_complete":
-		return x.TargetValuationComplete != false
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventExpansionAllocated"))
@@ -2133,8 +2834,6 @@ func (x *fastReflection_EventExpansionAllocated) Clear(fd protoreflect.FieldDesc
 		x.SpreadAndDustBurn = ""
 	case "ark.treasury.v1.EventExpansionAllocated.overflow_burn":
 		x.OverflowBurn = ""
-	case "ark.treasury.v1.EventExpansionAllocated.target_valuation_complete":
-		x.TargetValuationComplete = false
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventExpansionAllocated"))
@@ -2169,9 +2868,6 @@ func (x *fastReflection_EventExpansionAllocated) Get(descriptor protoreflect.Fie
 	case "ark.treasury.v1.EventExpansionAllocated.overflow_burn":
 		value := x.OverflowBurn
 		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.EventExpansionAllocated.target_valuation_complete":
-		value := x.TargetValuationComplete
-		return protoreflect.ValueOfBool(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventExpansionAllocated"))
@@ -2204,8 +2900,6 @@ func (x *fastReflection_EventExpansionAllocated) Set(fd protoreflect.FieldDescri
 		x.SpreadAndDustBurn = value.Interface().(string)
 	case "ark.treasury.v1.EventExpansionAllocated.overflow_burn":
 		x.OverflowBurn = value.Interface().(string)
-	case "ark.treasury.v1.EventExpansionAllocated.target_valuation_complete":
-		x.TargetValuationComplete = value.Bool()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventExpansionAllocated"))
@@ -2238,8 +2932,6 @@ func (x *fastReflection_EventExpansionAllocated) Mutable(fd protoreflect.FieldDe
 		panic(fmt.Errorf("field spread_and_dust_burn of message ark.treasury.v1.EventExpansionAllocated is not mutable"))
 	case "ark.treasury.v1.EventExpansionAllocated.overflow_burn":
 		panic(fmt.Errorf("field overflow_burn of message ark.treasury.v1.EventExpansionAllocated is not mutable"))
-	case "ark.treasury.v1.EventExpansionAllocated.target_valuation_complete":
-		panic(fmt.Errorf("field target_valuation_complete of message ark.treasury.v1.EventExpansionAllocated is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventExpansionAllocated"))
@@ -2265,8 +2957,6 @@ func (x *fastReflection_EventExpansionAllocated) NewField(fd protoreflect.FieldD
 		return protoreflect.ValueOfString("")
 	case "ark.treasury.v1.EventExpansionAllocated.overflow_burn":
 		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.EventExpansionAllocated.target_valuation_complete":
-		return protoreflect.ValueOfBool(false)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventExpansionAllocated"))
@@ -2360,9 +3050,6 @@ func (x *fastReflection_EventExpansionAllocated) ProtoMethods() *protoiface.Meth
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.TargetValuationComplete {
-			n += 2
-		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -2391,16 +3078,6 @@ func (x *fastReflection_EventExpansionAllocated) ProtoMethods() *protoiface.Meth
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.TargetValuationComplete {
-			i--
-			if x.TargetValuationComplete {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x38
 		}
 		if len(x.OverflowBurn) > 0 {
 			i -= len(x.OverflowBurn)
@@ -2685,26 +3362,6 @@ func (x *fastReflection_EventExpansionAllocated) ProtoMethods() *protoiface.Meth
 				}
 				x.OverflowBurn = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 7:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TargetValuationComplete", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.TargetValuationComplete = bool(v != 0)
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -2741,10 +3398,9 @@ func (x *fastReflection_EventExpansionAllocated) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_EventRedemptionBufferDrawn                              protoreflect.MessageDescriptor
-	fd_EventRedemptionBufferDrawn_denom                        protoreflect.FieldDescriptor
-	fd_EventRedemptionBufferDrawn_payment                      protoreflect.FieldDescriptor
-	fd_EventRedemptionBufferDrawn_aggregate_valuation_complete protoreflect.FieldDescriptor
+	md_EventRedemptionBufferDrawn         protoreflect.MessageDescriptor
+	fd_EventRedemptionBufferDrawn_denom   protoreflect.FieldDescriptor
+	fd_EventRedemptionBufferDrawn_payment protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -2752,7 +3408,6 @@ func init() {
 	md_EventRedemptionBufferDrawn = File_ark_treasury_v1_event_proto.Messages().ByName("EventRedemptionBufferDrawn")
 	fd_EventRedemptionBufferDrawn_denom = md_EventRedemptionBufferDrawn.Fields().ByName("denom")
 	fd_EventRedemptionBufferDrawn_payment = md_EventRedemptionBufferDrawn.Fields().ByName("payment")
-	fd_EventRedemptionBufferDrawn_aggregate_valuation_complete = md_EventRedemptionBufferDrawn.Fields().ByName("aggregate_valuation_complete")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventRedemptionBufferDrawn)(nil)
@@ -2764,7 +3419,7 @@ func (x *EventRedemptionBufferDrawn) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventRedemptionBufferDrawn) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_event_proto_msgTypes[4]
+	mi := &file_ark_treasury_v1_event_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2832,12 +3487,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) Range(f func(protoreflect.Fi
 			return
 		}
 	}
-	if x.AggregateValuationComplete != false {
-		value := protoreflect.ValueOfBool(x.AggregateValuationComplete)
-		if !f(fd_EventRedemptionBufferDrawn_aggregate_valuation_complete, value) {
-			return
-		}
-	}
 }
 
 // Has reports whether a field is populated.
@@ -2857,8 +3506,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) Has(fd protoreflect.FieldDes
 		return x.Denom != ""
 	case "ark.treasury.v1.EventRedemptionBufferDrawn.payment":
 		return x.Payment != ""
-	case "ark.treasury.v1.EventRedemptionBufferDrawn.aggregate_valuation_complete":
-		return x.AggregateValuationComplete != false
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventRedemptionBufferDrawn"))
@@ -2879,8 +3526,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) Clear(fd protoreflect.FieldD
 		x.Denom = ""
 	case "ark.treasury.v1.EventRedemptionBufferDrawn.payment":
 		x.Payment = ""
-	case "ark.treasury.v1.EventRedemptionBufferDrawn.aggregate_valuation_complete":
-		x.AggregateValuationComplete = false
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventRedemptionBufferDrawn"))
@@ -2903,9 +3548,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) Get(descriptor protoreflect.
 	case "ark.treasury.v1.EventRedemptionBufferDrawn.payment":
 		value := x.Payment
 		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.EventRedemptionBufferDrawn.aggregate_valuation_complete":
-		value := x.AggregateValuationComplete
-		return protoreflect.ValueOfBool(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventRedemptionBufferDrawn"))
@@ -2930,8 +3572,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) Set(fd protoreflect.FieldDes
 		x.Denom = value.Interface().(string)
 	case "ark.treasury.v1.EventRedemptionBufferDrawn.payment":
 		x.Payment = value.Interface().(string)
-	case "ark.treasury.v1.EventRedemptionBufferDrawn.aggregate_valuation_complete":
-		x.AggregateValuationComplete = value.Bool()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventRedemptionBufferDrawn"))
@@ -2956,8 +3596,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) Mutable(fd protoreflect.Fiel
 		panic(fmt.Errorf("field denom of message ark.treasury.v1.EventRedemptionBufferDrawn is not mutable"))
 	case "ark.treasury.v1.EventRedemptionBufferDrawn.payment":
 		panic(fmt.Errorf("field payment of message ark.treasury.v1.EventRedemptionBufferDrawn is not mutable"))
-	case "ark.treasury.v1.EventRedemptionBufferDrawn.aggregate_valuation_complete":
-		panic(fmt.Errorf("field aggregate_valuation_complete of message ark.treasury.v1.EventRedemptionBufferDrawn is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventRedemptionBufferDrawn"))
@@ -2975,8 +3613,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) NewField(fd protoreflect.Fie
 		return protoreflect.ValueOfString("")
 	case "ark.treasury.v1.EventRedemptionBufferDrawn.payment":
 		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.EventRedemptionBufferDrawn.aggregate_valuation_complete":
-		return protoreflect.ValueOfBool(false)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventRedemptionBufferDrawn"))
@@ -3054,9 +3690,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) ProtoMethods() *protoiface.M
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.AggregateValuationComplete {
-			n += 2
-		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -3085,16 +3718,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) ProtoMethods() *protoiface.M
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.AggregateValuationComplete {
-			i--
-			if x.AggregateValuationComplete {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x18
 		}
 		if len(x.Payment) > 0 {
 			i -= len(x.Payment)
@@ -3223,26 +3846,6 @@ func (x *fastReflection_EventRedemptionBufferDrawn) ProtoMethods() *protoiface.M
 				}
 				x.Payment = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AggregateValuationComplete", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.AggregateValuationComplete = bool(v != 0)
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -3304,7 +3907,7 @@ func (x *EventMonetaryMandateSet) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventMonetaryMandateSet) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_event_proto_msgTypes[5]
+	mi := &file_ark_treasury_v1_event_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3864,7 +4467,7 @@ func (x *EventReferenceTaxCapRebased) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventReferenceTaxCapRebased) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_event_proto_msgTypes[6]
+	mi := &file_ark_treasury_v1_event_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4537,25 +5140,87 @@ func (x *EventUnpricedStabilityTaxRouted) GetDeferred() []*v1beta1.Coin {
 	return nil
 }
 
+// EventLiabilityIncomplete discloses a block whose liability valuation could
+// not cover every recognized liability, and is emitted only in that degraded
+// state. At least one of the two supply lists below is non-empty and is the
+// reason. No fund target is sized while it fires.
+type EventLiabilityIncomplete struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// claimable_liability is the aggregate that can currently redeem, in anoah.
+	// It is still the denominator redemption coverage divides by; what it no
+	// longer supports is sizing a fund target.
+	ClaimableLiability *v1beta1.DecCoin `protobuf:"bytes,1,opt,name=claimable_liability,json=claimableLiability,proto3" json:"claimable_liability,omitempty"`
+	// stale_member_supply is supply whose feed was unavailable. It is still
+	// counted above at its last known rate: an absent feed is absent evidence,
+	// not an extinguished obligation.
+	StaleMemberSupply []*v1beta1.Coin `protobuf:"bytes,2,rep,name=stale_member_supply,json=staleMemberSupply,proto3" json:"stale_member_supply,omitempty"`
+	// untrusted_suspended_supply is SUSPENDED supply with no settlement plan,
+	// valuable by no honest rate and so outside the aggregate entirely.
+	UntrustedSuspendedSupply []*v1beta1.Coin `protobuf:"bytes,3,rep,name=untrusted_suspended_supply,json=untrustedSuspendedSupply,proto3" json:"untrusted_suspended_supply,omitempty"`
+}
+
+func (x *EventLiabilityIncomplete) Reset() {
+	*x = EventLiabilityIncomplete{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_treasury_v1_event_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventLiabilityIncomplete) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventLiabilityIncomplete) ProtoMessage() {}
+
+// Deprecated: Use EventLiabilityIncomplete.ProtoReflect.Descriptor instead.
+func (*EventLiabilityIncomplete) Descriptor() ([]byte, []int) {
+	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *EventLiabilityIncomplete) GetClaimableLiability() *v1beta1.DecCoin {
+	if x != nil {
+		return x.ClaimableLiability
+	}
+	return nil
+}
+
+func (x *EventLiabilityIncomplete) GetStaleMemberSupply() []*v1beta1.Coin {
+	if x != nil {
+		return x.StaleMemberSupply
+	}
+	return nil
+}
+
+func (x *EventLiabilityIncomplete) GetUntrustedSuspendedSupply() []*v1beta1.Coin {
+	if x != nil {
+		return x.UntrustedSuspendedSupply
+	}
+	return nil
+}
+
 // EventExpansionAllocated records the complete realised expansion allocation.
 type EventExpansionAllocated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Denom                   string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	RedemptionBufferCredit  string `protobuf:"bytes,2,opt,name=redemption_buffer_credit,json=redemptionBufferCredit,proto3" json:"redemption_buffer_credit,omitempty"`
-	StrategicReserveCredit  string `protobuf:"bytes,3,opt,name=strategic_reserve_credit,json=strategicReserveCredit,proto3" json:"strategic_reserve_credit,omitempty"`
-	InsuranceCredit         string `protobuf:"bytes,4,opt,name=insurance_credit,json=insuranceCredit,proto3" json:"insurance_credit,omitempty"`
-	SpreadAndDustBurn       string `protobuf:"bytes,5,opt,name=spread_and_dust_burn,json=spreadAndDustBurn,proto3" json:"spread_and_dust_burn,omitempty"`
-	OverflowBurn            string `protobuf:"bytes,6,opt,name=overflow_burn,json=overflowBurn,proto3" json:"overflow_burn,omitempty"`
-	TargetValuationComplete bool   `protobuf:"varint,7,opt,name=target_valuation_complete,json=targetValuationComplete,proto3" json:"target_valuation_complete,omitempty"`
+	Denom                  string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	RedemptionBufferCredit string `protobuf:"bytes,2,opt,name=redemption_buffer_credit,json=redemptionBufferCredit,proto3" json:"redemption_buffer_credit,omitempty"`
+	StrategicReserveCredit string `protobuf:"bytes,3,opt,name=strategic_reserve_credit,json=strategicReserveCredit,proto3" json:"strategic_reserve_credit,omitempty"`
+	InsuranceCredit        string `protobuf:"bytes,4,opt,name=insurance_credit,json=insuranceCredit,proto3" json:"insurance_credit,omitempty"`
+	SpreadAndDustBurn      string `protobuf:"bytes,5,opt,name=spread_and_dust_burn,json=spreadAndDustBurn,proto3" json:"spread_and_dust_burn,omitempty"`
+	OverflowBurn           string `protobuf:"bytes,6,opt,name=overflow_burn,json=overflowBurn,proto3" json:"overflow_burn,omitempty"`
 }
 
 func (x *EventExpansionAllocated) Reset() {
 	*x = EventExpansionAllocated{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_event_proto_msgTypes[3]
+		mi := &file_ark_treasury_v1_event_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4569,7 +5234,7 @@ func (*EventExpansionAllocated) ProtoMessage() {}
 
 // Deprecated: Use EventExpansionAllocated.ProtoReflect.Descriptor instead.
 func (*EventExpansionAllocated) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{3}
+	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EventExpansionAllocated) GetDenom() string {
@@ -4614,28 +5279,20 @@ func (x *EventExpansionAllocated) GetOverflowBurn() string {
 	return ""
 }
 
-func (x *EventExpansionAllocated) GetTargetValuationComplete() bool {
-	if x != nil {
-		return x.TargetValuationComplete
-	}
-	return false
-}
-
 // EventRedemptionBufferDrawn records a successful redemption-buffer payment.
 type EventRedemptionBufferDrawn struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Denom                      string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Payment                    string `protobuf:"bytes,2,opt,name=payment,proto3" json:"payment,omitempty"`
-	AggregateValuationComplete bool   `protobuf:"varint,3,opt,name=aggregate_valuation_complete,json=aggregateValuationComplete,proto3" json:"aggregate_valuation_complete,omitempty"`
+	Denom   string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Payment string `protobuf:"bytes,2,opt,name=payment,proto3" json:"payment,omitempty"`
 }
 
 func (x *EventRedemptionBufferDrawn) Reset() {
 	*x = EventRedemptionBufferDrawn{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_event_proto_msgTypes[4]
+		mi := &file_ark_treasury_v1_event_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4649,7 +5306,7 @@ func (*EventRedemptionBufferDrawn) ProtoMessage() {}
 
 // Deprecated: Use EventRedemptionBufferDrawn.ProtoReflect.Descriptor instead.
 func (*EventRedemptionBufferDrawn) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{4}
+	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *EventRedemptionBufferDrawn) GetDenom() string {
@@ -4664,13 +5321,6 @@ func (x *EventRedemptionBufferDrawn) GetPayment() string {
 		return x.Payment
 	}
 	return ""
-}
-
-func (x *EventRedemptionBufferDrawn) GetAggregateValuationComplete() bool {
-	if x != nil {
-		return x.AggregateValuationComplete
-	}
-	return false
 }
 
 // EventMonetaryMandateSet is emitted when governance appoints, replaces, or
@@ -4691,7 +5341,7 @@ type EventMonetaryMandateSet struct {
 func (x *EventMonetaryMandateSet) Reset() {
 	*x = EventMonetaryMandateSet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_event_proto_msgTypes[5]
+		mi := &file_ark_treasury_v1_event_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4705,7 +5355,7 @@ func (*EventMonetaryMandateSet) ProtoMessage() {}
 
 // Deprecated: Use EventMonetaryMandateSet.ProtoReflect.Descriptor instead.
 func (*EventMonetaryMandateSet) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{5}
+	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EventMonetaryMandateSet) GetTerm() uint64 {
@@ -4751,7 +5401,7 @@ type EventReferenceTaxCapRebased struct {
 func (x *EventReferenceTaxCapRebased) Reset() {
 	*x = EventReferenceTaxCapRebased{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_event_proto_msgTypes[6]
+		mi := &file_ark_treasury_v1_event_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4765,7 +5415,7 @@ func (*EventReferenceTaxCapRebased) ProtoMessage() {}
 
 // Deprecated: Use EventReferenceTaxCapRebased.ProtoReflect.Descriptor instead.
 func (*EventReferenceTaxCapRebased) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{6}
+	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EventReferenceTaxCapRebased) GetOldCap() *v1beta1.Coin {
@@ -4853,92 +5503,104 @@ var file_ark_treasury_v1_event_proto_rawDesc = []byte{
 	0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
 	0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d,
 	0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x64, 0x65, 0x66, 0x65, 0x72, 0x72, 0x65, 0x64, 0x22, 0xe1,
-	0x04, 0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x45, 0x78, 0x70, 0x61, 0x6e, 0x73, 0x69, 0x6f,
-	0x6e, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x12, 0x6a, 0x0a, 0x18, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x62,
-	0x75, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x64, 0x65, 0x66, 0x65, 0x72, 0x72, 0x65, 0x64, 0x22, 0xd0,
+	0x02, 0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74,
+	0x79, 0x49, 0x6e, 0x63, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x12, 0x58, 0x0a, 0x13, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x6c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69,
+	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44,
+	0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x12, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x4c, 0x69, 0x61, 0x62,
+	0x69, 0x6c, 0x69, 0x74, 0x79, 0x12, 0x65, 0x0a, 0x13, 0x73, 0x74, 0x61, 0x6c, 0x65, 0x5f, 0x6d,
+	0x65, 0x6d, 0x62, 0x65, 0x72, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x1a, 0xc8,
+	0xde, 0x1f, 0x00, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63,
+	0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x73, 0x74, 0x61, 0x6c, 0x65,
+	0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x12, 0x73, 0x0a, 0x1a,
+	0x75, 0x6e, 0x74, 0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x73, 0x70, 0x65, 0x6e,
+	0x64, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x1a, 0xc8, 0xde, 0x1f,
+	0x00, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69,
+	0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x18, 0x75, 0x6e, 0x74, 0x72, 0x75, 0x73, 0x74,
+	0x65, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x79, 0x22, 0x9e, 0x04, 0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x45, 0x78, 0x70, 0x61, 0x6e,
+	0x73, 0x69, 0x6f, 0x6e, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x14, 0x0a,
+	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65,
+	0x6e, 0x6f, 0x6d, 0x12, 0x6a, 0x0a, 0x18, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x69, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
+	0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49,
+	0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x16, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x69, 0x74, 0x12,
+	0x6a, 0x0a, 0x18, 0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x5f, 0x72, 0x65, 0x73,
+	0x65, 0x72, 0x76, 0x65, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x69, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74,
+	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x16, 0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x52, 0x65,
+	0x73, 0x65, 0x72, 0x76, 0x65, 0x43, 0x72, 0x65, 0x64, 0x69, 0x74, 0x12, 0x5b, 0x0a, 0x10, 0x69,
+	0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x69, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
+	0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49,
+	0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e,
+	0x63, 0x65, 0x43, 0x72, 0x65, 0x64, 0x69, 0x74, 0x12, 0x61, 0x0a, 0x14, 0x73, 0x70, 0x72, 0x65,
+	0x61, 0x64, 0x5f, 0x61, 0x6e, 0x64, 0x5f, 0x64, 0x75, 0x73, 0x74, 0x5f, 0x62, 0x75, 0x72, 0x6e,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x73, 0x70, 0x72, 0x65, 0x61, 0x64,
+	0x41, 0x6e, 0x64, 0x44, 0x75, 0x73, 0x74, 0x42, 0x75, 0x72, 0x6e, 0x12, 0x55, 0x0a, 0x0d, 0x6f,
+	0x76, 0x65, 0x72, 0x66, 0x6c, 0x6f, 0x77, 0x5f, 0x62, 0x75, 0x72, 0x6e, 0x18, 0x06, 0x20, 0x01,
 	0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d,
 	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e,
 	0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x16, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x69, 0x74, 0x12, 0x6a, 0x0a, 0x18,
-	0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x5f, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76,
-	0x65, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x69, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30,
-	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d,
-	0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x16, 0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x52, 0x65, 0x73, 0x65, 0x72,
-	0x76, 0x65, 0x43, 0x72, 0x65, 0x64, 0x69, 0x74, 0x12, 0x5b, 0x0a, 0x10, 0x69, 0x6e, 0x73, 0x75,
-	0x72, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x69, 0x74, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e,
-	0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x43,
-	0x72, 0x65, 0x64, 0x69, 0x74, 0x12, 0x61, 0x0a, 0x14, 0x73, 0x70, 0x72, 0x65, 0x61, 0x64, 0x5f,
-	0x61, 0x6e, 0x64, 0x5f, 0x64, 0x75, 0x73, 0x74, 0x5f, 0x62, 0x75, 0x72, 0x6e, 0x18, 0x05, 0x20,
-	0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49,
-	0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x73, 0x70, 0x72, 0x65, 0x61, 0x64, 0x41, 0x6e, 0x64,
-	0x44, 0x75, 0x73, 0x74, 0x42, 0x75, 0x72, 0x6e, 0x12, 0x55, 0x0a, 0x0d, 0x6f, 0x76, 0x65, 0x72,
-	0x66, 0x6c, 0x6f, 0x77, 0x5f, 0x62, 0x75, 0x72, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
-	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4,
-	0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x0c, 0x6f, 0x76, 0x65, 0x72, 0x66, 0x6c, 0x6f, 0x77, 0x42, 0x75, 0x72, 0x6e, 0x12,
-	0x41, 0x0a, 0x19, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x18, 0x07, 0x20, 0x01,
-	0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x17, 0x74, 0x61, 0x72, 0x67, 0x65,
-	0x74, 0x56, 0x61, 0x6c, 0x75, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x65,
-	0x74, 0x65, 0x22, 0xc7, 0x01, 0x0a, 0x1a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x64, 0x65,
-	0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x44, 0x72, 0x61, 0x77,
-	0x6e, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4a, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6d, 0x65,
-	0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
-	0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d,
-	0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6d,
-	0x65, 0x6e, 0x74, 0x12, 0x47, 0x0a, 0x1c, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
-	0x5f, 0x76, 0x61, 0x6c, 0x75, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x6c,
-	0x65, 0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x1a, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x22, 0xcc, 0x01, 0x0a,
-	0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61,
-	0x6e, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x74, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74,
-	0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x32, 0x0a, 0x11, 0x61,
-	0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61,
-	0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12,
-	0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65,
-	0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x9b, 0x01, 0x0a, 0x1b,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x54, 0x61,
-	0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x62, 0x61, 0x73, 0x65, 0x64, 0x12, 0x3d, 0x0a, 0x07, 0x6f,
-	0x6c, 0x64, 0x5f, 0x63, 0x61, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74,
-	0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x06, 0x6f, 0x6c, 0x64, 0x43, 0x61, 0x70, 0x12, 0x3d, 0x0a, 0x07, 0x6e, 0x65,
-	0x77, 0x5f, 0x63, 0x61, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
-	0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x06, 0x6e, 0x65, 0x77, 0x43, 0x61, 0x70, 0x42, 0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f,
-	0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
-	0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65,
-	0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
-	0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e,
-	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72,
-	0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b,
-	0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c,
-	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72,
-	0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x6f, 0x76, 0x65, 0x72, 0x66, 0x6c, 0x6f, 0x77, 0x42, 0x75,
+	0x72, 0x6e, 0x22, 0x7e, 0x0a, 0x1a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x64, 0x65, 0x6d,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x44, 0x72, 0x61, 0x77, 0x6e,
+	0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4a, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6d, 0x65, 0x6e,
+	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6d, 0x65,
+	0x6e, 0x74, 0x22, 0xcc, 0x01, 0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x6f, 0x6e, 0x65,
+	0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x74, 0x12, 0x19,
+	0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x22, 0x9b, 0x01, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72,
+	0x65, 0x6e, 0x63, 0x65, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x62, 0x61, 0x73, 0x65,
+	0x64, 0x12, 0x3d, 0x0a, 0x07, 0x6f, 0x6c, 0x64, 0x5f, 0x63, 0x61, 0x70, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x6f, 0x6c, 0x64, 0x43, 0x61, 0x70,
+	0x12, 0x3d, 0x0a, 0x07, 0x6e, 0x65, 0x77, 0x5f, 0x63, 0x61, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x6e, 0x65, 0x77, 0x43, 0x61, 0x70, 0x42,
+	0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72,
+	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61,
+	0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa,
+	0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56,
+	0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4953,29 +5615,34 @@ func file_ark_treasury_v1_event_proto_rawDescGZIP() []byte {
 	return file_ark_treasury_v1_event_proto_rawDescData
 }
 
-var file_ark_treasury_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_ark_treasury_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_ark_treasury_v1_event_proto_goTypes = []interface{}{
 	(*EventTaxCapsUpdated)(nil),             // 0: ark.treasury.v1.EventTaxCapsUpdated
 	(*EventBlockRewardsToppedUp)(nil),       // 1: ark.treasury.v1.EventBlockRewardsToppedUp
 	(*EventUnpricedStabilityTaxRouted)(nil), // 2: ark.treasury.v1.EventUnpricedStabilityTaxRouted
-	(*EventExpansionAllocated)(nil),         // 3: ark.treasury.v1.EventExpansionAllocated
-	(*EventRedemptionBufferDrawn)(nil),      // 4: ark.treasury.v1.EventRedemptionBufferDrawn
-	(*EventMonetaryMandateSet)(nil),         // 5: ark.treasury.v1.EventMonetaryMandateSet
-	(*EventReferenceTaxCapRebased)(nil),     // 6: ark.treasury.v1.EventReferenceTaxCapRebased
-	(*TaxCap)(nil),                          // 7: ark.treasury.v1.TaxCap
-	(*v1beta1.Coin)(nil),                    // 8: cosmos.base.v1beta1.Coin
+	(*EventLiabilityIncomplete)(nil),        // 3: ark.treasury.v1.EventLiabilityIncomplete
+	(*EventExpansionAllocated)(nil),         // 4: ark.treasury.v1.EventExpansionAllocated
+	(*EventRedemptionBufferDrawn)(nil),      // 5: ark.treasury.v1.EventRedemptionBufferDrawn
+	(*EventMonetaryMandateSet)(nil),         // 6: ark.treasury.v1.EventMonetaryMandateSet
+	(*EventReferenceTaxCapRebased)(nil),     // 7: ark.treasury.v1.EventReferenceTaxCapRebased
+	(*TaxCap)(nil),                          // 8: ark.treasury.v1.TaxCap
+	(*v1beta1.Coin)(nil),                    // 9: cosmos.base.v1beta1.Coin
+	(*v1beta1.DecCoin)(nil),                 // 10: cosmos.base.v1beta1.DecCoin
 }
 var file_ark_treasury_v1_event_proto_depIdxs = []int32{
-	7, // 0: ark.treasury.v1.EventTaxCapsUpdated.tax_caps:type_name -> ark.treasury.v1.TaxCap
-	8, // 1: ark.treasury.v1.EventUnpricedStabilityTaxRouted.moved:type_name -> cosmos.base.v1beta1.Coin
-	8, // 2: ark.treasury.v1.EventUnpricedStabilityTaxRouted.deferred:type_name -> cosmos.base.v1beta1.Coin
-	8, // 3: ark.treasury.v1.EventReferenceTaxCapRebased.old_cap:type_name -> cosmos.base.v1beta1.Coin
-	8, // 4: ark.treasury.v1.EventReferenceTaxCapRebased.new_cap:type_name -> cosmos.base.v1beta1.Coin
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	8,  // 0: ark.treasury.v1.EventTaxCapsUpdated.tax_caps:type_name -> ark.treasury.v1.TaxCap
+	9,  // 1: ark.treasury.v1.EventUnpricedStabilityTaxRouted.moved:type_name -> cosmos.base.v1beta1.Coin
+	9,  // 2: ark.treasury.v1.EventUnpricedStabilityTaxRouted.deferred:type_name -> cosmos.base.v1beta1.Coin
+	10, // 3: ark.treasury.v1.EventLiabilityIncomplete.claimable_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	9,  // 4: ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply:type_name -> cosmos.base.v1beta1.Coin
+	9,  // 5: ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply:type_name -> cosmos.base.v1beta1.Coin
+	9,  // 6: ark.treasury.v1.EventReferenceTaxCapRebased.old_cap:type_name -> cosmos.base.v1beta1.Coin
+	9,  // 7: ark.treasury.v1.EventReferenceTaxCapRebased.new_cap:type_name -> cosmos.base.v1beta1.Coin
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_ark_treasury_v1_event_proto_init() }
@@ -5022,7 +5689,7 @@ func file_ark_treasury_v1_event_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventExpansionAllocated); i {
+			switch v := v.(*EventLiabilityIncomplete); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5034,7 +5701,7 @@ func file_ark_treasury_v1_event_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventRedemptionBufferDrawn); i {
+			switch v := v.(*EventExpansionAllocated); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5046,7 +5713,7 @@ func file_ark_treasury_v1_event_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_event_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventMonetaryMandateSet); i {
+			switch v := v.(*EventRedemptionBufferDrawn); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5058,6 +5725,18 @@ func file_ark_treasury_v1_event_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_event_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventMonetaryMandateSet); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_treasury_v1_event_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventReferenceTaxCapRebased); i {
 			case 0:
 				return &v.state
@@ -5076,7 +5755,7 @@ func file_ark_treasury_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_treasury_v1_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -74,6 +74,33 @@ message EventUnpricedStabilityTaxRouted {
   ];
 }
 
+// EventLiabilityIncomplete discloses a block whose liability valuation could
+// not cover every recognized liability, and is emitted only in that degraded
+// state. At least one of the two supply lists below is non-empty and is the
+// reason. No fund target is sized while it fires.
+message EventLiabilityIncomplete {
+  // claimable_liability is the aggregate that can currently redeem, in anoah.
+  // It is still the denominator redemption coverage divides by; what it no
+  // longer supports is sizing a fund target.
+  cosmos.base.v1beta1.DecCoin claimable_liability = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // stale_member_supply is supply whose feed was unavailable. It is still
+  // counted above at its last known rate: an absent feed is absent evidence,
+  // not an extinguished obligation.
+  repeated cosmos.base.v1beta1.Coin stale_member_supply = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
+  ];
+  // untrusted_suspended_supply is SUSPENDED supply with no settlement plan,
+  // valuable by no honest rate and so outside the aggregate entirely.
+  repeated cosmos.base.v1beta1.Coin untrusted_suspended_supply = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
+  ];
+}
+
 // EventExpansionAllocated records the complete realised expansion allocation.
 message EventExpansionAllocated {
   string denom = 1;
@@ -107,7 +134,6 @@ message EventExpansionAllocated {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  bool target_valuation_complete = 7 [ (amino.dont_omitempty) = true ];
 }
 
 // EventRedemptionBufferDrawn records a successful redemption-buffer payment.
@@ -119,7 +145,6 @@ message EventRedemptionBufferDrawn {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  bool aggregate_valuation_complete = 3 [ (amino.dont_omitempty) = true ];
 }
 
 // EventMonetaryMandateSet is emitted when governance appoints, replaces, or
