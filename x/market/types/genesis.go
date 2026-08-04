@@ -76,7 +76,7 @@ func (gs GenesisState) Validate() error {
 	// agree here would assert the one invariant the rebase is designed to break.
 	//
 	// Nothing is lost by accepting it: ValidatePolicy refuses every candidate
-	// while the units disagree, so a stranded corridor authorizes nothing until
+	// while the units disagree, so a stranded corridor authorises nothing until
 	// governance re-appoints. Genesis already admits the other shape of
 	// un-actable mandate — one whose window has closed — for the same reason.
 

@@ -46,7 +46,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// Governance already holds the unbounded conversion path, so an appointment
 	// naming the authority is a delegation to nobody that still reads as a live
 	// fast path.
-	if !data.ConversionMandate.IsDisabled() && data.ConversionMandate.Committee == k.authority {
+	if data.ConversionMandate.Committee == k.authority {
 		return fmt.Errorf("conversion committee must be distinct from Market authority")
 	}
 
