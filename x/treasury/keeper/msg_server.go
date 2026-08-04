@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/pkg/chain"
 	"ark/pkg/mandate"
 	"ark/x/treasury/types"
 )
@@ -166,9 +165,6 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgCommitteeUpdatePolicy) (*types.MsgCommitteeUpdatePolicyResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee update monetary-policy message")
-	}
-	if _, err := chain.ParseCanonicalAccountAddress("committee", msg.Committee); err != nil {
-		return nil, err
 	}
 	if err := msg.Policy.Validate(); err != nil {
 		return nil, err
