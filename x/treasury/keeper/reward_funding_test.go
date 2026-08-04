@@ -40,11 +40,6 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingAccruesBlock() {
 // change applies only once the active countdown settles. The live window is
 // seeded far away from the configured one, so a countdown that re-read params
 // mid-window would jump to the configured value instead of ticking down.
-//
-// The property used to be proved by removing Params outright and showing
-// BeginBlocker still succeeded. That stopped isolating reward funding once the
-// tax-cap cadence became a parameter — BeginBlocker now reads params on every
-// block — so the assertion is made directly on the countdown instead.
 func (s *KeeperTestSuite) TestUpdateRewardFundingSkipsParamsReadDuringActiveWindow() {
 	s.setBlockHeight(2)
 	params := types.DefaultParams()
@@ -62,6 +57,7 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingSkipsParamsReadDuringActiveWind
 func (s *KeeperTestSuite) TestBeginBlockerDefersWindowChangeUntilNextWindow() {
 	s.setBlockHeight(2)
 	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
 	params.RewardFundingWindow = 2
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.expectValidatorFees(sdk.NewCoins())
@@ -91,6 +87,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDefersWindowChangeUntilNextWindow() {
 func (s *KeeperTestSuite) TestBeginBlockerSettlesSingleBlockWindow() {
 	s.setBlockHeight(2)
 	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
 	params.RewardFundingWindow = 1
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.expectValidatorFees(sdk.NewCoins())

@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"bytes"
+	"errors"
 
 	"go.uber.org/mock/gomock"
 
@@ -20,7 +21,10 @@ import (
 func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	policyBefore, err := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(err)
+	// The reference cap matches the suite baseline so no rebuild fires: the
+	// window change is the whole update.
 	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
 	params.RewardFundingWindow++
 
 	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -40,6 +44,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
 	funding := rewardFunding(2, 0, 0, 0)
 	s.setRewardFunding(funding)
 	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
 	params.RewardFundingWindow = 5
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -81,7 +86,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceAmountChange
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -103,6 +108,44 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceAmountChange
 	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(100)},
 		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(100)},
+	}})
+}
+
+// TestMsgUpdateParamsCoversMembersLackingRates pins the governance rebuild on
+// the same partial pass as the block refresh: a member whose rate cannot
+// serve keeps its cap instead of failing the act, and the flag left raised
+// has the refresh re-derive it under the new reference once rates return.
+func (s *KeeperTestSuite) TestMsgUpdateParamsCoversMembersLackingRates() {
+	s.setBlockHeight(42)
+	params := types.DefaultParams()
+	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
+	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(7)))
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
+		gomock.Any(),
+		chain.SDRBaseDenom,
+		chain.USDBaseDenom,
+	).Return(oracletypes.RateSet{
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+	}, nil)
+
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    params,
+	})
+	s.Require().NoError(err)
+	stored, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(params, stored)
+	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(100), sdrCap)
+	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(7), usdCap)
+	s.requireTaxCapRefreshPending(true)
+	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(100)},
 	}})
 }
 
@@ -402,7 +445,7 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -471,62 +514,45 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsReferenceDenomChange() {
 	s.Require().Equal(current, stored)
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateParamsRateFailurePreservesOldParamsAndCaps() {
-	tests := []struct {
-		name  string
-		rates oracletypes.RateSet
-		err   error
-	}{
-		{
-			name: "missing member rate",
-			rates: oracletypes.RateSet{
-				chain.SDRBaseDenom: math.LegacyOneDec(),
-			},
-		},
-		{
-			name: "stale snapshot",
-			err:  oracletypes.ErrStaleExchangeRate,
-		},
+// TestMsgUpdateParamsCaptureFailurePreservesOldParamsAndCaps pins the one
+// failure the partial pass does not cover over: the rate capture itself
+// erring. That blames Treasury's own read path rather than any price, so the
+// act fails and params, caps, and the event stream all stand.
+func (s *KeeperTestSuite) TestMsgUpdateParamsCaptureFailurePreservesOldParamsAndCaps() {
+	current := types.DefaultParams()
+	current.ReferenceTaxCap.Amount = math.NewInt(33)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
+	oldCaps := []types.TaxCap{
+		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(33)},
+		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(44)},
 	}
+	s.setTaxCaps(oldCaps)
+	candidate := current
+	candidate.ReferenceTaxCap.Amount = math.NewInt(101)
+	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
+		gomock.Any(),
+		chain.SDRBaseDenom,
+		chain.USDBaseDenom,
+	).Return(nil, errors.New("loading exchange-rate store"))
 
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			current := types.DefaultParams()
-			current.ReferenceTaxCap.Amount = math.NewInt(33)
-			s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-			oldCaps := []types.TaxCap{
-				{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(33)},
-				{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(44)},
-			}
-			s.setTaxCaps(oldCaps)
-			candidate := current
-			candidate.ReferenceTaxCap.Amount = math.NewInt(101)
-			s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-			s.oracleKeeper.EXPECT().GetRateSet(
-				gomock.Any(),
-				chain.SDRBaseDenom,
-				chain.USDBaseDenom,
-			).Return(test.rates, test.err)
-
-			_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-				Authority: s.authority,
-				Params:    candidate,
-			})
-			s.Require().Error(err)
-			stored, getErr := s.keeper.Params.Get(s.ctx)
-			s.Require().NoError(getErr)
-			s.Require().Equal(current, stored)
-			for _, oldCap := range oldCaps {
-				storedCap, getErr := s.keeper.TaxCaps.Get(s.ctx, oldCap.Denom)
-				s.Require().NoError(getErr)
-				s.Require().Equal(oldCap.TaxCap, storedCap)
-			}
-			taxCapsEvent, conversionErr := sdk.TypedEventToEvent(&types.EventTaxCapsUpdated{})
-			s.Require().NoError(conversionErr)
-			for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-				s.Require().NotEqual(taxCapsEvent.Type, event.Type)
-			}
-		})
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    candidate,
+	})
+	s.Require().ErrorContains(err, "capturing tax-cap rates")
+	stored, getErr := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().Equal(current, stored)
+	for _, oldCap := range oldCaps {
+		storedCap, getErr := s.keeper.TaxCaps.Get(s.ctx, oldCap.Denom)
+		s.Require().NoError(getErr)
+		s.Require().Equal(oldCap.TaxCap, storedCap)
+	}
+	taxCapsEvent, conversionErr := sdk.TypedEventToEvent(&types.EventTaxCapsUpdated{})
+	s.Require().NoError(conversionErr)
+	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
+		s.Require().NotEqual(taxCapsEvent.Type, event.Type)
 	}
 }
 

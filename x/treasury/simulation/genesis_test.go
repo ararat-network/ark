@@ -44,7 +44,7 @@ func TestRandomisedGenState(t *testing.T) {
 
 	require.NoError(t, treasuryGenesis.Validate())
 	require.True(t, treasuryGenesis.MonetaryPolicy.StabilityTaxRate.IsZero())
-	require.True(t, treasuryGenesis.Params.ReferenceTaxCap.IsZero())
+	require.Equal(t, math.OneInt(), treasuryGenesis.Params.ReferenceTaxCap.Amount)
 	require.False(t, treasuryGenesis.MonetaryPolicy.ValidatorBlockRewardTarget.IsNegative())
 	require.False(t, treasuryGenesis.MonetaryPolicy.OracleBlockRewardTarget.IsNegative())
 	require.True(

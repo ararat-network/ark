@@ -133,14 +133,14 @@ func (s *KeeperTestSuite) TestComputeTaxTreatsZeroCapAsUncapped() {
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
 }
 
-func (s *KeeperTestSuite) TestBuildTaxCapsUsesOneSnapshot() {
+func (s *KeeperTestSuite) TestUpdateParamsDerivesCapsFromOneSnapshot() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
 	// One capture for the whole membership, in sorted member order. The
 	// reference denomination is appended only when it is not already a member,
 	// and here it is one.
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -171,7 +171,7 @@ func (s *KeeperTestSuite) TestUpdateParamsRebuildServesOutstandingCadenceRefresh
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -188,12 +188,12 @@ func (s *KeeperTestSuite) TestUpdateParamsRebuildServesOutstandingCadenceRefresh
 	s.requireTaxCapRefreshPending(false)
 }
 
-// TestBuildTaxCapsUsesZeroAsUncappedWithoutRates is the complement of the
-// sub-unit flooring above: now that a truncated conversion floors at one, a
+// TestUpdateParamsUsesZeroAsUncappedWithoutRates is the complement of the
+// sub-unit flooring below: a truncated conversion floors at one, so a
 // deliberately zero reference cap is the only thing that can leave a derived
 // denom uncapped. No rate is captured to do it, so the oracle mock stays
 // unprogrammed.
-func (s *KeeperTestSuite) TestBuildTaxCapsUsesZeroAsUncappedWithoutRates() {
+func (s *KeeperTestSuite) TestUpdateParamsUsesZeroAsUncappedWithoutRates() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap.Amount = math.OneInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
@@ -213,7 +213,7 @@ func (s *KeeperTestSuite) TestBuildTaxCapsUsesZeroAsUncappedWithoutRates() {
 	}
 }
 
-func (s *KeeperTestSuite) TestBuildTaxCapsFloorsSubUnitConversionAtOneUnit() {
+func (s *KeeperTestSuite) TestUpdateParamsFloorsSubUnitConversionAtOneUnit() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.OneInt()
 	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
@@ -221,7 +221,7 @@ func (s *KeeperTestSuite) TestBuildTaxCapsFloorsSubUnitConversionAtOneUnit() {
 	// the zero it truncates to would read as uncapped, so it floors at one:
 	// the tightest ceiling ausd can express, which is what a reference cap
 	// this small is asking for.
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,

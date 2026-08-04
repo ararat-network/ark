@@ -16,22 +16,13 @@ import (
 	"ark/x/treasury/types"
 )
 
-// refreshTaxCaps rebuilds the derived caps when a rebuild is owed. Membership
-// is read once and feeds both the trigger and the rebuild, so the caps derived
-// are exactly the caps judged owed. Preblock lifecycle completions run before
-// BeginBlock, so an asset activated this block is a member in this block's
-// refresh.
-//
-// Coverage is containment, not equality. A denom that leaves the oracle-priced
-// set keeps the cap it was last derived with, because its outstanding supply stays
-// transferable and taxable — retirement itself can leave a residual — and its
-// feed may never return to re-derive one. An arrival is therefore a rebuild
-// trigger and a departure is not.
-//
-// A rebuild that cannot value its members skips rather than failing the block:
-// the triggers survive a skip, so the refresh retries every block until rates
-// return. Params are read before anything else because the cadence is one of
-// them.
+// refreshTaxCaps re-derives the caps when a refresh is owed, reading
+// membership once so the caps derived are exactly the caps judged owed. A
+// denom that leaves the oracle-priced set keeps the cap it was last derived
+// with — its outstanding supply stays transferable and taxable — so an
+// arrival is a refresh trigger and a departure is not. The pass is partial:
+// it derives what this block's rates can serve, covers the rest, and the
+// pending flag stays raised until a pass derives every member.
 func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -50,14 +41,15 @@ func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 		return nil
 	}
 
-	caps, err := k.buildTaxCaps(ctx, params, denoms)
+	caps, underived, err := k.buildTaxCaps(ctx, params, denoms)
 	if err != nil {
-		if !isUnusableRateInput(err) {
-			return fmt.Errorf("building tax caps: %w", err)
-		}
-
-		k.Logger(ctx).Warn("skipping Treasury tax-cap refresh", "error", err)
-		return nil
+		return fmt.Errorf("building tax caps: %w", err)
+	}
+	if len(underived) > 0 {
+		k.Logger(ctx).Warn(
+			"Treasury tax-cap refresh incomplete; retrying until rates return",
+			"underived", underived,
+		)
 	}
 
 	// Derived caps are upserted rather than replacing the stored set, so a cap
@@ -67,14 +59,15 @@ func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 			return fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
 		}
 	}
-	// This rebuild derived every member from current inputs, which is exactly
-	// what an outstanding cadence refresh was owed.
-	if err := k.TaxCapRefreshPending.Set(ctx, false); err != nil {
-		return fmt.Errorf("clearing pending tax cap refresh: %w", err)
+	if err := k.TaxCapRefreshPending.Set(ctx, len(underived) > 0); err != nil {
+		return fmt.Errorf("recording pending tax cap refresh: %w", err)
 	}
-	// The event carries the denoms this rebuild derived, not the whole stored
-	// set: kept caps are unchanged by definition, so reporting them would
-	// describe an update that did not happen.
+	if len(caps) == 0 {
+		return nil
+	}
+	// The event carries the denoms this pass wrote — derived and seeded — not
+	// the whole stored set: kept caps are unchanged by definition, so
+	// reporting them would describe an update that did not happen.
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{
 		TaxCaps: caps,
 	}); err != nil {
@@ -83,20 +76,13 @@ func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 	return nil
 }
 
-// taxCapRefreshOwed reports whether a rebuild is owed this block, recording
-// the cadence edge durably as it goes. The cadence boundary is an instant
-// rather than a state, so crossing one raises TaxCapRefreshPending before any
-// rebuild is attempted — once this block commits, the work is owed in state
-// even if every rebuild until rates return skips. Only a rebuild that reaches
-// its cap writes lowers the flag.
-//
-// The membership trigger is not an eager cadence: a member holding no cap is
-// untaxed rather than capped stale, because the tax reads a missing entry as
-// exemption, so deferring an arrival to the next boundary would leave a fresh
-// denomination collecting nothing for a whole period. It needs no flag of its
-// own either — the registry is re-read every block, so a gap left open by a
-// skipped rebuild re-asks on the next one. It reads ground truth rather than a
-// version consumers must be told to bump, so nothing has to announce a move.
+// taxCapRefreshOwed reports whether a refresh is owed this block. A cadence
+// boundary is an instant rather than a state, so crossing one raises
+// TaxCapRefreshPending durably before any derivation is attempted, and only a
+// pass that derives every member lowers it. A member holding no cap owes a
+// refresh immediately: the tax reads a missing entry as exemption, so
+// deferring an arrival to the next boundary would leave it collecting nothing
+// for a whole period.
 func (k Keeper) taxCapRefreshOwed(ctx context.Context, params types.Params, denoms []string) (bool, error) {
 	pending, err := k.TaxCapRefreshPending.Get(ctx)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
@@ -128,13 +114,17 @@ func (k Keeper) taxCapRefreshOwed(ctx context.Context, params types.Params, deno
 	return false, nil
 }
 
-// buildTaxCaps derives one cap per given oracle-priced denomination from the
-// reference cap. The reference unit is the protocol reference by invariant —
-// genesis pins it, UpdateParams refuses to move it, and RebaseTaxCap is the
-// only denom-moving path — so it is not re-checked here. It need not itself be
-// a member: rates exist for any feed, so the cap converts into member units
-// whether or not an asset is listed under the reference denomination.
-func (k Keeper) buildTaxCaps(ctx context.Context, params types.Params, denoms []string) ([]types.TaxCap, error) {
+// buildTaxCaps derives one cap per member from whichever rates this block can
+// serve, and covers the members it cannot derive: one holding a cap keeps it
+// (nothing is returned for it), one holding none is seeded at the unconverted
+// reference amount, and the returned underived list names both so the caller
+// keeps the refresh owed until it is empty. Seeding rather than skipping is
+// what keeps an arrival taxable, because Market mints a member against its
+// own feed alone, so coverage cannot wait for whichever rate the derivation
+// is missing. An unrepresentable cross is covered exactly like a missing rate
+// — it is a property of a rate pair redrawn every block — while any other
+// failure is Treasury's own and fails the caller.
+func (k Keeper) buildTaxCaps(ctx context.Context, params types.Params, denoms []string) ([]types.TaxCap, []string, error) {
 	referenceTaxCap := params.ReferenceTaxCap
 
 	caps := make([]types.TaxCap, 0, len(denoms))
@@ -145,61 +135,68 @@ func (k Keeper) buildTaxCaps(ctx context.Context, params types.Params, denoms []
 		for _, denom := range denoms {
 			caps = append(caps, types.TaxCap{Denom: denom, TaxCap: math.ZeroInt()})
 		}
-		return caps, nil
+		return caps, nil, nil
 	}
 	if len(denoms) == 0 {
-		return caps, nil
+		return caps, nil, nil
 	}
 	if len(denoms) == 1 && denoms[0] == referenceTaxCap.Denom {
-		return []types.TaxCap{{Denom: referenceTaxCap.Denom, TaxCap: referenceTaxCap.Amount}}, nil
+		return []types.TaxCap{{Denom: referenceTaxCap.Denom, TaxCap: referenceTaxCap.Amount}}, nil, nil
 	}
 
 	capture := slices.Clone(denoms)
 	if !slices.Contains(capture, referenceTaxCap.Denom) {
 		capture = append(capture, referenceTaxCap.Denom)
 	}
-	rates, err := k.oracleKeeper.GetRateSet(ctx, capture...)
+	rates, err := k.oracleKeeper.GetAvailableRateSet(ctx, capture...)
 	if err != nil {
-		return nil, fmt.Errorf("capturing tax-cap rates: %w", err)
+		return nil, nil, fmt.Errorf("capturing tax-cap rates: %w", err)
 	}
 
 	reference := sdk.NewDecCoinFromCoin(referenceTaxCap)
+	var underived []string
 	for _, denom := range denoms {
 		if denom == reference.Denom {
 			caps = append(caps, types.TaxCap{Denom: denom, TaxCap: referenceTaxCap.Amount})
 			continue
 		}
 		converted, err := rates.Convert(reference, denom)
+		switch {
+		case err == nil:
+			coin, _ := converted.TruncateDecimal()
+			amount := coin.Amount
+			// A sub-unit result floors at one rather than storing the zero it
+			// truncates to, which would read as uncapped and lift the ceiling
+			// a small reference cap was asking to tighten. Lopsided rates are
+			// a legal steady state, so this is a degrade and never an error.
+			if !amount.IsPositive() {
+				amount = math.OneInt()
+			}
+			caps = append(caps, types.TaxCap{Denom: denom, TaxCap: amount})
+			continue
+		case !isUnusableRateInput(err):
+			return nil, nil, fmt.Errorf("converting tax cap from %s to %s: %w", reference.Denom, denom, err)
+		}
+
+		underived = append(underived, denom)
+		covered, err := k.TaxCaps.Has(ctx, denom)
 		if err != nil {
-			return nil, fmt.Errorf("converting tax cap from %s to %s: %w", reference.Denom, denom, err)
+			return nil, nil, fmt.Errorf("checking tax cap for %s: %w", denom, err)
 		}
-		coin, _ := converted.TruncateDecimal()
-		amount := coin.Amount
-		if !amount.IsPositive() {
-			amount = math.OneInt()
+		if !covered {
+			caps = append(caps, types.TaxCap{Denom: denom, TaxCap: referenceTaxCap.Amount})
 		}
-		caps = append(caps, types.TaxCap{Denom: denom, TaxCap: amount})
 	}
-	return caps, nil
+	return caps, underived, nil
 }
 
-// isUnusableRateInput reports whether an error blames the rates a rebuild was
-// handed rather than Treasury's own state. Prices can be unusable in four ways
-// — missing, stale, invalid, or a pair whose cross leaves the representable
-// domain — and all four are statements about this block's price inputs, not
-// about anything Treasury holds.
-//
-// Representability belongs here because of what the cap conversion multiplies:
-// a governance-set reference amount by one rate over another. An out-of-range
-// result is therefore a property of the rate pair, which is redrawn every
-// block, and not of any quantity the protocol minted. That is the whole of the
-// difference from the liability scan, which multiplies supply the protocol
-// issued and treats the same overflow as fatal — there the number is ours, so
-// exceeding the domain is our bug; here the numbers arrive from consensus
-// pricing and the honest response is to keep the previous map and ask again.
-//
-// Keeping it deliberately does not widen to arithmetic generally: a Treasury
-// store or codec failure is not a price and must not be skipped.
+// isUnusableRateInput reports whether an error blames the rates a derivation
+// was handed rather than Treasury's own state: missing, stale, invalid, or a
+// cross that leaves the representable domain. All four are statements about
+// this block's price inputs, so the affected member is covered and asked
+// about again until rates return. It deliberately does not widen to
+// arithmetic generally — a Treasury store or codec failure is not a price and
+// must not be covered over.
 func isUnusableRateInput(err error) bool {
 	return errors.Is(err, oracletypes.ErrUnknownDenom) ||
 		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||

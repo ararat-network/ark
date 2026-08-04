@@ -96,6 +96,8 @@ func (s *KeeperTestSuite) TestQueryNilRequests() {
 }
 
 func (s *KeeperTestSuite) TestQueryParams() {
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, treasurytypes.DefaultParams()))
+
 	response, err := keeper.NewQueryServerImpl(s.keeper).Params(
 		s.ctx,
 		&treasurytypes.QueryParamsRequest{},
@@ -357,11 +359,11 @@ func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognizedLiabil
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 25), response.InsuranceTarget)
 }
 
-// TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete pins the inversion
-// of the old contract: incompleteness used to be a FailedPrecondition error,
-// which blinded operators during exactly the stress that makes valuation
-// incomplete. The query now always answers with the partition that explains
-// the gap — real balances beside zero targets that claim nothing.
+// TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete pins that an
+// incomplete valuation is not a query error, which would blind operators
+// during exactly the stress that makes valuation incomplete. The query always
+// answers with the partition that explains the gap — real balances beside
+// zero targets that claim nothing.
 func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete() {
 	tests := []struct {
 		name      string

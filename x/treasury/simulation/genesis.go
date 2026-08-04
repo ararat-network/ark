@@ -38,8 +38,8 @@ func RandomisedParams(r *rand.Rand) types.Params {
 }
 
 // RandomisedMonetaryPolicy returns valid launch policy. Stability tax remains
-// disabled; the zero reference cap lets keeper InitGenesis derive the complete
-// uncapped map from Oracle's configured denoms without exchange rates.
+// disabled; keeper InitGenesis seeds every member's cap at the reference
+// amount, so no exchange rates are needed regardless of the cap.
 func RandomisedMonetaryPolicy(r *rand.Rand) types.MonetaryPolicy {
 	policy := types.DefaultMonetaryPolicy()
 	policy.ValidatorBlockRewardTarget = GenRewardTarget(r)

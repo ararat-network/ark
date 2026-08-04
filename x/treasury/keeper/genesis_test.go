@@ -12,7 +12,6 @@ import (
 
 	chain "ark/pkg/chain"
 	"ark/pkg/mandate"
-	oracletypes "ark/x/oracle/types"
 	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
@@ -52,8 +51,33 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Equal(genesis.TaxCapRefreshPending, exported.TaxCapRefreshPending)
 }
 
-func (s *KeeperTestSuite) TestInitGenesisBuildsUncappedSetWhenTaxIsDisabled() {
+// TestInitGenesisSeedsCapsAtReferenceAmount pins the launch path: a genesis
+// shipping no caps seeds every member at the unconverted reference amount — a
+// fresh chain holds no rates at InitChain, so there is no conversion to
+// refuse, and the strict oracle mock carries that assertion. The seeds raise
+// the cadence flag so the first successful rebuild re-expresses them in
+// member units.
+func (s *KeeperTestSuite) TestInitGenesisSeedsCapsAtReferenceAmount() {
 	genesis := types.DefaultGenesisState()
+	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
+	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.expectGenesisFundBalances(nil)
+
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
+	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
+		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		s.Require().NoError(err)
+		s.Require().Equal(math.NewInt(100), cap)
+	}
+	s.requireTaxCapRefreshPending(true)
+}
+
+// TestInitGenesisSeedsUncappedSetWhenTaxIsUncapped keeps the zero sentinel's
+// meaning through seeding: an explicitly uncapped launch copies zero into
+// every member, so the whole set is taxed-uncapped from block one.
+func (s *KeeperTestSuite) TestInitGenesisSeedsUncappedSetWhenTaxIsUncapped() {
+	genesis := types.DefaultGenesisState()
+	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.expectGenesisFundBalances(nil)
 
@@ -63,30 +87,7 @@ func (s *KeeperTestSuite) TestInitGenesisBuildsUncappedSetWhenTaxIsDisabled() {
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
 	}
-}
-
-func (s *KeeperTestSuite) TestInitGenesisBuildsPositiveCapsWhenTaxIsDisabled() {
-	genesis := types.DefaultGenesisState()
-	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	// One capture: sorted oracle-priced members. The reference is already a
-	// member, so nothing is appended.
-	s.oracleKeeper.EXPECT().GetRateSet(
-		s.ctx,
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom: math.LegacyOneDec(),
-	}, nil)
-	s.expectGenesisFundBalances(nil)
-
-	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
-		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
-		s.Require().NoError(err)
-		s.Require().Equal(math.NewInt(100), cap)
-	}
+	s.requireTaxCapRefreshPending(true)
 }
 
 // TestInitGenesisRequiresConfiguredMatchingReferenceDenom pins the launch
@@ -122,12 +123,11 @@ func (s *KeeperTestSuite) TestInitGenesisRequiresConfiguredMatchingReferenceDeno
 }
 
 // TestInitGenesisAcceptsMembersWithoutCaps pins the import contract loose on
-// the member side: a member holding no cap is the gap an activation opens
-// until a rebuild lands, and live state closes it eventually rather than
-// continuously — a rebuild skips while any needed rate is stale. An export
-// taken inside that gap must therefore remain importable, arriving with the
-// member untaxed exactly as it was on the exporting chain; the membership
-// trigger re-derives the cap on the next BeginBlocker either way.
+// the member side: a member holding no cap is the gap an arrival opens until
+// the next BeginBlocker covers it, and an export taken inside that gap must
+// remain importable, arriving with the member untaxed exactly as it was on
+// the exporting chain; the membership trigger covers it — derived or seeded —
+// on the next BeginBlocker either way.
 func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutCaps() {
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
@@ -184,9 +184,10 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsCapsBeyondMembership() {
 }
 
 // TestInitGenesisImportsTaxCapRefreshFlag pins the cadence flag as imported
-// state. A fresh genesis carries false, so block 1 does not rebuild what
-// genesis established; an export taken while a refresh was owed carries true,
-// so the debt survives the migration instead of being forgiven by it.
+// state whenever the caps are: an export taken while a refresh was owed
+// carries true, so the debt survives the migration instead of being forgiven
+// by it. A genesis shipping no caps forces the flag instead, because seeds
+// are placeholders that owe the first successful rebuild.
 func (s *KeeperTestSuite) TestInitGenesisImportsTaxCapRefreshFlag() {
 	for _, pending := range []bool{false, true} {
 		s.Run(fmt.Sprintf("pending %t", pending), func() {
@@ -194,12 +195,26 @@ func (s *KeeperTestSuite) TestInitGenesisImportsTaxCapRefreshFlag() {
 			s.setAssets(chain.SDRBaseDenom)
 			s.expectGenesisFundBalances(nil)
 			genesis := types.DefaultGenesisState()
+			genesis.TaxCaps = []types.TaxCap{
+				{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()},
+			}
 			genesis.TaxCapRefreshPending = pending
 
 			s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
 			s.requireTaxCapRefreshPending(pending)
 		})
 	}
+
+	s.Run("seeded caps force the flag", func() {
+		s.setBlockHeight(9)
+		s.setAssets(chain.SDRBaseDenom)
+		s.expectGenesisFundBalances(nil)
+		genesis := types.DefaultGenesisState()
+		genesis.TaxCapRefreshPending = false
+
+		s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
+		s.requireTaxCapRefreshPending(true)
+	})
 }
 
 func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
@@ -216,8 +231,8 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 }
 
 // TestInitGenesisRejectsAuthorityCommittee pins that the monetary committee
-// cannot be the Treasury authority. The equivalent Claims rule moved with the
-// mandate and is asserted in x/claims.
+// cannot be the Treasury authority; the equivalent Claims rule is asserted in
+// x/claims.
 func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittee() {
 	minimum, maximum := monetaryPolicyBounds()
 	genesis := types.DefaultGenesisState()

@@ -142,8 +142,8 @@ func (s *KeeperTestSuite) SetupTest() {
 			Return(authtypes.NewModuleAddress(moduleName)).
 			AnyTimes()
 	}
-	// Insurance is no longer a Treasury fund account, but Treasury still reads
-	// its balance to report it in FundStatus.
+	// Insurance is not a Treasury fund account, but Treasury still reads its
+	// balance to report it in FundStatus.
 	s.accountKeeper.EXPECT().
 		GetModuleAddress(claimstypes.InsuranceName).
 		Return(authtypes.NewModuleAddress(claimstypes.InsuranceName)).
@@ -235,7 +235,13 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.claimsKeeper,
 		s.reserveKeeper,
 	)
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
+	// The baseline zeroes the launch default's one-unit reference cap: an
+	// uncapped set rebuilds rate-free, keeping the strict oracle mock quiet
+	// for the many tests that never look at caps. Every cap test states its
+	// own reference explicitly.
+	baselineParams := types.DefaultParams()
+	baselineParams.ReferenceTaxCap.Amount = math.ZeroInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, baselineParams))
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, types.DefaultMonetaryPolicy()))
 	s.Require().NoError(s.keeper.RewardFunding.Set(
 		s.ctx,
@@ -336,17 +342,13 @@ func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-// beginBlock runs BeginBlocker with the liability priming it now performs
-// absorbed. Priming scans the fixture registry for supply, which reward-funding
-// and tax-cap assertions are indifferent to, so unstubbed denominations report
-// zero rather than forcing every such test to describe a supply it does not
-// care about.
-//
-// The fallback is registered here rather than in SetupTest so it cannot shadow
-// a test that stubs supply itself: gomock serves the first unexhausted match,
-// so a specific expectation registered earlier in the test still answers first
-// and keeps its exact call count. Tests asserting on the primed value must
-// therefore stub GetSupply before calling this.
+// beginBlock runs BeginBlocker with its liability priming absorbed: priming
+// scans the fixture registry for supply, which reward-funding and tax-cap
+// assertions are indifferent to, so unstubbed denominations report zero. The
+// fallback is registered here rather than in SetupTest so it cannot shadow a
+// test that stubs supply itself — gomock serves the first unexhausted match.
+// Tests asserting on the primed value must therefore stub GetSupply before
+// calling this.
 func (s *KeeperTestSuite) beginBlock() error {
 	if !s.primingStubbed {
 		s.primingStubbed = true

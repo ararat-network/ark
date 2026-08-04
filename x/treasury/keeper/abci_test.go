@@ -137,7 +137,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsOnMembershipChange() {
 	// the rebuild must derive the members without disturbing it.
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(7)))
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -195,6 +195,9 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsCapsWhenMembershipShrinks() {
 // where the launch weekly default would have skipped, and skips at height 4.
 func (s *KeeperTestSuite) TestBeginBlockerRefreshCadenceFollowsParams() {
 	params := types.DefaultParams()
+	// Uncapped keeps the boundary rebuild rate-free, so the cadence is the
+	// only thing under test.
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
 	params.TaxCapRefreshPeriodBlocks = 10
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	// The cap set covers exactly the membership, so its denoms never disagree
@@ -230,8 +233,12 @@ func (s *KeeperTestSuite) TestBeginBlockerRefreshCadenceFollowsParams() {
 
 func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsAtWeeklyBoundaryWithUnchangedMembership() {
 	// The default cadence boundary trues up rate drift even while membership
-	// sits still. The zero reference cap keeps the rebuild rate-free, so the
-	// only observable difference from a skipped block is the replaced amount.
+	// sits still. An explicitly zero reference cap keeps the rebuild
+	// rate-free, so the only observable difference from a skipped block is
+	// the replaced amount.
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setBlockHeight(int64(chain.BlocksPerWeek) - 1)
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
@@ -257,7 +264,7 @@ func (s *KeeperTestSuite) TestBeginBlockerBuildsCapsForMembersOnlyWhenReferenceI
 	// excludes asdr, yet the rate capture must still include it so the cap
 	// can convert out of reference units.
 	s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.KRWBaseDenom,
 		chain.USDBaseDenom,
@@ -283,7 +290,12 @@ func (s *KeeperTestSuite) TestBeginBlockerBuildsCapsForMembersOnlyWhenReferenceI
 	s.requireTaxCapRefreshPending(false)
 }
 
-func (s *KeeperTestSuite) TestBeginBlockerSkipsUnavailableTaxCapRates() {
+// TestBeginBlockerCoversMembersLackingUsableRates pins all three verdicts of
+// one partial pass: a member whose rate serves is derived, a covered member
+// whose rate does not keeps its cap, and an uncovered member whose rate does
+// not is seeded at the unconverted reference amount rather than left exempt.
+// The pass is incomplete, so the refresh stays owed.
+func (s *KeeperTestSuite) TestBeginBlockerCoversMembersLackingUsableRates() {
 	s.setBlockHeight(1)
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
@@ -291,60 +303,73 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsUnavailableTaxCapRates() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// Only asdr carries a cap, so the member that never got one is observable.
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(1_000_000)))
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetRateSet(
+	// akrw holds a kept cap and its rate is unavailable; ausd awaits its
+	// first cap; asdr is the reference member, derivable without any rate.
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(7)))
+	s.setAssets(chain.KRWBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
+		chain.KRWBaseDenom,
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
-	).Return(nil, oracletypes.ErrStaleExchangeRate)
+	).Return(oracletypes.RateSet{
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+	}, nil)
 
 	s.Require().NoError(s.beginBlock())
-	// The skip is silent on the event stream — it is logged, not evented — so
-	// the stored caps are its whole observable effect: the member that never
-	// got one still has none.
-	_, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().Error(err)
-	// No boundary passed, so the cadence flag stays down: this refresh is
-	// membership-triggered, and the retry comes from the caps still failing to
-	// cover the registry rather than from any recorded state.
-	s.requireTaxCapRefreshPending(false)
+	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(7), krwCap)
+	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
+	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), usdCap)
+	s.requireTaxCapRefreshPending(true)
+	// The event carries what the pass wrote — the derived reference member
+	// and the seed — never the kept cap it left alone.
+	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
+		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(1_000_000)},
+	}})
 
-	// The surviving cap keeps taxing its member; the member that never got a
-	// cap is untaxed until one is derived. An oracle outage must not make a
-	// healthy denomination untransactable, so the cost of the skip is revenue
-	// and never liveness.
+	// Every member taxes through the outage: the kept cap keeps clamping —
+	// 10 would be owed at the rate, the kept cap of 7 binds — and the seeded
+	// arrival pays under its seed. An oracle outage must not make a healthy
+	// denomination untransactable — nor tax-exempt.
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
-		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 100)),
+		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)),
 	}})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 10)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 7)), tax)
 
 	tax, err = s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 	}})
 	s.Require().NoError(err)
-	s.Require().True(tax.IsZero())
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10)), tax)
 }
 
-// TestBeginBlockerRetriesSkippedRefreshNextBlock proves the skip is a retry
-// loop, not a deferral to the next membership move: the caps still disagree
-// with the registry, so every subsequent block attempts the rebuild until
-// rates return.
-func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedRefreshNextBlock() {
+// TestBeginBlockerRetriesIncompleteRefreshNextBlock proves a seed is a
+// placeholder, not a resting state: the member whose rate is unavailable is
+// seeded, the flag stays raised, and the next block's pass re-expresses the
+// whole set once rates return.
+func (s *KeeperTestSuite) TestBeginBlockerRetriesIncompleteRefreshNextBlock() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	gomock.InOrder(
-		s.oracleKeeper.EXPECT().GetRateSet(
+		s.oracleKeeper.EXPECT().GetAvailableRateSet(
 			gomock.Any(),
 			chain.SDRBaseDenom,
 			chain.USDBaseDenom,
-		).Return(nil, oracletypes.ErrStaleExchangeRate),
-		s.oracleKeeper.EXPECT().GetRateSet(
+		).Return(oracletypes.RateSet{
+			chain.SDRBaseDenom: math.LegacyOneDec(),
+		}, nil),
+		s.oracleKeeper.EXPECT().GetAvailableRateSet(
 			gomock.Any(),
 			chain.SDRBaseDenom,
 			chain.USDBaseDenom,
@@ -355,11 +380,20 @@ func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedRefreshNextBlock() {
 	)
 
 	s.Require().NoError(s.beginBlock())
-	s.requireTaxCapRefreshPending(false)
+	// The reference member derives without a rate; the member whose rate is
+	// unavailable is seeded at the reference amount, so the refresh stays
+	// owed.
+	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
+	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), usdCap)
+	s.requireTaxCapRefreshPending(true)
 
 	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(false)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	usdCap, err = s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(2_000_000), usdCap)
 	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
@@ -368,22 +402,31 @@ func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedRefreshNextBlock() {
 	}})
 }
 
-func (s *KeeperTestSuite) TestBeginBlockerSkipsUnrepresentableTaxCapConversion() {
+func (s *KeeperTestSuite) TestBeginBlockerCoversUnrepresentableTaxCapConversion() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetRateSet(
+	// The rate is present but the cross is unrepresentable: 10^6 reference
+	// units times a 10^72 rate leaves the decimal domain mid-conversion.
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
-	).Return(nil, oracletypes.ErrConversionOutOfRange)
+	).Return(oracletypes.RateSet{
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyNewDec(10).Power(72),
+	}, nil)
 
 	s.Require().NoError(s.beginBlock())
-	_, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().Error(err)
-	s.requireTaxCapRefreshPending(false)
+	// An unrepresentable cross is covered exactly like a missing rate: the
+	// uncovered member is seeded rather than left exempt, and the seed keeps
+	// the refresh owed.
+	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), usdCap)
+	s.requireTaxCapRefreshPending(true)
 }
 
 // TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit pins the degrade decision: a
@@ -399,7 +442,7 @@ func (s *KeeperTestSuite) TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit() {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	// A one-base-unit reference cap converts to half a unit at this rate pair.
-	s.oracleKeeper.EXPECT().GetRateSet(
+	s.oracleKeeper.EXPECT().GetAvailableRateSet(
 		gomock.Any(),
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,
@@ -420,60 +463,63 @@ func (s *KeeperTestSuite) TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit() {
 	}})
 }
 
-// TestBeginBlockerRetriesSkippedCadenceRefreshAfterBoundary covers the case
-// the epoch comparison could not: a cadence-triggered refresh that skips on
-// stale rates. Membership never moves and the boundary block passes, so a
-// trigger built on those two alone would go quiet for a whole period. Keying
-// the cadence to the last successful rebuild instead leaves the work due until
-// it actually succeeds.
-func (s *KeeperTestSuite) TestBeginBlockerRetriesSkippedCadenceRefreshAfterBoundary() {
+// TestBeginBlockerRetriesIncompleteCadenceRefreshAfterBoundary covers the
+// case the epoch comparison could not: a cadence-triggered refresh whose
+// rates cannot serve it. Membership never moves and the boundary block
+// passes, so a trigger built on those two alone would go quiet for a whole
+// period. Keying the cadence to the last complete pass instead leaves the
+// work due until it actually completes.
+func (s *KeeperTestSuite) TestBeginBlockerRetriesIncompleteCadenceRefreshAfterBoundary() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	params.TaxCapRefreshPeriodBlocks = 10
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	// The caps already cover membership exactly, so the cadence is the only
-	// trigger and only the stale amount is wrong.
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	// trigger and only the stale amounts are wrong. The non-reference member
+	// is what keeps the boundary pass incomplete: the reference member
+	// derives without a rate, so covered akrw is what the empty rate set
+	// leaves kept.
+	s.setAssets(chain.KRWBaseDenom, chain.SDRBaseDenom)
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(7)))
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(7)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(7)))
 	gomock.InOrder(
-		s.oracleKeeper.EXPECT().GetRateSet(
+		s.oracleKeeper.EXPECT().GetAvailableRateSet(
 			gomock.Any(),
+			chain.KRWBaseDenom,
 			chain.SDRBaseDenom,
-			chain.USDBaseDenom,
-		).Return(nil, oracletypes.ErrStaleExchangeRate),
-		s.oracleKeeper.EXPECT().GetRateSet(
+		).Return(oracletypes.RateSet{}, nil),
+		s.oracleKeeper.EXPECT().GetAvailableRateSet(
 			gomock.Any(),
+			chain.KRWBaseDenom,
 			chain.SDRBaseDenom,
-			chain.USDBaseDenom,
 		).Return(oracletypes.RateSet{
+			chain.KRWBaseDenom: math.LegacyNewDec(2),
 			chain.SDRBaseDenom: math.LegacyOneDec(),
-			chain.USDBaseDenom: math.LegacyNewDec(2),
 		}, nil),
 	)
 
-	// Height 9 closes the period and raises the flag, but rates are stale, so
-	// the rebuild skips and the flag stays raised.
+	// Height 9 closes the period and raises the flag, but no rate serves the
+	// non-reference member, so its kept cap stands and the flag stays raised.
 	s.setBlockHeight(9)
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
 	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(true)
-	staleCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	staleCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(7), staleCap)
 
-	// Height 10 is mid-period and membership still matches, yet the flag raised
-	// at 9 is still up, so the rebuild runs the moment rates return and lowers
-	// it.
+	// Height 10 is mid-period and membership still matches, yet the flag
+	// raised at 9 is still up, so the pass completes the moment rates return
+	// and lowers it.
 	s.setBlockHeight(10)
 	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
 	s.Require().NoError(s.beginBlock())
 	s.requireTaxCapRefreshPending(false)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(2_000_000), usdCap)
+	s.Require().Equal(math.NewInt(2_000_000), krwCap)
 }
 
 func (s *KeeperTestSuite) requireTaxCapRefreshPending(expected bool) {

@@ -37,12 +37,11 @@ type Keeper struct {
 	RewardFunding   collections.Item[types.RewardFundingState]
 	MonetaryMandate collections.Item[types.MonetaryMandate]
 	MonetaryPolicy  collections.Item[types.MonetaryPolicy]
-	// TaxCapRefreshPending records that a cadence boundary has passed without
-	// being served. The boundary block raises it and only a successful rebuild
-	// lowers it, so a refresh skipped on stale rates retries every block until
-	// it succeeds — the boundary itself passes once and does not come back.
-	// Membership drift is caught separately by comparing the cap denoms against
-	// the registry, which needs no flag because the registry is ground truth.
+	// TaxCapRefreshPending records that a complete cap derivation is owed: a
+	// cadence boundary passed, or a pass left seeded or kept-through-outage
+	// caps behind. Only a pass that derives every member lowers it, so an
+	// incomplete refresh retries every block until rates return. Membership
+	// drift needs no flag: the registry is ground truth, re-read every block.
 	TaxCapRefreshPending collections.Item[bool]
 }
 

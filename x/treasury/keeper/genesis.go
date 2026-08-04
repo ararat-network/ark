@@ -52,28 +52,28 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	}
 
 	taxCaps := append([]types.TaxCap(nil), data.TaxCaps...)
+	seeded := false
 	if len(taxCaps) == 0 {
 		denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 		if err != nil {
 			return fmt.Errorf("getting oracle-priced denominations: %w", err)
 		}
-		derivedTaxCaps, err := k.buildTaxCaps(ctx, data.Params, denoms)
-		if err != nil {
-			return fmt.Errorf("deriving genesis tax caps: %w", err)
+		// Seeded, not derived: a fresh genesis holds no rates by construction,
+		// so every member starts at the unconverted reference amount rather
+		// than a conversion no rate can serve. The seed is the same value the
+		// refresh uses for an arrival it cannot derive, and the flag raised
+		// below has the first complete pass re-express it in member units.
+		for _, denom := range denoms {
+			taxCaps = append(taxCaps, types.TaxCap{Denom: denom, TaxCap: data.Params.ReferenceTaxCap.Amount})
 		}
-		taxCaps = derivedTaxCaps
+		seeded = len(taxCaps) > 0
 	}
-	// A supplied cap set is imported as-is, loose on both sides of membership.
-	// A cap naming no member is the residue of a departure, and a member
-	// holding no cap is the gap an activation opens until a rebuild lands —
-	// live state maintains coverage eventually, not continuously, because a
-	// rebuild skips while any needed rate is stale. An export taken inside
-	// either window must remain importable, and the gap costs at import
-	// exactly what it costs at runtime: the member is untaxed until the
-	// membership trigger re-derives its cap, which the first BeginBlocker
-	// attempts. Amounts are not checked against the reference either: a kept
-	// cap is anchored to the reference amount it was derived under, which
-	// later policy moves and truncation drift are both free to leave behind.
+	// A supplied cap set is imported as-is, loose on both sides of membership:
+	// a cap naming no member is the residue of a departure, and a member
+	// holding no cap is the gap an arrival opens until the next BeginBlocker
+	// covers it, so an export taken inside either window stays importable.
+	// Amounts are not checked against the reference either — a kept cap is
+	// anchored to the reference amount it was last derived under.
 
 	for _, moduleName := range types.FundAccountNames() {
 		moduleAccount := k.accountKeeper.GetModuleAccount(ctx, moduleName)
@@ -103,11 +103,13 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			return fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
 		}
 	}
-	// The cadence flag is imported state rather than something this import
-	// derives: an export taken while a refresh was owed keeps it owed on the
-	// new chain, and a fresh genesis carries false so block 1 does not rebuild
-	// what genesis just established.
-	if err := k.TaxCapRefreshPending.Set(ctx, data.TaxCapRefreshPending); err != nil {
+	// The cadence flag is imported state on the supplied-caps path: an export
+	// taken while a refresh was owed keeps it owed on the new chain. A seeded
+	// set raises it regardless of the import, because a seed is a placeholder
+	// the first successful rebuild is owed — it converts into member units as
+	// soon as rates exist, which a fresh chain reaches within its first
+	// blocks.
+	if err := k.TaxCapRefreshPending.Set(ctx, data.TaxCapRefreshPending || seeded); err != nil {
 		return fmt.Errorf("setting pending tax cap refresh: %w", err)
 	}
 	if err := k.RewardFunding.Set(ctx, data.RewardFunding); err != nil {
