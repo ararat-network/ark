@@ -80,6 +80,32 @@ func (s *KeeperTestSuite) TestRebaseTaxCapCarriesZeroWithoutConversion() {
 	})
 }
 
+// TestRebaseTaxCapFloorsTruncatedCapAtOneUnit pins the degrade at a unit
+// change: a positive cap whose conversion truncates below one base unit lands
+// at one — the tightest finite ceiling — because zero is the explicit
+// uncapped sentinel, and refusing outright would wedge the reference re-point
+// on a rate pair no retry can mend.
+func (s *KeeperTestSuite) TestRebaseTaxCapFloorsTruncatedCapAtOneUnit() {
+	current := types.DefaultParams()
+	current.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
+	rates := oracletypes.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom:  math.LegacyNewDec(1_000),
+		chain.USDBaseDenom:  math.LegacyOneDec(),
+	}
+
+	s.Require().NoError(s.keeper.RebaseTaxCap(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+
+	stored, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewInt64Coin(chain.USDBaseDenom, 1), stored.ReferenceTaxCap)
+	s.requireTypedEvent(&types.EventReferenceTaxCapRebased{
+		OldCap: sdk.NewInt64Coin(chain.SDRBaseDenom, 100),
+		NewCap: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
+	})
+}
+
 func (s *KeeperTestSuite) TestRebaseTaxCapFailuresPreserveState() {
 	tests := []struct {
 		name      string
@@ -101,21 +127,6 @@ func (s *KeeperTestSuite) TestRebaseTaxCapFailuresPreserveState() {
 			rates:     nil,
 			expectErr: "reference tax cap is denominated in asdr, not ausd",
 			errorIs:   errortypes.ErrInvalidRequest,
-		},
-		{
-			// A positive cap truncating to zero would silently delete the
-			// finite ceiling: zero is the explicit uncapped sentinel, and
-			// unlimited taxation by rounding accident is not a unit change.
-			name: "positive cap truncates to zero",
-			from: chain.SDRBaseDenom,
-			to:   chain.USDBaseDenom,
-			rates: oracletypes.RateSet{
-				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyNewDec(1_000),
-				chain.USDBaseDenom:  math.LegacyOneDec(),
-			},
-			expectErr: "truncated to zero",
-			errorIs:   oracletypes.ErrConversionOutOfRange,
 		},
 		{
 			name: "destination has no rate in the handed set",

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
@@ -40,16 +41,13 @@ func (k Keeper) RebaseTaxCap(ctx context.Context, from string, to string, rates 
 			return err
 		}
 		coin, _ := converted.TruncateDecimal()
-		// A positive cap truncating to zero would silently delete the finite
-		// ceiling: zero is the explicit uncapped sentinel, and unlimited
-		// taxation by rounding accident is not a unit change.
+		// A positive cap truncating to zero would silently become the uncapped
+		// sentinel, and unlimited taxation by rounding accident is not a unit
+		// change. Flooring at one base unit is the same degrade the derived
+		// caps apply: the tightest finite ceiling, where refusing would wedge
+		// the re-point on a rate pair no retry can mend.
 		if !coin.Amount.IsPositive() {
-			return sdkerrors.Wrapf(
-				oracletypes.ErrConversionOutOfRange,
-				"converting positive reference tax cap from %s to %s truncated to zero",
-				from,
-				to,
-			)
+			coin.Amount = math.OneInt()
 		}
 		newCap = coin
 	}
