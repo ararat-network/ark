@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -46,37 +45,5 @@ func ValidateRewardTargetCapacity(params Params, funding RewardFundingState, pol
 	if _, err := accumulatedTarget.SafeAdd(remainingTarget); err != nil {
 		return fmt.Errorf("reward target capacity exceeded by projected window total: %w", err)
 	}
-	return nil
-}
-
-func (gs GenesisState) validateRewardFunding() error {
-	if gs.RewardFunding.ValidatorTarget.IsNil() {
-		return errors.New("validator target must be set")
-	}
-	if gs.RewardFunding.ValidatorTarget.IsNegative() {
-		return errors.New("validator target must be zero or positive")
-	}
-	if gs.RewardFunding.OracleTarget.IsNil() {
-		return errors.New("oracle target must be set")
-	}
-	if gs.RewardFunding.OracleTarget.IsNegative() {
-		return errors.New("oracle target must be zero or positive")
-	}
-	if gs.RewardFunding.ValidatorFeeValue.IsNil() {
-		return errors.New("validator fee value must be set")
-	}
-	if gs.RewardFunding.ValidatorFeeValue.IsNegative() {
-		return errors.New("validator fee value must be zero or positive")
-	}
-	if gs.RewardFunding.BlocksRemaining == 0 &&
-		(!gs.RewardFunding.ValidatorTarget.IsZero() ||
-			!gs.RewardFunding.OracleTarget.IsZero() ||
-			!gs.RewardFunding.ValidatorFeeValue.IsZero()) {
-		return errors.New("empty reward funding window must use the default state")
-	}
-	if err := ValidateRewardTargetCapacity(gs.Params, gs.RewardFunding, gs.MonetaryPolicy); err != nil {
-		return err
-	}
-
 	return nil
 }
