@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/pkg/chain"
 	"ark/pkg/mandate"
 	"ark/x/market/types"
 )
@@ -31,9 +30,9 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 
 // Swap validates the trader address and executes a swap back to the same account.
 func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
-	addr, err := chain.ParseCanonicalAccountAddress("trader", msg.Trader)
+	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
 	swapCoin, swapFee, err := m.k.Swap(ctx, addr, addr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
@@ -49,13 +48,13 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 
 // SwapSend validates the sender and recipient addresses and settles the swap to the recipient.
 func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types.MsgSwapSendResponse, error) {
-	fromAddr, err := chain.ParseCanonicalAccountAddress("from address", msg.FromAddress)
+	fromAddr, err := sdk.AccAddressFromBech32(msg.FromAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "from address is invalid: %s", err)
 	}
-	toAddr, err := chain.ParseCanonicalAccountAddress("to address", msg.ToAddress)
+	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "to address is invalid: %s", err)
 	}
 
 	swapCoin, swapFee, err := m.k.Swap(ctx, fromAddr, toAddr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
@@ -71,9 +70,9 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 
 // Settle validates the trader address and executes a settlement redemption.
 func (m msgServer) Settle(ctx context.Context, msg *types.MsgSettle) (*types.MsgSettleResponse, error) {
-	addr, err := chain.ParseCanonicalAccountAddress("trader", msg.Trader)
+	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
 	redeemed, err := m.k.Settle(ctx, addr, msg.OfferCoin)
@@ -249,9 +248,6 @@ func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgComm
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee update conversion policy message")
 	}
-	if _, err := chain.ParseCanonicalAccountAddress("committee", msg.Committee); err != nil {
-		return nil, err
-	}
 	if err := msg.Policy.Validate(); err != nil {
 		return nil, err
 	}
@@ -285,10 +281,6 @@ func (m msgServer) CommitteeSetTobinTax(ctx context.Context, msg *types.MsgCommi
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee set tobin tax message")
 	}
-	if _, err := chain.ParseCanonicalAccountAddress("committee", msg.Committee); err != nil {
-		return nil, err
-	}
-
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	conversionMandate, err := m.k.ConversionMandate.Get(ctx)
 	if err != nil {

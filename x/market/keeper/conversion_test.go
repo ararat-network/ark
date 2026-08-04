@@ -823,11 +823,11 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			expectErr: "base pool must be positive",
 		},
 		{
-			name:      "non-canonical committee address",
+			name:      "malformed committee address",
 			height:    capacityActivation,
 			committee: "not-an-address",
 			policy:    candidateInsideCorridor(),
-			expectErr: "committee is invalid",
+			expectErr: "committee signer is invalid",
 		},
 	}
 

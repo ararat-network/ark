@@ -45,12 +45,18 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 			errMsg:    "trader is invalid",
 		},
 		{
-			name: "non-canonical address",
+			// The uppercase spelling decodes to the same account, so the
+			// handler accepts it and the failure is the swap's own recursion
+			// check — proof the address cleared parsing.
+			name: "uppercase trader is accepted",
 			msg: &types.MsgSwap{
-				Trader: strings.ToUpper(trader),
+				Trader:         strings.ToUpper(trader),
+				OfferCoin:      sdk.NewCoin("akrw", math.NewInt(1)),
+				AskDenom:       "akrw",
+				MinimumReceive: sdk.NewInt64Coin("akrw", 1),
 			},
-			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "trader must be a canonical account address",
+			expectErr: types.ErrRecursiveSwap,
+			errMsg:    "recursive swap",
 		},
 		{
 			name: "recursive swap",
@@ -166,13 +172,19 @@ func (s *KeeperTestSuite) TestMsgSwapSend() {
 			errMsg:    "to address is invalid",
 		},
 		{
-			name: "non-canonical to address",
+			// The uppercase spelling decodes to the same account, so the
+			// handler accepts it and the failure is the swap's own recursion
+			// check — proof the address cleared parsing.
+			name: "uppercase to address is accepted",
 			msg: &types.MsgSwapSend{
-				FromAddress: fromAddr.String(),
-				ToAddress:   strings.ToUpper(fromAddr.String()),
+				FromAddress:    fromAddr.String(),
+				ToAddress:      strings.ToUpper(fromAddr.String()),
+				OfferCoin:      sdk.NewCoin("akrw", math.NewInt(1)),
+				AskDenom:       "akrw",
+				MinimumReceive: sdk.NewInt64Coin("akrw", 1),
 			},
-			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "to address must be a canonical account address",
+			expectErr: types.ErrRecursiveSwap,
+			errMsg:    "recursive swap",
 		},
 	}
 
