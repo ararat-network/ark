@@ -1,0 +1,57 @@
+syntax = "proto3";
+package ark.claims.v1;
+
+import "amino/amino.proto";
+import "ark/claims/v1/claims.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/claims/types";
+
+// EventClaimSubmitted records the keeper-assigned identity of a new claim.
+message EventClaimSubmitted {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// EventClaimPaid records the successful settlement of a claim.
+message EventClaimPaid {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  string recipient = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string amount_denom = 3;
+  string amount = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventClaimCancelled records the veto of a pending claim during its
+// cancellation period, releasing its Insurance reservation. The claim record
+// keeps the full detail; this carries the attribution an indexer needs to
+// follow the transition without polling.
+message EventClaimCancelled {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  ClaimAuthority cancelled_by = 2;
+}
+
+// EventClaimFailed records that the chain could not pay a claim that came due,
+// releasing its reservation and ending it unpaid.
+//
+// It carries no reason. The cause is a chain-generated error, and putting one
+// in state or in a consensus-visible field would make error-message formatting
+// consensus-critical; it goes to the node log instead, where drift is harmless.
+message EventClaimFailed {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// EventClaimsMandateSet is emitted when governance appoints, replaces, or
+// disables the Claims committee. A disabling carries the empty committee and
+// the advanced term.
+message EventClaimsMandateSet {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  // committee is empty when governance disabled the mandate.
+  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+}

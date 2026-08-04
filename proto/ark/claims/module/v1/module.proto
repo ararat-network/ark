@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ark.claims.module.v1;
+
+import "cosmos/app/v1alpha1/module.proto";
+
+// Module is the config object for the claims module.
+message Module {
+  option (cosmos.app.v1alpha1.module) = {
+    go_import : "ark/x/claims"
+  };
+}

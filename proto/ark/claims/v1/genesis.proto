@@ -1,0 +1,33 @@
+syntax = "proto3";
+package ark.claims.v1;
+
+import "amino/amino.proto";
+import "ark/claims/v1/claims.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/claims/types";
+
+// GenesisState defines the claims module's genesis state.
+message GenesisState {
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ClaimsMandate claims_mandate = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string claims_allowance_used = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string insurance_reserved = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // next_claim_id is the next globally available claim identifier.
+  uint64 next_claim_id = 5 [ (amino.dont_omitempty) = true ];
+  repeated Claim claims = 6
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}

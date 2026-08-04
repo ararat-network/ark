@@ -1,0 +1,111 @@
+syntax = "proto3";
+package ark.claims.v1;
+
+import "amino/amino.proto";
+import "ark/claims/v1/claims.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/query/v1/query.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "ark/x/claims/types";
+
+// Query defines the claims module's gRPC query service.
+service Query {
+  // Params queries the governance-owned claims parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/claims/v1/params";
+  }
+
+  // ClaimsMandate queries the committee mandate and its term allowance.
+  rpc ClaimsMandate(QueryClaimsMandateRequest)
+      returns (QueryClaimsMandateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/claims/v1/mandate";
+  }
+
+  // InsuranceBalance queries the fund's custody balance and the part of it
+  // encumbered by pending claims.
+  rpc InsuranceBalance(QueryInsuranceBalanceRequest)
+      returns (QueryInsuranceBalanceResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/claims/v1/insurance_balance";
+  }
+
+  // Claim queries one claim by its permanent identifier.
+  rpc Claim(QueryClaimRequest) returns (QueryClaimResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/claims/v1/claims/{claim_id}";
+  }
+
+  // Claims queries the paginated claim audit record.
+  rpc Claims(QueryClaimsRequest) returns (QueryClaimsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/claims/v1/claims";
+  }
+}
+
+// QueryParamsRequest is the request type for Query/Params.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for Query/Params.
+message QueryParamsResponse {
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryClaimsMandateRequest is the request type for Query/ClaimsMandate.
+message QueryClaimsMandateRequest {}
+
+// QueryClaimsMandateResponse is the response type for Query/ClaimsMandate.
+// Every figure here is scoped to the current term and resets with it. The
+// Insurance encumbrance does not, so it answers Query/InsuranceBalance instead.
+message QueryClaimsMandateResponse {
+  ClaimsMandate mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  bool active = 2 [ (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin allowance_used = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin allowance_remaining = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryInsuranceBalanceRequest is the request type for Query/InsuranceBalance.
+message QueryInsuranceBalanceRequest {}
+
+// QueryInsuranceBalanceResponse is the response type for
+// Query/InsuranceBalance. Their difference is the capital the fund recognises
+// toward its Treasury target.
+message QueryInsuranceBalanceResponse {
+  cosmos.base.v1beta1.Coin balance = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // reserved spans the pending claims of every term. Mandate replacement resets
+  // the committee allowance and never clears this.
+  cosmos.base.v1beta1.Coin reserved = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryClaimRequest is the request type for Query/Claim.
+message QueryClaimRequest {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// QueryClaimResponse is the response type for Query/Claim.
+message QueryClaimResponse {
+  Claim claim = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryClaimsRequest is the request type for Query/Claims.
+message QueryClaimsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryClaimsResponse is the response type for Query/Claims.
+message QueryClaimsResponse {
+  repeated Claim claims = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

@@ -1,0 +1,143 @@
+syntax = "proto3";
+package ark.claims.v1;
+
+import "amino/amino.proto";
+import "ark/claims/v1/claims.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/claims/types";
+
+// Msg defines the claims module's message service.
+//
+// There is no execution message. A claim that survives its cancellation period
+// is settled by the chain in EndBlock, so payment needs no signer and cannot
+// stall on one.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams updates the governance-owned claims parameters.
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
+  // SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
+  // committee.
+  rpc SetClaimsMandate(MsgSetClaimsMandate)
+      returns (MsgSetClaimsMandateResponse) {}
+  // SubmitClaim records a governance-submitted pending claim, which never
+  // consumes the committee allowance.
+  rpc SubmitClaim(MsgSubmitClaim) returns (MsgSubmitClaimResponse) {}
+  // CommitteeSubmitClaim records a committee-submitted pending claim against
+  // the current term allowance.
+  rpc CommitteeSubmitClaim(MsgCommitteeSubmitClaim)
+      returns (MsgCommitteeSubmitClaimResponse) {}
+  // CancelClaim cancels any pending claim as the governance authority during
+  // its cancellation period.
+  rpc CancelClaim(MsgCancelClaim) returns (MsgCancelClaimResponse) {}
+  // CommitteeCancelClaim cancels one pending non-governance claim as the
+  // Claims committee during its cancellation period.
+  rpc CommitteeCancelClaim(MsgCommitteeCancelClaim)
+      returns (MsgCommitteeCancelClaimResponse) {}
+}
+
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/claims/MsgUpdateParams";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  Params params = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// MsgUpdateParamsResponse is the Msg/UpdateParams response type.
+message MsgUpdateParamsResponse {}
+
+// MsgSetClaimsMandate is the governance request for a complete Claims
+// committee replacement. An empty committee disables the mandate; the chain
+// derives the next term. The committee claim limit is a fixed gross base-unit
+// NOAH allowance for the new term.
+message MsgSetClaimsMandate {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/claims/MsgSetClaimsMandate";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin committee_claim_limit = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// MsgSetClaimsMandateResponse is the response for a Claims committee mandate.
+message MsgSetClaimsMandateResponse {}
+
+// MsgSubmitClaim is a governance-signed exact claim submission. It never
+// consumes the committee term allowance and does not depend on the Claims
+// mandate; the cancellation period comes from claims params.
+message MsgSubmitClaim {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/claims/MsgSubmitClaim";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string reference = 2;
+  string recipient = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  cosmos.base.v1beta1.Coin amount = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// MsgSubmitClaimResponse is the response for a governance claim submission.
+message MsgSubmitClaimResponse {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCommitteeSubmitClaim is an exact committee-signed claim submission. It
+// permanently consumes the current term's gross claim allowance.
+message MsgCommitteeSubmitClaim {
+  option (cosmos.msg.v1.signer) = "committee";
+  option (amino.name) = "ark/x/claims/MsgCommitteeSubmitClaim";
+
+  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string reference = 3;
+  string recipient = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  cosmos.base.v1beta1.Coin amount = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// MsgCommitteeSubmitClaimResponse is the response for a committee claim
+// submission.
+message MsgCommitteeSubmitClaimResponse {
+  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCancelClaim is a governance-authorized cancellation of any pending claim
+// during its cancellation period. It carries no expected term because
+// governance cancellation does not depend on the current committee mandate.
+message MsgCancelClaim {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/x/claims/MsgCancelClaim";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 claim_id = 2 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCancelClaimResponse is the response for governance claim cancellation.
+message MsgCancelClaimResponse {}
+
+// MsgCommitteeCancelClaim is an exact committee-authorized cancellation during
+// the claim's cancellation period. expected_term protects committee
+// cancellations from stale signatures, and the committee may cancel only a
+// claim whose immutable origin is not governance.
+message MsgCommitteeCancelClaim {
+  option (cosmos.msg.v1.signer) = "committee";
+  option (amino.name) = "ark/x/claims/MsgCommitteeCancelClaim";
+
+  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  uint64 claim_id = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCommitteeCancelClaimResponse is the response for committee claim
+// cancellation.
+message MsgCommitteeCancelClaimResponse {}
