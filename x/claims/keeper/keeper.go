@@ -1,0 +1,141 @@
+package keeper
+
+import (
+	"context"
+	"fmt"
+
+	"cosmossdk.io/collections"
+	"cosmossdk.io/core/store"
+	"cosmossdk.io/log/v2"
+	"cosmossdk.io/math"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"ark/pkg/chain"
+	"ark/x/claims/types"
+)
+
+// Keeper owns the Claims mandate, the permanent claim record, and the
+// Insurance reservation. Custody itself remains in Bank.
+type Keeper struct {
+	cdc          codec.BinaryCodec
+	storeService store.KVStoreService
+	authority    string
+
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
+
+	Schema              collections.Schema
+	Params              collections.Item[types.Params]
+	ClaimsMandate       collections.Item[types.ClaimsMandate]
+	ClaimsAllowanceUsed collections.Item[math.Int]
+	InsuranceReserved   collections.Item[math.Int]
+	NextClaimID         collections.Sequence
+	Claims              collections.Map[uint64, types.Claim]
+	// DueClaims indexes pending claims by (closing height, claim ID) so
+	// EndBlocker can settle the ones that have come due without walking the
+	// permanent record. A claim leaves the index the block it is paid or
+	// cancelled; the record it points at is never removed.
+	DueClaims collections.KeySet[collections.Pair[uint64, uint64]]
+}
+
+// NewKeeper creates a Claims keeper.
+func NewKeeper(
+	cdc codec.BinaryCodec,
+	storeService store.KVStoreService,
+	authority string,
+	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
+) *Keeper {
+	if addr := accountKeeper.GetModuleAddress(types.InsuranceName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", types.InsuranceName))
+	}
+
+	sb := collections.NewSchemaBuilder(storeService)
+	k := &Keeper{
+		cdc:           cdc,
+		storeService:  storeService,
+		authority:     authority,
+		accountKeeper: accountKeeper,
+		bankKeeper:    bankKeeper,
+		Params: collections.NewItem(
+			sb,
+			types.ParamsKey,
+			"params",
+			codec.CollValue[types.Params](cdc),
+		),
+		ClaimsMandate: collections.NewItem(
+			sb,
+			types.ClaimsMandateKey,
+			"claims_mandate",
+			codec.CollValue[types.ClaimsMandate](cdc),
+		),
+		ClaimsAllowanceUsed: collections.NewItem(
+			sb,
+			types.ClaimsAllowanceUsedKey,
+			"claims_allowance_used",
+			sdk.IntValue,
+		),
+		InsuranceReserved: collections.NewItem(
+			sb,
+			types.InsuranceReservedKey,
+			"insurance_reserved",
+			sdk.IntValue,
+		),
+		NextClaimID: collections.NewSequence(
+			sb,
+			types.NextClaimIDKey,
+			"next_claim_id",
+		),
+		Claims: collections.NewMap(
+			sb,
+			types.ClaimsKey,
+			"claims",
+			collections.Uint64Key,
+			codec.CollValue[types.Claim](cdc),
+		),
+		DueClaims: collections.NewKeySet(
+			sb,
+			types.DueClaimsKey,
+			"due_claims",
+			collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key),
+		),
+	}
+
+	schema, err := sb.Build()
+	if err != nil {
+		panic(err)
+	}
+	k.Schema = schema
+
+	return k
+}
+
+// RecognisedCapital reports the Insurance capital available to cover new loss,
+// satisfying Treasury's expected ClaimsKeeper. Approved pending claims are
+// encumbered and cannot simultaneously cover another loss, so they are
+// excluded (TREASURY_REDESIGN_PLAN.md §7.2).
+//
+// Treasury owns the requirement this answers against; this module owns only
+// what the fund is currently worth toward it.
+func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
+	reserved, err := k.InsuranceReserved.Get(ctx)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("getting Insurance reservation: %w", err)
+	}
+	balance := k.insuranceBalance(ctx)
+	return balance.Sub(reserved), nil
+}
+
+// insuranceBalance reads the live Insurance NOAH balance from Bank.
+func (k Keeper) insuranceBalance(ctx context.Context) math.Int {
+	addr := k.accountKeeper.GetModuleAddress(types.InsuranceName)
+	return k.bankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
+}
+
+// Logger returns a module-specific logger.
+func (k Keeper) Logger(ctx context.Context) log.Logger {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
