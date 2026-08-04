@@ -124,9 +124,12 @@ func (gs GenesisState) Validate() error {
 		if len(rewardWeight.ValidatorAddress) == 0 {
 			return errors.New("reward weight validator address must not be empty")
 		}
-		validatorAddress, err := sdk.ValAddressFromBech32(rewardWeight.ValidatorAddress)
+		validatorAddress, err := chain.ParseCanonicalValidatorAddress(
+			"reward weight validator address",
+			rewardWeight.ValidatorAddress,
+		)
 		if err != nil {
-			return fmt.Errorf("reward weight validator address is invalid: %s", rewardWeight.ValidatorAddress)
+			return err
 		}
 		if i > 0 && bytes.Compare(validatorAddress, previousValidatorAddress) <= 0 {
 			return errors.New("genesis reward weights must be sorted by unique validator address")
@@ -141,9 +144,12 @@ func (gs GenesisState) Validate() error {
 		if len(record.ValidatorAddress) == 0 {
 			return errors.New("attendance record validator address must not be empty")
 		}
-		validatorAddress, err := sdk.ValAddressFromBech32(record.ValidatorAddress)
+		validatorAddress, err := chain.ParseCanonicalValidatorAddress(
+			"attendance record validator address",
+			record.ValidatorAddress,
+		)
 		if err != nil {
-			return fmt.Errorf("attendance record validator address is invalid: %s", record.ValidatorAddress)
+			return err
 		}
 		if i > 0 && bytes.Compare(validatorAddress, previousValidatorAddress) <= 0 {
 			return errors.New("genesis attendance records must be sorted by unique validator address")

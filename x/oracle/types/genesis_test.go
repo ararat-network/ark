@@ -3,6 +3,7 @@ package types_test
 import (
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -204,6 +205,19 @@ func TestValidateGenesis(t *testing.T) {
 			},
 			expectErr: "reward weight validator address is invalid",
 		},
+		{
+			// Bech32 accepts an all-uppercase address and lowercases it, so
+			// this decodes to the same key the canonical spelling does. Export
+			// only ever writes the canonical form, so accepting it would make
+			// import and export disagree on the genesis file.
+			name: "reward weight non-canonical validator address",
+			mutate: func(gs *types.GenesisState) {
+				gs.RewardWeights = []types.RewardWeight{
+					{ValidatorAddress: strings.ToUpper(validatorAddress), RewardWeight: math.NewInt(1)},
+				}
+			},
+			expectErr: "reward weight validator address must be a canonical validator address",
+		},
 		// AttendanceRecords
 		{
 			name: "attendance record empty validator address",
@@ -251,6 +265,16 @@ func TestValidateGenesis(t *testing.T) {
 				}
 			},
 			expectErr: "attendance record validator address is invalid",
+		},
+		{
+			name: "attendance record non-canonical validator address",
+			mutate: func(gs *types.GenesisState) {
+				gs.AttendanceRecords = []types.AttendanceRecord{{
+					ValidatorAddress: strings.ToUpper(validatorAddress),
+					Attendance:       types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1},
+				}}
+			},
+			expectErr: "attendance record validator address must be a canonical validator address",
 		},
 		{
 			name: "attended above eligible",
