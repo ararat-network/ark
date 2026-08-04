@@ -32,12 +32,9 @@ type taxSplit struct {
 // advanceRewardFunding accrues this block into the reward-funding window and
 // settles the window once it closes, leaving fresh accounting behind for the
 // next one. The whole window state machine lives here so the ABCI hook is not
-// the place that knows when a window opens, closes, or resets.
-//
-// Genesis height accrues nothing. Accrual values the fee collector, which at
-// BeginBlock holds the previous block's fees; height 1 has no previous block,
-// so opening a window there would charge it for a block whose organic revenue
-// is structurally absent rather than merely zero.
+// the place that knows when a window opens, closes, or resets. Genesis height
+// accrues nothing: accrual values the fee collector, which at BeginBlock
+// holds the previous block's fees, and height 1 has no previous block.
 func (k Keeper) advanceRewardFunding(ctx context.Context) error {
 	if sdk.UnwrapSDKContext(ctx).BlockHeight() <= 1 {
 		return nil

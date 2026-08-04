@@ -238,14 +238,12 @@ func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.Lega
 	if err != nil {
 		return fundStatus{}, fmt.Errorf("getting monetary policy: %w", err)
 	}
-	// Both committee-operated funds report their own recognised capital (§7.2);
-	// Treasury owns only the requirement each is measured against, and asks each
-	// operator what its fund is worth rather than reading the module account
-	// behind its back. Insurance already differs from its raw balance because an
-	// approved pending claim is encumbered, and Reserve will once it gains
-	// haircut external value in §20.1 — which is why the figure is asked for
-	// rather than read. The Buffer keeps a direct balance read: it has no
-	// operator, so Treasury is its operator.
+	// Both committee-operated funds report their own recognised capital (§7.2):
+	// Treasury owns only the requirement each is measured against, and asks
+	// each operator what its fund is worth rather than reading the module
+	// account behind its back — Insurance already differs from its raw balance
+	// because an approved pending claim is encumbered. The Buffer keeps a
+	// direct balance read: it has no operator, so Treasury is its operator.
 	insuranceBalance, err := k.claimsKeeper.RecognisedCapital(ctx)
 	if err != nil {
 		return fundStatus{}, fmt.Errorf("getting Insurance recognised capital: %w", err)

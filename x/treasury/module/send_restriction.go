@@ -19,14 +19,8 @@ var treasuryFundAddresses = map[string]struct{}{
 }
 
 // TreasurySendRestriction permits only positive anoah-only transfers into a
-// Treasury custody account. Transfers to every other recipient pass through
-// unchanged.
-//
-// There is no exemption here. The stability-tax-collector carve-out that once
-// lived in this function guarded the strategic Reserve, and moved to
-// x/reserve with the account; Treasury's settlement code still routes
-// derecognized tax there, but the rule admitting it now belongs to the module
-// that owns the recipient.
+// Treasury custody account, with no sender exemptions. Transfers to every
+// other recipient pass through unchanged.
 func TreasurySendRestriction(
 	_ context.Context,
 	_ sdk.AccAddress,

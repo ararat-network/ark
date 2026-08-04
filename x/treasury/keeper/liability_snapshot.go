@@ -17,12 +17,10 @@ import (
 // liabilityValuationGas is the flat gas charged for one transaction-time
 // aggregate-liability valuation, the preblocker having done the real scan as
 // unmetered block work. Transient stores opened through the store service are
-// metered with the KV gas config rather than the cheaper transient one, because
-// OpenTransientStore calls Context.KVStore: 1,000 flat plus 3 per key and value
-// byte, so a typical valuation reads 1,069 and the largest storable LegacyDec
-// 1,291. Emitting EventLiabilityIncomplete adds nothing, since the SDK does not
-// meter events, but recalibrate if the app customises store gas configs or adds
-// a second key, as two typical reads already cost about 2,138.
+// metered with the KV gas config — 1,000 flat plus 3 per key and value byte,
+// so a typical valuation reads 1,069 and the largest storable LegacyDec
+// 1,291. Recalibrate if the app customises store gas configs or adds a second
+// key.
 const liabilityValuationGas = 2_000
 
 // liabilityValuationKey holds the block's claimable-liability snapshot: one

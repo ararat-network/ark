@@ -16,30 +16,15 @@ import (
 	"ark/x/treasury/types"
 )
 
-// TestLiabilityValuationGasCoversTheMeteredRead holds liabilityValuationGas to
-// the work it prices. cachedLiabilityValue charges the constant flat and then
-// evaluates the lookup against a free meter, so nothing at runtime can notice
-// the fee drifting away from the cost — the flat charge is by construction
-// whatever the constant says. This test is what notices: it performs the same
-// read against a real meter and compares.
-//
-// It measures loadLiabilityValuation because that call is the whole of the hit
-// path's store work. A second read added there — the case the constant's
-// comment warns costs about 2,015 — pushes the measurement past the fee and
-// fails here. A read added to cachedLiabilityValue beside this call would not
-// be seen, so keep the hit path's store access inside loadLiabilityValuation.
-//
-// The floor assertion is the opposite guard, and the one no reviewer would
-// otherwise catch: transient stores are metered with the KV gas config only
-// because OpenTransientStore routes through Context.KVStore. Were that to
-// become the far cheaper transient config, every swap would keep paying 2,000
-// for work costing tens of gas, and nothing would fail. The floor is deliberately
-// loose — it exists to catch a change in the metering model, not to police
-// headroom someone deliberately adds to the constant.
-//
-// The test reads the SDK's default KV gas config, which is what the app uses
-// today. It cannot see an app-level override installed through baseapp, so a
-// change there still needs the constant recalibrated by hand.
+// TestLiabilityValuationGasCoversTheMeteredRead holds liabilityValuationGas
+// to the work it prices: cachedLiabilityValue charges the flat constant and
+// evaluates the lookup against a free meter, so this test is the only thing
+// that notices the fee drifting from the cost. It measures
+// loadLiabilityValuation — the whole of the hit path's store work — so keep
+// that path's store access inside it. The deliberately loose floor assertion
+// catches the metering model changing (transient stores are metered with the
+// KV gas config only because OpenTransientStore routes through
+// Context.KVStore), not headroom added to the constant.
 func TestLiabilityValuationGasCoversTheMeteredRead(t *testing.T) {
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(
