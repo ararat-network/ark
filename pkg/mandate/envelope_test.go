@@ -2,6 +2,7 @@ package mandate_test
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -186,6 +187,28 @@ func TestNext(t *testing.T) {
 			committee: testCommittee(),
 			expectErr: "term cannot advance",
 		},
+		{
+			// Bech32 accepts an all-uppercase spelling of the same account, so
+			// the appointment stores the canonical form to keep state, events,
+			// and every later string comparison on one spelling.
+			name:             "uppercase committee is stored canonical",
+			current:          validEnvelope,
+			committee:        strings.ToUpper(testCommittee()),
+			activationHeight: 30,
+			expiryHeight:     40,
+			expect: mandate.Envelope{
+				Term:             2,
+				Committee:        testCommittee(),
+				ActivationHeight: 30,
+				ExpiryHeight:     40,
+			},
+		},
+		{
+			name:      "malformed committee",
+			current:   validEnvelope,
+			committee: "not-an-address",
+			expectErr: "committee is invalid",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -254,6 +277,23 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			expectedTerm: 1,
 			height:       10,
 			expectErr:    "signer is not the exact appointed committee",
+		},
+		{
+			// The ante handler authenticates the signer by decoded bytes, so an
+			// uppercase spelling is the same signing account and must authorise.
+			name:         "uppercase signer authorises",
+			envelope:     validEnvelope,
+			signer:       strings.ToUpper(testCommittee()),
+			expectedTerm: 1,
+			height:       10,
+		},
+		{
+			name:         "malformed signer",
+			envelope:     validEnvelope,
+			signer:       "not-an-address",
+			expectedTerm: 1,
+			height:       10,
+			expectErr:    "committee signer is invalid",
 		},
 		{
 			name:         "stale term",

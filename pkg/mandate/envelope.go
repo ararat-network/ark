@@ -68,7 +68,10 @@ func (e Envelope) NextTerm() (uint64, error) {
 // Next derives the successor appointment envelope from the current one: the
 // canonical disabled envelope when committee is empty, otherwise the complete
 // appointment at the advanced term. Every replacement advances the term, so a
-// disablement retains its successor term too.
+// disablement retains its successor term too. The committee is stored in its
+// canonical spelling whatever letter case the message carried, so everything
+// downstream — Validate, authority-distinctness checks, events — reads one
+// spelling.
 //
 // Next owns derivation only. Judgment of the assembled appointment stays with
 // the embedding mandate, whose Validate is the single guardian for every entry
@@ -83,10 +86,14 @@ func Next(current Envelope, committee string, activationHeight uint64, expiryHei
 	if committee == "" {
 		return Disabled(term), nil
 	}
+	canonical, err := chain.CanonicaliseAccountAddress("committee", committee)
+	if err != nil {
+		return Envelope{}, err
+	}
 
 	return Envelope{
 		Term:             term,
-		Committee:        committee,
+		Committee:        canonical,
 		ActivationHeight: activationHeight,
 		ExpiryHeight:     expiryHeight,
 	}, nil
@@ -108,8 +115,19 @@ func (e Envelope) RequireTerm(expected uint64) error {
 // than whichever window it straddles. Everything beyond the appointment —
 // usage bounds, policy corridors, status preconditions — stays with the
 // embedding mandate, which names itself when wrapping these errors.
+//
+// The signer is compared in canonical spelling because the stored committee is
+// canonical while the ante handler authenticates a signer by decoded bytes, so
+// any letter case of the appointed address is the same authenticated account.
 func (e Envelope) Authorise(signer string, expectedTerm uint64, height uint64) error {
-	if e.IsDisabled() || signer != e.Committee {
+	if e.IsDisabled() {
+		return errors.New("signer is not the exact appointed committee")
+	}
+	canonical, err := chain.CanonicaliseAccountAddress("committee signer", signer)
+	if err != nil {
+		return err
+	}
+	if canonical != e.Committee {
 		return errors.New("signer is not the exact appointed committee")
 	}
 	if err := e.RequireTerm(expectedTerm); err != nil {
