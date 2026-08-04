@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"ark/pkg/chain"
 	"ark/x/asset/types"
 )
 
@@ -192,10 +193,19 @@ func (m msgServer) SetEmergencyMandate(ctx context.Context, msg *types.MsgSetEme
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
 	}
-	if msg.Committee == m.k.authority || msg.Committee == msg.Authority {
+	// Distinctness is judged before Next canonicalises the committee, so it must
+	// compare the canonical spelling itself or a re-cased authority would pass.
+	committee := msg.Committee
+	if committee != "" {
+		var err error
+		if committee, err = chain.CanonicaliseAccountAddress("committee", committee); err != nil {
+			return nil, err
+		}
+	}
+	if committee == m.k.authority || committee == msg.Authority {
 		return nil, errors.New("emergency committee must be distinct from the Asset authority")
 	}
-	if err := m.k.SetEmergencyMandate(ctx, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight); err != nil {
+	if err := m.k.SetEmergencyMandate(ctx, committee, msg.ActivationHeight, msg.ExpiryHeight); err != nil {
 		return nil, err
 	}
 

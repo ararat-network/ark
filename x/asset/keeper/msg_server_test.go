@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"strings"
+
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/math"
@@ -317,6 +319,16 @@ func (s *KeeperTestSuite) TestSetMandateRejectsAuthorityCommittee() {
 	_, err := server.SetEmergencyMandate(s.ctx, &types.MsgSetEmergencyMandate{
 		Authority:        govAuthority,
 		Committee:        govAuthority,
+		ActivationHeight: 1,
+		ExpiryHeight:     100,
+	})
+	s.Require().ErrorContains(err, "distinct from the Asset authority")
+
+	// The distinctness judgment runs on the canonical spelling, so re-casing
+	// the authority is still the authority.
+	_, err = server.SetEmergencyMandate(s.ctx, &types.MsgSetEmergencyMandate{
+		Authority:        govAuthority,
+		Committee:        strings.ToUpper(govAuthority),
 		ActivationHeight: 1,
 		ExpiryHeight:     100,
 	})

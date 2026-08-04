@@ -8,7 +8,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
 	"ark/pkg/mandate"
 	"ark/x/asset/types"
 )
@@ -66,9 +65,6 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 // signalling committee-confirmed distress through a door it left open. Halting
 // is wind-down policy, and policy runs at governance speed.
 func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, denom string, expectedTerm uint64) error {
-	if _, err := chain.ParseCanonicalAccountAddress("committee", committee); err != nil {
-		return err
-	}
 	emergencyMandate, err := k.EmergencyMandate.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting emergency mandate: %w", err)
