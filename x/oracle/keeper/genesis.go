@@ -33,32 +33,20 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	// Accounting anchors are block heights, so an anchor above the genesis
-	// height is unreachable rather than merely early: EndBlocker settles when
-	// the height is a whole number of windows past the anchor, and heights
-	// below it are outside the period entirely. Importing one — the shape a
-	// zero-height export produces if it carries old-chain heights over —
-	// silently disables reward settlement and attendance jailing until the
-	// chain climbs to a height it was never meant to see. Scheduled feed
-	// transitions are deliberately not checked here: an activation height
-	// above the genesis height is exactly what a legitimately pending
-	// transition looks like.
 	genesisHeight := sdkCtx.BlockHeight()
-	if genesisHeight >= 0 {
-		if data.Accounting.RewardWindowStartHeight > uint64(genesisHeight) {
-			return fmt.Errorf(
-				"genesis accounting reward window start height %d is after genesis block height %d",
-				data.Accounting.RewardWindowStartHeight,
-				genesisHeight,
-			)
-		}
-		if data.Accounting.AttendanceWindowStartHeight > uint64(genesisHeight) {
-			return fmt.Errorf(
-				"genesis accounting attendance window start height %d is after genesis block height %d",
-				data.Accounting.AttendanceWindowStartHeight,
-				genesisHeight,
-			)
-		}
+	if data.Accounting.RewardWindowStartHeight > uint64(genesisHeight) {
+		return fmt.Errorf(
+			"genesis accounting reward window start height %d is after genesis block height %d",
+			data.Accounting.RewardWindowStartHeight,
+			genesisHeight,
+		)
+	}
+	if data.Accounting.AttendanceWindowStartHeight > uint64(genesisHeight) {
+		return fmt.Errorf(
+			"genesis accounting attendance window start height %d is after genesis block height %d",
+			data.Accounting.AttendanceWindowStartHeight,
+			genesisHeight,
+		)
 	}
 
 	// Check that the module account exists before writing module state.
@@ -102,10 +90,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("setting feeds: %w", err)
 	}
 
-	// The reference denom names a feed, so its existence is a keeper-level rule
-	// rather than a GenesisState one: it is checked against the registry just
-	// imported. Freshness is not checked here on purpose — a genesis reference denom
-	// is legitimate before the chain has aggregated a single rate.
 	if data.ReferenceDenom != "" {
 		if err := k.requireFeedActive(ctx, data.ReferenceDenom); err != nil {
 			return fmt.Errorf("invalid genesis reference denom: %w", err)
