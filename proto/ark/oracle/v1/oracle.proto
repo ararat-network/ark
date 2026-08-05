@@ -41,7 +41,8 @@ message Params {
     (amino.dont_omitempty) = true
   ];
   // max_exchange_rate_age is the maximum elapsed block time since an exchange
-  // rate was last written before it is considered stale.
+  // rate was last written before it is considered stale. It is the default for
+  // every denomination without an entry in max_exchange_rate_age_overrides.
   google.protobuf.Duration max_exchange_rate_age = 7 [
     (gogoproto.nullable) = false,
     (gogoproto.stdduration) = true,
@@ -73,6 +74,29 @@ message Params {
   ];
 }
 
+// ExchangeRateAgeOverride replaces the default staleness window for one
+// denomination.
+//
+// How long a rate stays meaningful is a property of the feed, not of the
+// consumer reading it: a slow-moving instrument priced against a daily
+// published figure is not stale at an age that would make an FX rate dangerous
+// to quote against. The window therefore lives beside the rate, so every
+// consumer inherits one answer per denomination and no consumer needs a
+// staleness rule of its own.
+//
+// An override is stated through MsgAddFeed and lives exactly as long as the
+// feed it governs: written when the feed is added or its window re-stated,
+// dropped alongside the feed's rate when a removal activates. This message is
+// the genesis and query representation of that state, not a parameter.
+message ExchangeRateAgeOverride {
+  string denom = 1;
+  google.protobuf.Duration max_age = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.stdduration) = true,
+    (amino.dont_omitempty) = true
+  ];
+}
+
 // Feeds defines the materialized active feed set and any scheduled per-feed
 // transitions not yet activated. The feed set for a vote height is the active
 // set folded with every transition whose activation height has arrived.
@@ -84,19 +108,21 @@ message Feeds {
   // denomination it will carry.
   repeated string denoms = 1;
   // version advances once per activation batch.
-  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+  uint64 version = 2 [(amino.dont_omitempty) = true];
   // transitions are scheduled membership changes, sorted by
   // (activation_vote_height, denom). Immutable once written.
-  repeated FeedTransition transitions = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated FeedTransition transitions = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // FeedTransition is one scheduled membership change for one feed. Immutable
 // once written.
 message FeedTransition {
   string denom = 1;
-  FeedDirection direction = 2 [ (amino.dont_omitempty) = true ];
-  int64 activation_vote_height = 3 [ (amino.dont_omitempty) = true ];
+  FeedDirection direction = 2 [(amino.dont_omitempty) = true];
+  int64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
 }
 
 // FeedReferent is one consumer claim on a feed, derived from the consumer's

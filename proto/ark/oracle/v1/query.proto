@@ -46,6 +46,16 @@ service Query {
     option (google.api.http).get = "/ark/oracle/v1/feeds/{denom}/referents";
   }
 
+  // MaxExchangeRateAgeOverrides returns the per-feed staleness windows that
+  // differ from the chain default. The default itself is a parameter, so the
+  // full picture is this query folded over Params.
+  rpc MaxExchangeRateAgeOverrides(QueryMaxExchangeRateAgeOverridesRequest)
+      returns (QueryMaxExchangeRateAgeOverridesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get =
+        "/ark/oracle/v1/max_exchange_rate_age_overrides";
+  }
+
   // ReferenceDenom returns the denomination whose feed is the shared protocol
   // reference unit.
   rpc ReferenceDenom(QueryReferenceDenomRequest)
@@ -135,6 +145,21 @@ message QueryFeedReferentsResponse {
   // consumer blocks removal. Unpaginated: the count is bounded by consumers
   // times claims per consumer.
   repeated FeedReferent referents = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryMaxExchangeRateAgeOverridesRequest is the request type for the
+// Query/MaxExchangeRateAgeOverrides RPC method.
+message QueryMaxExchangeRateAgeOverridesRequest {}
+
+// QueryMaxExchangeRateAgeOverridesResponse is the response type for the
+// Query/MaxExchangeRateAgeOverrides RPC method.
+message QueryMaxExchangeRateAgeOverridesResponse {
+  // max_exchange_rate_age_overrides lists the per-feed windows differing from
+  // the default, sorted by denomination. Unpaginated: the set is bounded by the
+  // feed set and holds only the feeds governance singled out. A denomination
+  // absent here is governed by Params.max_exchange_rate_age.
+  repeated ExchangeRateAgeOverride max_exchange_rate_age_overrides = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 

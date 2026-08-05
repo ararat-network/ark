@@ -6,6 +6,7 @@ import "ark/oracle/v1/oracle.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "google/protobuf/duration.proto";
 
 option go_package = "ark/x/oracle/types";
 
@@ -48,7 +49,15 @@ message MsgUpdateParams {
 // MsgUpdateParams message.
 message MsgUpdateParamsResponse {}
 
-// MsgAddFeed schedules one feed addition.
+// MsgAddFeed schedules one feed addition and states the feed's staleness
+// window.
+//
+// The message is declarative about both: it says what the feed set and the
+// window should be, not what to change. A denom already active or already
+// scheduled to join is not an error — membership is simply satisfied — so the
+// same message re-states the window of a live feed. That is the only way a
+// window moves, which is what keeps every window attached to a feed that
+// exists.
 message MsgAddFeed {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/x/oracle/MsgAddFeed";
@@ -59,6 +68,21 @@ message MsgAddFeed {
 
   // denom keys the feed to add.
   string denom = 2;
+
+  // max_age is the feed's staleness window. Zero adopts the chain default in
+  // Params.max_exchange_rate_age and clears any override the feed carried, so
+  // the ordinary listing states nothing and inherits the default. A positive
+  // value overrides the default for this feed alone.
+  //
+  // Governance must therefore restate a non-default window whenever it
+  // re-sends AddFeed for a live feed. That is deliberate: the alternative,
+  // an absent-means-leave-alone tri-state, makes the message's effect depend
+  // on state the proposal author cannot see in the proposal.
+  google.protobuf.Duration max_age = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.stdduration) = true,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgAddFeedResponse defines the response structure for executing a MsgAddFeed
