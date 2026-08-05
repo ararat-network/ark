@@ -28,6 +28,22 @@ func (k Keeper) GetAsset(ctx context.Context, denom string) (types.Asset, error)
 	return asset, nil
 }
 
+// HasAsset reports whether denom is an Ark-issued asset, at any point in its
+// lifecycle.
+//
+// It answers membership alone, which is what a consumer enforcing D28 needs:
+// an Ark-issued denomination is permanently ineligible for capital credit
+// wherever it is held, and a written-off or retired asset is still Ark-issued.
+// Callers that care about a status ask for the record instead.
+func (k Keeper) HasAsset(ctx context.Context, denom string) (bool, error) {
+	registered, err := k.Assets.Has(ctx, denom)
+	if err != nil {
+		return false, fmt.Errorf("checking asset %s: %w", denom, err)
+	}
+
+	return registered, nil
+}
+
 // ListAssets returns every registered asset in key order. Treasury's liability
 // partition is a fold over this list; it never stores a membership set of its
 // own.
