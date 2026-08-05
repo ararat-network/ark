@@ -211,6 +211,22 @@ func (s *KeeperTestSuite) requireTypedEvent(expected proto.Message) {
 	s.FailNow("typed event not found", expectedEvent.Type)
 }
 
+// countTypedEvents reports how many events of one typed-event message are on
+// the context. It is what a no-op guard has to be asserted against: the suite
+// shares one event manager across a test, so the question is how many were
+// added, not what the whole stream contains.
+func (s *KeeperTestSuite) countTypedEvents(message proto.Message) int {
+	eventType := proto.MessageName(message)
+	count := 0
+	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
+		if event.Type == eventType {
+			count++
+		}
+	}
+
+	return count
+}
+
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {
 	s.Require().Len(actual, len(expected))
 	for i, expectedMessage := range expected {

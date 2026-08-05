@@ -167,6 +167,65 @@ func (s *KeeperTestSuite) TestSetTobinTaxOverride() {
 	}
 }
 
+// EventTobinTaxOverrideSet means a rate moved, not that a proposal ran.
+// Governance and the committee both reach this through one keeper method, so
+// they share the rule and the event.
+func (s *KeeperTestSuite) TestSetTobinTaxOverrideAnnouncesOnlyRealChanges() {
+	rate := math.LegacyNewDecWithPrec(1, 2)
+
+	s.Require().NoError(s.keeper.SetTobinTaxOverride(s.ctx, chain.USDBaseDenom, rate))
+	s.Require().Equal(1, s.countTypedEvents(&types.EventTobinTaxOverrideSet{}))
+	s.requireTypedEvent(&types.EventTobinTaxOverrideSet{
+		Denom:    chain.USDBaseDenom,
+		TobinTax: rate,
+	})
+
+	// Restated identically: nothing moved, so nothing is announced.
+	s.Require().NoError(s.keeper.SetTobinTaxOverride(s.ctx, chain.USDBaseDenom, rate))
+	s.Require().Equal(1, s.countTypedEvents(&types.EventTobinTaxOverrideSet{}))
+
+	// 0.0100 is the same rate as 0.01 held in a different big.Int. The guard
+	// has to compare value rather than the pointer a LegacyDec carries, or
+	// every restatement would read as a change.
+	s.Require().NoError(s.keeper.SetTobinTaxOverride(
+		s.ctx,
+		chain.USDBaseDenom,
+		math.LegacyNewDecWithPrec(100, 4),
+	))
+	s.Require().Equal(1, s.countTypedEvents(&types.EventTobinTaxOverrideSet{}))
+
+	// A rate that actually moves is announced.
+	raised := math.LegacyNewDecWithPrec(2, 2)
+	s.Require().NoError(s.keeper.SetTobinTaxOverride(s.ctx, chain.USDBaseDenom, raised))
+	s.Require().Equal(2, s.countTypedEvents(&types.EventTobinTaxOverrideSet{}))
+	s.requireTypedEvent(&types.EventTobinTaxOverrideSet{
+		Denom:    chain.USDBaseDenom,
+		TobinTax: raised,
+	})
+
+	stored, err := s.keeper.TobinTaxOverrides.Get(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().True(raised.Equal(stored), "expected %s, got %s", raised, stored)
+}
+
+// The removal path needs no equivalent guard: an absent entry errors rather
+// than announcing a deletion that did not happen.
+func (s *KeeperTestSuite) TestRemoveTobinTaxOverrideAnnouncesTheDeletion() {
+	s.Require().NoError(s.keeper.SetTobinTaxOverride(
+		s.ctx,
+		chain.KRWBaseDenom,
+		math.LegacyNewDecWithPrec(1, 2),
+	))
+
+	s.Require().NoError(s.keeper.RemoveTobinTaxOverride(s.ctx, chain.KRWBaseDenom))
+	s.Require().Equal(1, s.countTypedEvents(&types.EventTobinTaxOverrideRemoved{}))
+	s.requireTypedEvent(&types.EventTobinTaxOverrideRemoved{Denom: chain.KRWBaseDenom})
+
+	err := s.keeper.RemoveTobinTaxOverride(s.ctx, chain.KRWBaseDenom)
+	s.Require().ErrorIs(err, types.ErrTobinOverrideMissing)
+	s.Require().Equal(1, s.countTypedEvents(&types.EventTobinTaxOverrideRemoved{}))
+}
+
 func (s *KeeperTestSuite) TestRemoveTobinTaxOverride() {
 	tests := []struct {
 		name        string

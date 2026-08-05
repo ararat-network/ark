@@ -110,12 +110,6 @@ func (m msgServer) SetTobinTaxOverride(ctx context.Context, msg *types.MsgSetTob
 	if err := m.k.SetTobinTaxOverride(ctx, msg.Denom, msg.TobinTax); err != nil {
 		return nil, err
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTobinTaxOverrideSet{
-		Denom:    msg.Denom,
-		TobinTax: msg.TobinTax,
-	}); err != nil {
-		return nil, fmt.Errorf("emitting Market tobin tax override: %w", err)
-	}
 
 	return &types.MsgSetTobinTaxOverrideResponse{}, nil
 }
@@ -128,11 +122,6 @@ func (m msgServer) RemoveTobinTaxOverride(ctx context.Context, msg *types.MsgRem
 	}
 	if err := m.k.RemoveTobinTaxOverride(ctx, msg.Denom); err != nil {
 		return nil, err
-	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTobinTaxOverrideRemoved{
-		Denom: msg.Denom,
-	}); err != nil {
-		return nil, fmt.Errorf("emitting Market tobin tax override removal: %w", err)
 	}
 
 	return &types.MsgRemoveTobinTaxOverrideResponse{}, nil
@@ -304,12 +293,6 @@ func (m msgServer) CommitteeSetTobinTax(ctx context.Context, msg *types.MsgCommi
 
 	if err := m.k.SetTobinTaxOverride(ctx, msg.Denom, msg.TobinTax); err != nil {
 		return nil, err
-	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTobinTaxOverrideSet{
-		Denom:    msg.Denom,
-		TobinTax: msg.TobinTax,
-	}); err != nil {
-		return nil, fmt.Errorf("emitting Market tobin tax override: %w", err)
 	}
 
 	return &types.MsgCommitteeSetTobinTaxResponse{}, nil
