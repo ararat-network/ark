@@ -169,7 +169,11 @@ func (k Keeper) activateFeedBatch(ctx context.Context, feeds types.Feeds, batch 
 	}
 
 	// A rate that survived removal would be stale on the feed's return, so
-	// removal prunes it and a re-added feed re-warms.
+	// removal prunes it and a re-added feed re-warms. The staleness window goes
+	// with it: the window is a judgment about this feed's publication cadence,
+	// and leaving it behind would silently govern whatever a later AddFeed
+	// puts under the same denomination. A re-added feed states its window the
+	// same way it states its membership.
 	for _, denom := range removed {
 		if err := k.ExchangeRate.Remove(ctx, denom); err != nil {
 			return types.Feeds{}, fmt.Errorf(
@@ -177,6 +181,9 @@ func (k Keeper) activateFeedBatch(ctx context.Context, feeds types.Feeds, batch 
 				denom,
 				err,
 			)
+		}
+		if err := k.clearMaxAgeOverride(ctx, denom); err != nil {
+			return types.Feeds{}, err
 		}
 	}
 	if err := k.Feeds.Set(ctx, promoted); err != nil {

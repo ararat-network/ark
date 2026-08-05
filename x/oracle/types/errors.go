@@ -15,4 +15,5 @@ var (
 	ErrFeedNotFound                    = sdkerrors.Register(ModuleName, 7, "no active or in-flight feed for denom")
 	ErrInvalidReferenceDenom           = sdkerrors.Register(ModuleName, 8, "invalid protocol reference denom")
 	ErrReferenceDenomRebaseUnavailable = sdkerrors.Register(ModuleName, 9, "protocol reference denom cannot be rebased")
+	ErrInvalidMaxExchangeRateAge       = sdkerrors.Register(ModuleName, 10, "invalid max exchange rate age")
 )

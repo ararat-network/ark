@@ -93,7 +93,12 @@ func (k Keeper) rateSet(ctx context.Context, skipUnavailable bool, denoms []stri
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
 
 	for _, denom := range uniqueDenoms {
-		rate, err := k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
+		maxAge, err := k.maxAgeFor(ctx, params, denom)
+		if err != nil {
+			return nil, err
+		}
+
+		rate, err := k.getExchangeRate(ctx, denom, currentTime, maxAge)
 		if err != nil {
 			if skipUnavailable &&
 				(errors.Is(err, types.ErrUnknownDenom) || errors.Is(err, types.ErrStaleExchangeRate)) {

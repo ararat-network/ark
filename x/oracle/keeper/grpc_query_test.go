@@ -138,6 +138,31 @@ func (s *KeeperTestSuite) TestQueryFeeds() {
 	s.Require().Equal(stored, resp.Feeds)
 }
 
+// The query reports only the exceptions, in key order. The default lives in
+// Params, so an operator reads the full picture as this folded over that — and
+// a denomination absent here is on the default, not unconfigured.
+func (s *KeeperTestSuite) TestQueryMaxExchangeRateAgeOverrides() {
+	empty, err := s.queryClient.MaxExchangeRateAgeOverrides(
+		s.ctx,
+		&types.QueryMaxExchangeRateAgeOverridesRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Empty(empty.MaxExchangeRateAgeOverrides)
+
+	s.Require().NoError(s.keeper.SetMaxAge(s.ctx, chain.USDBaseDenom, time.Hour))
+	s.Require().NoError(s.keeper.SetMaxAge(s.ctx, chain.KRWBaseDenom, 26*time.Hour))
+
+	resp, err := s.queryClient.MaxExchangeRateAgeOverrides(
+		s.ctx,
+		&types.QueryMaxExchangeRateAgeOverridesRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal([]types.ExchangeRateAgeOverride{
+		{Denom: chain.KRWBaseDenom, MaxAge: 26 * time.Hour},
+		{Denom: chain.USDBaseDenom, MaxAge: time.Hour},
+	}, resp.MaxExchangeRateAgeOverrides)
+}
+
 // TestQueryFeedReferents covers the operator-facing half of the removal
 // guard: the query answers from the same collector MsgRemoveFeed consults, so
 // what an author inspects beforehand is what governance is judged against.

@@ -40,17 +40,15 @@ type Keeper struct {
 	marketReferenceKeeper   types.MarketReferenceDenomKeeper
 	treasuryReferenceKeeper types.TreasuryReferenceDenomKeeper
 
-	Schema       collections.Schema
-	Params       collections.Item[types.Params]
-	Accounting   collections.Item[types.Accounting]
-	ExchangeRate collections.Map[string, types.ExchangeRate]
-	RewardWeight collections.Map[sdk.ValAddress, math.Int]
-	Attendance   collections.Map[sdk.ValAddress, types.Attendance]
-	Feeds        collections.Item[types.Feeds]
-	// Reference holds the denomination whose feed prices Market's base pool and
-	// denominates Treasury's reference tax cap. It names a feed, not necessarily
-	// a listed asset, and a configured reference is re-pointed, never cleared.
-	ReferenceDenom collections.Item[string]
+	Schema                      collections.Schema
+	Params                      collections.Item[types.Params]
+	Accounting                  collections.Item[types.Accounting]
+	ExchangeRate                collections.Map[string, types.ExchangeRate]
+	RewardWeight                collections.Map[sdk.ValAddress, math.Int]
+	Attendance                  collections.Map[sdk.ValAddress, types.Attendance]
+	Feeds                       collections.Item[types.Feeds]
+	ReferenceDenom              collections.Item[string]
+	MaxExchangeRateAgeOverrides collections.Map[string, time.Duration]
 
 	// feedReferentGuards answer, at removal time, whether a consumer still
 	// depends on a feed. They derive from the consumer's own state; nothing is
@@ -134,6 +132,13 @@ func NewKeeper(
 			"reference_denom",
 			collections.StringValue,
 		),
+		MaxExchangeRateAgeOverrides: collections.NewMap(
+			sb,
+			types.MaxExchangeRateAgeOverridesKey,
+			"max_exchange_rate_age_overrides",
+			collections.StringKey,
+			types.DurationValue,
+		),
 	}
 
 	schema, err := sb.Build()
@@ -179,13 +184,13 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		return math.LegacyOneDec(), nil
 	}
 
-	params, err := k.Params.Get(ctx)
+	maxAge, err := k.MaxAgeFor(ctx, denom)
 	if err != nil {
-		return math.LegacyZeroDec(), fmt.Errorf("getting params: %w", err)
+		return math.LegacyZeroDec(), err
 	}
 
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
-	return k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
+	return k.getExchangeRate(ctx, denom, currentTime, maxAge)
 }
 
 // GetExchangeRates returns all non-stale stored exchange rates.
@@ -198,7 +203,11 @@ func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 	var exchangeRates sdk.DecCoins
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		if currentTime.Sub(exchangeRate.BlockTimestamp) > params.MaxExchangeRateAge {
+		maxAge, err := k.maxAgeFor(ctx, params, denom)
+		if err != nil {
+			return false, err
+		}
+		if currentTime.Sub(exchangeRate.BlockTimestamp) > maxAge {
 			return false, nil
 		}
 		exchangeRates = append(exchangeRates, sdk.NewDecCoinFromDec(denom, exchangeRate.Rate))

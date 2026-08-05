@@ -280,6 +280,62 @@ func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 	}, rates)
 }
 
+// TestExchangeRateAgeOverrideGovernsOneDenom pins that the staleness window is
+// per-denomination: a feed published on a slow cadence stays fresh under its
+// own window while its neighbour goes stale under the default, and the window
+// travels with the rate rather than living in any consumer. It is what lets a
+// slow-moving instrument be recognised at all without any consumer holding a
+// governance-supplied price.
+func (s *KeeperTestSuite) TestExchangeRateAgeOverrideGovernsOneDenom() {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MaxExchangeRateAge = time.Minute
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.SetMaxAge(s.ctx, chain.SDRBaseDenom, 26*time.Hour))
+
+	// Both rates are hours old: far beyond the default window, inside the
+	// override.
+	age := oracleTestBlockTime.Add(-2 * time.Hour)
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: age,
+	}))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+		Denom:          chain.USDBaseDenom,
+		Rate:           math.LegacyMustNewDecFromStr("1.3"),
+		BlockTimestamp: age,
+	}))
+
+	rates, err := s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(types.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.SDRBaseDenom:  math.LegacyOneDec(),
+	}, rates)
+
+	// The single-denom read and the all-rates walk agree with the set.
+	rate, err := s.keeper.GetExchangeRate(s.ctx, chain.SDRBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacyOneDec(), rate)
+	_, err = s.keeper.GetExchangeRate(s.ctx, chain.USDBaseDenom)
+	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
+	all, err := s.keeper.GetExchangeRates(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewDecCoins(sdk.NewDecCoinFromDec(chain.SDRBaseDenom, math.LegacyOneDec())), all)
+
+	// Past its own window the overridden feed goes stale like any other: the
+	// override moves the clock, it does not remove it.
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.SDRBaseDenom,
+		Rate:           math.LegacyOneDec(),
+		BlockTimestamp: oracleTestBlockTime.Add(-26*time.Hour - time.Second),
+	}))
+	rates, err = s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(types.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()}, rates)
+}
+
 // TestGetLastKnownRateSetIgnoresStalenessButNotAbsence pins the one difference
 // from the available set: a rate too old to transact at is still returned,
 // because the caller is sizing an aggregate over supply already outstanding
@@ -462,6 +518,16 @@ func (s *KeeperTestSuite) TestGetExchangeRates() {
 		sdk.DecCoins{sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec())},
 		exchangeRates,
 	)
+}
+
+// typedEvent renders one typed event for assertions against an event stream
+// carrying other events too, where requireTypedEvents' exact-list match is the
+// wrong question.
+func (s *KeeperTestSuite) typedEvent(message proto.Message) sdk.Event {
+	event, err := sdk.TypedEventToEvent(message)
+	s.Require().NoError(err)
+
+	return event
 }
 
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {
