@@ -233,6 +233,11 @@ func (s *KeeperTestSuite) TestRouteExpansionRoundsOnlyFinalAmounts() {
 // principal goes to the one fund whose allocation an operator can still revise
 // once valuation recovers. No fund status is read, which the mock enforces by
 // expecting no balance lookup.
+//
+// The credit moves through Bank exactly as the other two funds' would, and the
+// Reserve is separately told what it meant: the parked principal includes the
+// shares the Buffer, Insurance, and the tail burn would have taken, so the fund
+// holding it has to record that no target sized it.
 func (s *KeeperTestSuite) TestRouteExpansionParksPrincipalInReserveOnUnrelatedStaleRate() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
@@ -243,6 +248,9 @@ func (s *KeeperTestSuite) TestRouteExpansionParksPrincipalInReserveOnUnrelatedSt
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), markettypes.ModuleName, reservetypes.StrategicReserveName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 60)),
+	).Return(nil)
+	s.reserveKeeper.EXPECT().RecordParkedPrincipal(
+		gomock.Any(), math.NewInt(60),
 	).Return(nil)
 
 	burned, err := s.keeper.RouteExpansion(

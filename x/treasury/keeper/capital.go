@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -132,6 +133,18 @@ func (k Keeper) RouteExpansion(
 		}
 	}
 
+	// The Reserve is told what its credit meant, because only it can record
+	// that: the coins above are an ordinary fund credit, while the fact worth
+	// keeping is that no target sized them. Without this the parked principal
+	// would read as the Reserve simply having had a gap that large, and the
+	// share a complete valuation would have burned would vanish from the
+	// record entirely.
+	if !complete && reserveCredit.IsPositive() {
+		if err := k.reserveKeeper.RecordParkedPrincipal(ctx, reserveCredit); err != nil {
+			return sdk.Coin{}, err
+		}
+	}
+
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventExpansionAllocated{
 		Denom:                  chain.NoahBaseDenom,
 		RedemptionBufferCredit: bufferCredit,
@@ -231,6 +244,37 @@ func (k Keeper) DrawRedemptionBuffer(
 		return math.Int{}, fmt.Errorf("emitting Treasury redemption buffer event: %w", err)
 	}
 	return bufferPaid, nil
+}
+
+// RequiredReserveCapital reports the capital the strategic Reserve is owed
+// against current exposure, satisfying x/reserve's expected
+// TreasuryCapitalReader.
+//
+// It is the requirement side of §7.2 and nothing else: Treasury says what the
+// fund needs, the fund says what it has, and only the fund acts on the
+// difference. The read is deliberately one-directional — this returns a
+// number, never a decision — so the ownership boundary the extraction drew
+// holds even though the dependency now runs both ways.
+//
+// An incomplete valuation is an error rather than a figure. Targets derive
+// from a complete aggregate only, exactly as the waterfall requires, and the
+// caller for this is a burn: a fund that cannot currently size its own
+// requirement must not be disposing of capital against it.
+func (k Keeper) RequiredReserveCapital(ctx context.Context) (math.Int, error) {
+	liabilityNoah, complete, err := k.cachedLiabilityValue(ctx, nil)
+	if err != nil {
+		return math.Int{}, err
+	}
+	if !complete {
+		return math.Int{}, errors.New(
+			"aggregate liability valuation is incomplete: the Reserve capital requirement is unavailable",
+		)
+	}
+	policy, err := k.MonetaryPolicy.Get(ctx)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("getting monetary policy: %w", err)
+	}
+	return policy.StrategicReserveTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(), nil
 }
 
 func (k Keeper) calculateFundStatus(ctx context.Context, liabilityNoah math.LegacyDec) (fundStatus, error) {

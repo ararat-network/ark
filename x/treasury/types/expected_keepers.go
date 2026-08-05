@@ -25,10 +25,19 @@ type ClaimsKeeper interface {
 }
 
 // ReserveKeeper reports what x/reserve's committee-operated fund is worth
-// toward its capital requirement. See ClaimsKeeper for the accounting contract
-// both funds answer to.
+// toward its capital requirement, and books the expansion principal the
+// waterfall cannot allocate. See ClaimsKeeper for the accounting contract both
+// funds answer to.
+//
+// Both methods only ever exchange numbers: Treasury credits the fund through
+// Bank exactly as it credits the other two, then tells the Reserve what landed.
+// RecordParkedPrincipal exists because what parks under incomplete valuation is
+// the whole eligible principal, including the shares the Buffer, Insurance, and
+// the tail burn would have taken, and the fund that ends up holding it is the
+// one that must be able to explain it.
 type ReserveKeeper interface {
 	RecognisedCapital(ctx context.Context) (math.Int, error)
+	RecordParkedPrincipal(ctx context.Context, amount math.Int) error
 }
 
 // AccountKeeper defines the auth functionality required by Treasury.
