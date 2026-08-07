@@ -34,7 +34,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/oracle/MsgUpdateParams";
+  option (amino.name) = "ark/oracle/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
@@ -60,7 +60,7 @@ message MsgUpdateParamsResponse {}
 // exists.
 message MsgAddFeed {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/oracle/MsgAddFeed";
+  option (amino.name) = "ark/oracle/MsgAddFeed";
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
@@ -92,7 +92,7 @@ message MsgAddFeedResponse {}
 // MsgRemoveFeed schedules one feed removal.
 message MsgRemoveFeed {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/oracle/MsgRemoveFeed";
+  option (amino.name) = "ark/oracle/MsgRemoveFeed";
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
@@ -113,7 +113,7 @@ message MsgRemoveFeedResponse {}
 // it.
 message MsgSetReferenceDenom {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/oracle/MsgSetReferenceDenom";
+  option (amino.name) = "ark/oracle/MsgSetReferenceDenom";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   // reference_denom keys the feed the reference unit is priced from.

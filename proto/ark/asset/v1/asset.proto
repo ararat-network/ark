@@ -93,7 +93,7 @@ enum ResolutionKind {
 // Params defines the parameters for the asset module.
 message Params {
   option (gogoproto.equal) = true;
-  option (amino.name) = "ark/x/asset/Params";
+  option (amino.name) = "ark/asset/Params";
 
   // settlement_activation_delay_blocks is the distance between opening a
   // settlement plan and the height it activates. It is the designed

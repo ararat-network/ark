@@ -10,12 +10,10 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/oracle/MsgUpdateParams")
-	legacy.RegisterAminoMsg(cdc, &MsgAddFeed{}, "ark/x/oracle/MsgAddFeed")
-	legacy.RegisterAminoMsg(cdc, &MsgRemoveFeed{}, "ark/x/oracle/MsgRemoveFeed")
-	legacy.RegisterAminoMsg(cdc, &MsgSetReferenceDenom{}, "ark/x/oracle/MsgSetReferenceDenom")
-
-	cdc.RegisterConcrete(Params{}, "ark/x/oracle/Params", nil)
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/oracle/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgAddFeed{}, "ark/oracle/MsgAddFeed")
+	legacy.RegisterAminoMsg(cdc, &MsgRemoveFeed{}, "ark/oracle/MsgRemoveFeed")
+	legacy.RegisterAminoMsg(cdc, &MsgSetReferenceDenom{}, "ark/oracle/MsgSetReferenceDenom")
 }
 
 // RegisterInterfaces registers the x/oracle interfaces types with the interface registry

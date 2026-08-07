@@ -44,7 +44,7 @@ enum ClaimAuthority {
 // Params defines the governance-owned parameters for the claims module.
 message Params {
   option (gogoproto.equal) = true;
-  option (amino.name) = "ark/x/claims/Params";
+  option (amino.name) = "ark/claims/Params";
 
   // claim_cancellation_period_blocks is the shared veto window between any
   // claim's submission and its executable height, for both origins.

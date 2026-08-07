@@ -62,7 +62,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgUpdateParams";
+  option (amino.name) = "ark/asset/MsgUpdateParams";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   // params defines the x/asset parameters to update. All parameters must be
@@ -81,7 +81,7 @@ message MsgUpdateParamsResponse {}
 // else for a proposal to state and nothing that a later message could correct.
 message MsgRegisterAsset {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgRegisterAsset";
+  option (amino.name) = "ark/asset/MsgRegisterAsset";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -99,7 +99,7 @@ message MsgRegisterAssetResponse {}
 // preserving pricing, liability accounting, transfers, and redemption.
 message MsgHaltIssuance {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgHaltIssuance";
+  option (amino.name) = "ark/asset/MsgHaltIssuance";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -113,7 +113,7 @@ message MsgHaltIssuanceResponse {}
 // changing Oracle, Market, or Treasury policy.
 message MsgResumeIssuance {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgResumeIssuance";
+  option (amino.name) = "ark/asset/MsgResumeIssuance";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -129,7 +129,7 @@ message MsgResumeIssuanceResponse {}
 // the absence of a rate.
 message MsgSuspendAsset {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgSuspendAsset";
+  option (amino.name) = "ark/asset/MsgSuspendAsset";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -142,7 +142,7 @@ message MsgSuspendAssetResponse {}
 // MsgOpenSettlement creates a one-way asset-to-NOAH redemption plan.
 message MsgOpenSettlement {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgOpenSettlement";
+  option (amino.name) = "ark/asset/MsgOpenSettlement";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -173,7 +173,7 @@ message MsgOpenSettlementResponse {}
 // closing height may end it.
 message MsgCancelSettlement {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgCancelSettlement";
+  option (amino.name) = "ark/asset/MsgCancelSettlement";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -188,7 +188,7 @@ message MsgCancelSettlementResponse {}
 // the asset must carry no settlement plan.
 message MsgRecoverAsset {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgRecoverAsset";
+  option (amino.name) = "ark/asset/MsgRecoverAsset";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -204,7 +204,7 @@ message MsgRecoverAssetResponse {}
 // holders get, and derecognition is the only act that could break it.
 message MsgWriteOffAsset {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgWriteOffAsset";
+  option (amino.name) = "ark/asset/MsgWriteOffAsset";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -223,7 +223,7 @@ message MsgWriteOffAssetResponse {}
 // both of which registration refuses to collide with.
 message MsgFinalizeRetirement {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgFinalizeRetirement";
+  option (amino.name) = "ark/asset/MsgFinalizeRetirement";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;
@@ -259,7 +259,7 @@ message MsgFinalizeRetirementResponse {}
 // latest term.
 message MsgSetEmergencyMandate {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/asset/MsgSetEmergencyMandate";
+  option (amino.name) = "ark/asset/MsgSetEmergencyMandate";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   // committee is the exact threshold-multisig account, empty to disable.
@@ -280,7 +280,7 @@ message MsgSetEmergencyMandateResponse {}
 // the reference denomination suspends while the feed keeps pricing.
 message MsgEmergencySuspendAsset {
   option (cosmos.msg.v1.signer) = "committee";
-  option (amino.name) = "ark/x/asset/MsgEmergencySuspendAsset";
+  option (amino.name) = "ark/asset/MsgEmergencySuspendAsset";
 
   string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string denom = 2;

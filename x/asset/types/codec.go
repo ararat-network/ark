@@ -10,18 +10,18 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete asset message types.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/asset/MsgUpdateParams")
-	legacy.RegisterAminoMsg(cdc, &MsgRegisterAsset{}, "ark/x/asset/MsgRegisterAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgHaltIssuance{}, "ark/x/asset/MsgHaltIssuance")
-	legacy.RegisterAminoMsg(cdc, &MsgResumeIssuance{}, "ark/x/asset/MsgResumeIssuance")
-	legacy.RegisterAminoMsg(cdc, &MsgSuspendAsset{}, "ark/x/asset/MsgSuspendAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgOpenSettlement{}, "ark/x/asset/MsgOpenSettlement")
-	legacy.RegisterAminoMsg(cdc, &MsgCancelSettlement{}, "ark/x/asset/MsgCancelSettlement")
-	legacy.RegisterAminoMsg(cdc, &MsgRecoverAsset{}, "ark/x/asset/MsgRecoverAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgWriteOffAsset{}, "ark/x/asset/MsgWriteOffAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgFinalizeRetirement{}, "ark/x/asset/MsgFinalizeRetirement")
-	legacy.RegisterAminoMsg(cdc, &MsgSetEmergencyMandate{}, "ark/x/asset/MsgSetEmergencyMandate")
-	legacy.RegisterAminoMsg(cdc, &MsgEmergencySuspendAsset{}, "ark/x/asset/MsgEmergencySuspendAsset")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/asset/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgRegisterAsset{}, "ark/asset/MsgRegisterAsset")
+	legacy.RegisterAminoMsg(cdc, &MsgHaltIssuance{}, "ark/asset/MsgHaltIssuance")
+	legacy.RegisterAminoMsg(cdc, &MsgResumeIssuance{}, "ark/asset/MsgResumeIssuance")
+	legacy.RegisterAminoMsg(cdc, &MsgSuspendAsset{}, "ark/asset/MsgSuspendAsset")
+	legacy.RegisterAminoMsg(cdc, &MsgOpenSettlement{}, "ark/asset/MsgOpenSettlement")
+	legacy.RegisterAminoMsg(cdc, &MsgCancelSettlement{}, "ark/asset/MsgCancelSettlement")
+	legacy.RegisterAminoMsg(cdc, &MsgRecoverAsset{}, "ark/asset/MsgRecoverAsset")
+	legacy.RegisterAminoMsg(cdc, &MsgWriteOffAsset{}, "ark/asset/MsgWriteOffAsset")
+	legacy.RegisterAminoMsg(cdc, &MsgFinalizeRetirement{}, "ark/asset/MsgFinalizeRetirement")
+	legacy.RegisterAminoMsg(cdc, &MsgSetEmergencyMandate{}, "ark/asset/MsgSetEmergencyMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgEmergencySuspendAsset{}, "ark/asset/MsgEmergencySuspendAsset")
 }
 
 // RegisterInterfaces registers asset message implementations.

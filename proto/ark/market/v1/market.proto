@@ -17,7 +17,7 @@ option go_package = "ark/x/market/types";
 // revert a committee's emergency resize.
 message Params {
   option (gogoproto.equal) = true;
-  option (amino.name) = "ark/x/market/Params";
+  option (amino.name) = "ark/market/Params";
 
   // default_tobin_tax is the spread applied to conversion between two
   // denominations for every asset without an override. Rates are governance

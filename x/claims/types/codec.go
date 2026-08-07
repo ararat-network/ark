@@ -12,14 +12,12 @@ import (
 // governance transactions. Every name stays inside the 39-character limit
 // RegisterAminoMsg enforces for Ledger signing.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/claims/MsgUpdateParams")
-	legacy.RegisterAminoMsg(cdc, &MsgSetClaimsMandate{}, "ark/x/claims/MsgSetClaimsMandate")
-	legacy.RegisterAminoMsg(cdc, &MsgSubmitClaim{}, "ark/x/claims/MsgSubmitClaim")
-	legacy.RegisterAminoMsg(cdc, &MsgCommitteeSubmitClaim{}, "ark/x/claims/MsgCommitteeSubmitClaim")
-	legacy.RegisterAminoMsg(cdc, &MsgCancelClaim{}, "ark/x/claims/MsgCancelClaim")
-	legacy.RegisterAminoMsg(cdc, &MsgCommitteeCancelClaim{}, "ark/x/claims/MsgCommitteeCancelClaim")
-
-	cdc.RegisterConcrete(Params{}, "ark/x/claims/Params", nil)
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/claims/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgSetClaimsMandate{}, "ark/claims/MsgSetClaimsMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgSubmitClaim{}, "ark/claims/MsgSubmitClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeSubmitClaim{}, "ark/claims/MsgCommitteeSubmitClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgCancelClaim{}, "ark/claims/MsgCancelClaim")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeCancelClaim{}, "ark/claims/MsgCommitteeCancelClaim")
 }
 
 // RegisterInterfaces registers Claims messages as sdk.Msg implementations.
