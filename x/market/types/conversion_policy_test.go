@@ -169,11 +169,15 @@ func TestConversionPolicyIsZero(t *testing.T) {
 		},
 		{
 			// A bound supplied as an empty JSON object arrives with a nil
-			// amount, and must still read as the disabled sentinel rather than
-			// panicking on a nil decimal.
-			name:   "unset amount counts as zero",
+			// amount. Nil is not a zero anybody wrote, and the sentinel has one
+			// spelling, so it does not read as the disabled payload — the answer
+			// is false rather than a panic.
+			name:   "unset amount is not zero",
 			policy: types.ConversionPolicy{},
-			want:   true,
+		},
+		{
+			name:   "unset spread is not zero",
+			policy: types.ConversionPolicy{BasePool: sdk.DecCoin{Amount: math.LegacyZeroDec()}},
 		},
 		{
 			name:   "depth only",

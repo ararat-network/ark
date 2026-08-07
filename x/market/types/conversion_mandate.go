@@ -38,7 +38,11 @@ func NewDisabledConversionMandate(term uint64) ConversionMandate {
 // The bound checks sit inside the enabled branch rather than ahead of it,
 // unlike Treasury's equivalent: a market pool must be positive, so the zero
 // bounds a disabled mandate carries are the one pair ConversionPolicy.Validate
-// refuses. Envelope.Validate is reached through the field because this method
+// refuses. The disabled branch therefore carries the whole judgment of the
+// sentinel, which is why an unset decimal fails it: every sibling mandate
+// refuses one through the payload validation it runs before branching, and here
+// that refusal lives in ConversionPolicy.IsZero and in the Tobin cap's own
+// check. Envelope.Validate is reached through the field because this method
 // shadows the promoted one.
 func (conversionMandate ConversionMandate) Validate() error {
 	if err := conversionMandate.Envelope.Validate(); err != nil {
@@ -49,7 +53,7 @@ func (conversionMandate ConversionMandate) Validate() error {
 		if !conversionMandate.MinimumPolicy.IsZero() || !conversionMandate.MaximumPolicy.IsZero() {
 			return errors.New("disabled conversion mandate must use identical zero bounds")
 		}
-		if !conversionMandate.MaxTobinTax.IsNil() && !conversionMandate.MaxTobinTax.IsZero() {
+		if conversionMandate.MaxTobinTax.IsNil() || !conversionMandate.MaxTobinTax.IsZero() {
 			return errors.New("disabled conversion mandate must carry a zero Tobin cap")
 		}
 

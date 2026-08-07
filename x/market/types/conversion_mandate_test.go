@@ -167,6 +167,25 @@ func TestValidateConversionMandate(t *testing.T) {
 			expectErr: "disabled conversion mandate must use identical zero bounds",
 		},
 		{
+			// A corridor bound is refused unset for the same reason the Tobin
+			// cap is: the sentinel is one shape, and a policy that omits a
+			// decimal is not it.
+			name:    "unset depth on the disabled sentinel",
+			mandate: types.DefaultConversionMandate,
+			mutate: func(m *types.ConversionMandate) {
+				m.MinimumPolicy.BasePool.Amount = math.LegacyDec{}
+			},
+			expectErr: "disabled conversion mandate must use identical zero bounds",
+		},
+		{
+			name:    "unset spread on the disabled sentinel",
+			mandate: types.DefaultConversionMandate,
+			mutate: func(m *types.ConversionMandate) {
+				m.MaximumPolicy.MinStabilitySpread = math.LegacyDec{}
+			},
+			expectErr: "disabled conversion mandate must use identical zero bounds",
+		},
+		{
 			name:      "configured zero term",
 			mandate:   enabledConversionMandate,
 			mutate:    func(m *types.ConversionMandate) { m.Term = 0 },
@@ -273,12 +292,15 @@ func TestValidateConversionMandateTobinCap(t *testing.T) {
 			expectErr: "invalid conversion mandate Tobin cap: tobin tax must be set",
 		},
 		{
-			// The disabled sentinel is the one shape omission may take: a
-			// genesis file carrying an empty mandate object must still read as
-			// disabled rather than fail on a field it never delegated.
-			name:    "nil Tobin cap on the disabled sentinel",
-			mandate: types.DefaultConversionMandate,
-			mutate:  func(m *types.ConversionMandate) { m.MaxTobinTax = math.LegacyDec{} },
+			// Omission is not a spelling of zero on either branch. The sentinel
+			// stores an unset cap as zero, so nothing downstream would see the
+			// difference — which is the reason to refuse it here, where the
+			// difference between a delegation zeroed and a field never written
+			// is still visible.
+			name:      "nil Tobin cap on the disabled sentinel",
+			mandate:   types.DefaultConversionMandate,
+			mutate:    func(m *types.ConversionMandate) { m.MaxTobinTax = math.LegacyDec{} },
+			expectErr: "disabled conversion mandate must carry a zero Tobin cap",
 		},
 		{
 			name:    "zero Tobin cap",

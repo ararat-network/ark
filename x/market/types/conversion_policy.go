@@ -74,8 +74,9 @@ func (policy ConversionPolicy) Validate() error {
 }
 
 // Equal reports whether two policies carry the same unit, depth, recovery
-// period, and spread floor. Nil decimals are tolerated so the disabled sentinel
-// and a genesis-supplied empty policy compare without panicking.
+// period, and spread floor. Nil decimals are tolerated rather than compared, so
+// a policy that has not been through Validate — a freshly decoded message, a
+// half-built literal — compares without panicking.
 func (policy ConversionPolicy) Equal(other ConversionPolicy) bool {
 	if policy.PoolRecoveryPeriod != other.PoolRecoveryPeriod {
 		return false
@@ -101,14 +102,21 @@ func equalOrBothNil(a, b math.LegacyDec) bool {
 }
 
 // IsZero reports whether the policy carries no unit, no depth, no recovery
-// period, and no spread floor.
+// period, and no spread floor — the exact payload a disabled mandate holds.
+//
+// An unset decimal reads as false rather than as zero. Nil is not a value the
+// caller wrote, and the sentinel exists to have one spelling, so a policy that
+// omits a decimal is not the zero policy — it is not yet a policy. Answering it
+// leniently would matter, because this is the whole judgment the disabled
+// branch gets: a zero base pool is the one policy ConversionPolicy.Validate
+// refuses, so nothing else validates the payload there.
 func (policy ConversionPolicy) IsZero() bool {
 	if policy.BasePool.Denom != "" || policy.PoolRecoveryPeriod != 0 {
 		return false
 	}
-	if !policy.MinStabilitySpread.IsNil() && !policy.MinStabilitySpread.IsZero() {
+	if policy.BasePool.Amount.IsNil() || policy.MinStabilitySpread.IsNil() {
 		return false
 	}
 
-	return policy.BasePool.Amount.IsNil() || policy.BasePool.Amount.IsZero()
+	return policy.BasePool.Amount.IsZero() && policy.MinStabilitySpread.IsZero()
 }
