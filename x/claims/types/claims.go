@@ -37,16 +37,10 @@ func NewDisabledClaimsMandate(term uint64) ClaimsMandate {
 // Validate validates either the exact unconfigured sentinel or one complete
 // governed Claims mandate.
 func (mandate ClaimsMandate) Validate() error {
-	// Coin.Validate rejects an unset or negative amount, so the checks below
+	// ValidateNoahCoin rejects an unset or negative amount, so the checks below
 	// can read the amount directly.
-	if err := mandate.CommitteeClaimLimit.Validate(); err != nil {
-		return fmt.Errorf("Claims committee claim limit is invalid: %w", err)
-	}
-	if mandate.CommitteeClaimLimit.Denom != chain.NoahBaseDenom {
-		return fmt.Errorf(
-			"Claims committee claim limit must be denominated in %s",
-			chain.NoahBaseDenom,
-		)
+	if err := chain.ValidateNoahCoin("Claims committee claim limit", mandate.CommitteeClaimLimit); err != nil {
+		return err
 	}
 	if err := mandate.Envelope.Validate(); err != nil {
 		return fmt.Errorf("%s: %w", ClaimsMandateLabel, err)
@@ -96,8 +90,11 @@ func (claim Claim) Validate() error {
 	if claim.Recipient == authtypes.NewModuleAddress(InsuranceName).String() {
 		return errors.New("claim recipient cannot be the Insurance module account")
 	}
-	if !claim.Amount.IsValid() || !claim.Amount.IsPositive() || claim.Amount.Denom != chain.NoahBaseDenom {
-		return fmt.Errorf("claim amount must be a valid, positive %s coin", chain.NoahBaseDenom)
+	if err := chain.ValidateNoahCoin("claim amount", claim.Amount); err != nil {
+		return err
+	}
+	if !claim.Amount.IsPositive() {
+		return errors.New("claim amount must be positive")
 	}
 	// One height covers every status. A pending claim's is the cancellation
 	// period's end and a settled one keeps that schedule, both of which strictly

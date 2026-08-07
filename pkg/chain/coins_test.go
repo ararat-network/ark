@@ -22,6 +22,51 @@ var amounts = []math.Int{
 	math.NewIntFromBigInt(math.NewInt(1).BigInt().Lsh(math.NewInt(1).BigInt(), 100)),
 }
 
+// TestValidateNoahCoin covers the shape rule and, in the zero case, the thing
+// the helper deliberately does not decide: zero is a well-formed NOAH coin, so
+// callers that must reject it assert positivity themselves.
+func TestValidateNoahCoin(t *testing.T) {
+	tests := []struct {
+		name    string
+		coin    sdk.Coin
+		wantErr string
+	}{
+		{name: "positive", coin: chain.NoahCoin(math.OneInt())},
+		{name: "zero", coin: chain.NoahCoin(math.ZeroInt())},
+		{
+			name:    "unset",
+			coin:    sdk.Coin{},
+			wantErr: "invalid test coin: invalid denom",
+		},
+		{
+			name:    "unset amount",
+			coin:    sdk.Coin{Denom: chain.NoahBaseDenom},
+			wantErr: "invalid test coin: amount is nil",
+		},
+		{
+			name:    "negative",
+			coin:    sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)},
+			wantErr: "invalid test coin: negative coin amount",
+		},
+		{
+			name:    "wrong denom",
+			coin:    sdk.NewInt64Coin(chain.USDBaseDenom, 1),
+			wantErr: "test coin must be denominated in anoah",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := chain.ValidateNoahCoin("test coin", tt.coin)
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tt.wantErr)
+		})
+	}
+}
+
 // TestNoahCoinMatchesSDKConstructor is the whole claim the helper makes: it
 // produces what sdk.NewCoin produces and differs only in not matching a regular
 // expression against a constant on the way.

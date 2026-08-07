@@ -350,7 +350,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 			amount:    sdk.NewInt64Coin("usdr", 100),
 			authority: s.authority,
 			recipient: recipient,
-			expectErr: "must be a valid, positive",
+			expectErr: "claim amount must be denominated in anoah",
 		},
 		{
 			name:      "zero amount",
@@ -358,7 +358,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 			amount:    noahCoin(0),
 			authority: s.authority,
 			recipient: recipient,
-			expectErr: "must be a valid, positive",
+			expectErr: "claim amount must be positive",
 		},
 	}
 

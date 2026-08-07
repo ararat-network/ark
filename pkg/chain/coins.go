@@ -38,6 +38,25 @@ func ValidateNoahOnlyDeposit(fundLabel string, amount sdk.Coins) error {
 	return nil
 }
 
+// ValidateNoahCoin admits a well-formed NOAH coin, naming field in the error.
+//
+// Coin.Validate already rejects an unset or negative amount, so this is the
+// whole shape rule and callers can read the amount directly afterwards. It
+// deliberately says nothing about positivity: zero is a legitimate NOAH
+// quantity in stored records — an unused allowance, an unrecovered position —
+// and the call sites that must reject it require it only conditionally, so
+// they assert it themselves.
+func ValidateNoahCoin(field string, coin sdk.Coin) error {
+	if err := coin.Validate(); err != nil {
+		return fmt.Errorf("invalid %s: %w", field, err)
+	}
+	if coin.Denom != NoahBaseDenom {
+		return fmt.Errorf("%s must be denominated in %s", field, NoahBaseDenom)
+	}
+
+	return nil
+}
+
 // NoahCoin returns amount denominated in NOAH.
 //
 // The denomination is not checked because it is a compile-time constant: there

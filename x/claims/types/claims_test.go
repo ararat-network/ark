@@ -61,7 +61,7 @@ func TestClaimsMandateValidate(t *testing.T) {
 			name:      "unset committee claim limit",
 			mandate:   validClaimsMandate,
 			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = sdk.Coin{} },
-			expectErr: "claim limit is invalid",
+			expectErr: "invalid Claims committee claim limit",
 		},
 		{
 			name:      "zero committee claim limit",
