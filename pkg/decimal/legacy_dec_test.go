@@ -21,6 +21,21 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 		new(big.Int).Lsh(big.NewInt(1), 314),
 		math.LegacyPrecision,
 	)
+	half := math.LegacyMustNewDecFromStr("0.5")
+	// Halving an odd raw operand lands exactly on a tie. This one is wide enough
+	// to leave the direct multiply path, and its quotient is odd, so bankers
+	// rounding must round it up.
+	wideTieOperand := math.LegacyNewDecFromBigIntWithPrec(
+		new(big.Int).Add(bitValue(315), big.NewInt(3)),
+		math.LegacyPrecision,
+	)
+	// A 61-bit divisor puts this 316-bit numerator past the direct divide bound
+	// while leaving a remainder for the wide path to round.
+	wideQuoNumerator := math.LegacyNewDecFromBigIntWithPrec(bitValue(315), math.LegacyPrecision)
+	wideQuoDivisor := math.LegacyNewDecFromBigIntWithPrec(
+		new(big.Int).Lsh(big.NewInt(3), 59),
+		math.LegacyPrecision,
+	)
 	tests := []struct {
 		name    string
 		checked func(math.LegacyDec, math.LegacyDec) (math.LegacyDec, error)
@@ -96,7 +111,28 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 			checked: decimal.Mul,
 			legacy:  math.LegacyDec.Mul,
 			a:       math.LegacyNewDecFromBigIntWithPrec(big.NewInt(3), math.LegacyPrecision),
-			b:       math.LegacyMustNewDecFromStr("0.5"),
+			b:       half,
+		},
+		{
+			name:    "multiply uses bankers rounding on negatives",
+			checked: decimal.Mul,
+			legacy:  math.LegacyDec.Mul,
+			a:       math.LegacyNewDecFromBigIntWithPrec(big.NewInt(-3), math.LegacyPrecision),
+			b:       half,
+		},
+		{
+			name:    "multiply uses bankers rounding outside direct bound",
+			checked: decimal.Mul,
+			legacy:  math.LegacyDec.Mul,
+			a:       wideTieOperand,
+			b:       half,
+		},
+		{
+			name:    "multiply uses bankers rounding outside direct bound on negatives",
+			checked: decimal.Mul,
+			legacy:  math.LegacyDec.Mul,
+			a:       wideTieOperand.Neg(),
+			b:       half,
 		},
 		{
 			name:    "multiply negative",
@@ -146,6 +182,20 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 			legacy:  math.LegacyDec.Quo,
 			a:       math.LegacySmallestDec(),
 			b:       math.LegacyNewDec(3),
+		},
+		{
+			name:    "divide rounds outside direct bound",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a:       wideQuoNumerator,
+			b:       wideQuoDivisor,
+		},
+		{
+			name:    "divide rounds outside direct bound on negatives",
+			checked: decimal.Quo,
+			legacy:  math.LegacyDec.Quo,
+			a:       wideQuoNumerator.Neg(),
+			b:       wideQuoDivisor,
 		},
 		{
 			name:    "divide representable result outside direct bound",
