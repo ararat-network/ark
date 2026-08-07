@@ -104,6 +104,15 @@ func (gs GenesisState) Validate() error {
 	if err := gs.EmergencyMandate.Validate(); err != nil {
 		return err
 	}
+	// A suspension is recorded only by a live committee and cleared by every
+	// replacement, disablement included, so no running chain can hold usage
+	// under a disabled mandate. Importing that pair would seed a per-term bound
+	// belonging to nobody, which the next appointment silently clears — the
+	// same reason the mandate itself must carry no delegated power once
+	// disabled.
+	if gs.EmergencyMandate.IsDisabled() && len(gs.EmergencySuspensions) > 0 {
+		return fmt.Errorf("disabled emergency mandate must record no suspensions")
+	}
 	for i, denom := range gs.EmergencySuspensions {
 		if i > 0 && denom <= gs.EmergencySuspensions[i-1] {
 			return fmt.Errorf("genesis emergency suspensions must be sorted by unique denom")

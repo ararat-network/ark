@@ -7,6 +7,8 @@ import (
 
 	"cosmossdk.io/math"
 
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
 	"ark/pkg/chain"
 	assettypes "ark/x/asset/types"
 )
@@ -94,6 +96,29 @@ func TestGenesisValidateLifecycleConsistency(t *testing.T) {
 				)
 			},
 			expectErr: "must not have a settlement plan",
+		},
+		{
+			// Only a live committee records a suspension and every replacement
+			// clears them, so this pair is one no running chain can produce.
+			name: "recorded suspension under a disabled mandate",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.EmergencySuspensions = []string{genesis.Assets[0].Denom}
+			},
+			expectErr: "disabled emergency mandate must record no suspensions",
+		},
+		{
+			// The rule reaches no further than a disabled mandate. An expired
+			// appointment still owns its term's usage, and expiry is lazy, so an
+			// export taken after the window closed must round-trip.
+			name: "recorded suspension under an expired appointment",
+			mutate: func(genesis *assettypes.GenesisState) {
+				appointment := assettypes.NewDisabledEmergencyMandate(1)
+				appointment.Committee = authtypes.NewModuleAddress("emergency-committee").String()
+				appointment.ActivationHeight = 10
+				appointment.ExpiryHeight = 20
+				genesis.EmergencyMandate = appointment
+				genesis.EmergencySuspensions = []string{genesis.Assets[0].Denom}
+			},
 		},
 	}
 
