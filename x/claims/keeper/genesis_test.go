@@ -207,6 +207,20 @@ func (s *KeeperTestSuite) TestRecognisedCapital() {
 	}
 }
 
+// TestRecognisedCapitalRefusesAnOverReservation pins the refusal standing
+// between corrupt reservation accounting and the expansion waterfall. The state
+// has to be written directly because no path through the module can reach it,
+// which is the point: were it ever reached, nothing downstream would notice a
+// fund reporting negative capital.
+func (s *KeeperTestSuite) TestRecognisedCapitalRefusesAnOverReservation() {
+	s.SetupTest()
+	s.fundInsurance(100)
+	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(101)))
+
+	_, err := s.keeper.RecognisedCapital(s.ctx)
+	s.Require().ErrorContains(err, "exceeds the Insurance balance")
+}
+
 // TestRecognisedCapitalTracksClaimLifecycle proves the value Treasury's
 // waterfall consumes moves with the claim lifecycle, not just with the balance.
 func (s *KeeperTestSuite) TestRecognisedCapitalTracksClaimLifecycle() {

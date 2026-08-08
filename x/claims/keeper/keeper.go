@@ -119,12 +119,36 @@ func NewKeeper(
 //
 // Treasury owns the requirement this answers against; this module owns only
 // what the fund is currently worth toward it.
+//
+// A reservation above the balance is refused rather than reported as negative
+// capital. It cannot arise: submission refuses a claim the balance cannot cover
+// on top of what is already reserved, genesis refuses an import where it does
+// not, payment releases exactly what it sends, failure and cancellation release
+// without sending, and the account holds no Burner permission while no other
+// module spends from it — so every transition preserves reserved <= balance
+// from the point submission establishes it.
+//
+// Checked because of where the figure goes. Treasury sizes the Insurance gap
+// from it during settlement, so a reservation the fund cannot back would route
+// real expansion principal into a fund whose own books are already known to be
+// wrong, and it would do so silently: a negative merely widens the gap, which
+// looks like an underfunded fund rather than a broken one. Refusing halts the
+// block instead, which is the outcome corrupt state deserves over a settlement
+// that proceeds on it.
 func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 	reserved, err := k.InsuranceReserved.Get(ctx)
 	if err != nil {
 		return math.Int{}, fmt.Errorf("getting Insurance reservation: %w", err)
 	}
 	balance := k.insuranceBalance(ctx)
+	if reserved.GT(balance) {
+		return math.Int{}, fmt.Errorf(
+			"insurance reservation %s exceeds the Insurance balance %s",
+			reserved,
+			balance,
+		)
+	}
+
 	return balance.Sub(reserved), nil
 }
 
