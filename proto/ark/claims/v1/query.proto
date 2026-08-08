@@ -26,12 +26,11 @@ service Query {
     option (google.api.http).get = "/ark/claims/v1/mandate";
   }
 
-  // InsuranceBalance queries the fund's custody balance and the part of it
-  // encumbered by pending claims.
-  rpc InsuranceBalance(QueryInsuranceBalanceRequest)
-      returns (QueryInsuranceBalanceResponse) {
+  // Balance queries the fund's custody balance and the part of it encumbered
+  // by pending claims.
+  rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/claims/v1/insurance_balance";
+    option (google.api.http).get = "/ark/claims/v1/balance";
   }
 
   // Claim queries one claim by its permanent identifier.
@@ -61,7 +60,7 @@ message QueryClaimsMandateRequest {}
 
 // QueryClaimsMandateResponse is the response type for Query/ClaimsMandate.
 // Every figure here is scoped to the current term and resets with it. The
-// Insurance encumbrance does not, so it answers Query/InsuranceBalance instead.
+// Insurance encumbrance does not, so it answers Query/Balance instead.
 message QueryClaimsMandateResponse {
   ClaimsMandate mandate = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
@@ -72,13 +71,12 @@ message QueryClaimsMandateResponse {
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
-// QueryInsuranceBalanceRequest is the request type for Query/InsuranceBalance.
-message QueryInsuranceBalanceRequest {}
+// QueryBalanceRequest is the request type for Query/Balance.
+message QueryBalanceRequest {}
 
-// QueryInsuranceBalanceResponse is the response type for
-// Query/InsuranceBalance. Their difference is the capital the fund recognises
-// toward its Treasury target.
-message QueryInsuranceBalanceResponse {
+// QueryBalanceResponse is the response type for Query/Balance. Their
+// difference is the capital the fund recognises toward its Treasury target.
+message QueryBalanceResponse {
   cosmos.base.v1beta1.Coin balance = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // reserved spans the pending claims of every term. Mandate replacement resets

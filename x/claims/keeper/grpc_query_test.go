@@ -73,11 +73,11 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 	})
 }
 
-func (s *KeeperTestSuite) TestQueryInsuranceBalance() {
+func (s *KeeperTestSuite) TestQueryBalance() {
 	s.Run("empty fund", func() {
 		s.SetupTest()
 
-		resp, err := s.queryServer.InsuranceBalance(s.ctx, &types.QueryInsuranceBalanceRequest{})
+		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(0), resp.Balance)
 		s.Require().Equal(noahCoin(0), resp.Reserved)
@@ -88,7 +88,7 @@ func (s *KeeperTestSuite) TestQueryInsuranceBalance() {
 		s.fundInsurance(5_000)
 		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(250)))
 
-		resp, err := s.queryServer.InsuranceBalance(s.ctx, &types.QueryInsuranceBalanceRequest{})
+		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(5_000), resp.Balance)
 		s.Require().Equal(noahCoin(250), resp.Reserved)
@@ -131,7 +131,7 @@ func (s *KeeperTestSuite) TestQueryInsuranceBalance() {
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(0), mandate.AllowanceUsed)
 
-		resp, err := s.queryServer.InsuranceBalance(s.ctx, &types.QueryInsuranceBalanceRequest{})
+		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(100), resp.Reserved)
 	})

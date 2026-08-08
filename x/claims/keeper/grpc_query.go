@@ -72,12 +72,12 @@ func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMa
 	}, nil
 }
 
-// InsuranceBalance queries the fund's custody balance and its encumbrance.
+// Balance queries the fund's custody balance and its encumbrance.
 //
 // These answer here rather than alongside the mandate because neither is
 // scoped to a term: the reservation spans the pending claims of every mandate
 // and survives replacement, while the allowance figures reset with it.
-func (q queryServer) InsuranceBalance(ctx context.Context, req *types.QueryInsuranceBalanceRequest) (*types.QueryInsuranceBalanceResponse, error) {
+func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -87,8 +87,8 @@ func (q queryServer) InsuranceBalance(ctx context.Context, req *types.QueryInsur
 		return nil, status.Errorf(codes.Internal, "getting Insurance reservation: %v", err)
 	}
 
-	return &types.QueryInsuranceBalanceResponse{
-		Balance:  chain.NoahCoin(q.k.insuranceBalance(ctx)),
+	return &types.QueryBalanceResponse{
+		Balance:  chain.NoahCoin(q.k.balance(ctx)),
 		Reserved: chain.NoahCoin(reserved),
 	}, nil
 }

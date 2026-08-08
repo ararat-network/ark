@@ -149,7 +149,7 @@ func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 	if err != nil {
 		return math.Int{}, fmt.Errorf("getting Insurance reservation: %w", err)
 	}
-	balance := k.insuranceBalance(ctx)
+	balance := k.balance(ctx)
 	if reserved.GT(balance) {
 		return math.Int{}, fmt.Errorf(
 			"insurance reservation %s exceeds the Insurance balance %s",
@@ -161,8 +161,8 @@ func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 	return balance.Sub(reserved), nil
 }
 
-// insuranceBalance reads the live Insurance NOAH balance from Bank.
-func (k Keeper) insuranceBalance(ctx context.Context) math.Int {
+// balance reads the live Insurance NOAH balance from Bank.
+func (k Keeper) balance(ctx context.Context) math.Int {
 	return k.bankKeeper.GetBalance(ctx, k.insuranceAddress, chain.NoahBaseDenom).Amount
 }
 

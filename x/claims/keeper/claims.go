@@ -119,7 +119,7 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 	if err != nil {
 		return 0, fmt.Errorf("adding Insurance reservation: %w", err)
 	}
-	balance := k.insuranceBalance(ctx)
+	balance := k.balance(ctx)
 	if balance.LT(nextInsuranceReserved) {
 		return 0, fmt.Errorf("insurance balance %s cannot cover Insurance reservation %s", balance, nextInsuranceReserved)
 	}
@@ -246,7 +246,7 @@ func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 		)
 		return k.failClaim(ctx, claim)
 	}
-	if balance := k.insuranceBalance(ctx); balance.LT(claim.Amount.Amount) {
+	if balance := k.balance(ctx); balance.LT(claim.Amount.Amount) {
 		k.Logger(ctx).Error(
 			"failing unpayable claim",
 			"claim_id", claim.ClaimId,

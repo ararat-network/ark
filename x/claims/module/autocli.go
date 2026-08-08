@@ -29,10 +29,10 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:   fmt.Sprintf("%s query claims mandate", version.AppName),
 				},
 				{
-					RpcMethod: "InsuranceBalance",
-					Use:       "insurance-balance",
+					RpcMethod: "Balance",
+					Use:       "balance",
 					Short:     "Query the Insurance balance and the amount reserved by pending claims",
-					Example:   fmt.Sprintf("%s query claims insurance-balance", version.AppName),
+					Example:   fmt.Sprintf("%s query claims balance", version.AppName),
 				},
 				{
 					RpcMethod: "Claim",

@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Params_FullMethodName           = "/ark.claims.v1.Query/Params"
-	Query_ClaimsMandate_FullMethodName    = "/ark.claims.v1.Query/ClaimsMandate"
-	Query_InsuranceBalance_FullMethodName = "/ark.claims.v1.Query/InsuranceBalance"
-	Query_Claim_FullMethodName            = "/ark.claims.v1.Query/Claim"
-	Query_Claims_FullMethodName           = "/ark.claims.v1.Query/Claims"
+	Query_Params_FullMethodName        = "/ark.claims.v1.Query/Params"
+	Query_ClaimsMandate_FullMethodName = "/ark.claims.v1.Query/ClaimsMandate"
+	Query_Balance_FullMethodName       = "/ark.claims.v1.Query/Balance"
+	Query_Claim_FullMethodName         = "/ark.claims.v1.Query/Claim"
+	Query_Claims_FullMethodName        = "/ark.claims.v1.Query/Claims"
 )
 
 // QueryClient is the client API for Query service.
@@ -36,9 +36,9 @@ type QueryClient interface {
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// ClaimsMandate queries the committee mandate and its term allowance.
 	ClaimsMandate(ctx context.Context, in *QueryClaimsMandateRequest, opts ...grpc.CallOption) (*QueryClaimsMandateResponse, error)
-	// InsuranceBalance queries the fund's custody balance and the part of it
-	// encumbered by pending claims.
-	InsuranceBalance(ctx context.Context, in *QueryInsuranceBalanceRequest, opts ...grpc.CallOption) (*QueryInsuranceBalanceResponse, error)
+	// Balance queries the fund's custody balance and the part of it encumbered
+	// by pending claims.
+	Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error)
 	// Claim queries one claim by its permanent identifier.
 	Claim(ctx context.Context, in *QueryClaimRequest, opts ...grpc.CallOption) (*QueryClaimResponse, error)
 	// Claims queries the paginated claim audit record.
@@ -73,10 +73,10 @@ func (c *queryClient) ClaimsMandate(ctx context.Context, in *QueryClaimsMandateR
 	return out, nil
 }
 
-func (c *queryClient) InsuranceBalance(ctx context.Context, in *QueryInsuranceBalanceRequest, opts ...grpc.CallOption) (*QueryInsuranceBalanceResponse, error) {
+func (c *queryClient) Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryInsuranceBalanceResponse)
-	err := c.cc.Invoke(ctx, Query_InsuranceBalance_FullMethodName, in, out, cOpts...)
+	out := new(QueryBalanceResponse)
+	err := c.cc.Invoke(ctx, Query_Balance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,9 +113,9 @@ type QueryServer interface {
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// ClaimsMandate queries the committee mandate and its term allowance.
 	ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error)
-	// InsuranceBalance queries the fund's custody balance and the part of it
-	// encumbered by pending claims.
-	InsuranceBalance(context.Context, *QueryInsuranceBalanceRequest) (*QueryInsuranceBalanceResponse, error)
+	// Balance queries the fund's custody balance and the part of it encumbered
+	// by pending claims.
+	Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error)
 	// Claim queries one claim by its permanent identifier.
 	Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error)
 	// Claims queries the paginated claim audit record.
@@ -136,8 +136,8 @@ func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*Q
 func (UnimplementedQueryServer) ClaimsMandate(context.Context, *QueryClaimsMandateRequest) (*QueryClaimsMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClaimsMandate not implemented")
 }
-func (UnimplementedQueryServer) InsuranceBalance(context.Context, *QueryInsuranceBalanceRequest) (*QueryInsuranceBalanceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method InsuranceBalance not implemented")
+func (UnimplementedQueryServer) Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Balance not implemented")
 }
 func (UnimplementedQueryServer) Claim(context.Context, *QueryClaimRequest) (*QueryClaimResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Claim not implemented")
@@ -202,20 +202,20 @@ func _Query_ClaimsMandate_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_InsuranceBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryInsuranceBalanceRequest)
+func _Query_Balance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBalanceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).InsuranceBalance(ctx, in)
+		return srv.(QueryServer).Balance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_InsuranceBalance_FullMethodName,
+		FullMethod: Query_Balance_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).InsuranceBalance(ctx, req.(*QueryInsuranceBalanceRequest))
+		return srv.(QueryServer).Balance(ctx, req.(*QueryBalanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -272,8 +272,8 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_ClaimsMandate_Handler,
 		},
 		{
-			MethodName: "InsuranceBalance",
-			Handler:    _Query_InsuranceBalance_Handler,
+			MethodName: "Balance",
+			Handler:    _Query_Balance_Handler,
 		},
 		{
 			MethodName: "Claim",

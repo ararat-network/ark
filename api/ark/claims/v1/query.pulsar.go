@@ -1813,23 +1813,23 @@ func (x *fastReflection_QueryClaimsMandateResponse) ProtoMethods() *protoiface.M
 }
 
 var (
-	md_QueryInsuranceBalanceRequest protoreflect.MessageDescriptor
+	md_QueryBalanceRequest protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_claims_v1_query_proto_init()
-	md_QueryInsuranceBalanceRequest = File_ark_claims_v1_query_proto.Messages().ByName("QueryInsuranceBalanceRequest")
+	md_QueryBalanceRequest = File_ark_claims_v1_query_proto.Messages().ByName("QueryBalanceRequest")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryInsuranceBalanceRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryBalanceRequest)(nil)
 
-type fastReflection_QueryInsuranceBalanceRequest QueryInsuranceBalanceRequest
+type fastReflection_QueryBalanceRequest QueryBalanceRequest
 
-func (x *QueryInsuranceBalanceRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryInsuranceBalanceRequest)(x)
+func (x *QueryBalanceRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryBalanceRequest)(x)
 }
 
-func (x *QueryInsuranceBalanceRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryBalanceRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_claims_v1_query_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1841,43 +1841,43 @@ func (x *QueryInsuranceBalanceRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryInsuranceBalanceRequest_messageType fastReflection_QueryInsuranceBalanceRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryInsuranceBalanceRequest_messageType{}
+var _fastReflection_QueryBalanceRequest_messageType fastReflection_QueryBalanceRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryBalanceRequest_messageType{}
 
-type fastReflection_QueryInsuranceBalanceRequest_messageType struct{}
+type fastReflection_QueryBalanceRequest_messageType struct{}
 
-func (x fastReflection_QueryInsuranceBalanceRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryInsuranceBalanceRequest)(nil)
+func (x fastReflection_QueryBalanceRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryBalanceRequest)(nil)
 }
-func (x fastReflection_QueryInsuranceBalanceRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryInsuranceBalanceRequest)
+func (x fastReflection_QueryBalanceRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryBalanceRequest)
 }
-func (x fastReflection_QueryInsuranceBalanceRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryInsuranceBalanceRequest
+func (x fastReflection_QueryBalanceRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBalanceRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryInsuranceBalanceRequest
+func (x *fastReflection_QueryBalanceRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBalanceRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryInsuranceBalanceRequest_messageType
+func (x *fastReflection_QueryBalanceRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryBalanceRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryInsuranceBalanceRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryInsuranceBalanceRequest)
+func (x *fastReflection_QueryBalanceRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryBalanceRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryInsuranceBalanceRequest)(x)
+func (x *fastReflection_QueryBalanceRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryBalanceRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1885,7 +1885,7 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) Interface() protoreflect.P
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryBalanceRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -1899,13 +1899,13 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) Range(f func(protoreflect.
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryBalanceRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1915,13 +1915,13 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) Has(fd protoreflect.FieldD
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryBalanceRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1931,13 +1931,13 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) Clear(fd protoreflect.Fiel
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryBalanceRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1951,13 +1951,13 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) Get(descriptor protoreflec
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryBalanceRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1971,36 +1971,36 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) Set(fd protoreflect.FieldD
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryBalanceRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryInsuranceBalanceRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryBalanceRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceRequest"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryInsuranceBalanceRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryBalanceRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.claims.v1.QueryInsuranceBalanceRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.claims.v1.QueryBalanceRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2008,7 +2008,7 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) WhichOneof(d protoreflect.
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryInsuranceBalanceRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryBalanceRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2019,7 +2019,7 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) GetUnknown() protoreflect.
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryBalanceRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2031,7 +2031,7 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) SetUnknown(fields protoref
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryInsuranceBalanceRequest) IsValid() bool {
+func (x *fastReflection_QueryBalanceRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -2041,9 +2041,9 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryInsuranceBalanceRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryBalanceRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryInsuranceBalanceRequest)
+		x := input.Message.Interface().(*QueryBalanceRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2065,7 +2065,7 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) ProtoMethods() *protoiface
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryInsuranceBalanceRequest)
+		x := input.Message.Interface().(*QueryBalanceRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2095,7 +2095,7 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) ProtoMethods() *protoiface
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryInsuranceBalanceRequest)
+		x := input.Message.Interface().(*QueryBalanceRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2127,10 +2127,10 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) ProtoMethods() *protoiface
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryInsuranceBalanceRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBalanceRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryInsuranceBalanceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBalanceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -2169,27 +2169,27 @@ func (x *fastReflection_QueryInsuranceBalanceRequest) ProtoMethods() *protoiface
 }
 
 var (
-	md_QueryInsuranceBalanceResponse          protoreflect.MessageDescriptor
-	fd_QueryInsuranceBalanceResponse_balance  protoreflect.FieldDescriptor
-	fd_QueryInsuranceBalanceResponse_reserved protoreflect.FieldDescriptor
+	md_QueryBalanceResponse          protoreflect.MessageDescriptor
+	fd_QueryBalanceResponse_balance  protoreflect.FieldDescriptor
+	fd_QueryBalanceResponse_reserved protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_claims_v1_query_proto_init()
-	md_QueryInsuranceBalanceResponse = File_ark_claims_v1_query_proto.Messages().ByName("QueryInsuranceBalanceResponse")
-	fd_QueryInsuranceBalanceResponse_balance = md_QueryInsuranceBalanceResponse.Fields().ByName("balance")
-	fd_QueryInsuranceBalanceResponse_reserved = md_QueryInsuranceBalanceResponse.Fields().ByName("reserved")
+	md_QueryBalanceResponse = File_ark_claims_v1_query_proto.Messages().ByName("QueryBalanceResponse")
+	fd_QueryBalanceResponse_balance = md_QueryBalanceResponse.Fields().ByName("balance")
+	fd_QueryBalanceResponse_reserved = md_QueryBalanceResponse.Fields().ByName("reserved")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryInsuranceBalanceResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryBalanceResponse)(nil)
 
-type fastReflection_QueryInsuranceBalanceResponse QueryInsuranceBalanceResponse
+type fastReflection_QueryBalanceResponse QueryBalanceResponse
 
-func (x *QueryInsuranceBalanceResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryInsuranceBalanceResponse)(x)
+func (x *QueryBalanceResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryBalanceResponse)(x)
 }
 
-func (x *QueryInsuranceBalanceResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryBalanceResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_claims_v1_query_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2201,43 +2201,43 @@ func (x *QueryInsuranceBalanceResponse) slowProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryInsuranceBalanceResponse_messageType fastReflection_QueryInsuranceBalanceResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryInsuranceBalanceResponse_messageType{}
+var _fastReflection_QueryBalanceResponse_messageType fastReflection_QueryBalanceResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryBalanceResponse_messageType{}
 
-type fastReflection_QueryInsuranceBalanceResponse_messageType struct{}
+type fastReflection_QueryBalanceResponse_messageType struct{}
 
-func (x fastReflection_QueryInsuranceBalanceResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryInsuranceBalanceResponse)(nil)
+func (x fastReflection_QueryBalanceResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryBalanceResponse)(nil)
 }
-func (x fastReflection_QueryInsuranceBalanceResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryInsuranceBalanceResponse)
+func (x fastReflection_QueryBalanceResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryBalanceResponse)
 }
-func (x fastReflection_QueryInsuranceBalanceResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryInsuranceBalanceResponse
+func (x fastReflection_QueryBalanceResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBalanceResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryInsuranceBalanceResponse
+func (x *fastReflection_QueryBalanceResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBalanceResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryInsuranceBalanceResponse_messageType
+func (x *fastReflection_QueryBalanceResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryBalanceResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryInsuranceBalanceResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryInsuranceBalanceResponse)
+func (x *fastReflection_QueryBalanceResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryBalanceResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryInsuranceBalanceResponse)(x)
+func (x *fastReflection_QueryBalanceResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryBalanceResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2245,16 +2245,16 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) Interface() protoreflect.
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryBalanceResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Balance != nil {
 		value := protoreflect.ValueOfMessage(x.Balance.ProtoReflect())
-		if !f(fd_QueryInsuranceBalanceResponse_balance, value) {
+		if !f(fd_QueryBalanceResponse_balance, value) {
 			return
 		}
 	}
 	if x.Reserved != nil {
 		value := protoreflect.ValueOfMessage(x.Reserved.ProtoReflect())
-		if !f(fd_QueryInsuranceBalanceResponse_reserved, value) {
+		if !f(fd_QueryBalanceResponse_reserved, value) {
 			return
 		}
 	}
@@ -2271,17 +2271,17 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) Range(f func(protoreflect
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryBalanceResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.balance":
+	case "ark.claims.v1.QueryBalanceResponse.balance":
 		return x.Balance != nil
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.reserved":
+	case "ark.claims.v1.QueryBalanceResponse.reserved":
 		return x.Reserved != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2291,17 +2291,17 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) Has(fd protoreflect.Field
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryBalanceResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.balance":
+	case "ark.claims.v1.QueryBalanceResponse.balance":
 		x.Balance = nil
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.reserved":
+	case "ark.claims.v1.QueryBalanceResponse.reserved":
 		x.Reserved = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2311,19 +2311,19 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) Clear(fd protoreflect.Fie
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryBalanceResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.balance":
+	case "ark.claims.v1.QueryBalanceResponse.balance":
 		value := x.Balance
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.reserved":
+	case "ark.claims.v1.QueryBalanceResponse.reserved":
 		value := x.Reserved
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2337,17 +2337,17 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) Get(descriptor protorefle
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryBalanceResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.balance":
+	case "ark.claims.v1.QueryBalanceResponse.balance":
 		x.Balance = value.Message().Interface().(*v1beta1.Coin)
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.reserved":
+	case "ark.claims.v1.QueryBalanceResponse.reserved":
 		x.Reserved = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2361,52 +2361,52 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) Set(fd protoreflect.Field
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryBalanceResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.balance":
+	case "ark.claims.v1.QueryBalanceResponse.balance":
 		if x.Balance == nil {
 			x.Balance = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.Balance.ProtoReflect())
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.reserved":
+	case "ark.claims.v1.QueryBalanceResponse.reserved":
 		if x.Reserved == nil {
 			x.Reserved = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.Reserved.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryInsuranceBalanceResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryBalanceResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.balance":
+	case "ark.claims.v1.QueryBalanceResponse.balance":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.claims.v1.QueryInsuranceBalanceResponse.reserved":
+	case "ark.claims.v1.QueryBalanceResponse.reserved":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryInsuranceBalanceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.claims.v1.QueryBalanceResponse"))
 		}
-		panic(fmt.Errorf("message ark.claims.v1.QueryInsuranceBalanceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.claims.v1.QueryBalanceResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryInsuranceBalanceResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryBalanceResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.claims.v1.QueryInsuranceBalanceResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.claims.v1.QueryBalanceResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2414,7 +2414,7 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) WhichOneof(d protoreflect
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryInsuranceBalanceResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryBalanceResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2425,7 +2425,7 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) GetUnknown() protoreflect
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryInsuranceBalanceResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryBalanceResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2437,7 +2437,7 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) SetUnknown(fields protore
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryInsuranceBalanceResponse) IsValid() bool {
+func (x *fastReflection_QueryBalanceResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2447,9 +2447,9 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryInsuranceBalanceResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryBalanceResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryInsuranceBalanceResponse)
+		x := input.Message.Interface().(*QueryBalanceResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2479,7 +2479,7 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) ProtoMethods() *protoifac
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryInsuranceBalanceResponse)
+		x := input.Message.Interface().(*QueryBalanceResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2537,7 +2537,7 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) ProtoMethods() *protoifac
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryInsuranceBalanceResponse)
+		x := input.Message.Interface().(*QueryBalanceResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2569,10 +2569,10 @@ func (x *fastReflection_QueryInsuranceBalanceResponse) ProtoMethods() *protoifac
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryInsuranceBalanceResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBalanceResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryInsuranceBalanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBalanceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -4634,7 +4634,7 @@ func (*QueryClaimsMandateRequest) Descriptor() ([]byte, []int) {
 
 // QueryClaimsMandateResponse is the response type for Query/ClaimsMandate.
 // Every figure here is scoped to the current term and resets with it. The
-// Insurance encumbrance does not, so it answers Query/InsuranceBalance instead.
+// Insurance encumbrance does not, so it answers Query/Balance instead.
 type QueryClaimsMandateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4694,15 +4694,15 @@ func (x *QueryClaimsMandateResponse) GetAllowanceRemaining() *v1beta1.Coin {
 	return nil
 }
 
-// QueryInsuranceBalanceRequest is the request type for Query/InsuranceBalance.
-type QueryInsuranceBalanceRequest struct {
+// QueryBalanceRequest is the request type for Query/Balance.
+type QueryBalanceRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *QueryInsuranceBalanceRequest) Reset() {
-	*x = QueryInsuranceBalanceRequest{}
+func (x *QueryBalanceRequest) Reset() {
+	*x = QueryBalanceRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_claims_v1_query_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4710,21 +4710,20 @@ func (x *QueryInsuranceBalanceRequest) Reset() {
 	}
 }
 
-func (x *QueryInsuranceBalanceRequest) String() string {
+func (x *QueryBalanceRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryInsuranceBalanceRequest) ProtoMessage() {}
+func (*QueryBalanceRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryInsuranceBalanceRequest.ProtoReflect.Descriptor instead.
-func (*QueryInsuranceBalanceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryBalanceRequest.ProtoReflect.Descriptor instead.
+func (*QueryBalanceRequest) Descriptor() ([]byte, []int) {
 	return file_ark_claims_v1_query_proto_rawDescGZIP(), []int{4}
 }
 
-// QueryInsuranceBalanceResponse is the response type for
-// Query/InsuranceBalance. Their difference is the capital the fund recognises
-// toward its Treasury target.
-type QueryInsuranceBalanceResponse struct {
+// QueryBalanceResponse is the response type for Query/Balance. Their
+// difference is the capital the fund recognises toward its Treasury target.
+type QueryBalanceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -4735,8 +4734,8 @@ type QueryInsuranceBalanceResponse struct {
 	Reserved *v1beta1.Coin `protobuf:"bytes,2,opt,name=reserved,proto3" json:"reserved,omitempty"`
 }
 
-func (x *QueryInsuranceBalanceResponse) Reset() {
-	*x = QueryInsuranceBalanceResponse{}
+func (x *QueryBalanceResponse) Reset() {
+	*x = QueryBalanceResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_claims_v1_query_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4744,25 +4743,25 @@ func (x *QueryInsuranceBalanceResponse) Reset() {
 	}
 }
 
-func (x *QueryInsuranceBalanceResponse) String() string {
+func (x *QueryBalanceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryInsuranceBalanceResponse) ProtoMessage() {}
+func (*QueryBalanceResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryInsuranceBalanceResponse.ProtoReflect.Descriptor instead.
-func (*QueryInsuranceBalanceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryBalanceResponse.ProtoReflect.Descriptor instead.
+func (*QueryBalanceResponse) Descriptor() ([]byte, []int) {
 	return file_ark_claims_v1_query_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QueryInsuranceBalanceResponse) GetBalance() *v1beta1.Coin {
+func (x *QueryBalanceResponse) GetBalance() *v1beta1.Coin {
 	if x != nil {
 		return x.Balance
 	}
 	return nil
 }
 
-func (x *QueryInsuranceBalanceResponse) GetReserved() *v1beta1.Coin {
+func (x *QueryBalanceResponse) GetReserved() *v1beta1.Coin {
 	if x != nil {
 		return x.Reserved
 	}
@@ -4966,94 +4965,91 @@ var file_ark_claims_v1_query_proto_rawDesc = []byte{
 	0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
 	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x61, 0x6c, 0x6c,
 	0x6f, 0x77, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x22,
-	0x1e, 0x0a, 0x1c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63,
-	0x65, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,
-	0xa1, 0x01, 0x0a, 0x1d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e,
-	0x63, 0x65, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x3e, 0x0a, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8,
-	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63,
-	0x65, 0x12, 0x40, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09,
-	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72,
-	0x76, 0x65, 0x64, 0x22, 0x35, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69,
-	0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x08, 0x63, 0x6c, 0x61, 0x69,
-	0x6d, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x07, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x49, 0x64, 0x22, 0x4b, 0x0a, 0x12, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x35, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x14, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e,
-	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x22, 0x5c, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a,
-	0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
-	0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61,
-	0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x97, 0x01, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43,
-	0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a,
-	0x06, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e,
+	0x15, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x98, 0x01, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x3e, 0x0a, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f,
+	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12,
+	0x40, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65,
+	0x64, 0x22, 0x35, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x08, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x07, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x49, 0x64, 0x22, 0x4b, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x35,
+	0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c,
-	0x61, 0x69, 0x6d, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
-	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32,
-	0x99, 0x05, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x73, 0x0a, 0x06, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73,
-	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61,
-	0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x17, 0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c,
-	0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x89,
-	0x01, 0x0a, 0x0d, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
-	0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64,
-	0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x61, 0x72, 0x6b,
+	0x61, 0x69, 0x6d, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x22, 0x5c, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70,
+	0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75,
+	0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x22, 0x97, 0x01, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61,
+	0x69, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a, 0x06, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x73, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32, 0xf3, 0x04,
+	0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x73, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d,
+	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82,
+	0xd3, 0xe4, 0x93, 0x02, 0x17, 0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69,
+	0x6d, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x89, 0x01, 0x0a,
+	0x0d, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x28,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x23, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x18,
+	0x12, 0x16, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31,
+	0x2f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x77, 0x0a, 0x07, 0x42, 0x61, 0x6c, 0x61,
+	0x6e, 0x63, 0x65, 0x12, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x61, 0x6c,
+	0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x23, 0x88, 0xe7,
+	0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x18, 0x12, 0x16, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63,
+	0x65, 0x12, 0x7b, 0x0a, 0x05, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x20, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x23, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
-	0x02, 0x18, 0x12, 0x16, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f,
-	0x76, 0x31, 0x2f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x9c, 0x01, 0x0a, 0x10, 0x49,
-	0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12,
-	0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x61,
-	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x61,
+	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x61,
 	0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x49, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x61, 0x6c, 0x61, 0x6e,
-	0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c,
-	0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63,
-	0x65, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x7b, 0x0a, 0x05, 0x43, 0x6c, 0x61,
-	0x69, 0x6d, 0x12, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d,
-	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3,
-	0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d,
-	0x73, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f, 0x7b, 0x63, 0x6c, 0x61,
-	0x69, 0x6d, 0x5f, 0x69, 0x64, 0x7d, 0x12, 0x73, 0x0a, 0x06, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73,
-	0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73,
-	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3,
-	0xe4, 0x93, 0x02, 0x17, 0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d,
-	0x73, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x42, 0x95, 0x01, 0x0a, 0x11,
-	0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76,
-	0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
-	0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61,
-	0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x3b, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x76, 0x31, 0xa2,
-	0x02, 0x03, 0x41, 0x43, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x43, 0x6c, 0x61, 0x69,
-	0x6d, 0x73, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x43, 0x6c, 0x61, 0x69,
-	0x6d, 0x73, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x43, 0x6c, 0x61, 0x69,
-	0x6d, 0x73, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x3a,
-	0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x2d, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61,
+	0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6c, 0x61,
+	0x69, 0x6d, 0x73, 0x2f, 0x7b, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x69, 0x64, 0x7d, 0x12, 0x73,
+	0x0a, 0x06, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x22, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x17, 0x12, 0x15, 0x2f, 0x61,
+	0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6c, 0x61,
+	0x69, 0x6d, 0x73, 0x42, 0x95, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69,
+	0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2f, 0x76, 0x31, 0x3b, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x73, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x43, 0x58, 0xaa, 0x02, 0x0d,
+	0x41, 0x72, 0x6b, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d,
+	0x41, 0x72, 0x6b, 0x5c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19,
+	0x41, 0x72, 0x6b, 0x5c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
+	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a,
+	0x3a, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -5070,42 +5066,42 @@ func file_ark_claims_v1_query_proto_rawDescGZIP() []byte {
 
 var file_ark_claims_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_ark_claims_v1_query_proto_goTypes = []interface{}{
-	(*QueryParamsRequest)(nil),            // 0: ark.claims.v1.QueryParamsRequest
-	(*QueryParamsResponse)(nil),           // 1: ark.claims.v1.QueryParamsResponse
-	(*QueryClaimsMandateRequest)(nil),     // 2: ark.claims.v1.QueryClaimsMandateRequest
-	(*QueryClaimsMandateResponse)(nil),    // 3: ark.claims.v1.QueryClaimsMandateResponse
-	(*QueryInsuranceBalanceRequest)(nil),  // 4: ark.claims.v1.QueryInsuranceBalanceRequest
-	(*QueryInsuranceBalanceResponse)(nil), // 5: ark.claims.v1.QueryInsuranceBalanceResponse
-	(*QueryClaimRequest)(nil),             // 6: ark.claims.v1.QueryClaimRequest
-	(*QueryClaimResponse)(nil),            // 7: ark.claims.v1.QueryClaimResponse
-	(*QueryClaimsRequest)(nil),            // 8: ark.claims.v1.QueryClaimsRequest
-	(*QueryClaimsResponse)(nil),           // 9: ark.claims.v1.QueryClaimsResponse
-	(*Params)(nil),                        // 10: ark.claims.v1.Params
-	(*ClaimsMandate)(nil),                 // 11: ark.claims.v1.ClaimsMandate
-	(*v1beta1.Coin)(nil),                  // 12: cosmos.base.v1beta1.Coin
-	(*Claim)(nil),                         // 13: ark.claims.v1.Claim
-	(*v1beta11.PageRequest)(nil),          // 14: cosmos.base.query.v1beta1.PageRequest
-	(*v1beta11.PageResponse)(nil),         // 15: cosmos.base.query.v1beta1.PageResponse
+	(*QueryParamsRequest)(nil),         // 0: ark.claims.v1.QueryParamsRequest
+	(*QueryParamsResponse)(nil),        // 1: ark.claims.v1.QueryParamsResponse
+	(*QueryClaimsMandateRequest)(nil),  // 2: ark.claims.v1.QueryClaimsMandateRequest
+	(*QueryClaimsMandateResponse)(nil), // 3: ark.claims.v1.QueryClaimsMandateResponse
+	(*QueryBalanceRequest)(nil),        // 4: ark.claims.v1.QueryBalanceRequest
+	(*QueryBalanceResponse)(nil),       // 5: ark.claims.v1.QueryBalanceResponse
+	(*QueryClaimRequest)(nil),          // 6: ark.claims.v1.QueryClaimRequest
+	(*QueryClaimResponse)(nil),         // 7: ark.claims.v1.QueryClaimResponse
+	(*QueryClaimsRequest)(nil),         // 8: ark.claims.v1.QueryClaimsRequest
+	(*QueryClaimsResponse)(nil),        // 9: ark.claims.v1.QueryClaimsResponse
+	(*Params)(nil),                     // 10: ark.claims.v1.Params
+	(*ClaimsMandate)(nil),              // 11: ark.claims.v1.ClaimsMandate
+	(*v1beta1.Coin)(nil),               // 12: cosmos.base.v1beta1.Coin
+	(*Claim)(nil),                      // 13: ark.claims.v1.Claim
+	(*v1beta11.PageRequest)(nil),       // 14: cosmos.base.query.v1beta1.PageRequest
+	(*v1beta11.PageResponse)(nil),      // 15: cosmos.base.query.v1beta1.PageResponse
 }
 var file_ark_claims_v1_query_proto_depIdxs = []int32{
 	10, // 0: ark.claims.v1.QueryParamsResponse.params:type_name -> ark.claims.v1.Params
 	11, // 1: ark.claims.v1.QueryClaimsMandateResponse.mandate:type_name -> ark.claims.v1.ClaimsMandate
 	12, // 2: ark.claims.v1.QueryClaimsMandateResponse.allowance_used:type_name -> cosmos.base.v1beta1.Coin
 	12, // 3: ark.claims.v1.QueryClaimsMandateResponse.allowance_remaining:type_name -> cosmos.base.v1beta1.Coin
-	12, // 4: ark.claims.v1.QueryInsuranceBalanceResponse.balance:type_name -> cosmos.base.v1beta1.Coin
-	12, // 5: ark.claims.v1.QueryInsuranceBalanceResponse.reserved:type_name -> cosmos.base.v1beta1.Coin
+	12, // 4: ark.claims.v1.QueryBalanceResponse.balance:type_name -> cosmos.base.v1beta1.Coin
+	12, // 5: ark.claims.v1.QueryBalanceResponse.reserved:type_name -> cosmos.base.v1beta1.Coin
 	13, // 6: ark.claims.v1.QueryClaimResponse.claim:type_name -> ark.claims.v1.Claim
 	14, // 7: ark.claims.v1.QueryClaimsRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
 	13, // 8: ark.claims.v1.QueryClaimsResponse.claims:type_name -> ark.claims.v1.Claim
 	15, // 9: ark.claims.v1.QueryClaimsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
 	0,  // 10: ark.claims.v1.Query.Params:input_type -> ark.claims.v1.QueryParamsRequest
 	2,  // 11: ark.claims.v1.Query.ClaimsMandate:input_type -> ark.claims.v1.QueryClaimsMandateRequest
-	4,  // 12: ark.claims.v1.Query.InsuranceBalance:input_type -> ark.claims.v1.QueryInsuranceBalanceRequest
+	4,  // 12: ark.claims.v1.Query.Balance:input_type -> ark.claims.v1.QueryBalanceRequest
 	6,  // 13: ark.claims.v1.Query.Claim:input_type -> ark.claims.v1.QueryClaimRequest
 	8,  // 14: ark.claims.v1.Query.Claims:input_type -> ark.claims.v1.QueryClaimsRequest
 	1,  // 15: ark.claims.v1.Query.Params:output_type -> ark.claims.v1.QueryParamsResponse
 	3,  // 16: ark.claims.v1.Query.ClaimsMandate:output_type -> ark.claims.v1.QueryClaimsMandateResponse
-	5,  // 17: ark.claims.v1.Query.InsuranceBalance:output_type -> ark.claims.v1.QueryInsuranceBalanceResponse
+	5,  // 17: ark.claims.v1.Query.Balance:output_type -> ark.claims.v1.QueryBalanceResponse
 	7,  // 18: ark.claims.v1.Query.Claim:output_type -> ark.claims.v1.QueryClaimResponse
 	9,  // 19: ark.claims.v1.Query.Claims:output_type -> ark.claims.v1.QueryClaimsResponse
 	15, // [15:20] is the sub-list for method output_type
@@ -5171,7 +5167,7 @@ func file_ark_claims_v1_query_proto_init() {
 			}
 		}
 		file_ark_claims_v1_query_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryInsuranceBalanceRequest); i {
+			switch v := v.(*QueryBalanceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5183,7 +5179,7 @@ func file_ark_claims_v1_query_proto_init() {
 			}
 		}
 		file_ark_claims_v1_query_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryInsuranceBalanceResponse); i {
+			switch v := v.(*QueryBalanceResponse); i {
 			case 0:
 				return &v.state
 			case 1:

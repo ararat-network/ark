@@ -38,10 +38,10 @@ func (server *claimQueryGatewayServer) ClaimsMandate(
 	return nil, status.Error(codes.Unimplemented, "test route")
 }
 
-func (server *claimQueryGatewayServer) InsuranceBalance(
+func (server *claimQueryGatewayServer) Balance(
 	_ context.Context,
-	_ *types.QueryInsuranceBalanceRequest,
-) (*types.QueryInsuranceBalanceResponse, error) {
+	_ *types.QueryBalanceRequest,
+) (*types.QueryBalanceResponse, error) {
 	server.insuranceQueried = true
 	return nil, status.Error(codes.Unimplemented, "test route")
 }
@@ -75,13 +75,13 @@ func TestClaimGatewayPreservesMandateRoute(t *testing.T) {
 	require.Zero(t, server.claimID)
 }
 
-// TestClaimGatewayPreservesInsuranceBalanceRoute pins the same prefix hazard for
-// the fund route, which shares /ark/claims/v1/ with the numeric claim pattern.
-func TestClaimGatewayPreservesInsuranceBalanceRoute(t *testing.T) {
+// TestClaimGatewayPreservesBalanceRoute pins the same prefix hazard for the
+// fund route, which shares /ark/claims/v1/ with the numeric claim pattern.
+func TestClaimGatewayPreservesBalanceRoute(t *testing.T) {
 	server := &claimQueryGatewayServer{}
 	mux := runtime.NewServeMux()
 	require.NoError(t, types.RegisterQueryHandlerServer(context.Background(), mux, server))
-	request := httptest.NewRequest(http.MethodGet, "/ark/claims/v1/insurance_balance", nil)
+	request := httptest.NewRequest(http.MethodGet, "/ark/claims/v1/balance", nil)
 	response := httptest.NewRecorder()
 
 	mux.ServeHTTP(response, request)
