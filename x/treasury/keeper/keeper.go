@@ -11,8 +11,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	chain "ark/pkg/chain"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
@@ -65,6 +67,20 @@ func NewKeeper(
 	}
 	if addr := accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName); addr == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.StabilityTaxCollectorName))
+	}
+	// Not a Treasury account, but the liability fold reads its balances
+	// directly — the self-held netting is Treasury's own accounting (D66) — so
+	// its registration is asserted where every other account this keeper reads
+	// is asserted.
+	if addr := accountKeeper.GetModuleAddress(reservetypes.StrategicReserveName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", reservetypes.StrategicReserveName))
+	}
+	// Nor is the fee collector, but the reward-funding window reads its balances
+	// to value the fees validators already earned. A nil address there does not
+	// fail: it reads as an empty coin set, the window accrues no fee value, and
+	// settlement mints subsidy for a shortfall the fees had covered.
+	if addr := accountKeeper.GetModuleAddress(authtypes.FeeCollectorName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", authtypes.FeeCollectorName))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)

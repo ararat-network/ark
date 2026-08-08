@@ -74,14 +74,18 @@ message EventUnpricedStabilityTaxRouted {
   ];
 }
 
-// EventLiabilityIncomplete discloses a block whose liability valuation could
-// not cover every recognized liability, and is emitted only in that degraded
+// EventLiabilityIncomplete discloses a liability valuation that could not
+// cover every recognized liability, and is emitted only in that degraded
 // state. At least one of the two supply lists below is non-empty and is the
-// reason. No fund target is sized while it fires.
+// reason. Conversion settlement emits it once for the block's own valuation,
+// and a committee bound sized on the degraded aggregate emits it again inside
+// the transaction that acted on it, so a block can carry several.
 message EventLiabilityIncomplete {
   // claimable_liability is the aggregate that can currently redeem, in anoah.
-  // It is still the denominator redemption coverage divides by; what it no
-  // longer supports is sizing a fund target.
+  // It is the denominator redemption coverage divides by, and the basis a
+  // committee transfer into an underfunded fund is bounded by. What it does
+  // not support is sizing a bound on destroying capital, which is withheld
+  // entirely while this fires.
   cosmos.base.v1beta1.DecCoin claimable_liability = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // stale_member_supply is supply whose feed was unavailable. It is still
@@ -101,7 +105,20 @@ message EventLiabilityIncomplete {
   ];
 }
 
-// EventExpansionAllocated records the complete realised expansion allocation.
+// EventExpansionAllocated records one block's realised expansion allocation,
+// emitted once from conversion settlement in Market's EndBlocker. Every figure
+// is an aggregate over the block's expansions: their principal is placed
+// together against one liability valuation, so no per-conversion split exists
+// to report, and the individual conversions are visible as Market swap events.
+//
+// Valuation completeness is not carried here. Settlement discloses a degraded
+// valuation through EventLiabilityIncomplete before it allocates, so the same
+// block already says whether these credits were sized against targets at all.
+//
+// The spread is deliberately absent. It owes nothing to liability, fund state,
+// or valuation completeness, so each conversion burns its own as it charges it
+// and never defers; Market's swap event discloses it in the output
+// denomination.
 message EventExpansionAllocated {
   string denom = 1;
   string redemption_buffer_credit = 2 [
@@ -122,13 +139,7 @@ message EventExpansionAllocated {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string spread_and_dust_burn = 5 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string overflow_burn = 6 [
+  string overflow_burn = 5 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -136,7 +147,11 @@ message EventExpansionAllocated {
   ];
 }
 
-// EventRedemptionBufferDrawn records a successful redemption-buffer payment.
+// EventRedemptionBufferDrawn records one block's redemption-buffer draw,
+// emitted once from conversion settlement. payment is the aggregate the Buffer
+// funded across every redemption in the block, sized by one coverage ratio; it
+// is paid to Market and burned there against output already minted, rather
+// than paid to any trader.
 message EventRedemptionBufferDrawn {
   string denom = 1;
   string payment = 2 [

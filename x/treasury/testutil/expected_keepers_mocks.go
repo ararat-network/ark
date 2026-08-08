@@ -98,20 +98,6 @@ func (mr *MockReserveKeeperMockRecorder) RecognisedCapital(ctx any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecognisedCapital", reflect.TypeOf((*MockReserveKeeper)(nil).RecognisedCapital), ctx)
 }
 
-// RecordParkedPrincipal mocks base method.
-func (m *MockReserveKeeper) RecordParkedPrincipal(ctx context.Context, amount math.Int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordParkedPrincipal", ctx, amount)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecordParkedPrincipal indicates an expected call of RecordParkedPrincipal.
-func (mr *MockReserveKeeperMockRecorder) RecordParkedPrincipal(ctx, amount any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordParkedPrincipal", reflect.TypeOf((*MockReserveKeeper)(nil).RecordParkedPrincipal), ctx, amount)
-}
-
 // MockAccountKeeper is a mock of AccountKeeper interface.
 type MockAccountKeeper struct {
 	ctrl     *gomock.Controller

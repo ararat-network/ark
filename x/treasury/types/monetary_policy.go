@@ -106,6 +106,34 @@ func (policy MonetaryPolicy) Validate() error {
 	return nil
 }
 
+// FundTargetSet is the three fund targets one liability basis implies.
+type FundTargetSet struct {
+	Buffer    math.Int
+	Reserve   math.Int
+	Insurance math.Int
+}
+
+// FundTargets sizes every fund target against one liability basis.
+//
+// Rounding is up at both steps, because a target sizes a requirement rather
+// than a payment: MulRoundUp keeps the product from shedding a fraction of a
+// base unit, and Ceil turns whatever fraction remains into the whole unit a
+// fund has to actually hold. A target rounded down would call a fund full while
+// it was a base unit short of its own rule.
+//
+// The basis is taken rather than derived because one policy implies two
+// different sets, and which one is correct depends on the question. What bounds
+// a committee act is sized against gross liability, since the committee can
+// re-issue the paper its own fund holds; what the next expansion fills is sized
+// against net, since no claim arrives from that paper (D67).
+func (policy MonetaryPolicy) FundTargets(liabilityNoah math.LegacyDec) FundTargetSet {
+	return FundTargetSet{
+		Buffer:    policy.RedemptionBufferTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(),
+		Reserve:   policy.StrategicReserveTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(),
+		Insurance: policy.InsuranceTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(),
+	}
+}
+
 // Equal reports whether two monetary policies contain identical values.
 func (policy MonetaryPolicy) Equal(other MonetaryPolicy) bool {
 	return policy.StabilityTaxRate.Equal(other.StabilityTaxRate) &&

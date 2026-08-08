@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"errors"
 
 	"go.uber.org/mock/gomock"
@@ -14,12 +15,22 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
-// TestEndBlockerIdleBlockNeverSettles pins the licence to skip: a block that
-// converted nothing must not reach Treasury at all, so an idle chain values
-// liability never. The mock enforces it by failing on any unexpected call.
-func (s *KeeperTestSuite) TestEndBlockerIdleBlockNeverSettles() {
+// TestEndBlockerIdleBlockHandsOverZeroTotals pins what an idle block sends:
+// initialised zeros rather than nil, which is what lets Treasury decline before
+// it values anything. IsZero is the assertion — a nil field panics there rather
+// than reporting true, and that panic would be in an EndBlocker.
+func (s *KeeperTestSuite) TestEndBlockerIdleBlockHandsOverZeroTotals() {
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
+	s.treasuryKeeper.EXPECT().
+		SettleConversions(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, totals types.ConversionTotals) (math.Int, error) {
+			s.Require().NoError(totals.Validate())
+			s.Require().True(totals.IsZero())
+			return math.ZeroInt(), nil
+		})
+
+	// Nothing is burned: the bank mock fails on any unexpected call.
 	s.Require().NoError(s.keeper.EndBlocker(s.ctx))
 }
 

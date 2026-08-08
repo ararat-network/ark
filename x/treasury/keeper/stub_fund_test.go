@@ -20,10 +20,3 @@ func (s stubFund) RecognisedCapital(context.Context) (math.Int, error) {
 	}
 	return s.recognised, nil
 }
-
-// RecordParkedPrincipal satisfies the Reserve side of the interface. The
-// benchmarks that use this stub run the complete-valuation path, which parks
-// nothing.
-func (s stubFund) RecordParkedPrincipal(context.Context, math.Int) error {
-	return nil
-}

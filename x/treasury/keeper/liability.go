@@ -12,148 +12,66 @@ import (
 	"ark/pkg/decimal"
 	assettypes "ark/x/asset/types"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
 
-// RecordSupplyChange updates an existing block-local liability snapshot after
-// Market has successfully applied its burn and mint. It deliberately does not
-// build a snapshot when none exists; a later valuation will read current Bank
-// supply directly.
-func (k Keeper) RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted sdk.Coin, rates oracletypes.RateSet) error {
-	if err := burned.Validate(); err != nil {
-		return fmt.Errorf("invalid burned coin: %w", err)
-	}
-	if err := minted.Validate(); err != nil {
-		return fmt.Errorf("invalid minted coin: %w", err)
-	}
-
-	liability, complete, found, err := k.loadLiabilityValuation(ctx)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return nil
-	}
-
-	burnedValue, err := liabilityCoinValue(burned, rates)
-	if err != nil {
-		return fmt.Errorf("valuing burned supply %s: %w", burned, err)
-	}
-	liability, err = decimal.Sub(liability, burnedValue)
-	if err != nil {
-		return fmt.Errorf("subtracting burned supply %s from cached liability: %w", burned, err)
-	}
-	if liability.IsNegative() {
-		return fmt.Errorf("burned supply %s exceeds cached liability", burned)
-	}
-
-	mintedValue, err := liabilityCoinValue(minted, rates)
-	if err != nil {
-		return fmt.Errorf("valuing minted supply %s: %w", minted, err)
-	}
-	liability, err = decimal.Add(liability, mintedValue)
-	if err != nil {
-		return fmt.Errorf("adding minted supply %s to cached liability: %w", minted, err)
-	}
-
-	return k.storeLiabilitySnapshot(ctx, liability, complete)
-}
-
-// PrimeLiabilitySnapshot values the claimable liability once for the block,
-// called from Treasury's BeginBlocker after every PreBlocker has applied oracle
-// prices, so transaction-time callers never rescan. Reusing that snapshot is
-// sound only because its four inputs are either tracked — supply, via
-// RecordSupplyChange — or cannot move mid-block: lifecycle transitions and
-// settlement plans are governance messages run in the EndBlocker, the emergency
-// committee calls InvalidateRegistryCache, and only the preblock vote processor
-// writes rates. Any new path that moves supply across the partition mid-block
-// reintroduces that hazard; hard state errors fail the block, while an
-// incomplete valuation is an expected degraded mode disclosed by
-// EventLiabilityIncomplete.
-func (k Keeper) PrimeLiabilitySnapshot(ctx context.Context) error {
-	partition, err := k.liabilityPartitionValue(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	recognised, err := partition.recognizedNoah()
-	if err != nil {
-		return err
-	}
-	if err := k.storeLiabilitySnapshot(ctx, recognised, partition.complete); err != nil {
-		return err
-	}
-
-	// A complete valuation discloses nothing: an event every block would bury
-	// the blocks that matter. cachedLiabilityValue repeats this on the same
-	// terms — see the note there.
-	if partition.complete {
-		return nil
-	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventLiabilityIncomplete{
-		ClaimableLiability:       chain.NoahDecCoin(recognised),
-		StaleMemberSupply:        partition.stale,
-		UntrustedSuspendedSupply: partition.untrusted,
-	}); err != nil {
-		return fmt.Errorf("emitting Treasury incomplete liability event: %w", err)
-	}
-	return nil
-}
-
-// InvalidateRegistryCache implements assettypes.RegistryCacheInvalidator by
-// dropping the block's primed valuation. The snapshot tracks mint and burn but
-// not lifecycle status, so a suspension landing inside the block would leave
-// RouteExpansion sizing targets on the pre-failure figure — burning NOAH and
-// committing principal to the Buffer, both irreversible, in the block an asset
-// just failed. Dropping the entry is enough: cachedLiabilityValue rebuilds on a
-// miss, the same path a block that never primed takes.
-func (k Keeper) InvalidateRegistryCache(ctx context.Context) error {
-	if err := k.transientStoreService.OpenTransientStore(ctx).
-		Delete(liabilityValuationKey); err != nil {
-		return fmt.Errorf("invalidating cached liability: %w", err)
-	}
-
-	return nil
-}
-
-func liabilityCoinValue(coin sdk.Coin, rates oracletypes.RateSet) (math.LegacyDec, error) {
-	if coin.Denom == chain.NoahBaseDenom || coin.Amount.IsZero() {
-		return math.LegacyZeroDec(), nil
-	}
-
-	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(coin), chain.NoahBaseDenom)
-	if err != nil {
-		return math.LegacyDec{}, err
-	}
-	return converted.Amount, nil
-}
-
 // liabilityPartition is one block's liability report, partitioned by asset
-// lifecycle status.
+// lifecycle status. Which aggregate a consumer divides by is not a preference:
+// a flow takes net, a bound on a committee act takes recognised.
 type liabilityPartition struct {
-	pricedNoah     math.LegacyDec
-	settlementNoah math.LegacyDec
-	staleNoah      math.LegacyDec
-	stale          []sdk.Coin
-	untrusted      []sdk.Coin
-	writtenOff     []types.WrittenOffExposure
-	complete       bool
+	priced     math.LegacyDec
+	settlement math.LegacyDec
+	stale      math.LegacyDec
+	selfHeld   math.LegacyDec
+
+	staleSupply     []sdk.Coin
+	untrustedSupply []sdk.Coin
+	selfHeldSupply  []sdk.Coin
+	writtenOff      []types.WrittenOffExposure
+
+	complete bool
 }
 
-// recognizedNoah is the claimable aggregate: every liability this block could
-// put a number against, and the denominator redemption coverage divides by,
-// meaningful whether or not the partition is complete. A member whose feed is
-// unavailable is counted at its last known rate rather than dropped, because
-// leaving it out would pay its holders' coverage share away to whoever happens
-// to be transacting during the outage. A write-off extinguishes the obligation
-// and an untrusted suspension withdraws the protocol's rate, so both are
-// genuinely outside the aggregate; an absent feed is only absent evidence.
-func (p liabilityPartition) recognizedNoah() (math.LegacyDec, error) {
-	valued, err := decimal.Add(p.pricedNoah, p.settlementNoah)
+// recognised is the claimable aggregate — every liability the block could put
+// a number against — and the denominator redemption coverage divides by. A
+// member with an unavailable feed counts at its last known rate, because
+// dropping it would pay its holders' coverage share away during the outage.
+// Write-offs and untrusted suspensions are genuinely outside: the obligation
+// or the protocol's rate is withdrawn, not merely unevidenced.
+func (p liabilityPartition) recognised() (math.LegacyDec, error) {
+	valued, err := decimal.Add(p.priced, p.settlement)
 	if err != nil {
 		return math.LegacyDec{}, err
 	}
-	return decimal.Add(valued, p.staleNoah)
+	return decimal.Add(valued, p.stale)
+}
+
+// net is recognised less what the strategic Reserve holds of it: the claims
+// that can actually arrive, since Reserve-held paper has no holder and only a
+// committee act returns it to circulation. Committee bounds keep recognised —
+// the committee they constrain can re-issue that paper by deploying it, so a
+// bound on net would move on state its own subject controls. The subtraction
+// cannot go negative — selfHeld accrues only in branches that counted the same
+// supply at the same rate, and a balance never exceeds its supply — so the
+// check is a backstop.
+func (p liabilityPartition) net() (math.LegacyDec, error) {
+	recognised, err := p.recognised()
+	if err != nil {
+		return math.LegacyDec{}, err
+	}
+	net, err := decimal.Sub(recognised, p.selfHeld)
+	if err != nil {
+		return math.LegacyDec{}, fmt.Errorf("netting self-held supply from claimable liability: %w", err)
+	}
+	if net.IsNegative() {
+		return math.LegacyDec{}, fmt.Errorf(
+			"self-held liability %s exceeds the claimable aggregate %s",
+			p.selfHeld,
+			recognised,
+		)
+	}
+	return net, nil
 }
 
 // liabilityPartitionValue folds the asset registry into the block's liability
@@ -164,20 +82,18 @@ func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.R
 		return liabilityPartition{}, fmt.Errorf("pricing aggregate liability: %w", err)
 	}
 
+	// Only the decimals need seeding — LegacyDec's zero value is nil, while nil
+	// lists append and marshal as empty.
 	partition := liabilityPartition{
-		pricedNoah:     math.LegacyZeroDec(),
-		settlementNoah: math.LegacyZeroDec(),
-		staleNoah:      math.LegacyZeroDec(),
-		stale:          []sdk.Coin{},
-		untrusted:      []sdk.Coin{},
-		writtenOff:     []types.WrittenOffExposure{},
-		complete:       true,
+		priced:     math.LegacyZeroDec(),
+		settlement: math.LegacyZeroDec(),
+		stale:      math.LegacyZeroDec(),
+		selfHeld:   math.LegacyZeroDec(),
+		complete:   true,
 	}
 
-	// Supply is filtered after pricing rather than before so the registry is
-	// read once: naming denominations back to the fold would read every record
-	// a second time each block. Pricing a zero-supply member costs nothing, and
-	// the partition ignores it either way.
+	// Supply is filtered after pricing so the registry is read once; pricing a
+	// zero-supply member costs nothing.
 	for _, denom := range denoms {
 		supply := k.bankKeeper.GetSupply(ctx, denom)
 		if !supply.Amount.IsPositive() {
@@ -186,25 +102,31 @@ func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.R
 		verdict := pricings[denom]
 		switch {
 		case verdict.IsPriced() && verdict.Source == assettypes.PriceSource_PRICE_SOURCE_SETTLEMENT:
-			partition.settlementNoah, err = accrueLiability(
-				partition.settlementNoah,
+			partition.settlement, err = accrueLiability(
+				partition.settlement,
 				supply,
 				pricings.Convert,
 			)
 			if err != nil {
+				return liabilityPartition{}, err
+			}
+			if err := k.accrueSelfHeld(ctx, &partition, denom, pricings.Convert); err != nil {
 				return liabilityPartition{}, err
 			}
 		case verdict.IsPriced():
-			partition.pricedNoah, err = accrueLiability(
-				partition.pricedNoah,
+			partition.priced, err = accrueLiability(
+				partition.priced,
 				supply,
 				pricings.Convert,
 			)
 			if err != nil {
 				return liabilityPartition{}, err
 			}
+			if err := k.accrueSelfHeld(ctx, &partition, denom, pricings.Convert); err != nil {
+				return liabilityPartition{}, err
+			}
 		case verdict.Reason == assettypes.UnpricedReason_UNPRICED_REASON_UNTRUSTED:
-			partition.untrusted = append(partition.untrusted, supply)
+			partition.untrustedSupply = append(partition.untrustedSupply, supply)
 			partition.complete = false
 		case verdict.Reason == assettypes.UnpricedReason_UNPRICED_REASON_WRITTEN_OFF:
 			partition.writtenOff = append(partition.writtenOff, types.WrittenOffExposure{
@@ -212,21 +134,24 @@ func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.R
 				WriteOffVersion:   verdict.Asset.Version,
 			})
 		case verdict.Reason == assettypes.UnpricedReason_UNPRICED_REASON_FEED_UNAVAILABLE:
-			// Marked incomplete either way: no fresh rate stood behind part of
-			// the total, which is what fund targets must not be sized on,
-			// whether or not the last known rate kept counting this supply.
-			partition.stale = append(partition.stale, supply)
+			// Incomplete whether or not the last known rate keeps counting this
+			// supply: no fresh rate stood behind part of the total, which fund
+			// targets must not be sized on.
+			partition.staleSupply = append(partition.staleSupply, supply)
 			partition.complete = false
 			if verdict.LastRate == nil {
 				// Never priced, so there is no evidence to count it by.
 				continue
 			}
-			partition.staleNoah, err = accrueLiability(
-				partition.staleNoah,
+			partition.stale, err = accrueLiability(
+				partition.stale,
 				supply,
 				pricings.ConvertLastKnown,
 			)
 			if err != nil {
+				return liabilityPartition{}, err
+			}
+			if err := k.accrueSelfHeld(ctx, &partition, denom, pricings.ConvertLastKnown); err != nil {
 				return liabilityPartition{}, err
 			}
 		default:
@@ -238,10 +163,64 @@ func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.R
 	return partition, nil
 }
 
+// discloseIncompleteValuation announces a valuation that could not cover every
+// recognised liability, naming the supply behind the qualification.
+//
+// Its consumers call it rather than the fold, because the fold cannot know
+// whether a caller will spend against the figure or merely look at it.
+// Settlement announces the block's own valuation; a committee bound announces
+// the one its ceiling was sized on, inside the transaction that acted on it and
+// discarded with it if the act then fails. The event therefore means "capital
+// moved against a qualified figure", never "someone asked".
+func (k Keeper) discloseIncompleteValuation(ctx context.Context, partition liabilityPartition) error {
+	claimable, err := partition.recognised()
+	if err != nil {
+		return err
+	}
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventLiabilityIncomplete{
+		ClaimableLiability:       chain.NoahDecCoin(claimable),
+		StaleMemberSupply:        partition.staleSupply,
+		UntrustedSuspendedSupply: partition.untrustedSupply,
+	}); err != nil {
+		return fmt.Errorf("emitting Treasury incomplete liability event: %w", err)
+	}
+
+	return nil
+}
+
+// accrueSelfHeld records what the strategic Reserve holds of a member the
+// caller's branch just counted, valued through that branch's own conversion —
+// called per counted branch so the netting can never disagree with the
+// counting in membership or rate. A zero balance records nothing, so the list
+// names only what the Reserve holds.
+func (k Keeper) accrueSelfHeld(
+	ctx context.Context,
+	partition *liabilityPartition,
+	denom string,
+	convert func(sdk.DecCoin, string) (sdk.DecCoin, error),
+) error {
+	held := k.bankKeeper.GetBalance(
+		ctx,
+		k.accountKeeper.GetModuleAddress(reservetypes.StrategicReserveName),
+		denom,
+	)
+	if !held.Amount.IsPositive() {
+		return nil
+	}
+
+	accrued, err := accrueLiability(partition.selfHeld, held, convert)
+	if err != nil {
+		return fmt.Errorf("valuing self-held %s: %w", denom, err)
+	}
+	partition.selfHeld = accrued
+	partition.selfHeldSupply = append(partition.selfHeldSupply, held)
+
+	return nil
+}
+
 // accrueLiability adds the NOAH value of supply to a liability bucket. The
-// conversion is a parameter so each call site names the rate it values at:
-// ConvertLastKnown reads a rate the freshness gate rejected, legitimate in
-// exactly one branch.
+// conversion is a parameter so each call site names its rate; ConvertLastKnown
+// is legitimate in exactly one branch.
 func accrueLiability(total math.LegacyDec, supply sdk.Coin, convert func(sdk.DecCoin, string) (sdk.DecCoin, error)) (math.LegacyDec, error) {
 	converted, err := convert(sdk.NewDecCoinFromCoin(supply), chain.NoahBaseDenom)
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	chain "ark/pkg/chain"
+	markettypes "ark/x/market/types"
 	oraclekeeper "ark/x/oracle/keeper"
 	oracletestutil "ark/x/oracle/testutil"
 	oracletypes "ark/x/oracle/types"
@@ -31,39 +32,11 @@ import (
 	treasurytypes "ark/x/treasury/types"
 )
 
-// benchLiabilityValuationKey mirrors the unexported key in liability.go.
-var benchLiabilityValuationKey = []byte{0x01}
-
 type liabilityBenchFixture struct {
 	keeper           *treasurykeeper.Keeper
 	ctx              sdk.Context
 	transientService corestore.TransientStoreService
 	denoms           []string
-}
-
-func (f *liabilityBenchFixture) quoteRates() oracletypes.RateSet {
-	return oracletypes.RateSet{
-		chain.NoahBaseDenom: math.LegacyOneDec(),
-		f.denoms[0]:         math.LegacyOneDec(),
-	}
-}
-
-func (f *liabilityBenchFixture) draw() error {
-	_, err := f.keeper.DrawRedemptionBuffer(
-		f.ctx,
-		sdk.NewInt64Coin(f.denoms[0], 1000),
-		math.NewInt(500),
-		f.quoteRates(),
-	)
-	return err
-}
-
-func (f *liabilityBenchFixture) resetSnapshot(tb testing.TB) {
-	tb.Helper()
-	store := f.transientService.OpenTransientStore(f.ctx)
-	if err := store.Delete(benchLiabilityValuationKey); err != nil {
-		tb.Fatal(err)
-	}
 }
 
 func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixture {
@@ -149,6 +122,13 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		}).AnyTimes()
 	treasuryBankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
 		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).AnyTimes()
+	// The partition now asks what the strategic Reserve holds of every counted
+	// member (D66); an empty Reserve keeps the measured path the gross fold
+	// while still paying the per-member balance read the netting added.
+	treasuryBankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+			return sdk.NewCoin(denom, math.ZeroInt())
+		}).AnyTimes()
 
 	transientService := runtime.NewTransientStoreService(transientKey)
 	// The liability scan is now a fold over the asset registry, so the
@@ -176,54 +156,42 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 	}
 }
 
-// BenchmarkLiabilityValuation measures the three paths that define the
-// flat-metering design: the once-per-block preblock scan, the per-swap
-// snapshot read, and per-swap snapshot maintenance.
+// BenchmarkLiabilityValuation measures the whole per-block cost of the
+// aggregate: one registry fold and the settlement that consumes it. There is no
+// per-conversion path left to measure — a conversion records two integers — so
+// what this bounds is block overhead, paid once however busy the block was.
 func BenchmarkLiabilityValuation(b *testing.B) {
 	for _, denomCount := range []int{len(oracletypes.DefaultFeedDenoms), 26} {
-		// The real scan, performed once per block by the preblocker. Includes
-		// two transient deletes per iteration to reset the block.
-		b.Run(fmt.Sprintf("denoms_%d/preblock_prime", denomCount), func(b *testing.B) {
+		// Settlement of a redemption-only block: the fold, the coverage
+		// arithmetic, and the draw.
+		b.Run(fmt.Sprintf("denoms_%d/settle_redemption", denomCount), func(b *testing.B) {
 			fix := newLiabilityBenchFixture(b, denomCount)
+			totals := markettypes.ConversionTotals{
+				EligiblePrincipal: math.ZeroInt(),
+				RedemptionOutput:  math.NewInt(500),
+				RedeemedValue:     math.LegacyNewDec(1000),
+			}
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				fix.resetSnapshot(b)
-				if err := fix.keeper.PrimeLiabilitySnapshot(fix.ctx); err != nil {
+				if _, err := fix.keeper.SettleConversions(fix.ctx, totals); err != nil {
 					b.Fatal(err)
 				}
 			}
 		})
-		// The per-swap steady state: valuation via the primed snapshot.
-		b.Run(fmt.Sprintf("denoms_%d/snapshot_hit", denomCount), func(b *testing.B) {
+		// Settlement of an expansion-only block: the same fold, then the
+		// waterfall, which additionally asks both committee funds what they hold.
+		b.Run(fmt.Sprintf("denoms_%d/settle_expansion", denomCount), func(b *testing.B) {
 			fix := newLiabilityBenchFixture(b, denomCount)
-			if err := fix.keeper.PrimeLiabilitySnapshot(fix.ctx); err != nil {
-				b.Fatal(err)
+			totals := markettypes.ConversionTotals{
+				EligiblePrincipal: math.NewInt(500),
+				RedemptionOutput:  math.ZeroInt(),
+				RedeemedValue:     math.LegacyZeroDec(),
 			}
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				if err := fix.draw(); err != nil {
-					b.Fatal(err)
-				}
-			}
-		})
-		// The per-swap snapshot maintenance after burns and mints.
-		b.Run(fmt.Sprintf("denoms_%d/record_supply_change", denomCount), func(b *testing.B) {
-			fix := newLiabilityBenchFixture(b, denomCount)
-			if err := fix.keeper.PrimeLiabilitySnapshot(fix.ctx); err != nil {
-				b.Fatal(err)
-			}
-			rates := fix.quoteRates()
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				if err := fix.keeper.RecordSupplyChange(
-					fix.ctx,
-					sdk.NewInt64Coin(fix.denoms[0], 1),
-					sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-					rates,
-				); err != nil {
+				if _, err := fix.keeper.SettleConversions(fix.ctx, totals); err != nil {
 					b.Fatal(err)
 				}
 			}

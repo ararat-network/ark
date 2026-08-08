@@ -28,6 +28,7 @@ import (
 	assettypes "ark/x/asset/types"
 	claimstypes "ark/x/claims/types"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/keeper"
 	"ark/x/treasury/testutil"
 	"ark/x/treasury/types"
@@ -54,6 +55,11 @@ type KeeperTestSuite struct {
 	// balance stubs those funds used before they moved out.
 	insuranceRecognised math.Int
 	reserveRecognised   math.Int
+	// reserveHoldings is what the strategic Reserve holds of registry members,
+	// which nets out of the claimable aggregate for flows. It is empty by
+	// default, so a test that never parks protocol paper sees gross and net
+	// agree and keeps its old shape.
+	reserveHoldings sdk.Coins
 	// primingStubbed records that beginBlock has registered its zero-supply
 	// fallback, so repeated calls within one test add only one expectation.
 	primingStubbed        bool
@@ -134,6 +140,16 @@ func (s *KeeperTestSuite) SetupTest() {
 			return s.reserveRecognised, nil
 		}).
 		AnyTimes()
+	// The liability fold asks what the Reserve holds of every member it counts.
+	// The expectation is address-specific, so it never shadows the fund-balance
+	// reads other tests set up, and it answers zero unless a test parks paper.
+	s.reserveHoldings = sdk.NewCoins()
+	s.bankKeeper.EXPECT().
+		GetBalance(gomock.Any(), authtypes.NewModuleAddress(reservetypes.StrategicReserveName), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+			return sdk.NewCoin(denom, s.reserveHoldings.AmountOf(denom))
+		}).
+		AnyTimes()
 	s.transientStoreService = transientStoreService
 	s.commitMultiStore = testCtx.CMS
 	for _, moduleName := range types.FundAccountNames() {
@@ -147,6 +163,12 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.accountKeeper.EXPECT().
 		GetModuleAddress(claimstypes.InsuranceName).
 		Return(authtypes.NewModuleAddress(claimstypes.InsuranceName)).
+		AnyTimes()
+	// Nor is the strategic Reserve, but the liability fold reads what it holds
+	// of every counted member, and the constructor asserts its registration.
+	s.accountKeeper.EXPECT().
+		GetModuleAddress(reservetypes.StrategicReserveName).
+		Return(authtypes.NewModuleAddress(reservetypes.StrategicReserveName)).
 		AnyTimes()
 	s.accountKeeper.EXPECT().
 		GetModuleAddress(types.StabilityTaxCollectorName).

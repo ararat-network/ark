@@ -99,3 +99,36 @@ func TestRewardTargetCapsLeaveWindowHeadroom(t *testing.T) {
 	require.Less(t, whole.BigInt().BitLen(), math.MaxBitLen-64,
 		"a whole window must stay far under the integer limit")
 }
+
+// TestFundTargetsRoundUp pins the rounding direction, which is a consensus rule
+// rather than a preference: a target sizes a requirement, so any fraction of a
+// base unit becomes a whole one. Rounded down, a fund would report itself full
+// while sitting a base unit short of its own policy.
+func TestFundTargetsRoundUp(t *testing.T) {
+	policy := types.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyNewDecWithPrec(5, 1)
+	policy.StrategicReserveTargetRatio = math.LegacyNewDecWithPrec(25, 2)
+
+	t.Run("an exact product keeps its value", func(t *testing.T) {
+		targets := policy.FundTargets(math.LegacyNewDec(100))
+		require.True(t, math.NewInt(50).Equal(targets.Buffer), "buffer: %s", targets.Buffer)
+		require.True(t, math.NewInt(25).Equal(targets.Reserve), "reserve: %s", targets.Reserve)
+	})
+
+	t.Run("a fractional product takes the whole unit", func(t *testing.T) {
+		targets := policy.FundTargets(math.LegacyNewDec(101))
+		require.True(t, math.NewInt(51).Equal(targets.Buffer), "buffer: %s", targets.Buffer)
+		require.True(t, math.NewInt(26).Equal(targets.Reserve), "reserve: %s", targets.Reserve)
+	})
+
+	t.Run("a requirement under one base unit still requires one", func(t *testing.T) {
+		targets := policy.FundTargets(math.LegacyOneDec())
+		require.True(t, math.OneInt().Equal(targets.Buffer), "buffer: %s", targets.Buffer)
+		require.True(t, math.OneInt().Equal(targets.Reserve), "reserve: %s", targets.Reserve)
+	})
+
+	t.Run("a zero ratio requires nothing", func(t *testing.T) {
+		targets := policy.FundTargets(math.LegacyNewDec(1_000_000))
+		require.True(t, targets.Insurance.IsZero(), "insurance: %s", targets.Insurance)
+	})
+}

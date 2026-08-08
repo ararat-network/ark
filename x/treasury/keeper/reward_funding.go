@@ -76,6 +76,14 @@ func (k Keeper) updateRewardFunding(ctx context.Context) (types.RewardFundingSta
 		return types.RewardFundingState{}, fmt.Errorf("getting monetary policy: %w", err)
 	}
 
+	// The targets accumulate for a whole window, and the two ceilings on their
+	// inputs are what keep that safe: a per-block target under
+	// MaxBlockRewardTarget, over a window under MaxRewardFundingWindow, tops
+	// out ninety-five bits below the integer limit. Both are refused at the
+	// write, so no policy or params value reaching here can overflow these
+	// sums. The additions stay checked because this runs in a BeginBlocker,
+	// where the alternative to an error is a panicking block — but nothing
+	// depends on them firing.
 	funding.ValidatorTarget, err = funding.ValidatorTarget.SafeAdd(policy.ValidatorBlockRewardTarget)
 	if err != nil {
 		return types.RewardFundingState{}, fmt.Errorf("adding validator reward target: %w", err)
@@ -149,8 +157,24 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 	validatorShortfall := shortfall(funding.ValidatorTarget, split.validatorOrganic)
 	oracleShortfall := shortfall(funding.OracleTarget, split.oracleOrganic)
 	validatorSubsidy, oracleSubsidy := validatorShortfall, oracleShortfall
-	if totalShortfall := validatorShortfall.Add(oracleShortfall); subsidyBalance.LT(totalShortfall) {
-		oracleSubsidy = subsidyBalance.Mul(oracleShortfall).Quo(totalShortfall)
+	totalShortfall, err := validatorShortfall.SafeAdd(oracleShortfall)
+	if err != nil {
+		return fmt.Errorf("summing the window's reward shortfalls: %w", err)
+	}
+	if subsidyBalance.LT(totalShortfall) {
+		// The pool is shared pro rata by the Oracle leg's share of the combined
+		// gap. The product is checked rather than trusted to fit: both factors
+		// are chain balances with no ceiling of their own, and this runs in a
+		// BeginBlocker where an overflow would panic the block rather than fail
+		// a transaction. The division is safe — this branch cannot be entered
+		// with a zero total, because no balance is negative — and floors, so
+		// the validator remainder below stays non-negative and the two legs
+		// together spend exactly the pool.
+		scaledOracle, err := subsidyBalance.SafeMul(oracleShortfall)
+		if err != nil {
+			return fmt.Errorf("sizing the Oracle subsidy share: %w", err)
+		}
+		oracleSubsidy = scaledOracle.Quo(totalShortfall)
 		validatorSubsidy = subsidyBalance.Sub(oracleSubsidy)
 	}
 
@@ -256,14 +280,20 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 	// That share comes out denomination by denomination, pro rata by value, so
 	// neither leg is handed a pot skewed towards one asset. A non-positive pot
 	// or share leaves the validator leg empty, which also keeps the division
-	// below away from a zero divisor.
+	// below away from a zero divisor. The product is checked for the same
+	// reason the subsidy split's is: a balance times a target has no ceiling of
+	// its own, and this is reached from a BeginBlocker.
 	validatorTax := make(sdk.Coins, 0, len(priced))
 	if desiredValidatorTax.IsPositive() && stabilityTaxValue.IsPositive() {
 		for _, coin := range priced {
 			if !pricings[coin.Denom].IsPriced() {
 				continue
 			}
-			amount := coin.Amount.Mul(desiredValidatorTax).Quo(stabilityTaxValue)
+			scaled, err := coin.Amount.SafeMul(desiredValidatorTax)
+			if err != nil {
+				return taxSplit{}, fmt.Errorf("sizing the validator share of %s: %w", coin.Denom, err)
+			}
+			amount := scaled.Quo(stabilityTaxValue)
 			if amount.IsPositive() {
 				validatorTax = append(validatorTax, sdk.NewCoin(coin.Denom, amount))
 			}

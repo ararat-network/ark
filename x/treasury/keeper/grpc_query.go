@@ -151,7 +151,11 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 	// complete: it is what redemption coverage divides by, so withholding it
 	// would hide the figure driving payouts during the only stress that makes
 	// it interesting.
-	claimable, err := partition.recognizedNoah()
+	claimable, err := partition.recognised()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	net, err := partition.net()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
@@ -160,29 +164,56 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 	// target off it would call for less capital exactly when an asset has just
 	// failed, so a zero basis reports real balances beside targets that claim
 	// nothing.
-	targetBasis := math.LegacyZeroDec()
+	//
+	// Both bases are reported rather than one. The query decides nothing, and
+	// the two answer different operational questions: the nominal-sized targets
+	// are what bounds a committee burn or transfer right now, while the
+	// net-sized ones are where the next expansion will route. Publishing one
+	// would leave the other derivable only by a reader who knew the policy
+	// ratios and the netting rule.
+	targetBasis, gapBasis := math.LegacyZeroDec(), math.LegacyZeroDec()
 	if partition.complete {
-		targetBasis = claimable
+		targetBasis, gapBasis = claimable, net
 	}
-	fundStatus, err := q.k.calculateFundStatus(ctx, targetBasis)
+	policy, err := q.k.MonetaryPolicy.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting monetary policy: %v", err)
+	}
+	// Each committee-operated fund reports its own recognised capital, per the
+	// contract on ClaimsKeeper; the Buffer has no operator, so Treasury reads it.
+	insuranceBalance, err := q.k.claimsKeeper.RecognisedCapital(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
+	reserveBalance, err := q.k.reserveKeeper.RecognisedCapital(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	// One policy against both bases: the funds hold what they hold either way,
+	// and only the figure they are measured against moves.
+	grossTargets := policy.FundTargets(targetBasis)
+	netTargets := policy.FundTargets(gapBasis)
 	return &types.QueryFundStatusResponse{
-		PricedLiability:          chain.NoahDecCoin(partition.pricedNoah),
-		SettlementLiability:      chain.NoahDecCoin(partition.settlementNoah),
-		StalePricedLiability:     chain.NoahDecCoin(partition.staleNoah),
-		UntrustedSuspendedSupply: partition.untrusted,
-		WrittenOffExposure:       partition.writtenOff,
-		StaleMemberSupply:        partition.stale,
-		NominalLiability:         chain.NoahDecCoin(claimable),
-		SubsidyPoolBalance:       chain.NoahCoin(q.k.balance(ctx, types.SubsidyPoolName)),
-		RedemptionBufferBalance:  chain.NoahCoin(fundStatus.bufferBalance),
-		RedemptionBufferTarget:   chain.NoahCoin(fundStatus.bufferTarget),
-		StrategicReserveBalance:  chain.NoahCoin(fundStatus.reserveBalance),
-		StrategicReserveTarget:   chain.NoahCoin(fundStatus.reserveTarget),
-		InsuranceBalance:         chain.NoahCoin(fundStatus.insuranceBalance),
-		InsuranceTarget:          chain.NoahCoin(fundStatus.insuranceTarget),
+		PricedLiability:           chain.NoahDecCoin(partition.priced),
+		SettlementLiability:       chain.NoahDecCoin(partition.settlement),
+		StalePricedLiability:      chain.NoahDecCoin(partition.stale),
+		NominalLiability:          chain.NoahDecCoin(claimable),
+		SelfHeldSupply:            partition.selfHeldSupply,
+		SelfHeldLiability:         chain.NoahDecCoin(partition.selfHeld),
+		NetLiability:              chain.NoahDecCoin(net),
+		StaleMemberSupply:         partition.staleSupply,
+		UntrustedSuspendedSupply:  partition.untrustedSupply,
+		WrittenOffExposure:        partition.writtenOff,
+		RedemptionBufferBalance:   chain.NoahCoin(q.k.balance(ctx, types.RedemptionBufferName)),
+		RedemptionBufferTarget:    chain.NoahCoin(grossTargets.Buffer),
+		RedemptionBufferNetTarget: chain.NoahCoin(netTargets.Buffer),
+		StrategicReserveBalance:   chain.NoahCoin(reserveBalance),
+		StrategicReserveTarget:    chain.NoahCoin(grossTargets.Reserve),
+		StrategicReserveNetTarget: chain.NoahCoin(netTargets.Reserve),
+		InsuranceBalance:          chain.NoahCoin(insuranceBalance),
+		InsuranceTarget:           chain.NoahCoin(grossTargets.Insurance),
+		InsuranceNetTarget:        chain.NoahCoin(netTargets.Insurance),
+		SubsidyPoolBalance:        chain.NoahCoin(q.k.balance(ctx, types.SubsidyPoolName)),
 	}, nil
 }
 

@@ -20,59 +20,26 @@ func (s *KeeperTestSuite) TestBeginBlockerSkipsRewardFundingAtGenesisHeight() {
 	s.requireDefaultRewardFunding()
 }
 
-// TestBeginBlockerPrimesLiabilitySnapshot pins the valuation this module now
-// owns. It moved out of the ABCI preblocker, so BeginBlocker is the sole place
-// the block's claimable aggregate is established, and transaction-time callers
-// depend on finding it already there rather than rescanning the registry.
-func (s *KeeperTestSuite) TestBeginBlockerPrimesLiabilitySnapshot() {
+// TestBeginBlockerValuesNoLiability pins the scan that left this hook. The
+// aggregate has exactly one consumer that runs every block — conversion
+// settlement — and it runs at the end of one, where the figure can be built
+// from final state. So BeginBlock values nothing, an idle block folds the
+// registry not at all, and arithmetic that used to fail the block while priming
+// can no longer reach it.
+//
+// The registry holds supply that overflowed the conversion under the old
+// priming, and no supply read is stubbed at all: the mock fails the test on any
+// call, which is what asserts the fold is gone rather than merely quiet.
+func (s *KeeperTestSuite) TestBeginBlockerValuesNoLiability() {
 	s.setBlockHeight(2)
-	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
-		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.KRWBaseDenom).
-		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)).Times(1)
+	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
-		chain.USDBaseDenom: math.LegacyOneDec(),
-		chain.KRWBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(1, 18),
 	})
 	s.expectValidatorFees(sdk.NewCoins())
 
 	s.Require().NoError(s.beginBlock())
-	s.requireLiabilitySnapshot(math.LegacyNewDec(200), true)
-}
-
-// TestBeginBlockerPrimesLiabilityAtGenesisHeight pins priming outside the
-// height gate that gets reward funding. The preblocker primed unconditionally,
-// and the first block values liability exactly as every later one does, so a
-// transaction in it must not be the one call that pays for a registry scan.
-func (s *KeeperTestSuite) TestBeginBlockerPrimesLiabilityAtGenesisHeight() {
-	s.setBlockHeight(1)
-	s.setAssets(chain.USDBaseDenom)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
-		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 50)).Times(1)
-	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
-
-	s.Require().NoError(s.beginBlock())
-	s.requireLiabilitySnapshot(math.LegacyNewDec(50), true)
-	s.requireDefaultRewardFunding()
-}
-
-// TestBeginBlockerFailsBlockWhenPrimingFails keeps priming's failure semantics
-// across the move: valuation arithmetic leaving the supported domain halts the
-// block rather than degrading, and it does so before any later BeginBlocker
-// step observes state built on it.
-func (s *KeeperTestSuite) TestBeginBlockerFailsBlockWhenPrimingFails() {
-	s.setBlockHeight(2)
-	s.setAssets(chain.USDBaseDenom)
-	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
-		Return(sdk.NewCoin(chain.USDBaseDenom, math.NewIntWithDecimal(1, 60))).Times(1)
-	s.setRates(oracletypes.RateSet{
-		chain.USDBaseDenom: math.LegacyNewDecWithPrec(1, 18),
-	})
-
-	err := s.beginBlock()
-	s.Require().ErrorContains(err, "priming liability snapshot")
-	s.Require().ErrorIs(err, oracletypes.ErrConversionOutOfRange)
+	s.requireNoTypedEvent(&types.EventLiabilityIncomplete{})
 }
 
 func (s *KeeperTestSuite) TestBeginBlockerAccruesRewardFunding() {

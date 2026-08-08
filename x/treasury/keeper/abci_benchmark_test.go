@@ -27,6 +27,7 @@ import (
 	oraclekeeper "ark/x/oracle/keeper"
 	oracletestutil "ark/x/oracle/testutil"
 	oracletypes "ark/x/oracle/types"
+	reservetypes "ark/x/reserve/types"
 	treasurykeeper "ark/x/treasury/keeper"
 	treasurytestutil "ark/x/treasury/testutil"
 	treasurytypes "ark/x/treasury/types"
@@ -176,6 +177,9 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	}
 	treasuryAccountKeeper.EXPECT().GetModuleAddress(treasurytypes.StabilityTaxCollectorName).
 		Return(authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName))
+	treasuryAccountKeeper.EXPECT().GetModuleAddress(reservetypes.StrategicReserveName).
+		Return(authtypes.NewModuleAddress(reservetypes.StrategicReserveName)).
+		AnyTimes()
 	treasuryAccountKeeper.EXPECT().GetModuleAddress(authtypes.FeeCollectorName).
 		Return(authtypes.NewModuleAddress(authtypes.FeeCollectorName)).
 		AnyTimes()
