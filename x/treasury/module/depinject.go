@@ -49,8 +49,12 @@ type ModuleInputs struct {
 type ModuleOutputs struct {
 	depinject.Out
 
-	TreasuryKeeper  *keeper.Keeper
-	Module          appmodule.AppModule
+	TreasuryKeeper *keeper.Keeper
+	Module         appmodule.AppModule
+	// SendRestriction guards the Treasury custody accounts. Bank collects these
+	// into a module-keyed map, so every module providing one must also be named
+	// in bank's RestrictionsOrder or app construction fails on a length
+	// mismatch.
 	SendRestriction banktypes.SendRestrictionFn
 }
 
@@ -71,8 +75,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	m := NewAppModule(k)
 
 	return ModuleOutputs{
-		TreasuryKeeper:  k,
-		Module:          m,
-		SendRestriction: TreasurySendRestriction,
+		TreasuryKeeper: k,
+		Module:         m,
+		// The restriction is a keeper method because the guarded addresses are
+		// the ones the constructor resolved and asserted.
+		SendRestriction: k.SendRestriction,
 	}
 }

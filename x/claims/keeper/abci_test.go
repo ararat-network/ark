@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/collections"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"ark/x/claims/types"
 )
@@ -225,6 +226,41 @@ func (s *KeeperTestSuite) TestEndBlockerFailsBlockedRecipient() {
 	// The recipient was payable at submission and is blocked before the claim
 	// comes due. No expectPayouts: Bank must never be asked to pay it.
 	s.blockedAddrs[testAddress(3)] = struct{}{}
+	s.setBlockHeight(25)
+	s.Require().NoError(s.keeper.EndBlocker(s.ctx))
+
+	s.requireStatus(claimID, types.ClaimStatus_CLAIM_STATUS_FAILED)
+	s.requireDueClaims()
+
+	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
+}
+
+// TestEndBlockerFailsInsuranceSelfPayment exercises the settlement path's
+// re-validation of the stored record, using the one rule a claim can violate
+// without Bank noticing: Insurance as its own recipient. Insurance is unblocked
+// by design and its send restriction admits anoah, so neither the blocked-list
+// check above nor the restriction below would stop the payment — it would
+// settle, leaving custody untouched while releasing the reservation and
+// reporting the claim paid. Only Claim.Validate refuses it.
+func (s *KeeperTestSuite) TestEndBlockerFailsInsuranceSelfPayment() {
+	s.SetupTest()
+	s.setCancellationPeriod(5)
+	s.setBlockHeight(20)
+	s.fundInsurance(5_000)
+	claimID := s.submitGovernanceClaim(100)
+
+	// Submission refuses this recipient, so a stored claim can only carry it if
+	// the rules moved under an immutable record. Written directly, the way such
+	// a record would arrive. The closing height and ID are untouched, so the
+	// queue entry stays valid and the claim still comes due.
+	claim, err := s.keeper.Claims.Get(s.ctx, claimID)
+	s.Require().NoError(err)
+	claim.Recipient = authtypes.NewModuleAddress(types.InsuranceName).String()
+	s.Require().NoError(s.keeper.Claims.Set(s.ctx, claimID, claim))
+
+	// No expectPayouts: Bank must never be asked to pay it.
 	s.setBlockHeight(25)
 	s.Require().NoError(s.keeper.EndBlocker(s.ctx))
 

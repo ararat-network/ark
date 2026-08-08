@@ -33,6 +33,13 @@ type Keeper struct {
 	claimsKeeper  types.ClaimsKeeper
 	reserveKeeper types.ReserveKeeper
 
+	// fundAddresses is the custody set SendRestriction guards, keyed by raw
+	// address bytes. It is built from the same FundAccountNames() walk that
+	// asserts registration, so a fund cannot be declared reachable and left
+	// unguarded: an address the account keeper does not know is a panic here,
+	// never a silently empty entry in a hand-written map.
+	fundAddresses map[string]struct{}
+
 	Schema          collections.Schema
 	Params          collections.Item[types.Params]
 	TaxCaps         collections.Map[string, math.Int]
@@ -60,10 +67,14 @@ func NewKeeper(
 	claimsKeeper types.ClaimsKeeper,
 	reserveKeeper types.ReserveKeeper,
 ) *Keeper {
-	for _, moduleName := range types.FundAccountNames() {
-		if addr := accountKeeper.GetModuleAddress(moduleName); addr == nil {
+	fundNames := types.FundAccountNames()
+	fundAddresses := make(map[string]struct{}, len(fundNames))
+	for _, moduleName := range fundNames {
+		addr := accountKeeper.GetModuleAddress(moduleName)
+		if addr == nil {
 			panic(fmt.Sprintf("%s module account has not been set", moduleName))
 		}
+		fundAddresses[string(addr)] = struct{}{}
 	}
 	if addr := accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName); addr == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.StabilityTaxCollectorName))
@@ -95,6 +106,7 @@ func NewKeeper(
 		assetKeeper:           assetKeeper,
 		claimsKeeper:          claimsKeeper,
 		reserveKeeper:         reserveKeeper,
+		fundAddresses:         fundAddresses,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,

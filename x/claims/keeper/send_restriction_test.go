@@ -1,10 +1,7 @@
-package claims
+package keeper_test
 
 import (
 	"context"
-	"testing"
-
-	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
 
@@ -17,26 +14,29 @@ import (
 	"ark/x/claims/types"
 )
 
-func TestClaimsSendRestrictionAdmitsNoah(t *testing.T) {
+func (s *KeeperTestSuite) TestSendRestrictionAdmitsNoah() {
+	s.SetupTest()
 	insurance := authtypes.NewModuleAddress(types.InsuranceName)
 	amount := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
 
-	got, err := ClaimsSendRestriction(context.Background(), sdk.AccAddress{1}, insurance, amount)
-	require.NoError(t, err)
-	require.Equal(t, insurance, got)
+	got, err := s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, insurance, amount)
+	s.Require().NoError(err)
+	s.Require().Equal(insurance, got)
 }
 
-func TestClaimsSendRestrictionIgnoresOtherRecipients(t *testing.T) {
+func (s *KeeperTestSuite) TestSendRestrictionIgnoresOtherRecipients() {
+	s.SetupTest()
 	unrelated := sdk.AccAddress{2}
 	// Invalid coins still pass, because the restriction only guards Insurance.
 	invalid := sdk.Coins{{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}}
 
-	got, err := ClaimsSendRestriction(context.Background(), sdk.AccAddress{1}, unrelated, invalid)
-	require.NoError(t, err)
-	require.Equal(t, unrelated, got)
+	got, err := s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, unrelated, invalid)
+	s.Require().NoError(err)
+	s.Require().Equal(unrelated, got)
 }
 
-func TestClaimsSendRestrictionRejectsInvalidDeposits(t *testing.T) {
+func (s *KeeperTestSuite) TestSendRestrictionRejectsInvalidDeposits() {
+	s.SetupTest()
 	insurance := authtypes.NewModuleAddress(types.InsuranceName)
 	tests := []struct {
 		name   string
@@ -51,34 +51,36 @@ func TestClaimsSendRestrictionRejectsInvalidDeposits(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := ClaimsSendRestriction(context.Background(), sdk.AccAddress{1}, insurance, tc.amount)
-			require.ErrorIs(t, err, errortypes.ErrInvalidCoins)
-			require.Nil(t, got)
+		s.Run(tc.name, func() {
+			got, err := s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, insurance, tc.amount)
+			s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
+			s.Require().Nil(got)
 		})
 	}
 }
 
-// TestClaimsSendRestrictionHasNoCollectorExemption pins the difference from
+// TestSendRestrictionHasNoCollectorExemption pins the difference from
 // Treasury's restriction: the stability-tax collector may route non-NOAH
 // residue into strategic Reserve, but nothing may route it into Insurance.
-func TestClaimsSendRestrictionHasNoCollectorExemption(t *testing.T) {
+func (s *KeeperTestSuite) TestSendRestrictionHasNoCollectorExemption() {
+	s.SetupTest()
 	collector := authtypes.NewModuleAddress("stability_tax_collector")
 	insurance := authtypes.NewModuleAddress(types.InsuranceName)
 
-	got, err := ClaimsSendRestriction(
-		context.Background(),
+	got, err := s.keeper.SendRestriction(
+		s.ctx,
 		collector,
 		insurance,
 		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
 	)
-	require.ErrorIs(t, err, errortypes.ErrInvalidCoins)
-	require.Nil(t, got)
+	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
+	s.Require().Nil(got)
 }
 
-// TestClaimsSendRestrictionUsesRewrittenRecipient proves the restriction reads
-// the recipient a prior restriction in the chain produced, not the original.
-func TestClaimsSendRestrictionUsesRewrittenRecipient(t *testing.T) {
+// TestSendRestrictionUsesRewrittenRecipient proves the restriction reads the
+// recipient a prior restriction in the chain produced, not the original.
+func (s *KeeperTestSuite) TestSendRestrictionUsesRewrittenRecipient() {
+	s.SetupTest()
 	insurance := authtypes.NewModuleAddress(types.InsuranceName)
 	rewriteToInsurance := func(
 		_ context.Context,
@@ -88,23 +90,23 @@ func TestClaimsSendRestrictionUsesRewrittenRecipient(t *testing.T) {
 	) (sdk.AccAddress, error) {
 		return insurance, nil
 	}
-	restriction := banktypes.ComposeSendRestrictions(rewriteToInsurance, ClaimsSendRestriction)
+	restriction := banktypes.ComposeSendRestrictions(rewriteToInsurance, s.keeper.SendRestriction)
 
 	got, err := restriction(
-		context.Background(),
+		s.ctx,
 		sdk.AccAddress{1},
 		sdk.AccAddress{2},
 		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
 	)
-	require.ErrorIs(t, err, errortypes.ErrInvalidCoins)
-	require.Nil(t, got)
+	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
+	s.Require().Nil(got)
 
 	got, err = restriction(
-		context.Background(),
+		s.ctx,
 		sdk.AccAddress{1},
 		sdk.AccAddress{2},
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 	)
-	require.NoError(t, err)
-	require.Equal(t, insurance, got)
+	s.Require().NoError(err)
+	s.Require().Equal(insurance, got)
 }

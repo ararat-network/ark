@@ -60,8 +60,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	m := NewAppModule(k)
 
 	return ModuleOutputs{
-		ClaimsKeeper:    k,
-		Module:          m,
-		SendRestriction: ClaimsSendRestriction,
+		ClaimsKeeper: k,
+		Module:       m,
+		// The restriction is a keeper method because the guarded address is the
+		// one the constructor resolved and asserted.
+		SendRestriction: k.SendRestriction,
 	}
 }

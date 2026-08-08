@@ -26,6 +26,13 @@ type Keeper struct {
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
 
+	// insuranceAddress is the custody account's address, captured once at
+	// construction from the account keeper that asserted its registration.
+	// SendRestriction matches against it rather than re-deriving it by name: a
+	// name the account keeper does not know is a panic at startup, where
+	// deriving it would silently produce an address matching no account.
+	insuranceAddress sdk.AccAddress
+
 	Schema              collections.Schema
 	Params              collections.Item[types.Params]
 	ClaimsMandate       collections.Item[types.ClaimsMandate]
@@ -48,17 +55,19 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 ) *Keeper {
-	if addr := accountKeeper.GetModuleAddress(types.InsuranceName); addr == nil {
+	insuranceAddress := accountKeeper.GetModuleAddress(types.InsuranceName)
+	if insuranceAddress == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.InsuranceName))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:           cdc,
-		storeService:  storeService,
-		authority:     authority,
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
+		cdc:              cdc,
+		storeService:     storeService,
+		authority:        authority,
+		accountKeeper:    accountKeeper,
+		bankKeeper:       bankKeeper,
+		insuranceAddress: insuranceAddress,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,
@@ -154,8 +163,7 @@ func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 
 // insuranceBalance reads the live Insurance NOAH balance from Bank.
 func (k Keeper) insuranceBalance(ctx context.Context) math.Int {
-	addr := k.accountKeeper.GetModuleAddress(types.InsuranceName)
-	return k.bankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
+	return k.bankKeeper.GetBalance(ctx, k.insuranceAddress, chain.NoahBaseDenom).Amount
 }
 
 // Logger returns a module-specific logger.
