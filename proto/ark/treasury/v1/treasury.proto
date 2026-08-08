@@ -12,7 +12,7 @@ option go_package = "ark/x/treasury/types";
 // Params defines the parameters for the treasury module.
 message Params {
   option (gogoproto.equal) = true;
-  option (amino.name) = "ark/x/treasury/Params";
+  option (amino.name) = "ark/treasury/Params";
 
   // reference_tax_cap is the governance-owned cap used to derive the complete
   // per-denomination tax-cap map. A zero amount means taxation is uncapped; a

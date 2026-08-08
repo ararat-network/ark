@@ -11,13 +11,10 @@ import (
 // RegisterLegacyAminoCodec registers all Treasury messages used by direct or
 // governance transactions.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/x/treasury/MsgUpdateParams")
-	legacy.RegisterAminoMsg(cdc, &MsgSetMonetaryMandate{}, "ark/x/treasury/MsgSetMonetaryMandate")
-	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/x/treasury/MsgUpdatePolicy")
-	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/x/treasury/MsgCommitteeUpdatePolicy")
-
-	cdec := cdc
-	cdec.RegisterConcrete(Params{}, "ark/x/treasury/Params", nil)
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/treasury/MsgUpdateParams")
+	legacy.RegisterAminoMsg(cdc, &MsgSetMonetaryMandate{}, "ark/treasury/MsgSetMonetaryMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/treasury/MsgUpdatePolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/treasury/MsgCommitteeUpdatePolicy")
 }
 
 // RegisterInterfaces registers Treasury messages as sdk.Msg implementations.

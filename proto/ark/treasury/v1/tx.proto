@@ -31,7 +31,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgUpdateParams";
+  option (amino.name) = "ark/treasury/MsgUpdateParams";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   Params params = 2
@@ -46,7 +46,7 @@ message MsgUpdateParamsResponse {}
 // mandate; Treasury derives the next term on chain.
 message MsgSetMonetaryMandate {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgSetMonetaryMandate";
+  option (amino.name) = "ark/treasury/MsgSetMonetaryMandate";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -67,7 +67,7 @@ message MsgSetMonetaryMandateResponse {}
 // its authorization never depends on the committee mandate.
 message MsgUpdatePolicy {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/x/treasury/MsgUpdatePolicy";
+  option (amino.name) = "ark/treasury/MsgUpdatePolicy";
 
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   MonetaryPolicy policy = 2
@@ -86,7 +86,7 @@ message MsgCommitteeUpdatePolicy {
   // The protobuf-derived Amino name exceeds the SDK type-name limit, so this
   // message uses the compact identifier below. Its protobuf message name, RPC
   // name, signer, and semantics are unchanged.
-  option (amino.name) = "ark/x/treasury/MsgCommitteeUpdatePolicy";
+  option (amino.name) = "ark/treasury/MsgCommitteeUpdatePolicy";
 
   string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
