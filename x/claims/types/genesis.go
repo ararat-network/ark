@@ -1,13 +1,10 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"cosmossdk.io/math"
-
-	"github.com/cosmos/cosmos-sdk/codec"
 )
 
 // NewGenesisState creates a Claims genesis state.
@@ -144,14 +141,4 @@ func (gs GenesisState) Validate() error {
 	}
 
 	return nil
-}
-
-// GetGenesisStateFromAppState returns the Claims genesis state from raw app
-// genesis state.
-func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.RawMessage) *GenesisState {
-	var genesisState GenesisState
-	if appState[ModuleName] != nil {
-		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
-	}
-	return &genesisState
 }

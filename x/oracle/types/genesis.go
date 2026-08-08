@@ -2,12 +2,10 @@ package types
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "ark/pkg/chain"
@@ -226,16 +224,4 @@ func (gs GenesisState) Validate() error {
 	}
 
 	return nil
-}
-
-// GetGenesisStateFromAppState returns x/oracle GenesisState given raw application
-// genesis state.
-func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.RawMessage) *GenesisState {
-	var genesisState GenesisState
-
-	if appState[ModuleName] != nil {
-		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
-	}
-
-	return &genesisState
 }

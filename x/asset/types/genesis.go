@@ -1,10 +1,7 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
-
-	"github.com/cosmos/cosmos-sdk/codec"
 
 	chain "ark/pkg/chain"
 )
@@ -142,18 +139,4 @@ func (gs GenesisState) Validate() error {
 	}
 
 	return nil
-}
-
-// GetGenesisStateFromAppState returns x/asset GenesisState from application
-// genesis state.
-func GetGenesisStateFromAppState(
-	cdc codec.JSONCodec,
-	appState map[string]json.RawMessage,
-) *GenesisState {
-	var genesisState GenesisState
-	if appState[ModuleName] != nil {
-		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
-	}
-
-	return &genesisState
 }
