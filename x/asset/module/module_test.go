@@ -151,11 +151,10 @@ func TestAutoCLIOptionsCoverAssetServices(t *testing.T) {
 	// The expected sets are read off the service descriptors rather than
 	// transcribed, so a new RPC fails this test until it is described here.
 	// That is what makes the assertion below a real pin on the committee's
-	// powers: a second committee-signed message cannot ship unnoticed, and
-	// assettypes.RegistryCacheInvalidator cites this test for exactly that
-	// premise — suspension is the only mutation reaching consensus outside
-	// x/gov's EndBlocker, so it is the only one that must invalidate a
-	// consumer's block-scoped fold of the registry.
+	// powers: a second committee-signed message cannot ship unnoticed.
+	// Suspension is the only lifecycle mutation reaching consensus outside
+	// x/gov's EndBlocker, so it is the only one that can land while a block is
+	// still executing.
 	require.Equal(
 		t,
 		serviceMethods(assetv1.Query_ServiceDesc),

@@ -30,25 +30,3 @@ type OracleKeeper interface {
 	GetLastKnownRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
 	FeedPhase(ctx context.Context, denom string) (oracletypes.FeedPhase, error)
 }
-
-// RegistryCacheInvalidator drops state a consumer derived from the asset
-// registry and scoped to a single block.
-//
-// Almost no consumer needs this. Every lifecycle transition is a governance
-// message, and x/gov executes those in the EndBlocker — after every transaction
-// and after the only EndBlockers that follow it — so a block-scoped fold is
-// safe by ordering alone and is rebuilt before anything reads it again.
-//
-// The emergency committee is the single exception: it acts in an ordinary
-// transaction, so its suspension can land while the block is still being read,
-// leaving a consumer's fold describing a registry that no longer exists. That
-// one path invalidates; nothing else has to. The premise — that suspension is
-// the committee's only power and the only non-governance mutation — is pinned
-// by TestAutoCLIOptionsCoverAssetServices, which asserts the complete message
-// set and marks exactly one command as committee-signed.
-//
-// Consumers depend on x/asset, so the reverse edge is injected at wiring rather
-// than imported, the same shape as x/oracle's feed referent guards.
-type RegistryCacheInvalidator interface {
-	InvalidateRegistryCache(ctx context.Context) error
-}

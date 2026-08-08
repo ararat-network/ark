@@ -1,9 +1,6 @@
 package keeper
 
 import (
-	"context"
-	"fmt"
-
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
 
@@ -19,11 +16,6 @@ type Keeper struct {
 	authority    string
 	bankKeeper   types.BankKeeper
 	oracleKeeper types.OracleKeeper
-
-	// registryCacheInvalidators are the consumers holding a block-scoped fold of
-	// the registry. Only the emergency committee path notifies them, because it
-	// is the only transition that lands while its block is still being read.
-	registryCacheInvalidators []types.RegistryCacheInvalidator
 
 	Schema               collections.Schema
 	Params               collections.Item[types.Params]
@@ -97,24 +89,4 @@ func NewKeeper(
 	k.Schema = schema
 
 	return k
-}
-
-// SetRegistryCacheInvalidators registers the consumers holding a block-scoped
-// fold of the registry. App wiring owns the set, because consumers depend on
-// x/asset and the reverse edge must not become an import.
-func (k *Keeper) SetRegistryCacheInvalidators(invalidators ...types.RegistryCacheInvalidator) {
-	k.registryCacheInvalidators = invalidators
-}
-
-// invalidateRegistryCaches tells every registered consumer to drop its
-// block-scoped fold. It is called from the emergency committee path alone: see
-// RegistryCacheInvalidator for why no governance transition needs it.
-func (k Keeper) invalidateRegistryCaches(ctx context.Context) error {
-	for _, invalidator := range k.registryCacheInvalidators {
-		if err := invalidator.InvalidateRegistryCache(ctx); err != nil {
-			return fmt.Errorf("invalidating registry-derived cache: %w", err)
-		}
-	}
-
-	return nil
 }

@@ -103,18 +103,12 @@ func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, den
 		return err
 	}
 	// This is the only lifecycle transition that lands inside a block still
-	// being read. Governance transitions execute in x/gov's EndBlocker, after
-	// every transaction, so consumers folding the registry once per block are
-	// safe by ordering; the committee acts in an ordinary transaction, so a
-	// consumer that already folded this block now holds a fold describing a
-	// registry that no longer exists. Treasury's liability snapshot is one: it
-	// tracks mint and burn but not status, so without this a later expansion in
-	// this block would size fund targets on a valuation that still counts the
-	// asset just suspended, and still calls itself complete.
-	if err := k.invalidateRegistryCaches(ctx); err != nil {
-		return err
-	}
-
+	// being read: governance transitions execute in x/gov's EndBlocker, after
+	// every transaction, while the committee acts in an ordinary one. That once
+	// obliged consumers holding a block-scoped fold of the registry to be told,
+	// and Treasury's liability snapshot was such a consumer. None remains —
+	// Treasury values liability at the end of the block, from final state, so a
+	// suspension landing anywhere inside the block is simply seen.
 	if err := k.EmergencySuspensions.Set(ctx, denom); err != nil {
 		return fmt.Errorf("recording emergency suspension for asset %s: %w", denom, err)
 	}
