@@ -14,25 +14,25 @@ import (
 	"ark/x/oracle/types"
 )
 
-// MaxAgeFor returns the staleness window governing denom: the window its feed
+// GetMaxAge returns the staleness window governing denom: the window its feed
 // carries when governance stated one, the chain default otherwise.
 //
 // A window resolves for any denomination, including one with no feed at all.
 // The question a caller asks here is how old a rate may be, not whether the
 // feed is a member — and a denomination with no feed has no rate to age.
-func (k Keeper) MaxAgeFor(ctx context.Context, denom string) (time.Duration, error) {
+func (k Keeper) GetMaxAge(ctx context.Context, denom string) (time.Duration, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("getting params: %w", err)
 	}
 
-	return k.maxAgeFor(ctx, params, denom)
+	return k.getMaxAge(ctx, params, denom)
 }
 
-// maxAgeFor resolves denom's window against params the caller already holds.
+// getMaxAge resolves denom's window against params the caller already holds.
 // Rate-set reads walk many denominations under one policy snapshot, and this
 // keeps that walk at one params read rather than one per denomination.
-func (k Keeper) maxAgeFor(ctx context.Context, params types.Params, denom string) (time.Duration, error) {
+func (k Keeper) getMaxAge(ctx context.Context, params types.Params, denom string) (time.Duration, error) {
 	override, err := k.MaxExchangeRateAgeOverrides.Get(ctx, denom)
 	if err == nil {
 		return override, nil

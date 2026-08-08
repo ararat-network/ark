@@ -93,7 +93,7 @@ func (k Keeper) rateSet(ctx context.Context, skipUnavailable bool, denoms []stri
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
 
 	for _, denom := range uniqueDenoms {
-		maxAge, err := k.maxAgeFor(ctx, params, denom)
+		maxAge, err := k.getMaxAge(ctx, params, denom)
 		if err != nil {
 			return nil, err
 		}

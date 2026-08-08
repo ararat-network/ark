@@ -413,7 +413,7 @@ func (s *KeeperTestSuite) TestGenesisRoundTripsMaxExchangeRateAgeOverrides() {
 	)
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
 
-	maxAge, err := s.keeper.MaxAgeFor(s.ctx, feedDenom)
+	maxAge, err := s.keeper.GetMaxAge(s.ctx, feedDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(26*time.Hour, maxAge)
 

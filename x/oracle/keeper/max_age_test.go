@@ -12,7 +12,7 @@ import (
 // A window governs its own denomination and nothing else. Everything without
 // one — including a denomination the Oracle has never priced, and the
 // numeraire, which has no feed at all — resolves to the chain default.
-func (s *KeeperTestSuite) TestMaxAgeForResolvesPerDenom() {
+func (s *KeeperTestSuite) TestGetMaxAgeResolvesPerDenom() {
 	tests := []struct {
 		name  string
 		denom string
@@ -33,7 +33,7 @@ func (s *KeeperTestSuite) TestMaxAgeForResolvesPerDenom() {
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			s.Require().NoError(s.keeper.SetMaxAge(s.ctx, chain.SDRBaseDenom, 26*time.Hour))
 
-			maxAge, err := s.keeper.MaxAgeFor(s.ctx, tc.denom)
+			maxAge, err := s.keeper.GetMaxAge(s.ctx, tc.denom)
 			s.Require().NoError(err)
 			s.Require().Equal(tc.want, maxAge)
 		})
@@ -43,7 +43,7 @@ func (s *KeeperTestSuite) TestMaxAgeForResolvesPerDenom() {
 // A raised default reaches every denomination that has no window of its own,
 // and none that does: the two are independent knobs, not one folded into the
 // other.
-func (s *KeeperTestSuite) TestMaxAgeForFollowsTheDefaultItFallsBackTo() {
+func (s *KeeperTestSuite) TestGetMaxAgeFollowsTheDefaultItFallsBackTo() {
 	s.Require().NoError(s.keeper.SetMaxAge(s.ctx, chain.SDRBaseDenom, 26*time.Hour))
 
 	params, err := s.keeper.Params.Get(s.ctx)
@@ -51,11 +51,11 @@ func (s *KeeperTestSuite) TestMaxAgeForFollowsTheDefaultItFallsBackTo() {
 	params.MaxExchangeRateAge = time.Hour
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
-	overridden, err := s.keeper.MaxAgeFor(s.ctx, chain.SDRBaseDenom)
+	overridden, err := s.keeper.GetMaxAge(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(26*time.Hour, overridden)
 
-	inherited, err := s.keeper.MaxAgeFor(s.ctx, chain.USDBaseDenom)
+	inherited, err := s.keeper.GetMaxAge(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(time.Hour, inherited)
 }
@@ -79,7 +79,7 @@ func (s *KeeperTestSuite) TestSetMaxAgeIsDeclarative() {
 	s.Require().NoError(err)
 	s.Require().False(found)
 
-	maxAge, err := s.keeper.MaxAgeFor(s.ctx, chain.SDRBaseDenom)
+	maxAge, err := s.keeper.GetMaxAge(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultMaxExchangeRateAge, maxAge)
 }
@@ -138,7 +138,7 @@ func (s *KeeperTestSuite) TestSetMaxAgeRequiresAFeed() {
 	))
 	s.Require().NoError(s.keeper.SetMaxAge(s.ctx, "agold", 26*time.Hour))
 
-	maxAge, err := s.keeper.MaxAgeFor(s.ctx, "agold")
+	maxAge, err := s.keeper.GetMaxAge(s.ctx, "agold")
 	s.Require().NoError(err)
 	s.Require().Equal(26*time.Hour, maxAge)
 }

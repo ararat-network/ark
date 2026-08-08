@@ -156,7 +156,7 @@ func (s *KeeperTestSuite) TestAddFeed() {
 
 		// The window lands with the schedule, so the feed is never live for a
 		// block under a default chosen for faster instruments.
-		maxAge, err := s.keeper.MaxAgeFor(s.ctx, feedGold)
+		maxAge, err := s.keeper.GetMaxAge(s.ctx, feedGold)
 		s.Require().NoError(err)
 		s.Require().Equal(26*time.Hour, maxAge)
 	})
@@ -192,7 +192,7 @@ func (s *KeeperTestSuite) TestAddFeed() {
 		s.Require().NoError(err)
 		s.Require().Empty(feeds.Transitions)
 
-		maxAge, err := s.keeper.MaxAgeFor(s.ctx, feedGold)
+		maxAge, err := s.keeper.GetMaxAge(s.ctx, feedGold)
 		s.Require().NoError(err)
 		s.Require().Equal(12*time.Hour, maxAge)
 	})

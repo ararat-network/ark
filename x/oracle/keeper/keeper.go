@@ -184,7 +184,7 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		return math.LegacyOneDec(), nil
 	}
 
-	maxAge, err := k.MaxAgeFor(ctx, denom)
+	maxAge, err := k.GetMaxAge(ctx, denom)
 	if err != nil {
 		return math.LegacyZeroDec(), err
 	}
@@ -203,7 +203,7 @@ func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 	var exchangeRates sdk.DecCoins
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		maxAge, err := k.maxAgeFor(ctx, params, denom)
+		maxAge, err := k.getMaxAge(ctx, params, denom)
 		if err != nil {
 			return false, err
 		}

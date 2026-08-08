@@ -312,7 +312,7 @@ func (s *KeeperTestSuite) TestAdvanceFeedsPrunesRemovedMaxAgeOverrides() {
 	s.Require().False(hasRemoved)
 
 	// The departing feed's neighbour keeps its own window.
-	surviving, err := s.keeper.MaxAgeFor(s.ctx, feedUSD)
+	surviving, err := s.keeper.GetMaxAge(s.ctx, feedUSD)
 	s.Require().NoError(err)
 	s.Require().Equal(26*time.Hour, surviving)
 
