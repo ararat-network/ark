@@ -10,33 +10,11 @@ import (
 	chain "ark/pkg/chain"
 	assettypes "ark/x/asset/types"
 	"ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
 )
-
-// coinMatcher compares coins by denomination and amount. gomock's default
-// equality reaches into math.Int's big.Int internals, where a zero reached by
-// subtraction and a zero written as a literal are not the same value.
-type coinMatcher struct {
-	coin sdk.Coin
-}
-
-func equalCoin(coin sdk.Coin) gomock.Matcher {
-	return coinMatcher{coin: coin}
-}
-
-func (m coinMatcher) Matches(x any) bool {
-	coin, ok := x.(sdk.Coin)
-
-	return ok && coin.Denom == m.coin.Denom && coin.Amount.Equal(m.coin.Amount)
-}
-
-func (m coinMatcher) String() string {
-	return "is equal to " + m.coin.String()
-}
 
 // settlementPlan builds an activated plan redeeming two units of the asset per
 // one NOAH. The rate divides its offers exactly, which keeps the assertion on
-// the rates Treasury is handed about routing rather than rounding.
+// what settlement records about routing rather than rounding.
 func settlementPlan(denom string) assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
 		Denom:                 denom,
@@ -52,35 +30,15 @@ func (s *KeeperTestSuite) TestSettle() {
 	offerCoin := sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)
 	plan := settlementPlan(chain.USDBaseDenom)
 	entitlement := sdk.NewInt64Coin(chain.NoahBaseDenom, 500_000)
-	// The plan rate carried verbatim, because it is already quoted in units of
-	// the asset per one NOAH, with the numeraire carried at one so the set has
-	// the shape the oracle's own rate sets have. Treasury converts through
-	// whatever rates it is handed, and a suspended asset's market price is
-	// exactly what stopped being trustworthy, so it must be handed the committed
-	// rate and never the oracle's. No oracle expectation is registered anywhere
-	// in this test, which is what asserts the second half of that.
-	planRates := oracletypes.RateSet{
-		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom:  math.LegacyNewDec(2),
-	}
-
 	tests := []struct {
-		name         string
-		bufferPaid   math.Int
-		expectedMint sdk.Coin
+		name string
 	}{
 		{
-			// The buffer covers what it can and the rest is minted, so the holder
-			// receives the whole entitlement either way: an orderly failure costs
-			// bounded NOAH dilution rather than a haircut on the exit.
-			name:         "buffer covers part of the entitlement",
-			bufferPaid:   math.NewInt(200_000),
-			expectedMint: sdk.NewInt64Coin(chain.NoahBaseDenom, 300_000),
-		},
-		{
-			name:         "buffer covers the whole entitlement",
-			bufferPaid:   math.NewInt(500_000),
-			expectedMint: sdk.NewCoin(chain.NoahBaseDenom, math.ZeroInt()),
+			// The whole entitlement is minted here and the Buffer's share of it
+			// burned back at settlement, so the holder receives the whole
+			// entitlement without waiting on a valuation: an orderly failure
+			// costs bounded NOAH dilution rather than a haircut on the exit.
+			name: "the exit mints its whole entitlement",
 		},
 	}
 
@@ -94,36 +52,32 @@ func (s *KeeperTestSuite) TestSettle() {
 				ActiveSettlementPlan(s.ctx, chain.USDBaseDenom).
 				Return(plan, true, nil)
 
-			calls := []any{
+			gomock.InOrder(
 				s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 					s.ctx, trader, types.ModuleName, sdk.NewCoins(offerCoin),
 				).Return(nil),
-				s.treasuryKeeper.EXPECT().DrawRedemptionBuffer(
-					s.ctx, offerCoin, entitlement.Amount, planRates,
-				).Return(tc.bufferPaid, nil),
 				s.bankKeeper.EXPECT().BurnCoins(
 					s.ctx, types.ModuleName, sdk.NewCoins(offerCoin),
 				).Return(nil),
-			}
-			if tc.expectedMint.IsPositive() {
-				calls = append(calls, s.bankKeeper.EXPECT().MintCoins(
-					s.ctx, types.ModuleName, sdk.NewCoins(tc.expectedMint),
-				).Return(nil))
-			}
-			calls = append(
-				calls,
-				s.treasuryKeeper.EXPECT().RecordSupplyChange(
-					s.ctx, offerCoin, equalCoin(tc.expectedMint), planRates,
+				s.bankKeeper.EXPECT().MintCoins(
+					s.ctx, types.ModuleName, sdk.NewCoins(entitlement),
 				).Return(nil),
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 					s.ctx, types.ModuleName, trader, sdk.NewCoins(entitlement),
 				).Return(nil),
 			)
-			gomock.InOrder(calls...)
 
 			redeemed, err := s.keeper.Settle(s.ctx, trader, offerCoin)
 			s.Require().NoError(err)
 			s.Require().Equal(entitlement, redeemed)
+			// The entitlement is recorded at the plan's own committed rate — no
+			// oracle expectation is registered anywhere in this test, which is
+			// what asserts a suspended asset's market price never reaches it.
+			s.requireSettledTotals(types.ConversionTotals{
+				EligiblePrincipal: math.ZeroInt(),
+				RedemptionOutput:  entitlement.Amount,
+				RedeemedValue:     math.LegacyNewDecFromInt(entitlement.Amount),
+			})
 
 			s.requireTypedEvent(&types.EventSettle{
 				Trader:         trader.String(),

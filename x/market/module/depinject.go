@@ -29,8 +29,9 @@ func init() {
 type ModuleInputs struct {
 	depinject.In
 
-	Cdc          codec.Codec
-	StoreService store.KVStoreService
+	Cdc                   codec.Codec
+	StoreService          store.KVStoreService
+	TransientStoreService store.TransientStoreService
 
 	AccountKeeper  types.AccountKeeper
 	BankKeeper     types.BankKeeper
@@ -50,6 +51,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
+		in.TransientStoreService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		in.AccountKeeper,
 		in.BankKeeper,

@@ -338,20 +338,31 @@ func (k Keeper) settleSwap(
 		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
 	}
 
+	// An expansion keeps its principal in module custody for the block's
+	// settlement and burns only the spread, which owes nothing to Treasury
+	// state. A redemption burns the offer outright and mints the whole quoted
+	// output; the Buffer's share of it is burned back at settlement, so the
+	// trader is paid the same either way and no conversion waits on a valuation.
 	burned := offerCoin
 	minted := quote.swapCoin
 	if offerCoin.Denom == chain.NoahBaseDenom {
-		routedBurn, err := k.treasuryKeeper.RouteExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
+		spread, err := k.recordExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
 		if err != nil {
-			return sdkerrors.Wrapf(err, "routing expansion for offer %s and output %s", offerCoin, quote.swapCoin)
+			return sdkerrors.Wrapf(err, "recording expansion of offer %s into output %s", offerCoin, quote.swapCoin)
 		}
-		burned = routedBurn
+		burned = spread
 	} else if quote.swapCoin.Denom == chain.NoahBaseDenom {
-		bufferPaid, err := k.treasuryKeeper.DrawRedemptionBuffer(ctx, offerCoin, quote.swapCoin.Amount, quote.rates)
+		// The redeemed supply is valued at the rate this swap quoted, as the
+		// settlement-plan path values its own at the plan's committed rate. What
+		// the recorder sums is the value; whose rate produced it stays with the
+		// caller holding that rate.
+		redeemed, err := quote.rates.Convert(sdk.NewDecCoinFromCoin(offerCoin), chain.NoahBaseDenom)
 		if err != nil {
-			return sdkerrors.Wrapf(err, "drawing redemption buffer for offer %s and output %s", offerCoin, quote.swapCoin)
+			return sdkerrors.Wrapf(err, "valuing redeemed offer %s", offerCoin)
 		}
-		minted = chain.NoahCoin(quote.swapCoin.Amount.Sub(bufferPaid))
+		if err := k.recordRedemption(ctx, redeemed.Amount, quote.swapCoin.Amount); err != nil {
+			return sdkerrors.Wrapf(err, "recording redemption of offer %s into output %s", offerCoin, quote.swapCoin)
+		}
 	}
 
 	if !burned.IsZero() {
@@ -363,10 +374,6 @@ func (k Keeper) settleSwap(
 		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
 			return sdkerrors.Wrapf(err, "minting settlement coins %s in module", minted)
 		}
-	}
-
-	if err := k.treasuryKeeper.RecordSupplyChange(ctx, burned, minted, quote.rates); err != nil {
-		return sdkerrors.Wrapf(err, "recording supply change from %s to %s", burned, minted)
 	}
 
 	swapCoins := sdk.NewCoins(quote.swapCoin)

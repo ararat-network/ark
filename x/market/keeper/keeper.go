@@ -17,31 +17,21 @@ import (
 
 // Keeper of the market store
 type Keeper struct {
-	cdc            codec.BinaryCodec
-	storeService   store.KVStoreService
-	authority      string
-	accountKeeper  types.AccountKeeper
-	bankKeeper     types.BankKeeper
-	oracleKeeper   types.OracleKeeper
-	treasuryKeeper types.TreasuryKeeper
-	assetKeeper    types.AssetKeeper
+	cdc                   codec.BinaryCodec
+	storeService          store.KVStoreService
+	transientStoreService store.TransientStoreService
+	authority             string
+	accountKeeper         types.AccountKeeper
+	bankKeeper            types.BankKeeper
+	oracleKeeper          types.OracleKeeper
+	treasuryKeeper        types.TreasuryKeeper
+	assetKeeper           types.AssetKeeper
 
-	Schema       collections.Schema
-	Params       collections.Item[types.Params]
-	ArkPoolDelta collections.Item[math.LegacyDec]
-
-	// TobinTaxOverrides holds the sparse per-denomination exceptions to
-	// Params.DefaultTobinTax. Absence means the default applies, so an asset
-	// needs no entry to be convertible.
+	Schema            collections.Schema
+	Params            collections.Item[types.Params]
+	ArkPoolDelta      collections.Item[math.LegacyDec]
 	TobinTaxOverrides collections.Map[string, math.LegacyDec]
-
-	// ConversionPolicy holds the live conversion-capacity pair. It is separate
-	// from Params because it is committee-delegable: a whole-object params
-	// replacement must not be able to revert an emergency resize.
-	ConversionPolicy collections.Item[types.ConversionPolicy]
-
-	// ConversionMandate holds the governed committee appointment over
-	// ConversionPolicy, disabled unless governance has appointed one.
+	ConversionPolicy  collections.Item[types.ConversionPolicy]
 	ConversionMandate collections.Item[types.ConversionMandate]
 }
 
@@ -49,6 +39,7 @@ type Keeper struct {
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
+	transientStoreService store.TransientStoreService,
 	authority string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
@@ -63,14 +54,15 @@ func NewKeeper(
 
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:            cdc,
-		storeService:   storeService,
-		authority:      authority,
-		accountKeeper:  accountKeeper,
-		bankKeeper:     bankKeeper,
-		oracleKeeper:   oracleKeeper,
-		treasuryKeeper: treasuryKeeper,
-		assetKeeper:    assetKeeper,
+		cdc:                   cdc,
+		storeService:          storeService,
+		transientStoreService: transientStoreService,
+		authority:             authority,
+		accountKeeper:         accountKeeper,
+		bankKeeper:            bankKeeper,
+		oracleKeeper:          oracleKeeper,
+		treasuryKeeper:        treasuryKeeper,
+		assetKeeper:           assetKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,

@@ -263,14 +263,19 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
+	// No Treasury call appears in either case: a conversion records its own
+	// facts and settles at the end of the block. A redemption therefore mints
+	// its whole quoted output, and an expansion burns only its spread, holding
+	// the principal for settlement to place.
 	tests := []struct {
-		name          string
-		offerCoin     sdk.Coin
-		askDenom      string
-		expectedSwap  sdk.Coin
-		expectedDelta math.LegacyDec
-		expectedMint  sdk.Coin
-		setupTreasury func(oracletypes.RateSet) *gomock.Call
+		name           string
+		offerCoin      sdk.Coin
+		askDenom       string
+		expectedSwap   sdk.Coin
+		expectedDelta  math.LegacyDec
+		expectedBurn   sdk.Coin
+		expectedMint   sdk.Coin
+		expectedTotals types.ConversionTotals
 	}{
 		{
 			name:          "stablecoin to noah",
@@ -278,14 +283,12 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			askDenom:      chain.NoahBaseDenom,
 			expectedSwap:  sdk.NewInt64Coin(chain.NoahBaseDenom, 80),
 			expectedDelta: math.LegacyNewDec(100),
-			expectedMint:  sdk.NewInt64Coin(chain.NoahBaseDenom, 60),
-			setupTreasury: func(rates oracletypes.RateSet) *gomock.Call {
-				return s.treasuryKeeper.EXPECT().DrawRedemptionBuffer(
-					s.ctx,
-					sdk.NewInt64Coin(chain.USDBaseDenom, 100),
-					math.NewInt(80),
-					rates,
-				).Return(math.NewInt(20), nil)
+			expectedBurn:  sdk.NewInt64Coin("ausd", 100),
+			expectedMint:  sdk.NewInt64Coin(chain.NoahBaseDenom, 80),
+			expectedTotals: types.ConversionTotals{
+				EligiblePrincipal: math.ZeroInt(),
+				RedemptionOutput:  math.NewInt(80),
+				RedeemedValue:     math.LegacyNewDec(100),
 			},
 		},
 		{
@@ -294,14 +297,12 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			askDenom:      "ausd",
 			expectedSwap:  sdk.NewInt64Coin("ausd", 80),
 			expectedDelta: math.LegacyNewDec(-80),
+			expectedBurn:  sdk.NewInt64Coin(chain.NoahBaseDenom, 20),
 			expectedMint:  sdk.NewInt64Coin("ausd", 80),
-			setupTreasury: func(rates oracletypes.RateSet) *gomock.Call {
-				return s.treasuryKeeper.EXPECT().RouteExpansion(
-					s.ctx,
-					sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
-					sdk.NewInt64Coin(chain.USDBaseDenom, 80),
-					rates,
-				).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), nil)
+			expectedTotals: types.ConversionTotals{
+				EligiblePrincipal: math.NewInt(80),
+				RedemptionOutput:  math.ZeroInt(),
+				RedeemedValue:     math.LegacyZeroDec(),
 			},
 		},
 	}
@@ -322,24 +323,10 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 				tc.askDenom,
 			).Return(rates, nil).Times(1)
 
-			treasuryCall := tc.setupTreasury(rates)
-			burned := tc.offerCoin
-			if tc.offerCoin.Denom == chain.NoahBaseDenom {
-				burned = sdk.NewInt64Coin(chain.NoahBaseDenom, 100)
-			}
-			recordCall := s.treasuryKeeper.EXPECT().RecordSupplyChange(
-				s.ctx,
-				burned,
-				tc.expectedMint,
-				rates,
-			).Return(nil)
-
 			gomock.InOrder(
 				s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(s.ctx, trader, types.ModuleName, sdk.NewCoins(tc.offerCoin)).Return(nil),
-				treasuryCall,
-				s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, sdk.NewCoins(tc.offerCoin)).Return(nil),
+				s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, sdk.NewCoins(tc.expectedBurn)).Return(nil),
 				s.bankKeeper.EXPECT().MintCoins(s.ctx, types.ModuleName, sdk.NewCoins(tc.expectedMint)).Return(nil),
-				recordCall,
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(s.ctx, types.ModuleName, trader, sdk.NewCoins(tc.expectedSwap)).Return(nil),
 			)
 
@@ -355,6 +342,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			delta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 			s.Require().NoError(err)
 			s.Require().True(tc.expectedDelta.Equal(delta), "expected delta %s, got %s", tc.expectedDelta, delta)
+			s.requireSettledTotals(tc.expectedTotals)
 		})
 	}
 }
@@ -427,28 +415,6 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 			},
 		},
 		{
-			name:      "supply accounting",
-			offerCoin: stableOffer,
-			askDenom:  chain.KRWBaseDenom,
-			setup: func() {
-				s.expectStableToStableQuote(stableRates)
-				gomock.InOrder(
-					s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
-						s.ctx, trader, types.ModuleName, sdk.NewCoins(stableOffer),
-					).Return(nil),
-					s.bankKeeper.EXPECT().BurnCoins(
-						s.ctx, types.ModuleName, sdk.NewCoins(stableOffer),
-					).Return(nil),
-					s.bankKeeper.EXPECT().MintCoins(
-						s.ctx, types.ModuleName, sdk.NewCoins(stableOutput),
-					).Return(nil),
-					s.treasuryKeeper.EXPECT().RecordSupplyChange(
-						s.ctx, stableOffer, stableOutput, stableRates,
-					).Return(injectedErr),
-				)
-			},
-		},
-		{
 			name:      "recipient payout",
 			offerCoin: stableOffer,
 			askDenom:  chain.KRWBaseDenom,
@@ -464,9 +430,6 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 					s.bankKeeper.EXPECT().MintCoins(
 						s.ctx, types.ModuleName, sdk.NewCoins(stableOutput),
 					).Return(nil),
-					s.treasuryKeeper.EXPECT().RecordSupplyChange(
-						s.ctx, stableOffer, stableOutput, stableRates,
-					).Return(nil),
 					s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 						s.ctx, types.ModuleName, trader, sdk.NewCoins(stableOutput),
 					).Return(injectedErr),
@@ -474,7 +437,10 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 			},
 		},
 		{
-			name:      "expansion routing",
+			// The expansion burns only its spread now, so this is the burn that
+			// can fail inside the conversion; the principal it retains is
+			// Treasury's to place at settlement.
+			name:      "expansion spread burn",
 			offerCoin: sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 			askDenom:  chain.USDBaseDenom,
 			setup: func() {
@@ -488,17 +454,16 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 					s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 						s.ctx, trader, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)),
 					).Return(nil),
-					s.treasuryKeeper.EXPECT().RouteExpansion(
-						s.ctx,
-						sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
-						sdk.NewInt64Coin(chain.USDBaseDenom, 80),
-						nativeRates,
-					).Return(sdk.Coin{}, injectedErr),
+					s.bankKeeper.EXPECT().BurnCoins(
+						s.ctx, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)),
+					).Return(injectedErr),
 				)
 			},
 		},
 		{
-			name:      "redemption buffer draw",
+			// A redemption mints its whole quoted output and waits for no
+			// Buffer, so the mint is what can fail inside the conversion.
+			name:      "redemption output mint",
 			offerCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 			askDenom:  chain.NoahBaseDenom,
 			setup: func() {
@@ -512,12 +477,12 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 					s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 						s.ctx, trader, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 					).Return(nil),
-					s.treasuryKeeper.EXPECT().DrawRedemptionBuffer(
-						s.ctx,
-						sdk.NewInt64Coin(chain.USDBaseDenom, 100),
-						math.NewInt(80),
-						nativeRates,
-					).Return(math.Int{}, injectedErr),
+					s.bankKeeper.EXPECT().BurnCoins(
+						s.ctx, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
+					).Return(nil),
+					s.bankKeeper.EXPECT().MintCoins(
+						s.ctx, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 80)),
+					).Return(injectedErr),
 				)
 			},
 		},
@@ -724,7 +689,6 @@ func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver
 		s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(s.ctx, trader, types.ModuleName, sdk.NewCoins(offerCoin)).Return(nil),
 		s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, sdk.NewCoins(offerCoin)).Return(nil),
 		s.bankKeeper.EXPECT().MintCoins(s.ctx, types.ModuleName, sdk.NewCoins(swapCoin)).Return(nil),
-		s.treasuryKeeper.EXPECT().RecordSupplyChange(s.ctx, offerCoin, swapCoin, gomock.Any()).Return(nil),
 		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(s.ctx, types.ModuleName, receiver, sdk.NewCoins(swapCoin)).Return(nil),
 	)
 }

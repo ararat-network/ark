@@ -42,15 +42,14 @@ type AssetKeeper interface {
 // TreasuryKeeper defines the allocation and liability accounting required by
 // Market settlement.
 type TreasuryKeeper interface {
-	// RouteExpansion returns the NOAH Market must burn to settle the escrow it
-	// still holds: the quote spread plus any principal that overflowed every
-	// funded target. Market never learns how Treasury split the rest between
-	// the funds, so settlement cannot branch on monetary policy.
-	RouteExpansion(ctx context.Context, grossOffer sdk.Coin, stableOutput sdk.Coin, quoteRates oracletypes.RateSet) (sdk.Coin, error)
-	// DrawRedemptionBuffer returns the Buffer's payment toward noahOutput.
-	// Market mints the remainder and never learns how Treasury sized it: the
-	// liability figures behind the share stay execution-local, and settlement
-	// must not branch on them.
-	DrawRedemptionBuffer(ctx context.Context, redeemedStable sdk.Coin, noahOutput math.Int, quoteRates oracletypes.RateSet) (math.Int, error)
-	RecordSupplyChange(ctx context.Context, burned sdk.Coin, minted sdk.Coin, quoteRates oracletypes.RateSet) error
+	// SettleConversions places one block's recorded conversion flow and returns
+	// the NOAH Market must burn to finish it: principal that overflowed every
+	// funded target, plus the Buffer's coverage of output already minted.
+	//
+	// It is called once, from Market's EndBlocker, after every conversion in the
+	// block has minted, burned, and paid its trader. Market never learns how
+	// Treasury split the principal between the funds, so settlement cannot
+	// branch on monetary policy; Treasury never learns which conversions
+	// produced the totals, so allocation cannot favour one.
+	SettleConversions(ctx context.Context, totals ConversionTotals) (math.Int, error)
 }

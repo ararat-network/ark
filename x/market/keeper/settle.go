@@ -106,16 +106,13 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 		)
 	}
 
-	bufferPaid, err := k.treasuryKeeper.DrawRedemptionBuffer(
-		ctx,
-		offerCoin,
-		entitlement.Amount,
-		planRates,
-	)
-	if err != nil {
+	// The entitlement is recorded at the plan's own committed rate, which never
+	// appears in the oracle set, so this path values its own redemption rather
+	// than leaving it to settlement.
+	if err := k.recordRedemption(ctx, entitlementDec.Amount, entitlement.Amount); err != nil {
 		return sdk.Coin{}, sdkerrors.Wrapf(
 			err,
-			"drawing redemption buffer for settlement of %s",
+			"recording settlement redemption of %s",
 			offerCoin,
 		)
 	}
@@ -123,22 +120,12 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
 		return sdk.Coin{}, sdkerrors.Wrapf(err, "burning settled coins %s", offerCoin)
 	}
-	// The buffer covers what it can and the remainder is minted, so the holder
-	// always receives the whole entitlement: the cost of an orderly failure
-	// lands as bounded NOAH dilution rather than as a haircut on the exit.
-	minted := chain.NoahCoin(entitlement.Amount.Sub(bufferPaid))
-	if minted.IsPositive() {
-		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
-			return sdk.Coin{}, sdkerrors.Wrapf(err, "minting settlement coins %s", minted)
-		}
-	}
-	if err := k.treasuryKeeper.RecordSupplyChange(ctx, offerCoin, minted, planRates); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(
-			err,
-			"recording settlement supply change from %s to %s",
-			offerCoin,
-			minted,
-		)
+	// The whole entitlement is minted here and the Buffer's share of it burned
+	// back at settlement, so the holder always receives the whole entitlement:
+	// the cost of an orderly failure lands as bounded NOAH dilution rather than
+	// as a haircut on the exit, and the exit never waits on a valuation.
+	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(entitlement)); err != nil {
+		return sdk.Coin{}, sdkerrors.Wrapf(err, "minting settlement coins %s", entitlement)
 	}
 
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(

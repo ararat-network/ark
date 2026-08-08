@@ -72,12 +72,15 @@ func benchmarkMarketKeeper(
 
 	marketKey := storetypes.NewKVStoreKey(markettypes.StoreKey)
 	oracleKey := storetypes.NewKVStoreKey(oracletypes.StoreKey)
+	marketTransientKey := storetypes.NewTransientStoreKey("transient_market")
 	ctx := sdktestutil.DefaultContextWithKeys(
 		map[string]*storetypes.KVStoreKey{
 			markettypes.StoreKey: marketKey,
 			oracletypes.StoreKey: oracleKey,
 		},
-		nil,
+		map[string]*storetypes.TransientStoreKey{
+			"transient_market": marketTransientKey,
+		},
 		nil,
 	).WithBlockHeight(2).WithBlockTime(time.Unix(1, 0))
 
@@ -122,6 +125,7 @@ func benchmarkMarketKeeper(
 	keeper := NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(marketKey),
+		runtime.NewTransientStoreService(marketTransientKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		marketAccountKeeper,
 		markettestutil.NewMockBankKeeper(ctrl),

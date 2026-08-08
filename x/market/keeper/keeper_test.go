@@ -2,11 +2,13 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
+	"cosmossdk.io/core/store"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -30,15 +32,16 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx            context.Context
-	keeper         *keeper.Keeper
-	msgServer      types.MsgServer
-	queryClient    types.QueryClient
-	accountKeeper  *testutil.MockAccountKeeper
-	bankKeeper     *testutil.MockBankKeeper
-	oracleKeeper   *testutil.MockOracleKeeper
-	treasuryKeeper *testutil.MockTreasuryKeeper
-	assetKeeper    *testutil.MockAssetKeeper
+	ctx                   context.Context
+	keeper                *keeper.Keeper
+	msgServer             types.MsgServer
+	queryClient           types.QueryClient
+	accountKeeper         *testutil.MockAccountKeeper
+	bankKeeper            *testutil.MockBankKeeper
+	oracleKeeper          *testutil.MockOracleKeeper
+	treasuryKeeper        *testutil.MockTreasuryKeeper
+	assetKeeper           *testutil.MockAssetKeeper
+	transientStoreService store.TransientStoreService
 
 	// assetStatuses overrides the lifecycle status the asset mock reports per
 	// denomination. Denominations default to ACTIVE, which is the state every
@@ -58,8 +61,10 @@ func (s *KeeperTestSuite) SetupTest() {
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 
 	key := storetypes.NewKVStoreKey(types.StoreKey)
+	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	storeService := runtime.NewKVStoreService(key)
-	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
+	transientStoreService := runtime.NewTransientStoreService(transientKey)
+	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
 	s.ctx = testCtx.Ctx
 
 	ctrl := gomock.NewController(s.T())
@@ -76,6 +81,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.keeper = keeper.NewKeeper(
 		cdc,
 		storeService,
+		transientStoreService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
 		bankKeeper,
@@ -84,6 +90,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		assetKeeper,
 	)
 
+	s.transientStoreService = transientStoreService
 	s.accountKeeper = accountKeeper
 	s.bankKeeper = bankKeeper
 	s.oracleKeeper = oracleKeeper
@@ -119,6 +126,63 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	// Create message server
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
+}
+
+// conversionTotalsMatcher compares totals by value rather than representation:
+// a decimal that survived a store round trip is the same figure whether or not
+// its internal words match the literal a test wrote.
+type conversionTotalsMatcher struct {
+	expected types.ConversionTotals
+}
+
+func (m conversionTotalsMatcher) Matches(actual any) bool {
+	totals, ok := actual.(types.ConversionTotals)
+	if !ok {
+		return false
+	}
+
+	return totals.EligiblePrincipal.Equal(m.expected.EligiblePrincipal) &&
+		totals.RedemptionOutput.Equal(m.expected.RedemptionOutput) &&
+		totals.RedeemedValue.Equal(m.expected.RedeemedValue)
+}
+
+func (m conversionTotalsMatcher) String() string {
+	return fmt.Sprintf(
+		"conversion totals {principal %s, output %s, redeemed %s}",
+		m.expected.EligiblePrincipal,
+		m.expected.RedemptionOutput,
+		m.expected.RedeemedValue,
+	)
+}
+
+// requireSettledTotals drives the EndBlocker and asserts what Market hands
+// Treasury. The accumulators are unexported block-local state, so the settle
+// call is where a test observes what the block's conversions actually recorded.
+//
+// It clears the accumulators afterwards, standing in for the transient store
+// reset a real block boundary performs. The suite's context outlives one block,
+// so without it a later case would settle its predecessor's conversions too.
+func (s *KeeperTestSuite) requireSettledTotals(expected types.ConversionTotals) {
+	s.treasuryKeeper.EXPECT().
+		SettleConversions(gomock.Any(), conversionTotalsMatcher{expected: expected}).
+		Return(math.ZeroInt(), nil)
+	s.Require().NoError(s.keeper.EndBlocker(s.ctx))
+	s.endBlock()
+}
+
+// endBlock clears the block-local conversion accumulators.
+func (s *KeeperTestSuite) endBlock() {
+	transientStore := s.transientStoreService.OpenTransientStore(s.ctx)
+	iterator, err := transientStore.Iterator(nil, nil)
+	s.Require().NoError(err)
+	var keys [][]byte
+	for ; iterator.Valid(); iterator.Next() {
+		keys = append(keys, append([]byte(nil), iterator.Key()...))
+	}
+	s.Require().NoError(iterator.Close())
+	for _, key := range keys {
+		s.Require().NoError(transientStore.Delete(key))
+	}
 }
 
 func (s *KeeperTestSuite) TestReplenishPools() {
