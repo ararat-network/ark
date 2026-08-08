@@ -42,18 +42,6 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	if err != nil {
 		return nil, fmt.Errorf("getting current params: %w", err)
 	}
-	policy, err := m.k.MonetaryPolicy.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting monetary policy: %w", err)
-	}
-	funding, err := m.k.RewardFunding.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting reward funding state: %w", err)
-	}
-	if err := types.ValidateRewardTargetCapacity(msg.Params, funding, policy); err != nil {
-		return nil, err
-	}
-
 	if msg.Params.ReferenceTaxCap.Denom != current.ReferenceTaxCap.Denom {
 		return nil, sdkerrors.Wrapf(
 			errortypes.ErrInvalidRequest,
@@ -151,8 +139,8 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 	if err := msg.Policy.Validate(); err != nil {
 		return nil, err
 	}
-	if err := m.k.applyMonetaryPolicy(ctx, msg.Policy); err != nil {
-		return nil, err
+	if err := m.k.MonetaryPolicy.Set(ctx, msg.Policy); err != nil {
+		return nil, fmt.Errorf("setting monetary policy: %w", err)
 	}
 	return &types.MsgUpdatePolicyResponse{}, nil
 }
@@ -179,8 +167,8 @@ func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgComm
 	if err := mandate.ValidatePolicy(msg.Policy); err != nil {
 		return nil, err
 	}
-	if err := m.k.applyMonetaryPolicy(ctx, msg.Policy); err != nil {
-		return nil, err
+	if err := m.k.MonetaryPolicy.Set(ctx, msg.Policy); err != nil {
+		return nil, fmt.Errorf("setting monetary policy: %w", err)
 	}
 	return &types.MsgCommitteeUpdatePolicyResponse{}, nil
 }

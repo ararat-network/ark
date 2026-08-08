@@ -60,25 +60,50 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
 	s.Require().Equal(uint64(2), storedFunding.BlocksRemaining)
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsRewardTargetCapacity() {
-	maxInt := maxRepresentableInt()
-	policy := types.DefaultMonetaryPolicy()
-	policy.ValidatorBlockRewardTarget = maxInt.QuoRaw(2).AddRaw(1)
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+// TestMsgUpdateParamsBoundsTheFundingWindow covers the window's own ceiling,
+// which with the per-block target cap is what keeps a window's accrual
+// representable. The check is local to Params.Validate, so it does not consult
+// the live policy or the open window — a window length is admissible or not on
+// its own terms.
+func (s *KeeperTestSuite) TestMsgUpdateParamsBoundsTheFundingWindow() {
 	currentParams := types.DefaultParams()
 	currentParams.RewardFundingWindow = 1
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, currentParams))
 
 	candidate := currentParams
-	candidate.RewardFundingWindow = 2
+	candidate.RewardFundingWindow = types.MaxRewardFundingWindow + 1
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
 		Params:    candidate,
 	})
-	s.Require().ErrorContains(err, "reward target capacity exceeded")
+	s.Require().ErrorContains(err, "RewardFundingWindow must not exceed")
 	stored, getErr := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(getErr)
 	s.Require().Equal(currentParams, stored)
+}
+
+// TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy pins what the domain
+// caps bought. A window this long under targets this large was refused before,
+// by a validation that multiplied the two out at every write; the ceilings on
+// each field make the product safe without the projection, so the pair is now
+// simply admissible.
+func (s *KeeperTestSuite) TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy() {
+	policy := types.DefaultMonetaryPolicy()
+	policy.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
+	policy.OracleBlockRewardTarget = types.MaxBlockRewardTarget
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
+
+	candidate := types.DefaultParams()
+	candidate.RewardFundingWindow = types.MaxRewardFundingWindow
+	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
+		Authority: s.authority,
+		Params:    candidate,
+	})
+	s.Require().NoError(err)
+	stored, getErr := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(getErr)
+	s.Require().Equal(candidate, stored)
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceAmountChange() {
@@ -197,45 +222,49 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax
 	s.Require().True(cap.IsZero())
 }
 
-func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsRewardTargetCapacity() {
-	params := types.DefaultParams()
-	params.RewardFundingWindow = 2
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+// TestMsgUpdatePolicyBoundsTheBlockRewardTargets covers the per-block ceiling.
+// It is a fact about the field, checked in the policy's own validation, so a
+// candidate is refused without reading params or the open funding window.
+func (s *KeeperTestSuite) TestMsgUpdatePolicyBoundsTheBlockRewardTargets() {
 	candidate := types.DefaultMonetaryPolicy()
-	candidate.ValidatorBlockRewardTarget = maxRepresentableInt().QuoRaw(2).AddRaw(1)
+	candidate.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
 
 	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    candidate,
 	})
-	s.Require().ErrorContains(err, "reward target capacity exceeded")
+	s.Require().ErrorContains(err, "ValidatorBlockRewardTarget must not exceed")
 	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(getErr)
 	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
 }
 
-func (s *KeeperTestSuite) TestMsgUpdatePolicyChecksActiveRewardFundingWindow() {
-	maxInt := maxRepresentableInt()
+// TestMsgUpdatePolicyIgnoresTheOpenFundingWindow pins the property the swap to
+// domain caps was for: a policy's admissibility no longer depends on how far
+// the current window has already accrued. The same candidate that is accepted
+// here would have been refused mid-window before, which made a governance value
+// valid or not according to when it was proposed.
+func (s *KeeperTestSuite) TestMsgUpdatePolicyIgnoresTheOpenFundingWindow() {
 	params := types.DefaultParams()
-	params.RewardFundingWindow = 1
+	params.RewardFundingWindow = types.MaxRewardFundingWindow
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setRewardFunding(types.RewardFundingState{
-		BlocksRemaining:   1,
-		ValidatorTarget:   maxInt.QuoRaw(2),
-		OracleTarget:      math.ZeroInt(),
+		BlocksRemaining:   types.MaxRewardFundingWindow,
+		ValidatorTarget:   types.MaxBlockRewardTarget,
+		OracleTarget:      types.MaxBlockRewardTarget,
 		ValidatorFeeValue: math.ZeroInt(),
 	})
 	candidate := types.DefaultMonetaryPolicy()
-	candidate.ValidatorBlockRewardTarget = maxInt
+	candidate.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
 
 	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    candidate,
 	})
-	s.Require().ErrorContains(err, "reward target capacity exceeded")
+	s.Require().NoError(err)
 	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(getErr)
-	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
+	s.Require().True(candidate.Equal(stored))
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsInvalidAuthority() {

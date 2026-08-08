@@ -3,9 +3,25 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
 	"cosmossdk.io/math"
 )
+
+// MaxBlockRewardTarget bounds either per-block reward target, and exists to
+// make the window accrual safe by inspection rather than by projection.
+//
+// Reward targets accumulate one block at a time for a whole funding window, so
+// without a ceiling their sum is bounded only by the integer type — which put
+// the burden on a validation that had to re-prove, at every write of params or
+// policy, that the current state plus this policy over the remaining blocks
+// would still fit. A ceiling on the field itself replaces that: with both
+// targets under 2^128 and the window under MaxRewardFundingWindow, a whole
+// window accrues at most 2^161, leaving ninety-five bits of headroom under the
+// Int limit. The cap is far past economic reality — 2^128 anoah is on the order
+// of 10^20 NOAH in a single block — so it constrains nothing governance would
+// ever want, and refuses at the write what would otherwise fail a block.
+var MaxBlockRewardTarget = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 
 // DefaultMonetaryPolicy returns the disabled launch policy values.
 func DefaultMonetaryPolicy() MonetaryPolicy {
@@ -37,11 +53,25 @@ func (policy MonetaryPolicy) Validate() error {
 	if policy.ValidatorBlockRewardTarget.IsNegative() {
 		return fmt.Errorf("treasury parameter ValidatorBlockRewardTarget must be zero or positive: %s", policy.ValidatorBlockRewardTarget)
 	}
+	if policy.ValidatorBlockRewardTarget.GT(MaxBlockRewardTarget) {
+		return fmt.Errorf(
+			"treasury parameter ValidatorBlockRewardTarget must not exceed %s: %s",
+			MaxBlockRewardTarget,
+			policy.ValidatorBlockRewardTarget,
+		)
+	}
 	if policy.OracleBlockRewardTarget.IsNil() {
 		return errors.New("treasury parameter OracleBlockRewardTarget must be set")
 	}
 	if policy.OracleBlockRewardTarget.IsNegative() {
 		return fmt.Errorf("treasury parameter OracleBlockRewardTarget must be zero or positive: %s", policy.OracleBlockRewardTarget)
+	}
+	if policy.OracleBlockRewardTarget.GT(MaxBlockRewardTarget) {
+		return fmt.Errorf(
+			"treasury parameter OracleBlockRewardTarget must not exceed %s: %s",
+			MaxBlockRewardTarget,
+			policy.OracleBlockRewardTarget,
+		)
 	}
 	if policy.RedemptionBufferTargetRatio.IsNil() {
 		return errors.New("treasury parameter RedemptionBufferTargetRatio must be set")

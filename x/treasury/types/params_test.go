@@ -24,6 +24,15 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardFundingWindow must be positive",
 		},
 		{
+			name:   "reward funding window at the domain cap",
+			mutate: func(p *types.Params) { p.RewardFundingWindow = types.MaxRewardFundingWindow },
+		},
+		{
+			name:      "reward funding window above the domain cap",
+			mutate:    func(p *types.Params) { p.RewardFundingWindow = types.MaxRewardFundingWindow + 1 },
+			expectErr: "RewardFundingWindow must not exceed",
+		},
+		{
 			// Zero would divide by zero in the modular cadence check.
 			name:      "zero tax cap refresh period",
 			mutate:    func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = 0 },

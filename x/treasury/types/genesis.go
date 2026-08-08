@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"cosmossdk.io/math"
+
 	"ark/pkg/chain"
 )
 
@@ -36,6 +38,17 @@ func DefaultGenesisState() *GenesisState {
 		DefaultMonetaryPolicy(),
 		false,
 	)
+}
+
+// DefaultRewardFundingState returns canonical empty reward-funding accounting.
+// The keeper resets to it whenever a window settles, so the zero state has to
+// mean the same thing at genesis and mid-chain.
+func DefaultRewardFundingState() RewardFundingState {
+	return RewardFundingState{
+		ValidatorTarget:   math.ZeroInt(),
+		OracleTarget:      math.ZeroInt(),
+		ValidatorFeeValue: math.ZeroInt(),
+	}
 }
 
 // Validate checks the context-free Treasury genesis invariants. Fund balances
@@ -93,8 +106,23 @@ func (gs GenesisState) Validate() error {
 			!gs.RewardFunding.ValidatorFeeValue.IsZero()) {
 		return errors.New("empty reward funding window must use the default state")
 	}
-	if err := ValidateRewardTargetCapacity(gs.Params, gs.RewardFunding, gs.MonetaryPolicy); err != nil {
-		return err
+	// An imported window arrives mid-accrual rather than being reached one
+	// block at a time, so the ceiling the accrual gets from MaxBlockRewardTarget
+	// has to be imposed here directly. The bound is a whole window's worth of
+	// either target, which is the most the running state could legitimately
+	// hold.
+	maxAccrued := MaxBlockRewardTarget.Mul(math.NewIntFromUint64(MaxRewardFundingWindow))
+	for _, accrued := range []struct {
+		name  string
+		value math.Int
+	}{
+		{"validator target", gs.RewardFunding.ValidatorTarget},
+		{"oracle target", gs.RewardFunding.OracleTarget},
+		{"validator fee value", gs.RewardFunding.ValidatorFeeValue},
+	} {
+		if accrued.value.GT(maxAccrued) {
+			return fmt.Errorf("%s must not exceed %s: %s", accrued.name, maxAccrued, accrued.value)
+		}
 	}
 	if err := gs.MonetaryMandate.Validate(); err != nil {
 		return err

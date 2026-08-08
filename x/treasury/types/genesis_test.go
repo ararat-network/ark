@@ -117,3 +117,93 @@ func TestGenesisTaxCapValidation(t *testing.T) {
 		})
 	}
 }
+
+// TestGenesisRewardFundingValidation covers both halves of what an imported
+// window must satisfy: the shape rules, and the whole-window ceiling. An import
+// arrives mid-accrual rather than being reached one block at a time, so it
+// cannot inherit the bound the per-block accrual gets from MaxBlockRewardTarget,
+// and that ceiling has to be imposed here directly.
+func TestGenesisRewardFundingValidation(t *testing.T) {
+	overAccrued := types.MaxBlockRewardTarget.
+		Mul(math.NewIntFromUint64(types.MaxRewardFundingWindow)).
+		Add(math.OneInt())
+
+	tests := []struct {
+		name      string
+		mutate    func(*types.RewardFundingState)
+		expectErr string
+	}{
+		{
+			name:   "valid active window",
+			mutate: func(funding *types.RewardFundingState) { funding.BlocksRemaining = 2 },
+		},
+		{
+			name: "a populated window mid-accrual",
+			mutate: func(funding *types.RewardFundingState) {
+				funding.BlocksRemaining = 1
+				funding.ValidatorTarget = math.NewInt(1_000)
+			},
+		},
+		{
+			name:      "unset validator target",
+			mutate:    func(funding *types.RewardFundingState) { funding.ValidatorTarget = math.Int{} },
+			expectErr: "validator target must be set",
+		},
+		{
+			name: "negative validator fee value",
+			mutate: func(funding *types.RewardFundingState) {
+				funding.BlocksRemaining = 1
+				funding.ValidatorFeeValue = math.NewInt(-1)
+			},
+			expectErr: "validator fee value must be zero or positive",
+		},
+		{
+			name:      "completed window",
+			mutate:    func(funding *types.RewardFundingState) { funding.ValidatorTarget = math.OneInt() },
+			expectErr: "empty reward funding window must use the default state",
+		},
+		{
+			name:      "noncanonical empty window",
+			mutate:    func(funding *types.RewardFundingState) { funding.ValidatorFeeValue = math.OneInt() },
+			expectErr: "empty reward funding window must use the default state",
+		},
+		{
+			name: "validator target beyond a whole window",
+			mutate: func(funding *types.RewardFundingState) {
+				funding.BlocksRemaining = 1
+				funding.ValidatorTarget = overAccrued
+			},
+			expectErr: "validator target must not exceed",
+		},
+		{
+			name: "oracle target beyond a whole window",
+			mutate: func(funding *types.RewardFundingState) {
+				funding.BlocksRemaining = 1
+				funding.OracleTarget = overAccrued
+			},
+			expectErr: "oracle target must not exceed",
+		},
+		{
+			name: "fee value beyond a whole window",
+			mutate: func(funding *types.RewardFundingState) {
+				funding.BlocksRemaining = 1
+				funding.ValidatorFeeValue = overAccrued
+			},
+			expectErr: "validator fee value must not exceed",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			genesis := types.DefaultGenesisState()
+			tc.mutate(&genesis.RewardFunding)
+
+			err := genesis.Validate()
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
+}

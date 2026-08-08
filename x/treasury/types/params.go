@@ -15,6 +15,15 @@ const (
 	DefaultReferenceTaxCapDenom      = chain.SDRBaseDenom
 	DefaultRewardFundingWindow       = chain.BlocksPerWeek
 	DefaultTaxCapRefreshPeriodBlocks = chain.BlocksPerWeek
+
+	// MaxRewardFundingWindow bounds how many blocks one funding window accrues
+	// over. Together with MonetaryPolicy's MaxBlockRewardTarget it is what
+	// makes the accrual safe by inspection: the two ceilings multiply to a
+	// whole-window total ninety-five bits under the Int limit, so no sequence
+	// of blocks can overflow the running targets. A window of 2^32 blocks is
+	// some seven centuries at this chain's block time, so the bound refuses
+	// only values that were never a schedule.
+	MaxRewardFundingWindow = 1 << 32
 )
 
 // DefaultParams returns the safe launch defaults for Treasury.
@@ -43,6 +52,13 @@ func (p Params) Validate() error {
 	}
 	if p.RewardFundingWindow == 0 {
 		return errors.New("treasury parameter RewardFundingWindow must be positive")
+	}
+	if p.RewardFundingWindow > MaxRewardFundingWindow {
+		return fmt.Errorf(
+			"treasury parameter RewardFundingWindow must not exceed %d: %d",
+			uint64(MaxRewardFundingWindow),
+			p.RewardFundingWindow,
+		)
 	}
 	if p.TaxCapRefreshPeriodBlocks == 0 {
 		return errors.New("treasury parameter TaxCapRefreshPeriodBlocks must be positive")

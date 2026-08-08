@@ -34,6 +34,34 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 		{name: "negative validator target", mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(-1) }, expectErr: "ValidatorBlockRewardTarget must be zero or positive"},
 		{name: "nil Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.Int{} }, expectErr: "OracleBlockRewardTarget must be set"},
 		{name: "negative Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.NewInt(-1) }, expectErr: "OracleBlockRewardTarget must be zero or positive"},
+		{
+			name:   "validator target at the domain cap",
+			mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget },
+		},
+		{
+			name: "validator target above the domain cap",
+			mutate: func(p *types.MonetaryPolicy) {
+				p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
+			},
+			expectErr: "ValidatorBlockRewardTarget must not exceed",
+		},
+		{
+			name: "Oracle target above the domain cap",
+			mutate: func(p *types.MonetaryPolicy) {
+				p.OracleBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
+			},
+			expectErr: "OracleBlockRewardTarget must not exceed",
+		},
+		{
+			// The worst case the accrual can be handed, and admissible: the
+			// headroom lives in the window multiplication rather than in
+			// forbidding the pair, which the test below proves.
+			name: "both targets at the domain cap",
+			mutate: func(p *types.MonetaryPolicy) {
+				p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
+				p.OracleBlockRewardTarget = types.MaxBlockRewardTarget
+			},
+		},
 		{name: "nil Buffer ratio", mutate: func(p *types.MonetaryPolicy) { p.RedemptionBufferTargetRatio = math.LegacyDec{} }, expectErr: "RedemptionBufferTargetRatio must be set"},
 		{name: "negative Reserve ratio", mutate: func(p *types.MonetaryPolicy) { p.StrategicReserveTargetRatio = math.LegacyNewDec(-1) }, expectErr: "StrategicReserveTargetRatio must be between zero and one"},
 		{name: "Insurance ratio above one", mutate: func(p *types.MonetaryPolicy) {
@@ -53,4 +81,21 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 			require.ErrorContains(t, err, tc.expectErr)
 		})
 	}
+}
+
+// TestRewardTargetCapsLeaveWindowHeadroom is why the two caps exist in the
+// shape they do. They replaced a validation that projected the whole window's
+// arithmetic at every write of params or policy: a projection has to be
+// re-derived by every future writer of every input it reads, and its verdict
+// moves with live state, where a cap is a fact about one field checked where
+// that field is validated. That trade only holds if the caps' product clears
+// the integer ceiling with room to spare — both targets, every block of the
+// longest admissible window.
+func TestRewardTargetCapsLeaveWindowHeadroom(t *testing.T) {
+	perBlock, err := types.MaxBlockRewardTarget.SafeAdd(types.MaxBlockRewardTarget)
+	require.NoError(t, err)
+	whole, err := perBlock.SafeMul(math.NewIntFromUint64(types.MaxRewardFundingWindow))
+	require.NoError(t, err)
+	require.Less(t, whole.BigInt().BitLen(), math.MaxBitLen-64,
+		"a whole window must stay far under the integer limit")
 }
