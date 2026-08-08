@@ -19,8 +19,6 @@ import (
 var _ types.QueryServer = queryServer{}
 
 type queryServer struct {
-	types.UnimplementedQueryServer
-
 	k *Keeper
 }
 

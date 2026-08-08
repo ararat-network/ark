@@ -18,8 +18,6 @@ import (
 var _ types.QueryServer = (*queryServer)(nil)
 
 type queryServer struct {
-	types.UnimplementedQueryServer
-
 	k *Keeper
 }
 

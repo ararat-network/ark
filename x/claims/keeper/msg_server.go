@@ -16,8 +16,6 @@ import (
 var _ types.MsgServer = msgServer{}
 
 type msgServer struct {
-	types.UnimplementedMsgServer
-
 	k *Keeper
 }
 
