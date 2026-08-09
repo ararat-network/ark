@@ -310,9 +310,6 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 				chain.KRWBaseDenom,
 				chain.USDBaseDenom,
 			}, Version: types.InitialFeedVersion},
-		MaxExchangeRateAgeOverrides: []types.ExchangeRateAgeOverride{
-			{Denom: chain.KRWBaseDenom, MaxAge: 26 * time.Hour},
-		},
 	}
 	expected.Params.RewardWindow = 10
 	expected.Params.VoteThreshold = math.LegacyNewDecWithPrec(6, 1)
@@ -335,9 +332,6 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 		s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr, item.Attendance))
 	}
 	s.Require().NoError(s.keeper.Feeds.Set(s.ctx, expected.Feeds))
-	for _, item := range expected.MaxExchangeRateAgeOverrides {
-		s.Require().NoError(s.keeper.MaxExchangeRateAgeOverrides.Set(s.ctx, item.Denom, item.MaxAge))
-	}
 
 	gs, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
@@ -387,45 +381,5 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	}
 	for _, item := range expected.AttendanceRecords {
 		s.Require().Equal(item.Attendance, attendanceRecords[item.ValidatorAddress])
-	}
-
-	// Windows are feed-owned state, so they export from their own collection
-	// rather than riding along inside Params.
-	s.Require().Equal(expected.MaxExchangeRateAgeOverrides, gs.MaxExchangeRateAgeOverrides)
-}
-
-// A window survives an export/import cycle, which is what lets a chain restart
-// or a state migration keep a slow feed's staleness rule intact. Params carry
-// only the default.
-func (s *KeeperTestSuite) TestGenesisRoundTripsMaxExchangeRateAgeOverrides() {
-	exported, err := s.keeper.ExportGenesis(s.ctx)
-	s.Require().NoError(err)
-
-	feedDenom := exported.Feeds.Denoms[0]
-	exported.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-		{Denom: feedDenom, MaxAge: 26 * time.Hour},
-	}
-	s.Require().NoError(exported.Validate())
-
-	s.SetupTest()
-	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
-		authtypes.NewEmptyModuleAccount(types.ModuleName),
-	)
-	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
-
-	maxAge, err := s.keeper.GetMaxAge(s.ctx, feedDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(26*time.Hour, maxAge)
-
-	reExported, err := s.keeper.ExportGenesis(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(exported.MaxExchangeRateAgeOverrides, reExported.MaxExchangeRateAgeOverrides)
-
-	// Importing is not enacting, so nothing is announced.
-	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
-		s.Require().NotEqual(
-			"ark.oracle.v1.EventMaxExchangeRateAgeOverrideSet",
-			event.Type,
-		)
 	}
 }

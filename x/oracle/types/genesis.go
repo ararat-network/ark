@@ -20,17 +20,15 @@ func NewGenesisState(
 	accounting Accounting,
 	feeds Feeds,
 	referenceDenom string,
-	maxExchangeRateAgeOverrides []ExchangeRateAgeOverride,
 ) *GenesisState {
 	return &GenesisState{
-		Params:                      params,
-		ExchangeRates:               exchangeRates,
-		RewardWeights:               rewardWeights,
-		AttendanceRecords:           attendanceRecords,
-		Accounting:                  accounting,
-		Feeds:                       feeds,
-		ReferenceDenom:              referenceDenom,
-		MaxExchangeRateAgeOverrides: maxExchangeRateAgeOverrides,
+		Params:            params,
+		ExchangeRates:     exchangeRates,
+		RewardWeights:     rewardWeights,
+		AttendanceRecords: attendanceRecords,
+		Accounting:        accounting,
+		Feeds:             feeds,
+		ReferenceDenom:    referenceDenom,
 	}
 }
 
@@ -55,7 +53,6 @@ func DefaultGenesisState() *GenesisState {
 		NewAccounting(params),
 		DefaultFeeds(),
 		chain.SDRBaseDenom,
-		[]ExchangeRateAgeOverride{},
 	)
 }
 
@@ -179,34 +176,6 @@ func (gs GenesisState) Validate() error {
 	for _, er := range gs.ExchangeRates {
 		if _, found := slices.BinarySearch(gs.Feeds.Denoms, er.Denom); !found {
 			return fmt.Errorf("exchange rate %s is not an active feed", er.Denom)
-		}
-	}
-
-	// MaxExchangeRateAgeOverrides: ordered unique feed keys, positive windows,
-	// and a feed behind every entry. The membership check is what a parameter
-	// could never do — it needs the feed registry, which lives in this same
-	// genesis — and it is the invariant the runtime maintains by writing
-	// windows through AddFeed and dropping them when a removal activates. A
-	// feed still scheduled to join counts: its window is stated by the same
-	// message that schedules it, and lands before the feed is ever read.
-	for i, override := range gs.MaxExchangeRateAgeOverrides {
-		if err := chain.ValidatePricedDenom(override.Denom); err != nil {
-			return fmt.Errorf("max exchange rate age override %w", err)
-		}
-		if override.MaxAge <= 0 {
-			return fmt.Errorf(
-				"max exchange rate age override for %s must be greater than zero",
-				override.Denom,
-			)
-		}
-		if i > 0 && override.Denom <= gs.MaxExchangeRateAgeOverrides[i-1].Denom {
-			return errors.New("genesis max exchange rate age overrides must be sorted by unique denom")
-		}
-		if gs.Feeds.Phase(override.Denom) == FeedPhaseOff {
-			return fmt.Errorf(
-				"max exchange rate age override %s is not an active or scheduled feed",
-				override.Denom,
-			)
 		}
 	}
 

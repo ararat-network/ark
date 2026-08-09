@@ -103,17 +103,6 @@ func (q queryServer) FeedReferents(ctx context.Context, req *types.QueryFeedRefe
 	return &types.QueryFeedReferentsResponse{Referents: referents}, nil
 }
 
-// MaxExchangeRateAgeOverrides queries the per-feed staleness windows differing
-// from the chain default.
-func (q queryServer) MaxExchangeRateAgeOverrides(ctx context.Context, _ *types.QueryMaxExchangeRateAgeOverridesRequest) (*types.QueryMaxExchangeRateAgeOverridesResponse, error) {
-	overrides, err := q.k.GetMaxExchangeRateAgeOverrides(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle max exchange rate age overrides: %v", err)
-	}
-
-	return &types.QueryMaxExchangeRateAgeOverridesResponse{MaxExchangeRateAgeOverrides: overrides}, nil
-}
-
 // ReferenceDenom queries the denomination whose feed is the protocol reference.
 func (q queryServer) ReferenceDenom(ctx context.Context, _ *types.QueryReferenceDenomRequest) (*types.QueryReferenceDenomResponse, error) {
 	referenceDenom, err := q.k.GetReferenceDenom(ctx)

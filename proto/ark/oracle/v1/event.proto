@@ -6,7 +6,6 @@ import "ark/oracle/v1/oracle.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "google/protobuf/duration.proto";
 
 option go_package = "ark/x/oracle/types";
 
@@ -46,24 +45,6 @@ message EventFeedsActivated {
   repeated string added_denoms = 2;
   repeated string removed_denoms = 3;
 }
-
-// EventMaxExchangeRateAgeOverrideSet is emitted when a feed's staleness window
-// is written to something other than the chain default, whether the feed is
-// joining or already live.
-message EventMaxExchangeRateAgeOverrideSet {
-  string denom = 1;
-  google.protobuf.Duration max_age = 2 [
-    (gogoproto.nullable) = false,
-    (gogoproto.stdduration) = true,
-    (amino.dont_omitempty) = true
-  ];
-}
-
-// EventMaxExchangeRateAgeOverrideRemoved is emitted when a feed's staleness
-// window returns to the chain default. Two paths reach it: governance restated
-// the feed without a window, or the feed left the active set and its window was
-// dropped alongside its rate.
-message EventMaxExchangeRateAgeOverrideRemoved { string denom = 1; }
 
 // EventReferenceDenomUpdated is emitted after every protocol reference denom
 // write.

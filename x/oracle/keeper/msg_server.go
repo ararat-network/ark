@@ -65,9 +65,6 @@ func (m msgServer) AddFeed(ctx context.Context, msg *types.MsgAddFeed) (*types.M
 	); err != nil {
 		return nil, err
 	}
-	if err := m.k.SetMaxAge(ctx, msg.Denom, msg.MaxAge); err != nil {
-		return nil, err
-	}
 
 	return &types.MsgAddFeedResponse{}, nil
 }

@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/math"
 
@@ -144,101 +143,31 @@ func (s *KeeperTestSuite) TestAddFeed() {
 		s.Require().ErrorContains(err, "must be an Ark-native base denom matching")
 	})
 
-	s.Run("states the window alongside the addition", func() {
-		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
-
-		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
-			Authority: authority,
-			Denom:     feedGold,
-			MaxAge:    26 * time.Hour,
-		})
-		s.Require().NoError(err)
-
-		// The window lands with the schedule, so the feed is never live for a
-		// block under a default chosen for faster instruments.
-		maxAge, err := s.keeper.GetMaxAge(s.ctx, feedGold)
-		s.Require().NoError(err)
-		s.Require().Equal(26*time.Hour, maxAge)
-	})
-
-	s.Run("an omitted window leaves the feed on the default", func() {
-		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
-
-		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
-			Authority: authority,
-			Denom:     feedGold,
-		})
-		s.Require().NoError(err)
-
-		found, err := s.keeper.MaxExchangeRateAgeOverrides.Has(s.ctx, feedGold)
-		s.Require().NoError(err)
-		s.Require().False(found)
-	})
-
-	s.Run("restates the window of a live feed", func() {
+	// Membership is declarative, so re-sending a live feed is how governance
+	// re-approves one: nothing is scheduled and nothing changes.
+	s.Run("restating a live feed schedules nothing", func() {
 		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD, feedGold})))
-		s.Require().NoError(s.keeper.SetMaxAge(s.ctx, feedGold, 26*time.Hour))
 
 		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
 			Authority: authority,
 			Denom:     feedGold,
-			MaxAge:    12 * time.Hour,
 		})
 		s.Require().NoError(err)
 
-		// Membership was already satisfied, so nothing is scheduled and the
-		// message reduces to the window it states.
 		feeds, err := s.keeper.Feeds.Get(s.ctx)
 		s.Require().NoError(err)
 		s.Require().Empty(feeds.Transitions)
-
-		maxAge, err := s.keeper.GetMaxAge(s.ctx, feedGold)
-		s.Require().NoError(err)
-		s.Require().Equal(12*time.Hour, maxAge)
 	})
 
-	s.Run("restating a live feed without a window returns it to the default", func() {
-		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD, feedGold})))
-		s.Require().NoError(s.keeper.SetMaxAge(s.ctx, feedGold, 26*time.Hour))
-
-		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
-			Authority: authority,
-			Denom:     feedGold,
-		})
-		s.Require().NoError(err)
-
-		found, err := s.keeper.MaxExchangeRateAgeOverrides.Has(s.ctx, feedGold)
-		s.Require().NoError(err)
-		s.Require().False(found)
-	})
-
-	s.Run("rejects a negative window", func() {
-		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD})))
-
-		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
-			Authority: authority,
-			Denom:     feedGold,
-			MaxAge:    -time.Second,
-		})
-		s.Require().ErrorIs(err, types.ErrInvalidMaxExchangeRateAge)
-	})
-
-	// Membership is settled before the window is written, so a message the feed
-	// registry rejects leaves no window behind for a feed that never arrives.
-	s.Run("a conflicting removal aborts before the window is written", func() {
+	s.Run("rejects an addition conflicting with a scheduled removal", func() {
 		s.Require().NoError(s.keeper.Feeds.Set(s.ctx, types.NewFeeds([]string{feedUSD, feedGold})))
 		s.Require().NoError(s.scheduleRemove(feedGold))
 
 		_, err := s.msgServer.AddFeed(s.ctx, &types.MsgAddFeed{
 			Authority: authority,
 			Denom:     feedGold,
-			MaxAge:    26 * time.Hour,
 		})
 		s.Require().ErrorIs(err, types.ErrFeedTransitionPending)
-
-		found, err := s.keeper.MaxExchangeRateAgeOverrides.Has(s.ctx, feedGold)
-		s.Require().NoError(err)
-		s.Require().False(found)
 	})
 }
 

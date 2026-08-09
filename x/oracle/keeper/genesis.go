@@ -90,19 +90,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("setting feeds: %w", err)
 	}
 
-	// Written directly rather than through SetMaxAge: genesis state is imported,
-	// not enacted, so it emits nothing, and every value here was already checked
-	// against the feed set by GenesisState.Validate.
-	for _, override := range data.MaxExchangeRateAgeOverrides {
-		if err := k.MaxExchangeRateAgeOverrides.Set(ctx, override.Denom, override.MaxAge); err != nil {
-			return fmt.Errorf(
-				"setting genesis max exchange rate age override for denom %s: %w",
-				override.Denom,
-				err,
-			)
-		}
-	}
-
 	if data.ReferenceDenom != "" {
 		if err := k.requireFeedActive(ctx, data.ReferenceDenom); err != nil {
 			return fmt.Errorf("invalid genesis reference denom: %w", err)
@@ -175,11 +162,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, err
 	}
 
-	maxExchangeRateAgeOverrides, err := k.GetMaxExchangeRateAgeOverrides(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return types.NewGenesisState(
 		params,
 		exchangeRates,
@@ -188,6 +170,5 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		accounting,
 		feeds,
 		referenceDenom,
-		maxExchangeRateAgeOverrides,
 	), nil
 }

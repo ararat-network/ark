@@ -2,6 +2,7 @@ package types
 
 import (
 	"maps"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -35,6 +36,28 @@ func NewRateSetFrom(rates map[string]math.LegacyDec) RateSet {
 	maps.Copy(set, rates)
 	set[chain.NoahBaseDenom] = math.LegacyOneDec()
 	return set
+}
+
+// RateRequest asks for one denomination's rate under the caller's own
+// staleness window.
+//
+// The window is a per-call argument rather than Oracle state, which is the
+// whole design: how often a series publishes is a fact about the feed, but how
+// old a rate may be and still back a decision is a fact about the decision,
+// and one feed now answers to consumers with different tolerances. Two
+// requests may name one series under different windows — the Reserve sends one
+// per eligibility entry — and each verdict comes back under the requested
+// denomination, keyed apart.
+//
+// The request deliberately does not say which feed to read. The denomination
+// prices through the feed its own name derives — its prefix when it is an
+// external symbol, itself when it is a feed key — and the derivation is the
+// chain's naming grammar, pure and available to the Oracle in pkg/chain. A
+// feed field would state what the name already states, and could state it
+// wrongly, routing a symbol to another series with the Oracle unable to tell.
+type RateRequest struct {
+	Denom  string
+	MaxAge time.Duration
 }
 
 // Convert converts an offer coin into the ask denom using the captured rates.

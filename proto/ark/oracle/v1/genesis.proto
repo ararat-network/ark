@@ -30,13 +30,8 @@ message GenesisState {
   // denomination may suspend while the feed keeps pricing. Empty only before
   // first configuration; a configured reference is re-pointed, never cleared.
   string reference_denom = 7 [ (amino.dont_omitempty) = true ];
-  // max_exchange_rate_age_overrides seeds the per-feed staleness windows that
-  // differ from Params.max_exchange_rate_age, sorted by denomination. Every
-  // entry must name a feed this same genesis carries, active or scheduled to
-  // join: an override with no feed behind it is a window nothing would ever
-  // read, and no live transition could remove it.
-  repeated ExchangeRateAgeOverride max_exchange_rate_age_overrides = 8
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // 8 seeded per-feed staleness windows until 2026-08-09; see oracle.proto for
+  // why tolerance moved to the consumers that hold one.
 }
 
 // Accounting defines the active reward and attendance periods. Params may

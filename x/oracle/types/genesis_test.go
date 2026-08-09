@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -374,109 +373,6 @@ func TestValidateGenesis(t *testing.T) {
 				}}
 			},
 		},
-		// MaxExchangeRateAgeOverrides. The window is feed-owned state, so
-		// genesis has to carry it and, unlike a parameter, can check it against
-		// the feed set arriving in the same file.
-		{
-			name: "sorted unique overrides on active feeds are valid",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: chain.SDRBaseDenom, MaxAge: 26 * time.Hour},
-					{Denom: chain.USDBaseDenom, MaxAge: time.Minute},
-				}
-			},
-		},
-		{
-			name: "override on a feed scheduled to join is valid",
-			mutate: func(gs *types.GenesisState) {
-				gs.Feeds.Transitions = []types.FeedTransition{{
-					Denom:                "agold",
-					Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-					ActivationVoteHeight: 10,
-				}}
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: "agold", MaxAge: 26 * time.Hour},
-				}
-			},
-		},
-		{
-			name: "override on a feed scheduled to leave is valid",
-			mutate: func(gs *types.GenesisState) {
-				gs.Feeds.Transitions = []types.FeedTransition{{
-					Denom:                gs.Feeds.Denoms[0],
-					Direction:            types.FeedDirection_FEED_DIRECTION_REMOVE,
-					ActivationVoteHeight: 10,
-				}}
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: gs.Feeds.Denoms[0], MaxAge: 26 * time.Hour},
-				}
-			},
-		},
-		{
-			name: "override denom has no feed",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: "agold", MaxAge: 26 * time.Hour},
-				}
-			},
-			expectErr: "max exchange rate age override agold is not an active or scheduled feed",
-		},
-		{
-			name: "override denom is the numeraire",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: chain.NoahBaseDenom, MaxAge: time.Minute},
-				}
-			},
-			expectErr: "never priced",
-		},
-		{
-			name: "override denom is malformed",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: "NOT-A-DENOM", MaxAge: time.Minute},
-				}
-			},
-			expectErr: "max exchange rate age override denom must be an Ark-native base denom matching",
-		},
-		{
-			name: "override max age zero",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: chain.SDRBaseDenom},
-				}
-			},
-			expectErr: "max exchange rate age override for asdr must be greater than zero",
-		},
-		{
-			name: "override max age negative",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: chain.SDRBaseDenom, MaxAge: -time.Second},
-				}
-			},
-			expectErr: "max exchange rate age override for asdr must be greater than zero",
-		},
-		{
-			name: "overrides unsorted",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: chain.USDBaseDenom, MaxAge: time.Minute},
-					{Denom: chain.SDRBaseDenom, MaxAge: 26 * time.Hour},
-				}
-			},
-			expectErr: "genesis max exchange rate age overrides must be sorted by unique denom",
-		},
-		{
-			name: "overrides duplicated",
-			mutate: func(gs *types.GenesisState) {
-				gs.MaxExchangeRateAgeOverrides = []types.ExchangeRateAgeOverride{
-					{Denom: chain.SDRBaseDenom, MaxAge: time.Minute},
-					{Denom: chain.SDRBaseDenom, MaxAge: 26 * time.Hour},
-				}
-			},
-			expectErr: "genesis max exchange rate age overrides must be sorted by unique denom",
-		},
 		// Valid custom genesis
 		{
 			name: "custom valid genesis",
@@ -499,9 +395,6 @@ func TestValidateGenesis(t *testing.T) {
 						Version: types.InitialFeedVersion,
 					},
 					"ausd",
-					[]types.ExchangeRateAgeOverride{
-						{Denom: "ausd", MaxAge: 26 * time.Hour},
-					},
 				)
 			},
 		},

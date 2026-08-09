@@ -70,6 +70,67 @@ func (k Keeper) GetLastKnownRateSet(ctx context.Context, denoms ...string) (type
 	return rates, nil
 }
 
+// GetRateSetWithin returns each requested denomination's rate under the
+// request's own staleness window, keyed by the requested denomination — the
+// available read's semantics, with the caller's window in place of the chain
+// default. A request whose feed is unknown, never priced, non-positive, or
+// older than its window is omitted, and the result carries the NOAH identity
+// like every rate set.
+//
+// Each denomination prices through the feed its own name derives: its prefix
+// when it is an external symbol, itself otherwise. The derivation happens
+// here, not in the caller, so a request cannot route a name to any series but
+// its own — two requests may name one series under different windows and
+// receive different verdicts, keyed apart by the names that asked.
+//
+// This is the one read that takes a window from the caller, and nothing
+// unjudged leaves through it: the verdict is applied here, under the window
+// stated in the request, so a consumer cannot fetch a rate and forget the
+// judgment. Everything without a window of its own keeps using GetRateSet and
+// GetAvailableRateSet; GetLastKnownRateSet keeps its separate fence for sizing
+// aggregates against outstanding supply.
+//
+// A non-positive window admits nothing rather than erroring: the windows are
+// governance inputs validated at their own write, and this read sits behind
+// arithmetic that settles every block, where a conservative zero is an answer
+// and an error is a halt.
+func (k Keeper) GetRateSetWithin(ctx context.Context, requests []types.RateRequest) (types.RateSet, error) {
+	rates := types.NewRateSet()
+	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	seen := make(map[string]struct{}, len(requests))
+	for _, request := range requests {
+		if _, duplicate := seen[request.Denom]; duplicate {
+			return nil, fmt.Errorf("duplicate rate request for %s", request.Denom)
+		}
+		seen[request.Denom] = struct{}{}
+		if request.MaxAge <= 0 {
+			continue
+		}
+		feed := request.Denom
+		if derived, isExternal := chain.ExternalFeed(request.Denom); isExternal {
+			feed = derived
+		}
+
+		// Read directly rather than through getExchangeRate, which enforces
+		// the default window: the request's window governs here, and routing
+		// through the checked helper only to discard its verdict would invite
+		// someone to "fix" the duplication by reinstating it.
+		stored, err := k.ExchangeRate.Get(ctx, feed)
+		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				continue
+			}
+			return nil, fmt.Errorf("getting exchange rate for feed %s: %w", feed, err)
+		}
+		if currentTime.Sub(stored.BlockTimestamp) > request.MaxAge {
+			continue
+		}
+		rates[request.Denom] = stored.Rate
+	}
+
+	return rates, nil
+}
+
 func (k Keeper) rateSet(ctx context.Context, skipUnavailable bool, denoms []string) (types.RateSet, error) {
 	uniqueDenoms := make([]string, 0, len(denoms))
 	seen := map[string]struct{}{chain.NoahBaseDenom: {}}
@@ -93,12 +154,7 @@ func (k Keeper) rateSet(ctx context.Context, skipUnavailable bool, denoms []stri
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
 
 	for _, denom := range uniqueDenoms {
-		maxAge, err := k.getMaxAge(ctx, params, denom)
-		if err != nil {
-			return nil, err
-		}
-
-		rate, err := k.getExchangeRate(ctx, denom, currentTime, maxAge)
+		rate, err := k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
 		if err != nil {
 			if skipUnavailable &&
 				(errors.Is(err, types.ErrUnknownDenom) || errors.Is(err, types.ErrStaleExchangeRate)) {

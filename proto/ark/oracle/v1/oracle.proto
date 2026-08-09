@@ -74,28 +74,18 @@ message Params {
   ];
 }
 
-// ExchangeRateAgeOverride replaces the default staleness window for one
-// denomination.
-//
-// How long a rate stays meaningful is a property of the feed, not of the
-// consumer reading it: a slow-moving instrument priced against a daily
-// published figure is not stale at an age that would make an FX rate dangerous
-// to quote against. The window therefore lives beside the rate, so every
-// consumer inherits one answer per denomination and no consumer needs a
-// staleness rule of its own.
-//
-// An override is stated through MsgAddFeed and lives exactly as long as the
-// feed it governs: written when the feed is added or its window re-stated,
-// dropped alongside the feed's rate when a removal activates. This message is
-// the genesis and query representation of that state, not a parameter.
-message ExchangeRateAgeOverride {
-  string denom = 1;
-  google.protobuf.Duration max_age = 2 [
-    (gogoproto.nullable) = false,
-    (gogoproto.stdduration) = true,
-    (amino.dont_omitempty) = true
-  ];
-}
+// Per-feed staleness windows lived here until 2026-08-09. They rested on the
+// premise that how long a rate stays meaningful is a property of the feed
+// rather than of the consumer reading it, which held while every feed had one
+// consumer class. Feed sharing splits the premise in two: cadence — how often a
+// series publishes, when its market closes — is indeed a feed fact and stays
+// with the timestamps below, but tolerance — how old a rate may be and still
+// back a decision — is the consumer's risk policy, and one window cannot answer
+// for a conversion mint and a Reserve holding at once. Consumers holding a
+// window of their own now state it per request through GetRateSetWithin, each
+// verdict answered under the request's own key; every other consumer takes
+// Params.max_exchange_rate_age, which is the conversion-grade default and the
+// only window the Oracle keeps.
 
 // Feeds defines the materialized active feed set and any scheduled per-feed
 // transitions not yet activated. The feed set for a vote height is the active

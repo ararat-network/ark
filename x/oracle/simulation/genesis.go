@@ -139,7 +139,6 @@ func RandomisedGenState(simState *module.SimulationState) {
 		types.NewAccounting(params),
 		types.DefaultFeeds(),
 		chain.SDRBaseDenom,
-		[]types.ExchangeRateAgeOverride{},
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

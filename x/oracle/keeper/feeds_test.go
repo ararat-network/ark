@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	"time"
-
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -290,57 +288,6 @@ func (s *KeeperTestSuite) TestAdvanceFeedsPrunesRemovedRates() {
 	hasSurviving, err := s.keeper.ExchangeRate.Has(s.ctx, feedUSD)
 	s.Require().NoError(err)
 	s.Require().True(hasSurviving)
-}
-
-// A window is a judgment about one feed's publication cadence, so it leaves
-// with the feed. Were it to survive, a later AddFeed under the same
-// denomination would silently inherit a staleness rule written for something
-// else.
-func (s *KeeperTestSuite) TestAdvanceFeedsPrunesRemovedMaxAgeOverrides() {
-	s.seedFeeds(feedUSD, feedGold)
-	for _, denom := range []string{feedUSD, feedGold} {
-		s.Require().NoError(s.keeper.SetMaxAge(s.ctx, denom, 26*time.Hour))
-	}
-	activationHeight := sdk.UnwrapSDKContext(s.ctx).BlockHeight() + types.FeedActivationDelayBlocks
-	s.Require().NoError(s.scheduleRemove(feedGold))
-
-	activationCtx := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(activationHeight)
-	s.Require().NoError(s.keeper.AdvanceFeeds(activationCtx))
-
-	hasRemoved, err := s.keeper.MaxExchangeRateAgeOverrides.Has(s.ctx, feedGold)
-	s.Require().NoError(err)
-	s.Require().False(hasRemoved)
-
-	// The departing feed's neighbour keeps its own window.
-	surviving, err := s.keeper.GetMaxAge(s.ctx, feedUSD)
-	s.Require().NoError(err)
-	s.Require().Equal(26*time.Hour, surviving)
-
-	// The prune is announced: an indexer tracking windows sees the removal
-	// rather than inferring it from the activation batch.
-	events := sdk.UnwrapSDKContext(activationCtx).EventManager().Events()
-	s.Require().Contains(
-		events,
-		s.typedEvent(&types.EventMaxExchangeRateAgeOverrideRemoved{Denom: feedGold}),
-	)
-}
-
-// A feed that never carried a window announces nothing when it leaves, so the
-// ordinary removal does not emit a change that did not happen.
-func (s *KeeperTestSuite) TestAdvanceFeedsSilentWhenRemovedFeedHadNoOverride() {
-	s.seedFeeds(feedUSD, feedGold)
-	activationHeight := sdk.UnwrapSDKContext(s.ctx).BlockHeight() + types.FeedActivationDelayBlocks
-	s.Require().NoError(s.scheduleRemove(feedGold))
-
-	activationCtx := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(activationHeight)
-	s.Require().NoError(s.keeper.AdvanceFeeds(activationCtx))
-
-	for _, event := range sdk.UnwrapSDKContext(activationCtx).EventManager().Events() {
-		s.Require().NotEqual(
-			"ark.oracle.v1.EventMaxExchangeRateAgeOverrideRemoved",
-			event.Type,
-		)
-	}
 }
 
 func (s *KeeperTestSuite) TestAdvanceFeedsPromotesConsecutiveBatchesInOrder() {

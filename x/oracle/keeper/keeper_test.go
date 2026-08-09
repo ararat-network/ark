@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -24,7 +25,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/gogoproto/proto"
 
 	chain "ark/pkg/chain"
 	"ark/x/oracle/keeper"
@@ -280,60 +280,59 @@ func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 	}, rates)
 }
 
-// TestExchangeRateAgeOverrideGovernsOneDenom pins that the staleness window is
-// per-denomination: a feed published on a slow cadence stays fresh under its
-// own window while its neighbour goes stale under the default, and the window
-// travels with the rate rather than living in any consumer. It is what lets a
-// slow-moving instrument be recognised at all without any consumer holding a
-// governance-supplied price.
-func (s *KeeperTestSuite) TestExchangeRateAgeOverrideGovernsOneDenom() {
+// TestGetRateSetWithinJudgesOneFeedPerRequest pins what replaced the per-feed
+// staleness override: the window travels in the request, the series is derived
+// from the requested name, and the verdict comes back under that name — so one
+// series can back a patient holding and be refused by a strict one in the same
+// block, keyed apart. Every consumer without a window of its own keeps taking
+// the chain default through the gate-enforcing reads, which is why the same
+// rate is refused there.
+func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	params.MaxExchangeRateAge = time.Minute
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.Require().NoError(s.keeper.SetMaxAge(s.ctx, chain.SDRBaseDenom, 26*time.Hour))
 
-	// Both rates are hours old: far beyond the default window, inside the
-	// override.
-	age := oracleTestBlockTime.Add(-2 * time.Hour)
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
 		Denom:          chain.SDRBaseDenom,
 		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: age,
-	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyMustNewDecFromStr("1.3"),
-		BlockTimestamp: age,
+		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Hour),
 	}))
 
-	rates, err := s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom)
+	rates, err := s.keeper.GetRateSetWithin(s.ctx, []types.RateRequest{
+		// The series is derived from the requested name — its prefix for an
+		// external symbol, itself for a bare feed key — so a request cannot
+		// route a name to any series but its own.
+		{Denom: "asdr-patient", MaxAge: 26 * time.Hour},
+		{Denom: "asdr-strict", MaxAge: time.Hour},
+		{Denom: chain.SDRBaseDenom, MaxAge: 26 * time.Hour},
+		// A feed never priced is omitted rather than zero: a judged read is
+		// not licence to invent a rate where none was stored.
+		{Denom: "ausd-x", MaxAge: 26 * time.Hour},
+		// A non-positive window admits nothing rather than erroring: this read
+		// sits behind arithmetic that settles every block.
+		{Denom: "asdr-zero2", MaxAge: 0},
+	})
 	s.Require().NoError(err)
 	s.Require().Equal(types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
+		"asdr-patient":      math.LegacyOneDec(),
 		chain.SDRBaseDenom:  math.LegacyOneDec(),
 	}, rates)
 
-	// The single-denom read and the all-rates walk agree with the set.
-	rate, err := s.keeper.GetExchangeRate(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.LegacyOneDec(), rate)
-	_, err = s.keeper.GetExchangeRate(s.ctx, chain.USDBaseDenom)
-	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
-	all, err := s.keeper.GetExchangeRates(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewDecCoins(sdk.NewDecCoinFromDec(chain.SDRBaseDenom, math.LegacyOneDec())), all)
+	// Requested denominations must be unique, or two verdicts would silently
+	// collapse into one.
+	_, err = s.keeper.GetRateSetWithin(s.ctx, []types.RateRequest{
+		{Denom: "asdr-x", MaxAge: time.Hour},
+		{Denom: "asdr-x", MaxAge: 26 * time.Hour},
+	})
+	s.Require().ErrorContains(err, "duplicate rate request")
 
-	// Past its own window the overridden feed goes stale like any other: the
-	// override moves the clock, it does not remove it.
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.SDRBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-26*time.Hour - time.Second),
-	}))
-	rates, err = s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom)
+	available, err := s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(types.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()}, rates)
+	s.Require().Equal(types.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()}, available)
+	_, err = s.keeper.GetExchangeRate(s.ctx, chain.SDRBaseDenom)
+	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
 }
 
 // TestGetLastKnownRateSetIgnoresStalenessButNotAbsence pins the one difference
@@ -518,16 +517,6 @@ func (s *KeeperTestSuite) TestGetExchangeRates() {
 		sdk.DecCoins{sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec())},
 		exchangeRates,
 	)
-}
-
-// typedEvent renders one typed event for assertions against an event stream
-// carrying other events too, where requireTypedEvents' exact-list match is the
-// wrong question.
-func (s *KeeperTestSuite) typedEvent(message proto.Message) sdk.Event {
-	event, err := sdk.TypedEventToEvent(message)
-	s.Require().NoError(err)
-
-	return event
 }
 
 func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {
