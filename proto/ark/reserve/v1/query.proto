@@ -1,0 +1,197 @@
+syntax = "proto3";
+package ark.reserve.v1;
+
+import "amino/amino.proto";
+import "ark/reserve/v1/reserve.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/query/v1/query.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "ark/x/reserve/types";
+
+// Query defines the reserve module's gRPC query service.
+service Query {
+  // Params queries the governance-owned reserve parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/params";
+  }
+
+  // Mandate queries the committee mandate and its term allowance.
+  rpc Mandate(QueryMandateRequest) returns (QueryMandateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/mandate";
+  }
+
+  // Position queries one position by its permanent identifier.
+  rpc Position(QueryPositionRequest) returns (QueryPositionResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/positions/{position_id}";
+  }
+
+  // OpenPositions queries the paginated open set: what recognition credits and
+  // outstanding_deployed sums over.
+  rpc OpenPositions(QueryOpenPositionsRequest)
+      returns (QueryOpenPositionsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/open_positions";
+  }
+
+  // ClosedPositions queries the paginated closed record.
+  rpc ClosedPositions(QueryClosedPositionsRequest)
+      returns (QueryClosedPositionsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/closed_positions";
+  }
+
+  // Ledger queries the paginated accounting ledger.
+  rpc Ledger(QueryLedgerRequest) returns (QueryLedgerResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/ledger";
+  }
+
+  // Balance queries the Reserve's custody balance and outstanding deployment.
+  rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/balance";
+  }
+
+  // RecognitionPolicy queries the governance-owned asset eligibility set.
+  rpc RecognitionPolicy(QueryRecognitionPolicyRequest)
+      returns (QueryRecognitionPolicyResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/recognition_policy";
+  }
+
+  // RecognisedCapital queries the figure Treasury sees and its complete
+  // per-asset decomposition.
+  rpc RecognisedCapital(QueryRecognisedCapitalRequest)
+      returns (QueryRecognisedCapitalResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/recognised_capital";
+  }
+}
+
+// QueryParamsRequest is the request type for Query/Params.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for Query/Params.
+message QueryParamsResponse {
+  Params params = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryMandateRequest is the request type for Query/Mandate.
+message QueryMandateRequest {}
+
+// QueryMandateResponse is the response type for Query/Mandate.
+message QueryMandateResponse {
+  ReserveMandate mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  bool active = 2 [ (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin allowance_used = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin allowance_remaining = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryPositionRequest is the request type for Query/Position. A position is
+// answered from wherever it lives, so a caller holding an identifier need not
+// know whether it has closed.
+message QueryPositionRequest {
+  uint64 position_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// QueryPositionResponse is the response type for Query/Position.
+message QueryPositionResponse {
+  Position position = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryOpenPositionsRequest is the request type for Query/OpenPositions.
+message QueryOpenPositionsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryOpenPositionsResponse is the response type for Query/OpenPositions.
+message QueryOpenPositionsResponse {
+  repeated Position positions = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryClosedPositionsRequest is the request type for Query/ClosedPositions.
+message QueryClosedPositionsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryClosedPositionsResponse is the response type for Query/ClosedPositions.
+message QueryClosedPositionsResponse {
+  repeated Position positions = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryLedgerRequest is the request type for Query/Ledger. A nonzero
+// position_id restricts the answer to that position's entries.
+message QueryLedgerRequest {
+  uint64 position_id = 1 [ (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryLedgerResponse is the response type for Query/Ledger.
+message QueryLedgerResponse {
+  repeated AccountingEntry ledger = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryBalanceRequest is the request type for Query/Balance.
+message QueryBalanceRequest {}
+
+// QueryBalanceResponse reports what the Reserve holds on chain and what it
+// currently has deployed. Recognised capital is reported by the
+// RecognisedCapital query instead, beside the decomposition that explains it.
+message QueryBalanceResponse {
+  cosmos.base.v1beta1.Coin balance = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // outstanding_deployed is the cost basis of positions still open.
+  cosmos.base.v1beta1.Coin outstanding_deployed = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryRecognitionPolicyRequest is the request type for
+// Query/RecognitionPolicy.
+message QueryRecognitionPolicyRequest {}
+
+// QueryRecognitionPolicyResponse returns the complete eligibility set. It is
+// unpaginated because the set is bounded by validation, not by history.
+message QueryRecognitionPolicyResponse {
+  repeated EligibilityEntry entries = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryRecognisedCapitalRequest is the request type for
+// Query/RecognisedCapital.
+message QueryRecognisedCapitalRequest {}
+
+// QueryRecognisedCapitalResponse reports recognised capital and its complete
+// decomposition. Every zero credit is attributable to a visible zero factor:
+// an absent rate, a zero haircut, a zero cap ratio, nothing held, or an asset
+// held outside the policy.
+message QueryRecognisedCapitalResponse {
+  // recognised is the figure Treasury sees: the anoah balance plus every
+  // asset's credit.
+  cosmos.base.v1beta1.Coin recognised = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // noah_balance is the on-chain anoah counting at par, so recognised =
+  // noah_balance + the sum of every credit below.
+  cosmos.base.v1beta1.Coin noah_balance = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // assets covers the union of the policy and everything actually held, so a
+  // holding outside the policy is visible here rather than silently absent.
+  repeated AssetRecognition assets = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}

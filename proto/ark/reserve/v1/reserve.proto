@@ -1,0 +1,210 @@
+syntax = "proto3";
+package ark.reserve.v1;
+
+import "amino/amino.proto";
+import "ark/mandate/v1/envelope.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "ark/x/reserve/types";
+
+// EntryKind identifies what one ledger entry records. DEPLOYMENT and
+// RETURN_ATTRIBUTION carry a coin movement the chain executed, while
+// QUANTITY_UPDATE and IMPAIRMENT carry only what the committee attests.
+enum EntryKind {
+  // ENTRY_KIND_UNSPECIFIED is invalid.
+  ENTRY_KIND_UNSPECIFIED = 0;
+  // ENTRY_KIND_DEPLOYMENT records a proven outflow opening or funding a
+  // position.
+  ENTRY_KIND_DEPLOYMENT = 1;
+  // ENTRY_KIND_QUANTITY_UPDATE records an attested holding change: settlement
+  // confirmation, yield received, or an off-chain conversion.
+  ENTRY_KIND_QUANTITY_UPDATE = 2;
+  // ENTRY_KIND_RETURN_ATTRIBUTION records a proven inflow matched to a
+  // position.
+  ENTRY_KIND_RETURN_ATTRIBUTION = 3;
+  // ENTRY_KIND_IMPAIRMENT records the impaired flag being set or cleared.
+  ENTRY_KIND_IMPAIRMENT = 4;
+  // ENTRY_KIND_CORRECTION restates a prior entry without erasing it.
+  ENTRY_KIND_CORRECTION = 5;
+  // ENTRY_KIND_CLOSURE closes a position and crystallises its realised
+  // profit or loss.
+  ENTRY_KIND_CLOSURE = 6;
+}
+
+// Params defines the governance-owned parameters for the reserve module. It
+// is deliberately empty: governed policy lives in ReserveMandate and the
+// EligibilityEntry list.
+message Params {
+  option (gogoproto.equal) = true;
+  option (amino.name) = "ark/reserve/Params";
+}
+
+// ReserveMandate stores one governance-created, height-scoped Reserve
+// committee appointment and the deployment authority delegated to it for the
+// term. An empty committee identifies a disabled mandate; term still increases
+// on replacement so old committee transactions cannot become valid again.
+message ReserveMandate {
+  // envelope carries the shared term, committee, and half-open height window.
+  ark.mandate.v1.Envelope envelope = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // deployment_allowance is the fixed gross anoah outflow the committee may
+  // deploy during the term. It is consumed permanently and only by NOAH
+  // outflows, so it bounds gross deployment rather than outstanding exposure.
+  cosmos.base.v1beta1.Coin deployment_allowance = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // minimum_noah_balance is the anoah floor no committee disposal may take the
+  // account below: a deployment refuses to breach it, and a surplus burn sizes
+  // itself above it.
+  cosmos.base.v1beta1.Coin minimum_noah_balance = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // destinations are the exact on-chain addresses a deployment may pay.
+  // Appointment-scoped: replacement clears the list.
+  repeated string destinations = 4
+      [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+// EligibilityEntry grants one external holding a bounded recognition credit.
+// Governance owns the list and replaces it whole; custody admission never
+// reads it.
+message EligibilityEntry {
+  // denom keys the entry; one entry per claim. It is an external symbol —
+  // `<feed>-<tag>`, such as `axau-lbma` — never a bare denomination, so an
+  // Ark-issued asset or the NOAH base denomination cannot be listed. The tag
+  // distinguishes claims that price through one feed, each carrying its own
+  // haircut, cap, and window.
+  string denom = 1;
+  // haircut_factor in (0, 1] scales the feed value. Strictly positive: an
+  // entry granting no credit is refused rather than stored.
+  string haircut_factor = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // recognition_cap_ratio in (0, 1) bounds this asset's credit to ratio ×
+  // recognised capital itself, resolved per block by SolveRecognition's closed
+  // form. Clipping one asset shrinks the total and can tighten its neighbours,
+  // so ratios across the whole policy must sum strictly below one.
+  string recognition_cap_ratio = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // max_rate_age is how old the derived feed's rate may be and still back this
+  // claim's credit. Required and positive, and bounded by
+  // MaxRecognitionRateAge: a claim states its own tolerance rather than
+  // inheriting the Oracle default.
+  google.protobuf.Duration max_rate_age = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.stdduration) = true,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// Position is the current view of one deployment: quantity is what the
+// committee attests is held off-chain; deployed and returned are what the
+// chain itself moved. Open and closed positions live in separate stores, so a
+// position's status is where it is rather than a flag it carries.
+message Position {
+  uint64 position_id = 1 [ (amino.dont_omitempty) = true ];
+  // quantity is the attested holding, denominated in the asset held. A
+  // position is keyed to one asset for its whole life.
+  cosmos.base.v1beta1.Coin quantity = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // deployed is the proven cost basis: every anoah outflow attributed here.
+  cosmos.base.v1beta1.Coin deployed = 3
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // returned is the proven recovery: the anoah value, fixed at attribution
+  // time, of every inflow attributed here.
+  cosmos.base.v1beta1.Coin returned = 4
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // impaired zeroes this position's recognition credit without erasing the
+  // claim.
+  bool impaired = 5 [ (amino.dont_omitempty) = true ];
+  // venue_reference names the custodian, venue, or counterparty holding it.
+  string venue_reference = 6;
+  uint64 opened_height = 7 [ (amino.dont_omitempty) = true ];
+  // closed_height is zero while the position is open, and the height it closed
+  // at once it is.
+  uint64 closed_height = 8 [ (amino.dont_omitempty) = true ];
+}
+
+// AccountingEntry is one append-only ledger record. Every position mutation
+// is an entry, and nothing edits an entry once written.
+message AccountingEntry {
+  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  EntryKind kind = 3 [ (amino.dont_omitempty) = true ];
+  uint64 corrects = 4 [ (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin quantity = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin moved_noah_value = 6
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin moved_coin = 7
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string reference = 8;
+  string recorded_by = 9 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 term = 10 [ (amino.dont_omitempty) = true ];
+  uint64 height = 11 [ (amino.dont_omitempty) = true ];
+}
+
+// AssetRecognition decomposes one asset's contribution to recognised capital.
+// Quantities are attested custody the chain cannot see, carried by open
+// positions.
+message AssetRecognition {
+  string denom = 1;
+  // eligible reports whether the asset has a policy entry. An ineligible row
+  // is custody without credit.
+  bool eligible = 2 [ (amino.dont_omitempty) = true ];
+  // attested_quantity sums the open, unimpaired positions in this asset.
+  string attested_quantity = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // impaired_quantity sums the open, impaired positions: attested holdings
+  // excluded from credit without being erased.
+  string impaired_quantity = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // rate is the Oracle rate used this block, in units of this asset per one
+  // NOAH, so the credit below divides by it. It is zero when no rate was used:
+  // the feed is dark, stale, or non-positive, or the asset was never priced.
+  string rate = 6 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string haircut_factor = 7 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string recognition_cap_ratio = 8 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // effective_cap is recognition_cap_ratio resolved against this block's
+  // recognised capital: the anoah ceiling this asset's credit was clipped at.
+  cosmos.base.v1beta1.Coin effective_cap = 10
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // credit is the anoah this asset contributes: the gross quantity haircut,
+  // divided by the rate, truncated, then clipped by the cap.
+  cosmos.base.v1beta1.Coin credit = 9
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
