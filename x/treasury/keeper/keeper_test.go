@@ -59,10 +59,7 @@ type KeeperTestSuite struct {
 	// which nets out of the claimable aggregate for flows. It is empty by
 	// default, so a test that never parks protocol paper sees gross and net
 	// agree and keeps its old shape.
-	reserveHoldings sdk.Coins
-	// primingStubbed records that beginBlock has registered its zero-supply
-	// fallback, so repeated calls within one test add only one expectation.
-	primingStubbed        bool
+	reserveHoldings       sdk.Coins
 	transientStoreService store.TransientStoreService
 	commitMultiStore      storetypes.CommitMultiStore
 
@@ -183,7 +180,6 @@ func (s *KeeperTestSuite) SetupTest() {
 	// on many unrelated paths, so every method derives its answer from the
 	// suite fixtures instead of per-test expectations. Strictness stays where
 	// it matters — the bank and oracle mocks still fail on unexpected calls.
-	s.primingStubbed = false
 	s.assets = map[string]assettypes.Asset{}
 	s.plans = map[string]assettypes.SettlementPlan{}
 	s.rates = oracletypes.NewRateSet()
@@ -374,24 +370,11 @@ func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-// beginBlock runs BeginBlocker with its liability priming absorbed: priming
-// scans the fixture registry for supply, which reward-funding and tax-cap
-// assertions are indifferent to, so unstubbed denominations report zero. The
-// fallback is registered here rather than in SetupTest so it cannot shadow a
-// test that stubs supply itself — gomock serves the first unexhausted match.
-// Tests asserting on the primed value must therefore stub GetSupply before
-// calling this.
+// beginBlock runs BeginBlocker. The indirection is the seam tests share: when
+// BeginBlocker grows a per-block concern the suite can absorb here, its call
+// sites stay untouched. The zero-supply fallback that used to live here went
+// with liability priming, which BeginBlocker no longer performs.
 func (s *KeeperTestSuite) beginBlock() error {
-	if !s.primingStubbed {
-		s.primingStubbed = true
-		s.bankKeeper.EXPECT().
-			GetSupply(gomock.Any(), gomock.Any()).
-			DoAndReturn(func(_ context.Context, denom string) sdk.Coin {
-				return sdk.NewCoin(denom, math.ZeroInt())
-			}).
-			AnyTimes()
-	}
-
 	return s.keeper.BeginBlocker(s.ctx)
 }
 
