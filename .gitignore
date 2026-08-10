@@ -1,1 +1,10 @@
 .DS_Store
+
+# Build output
+/build/
+
+# Compiled test binaries, left behind by `go test -c` and by profiling runs
+*.test
+
+# Fuzz crashers, written by `go test -fuzz`. Promote them to f.Add seeds instead.
+**/testdata/fuzz/
