@@ -76,7 +76,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsBoundsTheFundingWindow() {
 		Authority: s.authority,
 		Params:    candidate,
 	})
-	s.Require().ErrorContains(err, "RewardFundingWindow must not exceed")
+	s.Require().ErrorContains(err, "RewardFundingWindow must be between one and")
 	stored, getErr := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(getErr)
 	s.Require().Equal(currentParams, stored)
@@ -130,7 +130,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRebuildsCapsOnReferenceAmountChange
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), cap)
 	}
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(100)},
 		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(100)},
 	}})
@@ -169,7 +169,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsCoversMembersLackingRates() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(7), usdCap)
 	s.requireTaxCapRefreshPending(true)
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(100)},
 	}})
 }
@@ -196,7 +196,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsSetsUncappedReferenceCap() {
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
 	}
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 		{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
 	}})
@@ -233,7 +233,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyBoundsTheBlockRewardTargets() {
 		Authority: s.authority,
 		Policy:    candidate,
 	})
-	s.Require().ErrorContains(err, "ValidatorBlockRewardTarget must not exceed")
+	s.Require().ErrorContains(err, "ValidatorBlockRewardTarget must be between zero and")
 	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(getErr)
 	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
@@ -505,6 +505,9 @@ func monetaryPolicyBounds() (types.MonetaryPolicy, types.MonetaryPolicy) {
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
 		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
+		LiabilityRatioWeight:        math.LegacyOneDec(),
+		VolatilityWeight:            math.LegacyOneDec(),
+		FlowWeight:                  math.LegacyOneDec(),
 	}
 	return minimum, maximum
 }
@@ -517,6 +520,9 @@ func committeePolicyCandidate() types.MonetaryPolicy {
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
 		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.25"),
+		LiabilityRatioWeight:        math.LegacyMustNewDecFromStr("0.5"),
+		VolatilityWeight:            math.LegacyZeroDec(),
+		FlowWeight:                  math.LegacyZeroDec(),
 	}
 }
 
@@ -578,7 +584,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsCaptureFailurePreservesOldParamsAnd
 		s.Require().NoError(getErr)
 		s.Require().Equal(oldCap.TaxCap, storedCap)
 	}
-	taxCapsEvent, conversionErr := sdk.TypedEventToEvent(&types.EventTaxCapsUpdated{})
+	taxCapsEvent, conversionErr := sdk.TypedEventToEvent(&types.EventTaxCapsRefreshed{})
 	s.Require().NoError(conversionErr)
 	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
 		s.Require().NotEqual(taxCapsEvent.Type, event.Type)

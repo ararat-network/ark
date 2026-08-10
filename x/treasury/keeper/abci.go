@@ -23,5 +23,13 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 		return err
 	}
 
-	return k.advanceRewardFunding(ctx)
+	if err := k.advanceRewardFunding(ctx); err != nil {
+		return err
+	}
+
+	// Last, and cheap on every block that is not a cadence boundary: one bool
+	// read. The recomputation it gates folds the registry, which is why it runs
+	// on a governed period rather than per block — the samples it consumes are
+	// already being taken in settlement.
+	return k.refreshExposure(ctx)
 }

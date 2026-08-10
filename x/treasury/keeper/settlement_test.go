@@ -330,3 +330,124 @@ func (s *KeeperTestSuite) TestSettleConversionsNetsReserveHeldPaperFromCoverage(
 	// coverage 30/50 pays 6.
 	s.Require().Equal(math.NewInt(6), burn)
 }
+
+// setMultiplier installs an applied exposure multiplier directly, so a
+// settlement test can assert what scaling does without driving a cadence.
+func (s *KeeperTestSuite) setMultiplier(multiplier string) {
+	state := types.DefaultExposureState()
+	state.Multiplier = math.LegacyMustNewDecFromStr(multiplier)
+	s.Require().NoError(s.keeper.ExposureState.Set(s.ctx, state))
+}
+
+// TestSettleConversionsLeavesDrawUnscaledByExposure is the D73 pin, and the one
+// test standing between this design and its opposite. The multiplier reaches
+// the targets and must not reach the coverage basis: dividing a payment
+// denominator by it would ration the exits the Buffer exists to fund, exactly
+// during the stress that raises it.
+//
+// The block redeems only, so no target is consulted and the draw is the whole
+// of what settlement does. The payment is therefore byte-identical to the
+// unscaled case.
+func (s *KeeperTestSuite) TestSettleConversionsLeavesDrawUnscaledByExposure() {
+	s.setMultiplier("4")
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 80))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	s.expectBufferBalances(50)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
+	).Return(nil)
+
+	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		EligiblePrincipal: math.ZeroInt(),
+		RedemptionOutput:  math.NewInt(20),
+		RedeemedValue:     math.LegacyNewDec(20),
+	})
+	s.Require().NoError(err)
+	// Coverage is 50 over a pre-burn basis of 100 — the 80 remaining plus the 20
+	// retired — paying half of a 20 output. A basis scaled by four would have
+	// paid 2.
+	s.Require().Equal(math.NewInt(10), burn)
+}
+
+// TestSettleConversionsScalesEveryTargetTogether is the §5 pin: the ratios are
+// voted as a set and read as relative fund sizing, so the multiplier must not
+// move the proportions between them. Doubling it doubles all three gaps, which
+// is visible here as each fund taking exactly twice what it took unscaled.
+func (s *KeeperTestSuite) TestSettleConversionsScalesEveryTargetTogether() {
+	policy := types.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.1")
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.05")
+	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.02")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.setMultiplier("2")
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	s.expectBufferBalances(0)
+	// Liability 100 doubled is 200, so the gaps are 20, 10, and 4 against empty
+	// funds — each exactly twice its unscaled size, and the ratios between them
+	// unchanged at 10 : 5 : 2.
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)),
+	).Return(nil)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, reservetypes.StrategicReserveName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
+	).Return(nil)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, claimstypes.InsuranceName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 4)),
+	).Return(nil)
+
+	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		EligiblePrincipal: math.NewInt(100),
+		RedemptionOutput:  math.ZeroInt(),
+		RedeemedValue:     math.LegacyZeroDec(),
+	})
+	s.Require().NoError(err)
+	// Unscaled the three gaps would total 17 and burn 83; scaled they total 34.
+	s.Require().Equal(math.NewInt(66), burn)
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                  chain.NoahBaseDenom,
+		RedemptionBufferCredit: math.NewInt(20),
+		StrategicReserveCredit: math.NewInt(10),
+		InsuranceCredit:        math.NewInt(4),
+		OverflowBurn:           math.NewInt(66),
+	})
+}
+
+// TestSettleConversionsRetainsMoreUnderExposure states the whole point of the
+// mechanism in one comparison: the same block, the same liability, and the same
+// principal, retained rather than burned because risk is elevated.
+func (s *KeeperTestSuite) TestSettleConversionsRetainsMoreUnderExposure() {
+	policy := types.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.1")
+	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
+	policy.InsuranceTargetRatio = math.LegacyZeroDec()
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.setMultiplier("3")
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	s.expectBufferBalances(0)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 30)),
+	).Return(nil)
+
+	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		EligiblePrincipal: math.NewInt(50),
+		RedemptionOutput:  math.ZeroInt(),
+		RedeemedValue:     math.LegacyZeroDec(),
+	})
+	s.Require().NoError(err)
+	// Unscaled the Buffer would have taken 10 and burned 40. Tripled, it takes
+	// 30 and burns 20 — the same principal, three times the cushion.
+	s.Require().Equal(math.NewInt(20), burn)
+}

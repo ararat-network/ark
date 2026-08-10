@@ -36,8 +36,23 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 	}
 	// An export taken while a cadence refresh was owed carries the raised flag,
-	// and the import must keep the work owed rather than forgive it.
+	// and the import must keep the work owed rather than forgive it. The
+	// exposure update carries the same semantics on its own flag.
 	genesis.TaxCapRefreshPending = true
+	genesis.ExposureRefreshPending = true
+	// A non-default risk state, so the round trip proves the series survive
+	// rather than being re-derived from zero: restarting the EWMAs would hand
+	// the new chain a calm-market multiplier during whatever prompted the
+	// export.
+	genesis.ExposureState = types.ExposureState{
+		LastReferencePrice: math.LegacyNewDec(3),
+		VolatilityVariance: math.LegacyMustNewDecFromStr("0.25"),
+		FlowPressure:       math.LegacyNewDec(11),
+		LiabilityRatio:     math.LegacyMustNewDecFromStr("0.4"),
+		FlowRatio:          math.LegacyMustNewDecFromStr("0.05"),
+		Multiplier:         math.LegacyMustNewDecFromStr("1.75"),
+		LastRefreshHeight:  7,
+	}
 	s.setAssets(chain.SDRBaseDenom)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
 		types.SubsidyPoolName:             sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
@@ -54,6 +69,8 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
 	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
 	s.Require().Equal(genesis.TaxCapRefreshPending, exported.TaxCapRefreshPending)
+	s.Require().Equal(genesis.ExposureState, exported.ExposureState)
+	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
 }
 
 // TestInitGenesisSeedsCapsAtReferenceAmount pins the launch path: a genesis

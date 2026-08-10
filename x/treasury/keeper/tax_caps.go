@@ -66,12 +66,12 @@ func (k Keeper) refreshTaxCaps(ctx context.Context) error {
 		return nil
 	}
 	// The event carries the denoms this pass wrote — derived and seeded — not
-	// the whole stored set: kept caps are unchanged by definition, so
-	// reporting them would describe an update that did not happen.
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{
+	// the whole stored set: a kept cap was not touched by this pass, so
+	// reporting it would describe work that did not happen.
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventTaxCapsRefreshed{
 		TaxCaps: caps,
 	}); err != nil {
-		return fmt.Errorf("emitting Treasury tax-cap update event: %w", err)
+		return fmt.Errorf("emitting Treasury tax-cap refresh event: %w", err)
 	}
 	return nil
 }

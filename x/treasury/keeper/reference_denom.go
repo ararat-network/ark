@@ -14,8 +14,14 @@ import (
 	"ark/x/treasury/types"
 )
 
-// RebaseTaxCap re-expresses the reference tax cap when governance re-points
-// the protocol reference.
+// RebaseTaxCap re-expresses Treasury's reference-denominated state when
+// governance re-points the protocol reference: the tax cap, and the exposure
+// model's price anchor.
+//
+// The anchor travels with the cap because both are figures quoted in the old
+// unit that keep their meaning only if converted in the same transaction the
+// unit changes. Leaving it would make the next block read a new-unit price
+// against an old-unit anchor and record the cross rate as a market move.
 func (k Keeper) RebaseTaxCap(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -55,6 +61,10 @@ func (k Keeper) RebaseTaxCap(ctx context.Context, from string, to string, rates 
 	params.ReferenceTaxCap = newCap
 	if err := k.Params.Set(ctx, params); err != nil {
 		return fmt.Errorf("setting rebased params: %w", err)
+	}
+
+	if err := k.rescaleReferencePrice(ctx, from, to, rates); err != nil {
+		return err
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventReferenceTaxCapRebased{

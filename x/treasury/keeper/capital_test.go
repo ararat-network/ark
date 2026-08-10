@@ -226,3 +226,45 @@ func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(6), burn)
 }
+
+// TestCommitteeBoundsScaleWithExposure pins the multiplier's reach into
+// x/reserve. Every direction it moves a bound is the conservative one: the
+// Reserve requirement rises, which shrinks the surplus a committee may burn,
+// and the two fund shortfalls rise, which widens the transfers a committee may
+// make into the funds that absorb a run.
+//
+// The bound stays legitimate because the multiplier is protocol-computed from
+// supply, oracle rates, and settled flow — none of which the bounded committee
+// can set — so this does not loosen a bound on state its actor can reverse.
+func (s *KeeperTestSuite) TestCommitteeBoundsScaleWithExposure() {
+	policy := types.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
+	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.setMultiplier("2")
+	s.setAssets(chain.USDBaseDenom)
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).AnyTimes()
+	s.bankKeeper.EXPECT().GetBalance(
+		gomock.Any(),
+		authtypes.NewModuleAddress(types.RedemptionBufferName),
+		chain.NoahBaseDenom,
+	).Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)).AnyTimes()
+	s.insuranceRecognised = math.NewInt(5)
+
+	// Liability 100 doubled is 200, so the targets are 100, 50 and 40 — each
+	// twice what TestCapitalReadsReportTargetGaps sees unscaled.
+	required, err := s.keeper.RequiredReserveCapital(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(50), required)
+
+	bufferGap, err := s.keeper.RedemptionBufferShortfall(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(80), bufferGap)
+
+	insuranceGap, err := s.keeper.InsuranceShortfall(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(35), insuranceGap)
+}

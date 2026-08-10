@@ -67,10 +67,10 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 			return nil, fmt.Errorf("recording pending tax cap refresh: %w", err)
 		}
 		if len(caps) > 0 {
-			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTaxCapsUpdated{
+			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTaxCapsRefreshed{
 				TaxCaps: caps,
 			}); err != nil {
-				return nil, fmt.Errorf("emitting Treasury tax-cap update event: %w", err)
+				return nil, fmt.Errorf("emitting Treasury tax-cap refresh event: %w", err)
 			}
 		}
 	}

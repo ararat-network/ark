@@ -176,6 +176,16 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.MonetaryMandate.Set(ctx, data.MonetaryMandate); err != nil {
 		return fmt.Errorf("setting monetary mandate: %w", err)
 	}
+	if err := k.ExposureState.Set(ctx, data.ExposureState); err != nil {
+		return fmt.Errorf("setting exposure state: %w", err)
+	}
+	// Imported as state rather than derived, for the same reason the cap flag
+	// is: an export taken while an update was owed keeps it owed here, and a
+	// fresh genesis carries false so the first block does not recompute what
+	// genesis just established.
+	if err := k.ExposureRefreshPending.Set(ctx, data.ExposureRefreshPending); err != nil {
+		return fmt.Errorf("setting pending exposure refresh: %w", err)
+	}
 
 	return nil
 }
@@ -203,6 +213,14 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return nil, fmt.Errorf("getting pending tax cap refresh: %w", err)
 	}
+	exposureState, err := k.getExposureState(ctx)
+	if err != nil {
+		return nil, err
+	}
+	exposureUpdatePending, err := k.ExposureRefreshPending.Get(ctx)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return nil, fmt.Errorf("getting pending exposure refresh: %w", err)
+	}
 
 	taxCaps := make([]types.TaxCap, 0)
 	if err := k.TaxCaps.Walk(ctx, nil, func(denom string, amount math.Int) (bool, error) {
@@ -213,11 +231,13 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	return &types.GenesisState{
-		Params:               params,
-		TaxCaps:              taxCaps,
-		RewardFunding:        rewardFunding,
-		MonetaryMandate:      monetaryMandate,
-		MonetaryPolicy:       monetaryPolicy,
-		TaxCapRefreshPending: taxCapRefreshPending,
+		Params:                 params,
+		TaxCaps:                taxCaps,
+		RewardFunding:          rewardFunding,
+		MonetaryMandate:        monetaryMandate,
+		MonetaryPolicy:         monetaryPolicy,
+		TaxCapRefreshPending:   taxCapRefreshPending,
+		ExposureState:          exposureState,
+		ExposureRefreshPending: exposureUpdatePending,
 	}, nil
 }

@@ -52,6 +52,17 @@ type Keeper struct {
 	// incomplete refresh retries every block until rates return. Membership
 	// drift needs no flag: the registry is ground truth, re-read every block.
 	TaxCapRefreshPending collections.Item[bool]
+	// ExposureState holds the risk estimate behind the fund-target multiplier:
+	// two per-block series, the inputs of the last completed refresh, and the
+	// multiplier itself. Sampling writes it every block from settlement;
+	// application rewrites it on the governed period.
+	ExposureState collections.Item[types.ExposureState]
+	// ExposureRefreshPending records that a recomputation is owed because a
+	// cadence boundary passed without one succeeding, on the same terms as
+	// TaxCapRefreshPending: the boundary is an instant, so a period that
+	// elapsed while liability could not be valued stays owed rather than being
+	// forgiven, and every later block retries until it lands.
+	ExposureRefreshPending collections.Item[bool]
 }
 
 // NewKeeper creates a Treasury keeper.
@@ -132,6 +143,18 @@ func NewKeeper(
 			"monetary_mandate",
 			codec.CollValue[types.MonetaryMandate](cdc),
 		),
+		ExposureState: collections.NewItem(
+			sb,
+			types.ExposureStateKey,
+			"exposure_state",
+			codec.CollValue[types.ExposureState](cdc),
+		),
+		ExposureRefreshPending: collections.NewItem(
+			sb,
+			types.ExposureRefreshPendingKey,
+			"exposure_refresh_pending",
+			collections.BoolValue,
+		),
 		MonetaryPolicy: collections.NewItem(
 			sb,
 			types.MonetaryPolicyKey,
@@ -161,9 +184,9 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// balance reads a module account's NOAH holding. Treasury sizes funds and
+// getBalance reads a module account's NOAH holding. Treasury sizes funds and
 // subsidies in NOAH throughout, so no caller needs the full coin set.
-func (k Keeper) balance(ctx context.Context, moduleName string) math.Int {
+func (k Keeper) getBalance(ctx context.Context, moduleName string) math.Int {
 	addr := k.accountKeeper.GetModuleAddress(moduleName)
 	return k.bankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
 }

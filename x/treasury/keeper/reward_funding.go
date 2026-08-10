@@ -153,7 +153,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 	// the same fraction of what they are owed, rather than serving one in full
 	// and starving the other. A zero combined gap never reaches that branch,
 	// because no balance is negative.
-	subsidyBalance := k.balance(ctx, types.SubsidyPoolName)
+	subsidyBalance := k.getBalance(ctx, types.SubsidyPoolName)
 	validatorShortfall := shortfall(funding.ValidatorTarget, split.validatorOrganic)
 	oracleShortfall := shortfall(funding.OracleTarget, split.oracleOrganic)
 	validatorSubsidy, oracleSubsidy := validatorShortfall, oracleShortfall

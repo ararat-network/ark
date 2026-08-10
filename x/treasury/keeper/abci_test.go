@@ -128,7 +128,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsOnMembershipChange() {
 	// membership, so the next block has nothing to do. The event reports the
 	// denoms this rebuild derived, not the kept cap it left alone.
 	s.requireTaxCapRefreshPending(false)
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
 		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(2_000_000)},
 	}})
@@ -211,13 +211,17 @@ func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsAtWeeklyBoundaryWithUnchan
 	s.expectValidatorFees(sdk.NewCoins())
 	s.setAssets(chain.SDRBaseDenom)
 	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(7)))
+	// A weekly boundary is also an hourly one, so this block recomputes the
+	// exposure multiplier alongside the cap rebuild. The recomputation is not
+	// what this test is about, but its reads have to be answered.
+	s.expectExposureUpdateReads()
 
 	s.Require().NoError(s.beginBlock())
 
 	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(sdrCap.IsZero())
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
 	}})
 }
@@ -296,7 +300,7 @@ func (s *KeeperTestSuite) TestBeginBlockerCoversMembersLackingUsableRates() {
 	s.requireTaxCapRefreshPending(true)
 	// The event carries what the pass wrote — the derived reference member
 	// and the seed — never the kept cap it left alone.
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
 		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(1_000_000)},
 	}})
@@ -363,7 +367,7 @@ func (s *KeeperTestSuite) TestBeginBlockerRetriesIncompleteRefreshNextBlock() {
 	usdCap, err = s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(2_000_000), usdCap)
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
 		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(2_000_000)},
 	}})
@@ -424,7 +428,7 @@ func (s *KeeperTestSuite) TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.OneInt(), usdCap)
 	s.requireTaxCapRefreshPending(false)
-	s.requireTypedEvent(&types.EventTaxCapsUpdated{TaxCaps: []types.TaxCap{
+	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
 		{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()},
 		{Denom: chain.USDBaseDenom, TaxCap: math.OneInt()},
 	}})

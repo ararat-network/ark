@@ -440,3 +440,75 @@ func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
 	s.Require().NoError(err)
 	s.Require().Equal(funding, response.RewardFunding)
 }
+
+// TestQueryExposureStatusReportsStoredRisk pins the query as stored state plus
+// the one derived figure, folding no registry — which is what keeps it
+// answerable when FundStatus is expensive or its targets are zeroed by an
+// incomplete valuation. The strict mocks carry that assertion: no supply or
+// balance expectation is set here.
+func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
+	state := treasurytypes.DefaultExposureState()
+	// A variance of one annualises to the square root of a year in blocks,
+	// which is the bound the sample clamp buys.
+	state.VolatilityVariance = math.LegacyOneDec()
+	state.FlowPressure = math.LegacyNewDec(12)
+	state.LiabilityRatio = math.LegacyMustNewDecFromStr("0.4")
+	state.FlowRatio = math.LegacyMustNewDecFromStr("0.05")
+	state.Multiplier = math.LegacyMustNewDecFromStr("1.5")
+	state.LastRefreshHeight = 7
+	s.Require().NoError(s.keeper.ExposureState.Set(s.ctx, state))
+	s.Require().NoError(s.keeper.ExposureRefreshPending.Set(s.ctx, true))
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).ExposureStatus(
+		s.ctx,
+		&treasurytypes.QueryExposureStatusRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(state, response.ExposureState)
+	s.Require().True(response.RefreshPending)
+
+	expected, err := math.LegacyNewDec(int64(chain.BlocksPerYear)).ApproxSqrt()
+	s.Require().NoError(err)
+	s.Require().Equal(expected, response.AnnualisedVolatility)
+}
+
+// TestQueryFundStatusReportsScaledTargetsAndMultiplier pins the response as
+// self-reconcilable: every target is scaled, and the multiplier that scaled
+// them is reported beside the liability, so a reader can recover the policy
+// ratio from what is on the wire. Without the field the response reads as a
+// contradiction — targets that are not their ratio times the liability shown.
+func (s *KeeperTestSuite) TestQueryFundStatusReportsScaledTargetsAndMultiplier() {
+	policy := treasurytypes.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
+	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.setMultiplier("2")
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	s.bankKeeper.EXPECT().GetBalance(s.ctx, gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).Times(2)
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).FundStatus(
+		s.ctx,
+		&treasurytypes.QueryFundStatusRequest{},
+	)
+	s.Require().NoError(err)
+
+	// The liability reported is the raw aggregate — the multiplier scales the
+	// targets, never the figure the draw divides by.
+	s.Require().Equal(
+		sdk.NewDecCoinFromDec(chain.NoahBaseDenom, math.LegacyNewDec(100)),
+		response.NominalLiability,
+	)
+	s.Require().Equal(math.LegacyNewDec(2), response.ExposureMultiplier)
+	// Each target is its ratio against a doubled basis, and the proportions
+	// between the three are the voted ones.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), response.RedemptionBufferTarget)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 50), response.StrategicReserveTarget)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 50), response.InsuranceTarget)
+	// The net family scales on the same multiplier, so the two stay comparable.
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), response.RedemptionBufferNetTarget)
+}

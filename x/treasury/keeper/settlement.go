@@ -27,6 +27,13 @@ import (
 // impossibility, while a valuation that could not cover every recognised
 // liability parks and discloses rather than failing.
 func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.ConversionTotals) (math.Int, error) {
+	// Ahead of both guards below, because the risk series measure elapsed time
+	// rather than elapsed activity: an idle block still decays flow and still
+	// records a reference price, so a quiet stretch cools the estimate instead
+	// of freezing it at whatever the last converting block saw.
+	if err := k.sampleExposure(ctx, totals); err != nil {
+		return math.Int{}, err
+	}
 	if err := totals.Validate(); err != nil {
 		return math.Int{}, fmt.Errorf("settling conversions: %w", err)
 	}
@@ -96,7 +103,7 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, principal math.I
 		if err != nil {
 			return math.Int{}, fmt.Errorf("getting Reserve recognised capital: %w", err)
 		}
-		bufferBalance := k.balance(ctx, types.RedemptionBufferName)
+		bufferBalance := k.getBalance(ctx, types.RedemptionBufferName)
 		// The net basis, because this is a flow rather than a bound: no claim
 		// arrives from paper the Reserve holds (D67), so filling a gap against it
 		// would sequester principal that should overflow-burn.
@@ -104,7 +111,15 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, principal math.I
 		if err != nil {
 			return math.Int{}, err
 		}
-		targets := policy.FundTargets(net)
+		// The targets' basis scales; nothing else here does. The draw below
+		// divides by the raw partition on purpose (D73) — scaling a payment
+		// denominator would ration the exits the Buffer exists to fund — so the
+		// multiplier is applied to this figure alone and never to the partition.
+		basis, err := k.exposureAdjusted(ctx, net)
+		if err != nil {
+			return math.Int{}, err
+		}
+		targets := policy.FundTargets(basis)
 
 		remaining := principal
 		bufferCredit = math.MinInt(remaining, shortfall(targets.Buffer, bufferBalance))
@@ -190,7 +205,7 @@ func (k Keeper) drawRedemptionCoverage(ctx context.Context, totals markettypes.C
 	// Multiplying leaves one rounding on a whole-anoah quantity, and monotone
 	// rounding cannot cross an exactly-representable bound, so both checks below
 	// hold however the last place falls.
-	bufferBalance := k.balance(ctx, types.RedemptionBufferName)
+	bufferBalance := k.getBalance(ctx, types.RedemptionBufferName)
 	share, err := totals.RedemptionOutput.SafeMul(bufferBalance)
 	if err != nil {
 		return math.Int{}, fmt.Errorf("valuing the Buffer's share of the block's output: %w", err)

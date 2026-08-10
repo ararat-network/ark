@@ -248,6 +248,28 @@ func (s *KeeperTestSuite) SetupTest() {
 			return s.reference, nil
 		}).
 		AnyTimes()
+	// Exposure sampling reads the reference rate on every settling block, and
+	// no reward-funding or settlement assertion depends on it. The matcher
+	// binds the whole variadic slice rather than one denomination, which is
+	// what keeps it from shadowing the tax-cap rebuild's own expectations: a
+	// bare string matcher would match any call whose first denomination is the
+	// reference, because gomock compares a short matcher list against a prefix
+	// of the arguments, and the capture sends the member set alongside it.
+	s.oracleKeeper.EXPECT().
+		GetAvailableRateSet(gomock.Any(), gomock.Eq([]string{chain.SDRBaseDenom})).
+		DoAndReturn(func(_ context.Context, denoms ...string) (oracletypes.RateSet, error) {
+			if s.ratesErr != nil {
+				return nil, s.ratesErr
+			}
+			set := oracletypes.NewRateSet()
+			for _, denom := range denoms {
+				if rate, priceable := s.rates[denom]; priceable {
+					set[denom] = rate
+				}
+			}
+			return set, nil
+		}).
+		AnyTimes()
 
 	s.keeper = keeper.NewKeeper(
 		s.cdc,
@@ -360,6 +382,31 @@ func (s *KeeperTestSuite) setReserveRecognised(amount int64) {
 
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+}
+
+// expectExposureUpdateReads absorbs the state an exposure recomputation reads
+// when a block crosses the update cadence. The recomputation folds the registry
+// and nets the fund balances out of NOAH supply, which a test about tax caps or
+// reward funding has no opinion about, so every read answers zero and the
+// multiplier holds at one.
+//
+// It is called from the tests that cross a boundary rather than from SetupTest,
+// so it cannot shadow a test that stubs supply or balances itself: gomock serves
+// the first unexhausted match, and anything registered earlier in the test still
+// answers first.
+func (s *KeeperTestSuite) expectExposureUpdateReads() {
+	s.bankKeeper.EXPECT().
+		GetSupply(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) sdk.Coin {
+			return sdk.NewCoin(denom, math.ZeroInt())
+		}).
+		AnyTimes()
+	s.bankKeeper.EXPECT().
+		GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		DoAndReturn(func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+			return sdk.NewCoin(denom, math.ZeroInt())
+		}).
+		AnyTimes()
 }
 
 // beginBlock runs BeginBlocker. The indirection is the seam tests share: when

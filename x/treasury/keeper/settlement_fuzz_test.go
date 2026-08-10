@@ -53,11 +53,11 @@ func ratCoverageDraw(liability, redeemed, buffer, output *big.Int) *big.Int {
 // sits one anoah short of the basis. Both bounds are therefore asserted
 // exactly, never within a tolerance.
 func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
-	f.Add(int64(100), int64(25), int64(40), int64(10))
-	f.Add(int64(0), int64(1), int64(1), int64(1))
-	f.Add(int64(1), int64(1), int64(1_000_000), int64(1))
-	f.Add(int64(999_999_999), int64(1), int64(3), int64(1))
-	f.Add(int64(7), int64(3), int64(5), int64(3))
+	f.Add(int64(100), int64(25), int64(40), int64(10), int64(0))
+	f.Add(int64(0), int64(1), int64(1), int64(1), int64(1_000))
+	f.Add(int64(1), int64(1), int64(1_000_000), int64(1), int64(3_000))
+	f.Add(int64(999_999_999), int64(1), int64(3), int64(1), int64(1))
+	f.Add(int64(7), int64(3), int64(5), int64(3), int64(2_500))
 	// The rounding-to-one adjacency: the whole float redeems while the Buffer
 	// sits one anoah short of the basis.
 	f.Add(
@@ -65,9 +65,14 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 		int64(3_000_000_000_000_000_000),
 		int64(2_999_999_999_999_999_999),
 		int64(3_000_000_000_000_000_000),
+		int64(3_000),
 	)
+	// Found by a fuzz run against an earlier draw, kept as a regression seed.
+	// The second is the same block swept to the top of the multiplier domain.
+	f.Add(int64(128), int64(145), int64(84), int64(39), int64(0))
+	f.Add(int64(128), int64(145), int64(84), int64(39), int64(3_000))
 
-	f.Fuzz(func(t *testing.T, supply, redeemed, buffer, output int64) {
+	f.Fuzz(func(t *testing.T, supply, redeemed, buffer, output, multiplierMilli int64) {
 		// The domain settlement can actually be handed: supply and buffer are
 		// bank figures, a redeemed value exists whenever an output does, and the
 		// bound the recorder enforces per conversion means the block's output
@@ -77,6 +82,12 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 		}
 
 		suite := newSettlementFuzzSuite(t, supply, buffer)
+		// The exposure multiplier, swept across its whole domain. The draw must
+		// not move with it (D73): the multiplier scales requirement bases, and
+		// the coverage basis is a payment denominator. The rational oracle below
+		// does not take it as an argument at all, which is the assertion — every
+		// bound holds identically at a multiplier of one and of four.
+		suite.setFuzzMultiplier(multiplierMilli)
 		drawn, err := suite.keeper.SettleConversions(suite.ctx, markettypes.ConversionTotals{
 			EligiblePrincipal: math.ZeroInt(),
 			RedemptionOutput:  math.NewInt(output),
@@ -84,6 +95,7 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 		})
 		require.NoError(t, err)
 
+		// Computed without the multiplier, deliberately.
 		want := ratCoverageDraw(
 			big.NewInt(supply),
 			big.NewInt(redeemed),
@@ -101,6 +113,21 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 		require.True(t, drawn.LTE(math.NewInt(buffer)), "draw exceeds the Buffer")
 		require.True(t, drawn.LTE(math.NewInt(output)), "draw exceeds the output it funds")
 	})
+}
+
+// setFuzzMultiplier installs an applied multiplier drawn from the fuzz input,
+// mapped into [1, 4] — the launch cap — in thousandths. Any input maps to a
+// valid multiplier rather than skipping, so the sweep spends every case on the
+// invariance being asserted.
+func (s *KeeperTestSuite) setFuzzMultiplier(milli int64) {
+	if milli < 0 {
+		milli = -milli
+	}
+	state := types.DefaultExposureState()
+	state.Multiplier = math.LegacyOneDec().Add(
+		math.LegacyNewDec(milli % 3_001).Quo(math.LegacyNewDec(1_000)),
+	)
+	s.Require().NoError(s.keeper.ExposureState.Set(s.ctx, state))
 }
 
 // newSettlementFuzzSuite stands the keeper suite up outside its runner, which

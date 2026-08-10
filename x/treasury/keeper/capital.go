@@ -37,7 +37,7 @@ func (k Keeper) RedemptionBufferShortfall(ctx context.Context) (math.Int, error)
 	if err != nil {
 		return math.Int{}, fmt.Errorf("sizing the Redemption Buffer target: %w", err)
 	}
-	return shortfall(targets.Buffer, k.balance(ctx, types.RedemptionBufferName)), nil
+	return shortfall(targets.Buffer, k.getBalance(ctx, types.RedemptionBufferName)), nil
 }
 
 // InsuranceShortfall reports how far Insurance falls below its target,
@@ -89,5 +89,17 @@ func (k Keeper) grossFundTargets(ctx context.Context, requireComplete bool) (typ
 	if err != nil {
 		return types.FundTargetSet{}, fmt.Errorf("getting monetary policy: %w", err)
 	}
-	return policy.FundTargets(gross), nil
+	// Committee bounds scale with the same multiplier the waterfall uses, and
+	// every direction it moves them is the conservative one: a higher Reserve
+	// requirement shrinks the surplus a committee may burn, and higher Buffer
+	// and Insurance targets widen the shortfalls bounding transfers into them.
+	// The rule this section states — that a bound must not loosen on state the
+	// bounded actor can reverse — is untouched, because the multiplier is
+	// protocol-computed from supply, oracle rates, and settled flow, none of
+	// which a committee can set.
+	basis, err := k.exposureAdjusted(ctx, gross)
+	if err != nil {
+		return types.FundTargetSet{}, err
+	}
+	return policy.FundTargets(basis), nil
 }

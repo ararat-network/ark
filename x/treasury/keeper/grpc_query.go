@@ -190,9 +190,23 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
 	// One policy against both bases: the funds hold what they hold either way,
-	// and only the figure they are measured against moves.
-	grossTargets := policy.FundTargets(targetBasis)
-	netTargets := policy.FundTargets(gapBasis)
+	// and only the figure they are measured against moves. Both bases carry the
+	// exposure multiplier, so the two families stay comparable and the reported
+	// multiplier reconciles either of them against the liability beside it.
+	scaledTargetBasis, err := q.k.exposureAdjusted(ctx, targetBasis)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	scaledGapBasis, err := q.k.exposureAdjusted(ctx, gapBasis)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	exposureState, err := q.k.getExposureState(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
+	}
+	grossTargets := policy.FundTargets(scaledTargetBasis)
+	netTargets := policy.FundTargets(scaledGapBasis)
 	return &types.QueryFundStatusResponse{
 		PricedLiability:           chain.NoahDecCoin(partition.priced),
 		SettlementLiability:       chain.NoahDecCoin(partition.settlement),
@@ -204,7 +218,7 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		StaleMemberSupply:         partition.staleSupply,
 		UntrustedSuspendedSupply:  partition.untrustedSupply,
 		WrittenOffExposure:        partition.writtenOff,
-		RedemptionBufferBalance:   chain.NoahCoin(q.k.balance(ctx, types.RedemptionBufferName)),
+		RedemptionBufferBalance:   chain.NoahCoin(q.k.getBalance(ctx, types.RedemptionBufferName)),
 		RedemptionBufferTarget:    chain.NoahCoin(grossTargets.Buffer),
 		RedemptionBufferNetTarget: chain.NoahCoin(netTargets.Buffer),
 		StrategicReserveBalance:   chain.NoahCoin(reserveBalance),
@@ -213,7 +227,8 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		InsuranceBalance:          chain.NoahCoin(insuranceBalance),
 		InsuranceTarget:           chain.NoahCoin(grossTargets.Insurance),
 		InsuranceNetTarget:        chain.NoahCoin(netTargets.Insurance),
-		SubsidyPoolBalance:        chain.NoahCoin(q.k.balance(ctx, types.SubsidyPoolName)),
+		SubsidyPoolBalance:        chain.NoahCoin(q.k.getBalance(ctx, types.SubsidyPoolName)),
+		ExposureMultiplier:        exposureState.Multiplier,
 	}, nil
 }
 
@@ -228,4 +243,35 @@ func (q queryServer) RewardFunding(ctx context.Context, req *types.QueryRewardFu
 		return nil, status.Errorf(codes.Internal, "getting reward funding: %v", err)
 	}
 	return &types.QueryRewardFundingResponse{RewardFunding: funding}, nil
+}
+
+// ExposureStatus queries the risk state behind the fund-target multiplier.
+//
+// It is served from stored state alone and folds no registry, which is what
+// keeps it answerable when FundStatus is expensive or its targets are zeroed by
+// an incomplete valuation: the multiplier is a property of the risk series, not
+// of whether this block could price every member.
+func (q queryServer) ExposureStatus(ctx context.Context, req *types.QueryExposureStatusRequest) (*types.QueryExposureStatusResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	state, err := q.k.getExposureState(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting exposure status: %v", err)
+	}
+	volatility, err := annualisedVolatility(state.VolatilityVariance)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting exposure status: %v", err)
+	}
+	pending, err := q.k.ExposureRefreshPending.Get(ctx)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return nil, status.Errorf(codes.Internal, "getting exposure status: %v", err)
+	}
+
+	return &types.QueryExposureStatusResponse{
+		ExposureState:        state,
+		AnnualisedVolatility: volatility,
+		RefreshPending:       pending,
+	}, nil
 }
