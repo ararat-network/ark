@@ -91,6 +91,117 @@ func TestIsPricedDenomRejectsEmbeddedNewline(t *testing.T) {
 	}
 }
 
+// externalDenomPattern is the specification the external rule's two entry points are
+// checked against, sourced from externalDenomShape exactly as the priced pattern
+// is sourced from pricedDenomShape.
+var externalDenomPattern = regexp.MustCompile(externalDenomShape)
+
+// externalShaped reports the pattern's verdict less the numeraire exclusion, which
+// no pattern over the symbol alone can express.
+func externalShaped(denom string) bool {
+	if !externalDenomPattern.MatchString(denom) {
+		return false
+	}
+	feed, _, _ := strings.Cut(denom, ExternalSeparator)
+
+	return feed != NoahBaseDenom
+}
+
+// TestExternalRuleMatchesPatternExhaustively walks every string up to five bytes
+// over an alphabet including the separator, which is one byte past the shortest
+// external symbol the rule admits (`aXX-X`), so every disagreement about shape is
+// reachable. Both entry points are checked against the one pattern, which is
+// what keeps the scanner ExternalFeed uses and the errors ValidateExternalDenom
+// reports from ever disagreeing about what an external symbol is.
+func TestExternalRuleMatchesPatternExhaustively(t *testing.T) {
+	alphabet := []byte{'a', 'z', '0', '-', 'A', '.', 'n'}
+
+	var candidate []byte
+	var walk func(depth int)
+	walk = func(depth int) {
+		denom := string(candidate)
+		want := externalShaped(denom)
+
+		_, ok := ExternalFeed(denom)
+		require.Equalf(t, want, ok, "ExternalFeed and pattern disagree on %q", denom)
+		require.Equalf(
+			t,
+			want,
+			ValidateExternalDenom(denom) == nil,
+			"ValidateExternalDenom and pattern disagree on %q",
+			denom,
+		)
+
+		if depth == 0 {
+			return
+		}
+		for _, b := range alphabet {
+			candidate = append(candidate, b)
+			walk(depth - 1)
+			candidate = candidate[:len(candidate)-1]
+		}
+	}
+	walk(5)
+}
+
+// TestExternalRuleAndPricedRuleAreDisjoint is the partition stated over the two
+// scanners rather than over examples: no string satisfies both rules, which is
+// what makes "policy ∩ registry = ∅" a theorem instead of a check.
+func TestExternalRuleAndPricedRuleAreDisjoint(t *testing.T) {
+	alphabet := []byte{'a', 'z', '0', '-', 'A', 'n'}
+
+	var candidate []byte
+	var walk func(depth int)
+	walk = func(depth int) {
+		denom := string(candidate)
+		_, external := ExternalFeed(denom)
+		require.Falsef(
+			t,
+			external && isPricedDenom(denom),
+			"%q satisfies both denomination rules",
+			denom,
+		)
+
+		if depth == 0 {
+			return
+		}
+		for _, b := range alphabet {
+			candidate = append(candidate, b)
+			walk(depth - 1)
+			candidate = candidate[:len(candidate)-1]
+		}
+	}
+	walk(5)
+}
+
+func FuzzExternalRuleMatchesPattern(f *testing.F) {
+	for _, seed := range []string{
+		"", "-", "a-", "-a", "ausd", "ausd-x", "axau-lbma", "anoah-x", "ausd-x-y",
+		"ausd-X", "ausd-" + strings.Repeat("z", MaxExternalTagBytes+1),
+		"a" + strings.Repeat("z", 16) + "-x", "ausd\n-x", "a😀-x",
+	} {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, denom string) {
+		want := externalShaped(denom)
+
+		feed, ok := ExternalFeed(denom)
+		require.Equalf(t, want, ok, "ExternalFeed and pattern disagree on %q", denom)
+		require.Equalf(
+			t,
+			want,
+			ValidateExternalDenom(denom) == nil,
+			"ValidateExternalDenom and pattern disagree on %q",
+			denom,
+		)
+		if ok {
+			require.Equalf(t, denom, feed+ExternalSeparator+denom[len(feed)+1:], "%q does not rebuild from its feed", denom)
+			require.NoErrorf(t, ValidatePricedDenom(feed), "%q derived an invalid feed key", denom)
+		}
+	})
+}
+
 func FuzzIsPricedDenomMatchesPattern(f *testing.F) {
 	for _, seed := range []string{
 		"", "a", "aa", "ausd", "anoah", "aUSD", "afoo/bar", "a.usd", "a??",
