@@ -15,6 +15,14 @@ import (
 // Default conversion values
 const (
 	DefaultPoolRecoveryPeriod = chain.BlocksPerDay // 14,400
+
+	// MaxPoolRecoveryPeriod bounds the recovery span at a year. The period is a
+	// divisor: each block returns delta/period toward zero, so a span long
+	// enough that the quotient truncates to nothing does not slow recovery, it
+	// stops it, and the pool keeps an imbalance for good. Since the delta is
+	// what makes sustained one-way flow expensive (D3), that turns the spread's
+	// memory into a permanent state rather than a decaying one.
+	MaxPoolRecoveryPeriod = chain.BlocksPerYear
 )
 
 var (
@@ -57,8 +65,12 @@ func (policy ConversionPolicy) Validate() error {
 	if _, err := decimal.Mul(policy.BasePool.Amount, policy.BasePool.Amount); err != nil {
 		return fmt.Errorf("base pool square must be representable: %w", err)
 	}
-	if policy.PoolRecoveryPeriod == 0 {
-		return fmt.Errorf("pool recovery period must be positive, is %d", policy.PoolRecoveryPeriod)
+	if policy.PoolRecoveryPeriod == 0 || policy.PoolRecoveryPeriod > MaxPoolRecoveryPeriod {
+		return fmt.Errorf(
+			"pool recovery period must be between one and %d, is %d",
+			uint64(MaxPoolRecoveryPeriod),
+			policy.PoolRecoveryPeriod,
+		)
 	}
 	if policy.MinStabilitySpread.IsNil() {
 		return errors.New("min stability spread must be set")

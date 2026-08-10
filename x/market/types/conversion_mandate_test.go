@@ -213,7 +213,7 @@ func TestValidateConversionMandate(t *testing.T) {
 			name:      "zero maximum recovery period",
 			mandate:   enabledConversionMandate,
 			mutate:    func(m *types.ConversionMandate) { m.MaximumPolicy.PoolRecoveryPeriod = 0 },
-			expectErr: "invalid conversion maximum: pool recovery period must be positive",
+			expectErr: "invalid conversion maximum: pool recovery period must be between one and",
 		},
 		{
 			// One corridor cannot span two units: the range would be

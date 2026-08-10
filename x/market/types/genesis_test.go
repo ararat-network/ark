@@ -91,7 +91,7 @@ func TestValidateGenesisState(t *testing.T) {
 			mutate: func(gs *types.GenesisState) {
 				gs.ConversionPolicy.PoolRecoveryPeriod = 0
 			},
-			expectErr: "invalid conversion policy: pool recovery period must be positive",
+			expectErr: "invalid conversion policy: pool recovery period must be between one and",
 		},
 		{
 			name: "invalid conversion mandate",

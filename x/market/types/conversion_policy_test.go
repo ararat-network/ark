@@ -75,7 +75,22 @@ func TestValidateConversionPolicy(t *testing.T) {
 			mutate: func(policy *types.ConversionPolicy) {
 				policy.PoolRecoveryPeriod = 0
 			},
-			expectErr: "pool recovery period must be positive",
+			expectErr: "pool recovery period must be between one and",
+		},
+		{
+			name: "pool recovery period at the domain cap",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.PoolRecoveryPeriod = types.MaxPoolRecoveryPeriod
+			},
+		},
+		{
+			// The period is a divisor: long enough and the per-block quotient
+			// truncates to nothing, so the pool keeps its imbalance for good.
+			name: "pool recovery period above the domain cap",
+			mutate: func(policy *types.ConversionPolicy) {
+				policy.PoolRecoveryPeriod = types.MaxPoolRecoveryPeriod + 1
+			},
+			expectErr: "pool recovery period must be between one and",
 		},
 		{
 			name: "single-block recovery period is valid",

@@ -30,9 +30,12 @@ func GenBasePool(r *rand.Rand) sdk.DecCoin {
 	return sdk.NewDecCoinFromDec(chain.SDRBaseDenom, amount)
 }
 
-// GenPoolRecoveryPeriod randomised PoolRecoveryPeriod
+// GenPoolRecoveryPeriod randomised PoolRecoveryPeriod, inside the domain the
+// policy accepts. The span was open-ended while the parameter was, which had
+// the simulator routinely proposing recovery periods so long the per-block
+// quotient truncates to nothing and the pool never recovers at all.
 func GenPoolRecoveryPeriod(r *rand.Rand) uint64 {
-	return uint64(100 + r.Intn(10000000000))
+	return uint64(100 + r.Intn(int(types.MaxPoolRecoveryPeriod)-100))
 }
 
 // GenMinSpread randomised MinSpread

@@ -529,7 +529,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsInvalidCandidates() {
 			name:      "zero recovery period",
 			authority: authority,
 			mutate:    func(p *types.ConversionPolicy) { p.PoolRecoveryPeriod = 0 },
-			expectErr: "pool recovery period must be positive",
+			expectErr: "pool recovery period must be between one and",
 		},
 	}
 
