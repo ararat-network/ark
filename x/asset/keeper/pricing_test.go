@@ -54,7 +54,6 @@ func (s *KeeperTestSuite) TestPricingsRequestsMembersOnly() {
 
 	pricings, err := s.keeper.Pricings(
 		s.ctx,
-		nil,
 		pricingDenom,
 		chain.KRWBaseDenom,
 		chain.NoahBaseDenom,
@@ -72,7 +71,7 @@ func (s *KeeperTestSuite) TestPricingsRequestsMembersOnly() {
 // which is a verdict another authority may later answer for. The strict mock
 // fails the test if such a denomination reaches the Oracle.
 func (s *KeeperTestSuite) TestPricingsReportsUnregisteredDenoms() {
-	pricings, err := s.keeper.Pricings(s.ctx, nil, "uunknown")
+	pricings, err := s.keeper.Pricings(s.ctx, "uunknown")
 
 	s.Require().NoError(err)
 	s.Require().False(pricings["uunknown"].IsPriced())
@@ -83,7 +82,7 @@ func (s *KeeperTestSuite) TestPricingsReportsUnregisteredDenoms() {
 // reaches the Oracle: the answer is the identity, and the strict mock fails
 // the test if a request is made.
 func (s *KeeperTestSuite) TestPricingsAnswersNumeraireWithoutTheOracle() {
-	pricings, err := s.keeper.Pricings(s.ctx, nil, chain.NoahBaseDenom)
+	pricings, err := s.keeper.Pricings(s.ctx, chain.NoahBaseDenom)
 
 	s.Require().NoError(err)
 	s.Require().Len(pricings, 1)
@@ -94,62 +93,10 @@ func (s *KeeperTestSuite) TestPricingsAnswersNumeraireWithoutTheOracle() {
 // Consumers convert through the numeraire whether or not they named it, so a
 // set that omitted it could not price anything at all.
 func (s *KeeperTestSuite) TestPricingsAnswersNumeraireUnasked() {
-	pricings, err := s.keeper.Pricings(s.ctx, nil)
+	pricings, err := s.keeper.Pricings(s.ctx)
 
 	s.Require().NoError(err)
 	s.Require().Equal(types.PriceSource_PRICE_SOURCE_NUMERAIRE, pricings[chain.NoahBaseDenom].Source)
-}
-
-// TestPricingsOverlayWinsAndIsNotMutated pins the overlay contract: a caller
-// holding rates it must stay honest to gets those rates back, the Oracle is
-// never asked to fill what the overlay already covers, and the caller's own map
-// does not grow entries behind it.
-func (s *KeeperTestSuite) TestPricingsOverlayWinsAndIsNotMutated() {
-	s.seedPricingAsset(types.AssetStatus_ASSET_STATUS_ACTIVE)
-	quoted := math.LegacyNewDec(7)
-	overlay := oracletypes.RateSet{pricingDenom: quoted}
-
-	pricings, err := s.keeper.Pricings(s.ctx, overlay, pricingDenom)
-
-	s.Require().NoError(err)
-	s.Require().True(pricings[pricingDenom].IsPriced())
-	s.Require().Equal(types.PriceSource_PRICE_SOURCE_ORACLE, pricings[pricingDenom].Source)
-	s.Require().True(quoted.Equal(*pricings[pricingDenom].Rate))
-	s.Require().Len(overlay, 1, "the caller's rate set must not grow entries")
-}
-
-// TestPricingsCapturesOnlyTheGap pins that capture asks for the members the
-// overlay does not cover and no others, then lets the overlay win where both
-// speak.
-func (s *KeeperTestSuite) TestPricingsCapturesOnlyTheGap() {
-	s.seedPricingAsset(types.AssetStatus_ASSET_STATUS_ACTIVE)
-	uncovered := types.Asset{
-		Denom:   chain.KRWBaseDenom,
-		Status:  types.AssetStatus_ASSET_STATUS_ACTIVE,
-		Version: 1,
-	}
-	s.Require().NoError(s.keeper.Assets.Set(s.ctx, uncovered.Denom, uncovered))
-
-	quoted := math.LegacyNewDec(7)
-	captured := math.LegacyNewDec(3)
-	overlay := oracletypes.RateSet{pricingDenom: quoted}
-
-	// Exactly the uncovered member is requested. A stale rate for the covered
-	// one is returned alongside it to prove the overlay still wins the merge.
-	s.oracleKeeper.EXPECT().
-		GetAvailableRateSet(gomock.Any(), chain.KRWBaseDenom).
-		DoAndReturn(func(_ context.Context, denoms ...string) (oracletypes.RateSet, error) {
-			rates := oracletypes.NewRateSet()
-			rates[chain.KRWBaseDenom] = captured
-			rates[pricingDenom] = math.LegacyNewDec(99)
-			return rates, nil
-		})
-
-	pricings, err := s.keeper.Pricings(s.ctx, overlay, pricingDenom, chain.KRWBaseDenom)
-
-	s.Require().NoError(err)
-	s.Require().True(quoted.Equal(*pricings[pricingDenom].Rate))
-	s.Require().True(captured.Equal(*pricings[chain.KRWBaseDenom].Rate))
 }
 
 // TestPricingsOmitsUnavailableFeeds pins that one member the Oracle cannot
@@ -185,7 +132,7 @@ func (s *KeeperTestSuite) TestPricingsOmitsUnavailableFeeds() {
 			return rates, nil
 		})
 
-	pricings, err := s.keeper.Pricings(s.ctx, nil, pricingDenom, chain.KRWBaseDenom)
+	pricings, err := s.keeper.Pricings(s.ctx, pricingDenom, chain.KRWBaseDenom)
 
 	s.Require().NoError(err)
 	s.Require().False(pricings[pricingDenom].IsPriced())
@@ -215,7 +162,7 @@ func (s *KeeperTestSuite) TestPricingsLeavesNeverPricedMemberWithoutLastRate() {
 			return oracletypes.NewRateSet(), nil
 		})
 
-	pricings, err := s.keeper.Pricings(s.ctx, nil, pricingDenom)
+	pricings, err := s.keeper.Pricings(s.ctx, pricingDenom)
 
 	s.Require().NoError(err)
 	s.Require().Equal(types.UnpricedReason_UNPRICED_REASON_FEED_UNAVAILABLE, pricings[pricingDenom].Reason)
@@ -236,7 +183,7 @@ func (s *KeeperTestSuite) TestPricingsDeduplicatesDenoms() {
 			return rates, nil
 		})
 
-	pricings, err := s.keeper.Pricings(s.ctx, nil, pricingDenom, pricingDenom)
+	pricings, err := s.keeper.Pricings(s.ctx, pricingDenom, pricingDenom)
 
 	s.Require().NoError(err)
 	s.Require().True(pricings[pricingDenom].IsPriced())

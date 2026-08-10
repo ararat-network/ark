@@ -69,7 +69,7 @@ func (k Keeper) InsuranceShortfall(ctx context.Context) (math.Int, error) {
 // protocol funds is exposed only in the high one, where the money stays
 // protocol capital and the mandate floor still binds.
 func (k Keeper) grossFundTargets(ctx context.Context, requireComplete bool) (types.FundTargetSet, error) {
-	partition, err := k.liabilityPartitionValue(ctx, nil)
+	partition, err := k.liabilityPartitionValue(ctx)
 	if err != nil {
 		return types.FundTargetSet{}, err
 	}

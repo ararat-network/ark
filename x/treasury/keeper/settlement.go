@@ -34,7 +34,7 @@ func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.Conver
 		return math.ZeroInt(), nil
 	}
 
-	partition, err := k.liabilityPartitionValue(ctx, nil)
+	partition, err := k.liabilityPartitionValue(ctx)
 	if err != nil {
 		return math.Int{}, err
 	}

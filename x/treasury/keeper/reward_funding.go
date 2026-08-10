@@ -98,7 +98,7 @@ func (k Keeper) updateRewardFunding(ctx context.Context) (types.RewardFundingSta
 		k.accountKeeper.GetModuleAddress(authtypes.FeeCollectorName),
 	)
 	if !validatorRewards.IsZero() {
-		pricings, err := k.assetKeeper.Pricings(ctx, nil, validatorRewards.Denoms()...)
+		pricings, err := k.assetKeeper.Pricings(ctx, validatorRewards.Denoms()...)
 		if err != nil {
 			return types.RewardFundingState{}, fmt.Errorf("pricing validator fees: %w", err)
 		}
@@ -127,7 +127,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 		ctx,
 		k.accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName),
 	)
-	pricings, err := k.assetKeeper.Pricings(ctx, nil, stabilityTax.Denoms()...)
+	pricings, err := k.assetKeeper.Pricings(ctx, stabilityTax.Denoms()...)
 	if err != nil {
 		return fmt.Errorf("pricing stability tax: %w", err)
 	}

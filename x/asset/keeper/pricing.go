@@ -22,7 +22,7 @@ import (
 // so a caller that needs the asset does not read a row the fold has already
 // read to price it. A denomination outside the registry, and the numeraire,
 // carry a verdict and no record.
-func (k Keeper) Pricings(ctx context.Context, overlay oracletypes.RateSet, denoms ...string) (types.AssetPricings, error) {
+func (k Keeper) Pricings(ctx context.Context, denoms ...string) (types.AssetPricings, error) {
 	pricings := make(types.AssetPricings, len(denoms)+1)
 
 	// Membership is a point read per denomination rather than a registry scan:
@@ -53,7 +53,7 @@ func (k Keeper) Pricings(ctx context.Context, overlay oracletypes.RateSet, denom
 		listed = append(listed, asset)
 	}
 
-	if err := k.price(ctx, overlay, listed, pricings); err != nil {
+	if err := k.price(ctx, listed, pricings); err != nil {
 		return nil, err
 	}
 
@@ -73,14 +73,14 @@ func (k Keeper) Pricings(ctx context.Context, overlay oracletypes.RateSet, denom
 // Callers holding denominations rather than records — balances of a fee
 // collector, say, which may name a denomination outside the registry entirely —
 // want Pricings instead.
-func (k Keeper) PricedAssets(ctx context.Context, overlay oracletypes.RateSet) ([]string, types.AssetPricings, error) {
+func (k Keeper) PricedAssets(ctx context.Context) ([]string, types.AssetPricings, error) {
 	listed, err := k.ListAssets(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	pricings := make(types.AssetPricings, len(listed)+1)
-	if err := k.price(ctx, overlay, listed, pricings); err != nil {
+	if err := k.price(ctx, listed, pricings); err != nil {
 		return nil, nil, err
 	}
 
@@ -93,10 +93,10 @@ func (k Keeper) PricedAssets(ctx context.Context, overlay oracletypes.RateSet) (
 }
 
 // price is the fold both entry points share: it seeds the numeraire, captures
-// the rates the listed members still need, reads the settlement plan of any
-// suspended one, and records a verdict for each. Only how the members were
-// arrived at differs above it, so the two entry points cannot drift on what a
-// verdict means.
+// the rates the listed members need, reads the settlement plan of any suspended
+// one, and records a verdict for each. Only how the members were arrived at
+// differs above it, so the two entry points cannot drift on what a verdict
+// means.
 //
 // pricings is filled in place. The numeraire is seeded here because every
 // valuation flow carries it whatever named it, and no registered asset can
@@ -106,7 +106,6 @@ func (k Keeper) PricedAssets(ctx context.Context, overlay oracletypes.RateSet) (
 // list.
 func (k Keeper) price(
 	ctx context.Context,
-	overlay oracletypes.RateSet,
 	listed []types.Asset,
 	pricings types.AssetPricings,
 ) error {
@@ -114,26 +113,20 @@ func (k Keeper) price(
 
 	needed := make([]string, 0, len(listed))
 	for _, asset := range listed {
-		if _, covered := overlay[asset.Denom]; !covered && asset.IsOraclePriced() {
+		if asset.IsOraclePriced() {
 			needed = append(needed, asset.Denom)
 		}
 	}
 
-	// Nothing left to ask short-circuits: an overlay that already covers every
-	// member, or a set with no members at all, has no gap for the Oracle to
-	// fill and the read would only rebuild what is in hand.
-	rates := overlay
+	// A set with no oracle-priced member asks the Oracle nothing and leaves
+	// rates nil, which only the oracle-priced verdict branch would have read.
+	var rates oracletypes.RateSet
 	if len(needed) > 0 {
 		captured, err := k.oracleKeeper.GetAvailableRateSet(ctx, needed...)
 		if err != nil {
 			return fmt.Errorf("capturing rates for pricing: %w", err)
 		}
-		rates = oracletypes.NewRateSetFrom(overlay)
-		for denom, rate := range captured {
-			if _, covered := rates[denom]; !covered {
-				rates[denom] = rate
-			}
-		}
+		rates = captured
 	}
 
 	// unavailable stays nil while every member prices, which is both the common

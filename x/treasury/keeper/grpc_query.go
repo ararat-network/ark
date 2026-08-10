@@ -143,7 +143,7 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	partition, err := q.k.liabilityPartitionValue(ctx, nil)
+	partition, err := q.k.liabilityPartitionValue(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}

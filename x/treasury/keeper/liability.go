@@ -11,7 +11,6 @@ import (
 	chain "ark/pkg/chain"
 	"ark/pkg/decimal"
 	assettypes "ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
 	reservetypes "ark/x/reserve/types"
 	"ark/x/treasury/types"
 )
@@ -76,8 +75,8 @@ func (p liabilityPartition) net() (math.LegacyDec, error) {
 
 // liabilityPartitionValue folds the asset registry into the block's liability
 // partition, classifying each holding by its pricing verdict.
-func (k Keeper) liabilityPartitionValue(ctx context.Context, rates oracletypes.RateSet) (liabilityPartition, error) {
-	denoms, pricings, err := k.assetKeeper.PricedAssets(ctx, rates)
+func (k Keeper) liabilityPartitionValue(ctx context.Context) (liabilityPartition, error) {
+	denoms, pricings, err := k.assetKeeper.PricedAssets(ctx)
 	if err != nil {
 		return liabilityPartition{}, fmt.Errorf("pricing aggregate liability: %w", err)
 	}

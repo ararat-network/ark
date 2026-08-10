@@ -54,7 +54,7 @@ func (q queryServer) Asset(ctx context.Context, req *types.QueryAssetRequest) (*
 		)
 	}
 
-	pricings, err := q.k.Pricings(ctx, nil, req.Denom)
+	pricings, err := q.k.Pricings(ctx, req.Denom)
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
@@ -89,7 +89,7 @@ func (q queryServer) Assets(ctx context.Context, req *types.QueryAssetsRequest) 
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	denoms, pricings, err := q.k.PricedAssets(ctx, nil)
+	denoms, pricings, err := q.k.PricedAssets(ctx)
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,

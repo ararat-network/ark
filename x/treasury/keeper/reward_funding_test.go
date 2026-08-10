@@ -334,8 +334,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersSuspendedTax() {
 	})
 }
 
-// TestSettleRewardFundingPricesSettlingTaxAtPlanRate pins the settlement-rate
-// overlay: a suspended asset carrying a governance-committed redemption rate
+// TestSettleRewardFundingPricesSettlingTaxAtPlanRate pins the settlement rate:
+// a suspended asset carrying a governance-committed redemption rate
 // is priced by that rate, so its tax funds targets and splits between
 // validators and the Oracle like any priced denomination rather than
 // deferring. The plan is deliberately unactivated, pinning the decision to
@@ -377,8 +377,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPricesSettlingTaxAtPlanRate() {
 	})
 }
 
-// TestUpdateRewardFundingValuesSettlingFeesAtPlanRate pins the overlay on the
-// fee side: gas paid in a settling denomination counts toward organic
+// TestUpdateRewardFundingValuesSettlingFeesAtPlanRate pins the settlement rate
+// on the fee side: gas paid in a settling denomination counts toward organic
 // validator rewards at the committed redemption rate instead of as zero, so
 // the subsidy is not asked to fund value validators already received.
 func (s *KeeperTestSuite) TestUpdateRewardFundingValuesSettlingFeesAtPlanRate() {

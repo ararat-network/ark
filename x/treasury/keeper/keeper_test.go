@@ -216,28 +216,26 @@ func (s *KeeperTestSuite) SetupTest() {
 	// so a test changes what a denomination is worth by seeding an asset,
 	// a plan, or an Oracle rate — never by stubbing a verdict directly.
 	s.assetKeeper.EXPECT().
-		Pricings(gomock.Any(), gomock.Any(), gomock.Any()).
+		Pricings(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
-			overlay oracletypes.RateSet,
 			denoms ...string,
 		) (assettypes.AssetPricings, error) {
-			return s.pricingsFor(overlay, denoms)
+			return s.pricingsFor(denoms)
 		}).
 		AnyTimes()
 	// The registry-wide fold answers from the same derivation as the
 	// denomination-keyed one, over every fixture asset in key order, so the two
 	// entry points cannot disagree here any more than they can in the registry.
 	s.assetKeeper.EXPECT().
-		PricedAssets(gomock.Any(), gomock.Any()).
+		PricedAssets(gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
-			overlay oracletypes.RateSet,
 		) ([]string, assettypes.AssetPricings, error) {
 			// Key order, like the real registry walk. Tests that stub
 			// per-denomination supply reads rely on this order.
 			denoms := slices.Sorted(maps.Keys(s.assets))
-			pricings, err := s.pricingsFor(overlay, denoms)
+			pricings, err := s.pricingsFor(denoms)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -295,23 +293,17 @@ func (s *KeeperTestSuite) SetupTest() {
 // denominations. Both asset-keeper pricing stubs answer through it, so the
 // registry-wide entry point and the denomination-keyed one cannot drift apart
 // in the fixtures the way they cannot in the registry.
-func (s *KeeperTestSuite) pricingsFor(
-	overlay oracletypes.RateSet,
-	denoms []string,
-) (assettypes.AssetPricings, error) {
+func (s *KeeperTestSuite) pricingsFor(denoms []string) (assettypes.AssetPricings, error) {
 	if s.ratesErr != nil {
 		return nil, s.ratesErr
 	}
 
-	// Capture mirrors the registry's: members the overlay does not already
-	// cover, priced at whatever the suite's Oracle can answer.
-	rates := oracletypes.NewRateSetFrom(overlay)
+	// Capture mirrors the registry's: every oracle-priced member, at whatever
+	// the suite's Oracle can answer.
+	rates := oracletypes.NewRateSet()
 	for _, denom := range denoms {
 		asset, listed := s.assets[denom]
 		if !listed || !asset.IsOraclePriced() {
-			continue
-		}
-		if _, covered := overlay[denom]; covered {
 			continue
 		}
 		if rate, priceable := s.rates[denom]; priceable {

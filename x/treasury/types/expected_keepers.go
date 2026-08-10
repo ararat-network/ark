@@ -76,8 +76,8 @@ type OracleKeeper interface {
 // genesis alone: it answers what the protocol has ever issued, which is the
 // question a seeded cap and a seeded collector balance must both survive.
 type AssetKeeper interface {
-	Pricings(ctx context.Context, overlay oracletypes.RateSet, denoms ...string) (assettypes.AssetPricings, error)
-	PricedAssets(ctx context.Context, overlay oracletypes.RateSet) ([]string, assettypes.AssetPricings, error)
+	Pricings(ctx context.Context, denoms ...string) (assettypes.AssetPricings, error)
+	PricedAssets(ctx context.Context) ([]string, assettypes.AssetPricings, error)
 	OraclePricedDenoms(ctx context.Context) ([]string, error)
 	HasAsset(ctx context.Context, denom string) (bool, error)
 }

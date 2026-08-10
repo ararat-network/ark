@@ -372,9 +372,9 @@ func (mr *MockAssetKeeperMockRecorder) OraclePricedDenoms(ctx any) *gomock.Call 
 }
 
 // PricedAssets mocks base method.
-func (m *MockAssetKeeper) PricedAssets(ctx context.Context, overlay types0.RateSet) ([]string, types.AssetPricings, error) {
+func (m *MockAssetKeeper) PricedAssets(ctx context.Context) ([]string, types.AssetPricings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PricedAssets", ctx, overlay)
+	ret := m.ctrl.Call(m, "PricedAssets", ctx)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(types.AssetPricings)
 	ret2, _ := ret[2].(error)
@@ -382,15 +382,15 @@ func (m *MockAssetKeeper) PricedAssets(ctx context.Context, overlay types0.RateS
 }
 
 // PricedAssets indicates an expected call of PricedAssets.
-func (mr *MockAssetKeeperMockRecorder) PricedAssets(ctx, overlay any) *gomock.Call {
+func (mr *MockAssetKeeperMockRecorder) PricedAssets(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PricedAssets", reflect.TypeOf((*MockAssetKeeper)(nil).PricedAssets), ctx, overlay)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PricedAssets", reflect.TypeOf((*MockAssetKeeper)(nil).PricedAssets), ctx)
 }
 
 // Pricings mocks base method.
-func (m *MockAssetKeeper) Pricings(ctx context.Context, overlay types0.RateSet, denoms ...string) (types.AssetPricings, error) {
+func (m *MockAssetKeeper) Pricings(ctx context.Context, denoms ...string) (types.AssetPricings, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{ctx, overlay}
+	varargs := []any{ctx}
 	for _, a := range denoms {
 		varargs = append(varargs, a)
 	}
@@ -401,8 +401,8 @@ func (m *MockAssetKeeper) Pricings(ctx context.Context, overlay types0.RateSet, 
 }
 
 // Pricings indicates an expected call of Pricings.
-func (mr *MockAssetKeeperMockRecorder) Pricings(ctx, overlay any, denoms ...any) *gomock.Call {
+func (mr *MockAssetKeeperMockRecorder) Pricings(ctx any, denoms ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, overlay}, denoms...)
+	varargs := append([]any{ctx}, denoms...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pricings", reflect.TypeOf((*MockAssetKeeper)(nil).Pricings), varargs...)
 }

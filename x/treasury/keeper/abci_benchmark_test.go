@@ -44,7 +44,6 @@ type benchAssetKeeper struct {
 
 func (b benchAssetKeeper) Pricings(
 	_ context.Context,
-	overlay oracletypes.RateSet,
 	denoms ...string,
 ) (assettypes.AssetPricings, error) {
 	pricings := make(assettypes.AssetPricings, len(denoms)+1)
@@ -59,10 +58,7 @@ func (b benchAssetKeeper) Pricings(
 			}
 			continue
 		}
-		rate, rated := overlay[denom]
-		if !rated {
-			rate = math.LegacyOneDec()
-		}
+		rate := math.LegacyOneDec()
 		pricings[denom] = assettypes.PricedAsset{
 			Asset: assettypes.Asset{
 				Denom:   denom,
@@ -78,9 +74,8 @@ func (b benchAssetKeeper) Pricings(
 
 func (b benchAssetKeeper) PricedAssets(
 	ctx context.Context,
-	overlay oracletypes.RateSet,
 ) ([]string, assettypes.AssetPricings, error) {
-	pricings, err := b.Pricings(ctx, overlay, b.denoms...)
+	pricings, err := b.Pricings(ctx, b.denoms...)
 	if err != nil {
 		return nil, nil, err
 	}
