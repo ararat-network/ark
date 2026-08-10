@@ -132,9 +132,8 @@ func inspectVoteExtensions(block *cmttypes.Block) (voteExtensionsOutput, error) 
 		Round:             extendedCommit.Round,
 		Votes:             make([]voteExtensionOutput, len(extendedCommit.Votes)),
 	}
-	voteExtensionCodec := codec.NewVoteExtensionCodec()
 	for i, vote := range extendedCommit.Votes {
-		voteExtension, err := voteExtensionCodec.Decode(vote.VoteExtension)
+		voteExtension, err := codec.DecodeVoteExtension(vote.VoteExtension)
 		if err != nil {
 			return voteExtensionsOutput{}, fmt.Errorf(
 				"decode vote extension for validator %X: %w",

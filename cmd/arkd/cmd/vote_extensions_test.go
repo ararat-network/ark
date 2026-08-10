@@ -228,7 +228,7 @@ func voteExtensionsTestBlock(t *testing.T, height int64) *cmttypes.Block {
 
 	rate, err := arkencoding.EncodeLegacyDec(math.LegacyMustNewDecFromStr("1.25"))
 	require.NoError(t, err)
-	voteExtension, err := codec.NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
+	voteExtension, err := codec.EncodeVoteExtension(vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{"ausd": rate},
 	})
 	require.NoError(t, err)
