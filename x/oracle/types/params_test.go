@@ -11,6 +11,14 @@ import (
 	"ark/x/oracle/types"
 )
 
+// Each combined bound asserts one message from both its lower and upper cases,
+// so those strings live once.
+const (
+	voteThresholdOutOfRange        = "VoteThreshold must be between"
+	functioningThresholdOutOfRange = "FunctioningBlockThreshold must be between"
+	exchangeRateAgeOutOfRange      = "MaxExchangeRateAge must be greater than zero and at most"
+)
+
 func TestParamsValidate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -35,12 +43,12 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "vote threshold below 50%",
 			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(499, 3) },
-			expectErr: "VoteThreshold must be at least 50 percent",
+			expectErr: voteThresholdOutOfRange,
 		},
 		{
 			name:      "vote threshold zero",
 			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyZeroDec() },
-			expectErr: "VoteThreshold must be at least 50 percent",
+			expectErr: voteThresholdOutOfRange,
 		},
 		{
 			name:   "vote threshold at 50%",
@@ -53,7 +61,7 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "vote threshold above 100%",
 			mutate:    func(p *types.Params) { p.VoteThreshold = math.LegacyNewDecWithPrec(1001, 3) },
-			expectErr: "VoteThreshold must not exceed 100 percent",
+			expectErr: voteThresholdOutOfRange,
 		},
 		// RewardBand
 		{
@@ -83,7 +91,18 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "reward window zero",
 			mutate:    func(p *types.Params) { p.RewardWindow = 0 },
-			expectErr: "RewardWindow must be > 0",
+			expectErr: "RewardWindow must be between one and",
+		},
+		{
+			name:   "reward window at the domain cap",
+			mutate: func(p *types.Params) { p.RewardWindow = types.MaxRewardWindow },
+		},
+		{
+			// A cadence no chain reaches does not slow settlement down, it
+			// switches it off: the window is settlement's only trigger.
+			name:      "reward window above the domain cap",
+			mutate:    func(p *types.Params) { p.RewardWindow = types.MaxRewardWindow + 1 },
+			expectErr: "RewardWindow must be between one and",
 		},
 		// RewardDistributionWindow
 		{
@@ -99,7 +118,18 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "attendance window zero",
 			mutate:    func(p *types.Params) { p.AttendanceWindow = 0 },
-			expectErr: "AttendanceWindow must be > 0",
+			expectErr: "AttendanceWindow must be between one and",
+		},
+		{
+			name:   "attendance window at the domain cap",
+			mutate: func(p *types.Params) { p.AttendanceWindow = types.MaxAttendanceWindow },
+		},
+		{
+			// Unreachable means attendance never grades, which is the deadman
+			// switch jailing depends on.
+			name:      "attendance window above the domain cap",
+			mutate:    func(p *types.Params) { p.AttendanceWindow = types.MaxAttendanceWindow + 1 },
+			expectErr: "AttendanceWindow must be between one and",
 		},
 		{
 			name:   "attendance window at one",
@@ -138,17 +168,17 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "functioning block threshold below 50%",
 			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDecWithPrec(49, 2) },
-			expectErr: "FunctioningBlockThreshold must be at least 50 percent",
+			expectErr: functioningThresholdOutOfRange,
 		},
 		{
 			name:      "functioning block threshold zero",
 			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyZeroDec() },
-			expectErr: "FunctioningBlockThreshold must be at least 50 percent",
+			expectErr: functioningThresholdOutOfRange,
 		},
 		{
 			name:      "functioning block threshold negative",
 			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDec(-1) },
-			expectErr: "FunctioningBlockThreshold must be at least 50 percent",
+			expectErr: functioningThresholdOutOfRange,
 		},
 		{
 			name:   "functioning block threshold at 50%",
@@ -161,7 +191,7 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "functioning block threshold above 100%",
 			mutate:    func(p *types.Params) { p.FunctioningBlockThreshold = math.LegacyNewDecWithPrec(101, 2) },
-			expectErr: "FunctioningBlockThreshold must not exceed 100 percent",
+			expectErr: functioningThresholdOutOfRange,
 		},
 		// ParticipationThreshold
 		{
@@ -172,12 +202,12 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "participation threshold negative",
 			mutate:    func(p *types.Params) { p.ParticipationThreshold = math.LegacyNewDecWithPrec(-1, 2) },
-			expectErr: "ParticipationThreshold must not be negative",
+			expectErr: "ParticipationThreshold must be between",
 		},
 		{
 			name:      "participation threshold above 50%",
 			mutate:    func(p *types.Params) { p.ParticipationThreshold = math.LegacyNewDecWithPrec(501, 3) },
-			expectErr: "ParticipationThreshold must not exceed 50 percent",
+			expectErr: "ParticipationThreshold must be between",
 		},
 		{
 			name:   "participation threshold at zero",
@@ -191,12 +221,23 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "max exchange rate age zero",
 			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = 0 },
-			expectErr: "MaxExchangeRateAge must be greater than zero",
+			expectErr: exchangeRateAgeOutOfRange,
 		},
 		{
 			name:      "max exchange rate age negative",
 			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = -time.Second },
-			expectErr: "MaxExchangeRateAge must be greater than zero",
+			expectErr: exchangeRateAgeOutOfRange,
+		},
+		{
+			name:   "max exchange rate age at the domain cap",
+			mutate: func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge },
+		},
+		{
+			// A window that never elapses does not loosen the staleness gate,
+			// it removes it: every rate reads fresh forever.
+			name:      "max exchange rate age above the domain cap",
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge + time.Second },
+			expectErr: exchangeRateAgeOutOfRange,
 		},
 	}
 

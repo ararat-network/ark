@@ -16,6 +16,30 @@ const (
 	DefaultAttendanceWindow         = chain.BlocksPerWeek // window for a week
 	DefaultRewardDistributionWindow = chain.BlocksPerYear // window for a year
 	DefaultMaxExchangeRateAge       = time.Minute
+
+	// MaxRewardWindow and MaxAttendanceWindow bound the two settlement
+	// cadences at a year. Neither feeds arithmetic that can overflow — both are
+	// moduli — but both are the only trigger their settlement has, so a period
+	// no chain reaches does not slow them down, it switches them off: rewards
+	// would never settle, and attendance would never grade, which is the
+	// deadman switch jailing depends on. A year is fifty-odd times the
+	// week-long defaults, so the bound refuses only values that were never a
+	// schedule.
+	MaxRewardWindow     = chain.BlocksPerYear
+	MaxAttendanceWindow = chain.BlocksPerYear
+
+	// MaxAllowedExchangeRateAge bounds the staleness window governance may set.
+	//
+	// This is the load-bearing one. MaxExchangeRateAge is the gate every
+	// freshness check measures against — conversion quotes, the liability
+	// partition's priced bucket, each recognition entry's own window — so a
+	// value large enough to never elapse does not loosen the gate, it removes
+	// it: every rate reads fresh forever, conversions quote on arbitrarily old
+	// prices, and the partition reports a fully priced aggregate it cannot
+	// support. Nothing errors, which is what makes it worth refusing at the
+	// write. Seven days is four orders of magnitude above the one-minute
+	// default and far beyond any outage a live feed should survive as "fresh".
+	MaxAllowedExchangeRateAge = 7 * 24 * time.Hour
 )
 
 // Default parameter values
@@ -80,11 +104,12 @@ func (p Params) Validate() error {
 	if p.VoteThreshold.IsNil() {
 		return errors.New("oracle parameter VoteThreshold must be set")
 	}
-	if p.VoteThreshold.LT(MinVoteThreshold) {
-		return errors.New("oracle parameter VoteThreshold must be at least 50 percent")
-	}
-	if p.VoteThreshold.GT(math.LegacyOneDec()) {
-		return errors.New("oracle parameter VoteThreshold must not exceed 100 percent")
+	if p.VoteThreshold.LT(MinVoteThreshold) || p.VoteThreshold.GT(math.LegacyOneDec()) {
+		return fmt.Errorf(
+			"oracle parameter VoteThreshold must be between %s and one, is %s",
+			MinVoteThreshold,
+			p.VoteThreshold,
+		)
 	}
 	if p.RewardBand.IsNil() {
 		return errors.New("oracle parameter RewardBand must be set")
@@ -92,14 +117,22 @@ func (p Params) Validate() error {
 	if p.RewardBand.GT(math.LegacyOneDec()) || p.RewardBand.IsNegative() {
 		return errors.New("oracle parameter RewardBand must be between [0, 1]")
 	}
-	if p.RewardWindow == 0 {
-		return fmt.Errorf("oracle parameter RewardWindow must be > 0, is %d", p.RewardWindow)
+	if p.RewardWindow == 0 || p.RewardWindow > MaxRewardWindow {
+		return fmt.Errorf(
+			"oracle parameter RewardWindow must be between one and %d, is %d",
+			uint64(MaxRewardWindow),
+			p.RewardWindow,
+		)
 	}
 	if p.RewardDistributionWindow < p.RewardWindow {
 		return errors.New("oracle parameter RewardDistributionWindow must be greater than or equal with RewardWindow")
 	}
-	if p.AttendanceWindow == 0 {
-		return fmt.Errorf("oracle parameter AttendanceWindow must be > 0, is %d", p.AttendanceWindow)
+	if p.AttendanceWindow == 0 || p.AttendanceWindow > MaxAttendanceWindow {
+		return fmt.Errorf(
+			"oracle parameter AttendanceWindow must be between one and %d, is %d",
+			uint64(MaxAttendanceWindow),
+			p.AttendanceWindow,
+		)
 	}
 	if p.MinAttendancePerWindow.IsNil() {
 		return errors.New("oracle parameter MinAttendancePerWindow must be set")
@@ -110,23 +143,30 @@ func (p Params) Validate() error {
 	if p.FunctioningBlockThreshold.IsNil() {
 		return errors.New("oracle parameter FunctioningBlockThreshold must be set")
 	}
-	if p.FunctioningBlockThreshold.LT(MinFunctioningBlockThreshold) {
-		return errors.New("oracle parameter FunctioningBlockThreshold must be at least 50 percent")
-	}
-	if p.FunctioningBlockThreshold.GT(math.LegacyOneDec()) {
-		return errors.New("oracle parameter FunctioningBlockThreshold must not exceed 100 percent")
+	if p.FunctioningBlockThreshold.LT(MinFunctioningBlockThreshold) ||
+		p.FunctioningBlockThreshold.GT(math.LegacyOneDec()) {
+		return fmt.Errorf(
+			"oracle parameter FunctioningBlockThreshold must be between %s and one, is %s",
+			MinFunctioningBlockThreshold,
+			p.FunctioningBlockThreshold,
+		)
 	}
 	if p.ParticipationThreshold.IsNil() {
 		return errors.New("oracle parameter ParticipationThreshold must be set")
 	}
-	if p.ParticipationThreshold.IsNegative() {
-		return errors.New("oracle parameter ParticipationThreshold must not be negative")
+	if p.ParticipationThreshold.IsNegative() || p.ParticipationThreshold.GT(MaxParticipationThreshold) {
+		return fmt.Errorf(
+			"oracle parameter ParticipationThreshold must be between zero and %s, is %s",
+			MaxParticipationThreshold,
+			p.ParticipationThreshold,
+		)
 	}
-	if p.ParticipationThreshold.GT(MaxParticipationThreshold) {
-		return errors.New("oracle parameter ParticipationThreshold must not exceed 50 percent")
-	}
-	if p.MaxExchangeRateAge <= 0 {
-		return errors.New("oracle parameter MaxExchangeRateAge must be greater than zero")
+	if p.MaxExchangeRateAge <= 0 || p.MaxExchangeRateAge > MaxAllowedExchangeRateAge {
+		return fmt.Errorf(
+			"oracle parameter MaxExchangeRateAge must be greater than zero and at most %s, is %s",
+			MaxAllowedExchangeRateAge,
+			p.MaxExchangeRateAge,
+		)
 	}
 
 	return nil

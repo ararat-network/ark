@@ -64,7 +64,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 			Authority: authority,
 			Params:    params,
 		})
-		s.Require().ErrorContains(err, "RewardWindow must be > 0")
+		s.Require().ErrorContains(err, "RewardWindow must be between one and")
 	})
 
 	// Parameters carry no feed referents, so no parameter update can move
