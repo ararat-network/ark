@@ -1,7 +1,8 @@
+version: 2
+
 project_name: arkd
 
 release:
-  disable: false
   name_template: "{{.Tag}}"
 
 before:
@@ -9,7 +10,9 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/arkd
+  - id: arkd
+    main: ./cmd/arkd
+    binary: arkd
     goos:
       - linux
       - darwin
@@ -33,12 +36,43 @@ builds:
       - "-w"
       - "-s"
 
+  # The oracle sidecar is an off-chain process: no ledger support, and a static
+  # binary so it can be dropped into a minimal container alongside the node.
+  - id: oracle
+    main: ./cmd/oracle
+    binary: oracle
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+      - -mod=readonly
+    tags:
+      - netgo
+    ldflags:
+      - "-X github.com/cosmos/cosmos-sdk/version.Version={{.Version}}"
+      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}"
+      - "-w"
+      - "-s"
+
 archives:
-  - name_template: '{{ replace .Version "arkd/" "arkd-" }}-{{ .Os }}-{{ .Arch }}'
+  - id: arkd
+    ids:
+      - arkd
+    name_template: '{{ replace .Version "arkd/" "arkd-" }}-{{ .Os }}-{{ .Arch }}'
+  - id: oracle
+    ids:
+      - oracle
+    name_template: 'oracle-{{ replace .Version "arkd/" "arkd-" }}-{{ .Os }}-{{ .Arch }}'
 
 checksum:
   name_template: 'SHA256SUMS-{{ replace .Version "arkd/" "arkd-" }}.txt'
   algorithm: sha256
 
 changelog:
-  skip: true
+  disable: true
