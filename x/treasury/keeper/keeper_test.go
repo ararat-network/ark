@@ -206,6 +206,16 @@ func (s *KeeperTestSuite) SetupTest() {
 			return denoms, nil
 		}).
 		AnyTimes()
+	// Membership is presence in the fixture registry regardless of status,
+	// mirroring the real registry's permanent rows: a departed member is a
+	// status change, never a missing row.
+	s.assetKeeper.EXPECT().
+		HasAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (bool, error) {
+			_, member := s.assets[denom]
+			return member, nil
+		}).
+		AnyTimes()
 	// Pricing verdicts mirror the real registry fold over the suite fixtures,
 	// so a test changes what a denomination is worth by seeding an asset,
 	// a plan, or an Oracle rate — never by stubbing a verdict directly.

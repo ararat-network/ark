@@ -95,6 +95,10 @@ func (b benchAssetKeeper) OraclePricedDenoms(context.Context) ([]string, error) 
 	return slices.Clone(b.denoms), nil
 }
 
+func (b benchAssetKeeper) HasAsset(_ context.Context, denom string) (bool, error) {
+	return slices.Contains(b.denoms, denom), nil
+}
+
 func BenchmarkTreasuryBeginBlocker(b *testing.B) {
 	for _, targetCount := range []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds} {
 		for _, feeDenom := range []string{"anoah", "stable"} {

@@ -222,8 +222,22 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 // and retired supply has no feed to wait for, so it moves to the strategic
 // reserve, while everything else — a member's stale feed, a suspension that
 // may yet recover — stays in the collector for a window that can price it.
-// Unrecognised denominations defer, because value never moves on a state this
-// function does not understand.
+//
+// The deferring arm has two live inhabitants, both members: an unavailable
+// feed and a suspension carrying no settlement plan. An unrecognised verdict
+// is not one of them, because every coin that can reach this account is NOAH
+// or a registry member — tax is collected only in capped denominations and a
+// cap names a member, genesis validates both the cap set and any seeded
+// collector balance against the registry, and no other door into the account
+// exists: it is a blocked address, so the ante handler's routing out of the
+// fee collector is the sole inbound path.
+//
+// The arm still catches it, because what makes it unreachable is an invariant
+// held elsewhere, and deferring is the only safe reading of a state this
+// function does not understand: value never moves on one. Note that the fee
+// collector, valued a step earlier by updateRewardFunding, has no such
+// invariant — fee denominations are unrestricted — so unrecognised verdicts
+// are ordinary there and valueRewards counts them at zero.
 func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pricings assettypes.AssetPricings) (sdk.Coins, error) {
 	var priced, deferred, moved sdk.Coins
 	for _, coin := range stabilityTax {

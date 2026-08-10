@@ -68,12 +68,36 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 		seeded = len(taxCaps) > 0
 	}
-	// A supplied cap set is imported as-is, loose on both sides of membership:
-	// a cap naming no member is the residue of a departure, and a member
-	// holding no cap is the gap an arrival opens until the next BeginBlocker
-	// covers it, so an export taken inside either window stays importable.
-	// Amounts are not checked against the reference either — a kept cap is
-	// anchored to the reference amount it was last derived under.
+	// A supplied cap set stays loose in one direction only: a member holding no
+	// cap is the gap an arrival opens until the next BeginBlocker covers it, so
+	// an export taken inside that window still imports. Amounts are not checked
+	// against the reference either — a kept cap is anchored to the reference
+	// amount it was last derived under.
+	//
+	// Every cap denomination must name a registry member, because the cap set
+	// is the tax base: a cap is the one thing that makes a denomination taxable,
+	// so a cap naming a never-member would have the chain collect tax it can
+	// never settle. Such coins verdict UNRECOGNISED, and settlement defers what
+	// it cannot price rather than moving it, so they would accumulate in the
+	// collector permanently.
+	//
+	// This refuses nothing a real export carries. A cap outliving its member's
+	// departure is exactly what the refresh is built to keep — but departure is
+	// a lifecycle status, not a loss of membership, and registry rows are never
+	// deleted, so a kept cap still names a member here.
+	for _, cap := range taxCaps {
+		member, err := k.assetKeeper.HasAsset(ctx, cap.Denom)
+		if err != nil {
+			return fmt.Errorf("checking the asset registry for %s: %w", cap.Denom, err)
+		}
+		if !member {
+			return fmt.Errorf(
+				"tax cap denom %s is not an Ark-issued asset: a cap is what makes a "+
+					"denomination taxable, and tax the chain cannot price never leaves the collector",
+				cap.Denom,
+			)
+		}
+	}
 
 	for _, moduleName := range types.FundAccountNames() {
 		moduleAccount := k.accountKeeper.GetModuleAccount(ctx, moduleName)
@@ -89,6 +113,40 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 					balance.Denom,
 				)
 			}
+		}
+	}
+
+	// The collector is held to a weaker rule than the funds above, because it
+	// is not a fund: an export taken mid-window carries the member tax that
+	// window collected, and NOAH-only would refuse a chain its own export. What
+	// it is held to is what the collector can ever legitimately contain — tax,
+	// which is collected only in capped denominations, and those are members by
+	// the rule above.
+	//
+	// Bank writes genesis balances directly, so this is the only place the rule
+	// can be stated. Nothing at runtime can reach the account: it is a blocked
+	// address, which stops every user send and every IBC delivery, and the one
+	// inbound path is the ante handler routing tax out of the fee collector.
+	collector := k.accountKeeper.GetModuleAccount(ctx, types.StabilityTaxCollectorName)
+	if collector == nil {
+		return fmt.Errorf("%s module account has not been set", types.StabilityTaxCollectorName)
+	}
+	for _, balance := range k.bankKeeper.GetAllBalances(ctx, collector.GetAddress()) {
+		if balance.Denom == chain.NoahBaseDenom {
+			continue
+		}
+		member, err := k.assetKeeper.HasAsset(ctx, balance.Denom)
+		if err != nil {
+			return fmt.Errorf("checking the asset registry for %s: %w", balance.Denom, err)
+		}
+		if !member {
+			return fmt.Errorf(
+				"%s account contains unsupported genesis denom %s: collected tax must be %s "+
+					"or an Ark-issued asset",
+				types.StabilityTaxCollectorName,
+				balance.Denom,
+				chain.NoahBaseDenom,
+			)
 		}
 	}
 

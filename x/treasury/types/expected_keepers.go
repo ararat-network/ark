@@ -72,8 +72,12 @@ type OracleKeeper interface {
 // from here: it is the cap set, which outlives membership. Pricing verdicts
 // are asked of the registry rather than assembled here — Treasury owns only
 // what to do about the answer.
+// HasAsset is membership rather than lifecycle status, and it is read at
+// genesis alone: it answers what the protocol has ever issued, which is the
+// question a seeded cap and a seeded collector balance must both survive.
 type AssetKeeper interface {
 	Pricings(ctx context.Context, overlay oracletypes.RateSet, denoms ...string) (assettypes.AssetPricings, error)
 	PricedAssets(ctx context.Context, overlay oracletypes.RateSet) ([]string, assettypes.AssetPricings, error)
 	OraclePricedDenoms(ctx context.Context) ([]string, error)
+	HasAsset(ctx context.Context, denom string) (bool, error)
 }

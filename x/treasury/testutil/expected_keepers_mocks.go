@@ -341,6 +341,21 @@ func (m *MockAssetKeeper) EXPECT() *MockAssetKeeperMockRecorder {
 	return m.recorder
 }
 
+// HasAsset mocks base method.
+func (m *MockAssetKeeper) HasAsset(ctx context.Context, denom string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasAsset", ctx, denom)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasAsset indicates an expected call of HasAsset.
+func (mr *MockAssetKeeperMockRecorder) HasAsset(ctx, denom any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasAsset", reflect.TypeOf((*MockAssetKeeper)(nil).HasAsset), ctx, denom)
+}
+
 // OraclePricedDenoms mocks base method.
 func (m *MockAssetKeeper) OraclePricedDenoms(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
