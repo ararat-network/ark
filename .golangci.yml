@@ -73,10 +73,6 @@ linters:
           - revive
         text: "or be unexported"
       - linters:
-          - staticcheck
-        path: migrations
-        text: "SA1019:"
-      - linters:
           - nolintlint
         text: leading space
     paths:
