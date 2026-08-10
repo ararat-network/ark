@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 
 	chain "ark/pkg/chain"
@@ -40,12 +39,10 @@ func DefaultParams() Params {
 // zero would quietly remove the correction the message is designed around,
 // which is not something a parameter update should be able to express.
 func (p Params) Validate() error {
-	if p.SettlementActivationDelayBlocks == 0 {
-		return errors.New("asset parameter SettlementActivationDelayBlocks must be positive")
-	}
-	if p.SettlementActivationDelayBlocks > MaxSettlementActivationDelayBlocks {
+	if p.SettlementActivationDelayBlocks == 0 ||
+		p.SettlementActivationDelayBlocks > MaxSettlementActivationDelayBlocks {
 		return fmt.Errorf(
-			"asset parameter SettlementActivationDelayBlocks must be at most %d, is %d",
+			"asset parameter SettlementActivationDelayBlocks must be between one and %d, is %d",
 			MaxSettlementActivationDelayBlocks,
 			p.SettlementActivationDelayBlocks,
 		)

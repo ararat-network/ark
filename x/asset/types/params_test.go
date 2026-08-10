@@ -9,6 +9,10 @@ import (
 	assettypes "ark/x/asset/types"
 )
 
+// Combining the delay bound into one condition means its lower and upper cases
+// assert the same message, so the string lives once.
+const delayOutOfRange = "SettlementActivationDelayBlocks must be between one and"
+
 func TestParamsValidate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -21,14 +25,14 @@ func TestParamsValidate(t *testing.T) {
 			// the only window a mistaken plan can be withdrawn in.
 			name:      "zero settlement activation delay",
 			mutate:    func(p *assettypes.Params) { p.SettlementActivationDelayBlocks = 0 },
-			expectErr: "SettlementActivationDelayBlocks must be positive",
+			expectErr: delayOutOfRange,
 		},
 		{
 			name: "settlement activation delay above the ceiling",
 			mutate: func(p *assettypes.Params) {
 				p.SettlementActivationDelayBlocks = assettypes.MaxSettlementActivationDelayBlocks + 1
 			},
-			expectErr: "SettlementActivationDelayBlocks must be at most",
+			expectErr: delayOutOfRange,
 		},
 		{
 			name: "settlement activation delay at the ceiling is valid",
@@ -43,7 +47,7 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *assettypes.Params) {
 				p.SettlementActivationDelayBlocks = 1 << 63
 			},
-			expectErr: "SettlementActivationDelayBlocks must be at most",
+			expectErr: delayOutOfRange,
 		},
 		{
 			name:   "single-block settlement activation delay is valid",

@@ -376,7 +376,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParams() {
 		Authority: authority,
 		Params:    types.Params{SettlementActivationDelayBlocks: 0},
 	})
-	s.Require().ErrorContains(err, "SettlementActivationDelayBlocks must be positive")
+	s.Require().ErrorContains(err, "SettlementActivationDelayBlocks must be between one and")
 
 	_, err = server.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: sdk.AccAddress("not-gov").String(),

@@ -318,6 +318,6 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsInvalidParams() {
 
 	s.Require().ErrorContains(
 		s.keeper.InitGenesis(s.ctx, genesis),
-		"SettlementActivationDelayBlocks must be positive",
+		"SettlementActivationDelayBlocks must be between one and",
 	)
 }
