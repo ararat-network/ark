@@ -13,12 +13,6 @@ option go_package = "ark/x/reserve/types";
 
 // Query defines the reserve module's gRPC query service.
 service Query {
-  // Params queries the governance-owned reserve parameters.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/reserve/v1/params";
-  }
-
   // Mandate queries the committee mandate and its term allowance.
   rpc Mandate(QueryMandateRequest) returns (QueryMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -72,15 +66,6 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/reserve/v1/recognised_capital";
   }
-}
-
-// QueryParamsRequest is the request type for Query/Params.
-message QueryParamsRequest {}
-
-// QueryParamsResponse is the response type for Query/Params.
-message QueryParamsResponse {
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // QueryMandateRequest is the request type for Query/Mandate.

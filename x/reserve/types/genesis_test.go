@@ -249,3 +249,158 @@ func TestGenesisReconcilesBothListsAgainstTheLedger(t *testing.T) {
 		require.ErrorContains(t, genesisState.Validate(), "names unknown position 42")
 	})
 }
+
+// attributedRecovery is the anoah one attribution books.
+const attributedRecovery = 60
+
+// attributedGenesis returns a genesis whose open position has one return
+// attributed to it. Reversal cases mutate it, so it must already balance.
+func attributedGenesis(t *testing.T) *types.GenesisState {
+	t.Helper()
+	position, _ := positionFixture(1, 1)
+	genesisState := genesisWithPositions([]types.Position{position}, nil)
+
+	attribution := types.AccountingEntry{
+		EntryId:        genesisState.NextEntryId,
+		PositionId:     position.PositionId,
+		Kind:           types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION,
+		Quantity:       position.Quantity,
+		MovedNoahValue: chain.NoahCoin(math.NewInt(attributedRecovery)),
+		MovedCoin:      sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(25)),
+		Reference:      "tx-0x02",
+		RecordedBy:     testAddress(1),
+		Height:         8,
+		Term:           1,
+	}
+	genesisState.Ledger = append(genesisState.Ledger, attribution)
+	genesisState.NextEntryId = attribution.EntryId + 1
+	// The position carries the recovery its ledger implies.
+	genesisState.OpenPositions[0].Returned = chain.NoahCoin(math.NewInt(attributedRecovery))
+	require.NoError(t, genesisState.Validate(), "attributed fixture must balance")
+	return genesisState
+}
+
+// withReversal appends the reversal of the last attribution and zeroes the
+// recovery, which is the state a reversed chain exports.
+func withReversal(genesisState *types.GenesisState) *types.GenesisState {
+	attribution := genesisState.Ledger[len(genesisState.Ledger)-1]
+	reversal := types.AccountingEntry{
+		EntryId:        genesisState.NextEntryId,
+		PositionId:     attribution.PositionId,
+		Kind:           types.EntryKind_ENTRY_KIND_RETURN_REVERSAL,
+		Corrects:       attribution.EntryId,
+		Quantity:       attribution.Quantity,
+		MovedNoahValue: attribution.MovedNoahValue,
+		MovedCoin:      attribution.MovedCoin,
+		Reference:      "custodian-statement-0x03",
+		RecordedBy:     testAddress(1),
+		Height:         9,
+		Term:           0,
+	}
+	genesisState.Ledger = append(genesisState.Ledger, reversal)
+	genesisState.NextEntryId = reversal.EntryId + 1
+	genesisState.OpenPositions[0].Returned = chain.NoahCoin(math.ZeroInt())
+	return genesisState
+}
+
+// TestGenesisFoldsReversalsOutOfTheRecovery pins that the fold treats a
+// reversal as the subtraction it is, so a reversed chain can round-trip.
+func TestGenesisFoldsReversalsOutOfTheRecovery(t *testing.T) {
+	t.Run("a reversed attribution reconciles to zero recovery", func(t *testing.T) {
+		require.NoError(t, withReversal(attributedGenesis(t)).Validate())
+	})
+
+	// A position still claiming the reversed recovery must not import.
+	t.Run("a position keeping the reversed recovery is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		genesisState.OpenPositions[0].Returned = chain.NoahCoin(math.NewInt(attributedRecovery))
+
+		require.ErrorContains(t, genesisState.Validate(), "does not equal its ledger sum")
+	})
+
+	// Validate enforces "earlier" on shape alone; existence is separate, which
+	// a gap in the identifier space is what exercises.
+	t.Run("a reversal of an unknown entry is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		reversal := &genesisState.Ledger[len(genesisState.Ledger)-1]
+		reversal.EntryId = 10
+		reversal.Corrects = 5
+		genesisState.NextEntryId = 11
+
+		require.ErrorContains(t, genesisState.Validate(), "restates unknown entry 5")
+	})
+
+	// Only an attribution adds to the recovery, so only one can be taken out.
+	t.Run("a reversal of a non-attribution is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		// Entry 1 is the deployment that opened the position.
+		genesisState.Ledger[len(genesisState.Ledger)-1].Corrects = 1
+
+		require.ErrorContains(t, genesisState.Validate(), "is not a return attribution")
+	})
+
+	t.Run("a second reversal of one attribution is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		duplicate := genesisState.Ledger[len(genesisState.Ledger)-1]
+		duplicate.EntryId = genesisState.NextEntryId
+		genesisState.Ledger = append(genesisState.Ledger, duplicate)
+		genesisState.NextEntryId = duplicate.EntryId + 1
+
+		require.ErrorContains(t, genesisState.Validate(), "is already reversed")
+	})
+
+	// The verbatim rule stops an import booking a reversal at a value its
+	// attribution never carried, as the live path does.
+	t.Run("a reversal restating the booked value is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		genesisState.Ledger[len(genesisState.Ledger)-1].MovedNoahValue = chain.NoahCoin(math.NewInt(59))
+
+		require.ErrorContains(t, genesisState.Validate(), "verbatim")
+	})
+
+	t.Run("a reversal restating the moved coin is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		genesisState.Ledger[len(genesisState.Ledger)-1].MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(24))
+
+		require.ErrorContains(t, genesisState.Validate(), "verbatim")
+	})
+}
+
+// TestGenesisRefusesRestatementsCrossingPositions pins that both restating
+// kinds name an entry of their own position, as both live paths require: a
+// crossing reversal would walk down a recovery it never contributed to.
+func TestGenesisRefusesRestatementsCrossingPositions(t *testing.T) {
+	t.Run("a reversal naming another position's entry is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		second, secondEntry := positionFixture(2, genesisState.NextEntryId)
+		genesisState.OpenPositions = append(genesisState.OpenPositions, second)
+		genesisState.NextPositionId = 3
+		// The reversal names position 1's entry while claiming position 2.
+		genesisState.Ledger[len(genesisState.Ledger)-1].PositionId = 2
+		genesisState.Ledger = append(genesisState.Ledger, secondEntry)
+		genesisState.NextEntryId = secondEntry.EntryId + 1
+
+		require.ErrorContains(t, genesisState.Validate(), "belongs to position 1, not 2")
+	})
+
+	t.Run("a correction naming another position's entry is refused", func(t *testing.T) {
+		first, _ := positionFixture(1, 1)
+		second, _ := positionFixture(2, 2)
+		genesisState := genesisWithPositions([]types.Position{first, second}, nil)
+		correction := types.AccountingEntry{
+			EntryId:        genesisState.NextEntryId,
+			PositionId:     2,
+			Kind:           types.EntryKind_ENTRY_KIND_CORRECTION,
+			Corrects:       1,
+			Quantity:       second.Quantity,
+			MovedNoahValue: chain.NoahCoin(math.ZeroInt()),
+			MovedCoin:      chain.NoahCoin(math.ZeroInt()),
+			RecordedBy:     testAddress(1),
+			Height:         9,
+		}
+		genesisState.Ledger = append(genesisState.Ledger, correction)
+		genesisState.NextEntryId = correction.EntryId + 1
+
+		require.ErrorContains(t, genesisState.Validate(), "belongs to position 1, not 2")
+	})
+}

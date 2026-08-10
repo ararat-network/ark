@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Params_FullMethodName            = "/ark.reserve.v1.Query/Params"
 	Query_Mandate_FullMethodName           = "/ark.reserve.v1.Query/Mandate"
 	Query_Position_FullMethodName          = "/ark.reserve.v1.Query/Position"
 	Query_OpenPositions_FullMethodName     = "/ark.reserve.v1.Query/OpenPositions"
@@ -36,8 +35,6 @@ const (
 //
 // Query defines the reserve module's gRPC query service.
 type QueryClient interface {
-	// Params queries the governance-owned reserve parameters.
-	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Mandate queries the committee mandate and its term allowance.
 	Mandate(ctx context.Context, in *QueryMandateRequest, opts ...grpc.CallOption) (*QueryMandateResponse, error)
 	// Position queries one position by its permanent identifier.
@@ -64,16 +61,6 @@ type queryClient struct {
 
 func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
 	return &queryClient{cc}
-}
-
-func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryParamsResponse)
-	err := c.cc.Invoke(ctx, Query_Params_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *queryClient) Mandate(ctx context.Context, in *QueryMandateRequest, opts ...grpc.CallOption) (*QueryMandateResponse, error) {
@@ -162,8 +149,6 @@ func (c *queryClient) RecognisedCapital(ctx context.Context, in *QueryRecognised
 //
 // Query defines the reserve module's gRPC query service.
 type QueryServer interface {
-	// Params queries the governance-owned reserve parameters.
-	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Mandate queries the committee mandate and its term allowance.
 	Mandate(context.Context, *QueryMandateRequest) (*QueryMandateResponse, error)
 	// Position queries one position by its permanent identifier.
@@ -192,9 +177,6 @@ type QueryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedQueryServer struct{}
 
-func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
-}
 func (UnimplementedQueryServer) Mandate(context.Context, *QueryMandateRequest) (*QueryMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Mandate not implemented")
 }
@@ -238,24 +220,6 @@ func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Query_ServiceDesc, srv)
-}
-
-func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryParamsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Params(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Params_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Params(ctx, req.(*QueryParamsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Query_Mandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -409,10 +373,6 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ark.reserve.v1.Query",
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Params",
-			Handler:    _Query_Params_Handler,
-		},
 		{
 			MethodName: "Mandate",
 			Handler:    _Query_Mandate_Handler,

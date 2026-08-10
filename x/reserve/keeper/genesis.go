@@ -55,9 +55,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return err
 	}
 
-	if err := k.Params.Set(ctx, data.Params); err != nil {
-		return fmt.Errorf("setting Reserve params: %w", err)
-	}
 	if err := k.Mandate.Set(ctx, data.Mandate); err != nil {
 		return fmt.Errorf("setting Reserve mandate: %w", err)
 	}
@@ -84,6 +81,13 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		if err := k.Ledger.Set(ctx, entry.EntryId, entry); err != nil {
 			return fmt.Errorf("setting ledger entry %d: %w", entry.EntryId, err)
 		}
+		// Derived rather than imported, so no genesis field can contradict the
+		// ledger about what has been reversed.
+		if entry.Kind == types.EntryKind_ENTRY_KIND_RETURN_REVERSAL {
+			if err := k.ReversedReturns.Set(ctx, entry.Corrects); err != nil {
+				return fmt.Errorf("marking entry %d reversed: %w", entry.Corrects, err)
+			}
+		}
 	}
 	for _, entry := range data.RecognitionPolicy {
 		if err := k.RecognitionPolicy.Set(ctx, entry.Denom, entry); err != nil {
@@ -97,10 +101,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 // ExportGenesis exports the Reserve-owned state. The custody balance remains
 // part of Bank genesis.
 func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting Reserve params: %w", err)
-	}
 	reserveMandate, err := k.Mandate.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting Reserve mandate: %w", err)
@@ -148,7 +148,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	return types.NewGenesisState(
-		params,
 		reserveMandate,
 		recognitionPolicy,
 		allowanceUsed,

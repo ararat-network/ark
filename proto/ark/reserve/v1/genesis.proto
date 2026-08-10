@@ -12,25 +12,23 @@ option go_package = "ark/x/reserve/types";
 // proven legs are re-derived from the ledger at import and required to match.
 // Positions arrive in two lists because they live in two stores.
 message GenesisState {
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  ReserveMandate mandate = 2
+  ReserveMandate mandate = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // recognition_policy is the governance-owned eligibility set, sorted by
   // asset denomination.
-  repeated EligibilityEntry recognition_policy = 3
+  repeated EligibilityEntry recognition_policy = 2
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // allowance_used is the gross anoah deployed during the current term.
-  cosmos.base.v1beta1.Coin allowance_used = 4
+  cosmos.base.v1beta1.Coin allowance_used = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // open_positions each carry a zero closed_height.
-  repeated Position open_positions = 5
+  repeated Position open_positions = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // closed_positions each carry a nonzero closed_height.
-  repeated Position closed_positions = 6
+  repeated Position closed_positions = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated AccountingEntry ledger = 7
+  repeated AccountingEntry ledger = 6
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  uint64 next_position_id = 8 [ (amino.dont_omitempty) = true ];
-  uint64 next_entry_id = 9 [ (amino.dont_omitempty) = true ];
+  uint64 next_position_id = 7 [ (amino.dont_omitempty) = true ];
+  uint64 next_entry_id = 8 [ (amino.dont_omitempty) = true ];
 }

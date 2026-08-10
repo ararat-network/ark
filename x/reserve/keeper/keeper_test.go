@@ -150,7 +150,6 @@ func (s *KeeperTestSuite) SetupTest() {
 		insuranceShortfall: math.ZeroInt(),
 	}
 	s.keeper.SetTreasuryCapitalReader(s.treasuryReader)
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
 	s.Require().NoError(s.keeper.Mandate.Set(s.ctx, types.DefaultReserveMandate()))
 	s.Require().NoError(s.keeper.AllowanceUsed.Set(s.ctx, math.ZeroInt()))
 	// Identifier sequences hold the next ID to issue and are one-based, so a

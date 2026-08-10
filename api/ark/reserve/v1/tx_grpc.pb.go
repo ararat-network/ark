@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_UpdateParams_FullMethodName             = "/ark.reserve.v1.Msg/UpdateParams"
 	Msg_SetReserveMandate_FullMethodName        = "/ark.reserve.v1.Msg/SetReserveMandate"
 	Msg_SetRecognitionPolicy_FullMethodName     = "/ark.reserve.v1.Msg/SetRecognitionPolicy"
 	Msg_FundBuffer_FullMethodName               = "/ark.reserve.v1.Msg/FundBuffer"
@@ -28,10 +27,12 @@ const (
 	Msg_ClearImpairment_FullMethodName          = "/ark.reserve.v1.Msg/ClearImpairment"
 	Msg_MarkImpaired_FullMethodName             = "/ark.reserve.v1.Msg/MarkImpaired"
 	Msg_ClosePosition_FullMethodName            = "/ark.reserve.v1.Msg/ClosePosition"
+	Msg_ReverseReturn_FullMethodName            = "/ark.reserve.v1.Msg/ReverseReturn"
 	Msg_BurnReserveAssets_FullMethodName        = "/ark.reserve.v1.Msg/BurnReserveAssets"
 	Msg_CommitteeDeploy_FullMethodName          = "/ark.reserve.v1.Msg/CommitteeDeploy"
 	Msg_CommitteeRecordUpdate_FullMethodName    = "/ark.reserve.v1.Msg/CommitteeRecordUpdate"
 	Msg_CommitteeAttributeReturn_FullMethodName = "/ark.reserve.v1.Msg/CommitteeAttributeReturn"
+	Msg_CommitteeReverseReturn_FullMethodName   = "/ark.reserve.v1.Msg/CommitteeReverseReturn"
 	Msg_CommitteeMarkImpaired_FullMethodName    = "/ark.reserve.v1.Msg/CommitteeMarkImpaired"
 	Msg_CommitteeClearImpairment_FullMethodName = "/ark.reserve.v1.Msg/CommitteeClearImpairment"
 	Msg_CommitteeCorrectPosition_FullMethodName = "/ark.reserve.v1.Msg/CommitteeCorrectPosition"
@@ -50,8 +51,6 @@ const (
 // take is its own message type, so the complete committee surface is
 // enumerable from this service.
 type MsgClient interface {
-	// UpdateParams updates the governance-owned reserve parameters.
-	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	// SetReserveMandate appoints, replaces, or disables the height-scoped
 	// Reserve committee.
 	SetReserveMandate(ctx context.Context, in *MsgSetReserveMandate, opts ...grpc.CallOption) (*MsgSetReserveMandateResponse, error)
@@ -75,6 +74,9 @@ type MsgClient interface {
 	// ClosePosition closes a position as the governance authority,
 	// crystallising its realised profit or loss.
 	ClosePosition(ctx context.Context, in *MsgClosePosition, opts ...grpc.CallOption) (*MsgClosePositionResponse, error)
+	// ReverseReturn undoes one return attribution as the governance authority,
+	// subtracting its booked value from the position's returned leg.
+	ReverseReturn(ctx context.Context, in *MsgReverseReturn, opts ...grpc.CallOption) (*MsgReverseReturnResponse, error)
 	// BurnReserveAssets destroys Reserve custody as the governance authority,
 	// including NOAH.
 	BurnReserveAssets(ctx context.Context, in *MsgBurnReserveAssets, opts ...grpc.CallOption) (*MsgBurnReserveAssetsResponse, error)
@@ -86,6 +88,8 @@ type MsgClient interface {
 	// CommitteeAttributeReturn matches an inflow already in the Reserve account
 	// to the position it settles.
 	CommitteeAttributeReturn(ctx context.Context, in *MsgCommitteeAttributeReturn, opts ...grpc.CallOption) (*MsgCommitteeAttributeReturnResponse, error)
+	// CommitteeReverseReturn undoes one return attribution recorded in error.
+	CommitteeReverseReturn(ctx context.Context, in *MsgCommitteeReverseReturn, opts ...grpc.CallOption) (*MsgCommitteeReverseReturnResponse, error)
 	// CommitteeMarkImpaired zeroes a position's recognition credit without
 	// erasing the claim.
 	CommitteeMarkImpaired(ctx context.Context, in *MsgCommitteeMarkImpaired, opts ...grpc.CallOption) (*MsgCommitteeMarkImpairedResponse, error)
@@ -116,16 +120,6 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
-}
-
-func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgUpdateParamsResponse)
-	err := c.cc.Invoke(ctx, Msg_UpdateParams_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *msgClient) SetReserveMandate(ctx context.Context, in *MsgSetReserveMandate, opts ...grpc.CallOption) (*MsgSetReserveMandateResponse, error) {
@@ -208,6 +202,16 @@ func (c *msgClient) ClosePosition(ctx context.Context, in *MsgClosePosition, opt
 	return out, nil
 }
 
+func (c *msgClient) ReverseReturn(ctx context.Context, in *MsgReverseReturn, opts ...grpc.CallOption) (*MsgReverseReturnResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgReverseReturnResponse)
+	err := c.cc.Invoke(ctx, Msg_ReverseReturn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *msgClient) BurnReserveAssets(ctx context.Context, in *MsgBurnReserveAssets, opts ...grpc.CallOption) (*MsgBurnReserveAssetsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgBurnReserveAssetsResponse)
@@ -242,6 +246,16 @@ func (c *msgClient) CommitteeAttributeReturn(ctx context.Context, in *MsgCommitt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgCommitteeAttributeReturnResponse)
 	err := c.cc.Invoke(ctx, Msg_CommitteeAttributeReturn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeReverseReturn(ctx context.Context, in *MsgCommitteeReverseReturn, opts ...grpc.CallOption) (*MsgCommitteeReverseReturnResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeReverseReturnResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeReverseReturn_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -336,8 +350,6 @@ func (c *msgClient) CommitteeFundInsurance(ctx context.Context, in *MsgCommittee
 // take is its own message type, so the complete committee surface is
 // enumerable from this service.
 type MsgServer interface {
-	// UpdateParams updates the governance-owned reserve parameters.
-	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	// SetReserveMandate appoints, replaces, or disables the height-scoped
 	// Reserve committee.
 	SetReserveMandate(context.Context, *MsgSetReserveMandate) (*MsgSetReserveMandateResponse, error)
@@ -361,6 +373,9 @@ type MsgServer interface {
 	// ClosePosition closes a position as the governance authority,
 	// crystallising its realised profit or loss.
 	ClosePosition(context.Context, *MsgClosePosition) (*MsgClosePositionResponse, error)
+	// ReverseReturn undoes one return attribution as the governance authority,
+	// subtracting its booked value from the position's returned leg.
+	ReverseReturn(context.Context, *MsgReverseReturn) (*MsgReverseReturnResponse, error)
 	// BurnReserveAssets destroys Reserve custody as the governance authority,
 	// including NOAH.
 	BurnReserveAssets(context.Context, *MsgBurnReserveAssets) (*MsgBurnReserveAssetsResponse, error)
@@ -372,6 +387,8 @@ type MsgServer interface {
 	// CommitteeAttributeReturn matches an inflow already in the Reserve account
 	// to the position it settles.
 	CommitteeAttributeReturn(context.Context, *MsgCommitteeAttributeReturn) (*MsgCommitteeAttributeReturnResponse, error)
+	// CommitteeReverseReturn undoes one return attribution recorded in error.
+	CommitteeReverseReturn(context.Context, *MsgCommitteeReverseReturn) (*MsgCommitteeReverseReturnResponse, error)
 	// CommitteeMarkImpaired zeroes a position's recognition credit without
 	// erasing the claim.
 	CommitteeMarkImpaired(context.Context, *MsgCommitteeMarkImpaired) (*MsgCommitteeMarkImpairedResponse, error)
@@ -404,9 +421,6 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
-func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
-}
 func (UnimplementedMsgServer) SetReserveMandate(context.Context, *MsgSetReserveMandate) (*MsgSetReserveMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetReserveMandate not implemented")
 }
@@ -431,6 +445,9 @@ func (UnimplementedMsgServer) MarkImpaired(context.Context, *MsgMarkImpaired) (*
 func (UnimplementedMsgServer) ClosePosition(context.Context, *MsgClosePosition) (*MsgClosePositionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClosePosition not implemented")
 }
+func (UnimplementedMsgServer) ReverseReturn(context.Context, *MsgReverseReturn) (*MsgReverseReturnResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReverseReturn not implemented")
+}
 func (UnimplementedMsgServer) BurnReserveAssets(context.Context, *MsgBurnReserveAssets) (*MsgBurnReserveAssetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BurnReserveAssets not implemented")
 }
@@ -442,6 +459,9 @@ func (UnimplementedMsgServer) CommitteeRecordUpdate(context.Context, *MsgCommitt
 }
 func (UnimplementedMsgServer) CommitteeAttributeReturn(context.Context, *MsgCommitteeAttributeReturn) (*MsgCommitteeAttributeReturnResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeAttributeReturn not implemented")
+}
+func (UnimplementedMsgServer) CommitteeReverseReturn(context.Context, *MsgCommitteeReverseReturn) (*MsgCommitteeReverseReturnResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeReverseReturn not implemented")
 }
 func (UnimplementedMsgServer) CommitteeMarkImpaired(context.Context, *MsgCommitteeMarkImpaired) (*MsgCommitteeMarkImpairedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeMarkImpaired not implemented")
@@ -486,24 +506,6 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Msg_ServiceDesc, srv)
-}
-
-func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgUpdateParams)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).UpdateParams(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_UpdateParams_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).UpdateParams(ctx, req.(*MsgUpdateParams))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_SetReserveMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -650,6 +652,24 @@ func _Msg_ClosePosition_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ReverseReturn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgReverseReturn)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ReverseReturn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ReverseReturn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ReverseReturn(ctx, req.(*MsgReverseReturn))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_BurnReserveAssets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgBurnReserveAssets)
 	if err := dec(in); err != nil {
@@ -718,6 +738,24 @@ func _Msg_CommitteeAttributeReturn_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).CommitteeAttributeReturn(ctx, req.(*MsgCommitteeAttributeReturn))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeReverseReturn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeReverseReturn)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeReverseReturn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeReverseReturn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeReverseReturn(ctx, req.(*MsgCommitteeReverseReturn))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -874,10 +912,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpdateParams",
-			Handler:    _Msg_UpdateParams_Handler,
-		},
-		{
 			MethodName: "SetReserveMandate",
 			Handler:    _Msg_SetReserveMandate_Handler,
 		},
@@ -910,6 +944,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_ClosePosition_Handler,
 		},
 		{
+			MethodName: "ReverseReturn",
+			Handler:    _Msg_ReverseReturn_Handler,
+		},
+		{
 			MethodName: "BurnReserveAssets",
 			Handler:    _Msg_BurnReserveAssets_Handler,
 		},
@@ -924,6 +962,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CommitteeAttributeReturn",
 			Handler:    _Msg_CommitteeAttributeReturn_Handler,
+		},
+		{
+			MethodName: "CommitteeReverseReturn",
+			Handler:    _Msg_CommitteeReverseReturn_Handler,
 		},
 		{
 			MethodName: "CommitteeMarkImpaired",

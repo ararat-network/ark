@@ -173,12 +173,12 @@ func (entry AccountingEntry) Validate() error {
 		return errors.New("entry must name a position")
 	}
 	switch entry.Kind {
-	case EntryKind_ENTRY_KIND_CORRECTION:
+	case EntryKind_ENTRY_KIND_CORRECTION, EntryKind_ENTRY_KIND_RETURN_REVERSAL:
 		if entry.Corrects == 0 {
-			return errors.New("correction must name the entry it restates")
+			return errors.New("a correction or reversal must name the entry it restates")
 		}
 		if entry.Corrects >= entry.EntryId {
-			return errors.New("correction must restate an earlier entry")
+			return errors.New("a correction or reversal must restate an earlier entry")
 		}
 	case EntryKind_ENTRY_KIND_DEPLOYMENT,
 		EntryKind_ENTRY_KIND_QUANTITY_UPDATE,
@@ -186,7 +186,7 @@ func (entry AccountingEntry) Validate() error {
 		EntryKind_ENTRY_KIND_IMPAIRMENT,
 		EntryKind_ENTRY_KIND_CLOSURE:
 		if entry.Corrects != 0 {
-			return errors.New("only a correction may name a corrected entry")
+			return errors.New("only a correction or reversal may name a restated entry")
 		}
 	default:
 		return errors.New("entry kind is invalid")
@@ -208,9 +208,9 @@ func (entry AccountingEntry) Validate() error {
 		return errors.New("entry moved coin must be zero or positive")
 	}
 
-	// The two movement kinds each require a coin to have moved; the judgment
-	// kinds require that none did. Both fields are governed together, so a
-	// judgment cannot smuggle in half a movement.
+	// The movement kinds each require a coin to have moved; the judgment kinds
+	// require that none did. Both fields are governed together, so a judgment
+	// cannot smuggle in half a movement.
 	switch entry.Kind {
 	case EntryKind_ENTRY_KIND_DEPLOYMENT:
 		if !entry.MovedCoin.Amount.IsPositive() {
@@ -220,16 +220,20 @@ func (entry AccountingEntry) Validate() error {
 		if !entry.MovedNoahValue.Amount.IsPositive() {
 			return errors.New("deployment must carry a positive booked value")
 		}
-	case EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION:
+	case EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION,
+		EntryKind_ENTRY_KIND_RETURN_REVERSAL:
 		if !entry.MovedCoin.Amount.IsPositive() {
-			return errors.New("return attribution must move a positive coin")
+			return errors.New("a return attribution or its reversal must carry a positive coin")
 		}
 		// A zero booked value is legal here and only here: a live feed priced
 		// the return to dust. An absent feed never lands here — valueMovement
-		// refuses it.
+		// refuses it. A reversal carries that movement verbatim, so the shape
+		// admitted here is admitted back.
 	default:
 		if entry.MovedCoin.Amount.IsPositive() || entry.MovedNoahValue.Amount.IsPositive() {
-			return errors.New("only a deployment or return attribution may move funds")
+			return errors.New(
+				"only a deployment, return attribution, or return reversal may carry a movement",
+			)
 		}
 	}
 
@@ -243,11 +247,13 @@ func (entry AccountingEntry) Validate() error {
 		)
 	}
 
-	// The kinds that assert a coin movement must name their evidence; the
-	// judgment kinds stay exempt.
-	movesFunds := entry.Kind == EntryKind_ENTRY_KIND_DEPLOYMENT ||
-		entry.Kind == EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION
-	if err := ValidateReference("entry reference", entry.Reference, movesFunds); err != nil {
+	// The kinds that assert or retract a coin movement must name their
+	// evidence; the judgment kinds stay exempt. A reversal is included: it
+	// contradicts a movement the ledger records, as the attribution asserted it.
+	carriesMovement := entry.Kind == EntryKind_ENTRY_KIND_DEPLOYMENT ||
+		entry.Kind == EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION ||
+		entry.Kind == EntryKind_ENTRY_KIND_RETURN_REVERSAL
+	if err := ValidateReference("entry reference", entry.Reference, carriesMovement); err != nil {
 		return err
 	}
 	if _, err := chain.ParseCanonicalAccountAddress("entry recorded by", entry.RecordedBy); err != nil {
@@ -258,13 +264,14 @@ func (entry AccountingEntry) Validate() error {
 	}
 
 	// Governance acts carry term zero; a committee act names the term it was
-	// authorised under. Impairment, correction, and closure may be written by
-	// either authority, so they accept both; the committee-only kinds must
-	// name a term.
+	// authorised under. Impairment, correction, closure, and return reversal
+	// may be written by either authority, so they accept both; the
+	// committee-only kinds must name a term.
 	switch entry.Kind {
 	case EntryKind_ENTRY_KIND_IMPAIRMENT,
 		EntryKind_ENTRY_KIND_CORRECTION,
-		EntryKind_ENTRY_KIND_CLOSURE:
+		EntryKind_ENTRY_KIND_CLOSURE,
+		EntryKind_ENTRY_KIND_RETURN_REVERSAL:
 	default:
 		if entry.Term == 0 {
 			return errors.New("a committee entry must name the term it acted under")

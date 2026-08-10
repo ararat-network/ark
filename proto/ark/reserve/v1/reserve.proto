@@ -32,14 +32,10 @@ enum EntryKind {
   // ENTRY_KIND_CLOSURE closes a position and crystallises its realised
   // profit or loss.
   ENTRY_KIND_CLOSURE = 6;
-}
-
-// Params defines the governance-owned parameters for the reserve module. It
-// is deliberately empty: governed policy lives in ReserveMandate and the
-// EligibilityEntry list.
-message Params {
-  option (gogoproto.equal) = true;
-  option (amino.name) = "ark/reserve/Params";
+  // ENTRY_KIND_RETURN_REVERSAL undoes one RETURN_ATTRIBUTION named by
+  // corrects, carrying its movement verbatim: the value is never re-priced,
+  // so reversing and re-attributing cannot harvest a rate move.
+  ENTRY_KIND_RETURN_REVERSAL = 7;
 }
 
 // ReserveMandate stores one governance-created, height-scoped Reserve
@@ -122,7 +118,7 @@ message Position {
   cosmos.base.v1beta1.Coin deployed = 3
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // returned is the proven recovery: the anoah value, fixed at attribution
-  // time, of every inflow attributed here.
+  // time, of every inflow attributed here, less any attribution reversed.
   cosmos.base.v1beta1.Coin returned = 4
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // impaired zeroes this position's recognition credit without erasing the
@@ -142,6 +138,8 @@ message AccountingEntry {
   uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
   uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
   EntryKind kind = 3 [ (amino.dont_omitempty) = true ];
+  // corrects names the entry a CORRECTION restates or a RETURN_REVERSAL
+  // undoes, and is zero on every other kind.
   uint64 corrects = 4 [ (amino.dont_omitempty) = true ];
   cosmos.base.v1beta1.Coin quantity = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];

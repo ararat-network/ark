@@ -17,12 +17,6 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			Service: reservev1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
-					RpcMethod: "Params",
-					Use:       "params",
-					Short:     "Query the Reserve parameters",
-					Example:   fmt.Sprintf("%s query reserve params", version.AppName),
-				},
-				{
 					RpcMethod: "Mandate",
 					Use:       "mandate",
 					Short:     "Query the Reserve mandate and its term deployment allowance",
@@ -78,15 +72,6 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service: reservev1.Msg_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-				{
-					RpcMethod:   "UpdateParams",
-					Use:         "update-params-proposal [params]",
-					Short:       "Submit a governance proposal to update Reserve parameters",
-					GovProposal: true,
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "params"},
-					},
-				},
 				{
 					RpcMethod:   "SetReserveMandate",
 					Use:         "set-mandate-proposal",
@@ -154,6 +139,15 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
+					RpcMethod:   "ReverseReturn",
+					Use:         "reverse-return-proposal [position-id]",
+					Short:       "Submit a governance proposal to undo a return attribution",
+					GovProposal: true,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "position_id"},
+					},
+				},
+				{
 					RpcMethod: "CommitteeDeploy",
 					Use:       "deploy",
 					Short:     "Deploy Reserve NOAH to a mandate destination as the Reserve committee",
@@ -170,6 +164,14 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "CommitteeAttributeReturn",
 					Use:       "attribute-return [position-id]",
 					Short:     "Attribute a returned inflow to a position as the Reserve committee",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "position_id"},
+					},
+				},
+				{
+					RpcMethod: "CommitteeReverseReturn",
+					Use:       "reverse-return [position-id]",
+					Short:     "Undo a return attribution as the Reserve committee",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "position_id"},
 					},

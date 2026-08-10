@@ -16,8 +16,6 @@ option go_package = "ark/x/reserve/types";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams updates the governance-owned reserve parameters.
-  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
   // SetReserveMandate appoints, replaces, or disables the height-scoped
   // Reserve committee.
   rpc SetReserveMandate(MsgSetReserveMandate)
@@ -45,6 +43,9 @@ service Msg {
   // ClosePosition closes a position as the governance authority,
   // crystallising its realised profit or loss.
   rpc ClosePosition(MsgClosePosition) returns (MsgClosePositionResponse) {}
+  // ReverseReturn undoes one return attribution as the governance authority,
+  // subtracting its booked value from the position's returned leg.
+  rpc ReverseReturn(MsgReverseReturn) returns (MsgReverseReturnResponse) {}
   // BurnReserveAssets destroys Reserve custody as the governance authority,
   // including NOAH.
   rpc BurnReserveAssets(MsgBurnReserveAssets)
@@ -61,6 +62,9 @@ service Msg {
   // to the position it settles.
   rpc CommitteeAttributeReturn(MsgCommitteeAttributeReturn)
       returns (MsgCommitteeAttributeReturnResponse) {}
+  // CommitteeReverseReturn undoes one return attribution recorded in error.
+  rpc CommitteeReverseReturn(MsgCommitteeReverseReturn)
+      returns (MsgCommitteeReverseReturnResponse) {}
   // CommitteeMarkImpaired zeroes a position's recognition credit without
   // erasing the claim.
   rpc CommitteeMarkImpaired(MsgCommitteeMarkImpaired)
@@ -92,19 +96,6 @@ service Msg {
   rpc CommitteeFundInsurance(MsgCommitteeFundInsurance)
       returns (MsgCommitteeFundInsuranceResponse) {}
 }
-
-// MsgUpdateParams is the Msg/UpdateParams request type.
-message MsgUpdateParams {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/reserve/MsgUpdateParams";
-
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  Params params = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-}
-
-// MsgUpdateParamsResponse is the Msg/UpdateParams response type.
-message MsgUpdateParamsResponse {}
 
 // MsgSetReserveMandate is the governance request for a complete Reserve
 // committee replacement. An empty committee disables the mandate; the chain
@@ -262,6 +253,32 @@ message MsgClosePositionResponse {
   uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
 }
 
+// MsgReverseReturn undoes one return attribution as the governance authority,
+// subtracting the value that attribution booked.
+//
+// Attribution is the one recorded movement whose position linkage the chain
+// cannot verify — Bank witnesses that coins arrived, never which position they
+// settle — so it is the only one needing a remedy. The deployed leg stays
+// uncorrectable: restating it would desynchronise the allowance it consumed.
+// Unlike the committee twin, this still works while no mandate is live.
+message MsgReverseReturn {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/reserve/MsgReverseReturn";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  // reverses names the RETURN_ATTRIBUTION being undone. It must exist, belong
+  // to this position, and not already have been reversed.
+  uint64 reverses = 3 [ (amino.dont_omitempty) = true ];
+  // reference must name the evidence that the attribution was wrong.
+  string reference = 4;
+}
+
+// MsgReverseReturnResponse is the response for a governance reversal.
+message MsgReverseReturnResponse {
+  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
 // MsgBurnReserveAssets destroys Reserve custody as the governance authority,
 // including NOAH and credit-bearing assets.
 message MsgBurnReserveAssets {
@@ -361,6 +378,26 @@ message MsgCommitteeAttributeReturn {
 
 // MsgCommitteeAttributeReturnResponse is the response for an attribution.
 message MsgCommitteeAttributeReturnResponse {
+  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+}
+
+// MsgCommitteeReverseReturn undoes one return attribution as the committee
+// that recorded it, on the governance reversal's exact terms.
+message MsgCommitteeReverseReturn {
+  option (cosmos.msg.v1.signer) = "committee";
+  option (amino.name) = "ark/reserve/MsgCommitteeReverseReturn";
+
+  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  // reverses names the RETURN_ATTRIBUTION being undone.
+  uint64 reverses = 4 [ (amino.dont_omitempty) = true ];
+  // reference must name the evidence that the attribution was wrong.
+  string reference = 5;
+}
+
+// MsgCommitteeReverseReturnResponse is the response for a committee reversal.
+message MsgCommitteeReverseReturnResponse {
   uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
 }
 

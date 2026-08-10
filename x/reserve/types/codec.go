@@ -11,7 +11,6 @@ import (
 // RegisterLegacyAminoCodec registers all Reserve messages used by governance
 // transactions.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/reserve/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgSetReserveMandate{}, "ark/reserve/MsgSetReserveMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgSetRecognitionPolicy{}, "ark/reserve/MsgSetRecognitionPolicy")
 	legacy.RegisterAminoMsg(cdc, &MsgFundBuffer{}, "ark/reserve/MsgFundBuffer")
@@ -20,6 +19,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgClearImpairment{}, "ark/reserve/MsgClearImpairment")
 	legacy.RegisterAminoMsg(cdc, &MsgMarkImpaired{}, "ark/reserve/MsgMarkImpaired")
 	legacy.RegisterAminoMsg(cdc, &MsgClosePosition{}, "ark/reserve/MsgClosePosition")
+	legacy.RegisterAminoMsg(cdc, &MsgReverseReturn{}, "ark/reserve/MsgReverseReturn")
 	legacy.RegisterAminoMsg(cdc, &MsgBurnReserveAssets{}, "ark/reserve/MsgBurnReserveAssets")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeDeploy{}, "ark/reserve/MsgCommitteeDeploy")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeRecordUpdate{}, "ark/reserve/MsgCommitteeRecordUpdate")
@@ -27,6 +27,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeMarkImpaired{}, "ark/reserve/MsgCommitteeMarkImpaired")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeClearImpairment{}, "ark/reserve/MsgCommitteeClear")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeCorrectPosition{}, "ark/reserve/MsgCommitteeCorrect")
+	legacy.RegisterAminoMsg(cdc, &MsgCommitteeReverseReturn{}, "ark/reserve/MsgCommitteeReverseReturn")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeClosePosition{}, "ark/reserve/MsgCommitteeClosePosition")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeBurnPaper{}, "ark/reserve/MsgCommitteeBurnPaper")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeBurnSurplus{}, "ark/reserve/MsgCommitteeBurnSurplus")
@@ -38,7 +39,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
-		&MsgUpdateParams{},
 		&MsgSetReserveMandate{},
 		&MsgSetRecognitionPolicy{},
 		&MsgFundBuffer{},
@@ -47,6 +47,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgClearImpairment{},
 		&MsgMarkImpaired{},
 		&MsgClosePosition{},
+		&MsgReverseReturn{},
 		&MsgBurnReserveAssets{},
 		&MsgCommitteeDeploy{},
 		&MsgCommitteeRecordUpdate{},
@@ -54,6 +55,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgCommitteeMarkImpaired{},
 		&MsgCommitteeClearImpairment{},
 		&MsgCommitteeCorrectPosition{},
+		&MsgCommitteeReverseReturn{},
 		&MsgCommitteeClosePosition{},
 		&MsgCommitteeBurnPaper{},
 		&MsgCommitteeBurnSurplus{},

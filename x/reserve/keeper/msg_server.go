@@ -28,23 +28,6 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return msgServer{k: k}
 }
 
-// UpdateParams replaces the complete governance-owned Reserve parameter set.
-func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
-	if msg == nil {
-		return nil, fmt.Errorf("nil update params message")
-	}
-	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
-		return nil, err
-	}
-	if err := msg.Params.Validate(); err != nil {
-		return nil, err
-	}
-	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
-		return nil, fmt.Errorf("setting Reserve params: %w", err)
-	}
-	return &types.MsgUpdateParamsResponse{}, nil
-}
-
 // SetReserveMandate appoints, replaces, or disables the Reserve committee. A
 // replacement resets allowance usage and clears the destination list with it.
 func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReserveMandate) (*types.MsgSetReserveMandateResponse, error) {
@@ -587,4 +570,50 @@ func (m msgServer) CommitteeCorrectPosition(ctx context.Context, msg *types.MsgC
 		return nil, err
 	}
 	return &types.MsgCommitteeCorrectPositionResponse{EntryId: entryID}, nil
+}
+
+// ReverseReturn undoes one return attribution as the governance authority,
+// recording term zero for the standing authority rather than an appointment.
+// Unlike the committee twin, it still works while no mandate is live, so a
+// mistaken attribution stays repairable after an appointment lapses.
+func (m msgServer) ReverseReturn(ctx context.Context, msg *types.MsgReverseReturn) (*types.MsgReverseReturnResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil reverse return message")
+	}
+	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
+		return nil, err
+	}
+	entryID, err := m.k.reverseReturn(ctx, returnReversal{
+		PositionID: msg.PositionId,
+		Reverses:   msg.Reverses,
+		Reference:  msg.Reference,
+		RecordedBy: msg.Authority,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgReverseReturnResponse{EntryId: entryID}, nil
+}
+
+// CommitteeReverseReturn undoes one return attribution as the committee that
+// recorded it, on the governance reversal's exact terms.
+func (m msgServer) CommitteeReverseReturn(ctx context.Context, msg *types.MsgCommitteeReverseReturn) (*types.MsgCommitteeReverseReturnResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil committee reverse return message")
+	}
+	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	if err != nil {
+		return nil, err
+	}
+	entryID, err := m.k.reverseReturn(ctx, returnReversal{
+		PositionID: msg.PositionId,
+		Reverses:   msg.Reverses,
+		Reference:  msg.Reference,
+		RecordedBy: msg.Committee,
+		Term:       reserveMandate.Term,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgCommitteeReverseReturnResponse{EntryId: entryID}, nil
 }

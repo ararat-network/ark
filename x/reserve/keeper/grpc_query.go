@@ -28,19 +28,6 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 	return &queryServer{k: k}
 }
 
-// Params queries the current Reserve parameters.
-func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid request")
-	}
-
-	params, err := q.k.Params.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Reserve params: %v", err)
-	}
-	return &types.QueryParamsResponse{Params: params}, nil
-}
-
 // Mandate queries the stored committee mandate and its term allowance.
 func (q queryServer) Mandate(ctx context.Context, req *types.QueryMandateRequest) (*types.QueryMandateResponse, error) {
 	if req == nil {

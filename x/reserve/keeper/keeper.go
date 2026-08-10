@@ -33,7 +33,6 @@ type Keeper struct {
 	treasuryReader types.TreasuryCapitalReader
 
 	Schema            collections.Schema
-	Params            collections.Item[types.Params]
 	Mandate           collections.Item[types.ReserveMandate]
 	AllowanceUsed     collections.Item[math.Int]
 	NextPositionID    collections.Sequence
@@ -42,6 +41,7 @@ type Keeper struct {
 	NextEntryID       collections.Sequence
 	Ledger            collections.Map[uint64, types.AccountingEntry]
 	RecognitionPolicy collections.Map[string, types.EligibilityEntry]
+	ReversedReturns   collections.KeySet[uint64]
 }
 
 // NewKeeper creates a Reserve keeper.
@@ -68,12 +68,6 @@ func NewKeeper(
 		bankKeeper:     bankKeeper,
 		oracleKeeper:   oracleKeeper,
 		assetKeeper:    assetKeeper,
-		Params: collections.NewItem(
-			sb,
-			types.ParamsKey,
-			"params",
-			codec.CollValue[types.Params](cdc),
-		),
 		Mandate: collections.NewItem(
 			sb,
 			types.MandateKey,
@@ -123,6 +117,12 @@ func NewKeeper(
 			"recognition_policy",
 			collections.StringKey,
 			codec.CollValue[types.EligibilityEntry](cdc),
+		),
+		ReversedReturns: collections.NewKeySet(
+			sb,
+			types.ReversedReturnsKey,
+			"reversed_returns",
+			collections.Uint64Key,
 		),
 	}
 

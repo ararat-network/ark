@@ -432,6 +432,106 @@ func (k *Keeper) correctPosition(ctx context.Context, correction positionCorrect
 	})
 }
 
+// returnReversal carries one already-authorized retraction of a recorded
+// return into the shared reversal core. Authority is decided by the message
+// type that reached here.
+type returnReversal struct {
+	PositionID uint64
+	// Reverses names the RETURN_ATTRIBUTION entry being undone.
+	Reverses   uint64
+	Reference  string
+	RecordedBy string
+	// Term is the appointment that acted, or zero for a governance act.
+	Term uint64
+}
+
+// reverseReturn undoes one return attribution and records the reversal as a
+// ledger entry, returning that entry. Attribution is the one recorded movement
+// whose linkage the chain cannot verify — Bank witnesses that coins arrived,
+// never which position they settle — so it is the only one needing a remedy.
+//
+// The reversed value is copied rather than re-derived: a re-priced reversal
+// would let a committee reverse and re-attribute one inflow across a rate move
+// and book the difference. The position is loaded from either store, because a
+// closed position's recovery should read as true afterwards as an open one's.
+func (k *Keeper) reverseReturn(ctx context.Context, reversal returnReversal) (uint64, error) {
+	position, err := k.OpenPositions.Get(ctx, reversal.PositionID)
+	closed := errors.Is(err, collections.ErrNotFound)
+	if closed {
+		position, err = k.ClosedPositions.Get(ctx, reversal.PositionID)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("getting position %d: %w", reversal.PositionID, err)
+	}
+	reversed, err := k.Ledger.Get(ctx, reversal.Reverses)
+	if err != nil {
+		return 0, fmt.Errorf("getting reversed entry %d: %w", reversal.Reverses, err)
+	}
+	if reversed.PositionId != reversal.PositionID {
+		return 0, fmt.Errorf(
+			"entry %d belongs to position %d, not %d",
+			reversed.EntryId,
+			reversed.PositionId,
+			reversal.PositionID,
+		)
+	}
+	if reversed.Kind != types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION {
+		return 0, fmt.Errorf(
+			"entry %d records %s, and only a return attribution can be reversed",
+			reversed.EntryId,
+			reversed.Kind,
+		)
+	}
+	alreadyReversed, err := k.ReversedReturns.Has(ctx, reversal.Reverses)
+	if err != nil {
+		return 0, fmt.Errorf("checking whether entry %d is reversed: %w", reversal.Reverses, err)
+	}
+	if alreadyReversed {
+		return 0, fmt.Errorf("entry %d has already been reversed", reversal.Reverses)
+	}
+
+	returned, err := position.Returned.Amount.SafeSub(reversed.MovedNoahValue.Amount)
+	if err == nil && returned.IsNegative() {
+		err = errors.New("reversal exceeds the recovery attributed to the position")
+	}
+	if err != nil {
+		// Unreachable: every attribution adds its booked value to Returned
+		// exactly once and reverses at most once, so the recovery cannot pass
+		// zero. Kept because Returned funds the realised figure a closure
+		// crystallises.
+		return 0, fmt.Errorf(
+			"reversing the return attributed to position %d: %w",
+			position.PositionId,
+			err,
+		)
+	}
+	position.Returned = chain.NoahCoin(returned)
+	if err := position.Validate(); err != nil {
+		return 0, err
+	}
+	positions := k.OpenPositions
+	if closed {
+		positions = k.ClosedPositions
+	}
+	if err := positions.Set(ctx, position.PositionId, position); err != nil {
+		return 0, fmt.Errorf("reversing a return of position %d: %w", position.PositionId, err)
+	}
+	if err := k.ReversedReturns.Set(ctx, reversal.Reverses); err != nil {
+		return 0, fmt.Errorf("marking entry %d reversed: %w", reversal.Reverses, err)
+	}
+	return k.appendEntry(ctx, ledgerAppend{
+		PositionID:     position.PositionId,
+		Kind:           types.EntryKind_ENTRY_KIND_RETURN_REVERSAL,
+		Corrects:       reversal.Reverses,
+		Quantity:       position.Quantity,
+		MovedCoin:      reversed.MovedCoin,
+		MovedNoahValue: reversed.MovedNoahValue,
+		Reference:      reversal.Reference,
+		RecordedBy:     reversal.RecordedBy,
+		Term:           reversal.Term,
+	})
+}
+
 // closePosition crystallises a position's realised profit or loss and records
 // the closure as a ledger entry, returning that entry. The position must still
 // be open, so a second closure is refused rather than re-stamping the height

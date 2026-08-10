@@ -11,7 +11,6 @@ import (
 
 // NewGenesisState creates a Reserve genesis state.
 func NewGenesisState(
-	params Params,
 	reserveMandate ReserveMandate,
 	recognitionPolicy []EligibilityEntry,
 	allowanceUsed math.Int,
@@ -22,7 +21,6 @@ func NewGenesisState(
 	nextEntryID uint64,
 ) *GenesisState {
 	return &GenesisState{
-		Params:            params,
 		Mandate:           reserveMandate,
 		RecognitionPolicy: append([]EligibilityEntry(nil), recognitionPolicy...),
 		AllowanceUsed:     chain.NoahCoin(allowanceUsed),
@@ -38,7 +36,6 @@ func NewGenesisState(
 // no committee, no positions, an empty ledger, no eligible assets.
 func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
-		DefaultParams(),
 		DefaultReserveMandate(),
 		[]EligibilityEntry{},
 		math.ZeroInt(),
@@ -54,9 +51,6 @@ func DefaultGenesisState() *GenesisState {
 // aggregate is re-derived from the ledger and required to match. The Reserve's
 // custody balance is Bank state and is validated by the keeper instead.
 func (gs GenesisState) Validate() error {
-	if err := gs.Params.Validate(); err != nil {
-		return err
-	}
 	if err := gs.Mandate.Validate(); err != nil {
 		return err
 	}
@@ -94,11 +88,12 @@ func (gs GenesisState) Validate() error {
 	}
 
 	// Fold the ledger into the figures it should have produced. Only the
-	// entries carrying a proven coin movement contribute; corrections restate
-	// rather than accumulate.
+	// entries carrying a proven coin movement contribute: deployments and
+	// attributions accumulate, a reversal subtracts, corrections restate.
 	deployedByPosition := make(map[uint64]math.Int, len(positions))
 	returnedByPosition := make(map[uint64]math.Int, len(positions))
-	entryIDs := make(map[uint64]struct{}, len(gs.Ledger))
+	entries := make(map[uint64]AccountingEntry, len(gs.Ledger))
+	reversed := make(map[uint64]struct{}, len(gs.Ledger))
 	for i, entry := range gs.Ledger {
 		if err := entry.Validate(); err != nil {
 			return fmt.Errorf("invalid ledger entry %d: %w", entry.EntryId, err)
@@ -121,17 +116,55 @@ func (gs GenesisState) Validate() error {
 			)
 		}
 		if entry.Corrects != 0 {
-			// Entry.Validate already required the corrected ID to be lower, so
-			// a correction can only reference an entry this walk has passed.
-			if _, known := entryIDs[entry.Corrects]; !known {
+			// Entry.Validate already required the restated ID to be lower, so a
+			// correction or reversal can only name an entry this walk has passed.
+			restated, known := entries[entry.Corrects]
+			if !known {
 				return fmt.Errorf(
-					"ledger entry %d corrects unknown entry %d",
+					"ledger entry %d restates unknown entry %d",
 					entry.EntryId,
 					entry.Corrects,
 				)
 			}
+			// Both live paths refuse a restatement crossing positions, or a
+			// reversal could walk down a recovery it never contributed to.
+			if restated.PositionId != entry.PositionId {
+				return fmt.Errorf(
+					"ledger entry %d restates entry %d, which belongs to position %d, not %d",
+					entry.EntryId,
+					entry.Corrects,
+					restated.PositionId,
+					entry.PositionId,
+				)
+			}
+			if entry.Kind == EntryKind_ENTRY_KIND_RETURN_REVERSAL {
+				if restated.Kind != EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION {
+					return fmt.Errorf(
+						"ledger entry %d reverses entry %d, which is not a return attribution",
+						entry.EntryId,
+						entry.Corrects,
+					)
+				}
+				if _, duplicate := reversed[entry.Corrects]; duplicate {
+					return fmt.Errorf(
+						"ledger entry %d reverses entry %d, which is already reversed",
+						entry.EntryId,
+						entry.Corrects,
+					)
+				}
+				// Verbatim, which is what makes the fold cancel exactly.
+				if !entry.MovedNoahValue.Equal(restated.MovedNoahValue) ||
+					!entry.MovedCoin.Equal(restated.MovedCoin) {
+					return fmt.Errorf(
+						"ledger entry %d must carry entry %d's movement verbatim",
+						entry.EntryId,
+						entry.Corrects,
+					)
+				}
+				reversed[entry.Corrects] = struct{}{}
+			}
 		}
-		entryIDs[entry.EntryId] = struct{}{}
+		entries[entry.EntryId] = entry
 
 		var err error
 		switch entry.Kind {
@@ -144,6 +177,11 @@ func (gs GenesisState) Validate() error {
 			returnedByPosition[entry.PositionId], err = sumInto(returnedByPosition, entry.PositionId, entry.MovedNoahValue.Amount)
 			if err != nil {
 				return fmt.Errorf("summing returns for position %d: %w", entry.PositionId, err)
+			}
+		case EntryKind_ENTRY_KIND_RETURN_REVERSAL:
+			returnedByPosition[entry.PositionId], err = subFrom(returnedByPosition, entry.PositionId, entry.MovedNoahValue.Amount)
+			if err != nil {
+				return fmt.Errorf("reversing returns for position %d: %w", entry.PositionId, err)
 			}
 		}
 	}
@@ -230,6 +268,15 @@ func reconcilePositions(list []Position, deployedByPosition, returnedByPosition 
 // sumInto adds amount to the running total for id.
 func sumInto(totals map[uint64]math.Int, id uint64, amount math.Int) (math.Int, error) {
 	return zeroIfAbsent(totals, id).SafeAdd(amount)
+}
+
+// subFrom subtracts amount from the running total for id.
+func subFrom(totals map[uint64]math.Int, id uint64, amount math.Int) (math.Int, error) {
+	total, err := zeroIfAbsent(totals, id).SafeSub(amount)
+	if err == nil && total.IsNegative() {
+		err = errors.New("reversals exceed the returns attributed to the position")
+	}
+	return total, err
 }
 
 // zeroIfAbsent reads a running total, treating an absent key as zero.

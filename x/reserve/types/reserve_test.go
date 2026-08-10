@@ -64,9 +64,19 @@ func validEntry(kind types.EntryKind) types.AccountingEntry {
 		// Either authority may correct, so the term is free; zero is the
 		// governance case.
 		entry.Term = 0
+	case types.EntryKind_ENTRY_KIND_RETURN_REVERSAL:
+		// Carries the reversed attribution's movement verbatim, so it is
+		// shaped like the return above.
+		entry.Corrects = 1
+		entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(25))
+		entry.MovedNoahValue = chain.NoahCoin(math.NewInt(60))
+		entry.Term = 0
 	}
 	return entry
 }
+
+// missingEvidenceErr is what a movement kind earns with a blank reference.
+const missingEvidenceErr = "entry reference must not be empty"
 
 // disabledMandateErr is the one answer every field of a disabled appointment
 // must earn, whichever of them carries power it should not.
@@ -281,6 +291,7 @@ func TestAccountingEntryValidateTerm(t *testing.T) {
 			types.EntryKind_ENTRY_KIND_IMPAIRMENT,
 			types.EntryKind_ENTRY_KIND_CORRECTION,
 			types.EntryKind_ENTRY_KIND_CLOSURE,
+			types.EntryKind_ENTRY_KIND_RETURN_REVERSAL,
 		} {
 			committee := validEntry(kind)
 			committee.Term = 3
@@ -331,19 +342,28 @@ func TestAccountingEntryValidateMovement(t *testing.T) {
 		for _, kind := range []types.EntryKind{
 			types.EntryKind_ENTRY_KIND_DEPLOYMENT,
 			types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION,
+			types.EntryKind_ENTRY_KIND_RETURN_REVERSAL,
 		} {
 			entry := validEntry(kind)
 			entry.MovedCoin = chain.NoahCoin(math.ZeroInt())
 			entry.MovedNoahValue = chain.NoahCoin(math.ZeroInt())
-			require.ErrorContains(t, entry.Validate(), "must move a positive coin", kind.String())
+			require.ErrorContains(t, entry.Validate(), "positive coin", kind.String())
 		}
+	})
+
+	// The zero-booked-value case a dark feed produces must survive reversal.
+	t.Run("a reversal may carry a zero booked value", func(t *testing.T) {
+		entry := validEntry(types.EntryKind_ENTRY_KIND_RETURN_REVERSAL)
+		entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(100))
+		entry.MovedNoahValue = chain.NoahCoin(math.ZeroInt())
+		require.NoError(t, entry.Validate())
 	})
 
 	t.Run("a judgment kind may not carry a moved coin", func(t *testing.T) {
 		for _, kind := range judgmentKinds {
 			entry := validEntry(kind)
 			entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(5))
-			require.ErrorContains(t, entry.Validate(), "may move funds", kind.String())
+			require.ErrorContains(t, entry.Validate(), "may carry a movement", kind.String())
 		}
 	})
 
@@ -351,7 +371,7 @@ func TestAccountingEntryValidateMovement(t *testing.T) {
 		for _, kind := range judgmentKinds {
 			entry := validEntry(kind)
 			entry.MovedNoahValue = chain.NoahCoin(math.NewInt(5))
-			require.ErrorContains(t, entry.Validate(), "may move funds", kind.String())
+			require.ErrorContains(t, entry.Validate(), "may carry a movement", kind.String())
 		}
 	})
 }
@@ -365,12 +385,12 @@ func TestAccountingEntryValidateReference(t *testing.T) {
 		{
 			name:    "deployment requires evidence",
 			kind:    types.EntryKind_ENTRY_KIND_DEPLOYMENT,
-			wantErr: "entry reference must not be empty",
+			wantErr: missingEvidenceErr,
 		},
 		{
 			name:    "return attribution requires evidence",
 			kind:    types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION,
-			wantErr: "entry reference must not be empty",
+			wantErr: missingEvidenceErr,
 		},
 		{
 			name: "quantity update is a judgment and may omit evidence",
@@ -387,6 +407,11 @@ func TestAccountingEntryValidateReference(t *testing.T) {
 		{
 			name: "correction is a judgment and may omit evidence",
 			kind: types.EntryKind_ENTRY_KIND_CORRECTION,
+		},
+		{
+			name:    "return reversal requires evidence",
+			kind:    types.EntryKind_ENTRY_KIND_RETURN_REVERSAL,
+			wantErr: missingEvidenceErr,
 		},
 	}
 
@@ -413,4 +438,48 @@ func TestAccountingEntryValidateReference(t *testing.T) {
 			require.NoError(t, entry.Validate())
 		})
 	}
+}
+
+// TestAccountingEntryValidateRestatement covers the field the two restating
+// kinds share: each names the earlier entry it acts on, and no other kind may.
+func TestAccountingEntryValidateRestatement(t *testing.T) {
+	restatingKinds := []types.EntryKind{
+		types.EntryKind_ENTRY_KIND_CORRECTION,
+		types.EntryKind_ENTRY_KIND_RETURN_REVERSAL,
+	}
+
+	t.Run("a restatement must name what it acts on", func(t *testing.T) {
+		for _, kind := range restatingKinds {
+			entry := validEntry(kind)
+			entry.Corrects = 0
+			require.ErrorContains(t, entry.Validate(), "must name the entry it restates", kind.String())
+		}
+	})
+
+	// The ordering rule lets a genesis import's single forward pass resolve
+	// every target, and stops an entry restating itself.
+	t.Run("a restatement must act on an earlier entry", func(t *testing.T) {
+		for _, kind := range restatingKinds {
+			entry := validEntry(kind)
+			entry.Corrects = entry.EntryId
+			require.ErrorContains(t, entry.Validate(), "must restate an earlier entry", kind.String())
+
+			entry.Corrects = entry.EntryId + 1
+			require.ErrorContains(t, entry.Validate(), "must restate an earlier entry", kind.String())
+		}
+	})
+
+	t.Run("no other kind may name a restated entry", func(t *testing.T) {
+		for _, kind := range []types.EntryKind{
+			types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			types.EntryKind_ENTRY_KIND_QUANTITY_UPDATE,
+			types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION,
+			types.EntryKind_ENTRY_KIND_IMPAIRMENT,
+			types.EntryKind_ENTRY_KIND_CLOSURE,
+		} {
+			entry := validEntry(kind)
+			entry.Corrects = 1
+			require.ErrorContains(t, entry.Validate(), "may name a restated entry", kind.String())
+		}
+	})
 }
