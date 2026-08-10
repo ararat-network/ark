@@ -16,7 +16,7 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 		mutate    func(*types.MonetaryPolicy)
 		expectErr string
 	}{
-		{name: "default is valid", mutate: func(*types.MonetaryPolicy) {}},
+		{name: defaultValidCase, mutate: func(*types.MonetaryPolicy) {}},
 		{
 			name: "independent ratios may sum above one",
 			mutate: func(p *types.MonetaryPolicy) {
@@ -31,9 +31,9 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 			p.StabilityTaxRate = math.LegacyNewDecWithPrec(1001, 3)
 		}, expectErr: "StabilityTaxRate must be between zero and one"},
 		{name: "nil validator target", mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = math.Int{} }, expectErr: "ValidatorBlockRewardTarget must be set"},
-		{name: "negative validator target", mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(-1) }, expectErr: "ValidatorBlockRewardTarget must be zero or positive"},
+		{name: "negative validator target", mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(-1) }, expectErr: "ValidatorBlockRewardTarget must be between zero and"},
 		{name: "nil Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.Int{} }, expectErr: "OracleBlockRewardTarget must be set"},
-		{name: "negative Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.NewInt(-1) }, expectErr: "OracleBlockRewardTarget must be zero or positive"},
+		{name: "negative Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.NewInt(-1) }, expectErr: "OracleBlockRewardTarget must be between zero and"},
 		{
 			name:   "validator target at the domain cap",
 			mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget },
@@ -43,14 +43,14 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 			mutate: func(p *types.MonetaryPolicy) {
 				p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
 			},
-			expectErr: "ValidatorBlockRewardTarget must not exceed",
+			expectErr: "ValidatorBlockRewardTarget must be between zero and",
 		},
 		{
 			name: "Oracle target above the domain cap",
 			mutate: func(p *types.MonetaryPolicy) {
 				p.OracleBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
 			},
-			expectErr: "OracleBlockRewardTarget must not exceed",
+			expectErr: "OracleBlockRewardTarget must be between zero and",
 		},
 		{
 			// The worst case the accrual can be handed, and admissible: the
@@ -79,6 +79,60 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 				return
 			}
 			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
+}
+
+// TestExposureWeightValidation covers the three indicator weights, which live
+// here rather than in Params because they are stance rather than machinery. The
+// bound on them is a domain cap; what keeps a positive weight safe is the
+// multiplier cap and step in Params.
+func TestExposureWeightValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(*types.MonetaryPolicy)
+		expectErr string
+	}{
+		{name: defaultValidCase, mutate: func(*types.MonetaryPolicy) {}},
+		{
+			name:      "negative liability ratio weight",
+			mutate:    func(p *types.MonetaryPolicy) { p.LiabilityRatioWeight = math.LegacyNewDec(-1) },
+			expectErr: "LiabilityRatioWeight must be between zero and",
+		},
+		{
+			name:      "negative volatility weight",
+			mutate:    func(p *types.MonetaryPolicy) { p.VolatilityWeight = math.LegacyNewDec(-1) },
+			expectErr: "VolatilityWeight must be between zero and",
+		},
+		{
+			name:      "negative flow weight",
+			mutate:    func(p *types.MonetaryPolicy) { p.FlowWeight = math.LegacyNewDec(-1) },
+			expectErr: "FlowWeight must be between zero and",
+		},
+		{
+			name:   "weight at the domain cap",
+			mutate: func(p *types.MonetaryPolicy) { p.FlowWeight = types.MaxExposureWeight },
+		},
+		{
+			name: "weight above the domain cap",
+			mutate: func(p *types.MonetaryPolicy) {
+				p.FlowWeight = types.MaxExposureWeight.Add(math.LegacyOneDec())
+			},
+			expectErr: "FlowWeight must be between zero and",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			policy := types.DefaultMonetaryPolicy()
+			test.mutate(&policy)
+
+			err := policy.Validate()
+			if test.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, test.expectErr)
 		})
 	}
 }

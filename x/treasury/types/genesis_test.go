@@ -30,6 +30,8 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 		types.DefaultMonetaryMandate(),
 		types.DefaultMonetaryPolicy(),
 		false,
+		types.DefaultExposureState(),
+		false,
 	)
 	taxCaps[0].Denom = "mutated"
 	require.Equal(t, chain.USDBaseDenom, genesis.TaxCaps[0].Denom)

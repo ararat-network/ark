@@ -17,14 +17,18 @@ func NewGenesisState(
 	monetaryMandate MonetaryMandate,
 	monetaryPolicy MonetaryPolicy,
 	taxCapRefreshPending bool,
+	exposureState ExposureState,
+	exposureUpdatePending bool,
 ) *GenesisState {
 	return &GenesisState{
-		Params:               params,
-		TaxCaps:              append([]TaxCap(nil), taxCaps...),
-		RewardFunding:        rewardFunding,
-		MonetaryMandate:      monetaryMandate,
-		MonetaryPolicy:       monetaryPolicy,
-		TaxCapRefreshPending: taxCapRefreshPending,
+		Params:                 params,
+		TaxCaps:                append([]TaxCap(nil), taxCaps...),
+		RewardFunding:          rewardFunding,
+		MonetaryMandate:        monetaryMandate,
+		MonetaryPolicy:         monetaryPolicy,
+		TaxCapRefreshPending:   taxCapRefreshPending,
+		ExposureState:          exposureState,
+		ExposureRefreshPending: exposureUpdatePending,
 	}
 }
 
@@ -36,6 +40,8 @@ func DefaultGenesisState() *GenesisState {
 		DefaultRewardFundingState(),
 		DefaultMonetaryMandate(),
 		DefaultMonetaryPolicy(),
+		false,
+		DefaultExposureState(),
 		false,
 	)
 }
@@ -125,6 +131,9 @@ func (gs GenesisState) Validate() error {
 		}
 	}
 	if err := gs.MonetaryMandate.Validate(); err != nil {
+		return err
+	}
+	if err := gs.ExposureState.Validate(); err != nil {
 		return err
 	}
 

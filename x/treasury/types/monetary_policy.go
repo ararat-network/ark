@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -23,6 +22,15 @@ import (
 // ever want, and refuses at the write what would otherwise fail a block.
 var MaxBlockRewardTarget = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 
+// MaxExposureWeight bounds each indicator weight. Like MaxBlockRewardTarget it
+// is a domain cap rather than a projection: the composite is folded and applied
+// inside block hooks, where a checked arithmetic error and a panic are the same
+// outcome, so the defence has to be refusing the value at the write. A million
+// is far past any defensible setting — a liability-ratio weight of one already
+// means a fund holding as much as the liability itself doubles its target — and
+// exists to keep the arithmetic provably in range, not to express a view.
+var MaxExposureWeight = math.LegacyNewDec(1_000_000)
+
 // DefaultMonetaryPolicy returns the disabled launch policy values.
 func DefaultMonetaryPolicy() MonetaryPolicy {
 	return MonetaryPolicy{
@@ -32,75 +40,96 @@ func DefaultMonetaryPolicy() MonetaryPolicy {
 		RedemptionBufferTargetRatio: math.LegacyZeroDec(),
 		StrategicReserveTargetRatio: math.LegacyZeroDec(),
 		InsuranceTargetRatio:        math.LegacyZeroDec(),
+		LiabilityRatioWeight:        math.LegacyZeroDec(),
+		VolatilityWeight:            math.LegacyZeroDec(),
+		FlowWeight:                  math.LegacyZeroDec(),
 	}
 }
 
 // Validate performs context-free validation of one reversible policy.
+//
+// Three tables, because the levers fall into three shapes and the shape is what
+// the bound means. A share is a fraction of something, so exceeding one is not
+// a large value but an incoherent one. A reward target is an absolute per-block
+// amount whose ceiling exists so a whole window's accrual stays in range. A
+// weight is a multiplier on an indicator, unbounded in principle and capped
+// only to keep the composite representable. A new lever joins whichever table
+// states its bound, or brings a fourth.
 func (policy MonetaryPolicy) Validate() error {
-	if policy.StabilityTaxRate.IsNil() {
-		return errors.New("treasury parameter StabilityTaxRate must be set")
-	}
-	if !policy.StabilityTaxRate.IsInValidRange() {
-		return errors.New("treasury parameter StabilityTaxRate is not representable")
-	}
-	if policy.StabilityTaxRate.IsNegative() || policy.StabilityTaxRate.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("treasury parameter StabilityTaxRate must be between zero and one: %s", policy.StabilityTaxRate)
-	}
-
-	if policy.ValidatorBlockRewardTarget.IsNil() {
-		return errors.New("treasury parameter ValidatorBlockRewardTarget must be set")
-	}
-	if policy.ValidatorBlockRewardTarget.IsNegative() {
-		return fmt.Errorf("treasury parameter ValidatorBlockRewardTarget must be zero or positive: %s", policy.ValidatorBlockRewardTarget)
-	}
-	if policy.ValidatorBlockRewardTarget.GT(MaxBlockRewardTarget) {
-		return fmt.Errorf(
-			"treasury parameter ValidatorBlockRewardTarget must not exceed %s: %s",
-			MaxBlockRewardTarget,
-			policy.ValidatorBlockRewardTarget,
-		)
-	}
-	if policy.OracleBlockRewardTarget.IsNil() {
-		return errors.New("treasury parameter OracleBlockRewardTarget must be set")
-	}
-	if policy.OracleBlockRewardTarget.IsNegative() {
-		return fmt.Errorf("treasury parameter OracleBlockRewardTarget must be zero or positive: %s", policy.OracleBlockRewardTarget)
-	}
-	if policy.OracleBlockRewardTarget.GT(MaxBlockRewardTarget) {
-		return fmt.Errorf(
-			"treasury parameter OracleBlockRewardTarget must not exceed %s: %s",
-			MaxBlockRewardTarget,
-			policy.OracleBlockRewardTarget,
-		)
-	}
-	if policy.RedemptionBufferTargetRatio.IsNil() {
-		return errors.New("treasury parameter RedemptionBufferTargetRatio must be set")
-	}
-	if !policy.RedemptionBufferTargetRatio.IsInValidRange() {
-		return errors.New("treasury parameter RedemptionBufferTargetRatio is not representable")
-	}
-	if policy.RedemptionBufferTargetRatio.IsNegative() || policy.RedemptionBufferTargetRatio.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("treasury parameter RedemptionBufferTargetRatio must be between zero and one: %s", policy.RedemptionBufferTargetRatio)
+	for _, share := range []struct {
+		name  string
+		value math.LegacyDec
+	}{
+		{"StabilityTaxRate", policy.StabilityTaxRate},
+		{"RedemptionBufferTargetRatio", policy.RedemptionBufferTargetRatio},
+		{"StrategicReserveTargetRatio", policy.StrategicReserveTargetRatio},
+		{"InsuranceTargetRatio", policy.InsuranceTargetRatio},
+	} {
+		if share.value.IsNil() {
+			return fmt.Errorf("treasury parameter %s must be set", share.name)
+		}
+		if !share.value.IsInValidRange() {
+			return fmt.Errorf("treasury parameter %s is not representable", share.name)
+		}
+		if share.value.IsNegative() || share.value.GT(math.LegacyOneDec()) {
+			return fmt.Errorf(
+				"treasury parameter %s must be between zero and one: %s",
+				share.name,
+				share.value,
+			)
+		}
 	}
 
-	if policy.StrategicReserveTargetRatio.IsNil() {
-		return errors.New("treasury parameter StrategicReserveTargetRatio must be set")
-	}
-	if !policy.StrategicReserveTargetRatio.IsInValidRange() {
-		return errors.New("treasury parameter StrategicReserveTargetRatio is not representable")
-	}
-	if policy.StrategicReserveTargetRatio.IsNegative() || policy.StrategicReserveTargetRatio.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("treasury parameter StrategicReserveTargetRatio must be between zero and one: %s", policy.StrategicReserveTargetRatio)
+	// Representability goes unchecked here alone: Int has no invalid range, and
+	// the ceiling does that work instead.
+	for _, target := range []struct {
+		name  string
+		value math.Int
+	}{
+		{"ValidatorBlockRewardTarget", policy.ValidatorBlockRewardTarget},
+		{"OracleBlockRewardTarget", policy.OracleBlockRewardTarget},
+	} {
+		if target.value.IsNil() {
+			return fmt.Errorf("treasury parameter %s must be set", target.name)
+		}
+		if target.value.IsNegative() || target.value.GT(MaxBlockRewardTarget) {
+			return fmt.Errorf(
+				"treasury parameter %s must be between zero and %s: %s",
+				target.name,
+				MaxBlockRewardTarget,
+				target.value,
+			)
+		}
 	}
 
-	if policy.InsuranceTargetRatio.IsNil() {
-		return errors.New("treasury parameter InsuranceTargetRatio must be set")
-	}
-	if !policy.InsuranceTargetRatio.IsInValidRange() {
-		return errors.New("treasury parameter InsuranceTargetRatio is not representable")
-	}
-	if policy.InsuranceTargetRatio.IsNegative() || policy.InsuranceTargetRatio.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("treasury parameter InsuranceTargetRatio must be between zero and one: %s", policy.InsuranceTargetRatio)
+	// The exposure weights. Each states how much extra capital a unit of its
+	// indicator should demand, so zero is meaningful — it is the launch value,
+	// and the way one indicator is switched off without disturbing the others —
+	// and the only ceiling is MaxExposureWeight, the domain cap that keeps the
+	// composite in range. What a weight is safe inside is the multiplier cap and
+	// step limit, which live in Params and stay with governance.
+	for _, weight := range []struct {
+		name  string
+		value math.LegacyDec
+	}{
+		{"LiabilityRatioWeight", policy.LiabilityRatioWeight},
+		{"VolatilityWeight", policy.VolatilityWeight},
+		{"FlowWeight", policy.FlowWeight},
+	} {
+		if weight.value.IsNil() {
+			return fmt.Errorf("treasury parameter %s must be set", weight.name)
+		}
+		if !weight.value.IsInValidRange() {
+			return fmt.Errorf("treasury parameter %s is not representable", weight.name)
+		}
+		if weight.value.IsNegative() || weight.value.GT(MaxExposureWeight) {
+			return fmt.Errorf(
+				"treasury parameter %s must be between zero and %s: %s",
+				weight.name,
+				MaxExposureWeight,
+				weight.value,
+			)
+		}
 	}
 
 	return nil
@@ -141,7 +170,10 @@ func (policy MonetaryPolicy) Equal(other MonetaryPolicy) bool {
 		policy.OracleBlockRewardTarget.Equal(other.OracleBlockRewardTarget) &&
 		policy.RedemptionBufferTargetRatio.Equal(other.RedemptionBufferTargetRatio) &&
 		policy.StrategicReserveTargetRatio.Equal(other.StrategicReserveTargetRatio) &&
-		policy.InsuranceTargetRatio.Equal(other.InsuranceTargetRatio)
+		policy.InsuranceTargetRatio.Equal(other.InsuranceTargetRatio) &&
+		policy.LiabilityRatioWeight.Equal(other.LiabilityRatioWeight) &&
+		policy.VolatilityWeight.Equal(other.VolatilityWeight) &&
+		policy.FlowWeight.Equal(other.FlowWeight)
 }
 
 // IsZero reports whether every policy value is zero.
@@ -151,5 +183,8 @@ func (policy MonetaryPolicy) IsZero() bool {
 		policy.OracleBlockRewardTarget.IsZero() &&
 		policy.RedemptionBufferTargetRatio.IsZero() &&
 		policy.StrategicReserveTargetRatio.IsZero() &&
-		policy.InsuranceTargetRatio.IsZero()
+		policy.InsuranceTargetRatio.IsZero() &&
+		policy.LiabilityRatioWeight.IsZero() &&
+		policy.VolatilityWeight.IsZero() &&
+		policy.FlowWeight.IsZero()
 }

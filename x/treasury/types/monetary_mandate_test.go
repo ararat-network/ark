@@ -105,6 +105,9 @@ func validMonetaryMandate() types.MonetaryMandate {
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
 		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
+		LiabilityRatioWeight:        math.LegacyOneDec(),
+		VolatilityWeight:            math.LegacyOneDec(),
+		FlowWeight:                  math.LegacyOneDec(),
 	}
 	return types.MonetaryMandate{
 		Envelope: mandate.Envelope{
@@ -126,5 +129,8 @@ func boundedCandidatePolicy() types.MonetaryPolicy {
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
 		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.25"),
+		LiabilityRatioWeight:        math.LegacyMustNewDecFromStr("0.5"),
+		VolatilityWeight:            math.LegacyMustNewDecFromStr("0.5"),
+		FlowWeight:                  math.LegacyMustNewDecFromStr("0.5"),
 	}
 }

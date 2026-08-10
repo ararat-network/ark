@@ -12,12 +12,14 @@ const (
 )
 
 var (
-	ParamsKey               = collections.NewPrefix(0)
-	TaxCapsKey              = collections.NewPrefix(1)
-	RewardFundingKey        = collections.NewPrefix(2)
-	MonetaryMandateKey      = collections.NewPrefix(3)
-	MonetaryPolicyKey       = collections.NewPrefix(4)
-	TaxCapRefreshPendingKey = collections.NewPrefix(5)
+	ParamsKey                 = collections.NewPrefix(0)
+	TaxCapsKey                = collections.NewPrefix(1)
+	RewardFundingKey          = collections.NewPrefix(2)
+	MonetaryMandateKey        = collections.NewPrefix(3)
+	MonetaryPolicyKey         = collections.NewPrefix(4)
+	TaxCapRefreshPendingKey   = collections.NewPrefix(5)
+	ExposureStateKey          = collections.NewPrefix(6)
+	ExposureRefreshPendingKey = collections.NewPrefix(7)
 )
 
 // FundAccountNames returns the custody accounts Treasury itself operates.

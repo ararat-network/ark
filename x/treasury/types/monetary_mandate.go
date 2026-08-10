@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"cosmossdk.io/math"
+
 	"ark/pkg/mandate"
 )
 
@@ -56,60 +58,106 @@ func (mandate MonetaryMandate) Validate() error {
 }
 
 // ValidatePolicy checks a committee policy against every mandate bound.
+//
+// Two tables, split only by the type each bound compares. Every lever is
+// clamped identically — inside [minimum, maximum], inclusive at both ends — so
+// the rule lives once and each lever is a row naming itself; Dec and Int need
+// separate tables because only their comparison differs.
+//
+// A lever missing from these tables is a lever the committee may set freely,
+// which is why adding one is a row rather than a block: the omission would be
+// invisible in a wall of near-identical conditionals.
 func (mandate MonetaryMandate) ValidatePolicy(policy MonetaryPolicy) error {
-	if policy.StabilityTaxRate.LT(mandate.MinimumPolicy.StabilityTaxRate) ||
-		policy.StabilityTaxRate.GT(mandate.MaximumPolicy.StabilityTaxRate) {
-		return fmt.Errorf(
-			"stability tax rate %s is outside mandate range [%s, %s]",
+	minimum, maximum := mandate.MinimumPolicy, mandate.MaximumPolicy
+
+	for _, bound := range []struct {
+		name    string
+		value   math.LegacyDec
+		minimum math.LegacyDec
+		maximum math.LegacyDec
+	}{
+		{
+			"stability tax rate",
 			policy.StabilityTaxRate,
-			mandate.MinimumPolicy.StabilityTaxRate,
-			mandate.MaximumPolicy.StabilityTaxRate,
-		)
-	}
-	if policy.RedemptionBufferTargetRatio.LT(mandate.MinimumPolicy.RedemptionBufferTargetRatio) ||
-		policy.RedemptionBufferTargetRatio.GT(mandate.MaximumPolicy.RedemptionBufferTargetRatio) {
-		return fmt.Errorf(
-			"redemption Buffer target ratio %s is outside mandate range [%s, %s]",
+			minimum.StabilityTaxRate,
+			maximum.StabilityTaxRate,
+		},
+		{
+			"redemption Buffer target ratio",
 			policy.RedemptionBufferTargetRatio,
-			mandate.MinimumPolicy.RedemptionBufferTargetRatio,
-			mandate.MaximumPolicy.RedemptionBufferTargetRatio,
-		)
-	}
-	if policy.StrategicReserveTargetRatio.LT(mandate.MinimumPolicy.StrategicReserveTargetRatio) ||
-		policy.StrategicReserveTargetRatio.GT(mandate.MaximumPolicy.StrategicReserveTargetRatio) {
-		return fmt.Errorf(
-			"strategic Reserve target ratio %s is outside mandate range [%s, %s]",
+			minimum.RedemptionBufferTargetRatio,
+			maximum.RedemptionBufferTargetRatio,
+		},
+		{
+			"strategic Reserve target ratio",
 			policy.StrategicReserveTargetRatio,
-			mandate.MinimumPolicy.StrategicReserveTargetRatio,
-			mandate.MaximumPolicy.StrategicReserveTargetRatio,
-		)
-	}
-	if policy.InsuranceTargetRatio.LT(mandate.MinimumPolicy.InsuranceTargetRatio) ||
-		policy.InsuranceTargetRatio.GT(mandate.MaximumPolicy.InsuranceTargetRatio) {
-		return fmt.Errorf(
-			"insurance target ratio %s is outside mandate range [%s, %s]",
+			minimum.StrategicReserveTargetRatio,
+			maximum.StrategicReserveTargetRatio,
+		},
+		{
+			"insurance target ratio",
 			policy.InsuranceTargetRatio,
-			mandate.MinimumPolicy.InsuranceTargetRatio,
-			mandate.MaximumPolicy.InsuranceTargetRatio,
-		)
+			minimum.InsuranceTargetRatio,
+			maximum.InsuranceTargetRatio,
+		},
+		{
+			"exposure liability ratio weight",
+			policy.LiabilityRatioWeight,
+			minimum.LiabilityRatioWeight,
+			maximum.LiabilityRatioWeight,
+		},
+		{
+			"exposure volatility weight",
+			policy.VolatilityWeight,
+			minimum.VolatilityWeight,
+			maximum.VolatilityWeight,
+		},
+		{
+			"exposure flow weight",
+			policy.FlowWeight,
+			minimum.FlowWeight,
+			maximum.FlowWeight,
+		},
+	} {
+		if bound.value.LT(bound.minimum) || bound.value.GT(bound.maximum) {
+			return fmt.Errorf(
+				"%s %s is outside mandate range [%s, %s]",
+				bound.name,
+				bound.value,
+				bound.minimum,
+				bound.maximum,
+			)
+		}
 	}
-	if policy.ValidatorBlockRewardTarget.LT(mandate.MinimumPolicy.ValidatorBlockRewardTarget) ||
-		policy.ValidatorBlockRewardTarget.GT(mandate.MaximumPolicy.ValidatorBlockRewardTarget) {
-		return fmt.Errorf(
-			"validator block reward target %s is outside mandate range [%s, %s]",
+
+	for _, bound := range []struct {
+		name    string
+		value   math.Int
+		minimum math.Int
+		maximum math.Int
+	}{
+		{
+			"validator block reward target",
 			policy.ValidatorBlockRewardTarget,
-			mandate.MinimumPolicy.ValidatorBlockRewardTarget,
-			mandate.MaximumPolicy.ValidatorBlockRewardTarget,
-		)
-	}
-	if policy.OracleBlockRewardTarget.LT(mandate.MinimumPolicy.OracleBlockRewardTarget) ||
-		policy.OracleBlockRewardTarget.GT(mandate.MaximumPolicy.OracleBlockRewardTarget) {
-		return fmt.Errorf(
-			"oracle block reward target %s is outside mandate range [%s, %s]",
+			minimum.ValidatorBlockRewardTarget,
+			maximum.ValidatorBlockRewardTarget,
+		},
+		{
+			"oracle block reward target",
 			policy.OracleBlockRewardTarget,
-			mandate.MinimumPolicy.OracleBlockRewardTarget,
-			mandate.MaximumPolicy.OracleBlockRewardTarget,
-		)
+			minimum.OracleBlockRewardTarget,
+			maximum.OracleBlockRewardTarget,
+		},
+	} {
+		if bound.value.LT(bound.minimum) || bound.value.GT(bound.maximum) {
+			return fmt.Errorf(
+				"%s %s is outside mandate range [%s, %s]",
+				bound.name,
+				bound.value,
+				bound.minimum,
+				bound.maximum,
+			)
+		}
 	}
 
 	return nil
