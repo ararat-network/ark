@@ -3,7 +3,7 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/wasm/`. The chain currently uses **cosmos-sdk v0.54.2** with
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/claims/`, `x/reserve/`, `x/wasm/`. The chain currently uses **cosmos-sdk v0.54.2** with
 depinject and `cosmossdk.io/*` packages; always verify `go.mod` before SDK-specific work because the SDK version can
 move.
 
@@ -28,7 +28,7 @@ Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern pat
 
 Reference codebases:
 
-- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
+- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/`, `x/claims/`, `x/reserve/` (this repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Connect reference**: `../connect/`; when the user says `connect`, use this repo.
 - **Terra Feeder reference**: `../oracle-feeder/`; when the user says `feeder`, use this repo.
@@ -41,6 +41,8 @@ Reference codebases:
 x/market/       # DEX swap module (Noah ↔ stablecoins)
 x/oracle/       # Price oracle module (validator price voting)
 x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
+x/claims/       # Insurance claims module (Claims mandate, claim record, Insurance custody)
+x/reserve/      # Strategic Reserve module (custody, governed Buffer transfer)
 x/wasm/         # CosmWasm smart contract module (exported interfaces)
 abci/           # Vote-extension, proposal, and preblock oracle pipeline
 oracle/         # Off-chain oracle runtime, providers, transport, and validation
@@ -96,6 +98,30 @@ When porting from Classic, always modernize:
 - Cargo-culted methods on custom types (e.g., `Marshal`, `Unmarshal`, `MarshalJSON`, `Empty`, `Bytes`, `Format`) →
   remove unless actually used. Classic copied these from `sdk.AccAddress` onto types like `AggregateVoteHash`.
 
+## Arithmetic Rules
+
+These are consensus rules, not style. All three were violated in reviewed code before being written down here.
+
+- **Round in the direction of what the number funds.** A division producing a payment floors; a division sizing a
+  requirement ceils; round-to-nearest is only for figures nothing pays from. Fund targets use
+  `MulRoundUp(...).Ceil()`; the subsidy split and the redemption coverage draw floor.
+- **Multiply before dividing, and check the product.** Forming a ratio first rounds an intermediate against its own
+  bound, and the other operand then amplifies that error past the bound — the coverage draw could exceed the Buffer
+  it was paid from. Multiplying first leaves one rounding on a quantity whose bounds are whole base units, which
+  monotone rounding cannot cross, so the bound becomes a theorem rather than a guarded hope. Use `SafeMul` for the
+  product: unlike `Mul` it errors rather than panicking.
+- **Bound governance inputs with domain caps, not projections.** For a governance-set number feeding halt-class
+  arithmetic, cap the field in its own `Validate` with orders of magnitude of headroom
+  (`MaxBlockRewardTarget`, `MaxRewardFundingWindow`). Reach for a projection — "this value plus live state over N
+  blocks will still fit" — only when the domain genuinely cannot be bounded, and treat needing one as a signal that
+  something in the state design is compounding: a projection has to be re-proved by every future writer of every
+  input it reads, and its verdict moves with live state, so the same value can be valid today and invalid next month.
+
+The reason the third rule matters: **inside a BeginBlocker or EndBlocker a checked error and a panic are the same
+outcome — the block fails and the chain halts.** Checked arithmetic buys a diagnosable message, never liveness. The
+defence is refusing the input at the write, where a human is in the loop; `Safe*` is the loud backstop behind it.
+Keep the backstop even when it is provably unreachable, and say so in a comment naming what makes it unreachable.
+
 ## Git Workflow
 
 - Before running any `git push` commands, verify that a remote is configured with `git remote -v`
@@ -108,7 +134,9 @@ When porting from Classic, always modernize:
 ## General Rules
 
 - Before making any changes, first outline exactly what files you'll modify and what the changes will be. Show the key
-  diffs. Wait for approval before editing. This is especially important for proto files and keeper/module wiring.
+  diffs. Wait for approval before editing. This is especially important for proto files, keeper/module wiring, and
+  parameter validation — a validation that is too loose, too strict, or the wrong shape is a halt or a governance
+  deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
 
