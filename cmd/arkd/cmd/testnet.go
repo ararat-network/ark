@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	cmtconfig "github.com/cometbft/cometbft/config"
 	cmttime "github.com/cometbft/cometbft/types/time"
@@ -89,23 +88,14 @@ type startArgs struct {
 }
 
 func addTestnetFlagsToCmd(cmd *cobra.Command) {
-	cmd.Flags().IntP(flagNumValidators, "v", 4, "Number of validators to initialize the testnet with")
+	cmd.Flags().IntP(flagNumValidators, "v", 4, "Number of validators to initialise the testnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./.testnets", "Directory to store initialization data for the testnet")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("6000000%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyType, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-
-	// support old flags name for backwards compatibility
-	cmd.Flags().SetNormalizeFunc(func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		if name == flags.FlagKeyAlgorithm {
-			name = flags.FlagKeyType
-		}
-
-		return pflag.NormalizedName(name)
-	})
 }
 
-// NewTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialize
+// NewTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialise
 // validator configuration files for running a multi-validator testnet in a separate process
 func NewTestnetCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	testnetCmd := &cobra.Command{
@@ -122,11 +112,11 @@ func NewTestnetCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalan
 	return testnetCmd
 }
 
-// testnetInitFilesCmd returns a cmd to initialize all files for CometBFT testnet and application
+// testnetInitFilesCmd returns a cmd to initialise all files for CometBFT testnet and application
 func testnetInitFilesCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init-files",
-		Short: "Initialize config directories & files for a multi-validator testnet running locally via separate processes (e.g. Docker Compose or similar)",
+		Short: "Initialise config directories & files for a multi-validator testnet running locally via separate processes (e.g. Docker Compose or similar)",
 		Long: fmt.Sprintf(`init-files will setup one directory per validator and populate each with
 necessary files (private validator, genesis, config, etc.) for running validator nodes.
 
@@ -223,7 +213,7 @@ Example:
 
 const nodeDirPerm = 0o755
 
-// initTestnetFiles initializes testnet files for a testnet to be run in a separate process
+// initTestnetFiles initialises testnet files for a testnet to be run in a separate process
 func initTestnetFiles(
 	clientCtx client.Context,
 	cmd *cobra.Command,
@@ -428,7 +418,7 @@ func initTestnetFiles(
 		}
 	}
 
-	cmd.PrintErrf("Successfully initialized %d node directories\n", args.numValidators)
+	cmd.PrintErrf("Successfully initialised %d node directories\n", args.numValidators)
 	return nil
 }
 
