@@ -33,8 +33,9 @@ type ModuleInputs struct {
 	Cdc          codec.Codec
 	StoreService store.KVStoreService
 
-	BankKeeper   types.BankKeeper
-	OracleKeeper types.OracleKeeper
+	AccountKeeper types.AccountKeeper
+	BankKeeper    types.BankKeeper
+	OracleKeeper  types.OracleKeeper
 }
 
 // ModuleOutputs defines the x/asset keeper and application module outputs.
@@ -51,6 +52,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.Cdc,
 		in.StoreService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		in.AccountKeeper,
 		in.BankKeeper,
 		in.OracleKeeper,
 	)

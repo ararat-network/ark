@@ -21,9 +21,13 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 	if err != nil {
 		return fmt.Errorf("getting emergency mandate: %w", err)
 	}
-	envelope, err := mandate.Next(current.Envelope, committee, activationHeight, expiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, committee, activationHeight, expiryHeight)
 	if err != nil {
 		return err
+	}
+	// A disabling has no committee to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(k.accountKeeper.GetAccount(ctx, committeeAddress))
 	}
 
 	// The mandate carries no fields of its own, so the derived envelope is the
@@ -45,6 +49,7 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 			Committee:        updated.Committee,
 			ActivationHeight: updated.ActivationHeight,
 			ExpiryHeight:     updated.ExpiryHeight,
+			CommitteeShape:   updated.CommitteeShape,
 		},
 	); err != nil {
 		return fmt.Errorf("emitting emergency mandate: %w", err)

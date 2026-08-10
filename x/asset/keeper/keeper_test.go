@@ -30,10 +30,11 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx          context.Context
-	keeper       *keeper.Keeper
-	bankKeeper   *testutil.MockBankKeeper
-	oracleKeeper *testutil.MockOracleKeeper
+	ctx           context.Context
+	keeper        *keeper.Keeper
+	accountKeeper *testutil.MockAccountKeeper
+	bankKeeper    *testutil.MockBankKeeper
+	oracleKeeper  *testutil.MockOracleKeeper
 
 	// feedPhases overrides the phase the oracle mock reports per feed. Feeds
 	// default to Active, which is the launch state for every seeded asset.
@@ -60,12 +61,17 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.ctx = testCtx.Ctx
 
 	ctrl := gomock.NewController(s.T())
+	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 	s.oracleKeeper = testutil.NewMockOracleKeeper(ctrl)
+	// Committee accounts default to absent, which an appointment records as the
+	// shape it observed rather than refusing.
+	s.accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.keeper = keeper.NewKeeper(
 		cdc,
 		storeService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		s.accountKeeper,
 		s.bankKeeper,
 		s.oracleKeeper,
 	)

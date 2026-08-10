@@ -13,11 +13,20 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	chain "ark/pkg/chain"
+	"ark/pkg/mandate"
 	assettypes "ark/x/asset/types"
 	"ark/x/market/keeper"
 	"ark/x/market/types"
 	oracletypes "ark/x/oracle/types"
 )
+
+// absentCommitteeShape is the observation an appointment records for a
+// committee address holding no account, which is every committee here: these
+// suites drive the keeper directly rather than through a signed transaction,
+// so no committee account is ever created.
+var absentCommitteeShape = mandate.CommitteeShape{
+	KeyKind: mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT,
+}
 
 const (
 	capacityActivation = 10
@@ -122,6 +131,7 @@ func (s *KeeperTestSuite) TestSetMandate() {
 		Committee:        capacityCommittee(),
 		ActivationHeight: capacityActivation,
 		ExpiryHeight:     capacityExpiry,
+		CommitteeShape:   absentCommitteeShape,
 	})
 
 	// Replacement advances the term, so a transaction prepared under the old

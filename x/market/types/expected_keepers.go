@@ -13,6 +13,9 @@ import (
 
 // AccountKeeper is expected keeper for auth module
 type AccountKeeper interface {
+	// GetAccount resolves the committee account whose shape an appointment
+	// records. It returns nil for an address holding no account.
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 	GetModuleAddress(name string) sdk.AccAddress
 	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 }

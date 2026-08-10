@@ -4,8 +4,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	"ark/pkg/mandate"
 	"ark/x/asset/types"
 )
+
+// absentCommitteeShape is the observation an appointment records for a
+// committee address holding no account, which is every committee here: these
+// suites drive the keeper directly rather than through a signed transaction,
+// so no committee account is ever created.
+var absentCommitteeShape = mandate.CommitteeShape{
+	KeyKind: mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT,
+}
 
 func emergencyCommittee() string {
 	return authtypes.NewModuleAddress("asset-emergency-committee").String()
@@ -64,6 +73,7 @@ func (s *KeeperTestSuite) TestSetMandateAdvancesTerm() {
 			Committee:        emergencyCommittee(),
 			ActivationHeight: 1,
 			ExpiryHeight:     1_000,
+			CommitteeShape:   absentCommitteeShape,
 		},
 		&types.EventEmergencyMandateSet{Term: 2},
 	)

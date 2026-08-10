@@ -43,7 +43,7 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 	if err != nil {
 		return nil, fmt.Errorf("getting Reserve mandate: %w", err)
 	}
-	envelope, err := mandate.Next(
+	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
 		msg.ActivationHeight,
@@ -51,6 +51,10 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 	)
 	if err != nil {
 		return nil, err
+	}
+	// A disabling has no committee to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
 	}
 	reserveMandate := types.NewDisabledReserveMandate(envelope.Term)
 	reserveMandate.Envelope = envelope
@@ -76,6 +80,7 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 		Committee:        reserveMandate.Committee,
 		ActivationHeight: reserveMandate.ActivationHeight,
 		ExpiryHeight:     reserveMandate.ExpiryHeight,
+		CommitteeShape:   reserveMandate.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Reserve mandate: %w", err)
 	}

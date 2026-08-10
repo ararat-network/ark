@@ -9,6 +9,14 @@ import (
 	oracletypes "ark/x/oracle/types"
 )
 
+// AccountKeeper defines the auth functionality required by Asset, which is
+// only the committee account an emergency appointment observes.
+type AccountKeeper interface {
+	// GetAccount resolves the committee account whose shape an appointment
+	// records. It returns nil for an address holding no account.
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
+}
+
 // BankKeeper defines the supply and metadata functionality required by Asset.
 type BankKeeper interface {
 	GetSupply(ctx context.Context, denom string) sdk.Coin

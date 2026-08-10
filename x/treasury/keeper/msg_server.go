@@ -95,9 +95,13 @@ func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMone
 	if err != nil {
 		return nil, fmt.Errorf("getting monetary mandate: %w", err)
 	}
-	envelope, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
 	if err != nil {
 		return nil, err
+	}
+	// A disabling has no committee to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
 	}
 	updated := types.NewDisabledMonetaryMandate(envelope.Term)
 	updated.Envelope = envelope
@@ -120,6 +124,7 @@ func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMone
 		Committee:        updated.Committee,
 		ActivationHeight: updated.ActivationHeight,
 		ExpiryHeight:     updated.ExpiryHeight,
+		CommitteeShape:   updated.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Treasury monetary mandate: %w", err)
 	}

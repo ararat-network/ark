@@ -11,11 +11,12 @@ import (
 
 // Keeper stores asset registry and lifecycle state.
 type Keeper struct {
-	cdc          codec.BinaryCodec
-	storeService store.KVStoreService
-	authority    string
-	bankKeeper   types.BankKeeper
-	oracleKeeper types.OracleKeeper
+	cdc           codec.BinaryCodec
+	storeService  store.KVStoreService
+	authority     string
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
+	oracleKeeper  types.OracleKeeper
 
 	Schema               collections.Schema
 	Params               collections.Item[types.Params]
@@ -31,16 +32,18 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
 	authority string,
+	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 ) *Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
 	k := &Keeper{
-		cdc:          cdc,
-		storeService: storeService,
-		authority:    authority,
-		bankKeeper:   bankKeeper,
-		oracleKeeper: oracleKeeper,
+		cdc:           cdc,
+		storeService:  storeService,
+		authority:     authority,
+		accountKeeper: accountKeeper,
+		bankKeeper:    bankKeeper,
+		oracleKeeper:  oracleKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,

@@ -14,9 +14,18 @@ import (
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	chain "ark/pkg/chain"
+	"ark/pkg/mandate"
 	oracletypes "ark/x/oracle/types"
 	"ark/x/treasury/types"
 )
+
+// absentCommitteeShape is the observation an appointment records for a
+// committee address holding no account, which is every committee here: these
+// suites drive the keeper directly rather than through a signed transaction,
+// so no committee account is ever created.
+var absentCommitteeShape = mandate.CommitteeShape{
+	KeyKind: mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT,
+}
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	policyBefore, err := s.keeper.MonetaryPolicy.Get(s.ctx)
@@ -298,6 +307,7 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 		Committee:        committee,
 		ActivationHeight: 10,
 		ExpiryHeight:     20,
+		CommitteeShape:   absentCommitteeShape,
 	})
 
 	policy := committeePolicyCandidate()

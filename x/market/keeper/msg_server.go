@@ -141,9 +141,13 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 	if err != nil {
 		return nil, fmt.Errorf("getting conversion mandate: %w", err)
 	}
-	envelope, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
 	if err != nil {
 		return nil, err
+	}
+	// A disabling has no committee to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
 	}
 
 	updated := types.NewDisabledConversionMandate(envelope.Term)
@@ -199,6 +203,7 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		Committee:        updated.Committee,
 		ActivationHeight: updated.ActivationHeight,
 		ExpiryHeight:     updated.ExpiryHeight,
+		CommitteeShape:   updated.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Market conversion mandate: %w", err)
 	}

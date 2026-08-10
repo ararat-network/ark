@@ -55,7 +55,7 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 	if err != nil {
 		return nil, fmt.Errorf("getting Claims mandate: %w", err)
 	}
-	envelope, err := mandate.Next(
+	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
 		msg.ActivationHeight,
@@ -63,6 +63,10 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 	)
 	if err != nil {
 		return nil, err
+	}
+	// A disabling has no committee to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
 	}
 	claimsMandate := types.NewDisabledClaimsMandate(envelope.Term)
 	claimsMandate.Envelope = envelope
@@ -111,6 +115,7 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		Committee:        claimsMandate.Committee,
 		ActivationHeight: claimsMandate.ActivationHeight,
 		ExpiryHeight:     claimsMandate.ExpiryHeight,
+		CommitteeShape:   claimsMandate.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Claims mandate: %w", err)
 	}

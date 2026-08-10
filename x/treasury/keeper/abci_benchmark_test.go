@@ -170,6 +170,9 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	}
 
 	treasuryAccountKeeper := treasurytestutil.NewMockAccountKeeper(ctrl)
+	// Committee accounts default to absent, which an appointment records as
+	// the shape it observed rather than refusing.
+	treasuryAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	for _, moduleName := range treasurytypes.FundAccountNames() {
 		treasuryAccountKeeper.EXPECT().GetModuleAddress(moduleName).
 			Return(authtypes.NewModuleAddress(moduleName))

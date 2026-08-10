@@ -48,6 +48,9 @@ func (s *AccumulatorTestSuite) SetupTest() {
 
 	ctrl := gomock.NewController(s.T())
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
+	// Committee accounts default to absent, which an appointment records as
+	// the shape it observed rather than refusing.
+	accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
 
 	s.keeper = NewKeeper(
