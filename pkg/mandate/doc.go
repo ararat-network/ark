@@ -5,16 +5,19 @@
 // A mandate is one bounded, expiring delegation of a power governance already
 // holds. Governance appoints an exact account for a half-open height window;
 // the committee acts faster than a voting period allows; the appointment
-// expires on its own. Four mandates exist today — Treasury's monetary-policy
-// and Claims mandates, Market's conversion mandate, and Asset's emergency
-// mandate — and the sections below are the convention a fifth follows.
+// expires on its own. Six mandates exist today — Treasury's monetary-policy
+// mandate, Claims's, Market's conversion mandate, Asset's emergency mandate,
+// Reserve's, and Security's — and the sections below are the convention a
+// seventh follows.
 //
 // # What this package owns
 //
 // Appointment shape and staleness only: term monotonicity ([Envelope.NextTerm],
 // [Next]), the two canonical envelope shapes, the half-open active window
-// ([Envelope.IsActive]), and the signer-then-term-then-window authorization
-// ordering ([Envelope.Authorise]). Nothing here reads module state, so a
+// ([Envelope.IsActive]), the signer-then-term-then-window authorization
+// ordering ([Envelope.Authorise]), and the committee observation
+// ([Envelope.Observe], [Shape]). Nothing here reads module state — the
+// observation classifies an account the module resolved and passed in — so a
 // mandate's powers, bounds, and usage metering are invisible to it by
 // construction.
 //
@@ -36,9 +39,12 @@
 // re-appointed. Derive the successor envelope with [Next], assemble the module
 // mandate around it, then validate the whole:
 //
-//	env, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+//	env, committee, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
 //	if err != nil {
 //		return nil, err
+//	}
+//	if !env.IsDisabled() {
+//		env.Observe(k.accountKeeper.GetAccount(ctx, committee))
 //	}
 //	updated := types.NewDisabled<Name>Mandate(env.Term)
 //	updated.Envelope = env
@@ -60,17 +66,25 @@
 // that delegates nothing. Distinctness *across* modules is deliberately not
 // chain-enforced: it is a governance-process concern, and enforcing it would
 // put a cross-module keeper read on the appointment path for an invariant
-// governance is better placed to hold. Committee membership is likewise not
-// this package's problem — a committee is an ordinary account, so a multisig
-// composes at the account layer with no mandate-level support.
+// governance is better placed to hold.
+//
+// A committee is an ordinary account, so a threshold multisig composes at the
+// account layer and nothing here gates on one. What appointment does record is
+// [Envelope.Observe]: what the chain could prove about the account, classified
+// by [Shape] from the account the module resolved. An address is opaque, so
+// without this nothing on chain answers "is this committee still 3-of-5" — the
+// address commits to that K-of-N, but only the appointment is placed to read it
+// and write it down. The shape authorises nothing, and a zeroed one is a
+// committee whose backing could not be established rather than one refused.
 //
 // # Replacing
 //
 // Replacement advances the term, which is what makes term-scoped usage
 // term-scoped: reset it in the same handler that stores the new appointment, so
-// the appointment and the usage keyed to it can never skew. Treasury's Claims
-// mandate resets its allowance; Asset's emergency mandate clears its recorded
-// per-term suspensions. A mandate with no usage to reset resets nothing.
+// the appointment and the usage keyed to it can never skew. The Claims and
+// Reserve mandates each reset an allowance; Asset's emergency mandate clears
+// its recorded per-term suspensions. A mandate with no usage to reset resets
+// nothing.
 //
 // # Acting
 //
@@ -91,8 +105,9 @@
 //
 // Appointment, replacement, and disabling each emit Event<Name>MandateSet
 // carrying exactly the envelope fields — term, committee, activation height,
-// expiry height — with the empty committee identifying a disabling. These
-// events are the chain-wide record of who holds delegated power at any height,
-// so a mandate that does not emit one is invisible to anything indexing it.
+// expiry height, committee shape — with the empty committee identifying a
+// disabling. These events are the chain-wide record of who holds delegated
+// power at any height, and of what backed them, so a mandate that does not emit
+// one is invisible to anything indexing it.
 // Genesis import emits nothing; it is a state load, not an appointment.
 package mandate

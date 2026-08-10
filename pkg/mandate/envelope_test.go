@@ -213,7 +213,7 @@ func TestNext(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			envelope, err := mandate.Next(
+			envelope, committeeAddress, err := mandate.Next(
 				testCase.current(),
 				testCase.committee,
 				testCase.activationHeight,
@@ -222,11 +222,19 @@ func TestNext(t *testing.T) {
 			if testCase.expectErr != "" {
 				require.ErrorContains(t, err, testCase.expectErr)
 				require.Equal(t, mandate.Envelope{}, envelope)
+				require.Nil(t, committeeAddress)
 				return
 			}
 
 			require.NoError(t, err)
 			require.Equal(t, testCase.expect, envelope)
+			// The decoded committee accompanies an appointment and is absent
+			// from a disablement, so a caller never resolves an empty address.
+			if envelope.IsDisabled() {
+				require.Nil(t, committeeAddress)
+				return
+			}
+			require.Equal(t, envelope.Committee, committeeAddress.String())
 		})
 	}
 }

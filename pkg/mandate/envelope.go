@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"ark/pkg/chain"
 )
 
@@ -40,6 +42,9 @@ func (e Envelope) Validate() error {
 		if e.ActivationHeight != 0 || e.ExpiryHeight != 0 {
 			return errors.New("disabled envelope must not have an activation or expiry height")
 		}
+		if !e.CommitteeShape.IsZero() {
+			return errors.New("disabled envelope must not carry a committee shape")
+		}
 
 		return nil
 	}
@@ -51,6 +56,16 @@ func (e Envelope) Validate() error {
 	}
 	if e.ActivationHeight >= e.ExpiryHeight {
 		return errors.New("activation height must precede expiry height")
+	}
+	// The shape is observation, never authorisation, so an enabled envelope is
+	// not required to carry one: an unclassified committee reads as unknown,
+	// which is what a hand-written genesis that omits it means. Only the
+	// internal coherence of a shape that is present is checked.
+	if (e.CommitteeShape.Threshold == 0) != (e.CommitteeShape.MemberCount == 0) {
+		return errors.New("committee threshold and member count must be zero together")
+	}
+	if e.CommitteeShape.Threshold > e.CommitteeShape.MemberCount {
+		return errors.New("committee threshold cannot exceed the member count")
 	}
 
 	return nil
@@ -71,32 +86,73 @@ func (e Envelope) NextTerm() (uint64, error) {
 // disablement retains its successor term too. The committee is stored in its
 // canonical spelling whatever letter case the message carried, so everything
 // downstream — Validate, authority-distinctness checks, events — reads one
-// spelling.
+// spelling. The decoded committee is handed back with it — nil for a
+// disablement — because canonicalising already decoded it, and a caller that
+// needs the account would otherwise re-parse a spelling this function just
+// produced, carrying an error branch that cannot be reached.
 //
 // Next owns derivation only. Judgment of the assembled appointment stays with
 // the embedding mandate, whose Validate is the single guardian for every entry
 // point — genesis import reaches state without passing here — and which names
 // itself when wrapping envelope errors. Callers must validate the mandate they
 // assemble around this envelope.
-func Next(current Envelope, committee string, activationHeight uint64, expiryHeight uint64) (Envelope, error) {
+func Next(
+	current Envelope,
+	committee string,
+	activationHeight uint64,
+	expiryHeight uint64,
+) (Envelope, sdk.AccAddress, error) {
 	term, err := current.NextTerm()
 	if err != nil {
-		return Envelope{}, err
+		return Envelope{}, nil, err
 	}
 	if committee == "" {
-		return Disabled(term), nil
+		return Disabled(term), nil, nil
 	}
-	canonical, err := chain.CanonicaliseAccountAddress("committee", committee)
+	// Decoded here rather than through chain.CanonicaliseAccountAddress because
+	// both halves of that decode are wanted: the bytes for the caller and the
+	// canonical spelling for state.
+	address, err := sdk.AccAddressFromBech32(committee)
 	if err != nil {
-		return Envelope{}, err
+		return Envelope{}, nil, fmt.Errorf("committee is invalid: %w", err)
 	}
 
 	return Envelope{
 		Term:             term,
-		Committee:        canonical,
+		Committee:        address.String(),
 		ActivationHeight: activationHeight,
 		ExpiryHeight:     expiryHeight,
-	}, nil
+	}, address, nil
+}
+
+// Observe records what the chain can prove about this appointment's committee,
+// from the account the module resolved for it. A disabled envelope observes
+// nothing, keeping the canonical disabled shape zero. [Shape] does the
+// classifying, so this package still reads no module state.
+//
+// This runs at appointment and never again, which is sound because the
+// committee address is the hash of the key it commits to: the account named by
+// an appointment cannot come to require fewer signatures than it did when
+// governance appointed it. Nothing here gates an action — the shape is the
+// record of who holds delegated power, for the operators and indexers reading
+// it, not a second authorization.
+//
+// Embedders promote this method rather than shadowing it, so calling it on the
+// assembled mandate records the shape on the envelope it wraps.
+//
+// An account that is not the appointed committee records nothing. Resolving the
+// account is the module's half, so this is the one thing that can be mispaired
+// — and a shape describing some other address, in the field whose whole purpose
+// is naming what backs this committee, is worse than no shape at all.
+func (e *Envelope) Observe(account sdk.AccountI) {
+	if e.IsDisabled() {
+		return
+	}
+	if account != nil && account.GetAddress().String() != e.Committee {
+		e.CommitteeShape = CommitteeShape{}
+		return
+	}
+	e.CommitteeShape = Shape(account)
 }
 
 // RequireTerm checks the exact term a committee message must carry. Term is

@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
+	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
@@ -24,6 +25,148 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// CommitteeKeyKind names what backs authorisation for a committee account. The
+// set of key types is closed by the interface registry — an unregistered key
+// cannot decode into an account — so every account the chain can hold maps to
+// exactly one value here, with OTHER absorbing a type this binary predates.
+type CommitteeKeyKind int32
+
+const (
+	// COMMITTEE_KEY_KIND_UNSPECIFIED is the disabled mandate's zero shape.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_UNSPECIFIED CommitteeKeyKind = 0
+	// COMMITTEE_KEY_KIND_ABSENT is an address holding no account.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT CommitteeKeyKind = 1
+	// COMMITTEE_KEY_KIND_KEYLESS is an account with no registered key: an unused
+	// key pair, a contract, an interchain account, or a module account.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_KEYLESS CommitteeKeyKind = 2
+	// COMMITTEE_KEY_KIND_SINGLE is one simple key.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_SINGLE CommitteeKeyKind = 3
+	// COMMITTEE_KEY_KIND_MULTISIG is a legacy amino threshold multisig.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG CommitteeKeyKind = 4
+	// COMMITTEE_KEY_KIND_MODULE is a module credential, authorising by module
+	// logic rather than by a key.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_MODULE CommitteeKeyKind = 5
+	// COMMITTEE_KEY_KIND_OTHER is a registered key type this binary predates,
+	// which must not be read as any of the shapes above.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_OTHER CommitteeKeyKind = 6
+)
+
+var CommitteeKeyKind_name = map[int32]string{
+	0: "COMMITTEE_KEY_KIND_UNSPECIFIED",
+	1: "COMMITTEE_KEY_KIND_ABSENT",
+	2: "COMMITTEE_KEY_KIND_KEYLESS",
+	3: "COMMITTEE_KEY_KIND_SINGLE",
+	4: "COMMITTEE_KEY_KIND_MULTISIG",
+	5: "COMMITTEE_KEY_KIND_MODULE",
+	6: "COMMITTEE_KEY_KIND_OTHER",
+}
+
+var CommitteeKeyKind_value = map[string]int32{
+	"COMMITTEE_KEY_KIND_UNSPECIFIED": 0,
+	"COMMITTEE_KEY_KIND_ABSENT":      1,
+	"COMMITTEE_KEY_KIND_KEYLESS":     2,
+	"COMMITTEE_KEY_KIND_SINGLE":      3,
+	"COMMITTEE_KEY_KIND_MULTISIG":    4,
+	"COMMITTEE_KEY_KIND_MODULE":      5,
+	"COMMITTEE_KEY_KIND_OTHER":       6,
+}
+
+func (x CommitteeKeyKind) String() string {
+	return proto.EnumName(CommitteeKeyKind_name, int32(x))
+}
+
+func (CommitteeKeyKind) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_dc034797e1042eb6, []int{0}
+}
+
+// CommitteeShape is what the chain could prove about the committee account at
+// appointment. It is observation, never authorisation: a zeroed shape is a
+// committee whose backing could not be established, not one that was rejected.
+type CommitteeShape struct {
+	// account_type is the account's proto message name, empty when no account
+	// existed. It names an interchain account or any future account type without
+	// this package depending on the stack defining it.
+	AccountType string           `protobuf:"bytes,1,opt,name=account_type,json=accountType,proto3" json:"account_type,omitempty"`
+	KeyKind     CommitteeKeyKind `protobuf:"varint,2,opt,name=key_kind,json=keyKind,proto3,enum=ark.mandate.v1.CommitteeKeyKind" json:"key_kind,omitempty"`
+	// module is the module controlling the address, from a module credential or
+	// a module account, empty otherwise.
+	Module string `protobuf:"bytes,3,opt,name=module,proto3" json:"module,omitempty"`
+	// threshold and member_count read as K-of-N, and are nonzero only for a
+	// multisig of pairwise-distinct simple keys. A duplicate or nested member
+	// leaves them zero under COMMITTEE_KEY_KIND_MULTISIG, which is exactly the
+	// shape governance must not read as verified.
+	Threshold   uint32 `protobuf:"varint,4,opt,name=threshold,proto3" json:"threshold,omitempty"`
+	MemberCount uint32 `protobuf:"varint,5,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
+}
+
+func (m *CommitteeShape) Reset()         { *m = CommitteeShape{} }
+func (m *CommitteeShape) String() string { return proto.CompactTextString(m) }
+func (*CommitteeShape) ProtoMessage()    {}
+func (*CommitteeShape) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dc034797e1042eb6, []int{0}
+}
+func (m *CommitteeShape) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitteeShape) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitteeShape.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitteeShape) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitteeShape.Merge(m, src)
+}
+func (m *CommitteeShape) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitteeShape) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitteeShape.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitteeShape proto.InternalMessageInfo
+
+func (m *CommitteeShape) GetAccountType() string {
+	if m != nil {
+		return m.AccountType
+	}
+	return ""
+}
+
+func (m *CommitteeShape) GetKeyKind() CommitteeKeyKind {
+	if m != nil {
+		return m.KeyKind
+	}
+	return CommitteeKeyKind_COMMITTEE_KEY_KIND_UNSPECIFIED
+}
+
+func (m *CommitteeShape) GetModule() string {
+	if m != nil {
+		return m.Module
+	}
+	return ""
+}
+
+func (m *CommitteeShape) GetThreshold() uint32 {
+	if m != nil {
+		return m.Threshold
+	}
+	return 0
+}
+
+func (m *CommitteeShape) GetMemberCount() uint32 {
+	if m != nil {
+		return m.MemberCount
+	}
+	return 0
+}
+
 // Envelope is the shared appointment envelope embedded by every
 // governance-appointed committee mandate. An empty committee is the canonical
 // disabled mandate, which still retains the latest term.
@@ -40,13 +183,17 @@ type Envelope struct {
 	// expiry_height is the first height at which the committee may no longer
 	// act, forming a half-open window with activation_height.
 	ExpiryHeight uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	// committee_shape is what the chain proved about the committee account when
+	// it was appointed. The address is the hash of the key it commits to, so a
+	// shape observed at appointment cannot go stale within the term.
+	CommitteeShape CommitteeShape `protobuf:"bytes,5,opt,name=committee_shape,json=committeeShape,proto3" json:"committee_shape"`
 }
 
 func (m *Envelope) Reset()         { *m = Envelope{} }
 func (m *Envelope) String() string { return proto.CompactTextString(m) }
 func (*Envelope) ProtoMessage()    {}
 func (*Envelope) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dc034797e1042eb6, []int{0}
+	return fileDescriptor_dc034797e1042eb6, []int{1}
 }
 func (m *Envelope) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -103,31 +250,110 @@ func (m *Envelope) GetExpiryHeight() uint64 {
 	return 0
 }
 
+func (m *Envelope) GetCommitteeShape() CommitteeShape {
+	if m != nil {
+		return m.CommitteeShape
+	}
+	return CommitteeShape{}
+}
+
 func init() {
+	proto.RegisterEnum("ark.mandate.v1.CommitteeKeyKind", CommitteeKeyKind_name, CommitteeKeyKind_value)
+	proto.RegisterType((*CommitteeShape)(nil), "ark.mandate.v1.CommitteeShape")
 	proto.RegisterType((*Envelope)(nil), "ark.mandate.v1.Envelope")
 }
 
 func init() { proto.RegisterFile("ark/mandate/v1/envelope.proto", fileDescriptor_dc034797e1042eb6) }
 
 var fileDescriptor_dc034797e1042eb6 = []byte{
-	// 262 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x4d, 0x2c, 0xca, 0xd6,
-	0xcf, 0x4d, 0xcc, 0x4b, 0x49, 0x2c, 0x49, 0xd5, 0x2f, 0x33, 0xd4, 0x4f, 0xcd, 0x2b, 0x4b, 0xcd,
-	0xc9, 0x2f, 0x48, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x4b, 0x2c, 0xca, 0xd6, 0x83,
-	0x4a, 0xeb, 0x95, 0x19, 0x4a, 0x09, 0x26, 0xe6, 0x66, 0xe6, 0xe5, 0xeb, 0x83, 0x49, 0x88, 0x12,
-	0x29, 0xc9, 0xe4, 0xfc, 0xe2, 0xdc, 0xfc, 0xe2, 0x78, 0x30, 0x4f, 0x1f, 0xc2, 0x81, 0x48, 0x29,
-	0xed, 0x65, 0xe4, 0xe2, 0x70, 0x85, 0x1a, 0x28, 0x24, 0xc9, 0xc5, 0x52, 0x92, 0x5a, 0x94, 0x2b,
-	0xc1, 0xa8, 0xc0, 0xa8, 0xc1, 0xe2, 0xc4, 0xba, 0xe2, 0xf9, 0x06, 0x2d, 0xc6, 0x20, 0xb0, 0x90,
-	0x90, 0x19, 0x17, 0x67, 0x72, 0x7e, 0x6e, 0x6e, 0x66, 0x49, 0x49, 0x6a, 0xaa, 0x04, 0x93, 0x02,
-	0xa3, 0x06, 0xa7, 0x93, 0xc4, 0xa5, 0x2d, 0xba, 0x22, 0x50, 0xc3, 0x1c, 0x53, 0x52, 0x8a, 0x52,
-	0x8b, 0x8b, 0x83, 0x4b, 0x8a, 0x32, 0xf3, 0xd2, 0x83, 0x10, 0x4a, 0x85, 0x8c, 0xb8, 0x04, 0x13,
-	0x93, 0x4b, 0x32, 0xcb, 0x12, 0x4b, 0x32, 0xf3, 0xf3, 0xe2, 0x33, 0x52, 0x33, 0xd3, 0x33, 0x4a,
-	0x24, 0x98, 0x91, 0xcd, 0x17, 0x40, 0xc8, 0x7b, 0x80, 0xa5, 0x85, 0xb4, 0xb8, 0x78, 0x53, 0x2b,
-	0x0a, 0x32, 0x8b, 0x2a, 0x61, 0xea, 0x59, 0x90, 0xd5, 0xf3, 0x40, 0xe4, 0x20, 0x6a, 0x9d, 0x34,
-	0x4f, 0x3c, 0x92, 0x63, 0xbc, 0xf0, 0x48, 0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x09, 0x8f, 0xe5,
-	0x18, 0x2e, 0x3c, 0x96, 0x63, 0xb8, 0xf1, 0x58, 0x8e, 0x21, 0x8a, 0x1f, 0x14, 0x6c, 0x05, 0xd9,
-	0xe9, 0xb0, 0xa0, 0x4b, 0x62, 0x03, 0xfb, 0xd8, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0xf4, 0x54,
-	0x54, 0xed, 0x50, 0x01, 0x00, 0x00,
+	// 545 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x93, 0xcd, 0x6e, 0xda, 0x40,
+	0x10, 0xc7, 0xd9, 0x04, 0x68, 0x58, 0x08, 0x71, 0x56, 0x51, 0x65, 0x68, 0xe3, 0x50, 0x7a, 0xa1,
+	0x48, 0x05, 0x85, 0x4a, 0xbd, 0xc7, 0xb0, 0x4d, 0x2c, 0xbe, 0x2a, 0x6c, 0x0e, 0xe9, 0xc5, 0x72,
+	0xec, 0x15, 0x58, 0xc6, 0x5e, 0xcb, 0xde, 0xa0, 0xf2, 0x16, 0xed, 0x5b, 0xf4, 0xd8, 0x43, 0x1f,
+	0x22, 0xc7, 0xa8, 0xa7, 0x9e, 0xa2, 0x0a, 0x0e, 0xbd, 0xf7, 0x09, 0x2a, 0xd6, 0x06, 0x92, 0x0a,
+	0x2e, 0x96, 0x67, 0x7e, 0xff, 0x99, 0x9d, 0x0f, 0x0d, 0x3c, 0x35, 0x02, 0xa7, 0xee, 0x1a, 0x9e,
+	0x65, 0x30, 0x52, 0x9f, 0x9e, 0xd7, 0x89, 0x37, 0x25, 0x13, 0xea, 0x93, 0x9a, 0x1f, 0x50, 0x46,
+	0x51, 0xde, 0x08, 0x9c, 0x5a, 0x8c, 0x6b, 0xd3, 0xf3, 0xe2, 0xb1, 0xe1, 0xda, 0x1e, 0xad, 0xf3,
+	0x6f, 0x24, 0x29, 0x16, 0x4c, 0x1a, 0xba, 0x34, 0xd4, 0xb9, 0x55, 0x8f, 0x8c, 0x18, 0x9d, 0x8c,
+	0xe8, 0x88, 0x46, 0xfe, 0xe5, 0x5f, 0xe4, 0x2d, 0x3f, 0x00, 0x98, 0x6f, 0x52, 0xd7, 0xb5, 0x19,
+	0x23, 0x44, 0x1d, 0x1b, 0x3e, 0x41, 0xaf, 0x60, 0xce, 0x30, 0x4d, 0x7a, 0xeb, 0x31, 0x9d, 0xcd,
+	0x7c, 0x22, 0x82, 0x12, 0xa8, 0x64, 0x06, 0xd9, 0xd8, 0xa7, 0xcd, 0x7c, 0x82, 0x64, 0x78, 0xe0,
+	0x90, 0x99, 0xee, 0xd8, 0x9e, 0x25, 0xee, 0x95, 0x40, 0x25, 0xdf, 0x28, 0xd5, 0x9e, 0x16, 0x57,
+	0x5b, 0x27, 0x6d, 0x93, 0x59, 0xdb, 0xf6, 0x2c, 0x39, 0xf5, 0xed, 0xcf, 0xf7, 0x2a, 0x18, 0x3c,
+	0x73, 0x22, 0x1b, 0x3d, 0x87, 0x69, 0x97, 0x5a, 0xb7, 0x13, 0x22, 0xee, 0xf3, 0x07, 0x62, 0x0b,
+	0xbd, 0x86, 0x19, 0x36, 0x0e, 0x48, 0x38, 0xa6, 0x13, 0x4b, 0x4c, 0x96, 0x40, 0xe5, 0x70, 0x15,
+	0xba, 0xf1, 0xa3, 0x0a, 0xcc, 0xb9, 0xc4, 0xbd, 0x21, 0x81, 0xce, 0x8b, 0x12, 0x53, 0x8f, 0x75,
+	0xd9, 0x08, 0x35, 0x97, 0xa4, 0xfc, 0x75, 0x0f, 0x1e, 0xe0, 0x78, 0x8e, 0xa8, 0x00, 0x93, 0x8c,
+	0x04, 0x2e, 0x6f, 0x29, 0xb9, 0x92, 0x73, 0x17, 0x7a, 0x0f, 0x33, 0xe6, 0xaa, 0x64, 0xde, 0x53,
+	0x46, 0x16, 0x7f, 0xfe, 0x78, 0x7b, 0x12, 0xcf, 0xf0, 0xc2, 0xb2, 0x02, 0x12, 0x86, 0x2a, 0x0b,
+	0x6c, 0x6f, 0x34, 0xd8, 0x48, 0x51, 0x03, 0x1e, 0x1b, 0x26, 0xb3, 0xa7, 0x06, 0xb3, 0xa9, 0xa7,
+	0x8f, 0x89, 0x3d, 0x1a, 0x33, 0xde, 0xd1, 0x3a, 0xbf, 0xb0, 0xe1, 0x57, 0x1c, 0xa3, 0x2a, 0x3c,
+	0x24, 0x9f, 0x7d, 0x3b, 0x98, 0xad, 0xf4, 0xc9, 0xc7, 0xfa, 0x5c, 0xc4, 0x62, 0xed, 0x00, 0x1e,
+	0xad, 0x1f, 0xd3, 0xc3, 0xe5, 0x82, 0x78, 0xb3, 0xd9, 0x86, 0xb4, 0x73, 0xe2, 0x7c, 0x8d, 0x72,
+	0xe6, 0xee, 0xe1, 0x2c, 0x11, 0x65, 0xcc, 0x9b, 0x4f, 0x50, 0xf5, 0x2f, 0x80, 0xc2, 0xff, 0xfb,
+	0x41, 0x65, 0x28, 0x35, 0xfb, 0xdd, 0xae, 0xa2, 0x69, 0x18, 0xeb, 0x6d, 0x7c, 0xad, 0xb7, 0x95,
+	0x5e, 0x4b, 0x1f, 0xf6, 0xd4, 0x8f, 0xb8, 0xa9, 0x7c, 0x50, 0x70, 0x4b, 0x48, 0xa0, 0x53, 0x58,
+	0xd8, 0xa2, 0xb9, 0x90, 0x55, 0xdc, 0xd3, 0x04, 0x80, 0x24, 0x58, 0xdc, 0x82, 0xdb, 0xf8, 0xba,
+	0x83, 0x55, 0x55, 0xd8, 0xdb, 0x11, 0xae, 0x2a, 0xbd, 0xcb, 0x0e, 0x16, 0xf6, 0xd1, 0x19, 0x7c,
+	0xb1, 0x05, 0x77, 0x87, 0x1d, 0x4d, 0x51, 0x95, 0x4b, 0x21, 0xb9, 0x23, 0xbe, 0xdb, 0x6f, 0x0d,
+	0x3b, 0x58, 0x48, 0xa1, 0x97, 0x50, 0xdc, 0x82, 0xfb, 0xda, 0x15, 0x1e, 0x08, 0x69, 0xf9, 0xcd,
+	0xdd, 0x5c, 0x02, 0xf7, 0x73, 0x09, 0xfc, 0x9e, 0x4b, 0xe0, 0xcb, 0x42, 0x4a, 0xdc, 0x2f, 0xa4,
+	0xc4, 0xaf, 0x85, 0x94, 0xf8, 0x74, 0xb4, 0x3c, 0x3b, 0xdf, 0x19, 0xad, 0x4e, 0xef, 0x26, 0xcd,
+	0x6f, 0xe3, 0xdd, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x7e, 0xbc, 0x8f, 0x12, 0x90, 0x03, 0x00,
+	0x00,
+}
+
+func (m *CommitteeShape) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitteeShape) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitteeShape) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.MemberCount != 0 {
+		i = encodeVarintEnvelope(dAtA, i, uint64(m.MemberCount))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Threshold != 0 {
+		i = encodeVarintEnvelope(dAtA, i, uint64(m.Threshold))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Module) > 0 {
+		i -= len(m.Module)
+		copy(dAtA[i:], m.Module)
+		i = encodeVarintEnvelope(dAtA, i, uint64(len(m.Module)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.KeyKind != 0 {
+		i = encodeVarintEnvelope(dAtA, i, uint64(m.KeyKind))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.AccountType) > 0 {
+		i -= len(m.AccountType)
+		copy(dAtA[i:], m.AccountType)
+		i = encodeVarintEnvelope(dAtA, i, uint64(len(m.AccountType)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *Envelope) Marshal() (dAtA []byte, err error) {
@@ -150,6 +376,16 @@ func (m *Envelope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size, err := m.CommitteeShape.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintEnvelope(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
 	if m.ExpiryHeight != 0 {
 		i = encodeVarintEnvelope(dAtA, i, uint64(m.ExpiryHeight))
 		i--
@@ -186,6 +422,32 @@ func encodeVarintEnvelope(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *CommitteeShape) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.AccountType)
+	if l > 0 {
+		n += 1 + l + sovEnvelope(uint64(l))
+	}
+	if m.KeyKind != 0 {
+		n += 1 + sovEnvelope(uint64(m.KeyKind))
+	}
+	l = len(m.Module)
+	if l > 0 {
+		n += 1 + l + sovEnvelope(uint64(l))
+	}
+	if m.Threshold != 0 {
+		n += 1 + sovEnvelope(uint64(m.Threshold))
+	}
+	if m.MemberCount != 0 {
+		n += 1 + sovEnvelope(uint64(m.MemberCount))
+	}
+	return n
+}
+
 func (m *Envelope) Size() (n int) {
 	if m == nil {
 		return 0
@@ -205,6 +467,8 @@ func (m *Envelope) Size() (n int) {
 	if m.ExpiryHeight != 0 {
 		n += 1 + sovEnvelope(uint64(m.ExpiryHeight))
 	}
+	l = m.CommitteeShape.Size()
+	n += 1 + l + sovEnvelope(uint64(l))
 	return n
 }
 
@@ -213,6 +477,177 @@ func sovEnvelope(x uint64) (n int) {
 }
 func sozEnvelope(x uint64) (n int) {
 	return sovEnvelope(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *CommitteeShape) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEnvelope
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CommitteeShape: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CommitteeShape: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEnvelope
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccountType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyKind", wireType)
+			}
+			m.KeyKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEnvelope
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.KeyKind |= CommitteeKeyKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Module", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEnvelope
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Module = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Threshold", wireType)
+			}
+			m.Threshold = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEnvelope
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Threshold |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberCount", wireType)
+			}
+			m.MemberCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEnvelope
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MemberCount |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEnvelope(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *Envelope) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -332,6 +767,39 @@ func (m *Envelope) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommitteeShape", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEnvelope
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEnvelope
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.CommitteeShape.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEnvelope(dAtA[iNdEx:])
