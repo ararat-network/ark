@@ -39,7 +39,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 			name:      "invalid params",
 			authority: s.authority,
 			params:    types.Params{ClaimCancellationPeriodBlocks: 0},
-			expectErr: "must be positive",
+			expectErr: "ClaimCancellationPeriodBlocks must be between one and",
 		},
 	}
 

@@ -8,6 +8,10 @@ import (
 	"ark/x/claims/types"
 )
 
+// Combining the period bound into one condition means its lower and upper cases
+// assert the same message, so the string lives once for the package.
+const cancellationPeriodOutOfRange = "ClaimCancellationPeriodBlocks must be between one and"
+
 func TestParamsValidate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -22,7 +26,22 @@ func TestParamsValidate(t *testing.T) {
 		{
 			name:      "zero cancellation period",
 			mutate:    func(params *types.Params) { params.ClaimCancellationPeriodBlocks = 0 },
-			expectErr: "ClaimCancellationPeriodBlocks must be positive",
+			expectErr: cancellationPeriodOutOfRange,
+		},
+		{
+			name: "cancellation period at the domain cap",
+			mutate: func(p *types.Params) {
+				p.ClaimCancellationPeriodBlocks = types.MaxClaimCancellationPeriodBlocks
+			},
+		},
+		{
+			// Unreachable freezes Insurance: no claim ever leaves the veto
+			// window, while the mandate still reads as configured.
+			name: "cancellation period above the domain cap",
+			mutate: func(p *types.Params) {
+				p.ClaimCancellationPeriodBlocks = types.MaxClaimCancellationPeriodBlocks + 1
+			},
+			expectErr: cancellationPeriodOutOfRange,
 		},
 	}
 

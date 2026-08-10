@@ -60,7 +60,7 @@ func TestGenesisValidate(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Params.ClaimCancellationPeriodBlocks = 0
 			},
-			expectErr: "ClaimCancellationPeriodBlocks must be positive",
+			expectErr: cancellationPeriodOutOfRange,
 		},
 		{
 			name: "invalid mandate",
