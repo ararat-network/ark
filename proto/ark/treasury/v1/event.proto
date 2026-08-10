@@ -9,9 +9,12 @@ import "gogoproto/gogo.proto";
 
 option go_package = "ark/x/treasury/types";
 
-// EventTaxCapsUpdated is emitted after the complete derived tax-cap set
-// changes.
-message EventTaxCapsUpdated {
+// EventTaxCapsRefreshed reports one completed pass of the derived tax-cap
+// rebuild. It is emitted per pass that wrote something rather than per changed
+// value — a pass that re-derives a cap to the amount it already held still says
+// the rebuild ran and what it produced — which is why it is named for the
+// refresh, as the exposure multiplier's twin mechanism is.
+message EventTaxCapsRefreshed {
   repeated TaxCap tax_caps = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
@@ -157,6 +160,57 @@ message EventRedemptionBufferDrawn {
   string payment = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventExposureRefreshed records one completed refresh of the exposure
+// multiplier, with every input behind it. It is emitted per refresh rather than
+// per change — a refresh that leaves the multiplier where it was still says the
+// indicators were read and what they said — and never per sample, since
+// sampling runs every block and would bury the periods that moved the number.
+//
+// uncapped_multiplier is the composite before the step limit and the cap, so an
+// operator can see how hard the guardrails are binding — a multiplier sitting
+// at the cap for many periods reads very differently from one that arrived
+// there once.
+message EventExposureRefreshed {
+  string previous_multiplier = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string multiplier = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string uncapped_multiplier = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string liability_ratio = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string annualised_volatility = 5 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // flow_ratio is the stored EMA divided by the net liability this update
+  // sized against, which is the dimensionless form the composite consumes.
+  string flow_ratio = 6 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

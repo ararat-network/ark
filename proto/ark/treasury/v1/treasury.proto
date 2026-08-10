@@ -30,6 +30,128 @@ message Params {
   // governance voted for more closely and rebuilds the map more often; a longer
   // one lets the real ceiling drift further from it.
   uint64 tax_cap_refresh_period_blocks = 3 [ (amino.dont_omitempty) = true ];
+
+  // The exposure multiplier's machinery (D72): the instrument that measures
+  // risk, the cadence it runs on, and the rails bounding how far and how fast
+  // the response may move. The three indicator weights it serves are
+  // MonetaryPolicy, because those are stance and these are not — a decay
+  // defines what the series means and a series folded under one memory is not
+  // recoverable by restoring the old value, while the cap and the step are the
+  // bounds a delegated weight is safe inside, so handing them to the same
+  // holder would defeat them.
+  //
+  // Each bound is a domain cap in Validate, not a projection over live state:
+  // the multiplier is folded and applied inside block hooks, where a checked
+  // arithmetic error and a panic are the same outcome, so the defence is
+  // refusing the value at the write.
+
+  // volatility_decay is the per-block EWMA retention for the variance
+  // series, in [0, 1). A value at or above one would never forget a sample.
+  string volatility_decay = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // flow_decay is the per-block EMA retention for the flow series, in
+  // [0, 1).
+  string flow_decay = 5 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // multiplier_cap is the ceiling on the applied multiplier, at least
+  // one. It is also the saturation point: a composite that leaves representable
+  // range resolves here rather than failing a block, because stress past
+  // measurement is the cap by definition.
+  string multiplier_cap = 6 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // multiplier_max_step is the most the multiplier may move in one
+  // update, in either direction. Positive: a zero step would freeze the
+  // multiplier at its stored value forever.
+  string multiplier_max_step = 7 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // exposure_refresh_period_blocks is how often the multiplier is recomputed
+  // from the sampled series. Sampling itself is per block; only the
+  // recomputation waits. It keeps the exposure qualifier the four fields above
+  // drop, because Params already carries a second cadence in
+  // tax_cap_refresh_period_blocks and a bare period would read as the module's.
+  uint64 exposure_refresh_period_blocks = 8 [ (amino.dont_omitempty) = true ];
+}
+
+// ExposureState is the running risk estimate behind the multiplier: two
+// per-block series, the inputs of the last applied update, and the multiplier
+// every target consumer reads.
+message ExposureState {
+  // last_reference_price is the previous block's protocol reference rate, held
+  // to form the next return. Zero means no sample has been taken yet, so the
+  // next one records a price and produces no return.
+  string last_reference_price = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // volatility_variance is the EWMA of squared per-block returns. Each sample
+  // is clamped to [-1, 1], which bounds this series to [0, 1] by induction and
+  // so bounds annualised volatility by the square root of a year in blocks.
+  string volatility_variance = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // flow_pressure is the EMA of per-block net redemption value in NOAH. It is
+  // an absolute quantity, divided by net liability only when the multiplier is
+  // applied, so a changing liability never restates the stored series.
+  string flow_pressure = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // liability_ratio is the ratio behind the last applied update, kept so the
+  // multiplier's inputs are readable without recomputing the fold.
+  string liability_ratio = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // multiplier is what target consumers currently scale by, at least one.
+  string multiplier = 5 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // flow_ratio is the flow indicator behind the last applied update:
+  // flow_pressure over the net liability that update sized against. Kept
+  // beside liability_ratio because neither survives in the live series — the
+  // net liability both divided by has since moved. Zero when that update
+  // found no positive net liability.
+  string flow_ratio = 6 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // last_refresh_height is the block liability_ratio, flow_ratio, and
+  // multiplier were computed at, and the only thing separating them from the
+  // live series in fields 1-3. Zero means no refresh has been applied yet. It
+  // is chain-relative: an exported state carries the old chain's height, so a
+  // reader comparing it against a restarted chain sees a refresh in the future
+  // rather than a stale one.
+  uint64 last_refresh_height = 7 [ (amino.dont_omitempty) = true ];
 }
 
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
@@ -66,6 +188,43 @@ message MonetaryPolicy {
     (amino.dont_omitempty) = true
   ];
   string insurance_target_ratio = 6 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+
+  // The exposure multiplier's three indicator weights (D72). They sit here
+  // rather than in Params because each states how much extra capital a unit of
+  // risk should demand, which is the same kind of lever as the three target
+  // ratios above and modifies exactly them. Zeroing one switches its indicator
+  // off and the multiplier decays back within hours, so the whole set is as
+  // reversible as the ratios it scales. The instrument behind them — the decay
+  // windows, the cap, the step limit, the cadence — stays in Params, which is
+  // what bounds how far and how fast this delegation can move anything.
+  //
+  // Every weight is zero in the disabled launch policy, which pins the
+  // multiplier at one.
+
+  // liability_ratio_weight scales net liability over circulating NOAH: the
+  // dilution term, and the one indicator that states directly how reflexive a
+  // redemption is.
+  string liability_ratio_weight = 7 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // volatility_weight scales annualised realised volatility of the protocol
+  // reference rate.
+  string volatility_weight = 8 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // flow_weight scales redemption flow pressure as a share of net liability.
+  string flow_weight = 9 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,

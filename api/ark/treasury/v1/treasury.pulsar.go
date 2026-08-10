@@ -18,10 +18,15 @@ import (
 )
 
 var (
-	md_Params                               protoreflect.MessageDescriptor
-	fd_Params_reference_tax_cap             protoreflect.FieldDescriptor
-	fd_Params_reward_funding_window         protoreflect.FieldDescriptor
-	fd_Params_tax_cap_refresh_period_blocks protoreflect.FieldDescriptor
+	md_Params                                protoreflect.MessageDescriptor
+	fd_Params_reference_tax_cap              protoreflect.FieldDescriptor
+	fd_Params_reward_funding_window          protoreflect.FieldDescriptor
+	fd_Params_tax_cap_refresh_period_blocks  protoreflect.FieldDescriptor
+	fd_Params_volatility_decay               protoreflect.FieldDescriptor
+	fd_Params_flow_decay                     protoreflect.FieldDescriptor
+	fd_Params_multiplier_cap                 protoreflect.FieldDescriptor
+	fd_Params_multiplier_max_step            protoreflect.FieldDescriptor
+	fd_Params_exposure_refresh_period_blocks protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -30,6 +35,11 @@ func init() {
 	fd_Params_reference_tax_cap = md_Params.Fields().ByName("reference_tax_cap")
 	fd_Params_reward_funding_window = md_Params.Fields().ByName("reward_funding_window")
 	fd_Params_tax_cap_refresh_period_blocks = md_Params.Fields().ByName("tax_cap_refresh_period_blocks")
+	fd_Params_volatility_decay = md_Params.Fields().ByName("volatility_decay")
+	fd_Params_flow_decay = md_Params.Fields().ByName("flow_decay")
+	fd_Params_multiplier_cap = md_Params.Fields().ByName("multiplier_cap")
+	fd_Params_multiplier_max_step = md_Params.Fields().ByName("multiplier_max_step")
+	fd_Params_exposure_refresh_period_blocks = md_Params.Fields().ByName("exposure_refresh_period_blocks")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -115,6 +125,36 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
+	if x.VolatilityDecay != "" {
+		value := protoreflect.ValueOfString(x.VolatilityDecay)
+		if !f(fd_Params_volatility_decay, value) {
+			return
+		}
+	}
+	if x.FlowDecay != "" {
+		value := protoreflect.ValueOfString(x.FlowDecay)
+		if !f(fd_Params_flow_decay, value) {
+			return
+		}
+	}
+	if x.MultiplierCap != "" {
+		value := protoreflect.ValueOfString(x.MultiplierCap)
+		if !f(fd_Params_multiplier_cap, value) {
+			return
+		}
+	}
+	if x.MultiplierMaxStep != "" {
+		value := protoreflect.ValueOfString(x.MultiplierMaxStep)
+		if !f(fd_Params_multiplier_max_step, value) {
+			return
+		}
+	}
+	if x.ExposureRefreshPeriodBlocks != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExposureRefreshPeriodBlocks)
+		if !f(fd_Params_exposure_refresh_period_blocks, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -136,6 +176,16 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.RewardFundingWindow != uint64(0)
 	case "ark.treasury.v1.Params.tax_cap_refresh_period_blocks":
 		return x.TaxCapRefreshPeriodBlocks != uint64(0)
+	case "ark.treasury.v1.Params.volatility_decay":
+		return x.VolatilityDecay != ""
+	case "ark.treasury.v1.Params.flow_decay":
+		return x.FlowDecay != ""
+	case "ark.treasury.v1.Params.multiplier_cap":
+		return x.MultiplierCap != ""
+	case "ark.treasury.v1.Params.multiplier_max_step":
+		return x.MultiplierMaxStep != ""
+	case "ark.treasury.v1.Params.exposure_refresh_period_blocks":
+		return x.ExposureRefreshPeriodBlocks != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.Params"))
@@ -158,6 +208,16 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.RewardFundingWindow = uint64(0)
 	case "ark.treasury.v1.Params.tax_cap_refresh_period_blocks":
 		x.TaxCapRefreshPeriodBlocks = uint64(0)
+	case "ark.treasury.v1.Params.volatility_decay":
+		x.VolatilityDecay = ""
+	case "ark.treasury.v1.Params.flow_decay":
+		x.FlowDecay = ""
+	case "ark.treasury.v1.Params.multiplier_cap":
+		x.MultiplierCap = ""
+	case "ark.treasury.v1.Params.multiplier_max_step":
+		x.MultiplierMaxStep = ""
+	case "ark.treasury.v1.Params.exposure_refresh_period_blocks":
+		x.ExposureRefreshPeriodBlocks = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.Params"))
@@ -182,6 +242,21 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 		return protoreflect.ValueOfUint64(value)
 	case "ark.treasury.v1.Params.tax_cap_refresh_period_blocks":
 		value := x.TaxCapRefreshPeriodBlocks
+		return protoreflect.ValueOfUint64(value)
+	case "ark.treasury.v1.Params.volatility_decay":
+		value := x.VolatilityDecay
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.Params.flow_decay":
+		value := x.FlowDecay
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.Params.multiplier_cap":
+		value := x.MultiplierCap
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.Params.multiplier_max_step":
+		value := x.MultiplierMaxStep
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.Params.exposure_refresh_period_blocks":
+		value := x.ExposureRefreshPeriodBlocks
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -209,6 +284,16 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.RewardFundingWindow = value.Uint()
 	case "ark.treasury.v1.Params.tax_cap_refresh_period_blocks":
 		x.TaxCapRefreshPeriodBlocks = value.Uint()
+	case "ark.treasury.v1.Params.volatility_decay":
+		x.VolatilityDecay = value.Interface().(string)
+	case "ark.treasury.v1.Params.flow_decay":
+		x.FlowDecay = value.Interface().(string)
+	case "ark.treasury.v1.Params.multiplier_cap":
+		x.MultiplierCap = value.Interface().(string)
+	case "ark.treasury.v1.Params.multiplier_max_step":
+		x.MultiplierMaxStep = value.Interface().(string)
+	case "ark.treasury.v1.Params.exposure_refresh_period_blocks":
+		x.ExposureRefreshPeriodBlocks = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.Params"))
@@ -238,6 +323,16 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 		panic(fmt.Errorf("field reward_funding_window of message ark.treasury.v1.Params is not mutable"))
 	case "ark.treasury.v1.Params.tax_cap_refresh_period_blocks":
 		panic(fmt.Errorf("field tax_cap_refresh_period_blocks of message ark.treasury.v1.Params is not mutable"))
+	case "ark.treasury.v1.Params.volatility_decay":
+		panic(fmt.Errorf("field volatility_decay of message ark.treasury.v1.Params is not mutable"))
+	case "ark.treasury.v1.Params.flow_decay":
+		panic(fmt.Errorf("field flow_decay of message ark.treasury.v1.Params is not mutable"))
+	case "ark.treasury.v1.Params.multiplier_cap":
+		panic(fmt.Errorf("field multiplier_cap of message ark.treasury.v1.Params is not mutable"))
+	case "ark.treasury.v1.Params.multiplier_max_step":
+		panic(fmt.Errorf("field multiplier_max_step of message ark.treasury.v1.Params is not mutable"))
+	case "ark.treasury.v1.Params.exposure_refresh_period_blocks":
+		panic(fmt.Errorf("field exposure_refresh_period_blocks of message ark.treasury.v1.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.Params"))
@@ -257,6 +352,16 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 	case "ark.treasury.v1.Params.reward_funding_window":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.treasury.v1.Params.tax_cap_refresh_period_blocks":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.treasury.v1.Params.volatility_decay":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.Params.flow_decay":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.Params.multiplier_cap":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.Params.multiplier_max_step":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.Params.exposure_refresh_period_blocks":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -337,6 +442,25 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.TaxCapRefreshPeriodBlocks != 0 {
 			n += 1 + runtime.Sov(uint64(x.TaxCapRefreshPeriodBlocks))
 		}
+		l = len(x.VolatilityDecay)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.FlowDecay)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.MultiplierCap)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.MultiplierMaxStep)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExposureRefreshPeriodBlocks != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExposureRefreshPeriodBlocks))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -365,6 +489,39 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ExposureRefreshPeriodBlocks != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExposureRefreshPeriodBlocks))
+			i--
+			dAtA[i] = 0x40
+		}
+		if len(x.MultiplierMaxStep) > 0 {
+			i -= len(x.MultiplierMaxStep)
+			copy(dAtA[i:], x.MultiplierMaxStep)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MultiplierMaxStep)))
+			i--
+			dAtA[i] = 0x3a
+		}
+		if len(x.MultiplierCap) > 0 {
+			i -= len(x.MultiplierCap)
+			copy(dAtA[i:], x.MultiplierCap)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MultiplierCap)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if len(x.FlowDecay) > 0 {
+			i -= len(x.FlowDecay)
+			copy(dAtA[i:], x.FlowDecay)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FlowDecay)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.VolatilityDecay) > 0 {
+			i -= len(x.VolatilityDecay)
+			copy(dAtA[i:], x.VolatilityDecay)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.VolatilityDecay)))
+			i--
+			dAtA[i] = 0x22
 		}
 		if x.TaxCapRefreshPeriodBlocks != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.TaxCapRefreshPeriodBlocks))
@@ -513,6 +670,941 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VolatilityDecay", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.VolatilityDecay = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FlowDecay", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.FlowDecay = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MultiplierCap", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MultiplierCap = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 7:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MultiplierMaxStep", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MultiplierMaxStep = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 8:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExposureRefreshPeriodBlocks", wireType)
+				}
+				x.ExposureRefreshPeriodBlocks = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExposureRefreshPeriodBlocks |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_ExposureState                      protoreflect.MessageDescriptor
+	fd_ExposureState_last_reference_price protoreflect.FieldDescriptor
+	fd_ExposureState_volatility_variance  protoreflect.FieldDescriptor
+	fd_ExposureState_flow_pressure        protoreflect.FieldDescriptor
+	fd_ExposureState_liability_ratio      protoreflect.FieldDescriptor
+	fd_ExposureState_multiplier           protoreflect.FieldDescriptor
+	fd_ExposureState_flow_ratio           protoreflect.FieldDescriptor
+	fd_ExposureState_last_refresh_height  protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_treasury_v1_treasury_proto_init()
+	md_ExposureState = File_ark_treasury_v1_treasury_proto.Messages().ByName("ExposureState")
+	fd_ExposureState_last_reference_price = md_ExposureState.Fields().ByName("last_reference_price")
+	fd_ExposureState_volatility_variance = md_ExposureState.Fields().ByName("volatility_variance")
+	fd_ExposureState_flow_pressure = md_ExposureState.Fields().ByName("flow_pressure")
+	fd_ExposureState_liability_ratio = md_ExposureState.Fields().ByName("liability_ratio")
+	fd_ExposureState_multiplier = md_ExposureState.Fields().ByName("multiplier")
+	fd_ExposureState_flow_ratio = md_ExposureState.Fields().ByName("flow_ratio")
+	fd_ExposureState_last_refresh_height = md_ExposureState.Fields().ByName("last_refresh_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_ExposureState)(nil)
+
+type fastReflection_ExposureState ExposureState
+
+func (x *ExposureState) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ExposureState)(x)
+}
+
+func (x *ExposureState) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ExposureState_messageType fastReflection_ExposureState_messageType
+var _ protoreflect.MessageType = fastReflection_ExposureState_messageType{}
+
+type fastReflection_ExposureState_messageType struct{}
+
+func (x fastReflection_ExposureState_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ExposureState)(nil)
+}
+func (x fastReflection_ExposureState_messageType) New() protoreflect.Message {
+	return new(fastReflection_ExposureState)
+}
+func (x fastReflection_ExposureState_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ExposureState
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ExposureState) Descriptor() protoreflect.MessageDescriptor {
+	return md_ExposureState
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ExposureState) Type() protoreflect.MessageType {
+	return _fastReflection_ExposureState_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ExposureState) New() protoreflect.Message {
+	return new(fastReflection_ExposureState)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ExposureState) Interface() protoreflect.ProtoMessage {
+	return (*ExposureState)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ExposureState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.LastReferencePrice != "" {
+		value := protoreflect.ValueOfString(x.LastReferencePrice)
+		if !f(fd_ExposureState_last_reference_price, value) {
+			return
+		}
+	}
+	if x.VolatilityVariance != "" {
+		value := protoreflect.ValueOfString(x.VolatilityVariance)
+		if !f(fd_ExposureState_volatility_variance, value) {
+			return
+		}
+	}
+	if x.FlowPressure != "" {
+		value := protoreflect.ValueOfString(x.FlowPressure)
+		if !f(fd_ExposureState_flow_pressure, value) {
+			return
+		}
+	}
+	if x.LiabilityRatio != "" {
+		value := protoreflect.ValueOfString(x.LiabilityRatio)
+		if !f(fd_ExposureState_liability_ratio, value) {
+			return
+		}
+	}
+	if x.Multiplier != "" {
+		value := protoreflect.ValueOfString(x.Multiplier)
+		if !f(fd_ExposureState_multiplier, value) {
+			return
+		}
+	}
+	if x.FlowRatio != "" {
+		value := protoreflect.ValueOfString(x.FlowRatio)
+		if !f(fd_ExposureState_flow_ratio, value) {
+			return
+		}
+	}
+	if x.LastRefreshHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.LastRefreshHeight)
+		if !f(fd_ExposureState_last_refresh_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ExposureState) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.treasury.v1.ExposureState.last_reference_price":
+		return x.LastReferencePrice != ""
+	case "ark.treasury.v1.ExposureState.volatility_variance":
+		return x.VolatilityVariance != ""
+	case "ark.treasury.v1.ExposureState.flow_pressure":
+		return x.FlowPressure != ""
+	case "ark.treasury.v1.ExposureState.liability_ratio":
+		return x.LiabilityRatio != ""
+	case "ark.treasury.v1.ExposureState.multiplier":
+		return x.Multiplier != ""
+	case "ark.treasury.v1.ExposureState.flow_ratio":
+		return x.FlowRatio != ""
+	case "ark.treasury.v1.ExposureState.last_refresh_height":
+		return x.LastRefreshHeight != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.ExposureState"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.ExposureState does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ExposureState) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.ExposureState.last_reference_price":
+		x.LastReferencePrice = ""
+	case "ark.treasury.v1.ExposureState.volatility_variance":
+		x.VolatilityVariance = ""
+	case "ark.treasury.v1.ExposureState.flow_pressure":
+		x.FlowPressure = ""
+	case "ark.treasury.v1.ExposureState.liability_ratio":
+		x.LiabilityRatio = ""
+	case "ark.treasury.v1.ExposureState.multiplier":
+		x.Multiplier = ""
+	case "ark.treasury.v1.ExposureState.flow_ratio":
+		x.FlowRatio = ""
+	case "ark.treasury.v1.ExposureState.last_refresh_height":
+		x.LastRefreshHeight = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.ExposureState"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.ExposureState does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ExposureState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.treasury.v1.ExposureState.last_reference_price":
+		value := x.LastReferencePrice
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.ExposureState.volatility_variance":
+		value := x.VolatilityVariance
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.ExposureState.flow_pressure":
+		value := x.FlowPressure
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.ExposureState.liability_ratio":
+		value := x.LiabilityRatio
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.ExposureState.multiplier":
+		value := x.Multiplier
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.ExposureState.flow_ratio":
+		value := x.FlowRatio
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.ExposureState.last_refresh_height":
+		value := x.LastRefreshHeight
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.ExposureState"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.ExposureState does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ExposureState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.ExposureState.last_reference_price":
+		x.LastReferencePrice = value.Interface().(string)
+	case "ark.treasury.v1.ExposureState.volatility_variance":
+		x.VolatilityVariance = value.Interface().(string)
+	case "ark.treasury.v1.ExposureState.flow_pressure":
+		x.FlowPressure = value.Interface().(string)
+	case "ark.treasury.v1.ExposureState.liability_ratio":
+		x.LiabilityRatio = value.Interface().(string)
+	case "ark.treasury.v1.ExposureState.multiplier":
+		x.Multiplier = value.Interface().(string)
+	case "ark.treasury.v1.ExposureState.flow_ratio":
+		x.FlowRatio = value.Interface().(string)
+	case "ark.treasury.v1.ExposureState.last_refresh_height":
+		x.LastRefreshHeight = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.ExposureState"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.ExposureState does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ExposureState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.ExposureState.last_reference_price":
+		panic(fmt.Errorf("field last_reference_price of message ark.treasury.v1.ExposureState is not mutable"))
+	case "ark.treasury.v1.ExposureState.volatility_variance":
+		panic(fmt.Errorf("field volatility_variance of message ark.treasury.v1.ExposureState is not mutable"))
+	case "ark.treasury.v1.ExposureState.flow_pressure":
+		panic(fmt.Errorf("field flow_pressure of message ark.treasury.v1.ExposureState is not mutable"))
+	case "ark.treasury.v1.ExposureState.liability_ratio":
+		panic(fmt.Errorf("field liability_ratio of message ark.treasury.v1.ExposureState is not mutable"))
+	case "ark.treasury.v1.ExposureState.multiplier":
+		panic(fmt.Errorf("field multiplier of message ark.treasury.v1.ExposureState is not mutable"))
+	case "ark.treasury.v1.ExposureState.flow_ratio":
+		panic(fmt.Errorf("field flow_ratio of message ark.treasury.v1.ExposureState is not mutable"))
+	case "ark.treasury.v1.ExposureState.last_refresh_height":
+		panic(fmt.Errorf("field last_refresh_height of message ark.treasury.v1.ExposureState is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.ExposureState"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.ExposureState does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ExposureState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.ExposureState.last_reference_price":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.ExposureState.volatility_variance":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.ExposureState.flow_pressure":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.ExposureState.liability_ratio":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.ExposureState.multiplier":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.ExposureState.flow_ratio":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.ExposureState.last_refresh_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.ExposureState"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.ExposureState does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ExposureState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.ExposureState", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ExposureState) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ExposureState) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ExposureState) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ExposureState) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ExposureState)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.LastReferencePrice)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.VolatilityVariance)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.FlowPressure)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.LiabilityRatio)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Multiplier)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.FlowRatio)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.LastRefreshHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.LastRefreshHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ExposureState)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.LastRefreshHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.LastRefreshHeight))
+			i--
+			dAtA[i] = 0x38
+		}
+		if len(x.FlowRatio) > 0 {
+			i -= len(x.FlowRatio)
+			copy(dAtA[i:], x.FlowRatio)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FlowRatio)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if len(x.Multiplier) > 0 {
+			i -= len(x.Multiplier)
+			copy(dAtA[i:], x.Multiplier)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Multiplier)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.LiabilityRatio) > 0 {
+			i -= len(x.LiabilityRatio)
+			copy(dAtA[i:], x.LiabilityRatio)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.LiabilityRatio)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.FlowPressure) > 0 {
+			i -= len(x.FlowPressure)
+			copy(dAtA[i:], x.FlowPressure)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FlowPressure)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.VolatilityVariance) > 0 {
+			i -= len(x.VolatilityVariance)
+			copy(dAtA[i:], x.VolatilityVariance)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.VolatilityVariance)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.LastReferencePrice) > 0 {
+			i -= len(x.LastReferencePrice)
+			copy(dAtA[i:], x.LastReferencePrice)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.LastReferencePrice)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ExposureState)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExposureState: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ExposureState: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LastReferencePrice", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.LastReferencePrice = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VolatilityVariance", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.VolatilityVariance = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FlowPressure", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.FlowPressure = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LiabilityRatio", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.LiabilityRatio = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Multiplier", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Multiplier = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FlowRatio", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.FlowRatio = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 7:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LastRefreshHeight", wireType)
+				}
+				x.LastRefreshHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.LastRefreshHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -556,6 +1648,9 @@ var (
 	fd_MonetaryPolicy_redemption_buffer_target_ratio protoreflect.FieldDescriptor
 	fd_MonetaryPolicy_strategic_reserve_target_ratio protoreflect.FieldDescriptor
 	fd_MonetaryPolicy_insurance_target_ratio         protoreflect.FieldDescriptor
+	fd_MonetaryPolicy_liability_ratio_weight         protoreflect.FieldDescriptor
+	fd_MonetaryPolicy_volatility_weight              protoreflect.FieldDescriptor
+	fd_MonetaryPolicy_flow_weight                    protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -567,6 +1662,9 @@ func init() {
 	fd_MonetaryPolicy_redemption_buffer_target_ratio = md_MonetaryPolicy.Fields().ByName("redemption_buffer_target_ratio")
 	fd_MonetaryPolicy_strategic_reserve_target_ratio = md_MonetaryPolicy.Fields().ByName("strategic_reserve_target_ratio")
 	fd_MonetaryPolicy_insurance_target_ratio = md_MonetaryPolicy.Fields().ByName("insurance_target_ratio")
+	fd_MonetaryPolicy_liability_ratio_weight = md_MonetaryPolicy.Fields().ByName("liability_ratio_weight")
+	fd_MonetaryPolicy_volatility_weight = md_MonetaryPolicy.Fields().ByName("volatility_weight")
+	fd_MonetaryPolicy_flow_weight = md_MonetaryPolicy.Fields().ByName("flow_weight")
 }
 
 var _ protoreflect.Message = (*fastReflection_MonetaryPolicy)(nil)
@@ -578,7 +1676,7 @@ func (x *MonetaryPolicy) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MonetaryPolicy) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[1]
+	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -670,6 +1768,24 @@ func (x *fastReflection_MonetaryPolicy) Range(f func(protoreflect.FieldDescripto
 			return
 		}
 	}
+	if x.LiabilityRatioWeight != "" {
+		value := protoreflect.ValueOfString(x.LiabilityRatioWeight)
+		if !f(fd_MonetaryPolicy_liability_ratio_weight, value) {
+			return
+		}
+	}
+	if x.VolatilityWeight != "" {
+		value := protoreflect.ValueOfString(x.VolatilityWeight)
+		if !f(fd_MonetaryPolicy_volatility_weight, value) {
+			return
+		}
+	}
+	if x.FlowWeight != "" {
+		value := protoreflect.ValueOfString(x.FlowWeight)
+		if !f(fd_MonetaryPolicy_flow_weight, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -697,6 +1813,12 @@ func (x *fastReflection_MonetaryPolicy) Has(fd protoreflect.FieldDescriptor) boo
 		return x.StrategicReserveTargetRatio != ""
 	case "ark.treasury.v1.MonetaryPolicy.insurance_target_ratio":
 		return x.InsuranceTargetRatio != ""
+	case "ark.treasury.v1.MonetaryPolicy.liability_ratio_weight":
+		return x.LiabilityRatioWeight != ""
+	case "ark.treasury.v1.MonetaryPolicy.volatility_weight":
+		return x.VolatilityWeight != ""
+	case "ark.treasury.v1.MonetaryPolicy.flow_weight":
+		return x.FlowWeight != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MonetaryPolicy"))
@@ -725,6 +1847,12 @@ func (x *fastReflection_MonetaryPolicy) Clear(fd protoreflect.FieldDescriptor) {
 		x.StrategicReserveTargetRatio = ""
 	case "ark.treasury.v1.MonetaryPolicy.insurance_target_ratio":
 		x.InsuranceTargetRatio = ""
+	case "ark.treasury.v1.MonetaryPolicy.liability_ratio_weight":
+		x.LiabilityRatioWeight = ""
+	case "ark.treasury.v1.MonetaryPolicy.volatility_weight":
+		x.VolatilityWeight = ""
+	case "ark.treasury.v1.MonetaryPolicy.flow_weight":
+		x.FlowWeight = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MonetaryPolicy"))
@@ -759,6 +1887,15 @@ func (x *fastReflection_MonetaryPolicy) Get(descriptor protoreflect.FieldDescrip
 	case "ark.treasury.v1.MonetaryPolicy.insurance_target_ratio":
 		value := x.InsuranceTargetRatio
 		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.MonetaryPolicy.liability_ratio_weight":
+		value := x.LiabilityRatioWeight
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.MonetaryPolicy.volatility_weight":
+		value := x.VolatilityWeight
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.MonetaryPolicy.flow_weight":
+		value := x.FlowWeight
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MonetaryPolicy"))
@@ -791,6 +1928,12 @@ func (x *fastReflection_MonetaryPolicy) Set(fd protoreflect.FieldDescriptor, val
 		x.StrategicReserveTargetRatio = value.Interface().(string)
 	case "ark.treasury.v1.MonetaryPolicy.insurance_target_ratio":
 		x.InsuranceTargetRatio = value.Interface().(string)
+	case "ark.treasury.v1.MonetaryPolicy.liability_ratio_weight":
+		x.LiabilityRatioWeight = value.Interface().(string)
+	case "ark.treasury.v1.MonetaryPolicy.volatility_weight":
+		x.VolatilityWeight = value.Interface().(string)
+	case "ark.treasury.v1.MonetaryPolicy.flow_weight":
+		x.FlowWeight = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MonetaryPolicy"))
@@ -823,6 +1966,12 @@ func (x *fastReflection_MonetaryPolicy) Mutable(fd protoreflect.FieldDescriptor)
 		panic(fmt.Errorf("field strategic_reserve_target_ratio of message ark.treasury.v1.MonetaryPolicy is not mutable"))
 	case "ark.treasury.v1.MonetaryPolicy.insurance_target_ratio":
 		panic(fmt.Errorf("field insurance_target_ratio of message ark.treasury.v1.MonetaryPolicy is not mutable"))
+	case "ark.treasury.v1.MonetaryPolicy.liability_ratio_weight":
+		panic(fmt.Errorf("field liability_ratio_weight of message ark.treasury.v1.MonetaryPolicy is not mutable"))
+	case "ark.treasury.v1.MonetaryPolicy.volatility_weight":
+		panic(fmt.Errorf("field volatility_weight of message ark.treasury.v1.MonetaryPolicy is not mutable"))
+	case "ark.treasury.v1.MonetaryPolicy.flow_weight":
+		panic(fmt.Errorf("field flow_weight of message ark.treasury.v1.MonetaryPolicy is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MonetaryPolicy"))
@@ -847,6 +1996,12 @@ func (x *fastReflection_MonetaryPolicy) NewField(fd protoreflect.FieldDescriptor
 	case "ark.treasury.v1.MonetaryPolicy.strategic_reserve_target_ratio":
 		return protoreflect.ValueOfString("")
 	case "ark.treasury.v1.MonetaryPolicy.insurance_target_ratio":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.MonetaryPolicy.liability_ratio_weight":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.MonetaryPolicy.volatility_weight":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.MonetaryPolicy.flow_weight":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -941,6 +2096,18 @@ func (x *fastReflection_MonetaryPolicy) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		l = len(x.LiabilityRatioWeight)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.VolatilityWeight)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.FlowWeight)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -969,6 +2136,27 @@ func (x *fastReflection_MonetaryPolicy) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.FlowWeight) > 0 {
+			i -= len(x.FlowWeight)
+			copy(dAtA[i:], x.FlowWeight)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FlowWeight)))
+			i--
+			dAtA[i] = 0x4a
+		}
+		if len(x.VolatilityWeight) > 0 {
+			i -= len(x.VolatilityWeight)
+			copy(dAtA[i:], x.VolatilityWeight)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.VolatilityWeight)))
+			i--
+			dAtA[i] = 0x42
+		}
+		if len(x.LiabilityRatioWeight) > 0 {
+			i -= len(x.LiabilityRatioWeight)
+			copy(dAtA[i:], x.LiabilityRatioWeight)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.LiabilityRatioWeight)))
+			i--
+			dAtA[i] = 0x3a
 		}
 		if len(x.InsuranceTargetRatio) > 0 {
 			i -= len(x.InsuranceTargetRatio)
@@ -1253,6 +2441,102 @@ func (x *fastReflection_MonetaryPolicy) ProtoMethods() *protoiface.Methods {
 				}
 				x.InsuranceTargetRatio = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 7:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LiabilityRatioWeight", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.LiabilityRatioWeight = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 8:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VolatilityWeight", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.VolatilityWeight = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 9:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FlowWeight", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.FlowWeight = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1312,7 +2596,7 @@ func (x *MonetaryMandate) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MonetaryMandate) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[2]
+	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1907,7 +3191,7 @@ func (x *RewardFundingState) ProtoReflect() protoreflect.Message {
 }
 
 func (x *RewardFundingState) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[3]
+	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2499,7 +3783,7 @@ func (x *TaxCap) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TaxCap) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[4]
+	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2983,7 +4267,7 @@ func (x *WrittenOffExposure) ProtoReflect() protoreflect.Message {
 }
 
 func (x *WrittenOffExposure) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[5]
+	mi := &file_ark_treasury_v1_treasury_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3478,6 +4762,27 @@ type Params struct {
 	// governance voted for more closely and rebuilds the map more often; a longer
 	// one lets the real ceiling drift further from it.
 	TaxCapRefreshPeriodBlocks uint64 `protobuf:"varint,3,opt,name=tax_cap_refresh_period_blocks,json=taxCapRefreshPeriodBlocks,proto3" json:"tax_cap_refresh_period_blocks,omitempty"`
+	// volatility_decay is the per-block EWMA retention for the variance
+	// series, in [0, 1). A value at or above one would never forget a sample.
+	VolatilityDecay string `protobuf:"bytes,4,opt,name=volatility_decay,json=volatilityDecay,proto3" json:"volatility_decay,omitempty"`
+	// flow_decay is the per-block EMA retention for the flow series, in
+	// [0, 1).
+	FlowDecay string `protobuf:"bytes,5,opt,name=flow_decay,json=flowDecay,proto3" json:"flow_decay,omitempty"`
+	// multiplier_cap is the ceiling on the applied multiplier, at least
+	// one. It is also the saturation point: a composite that leaves representable
+	// range resolves here rather than failing a block, because stress past
+	// measurement is the cap by definition.
+	MultiplierCap string `protobuf:"bytes,6,opt,name=multiplier_cap,json=multiplierCap,proto3" json:"multiplier_cap,omitempty"`
+	// multiplier_max_step is the most the multiplier may move in one
+	// update, in either direction. Positive: a zero step would freeze the
+	// multiplier at its stored value forever.
+	MultiplierMaxStep string `protobuf:"bytes,7,opt,name=multiplier_max_step,json=multiplierMaxStep,proto3" json:"multiplier_max_step,omitempty"`
+	// exposure_refresh_period_blocks is how often the multiplier is recomputed
+	// from the sampled series. Sampling itself is per block; only the
+	// recomputation waits. It keeps the exposure qualifier the four fields above
+	// drop, because Params already carries a second cadence in
+	// tax_cap_refresh_period_blocks and a bare period would read as the module's.
+	ExposureRefreshPeriodBlocks uint64 `protobuf:"varint,8,opt,name=exposure_refresh_period_blocks,json=exposureRefreshPeriodBlocks,proto3" json:"exposure_refresh_period_blocks,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -3521,6 +4826,150 @@ func (x *Params) GetTaxCapRefreshPeriodBlocks() uint64 {
 	return 0
 }
 
+func (x *Params) GetVolatilityDecay() string {
+	if x != nil {
+		return x.VolatilityDecay
+	}
+	return ""
+}
+
+func (x *Params) GetFlowDecay() string {
+	if x != nil {
+		return x.FlowDecay
+	}
+	return ""
+}
+
+func (x *Params) GetMultiplierCap() string {
+	if x != nil {
+		return x.MultiplierCap
+	}
+	return ""
+}
+
+func (x *Params) GetMultiplierMaxStep() string {
+	if x != nil {
+		return x.MultiplierMaxStep
+	}
+	return ""
+}
+
+func (x *Params) GetExposureRefreshPeriodBlocks() uint64 {
+	if x != nil {
+		return x.ExposureRefreshPeriodBlocks
+	}
+	return 0
+}
+
+// ExposureState is the running risk estimate behind the multiplier: two
+// per-block series, the inputs of the last applied update, and the multiplier
+// every target consumer reads.
+type ExposureState struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// last_reference_price is the previous block's protocol reference rate, held
+	// to form the next return. Zero means no sample has been taken yet, so the
+	// next one records a price and produces no return.
+	LastReferencePrice string `protobuf:"bytes,1,opt,name=last_reference_price,json=lastReferencePrice,proto3" json:"last_reference_price,omitempty"`
+	// volatility_variance is the EWMA of squared per-block returns. Each sample
+	// is clamped to [-1, 1], which bounds this series to [0, 1] by induction and
+	// so bounds annualised volatility by the square root of a year in blocks.
+	VolatilityVariance string `protobuf:"bytes,2,opt,name=volatility_variance,json=volatilityVariance,proto3" json:"volatility_variance,omitempty"`
+	// flow_pressure is the EMA of per-block net redemption value in NOAH. It is
+	// an absolute quantity, divided by net liability only when the multiplier is
+	// applied, so a changing liability never restates the stored series.
+	FlowPressure string `protobuf:"bytes,3,opt,name=flow_pressure,json=flowPressure,proto3" json:"flow_pressure,omitempty"`
+	// liability_ratio is the ratio behind the last applied update, kept so the
+	// multiplier's inputs are readable without recomputing the fold.
+	LiabilityRatio string `protobuf:"bytes,4,opt,name=liability_ratio,json=liabilityRatio,proto3" json:"liability_ratio,omitempty"`
+	// multiplier is what target consumers currently scale by, at least one.
+	Multiplier string `protobuf:"bytes,5,opt,name=multiplier,proto3" json:"multiplier,omitempty"`
+	// flow_ratio is the flow indicator behind the last applied update:
+	// flow_pressure over the net liability that update sized against. Kept
+	// beside liability_ratio because neither survives in the live series — the
+	// net liability both divided by has since moved. Zero when that update
+	// found no positive net liability.
+	FlowRatio string `protobuf:"bytes,6,opt,name=flow_ratio,json=flowRatio,proto3" json:"flow_ratio,omitempty"`
+	// last_refresh_height is the block liability_ratio, flow_ratio, and
+	// multiplier were computed at, and the only thing separating them from the
+	// live series in fields 1-3. Zero means no refresh has been applied yet. It
+	// is chain-relative: an exported state carries the old chain's height, so a
+	// reader comparing it against a restarted chain sees a refresh in the future
+	// rather than a stale one.
+	LastRefreshHeight uint64 `protobuf:"varint,7,opt,name=last_refresh_height,json=lastRefreshHeight,proto3" json:"last_refresh_height,omitempty"`
+}
+
+func (x *ExposureState) Reset() {
+	*x = ExposureState{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExposureState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExposureState) ProtoMessage() {}
+
+// Deprecated: Use ExposureState.ProtoReflect.Descriptor instead.
+func (*ExposureState) Descriptor() ([]byte, []int) {
+	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ExposureState) GetLastReferencePrice() string {
+	if x != nil {
+		return x.LastReferencePrice
+	}
+	return ""
+}
+
+func (x *ExposureState) GetVolatilityVariance() string {
+	if x != nil {
+		return x.VolatilityVariance
+	}
+	return ""
+}
+
+func (x *ExposureState) GetFlowPressure() string {
+	if x != nil {
+		return x.FlowPressure
+	}
+	return ""
+}
+
+func (x *ExposureState) GetLiabilityRatio() string {
+	if x != nil {
+		return x.LiabilityRatio
+	}
+	return ""
+}
+
+func (x *ExposureState) GetMultiplier() string {
+	if x != nil {
+		return x.Multiplier
+	}
+	return ""
+}
+
+func (x *ExposureState) GetFlowRatio() string {
+	if x != nil {
+		return x.FlowRatio
+	}
+	return ""
+}
+
+func (x *ExposureState) GetLastRefreshHeight() uint64 {
+	if x != nil {
+		return x.LastRefreshHeight
+	}
+	return 0
+}
+
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
 // to the monetary-policy committee.
 type MonetaryPolicy struct {
@@ -3534,12 +4983,21 @@ type MonetaryPolicy struct {
 	RedemptionBufferTargetRatio string `protobuf:"bytes,4,opt,name=redemption_buffer_target_ratio,json=redemptionBufferTargetRatio,proto3" json:"redemption_buffer_target_ratio,omitempty"`
 	StrategicReserveTargetRatio string `protobuf:"bytes,5,opt,name=strategic_reserve_target_ratio,json=strategicReserveTargetRatio,proto3" json:"strategic_reserve_target_ratio,omitempty"`
 	InsuranceTargetRatio        string `protobuf:"bytes,6,opt,name=insurance_target_ratio,json=insuranceTargetRatio,proto3" json:"insurance_target_ratio,omitempty"`
+	// liability_ratio_weight scales net liability over circulating NOAH: the
+	// dilution term, and the one indicator that states directly how reflexive a
+	// redemption is.
+	LiabilityRatioWeight string `protobuf:"bytes,7,opt,name=liability_ratio_weight,json=liabilityRatioWeight,proto3" json:"liability_ratio_weight,omitempty"`
+	// volatility_weight scales annualised realised volatility of the protocol
+	// reference rate.
+	VolatilityWeight string `protobuf:"bytes,8,opt,name=volatility_weight,json=volatilityWeight,proto3" json:"volatility_weight,omitempty"`
+	// flow_weight scales redemption flow pressure as a share of net liability.
+	FlowWeight string `protobuf:"bytes,9,opt,name=flow_weight,json=flowWeight,proto3" json:"flow_weight,omitempty"`
 }
 
 func (x *MonetaryPolicy) Reset() {
 	*x = MonetaryPolicy{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[1]
+		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3553,7 +5011,7 @@ func (*MonetaryPolicy) ProtoMessage() {}
 
 // Deprecated: Use MonetaryPolicy.ProtoReflect.Descriptor instead.
 func (*MonetaryPolicy) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{1}
+	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MonetaryPolicy) GetStabilityTaxRate() string {
@@ -3598,6 +5056,27 @@ func (x *MonetaryPolicy) GetInsuranceTargetRatio() string {
 	return ""
 }
 
+func (x *MonetaryPolicy) GetLiabilityRatioWeight() string {
+	if x != nil {
+		return x.LiabilityRatioWeight
+	}
+	return ""
+}
+
+func (x *MonetaryPolicy) GetVolatilityWeight() string {
+	if x != nil {
+		return x.VolatilityWeight
+	}
+	return ""
+}
+
+func (x *MonetaryPolicy) GetFlowWeight() string {
+	if x != nil {
+		return x.FlowWeight
+	}
+	return ""
+}
+
 // MonetaryMandate stores one governance-created, bounded committee
 // appointment. An empty committee identifies a disabled mandate; term still
 // increases on replacement so previously prepared committee transactions
@@ -3616,7 +5095,7 @@ type MonetaryMandate struct {
 func (x *MonetaryMandate) Reset() {
 	*x = MonetaryMandate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[2]
+		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3630,7 +5109,7 @@ func (*MonetaryMandate) ProtoMessage() {}
 
 // Deprecated: Use MonetaryMandate.ProtoReflect.Descriptor instead.
 func (*MonetaryMandate) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{2}
+	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MonetaryMandate) GetEnvelope() *v1.Envelope {
@@ -3671,7 +5150,7 @@ type RewardFundingState struct {
 func (x *RewardFundingState) Reset() {
 	*x = RewardFundingState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[3]
+		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3685,7 +5164,7 @@ func (*RewardFundingState) ProtoMessage() {}
 
 // Deprecated: Use RewardFundingState.ProtoReflect.Descriptor instead.
 func (*RewardFundingState) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{3}
+	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RewardFundingState) GetBlocksRemaining() uint64 {
@@ -3731,7 +5210,7 @@ type TaxCap struct {
 func (x *TaxCap) Reset() {
 	*x = TaxCap{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[4]
+		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3745,7 +5224,7 @@ func (*TaxCap) ProtoMessage() {}
 
 // Deprecated: Use TaxCap.ProtoReflect.Descriptor instead.
 func (*TaxCap) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{4}
+	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TaxCap) GetDenom() string {
@@ -3777,7 +5256,7 @@ type WrittenOffExposure struct {
 func (x *WrittenOffExposure) Reset() {
 	*x = WrittenOffExposure{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[5]
+		mi := &file_ark_treasury_v1_treasury_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3791,7 +5270,7 @@ func (*WrittenOffExposure) ProtoMessage() {}
 
 // Deprecated: Use WrittenOffExposure.ProtoReflect.Descriptor instead.
 func (*WrittenOffExposure) Descriptor() ([]byte, []int) {
-	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{5}
+	return file_ark_treasury_v1_treasury_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *WrittenOffExposure) GetOutstandingSupply() *v1beta1.Coin {
@@ -3822,7 +5301,7 @@ var file_ark_treasury_v1_treasury_proto_rawDesc = []byte{
 	0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14,
 	0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xfc, 0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc9, 0x05, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12,
 	0x50, 0x0a, 0x11, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x5f, 0x74, 0x61, 0x78,
 	0x5f, 0x63, 0x61, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73,
 	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
@@ -3836,118 +5315,206 @@ var file_ark_treasury_v1_treasury_proto_rawDesc = []byte{
 	0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x18, 0x03, 0x20,
 	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x19, 0x74, 0x61, 0x78, 0x43,
 	0x61, 0x70, 0x52, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x42,
-	0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x3a, 0x1c, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13,
-	0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x22, 0xc2, 0x05, 0x0a, 0x0e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79,
-	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x64, 0x0a, 0x12, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c,
-	0x69, 0x74, 0x79, 0x5f, 0x74, 0x61, 0x78, 0x5f, 0x72, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65,
-	0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x73, 0x74, 0x61, 0x62,
-	0x69, 0x6c, 0x69, 0x74, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61, 0x74, 0x65, 0x12, 0x73, 0x0a, 0x1d,
-	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
-	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49,
-	0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x1a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
-	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x54, 0x61, 0x72, 0x67, 0x65,
-	0x74, 0x12, 0x6d, 0x0a, 0x1a, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5f, 0x62, 0x6c, 0x6f, 0x63,
-	0x6b, 0x5f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
-	0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49,
-	0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x17, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x42,
-	0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74,
-	0x12, 0x7b, 0x0a, 0x1e, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x62,
-	0x75, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
+	0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x12, 0x61, 0x0a, 0x10, 0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c,
+	0x69, 0x74, 0x79, 0x5f, 0x64, 0x65, 0x63, 0x61, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
+	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
+	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c,
+	0x69, 0x74, 0x79, 0x44, 0x65, 0x63, 0x61, 0x79, 0x12, 0x55, 0x0a, 0x0a, 0x66, 0x6c, 0x6f, 0x77,
+	0x5f, 0x64, 0x65, 0x63, 0x61, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde,
+	0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65,
+	0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x66, 0x6c, 0x6f, 0x77, 0x44, 0x65, 0x63, 0x61, 0x79, 0x12,
+	0x5d, 0x0a, 0x0e, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x63, 0x61,
+	0x70, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x0d, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x43, 0x61, 0x70, 0x12, 0x66,
+	0x0a, 0x13, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x6d, 0x61, 0x78,
+	0x5f, 0x73, 0x74, 0x65, 0x70, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f,
+	0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63,
+	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x4d,
+	0x61, 0x78, 0x53, 0x74, 0x65, 0x70, 0x12, 0x4a, 0x0a, 0x1e, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75,
+	0x72, 0x65, 0x5f, 0x72, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f,
+	0x64, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x1b, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x52,
+	0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x73, 0x3a, 0x1c, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x61, 0x72, 0x6b,
+	0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x22, 0x86, 0x05, 0x0a, 0x0d, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x53, 0x74, 0x61,
+	0x74, 0x65, 0x12, 0x68, 0x0a, 0x14, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x72, 0x65, 0x66, 0x65, 0x72,
+	0x65, 0x6e, 0x63, 0x65, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61,
+	0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x6c, 0x61, 0x73, 0x74, 0x52, 0x65,
+	0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x67, 0x0a, 0x13,
+	0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61,
+	0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda,
+	0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4,
+	0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x12, 0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x5b, 0x0a, 0x0d, 0x66, 0x6c, 0x6f, 0x77, 0x5f, 0x70, 0x72,
+	0x65, 0x73, 0x73, 0x75, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde,
+	0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65,
+	0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x66, 0x6c, 0x6f, 0x77, 0x50, 0x72, 0x65, 0x73, 0x73, 0x75,
+	0x72, 0x65, 0x12, 0x5f, 0x0a, 0x0f, 0x6c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f,
+	0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63,
+	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x61,
+	0x74, 0x69, 0x6f, 0x12, 0x56, 0x0a, 0x0a, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x0a, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x55, 0x0a, 0x0a, 0x66,
+	0x6c, 0x6f, 0x77, 0x5f, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
+	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
+	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x66, 0x6c, 0x6f, 0x77, 0x52, 0x61, 0x74,
+	0x69, 0x6f, 0x12, 0x35, 0x0a, 0x13, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x72, 0x65, 0x66, 0x72, 0x65,
+	0x73, 0x68, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x04, 0x42,
+	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6c, 0x61, 0x73, 0x74, 0x52, 0x65, 0x66, 0x72,
+	0x65, 0x73, 0x68, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xee, 0x07, 0x0a, 0x0e, 0x4d, 0x6f,
+	0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x64, 0x0a, 0x12,
+	0x73, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x74, 0x61, 0x78, 0x5f, 0x72, 0x61,
+	0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
 	0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d,
 	0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d,
 	0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x1b, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x75, 0x66, 0x66,
-	0x65, 0x72, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x12, 0x7b, 0x0a,
-	0x1e, 0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x5f, 0x72, 0x65, 0x73, 0x65, 0x72,
-	0x76, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
-	0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x1b, 0x73,
-	0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x52, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x54,
-	0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x12, 0x6c, 0x0a, 0x16, 0x69, 0x6e,
-	0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00,
-	0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2,
-	0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x14, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x54, 0x61, 0x72,
-	0x67, 0x65, 0x74, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x22, 0xfc, 0x01, 0x0a, 0x0f, 0x4d, 0x6f, 0x6e,
-	0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x43, 0x0a, 0x08,
-	0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x42, 0x0d, 0xc8, 0xde, 0x1f, 0x00, 0xd0, 0xde,
-	0x1f, 0x01, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70,
-	0x65, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d, 0x5f, 0x70, 0x6f, 0x6c,
-	0x69, 0x63, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65,
-	0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d, 0x50, 0x6f,
-	0x6c, 0x69, 0x63, 0x79, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x61, 0x78, 0x69, 0x6d, 0x75, 0x6d, 0x5f,
-	0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8,
-	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x61, 0x78, 0x69, 0x6d, 0x75,
-	0x6d, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x22, 0xdc, 0x02, 0x0a, 0x12, 0x52, 0x65, 0x77, 0x61,
-	0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x30,
-	0x0a, 0x10, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x5f, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69,
-	0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x0f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x52, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67,
-	0x12, 0x5b, 0x0a, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x74, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00,
-	0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x76, 0x61,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x55, 0x0a,
-	0x0d, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e,
-	0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e,
-	0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x54, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x12, 0x60, 0x0a, 0x13, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
-	0x72, 0x5f, 0x66, 0x65, 0x65, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74,
-	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x46, 0x65,
-	0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x69, 0x0a, 0x06, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70,
-	0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x49, 0x0a, 0x07, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61,
-	0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
-	0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
-	0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x74, 0x61, 0x78, 0x43, 0x61,
-	0x70, 0x22, 0x95, 0x01, 0x0a, 0x12, 0x57, 0x72, 0x69, 0x74, 0x74, 0x65, 0x6e, 0x4f, 0x66, 0x66,
-	0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x12, 0x53, 0x0a, 0x12, 0x6f, 0x75, 0x74, 0x73,
-	0x74, 0x61, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42,
-	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6f, 0x75, 0x74, 0x73,
-	0x74, 0x61, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x12, 0x2a, 0x0a,
-	0x11, 0x77, 0x72, 0x69, 0x74, 0x65, 0x5f, 0x6f, 0x66, 0x66, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0f, 0x77, 0x72, 0x69, 0x74, 0x65, 0x4f,
-	0x66, 0x66, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0xa6, 0x01, 0x0a, 0x13, 0x63, 0x6f,
-	0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x42, 0x0d, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41,
-	0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02,
-	0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31,
-	0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c,
-	0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a,
-	0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x10, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x54, 0x61, 0x78, 0x52, 0x61,
+	0x74, 0x65, 0x12, 0x73, 0x0a, 0x1d, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f,
+	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x74, 0x61, 0x72,
+	0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda,
+	0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x1a, 0x76, 0x61, 0x6c,
+	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x77, 0x61, 0x72,
+	0x64, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x6d, 0x0a, 0x1a, 0x6f, 0x72, 0x61, 0x63, 0x6c,
+	0x65, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x74,
+	0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f,
+	0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x17, 0x6f,
+	0x72, 0x61, 0x63, 0x6c, 0x65, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64,
+	0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x7b, 0x0a, 0x1e, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x74, 0x61, 0x72, 0x67,
+	0x65, 0x74, 0x5f, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x1b, 0x72, 0x65, 0x64, 0x65, 0x6d, 0x70, 0x74, 0x69,
+	0x6f, 0x6e, 0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x61,
+	0x74, 0x69, 0x6f, 0x12, 0x7b, 0x0a, 0x1e, 0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63,
+	0x5f, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f,
+	0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63,
+	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x1b, 0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x69, 0x63, 0x52, 0x65,
+	0x73, 0x65, 0x72, 0x76, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x61, 0x74, 0x69, 0x6f,
+	0x12, 0x6c, 0x0a, 0x16, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x74, 0x61,
+	0x72, 0x67, 0x65, 0x74, 0x5f, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09,
+	0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61,
+	0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61,
+	0x6e, 0x63, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x12, 0x6c,
+	0x0a, 0x16, 0x6c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x6c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74,
+	0x79, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x63, 0x0a, 0x11,
+	0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x10, 0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x57, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x12, 0x57, 0x0a, 0x0b, 0x66, 0x6c, 0x6f, 0x77, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a,
+	0x66, 0x6c, 0x6f, 0x77, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xfc, 0x01, 0x0a, 0x0f, 0x4d,
+	0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x43,
+	0x0a, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x42, 0x0d, 0xc8, 0xde, 0x1f, 0x00,
+	0xd0, 0xde, 0x1f, 0x01, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c,
+	0x6f, 0x70, 0x65, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d, 0x5f, 0x70,
+	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f,
+	0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d,
+	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x61, 0x78, 0x69, 0x6d, 0x75,
+	0x6d, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42,
+	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x61, 0x78, 0x69,
+	0x6d, 0x75, 0x6d, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x22, 0xdc, 0x02, 0x0a, 0x12, 0x52, 0x65,
+	0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65,
+	0x12, 0x30, 0x0a, 0x10, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x5f, 0x72, 0x65, 0x6d, 0x61, 0x69,
+	0x6e, 0x69, 0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x52, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69,
+	0x6e, 0x67, 0x12, 0x5b, 0x0a, 0x10, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f,
+	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde,
+	0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f,
+	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12,
+	0x55, 0x0a, 0x0d, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x60, 0x0a, 0x13, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x6f, 0x72, 0x5f, 0x66, 0x65, 0x65, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49,
+	0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
+	0x46, 0x65, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x69, 0x0a, 0x06, 0x54, 0x61, 0x78, 0x43,
+	0x61, 0x70, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x49, 0x0a, 0x07, 0x74, 0x61, 0x78, 0x5f,
+	0x63, 0x61, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda,
+	0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x74, 0x61, 0x78,
+	0x43, 0x61, 0x70, 0x22, 0x95, 0x01, 0x0a, 0x12, 0x57, 0x72, 0x69, 0x74, 0x74, 0x65, 0x6e, 0x4f,
+	0x66, 0x66, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x12, 0x53, 0x0a, 0x12, 0x6f, 0x75,
+	0x74, 0x73, 0x74, 0x61, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69,
+	0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x11, 0x6f, 0x75,
+	0x74, 0x73, 0x74, 0x61, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x12,
+	0x2a, 0x0a, 0x11, 0x77, 0x72, 0x69, 0x74, 0x65, 0x5f, 0x6f, 0x66, 0x66, 0x5f, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0f, 0x77, 0x72, 0x69, 0x74,
+	0x65, 0x4f, 0x66, 0x66, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0xa6, 0x01, 0x0a, 0x13,
+	0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x2e, 0x76, 0x31, 0x42, 0x0d, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72,
+	0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02,
+	0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31,
+	0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c,
+	0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3962,23 +5529,24 @@ func file_ark_treasury_v1_treasury_proto_rawDescGZIP() []byte {
 	return file_ark_treasury_v1_treasury_proto_rawDescData
 }
 
-var file_ark_treasury_v1_treasury_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_ark_treasury_v1_treasury_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_ark_treasury_v1_treasury_proto_goTypes = []interface{}{
 	(*Params)(nil),             // 0: ark.treasury.v1.Params
-	(*MonetaryPolicy)(nil),     // 1: ark.treasury.v1.MonetaryPolicy
-	(*MonetaryMandate)(nil),    // 2: ark.treasury.v1.MonetaryMandate
-	(*RewardFundingState)(nil), // 3: ark.treasury.v1.RewardFundingState
-	(*TaxCap)(nil),             // 4: ark.treasury.v1.TaxCap
-	(*WrittenOffExposure)(nil), // 5: ark.treasury.v1.WrittenOffExposure
-	(*v1beta1.Coin)(nil),       // 6: cosmos.base.v1beta1.Coin
-	(*v1.Envelope)(nil),        // 7: ark.mandate.v1.Envelope
+	(*ExposureState)(nil),      // 1: ark.treasury.v1.ExposureState
+	(*MonetaryPolicy)(nil),     // 2: ark.treasury.v1.MonetaryPolicy
+	(*MonetaryMandate)(nil),    // 3: ark.treasury.v1.MonetaryMandate
+	(*RewardFundingState)(nil), // 4: ark.treasury.v1.RewardFundingState
+	(*TaxCap)(nil),             // 5: ark.treasury.v1.TaxCap
+	(*WrittenOffExposure)(nil), // 6: ark.treasury.v1.WrittenOffExposure
+	(*v1beta1.Coin)(nil),       // 7: cosmos.base.v1beta1.Coin
+	(*v1.Envelope)(nil),        // 8: ark.mandate.v1.Envelope
 }
 var file_ark_treasury_v1_treasury_proto_depIdxs = []int32{
-	6, // 0: ark.treasury.v1.Params.reference_tax_cap:type_name -> cosmos.base.v1beta1.Coin
-	7, // 1: ark.treasury.v1.MonetaryMandate.envelope:type_name -> ark.mandate.v1.Envelope
-	1, // 2: ark.treasury.v1.MonetaryMandate.minimum_policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	1, // 3: ark.treasury.v1.MonetaryMandate.maximum_policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	6, // 4: ark.treasury.v1.WrittenOffExposure.outstanding_supply:type_name -> cosmos.base.v1beta1.Coin
+	7, // 0: ark.treasury.v1.Params.reference_tax_cap:type_name -> cosmos.base.v1beta1.Coin
+	8, // 1: ark.treasury.v1.MonetaryMandate.envelope:type_name -> ark.mandate.v1.Envelope
+	2, // 2: ark.treasury.v1.MonetaryMandate.minimum_policy:type_name -> ark.treasury.v1.MonetaryPolicy
+	2, // 3: ark.treasury.v1.MonetaryMandate.maximum_policy:type_name -> ark.treasury.v1.MonetaryPolicy
+	7, // 4: ark.treasury.v1.WrittenOffExposure.outstanding_supply:type_name -> cosmos.base.v1beta1.Coin
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -4005,7 +5573,7 @@ func file_ark_treasury_v1_treasury_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_treasury_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MonetaryPolicy); i {
+			switch v := v.(*ExposureState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4017,7 +5585,7 @@ func file_ark_treasury_v1_treasury_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_treasury_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MonetaryMandate); i {
+			switch v := v.(*MonetaryPolicy); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4029,7 +5597,7 @@ func file_ark_treasury_v1_treasury_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_treasury_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardFundingState); i {
+			switch v := v.(*MonetaryMandate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4041,7 +5609,7 @@ func file_ark_treasury_v1_treasury_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_treasury_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TaxCap); i {
+			switch v := v.(*RewardFundingState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4053,6 +5621,18 @@ func file_ark_treasury_v1_treasury_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_treasury_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TaxCap); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_treasury_v1_treasury_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*WrittenOffExposure); i {
 			case 0:
 				return &v.state
@@ -4071,7 +5651,7 @@ func file_ark_treasury_v1_treasury_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_treasury_v1_treasury_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

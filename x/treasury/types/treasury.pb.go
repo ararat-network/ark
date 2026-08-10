@@ -45,6 +45,27 @@ type Params struct {
 	// governance voted for more closely and rebuilds the map more often; a longer
 	// one lets the real ceiling drift further from it.
 	TaxCapRefreshPeriodBlocks uint64 `protobuf:"varint,3,opt,name=tax_cap_refresh_period_blocks,json=taxCapRefreshPeriodBlocks,proto3" json:"tax_cap_refresh_period_blocks,omitempty"`
+	// volatility_decay is the per-block EWMA retention for the variance
+	// series, in [0, 1). A value at or above one would never forget a sample.
+	VolatilityDecay cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=volatility_decay,json=volatilityDecay,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"volatility_decay"`
+	// flow_decay is the per-block EMA retention for the flow series, in
+	// [0, 1).
+	FlowDecay cosmossdk_io_math.LegacyDec `protobuf:"bytes,5,opt,name=flow_decay,json=flowDecay,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"flow_decay"`
+	// multiplier_cap is the ceiling on the applied multiplier, at least
+	// one. It is also the saturation point: a composite that leaves representable
+	// range resolves here rather than failing a block, because stress past
+	// measurement is the cap by definition.
+	MultiplierCap cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=multiplier_cap,json=multiplierCap,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"multiplier_cap"`
+	// multiplier_max_step is the most the multiplier may move in one
+	// update, in either direction. Positive: a zero step would freeze the
+	// multiplier at its stored value forever.
+	MultiplierMaxStep cosmossdk_io_math.LegacyDec `protobuf:"bytes,7,opt,name=multiplier_max_step,json=multiplierMaxStep,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"multiplier_max_step"`
+	// exposure_refresh_period_blocks is how often the multiplier is recomputed
+	// from the sampled series. Sampling itself is per block; only the
+	// recomputation waits. It keeps the exposure qualifier the four fields above
+	// drop, because Params already carries a second cadence in
+	// tax_cap_refresh_period_blocks and a bare period would read as the module's.
+	ExposureRefreshPeriodBlocks uint64 `protobuf:"varint,8,opt,name=exposure_refresh_period_blocks,json=exposureRefreshPeriodBlocks,proto3" json:"exposure_refresh_period_blocks,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -101,6 +122,89 @@ func (m *Params) GetTaxCapRefreshPeriodBlocks() uint64 {
 	return 0
 }
 
+func (m *Params) GetExposureRefreshPeriodBlocks() uint64 {
+	if m != nil {
+		return m.ExposureRefreshPeriodBlocks
+	}
+	return 0
+}
+
+// ExposureState is the running risk estimate behind the multiplier: two
+// per-block series, the inputs of the last applied update, and the multiplier
+// every target consumer reads.
+type ExposureState struct {
+	// last_reference_price is the previous block's protocol reference rate, held
+	// to form the next return. Zero means no sample has been taken yet, so the
+	// next one records a price and produces no return.
+	LastReferencePrice cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=last_reference_price,json=lastReferencePrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"last_reference_price"`
+	// volatility_variance is the EWMA of squared per-block returns. Each sample
+	// is clamped to [-1, 1], which bounds this series to [0, 1] by induction and
+	// so bounds annualised volatility by the square root of a year in blocks.
+	VolatilityVariance cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=volatility_variance,json=volatilityVariance,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"volatility_variance"`
+	// flow_pressure is the EMA of per-block net redemption value in NOAH. It is
+	// an absolute quantity, divided by net liability only when the multiplier is
+	// applied, so a changing liability never restates the stored series.
+	FlowPressure cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=flow_pressure,json=flowPressure,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"flow_pressure"`
+	// liability_ratio is the ratio behind the last applied update, kept so the
+	// multiplier's inputs are readable without recomputing the fold.
+	LiabilityRatio cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=liability_ratio,json=liabilityRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"liability_ratio"`
+	// multiplier is what target consumers currently scale by, at least one.
+	Multiplier cosmossdk_io_math.LegacyDec `protobuf:"bytes,5,opt,name=multiplier,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"multiplier"`
+	// flow_ratio is the flow indicator behind the last applied update:
+	// flow_pressure over the net liability that update sized against. Kept
+	// beside liability_ratio because neither survives in the live series — the
+	// net liability both divided by has since moved. Zero when that update
+	// found no positive net liability.
+	FlowRatio cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=flow_ratio,json=flowRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"flow_ratio"`
+	// last_refresh_height is the block liability_ratio, flow_ratio, and
+	// multiplier were computed at, and the only thing separating them from the
+	// live series in fields 1-3. Zero means no refresh has been applied yet. It
+	// is chain-relative: an exported state carries the old chain's height, so a
+	// reader comparing it against a restarted chain sees a refresh in the future
+	// rather than a stale one.
+	LastRefreshHeight uint64 `protobuf:"varint,7,opt,name=last_refresh_height,json=lastRefreshHeight,proto3" json:"last_refresh_height,omitempty"`
+}
+
+func (m *ExposureState) Reset()         { *m = ExposureState{} }
+func (m *ExposureState) String() string { return proto.CompactTextString(m) }
+func (*ExposureState) ProtoMessage()    {}
+func (*ExposureState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8a4c35639ab3f93f, []int{1}
+}
+func (m *ExposureState) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ExposureState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ExposureState.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ExposureState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExposureState.Merge(m, src)
+}
+func (m *ExposureState) XXX_Size() int {
+	return m.Size()
+}
+func (m *ExposureState) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExposureState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ExposureState proto.InternalMessageInfo
+
+func (m *ExposureState) GetLastRefreshHeight() uint64 {
+	if m != nil {
+		return m.LastRefreshHeight
+	}
+	return 0
+}
+
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
 // to the monetary-policy committee.
 type MonetaryPolicy struct {
@@ -110,13 +214,22 @@ type MonetaryPolicy struct {
 	RedemptionBufferTargetRatio cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=redemption_buffer_target_ratio,json=redemptionBufferTargetRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_buffer_target_ratio"`
 	StrategicReserveTargetRatio cosmossdk_io_math.LegacyDec `protobuf:"bytes,5,opt,name=strategic_reserve_target_ratio,json=strategicReserveTargetRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"strategic_reserve_target_ratio"`
 	InsuranceTargetRatio        cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=insurance_target_ratio,json=insuranceTargetRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"insurance_target_ratio"`
+	// liability_ratio_weight scales net liability over circulating NOAH: the
+	// dilution term, and the one indicator that states directly how reflexive a
+	// redemption is.
+	LiabilityRatioWeight cosmossdk_io_math.LegacyDec `protobuf:"bytes,7,opt,name=liability_ratio_weight,json=liabilityRatioWeight,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"liability_ratio_weight"`
+	// volatility_weight scales annualised realised volatility of the protocol
+	// reference rate.
+	VolatilityWeight cosmossdk_io_math.LegacyDec `protobuf:"bytes,8,opt,name=volatility_weight,json=volatilityWeight,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"volatility_weight"`
+	// flow_weight scales redemption flow pressure as a share of net liability.
+	FlowWeight cosmossdk_io_math.LegacyDec `protobuf:"bytes,9,opt,name=flow_weight,json=flowWeight,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"flow_weight"`
 }
 
 func (m *MonetaryPolicy) Reset()         { *m = MonetaryPolicy{} }
 func (m *MonetaryPolicy) String() string { return proto.CompactTextString(m) }
 func (*MonetaryPolicy) ProtoMessage()    {}
 func (*MonetaryPolicy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8a4c35639ab3f93f, []int{1}
+	return fileDescriptor_8a4c35639ab3f93f, []int{2}
 }
 func (m *MonetaryPolicy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -160,7 +273,7 @@ func (m *MonetaryMandate) Reset()         { *m = MonetaryMandate{} }
 func (m *MonetaryMandate) String() string { return proto.CompactTextString(m) }
 func (*MonetaryMandate) ProtoMessage()    {}
 func (*MonetaryMandate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8a4c35639ab3f93f, []int{2}
+	return fileDescriptor_8a4c35639ab3f93f, []int{3}
 }
 func (m *MonetaryMandate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -217,7 +330,7 @@ func (m *RewardFundingState) Reset()         { *m = RewardFundingState{} }
 func (m *RewardFundingState) String() string { return proto.CompactTextString(m) }
 func (*RewardFundingState) ProtoMessage()    {}
 func (*RewardFundingState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8a4c35639ab3f93f, []int{3}
+	return fileDescriptor_8a4c35639ab3f93f, []int{4}
 }
 func (m *RewardFundingState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -265,7 +378,7 @@ func (m *TaxCap) Reset()         { *m = TaxCap{} }
 func (m *TaxCap) String() string { return proto.CompactTextString(m) }
 func (*TaxCap) ProtoMessage()    {}
 func (*TaxCap) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8a4c35639ab3f93f, []int{4}
+	return fileDescriptor_8a4c35639ab3f93f, []int{5}
 }
 func (m *TaxCap) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -313,7 +426,7 @@ func (m *WrittenOffExposure) Reset()         { *m = WrittenOffExposure{} }
 func (m *WrittenOffExposure) String() string { return proto.CompactTextString(m) }
 func (*WrittenOffExposure) ProtoMessage()    {}
 func (*WrittenOffExposure) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8a4c35639ab3f93f, []int{5}
+	return fileDescriptor_8a4c35639ab3f93f, []int{6}
 }
 func (m *WrittenOffExposure) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -358,6 +471,7 @@ func (m *WrittenOffExposure) GetWriteOffVersion() uint64 {
 
 func init() {
 	proto.RegisterType((*Params)(nil), "ark.treasury.v1.Params")
+	proto.RegisterType((*ExposureState)(nil), "ark.treasury.v1.ExposureState")
 	proto.RegisterType((*MonetaryPolicy)(nil), "ark.treasury.v1.MonetaryPolicy")
 	proto.RegisterType((*MonetaryMandate)(nil), "ark.treasury.v1.MonetaryMandate")
 	proto.RegisterType((*RewardFundingState)(nil), "ark.treasury.v1.RewardFundingState")
@@ -368,61 +482,79 @@ func init() {
 func init() { proto.RegisterFile("ark/treasury/v1/treasury.proto", fileDescriptor_8a4c35639ab3f93f) }
 
 var fileDescriptor_8a4c35639ab3f93f = []byte{
-	// 863 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x95, 0xcf, 0x6f, 0xdc, 0x44,
-	0x14, 0xc7, 0xe3, 0xa6, 0x59, 0xc8, 0x94, 0x74, 0xb3, 0x93, 0x14, 0x36, 0x29, 0xf1, 0x56, 0x7b,
-	0xaa, 0x22, 0xe1, 0x6d, 0x8a, 0x84, 0x04, 0xc7, 0x4d, 0x5b, 0x14, 0x89, 0xaa, 0xc1, 0x09, 0xad,
-	0x04, 0x07, 0x33, 0x6b, 0x3f, 0x6f, 0x47, 0xb1, 0x67, 0xac, 0x99, 0xb1, 0xb3, 0x2b, 0xfe, 0x03,
-	0x4e, 0x5c, 0xb8, 0x73, 0xe4, 0xd8, 0x03, 0x7f, 0x01, 0xa7, 0x1e, 0x23, 0x4e, 0x08, 0xa1, 0x08,
-	0x25, 0x87, 0xf2, 0x47, 0x70, 0x40, 0xf3, 0x23, 0x5e, 0x87, 0x72, 0x49, 0xf6, 0xb2, 0x5a, 0xcf,
-	0x7b, 0xf3, 0xf9, 0xce, 0x3c, 0xfb, 0x7d, 0x1f, 0xf2, 0x89, 0x38, 0x1a, 0x28, 0x01, 0x44, 0x96,
-	0x62, 0x3a, 0xa8, 0x76, 0xea, 0xff, 0x41, 0x21, 0xb8, 0xe2, 0xb8, 0x4d, 0xc4, 0x51, 0x50, 0xaf,
-	0x55, 0x3b, 0x9b, 0x1d, 0x92, 0x53, 0xc6, 0x07, 0xe6, 0xd7, 0xe6, 0x6c, 0x6e, 0x69, 0x46, 0x4e,
-	0x58, 0x42, 0x14, 0x68, 0x04, 0xb0, 0x0a, 0x32, 0x5e, 0x80, 0x0b, 0xfb, 0x31, 0x97, 0x39, 0x97,
-	0x83, 0x11, 0x91, 0x3a, 0x3c, 0x02, 0x45, 0x76, 0x06, 0x31, 0xa7, 0xcc, 0xc5, 0x37, 0x6c, 0x3c,
-	0x32, 0x4f, 0x03, 0xfb, 0xe0, 0x42, 0xeb, 0x63, 0x3e, 0xe6, 0x76, 0x5d, 0xff, 0xb3, 0xab, 0xfd,
-	0x7f, 0x3c, 0xd4, 0xda, 0x27, 0x82, 0xe4, 0x12, 0xef, 0xa3, 0x8e, 0x80, 0x14, 0x04, 0xb0, 0x18,
-	0x22, 0x45, 0x26, 0x51, 0x4c, 0x8a, 0xae, 0x77, 0xcf, 0xbb, 0x7f, 0xeb, 0xe1, 0x46, 0xe0, 0x50,
-	0x5a, 0x37, 0x70, 0xba, 0xc1, 0x2e, 0xa7, 0x6c, 0xb8, 0xfc, 0xfa, 0xb4, 0xb7, 0xf0, 0xf3, 0x9b,
-	0x57, 0xdb, 0x5e, 0xd8, 0xae, 0xb7, 0x1f, 0x92, 0xc9, 0x2e, 0x29, 0xf0, 0xa7, 0xe8, 0x8e, 0x80,
-	0x63, 0x22, 0x92, 0x28, 0x2d, 0x59, 0x42, 0xd9, 0x38, 0x3a, 0xa6, 0x2c, 0xe1, 0xc7, 0xdd, 0x1b,
-	0xf7, 0xbc, 0xfb, 0x37, 0x87, 0x4b, 0x76, 0xdb, 0x9a, 0xcd, 0x79, 0x62, 0x53, 0x5e, 0x98, 0x0c,
-	0xfc, 0x39, 0xda, 0x72, 0x47, 0x88, 0x04, 0xa4, 0x02, 0xe4, 0xcb, 0xa8, 0x00, 0x41, 0x79, 0x12,
-	0x8d, 0x32, 0x1e, 0x1f, 0xc9, 0xee, 0x62, 0x13, 0xb1, 0xa1, 0x8c, 0x60, 0x68, 0x33, 0xf7, 0x4d,
-	0xe2, 0xd0, 0xe4, 0x7d, 0xf6, 0xe1, 0xdf, 0x3f, 0xf5, 0xbc, 0xef, 0xdf, 0xbc, 0xda, 0x5e, 0xbb,
-	0xf4, 0x76, 0xec, 0x9d, 0xfb, 0xbf, 0x2e, 0xa1, 0xdb, 0x4f, 0x39, 0x03, 0x45, 0xc4, 0x74, 0x9f,
-	0x67, 0x34, 0x9e, 0xe2, 0x04, 0x61, 0xa9, 0xc8, 0x88, 0x66, 0x54, 0x4d, 0x4d, 0x19, 0x04, 0x51,
-	0x60, 0xea, 0xb0, 0x3c, 0xfc, 0x44, 0x5f, 0xf6, 0x8f, 0xd3, 0xde, 0x5d, 0x5b, 0x0e, 0x99, 0x1c,
-	0x05, 0x94, 0x0f, 0x72, 0xa2, 0x5e, 0x06, 0x5f, 0xc0, 0x98, 0xc4, 0xd3, 0x47, 0x10, 0xff, 0xf6,
-	0xcb, 0x47, 0xc8, 0x55, 0xeb, 0x11, 0xc4, 0xf6, 0x7c, 0xab, 0x35, 0xf1, 0x90, 0x4c, 0x42, 0xa2,
-	0x00, 0x4b, 0xb4, 0x55, 0x91, 0x8c, 0x26, 0x44, 0x71, 0x61, 0xaf, 0x14, 0xb9, 0x52, 0x29, 0x22,
-	0xc6, 0xa0, 0x4c, 0x89, 0x96, 0x87, 0x0f, 0x9c, 0xe0, 0x9d, 0xb7, 0x05, 0xf7, 0x98, 0x6a, 0x48,
-	0xed, 0x31, 0x65, 0xa5, 0x36, 0x6b, 0xac, 0x29, 0x40, 0x68, 0xa0, 0x87, 0x86, 0x89, 0x73, 0xb4,
-	0xc9, 0x05, 0x89, 0x33, 0xf8, 0x5f, 0xc5, 0xc5, 0x6b, 0x2a, 0x7e, 0x60, 0x99, 0x6f, 0xcb, 0x7d,
-	0x87, 0x7c, 0x01, 0x09, 0xe4, 0x85, 0xa2, 0x9c, 0x45, 0xa3, 0x32, 0x4d, 0x41, 0x38, 0x31, 0x5d,
-	0x54, 0xca, 0xbb, 0x37, 0xe7, 0xaa, 0xea, 0xdd, 0x19, 0x7d, 0x68, 0xe0, 0x56, 0x37, 0xd4, 0x68,
-	0x2d, 0x2e, 0x95, 0x7e, 0x75, 0x63, 0x1a, 0x47, 0x02, 0x24, 0x88, 0x0a, 0x2e, 0x8b, 0x2f, 0xcd,
-	0x27, 0x5e, 0xd3, 0x43, 0x0b, 0x6f, 0x8a, 0x67, 0xe8, 0x7d, 0xca, 0x64, 0x29, 0x88, 0x6d, 0xa5,
-	0x86, 0x68, 0x6b, 0x2e, 0xd1, 0xf5, 0x9a, 0xda, 0x50, 0xd3, 0x3d, 0xdc, 0xbe, 0xf8, 0x88, 0x9f,
-	0x5a, 0xeb, 0xc0, 0xbb, 0xe8, 0xdd, 0x0b, 0xeb, 0x70, 0x3d, 0xdc, 0x0d, 0xb4, 0xfd, 0x38, 0x6b,
-	0x09, 0xaa, 0x9d, 0xe0, 0xb1, 0x8b, 0x0f, 0x57, 0xf4, 0x69, 0x4e, 0x4e, 0x7b, 0x9e, 0x15, 0xa9,
-	0x37, 0xe2, 0x2f, 0xd1, 0xed, 0x9c, 0x32, 0x9a, 0x97, 0x79, 0x54, 0x98, 0xe6, 0x30, 0x5f, 0xe5,
-	0xad, 0x87, 0xbd, 0xe0, 0x3f, 0x4e, 0x16, 0x5c, 0xee, 0xa1, 0xa6, 0x29, 0xac, 0x38, 0x82, 0xeb,
-	0x2e, 0x8d, 0x24, 0x93, 0x26, 0x72, 0xf1, 0x1a, 0x48, 0x4b, 0xb0, 0x91, 0xfe, 0x9f, 0x37, 0x10,
-	0x0e, 0x9b, 0x16, 0x72, 0xa0, 0x74, 0x05, 0x1e, 0xa0, 0x55, 0x6b, 0x15, 0x91, 0x80, 0x9c, 0x50,
-	0x46, 0xd9, 0xd8, 0x54, 0xa2, 0x36, 0x8d, 0xb6, 0x0d, 0x87, 0x17, 0x51, 0xfc, 0x0d, 0x5a, 0x9d,
-	0xf5, 0xe4, 0x9c, 0x6d, 0xd8, 0xae, 0x49, 0xae, 0x19, 0xbe, 0x42, 0x2b, 0xae, 0xf7, 0xe6, 0x6c,
-	0xb7, 0xf7, 0x2c, 0xc6, 0x61, 0xbf, 0x45, 0x6b, 0xb3, 0x33, 0xa7, 0x00, 0x51, 0x45, 0xb2, 0x12,
-	0x5c, 0x63, 0x5d, 0x1d, 0xde, 0xa9, 0x61, 0x4f, 0x00, 0x9e, 0x6b, 0x54, 0x9f, 0xa2, 0x96, 0xb3,
-	0xf3, 0x75, 0xb4, 0x94, 0x00, 0xe3, 0xb9, 0x35, 0xc3, 0xd0, 0x3e, 0xe0, 0x3d, 0xf4, 0xce, 0xc5,
-	0xb0, 0xb8, 0x6e, 0xb1, 0x5a, 0xd6, 0xbe, 0xfb, 0x3f, 0x7a, 0x08, 0xbf, 0x10, 0x54, 0x29, 0x60,
-	0xcf, 0xd2, 0xf4, 0xf1, 0xa4, 0xe0, 0xb2, 0x14, 0x80, 0x0f, 0x10, 0xe6, 0xa5, 0x92, 0x8a, 0xd8,
-	0x19, 0x22, 0xcb, 0xa2, 0xc8, 0xa6, 0x57, 0x9a, 0x4c, 0x9d, 0xc6, 0xfe, 0x03, 0xb3, 0x1d, 0x6f,
-	0xa3, 0xce, 0xb1, 0xa0, 0x0a, 0x22, 0x9e, 0xa6, 0x51, 0x05, 0x42, 0x52, 0xce, 0xec, 0x5c, 0x0a,
-	0xdb, 0x26, 0xf0, 0x2c, 0x4d, 0x9f, 0xdb, 0xe5, 0x61, 0xf0, 0xfa, 0xcc, 0xf7, 0x4e, 0xce, 0x7c,
-	0xef, 0xaf, 0x33, 0xdf, 0xfb, 0xe1, 0xdc, 0x5f, 0x38, 0x39, 0xf7, 0x17, 0x7e, 0x3f, 0xf7, 0x17,
-	0xbe, 0x5e, 0xd7, 0x43, 0x65, 0x32, 0x1b, 0x2b, 0x6a, 0x5a, 0x80, 0x1c, 0xb5, 0xcc, 0x6c, 0xfd,
-	0xf8, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x0c, 0x7b, 0xb3, 0x54, 0x11, 0x08, 0x00, 0x00,
+	// 1140 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x97, 0xcf, 0x6f, 0xe3, 0x44,
+	0x14, 0xc7, 0xeb, 0xed, 0x36, 0x6d, 0xa7, 0x9b, 0xa6, 0x99, 0x74, 0x21, 0x6d, 0x69, 0x5a, 0xe5,
+	0x54, 0x55, 0xc2, 0xd9, 0x2e, 0x02, 0x09, 0x8e, 0x69, 0x77, 0xa1, 0x88, 0x6a, 0x43, 0xda, 0x6d,
+	0x25, 0x56, 0xc8, 0x4c, 0x9c, 0xe7, 0x74, 0x54, 0xdb, 0x63, 0x8d, 0x27, 0xbf, 0xb4, 0x77, 0x0e,
+	0x9c, 0xb8, 0x70, 0xe7, 0xc8, 0x71, 0x0f, 0xfc, 0x11, 0xcb, 0xad, 0xe2, 0x84, 0x10, 0xaa, 0x50,
+	0x7b, 0x58, 0x4e, 0xfc, 0x05, 0x1c, 0xd0, 0xfc, 0x88, 0xed, 0x76, 0x97, 0xc3, 0xd6, 0x5c, 0xa2,
+	0xd8, 0x6f, 0xe6, 0xf3, 0x9d, 0xf1, 0x7c, 0xdf, 0xf3, 0x33, 0xaa, 0x11, 0x7e, 0xd6, 0x10, 0x1c,
+	0x48, 0xdc, 0xe7, 0xe3, 0xc6, 0x60, 0x27, 0xf9, 0x6f, 0x47, 0x9c, 0x09, 0x86, 0x4b, 0x84, 0x9f,
+	0xd9, 0xc9, 0xbd, 0xc1, 0xce, 0x6a, 0x99, 0x04, 0x34, 0x64, 0x0d, 0xf5, 0xab, 0xc7, 0xac, 0xae,
+	0x4b, 0x46, 0x40, 0xc2, 0x2e, 0x11, 0x20, 0x11, 0x10, 0x0e, 0xc0, 0x67, 0x11, 0x98, 0x70, 0xcd,
+	0x65, 0x71, 0xc0, 0xe2, 0x46, 0x87, 0xc4, 0x32, 0xdc, 0x01, 0x41, 0x76, 0x1a, 0x2e, 0xa3, 0xa1,
+	0x89, 0xaf, 0xe8, 0xb8, 0xa3, 0xae, 0x1a, 0xfa, 0xc2, 0x84, 0x96, 0x7b, 0xac, 0xc7, 0xf4, 0x7d,
+	0xf9, 0x4f, 0xdf, 0xad, 0xff, 0x32, 0x83, 0x0a, 0x2d, 0xc2, 0x49, 0x10, 0xe3, 0x16, 0x2a, 0x73,
+	0xf0, 0x80, 0x43, 0xe8, 0x82, 0x23, 0xc8, 0xc8, 0x71, 0x49, 0x54, 0xb5, 0x36, 0xad, 0xad, 0x85,
+	0x87, 0x2b, 0xb6, 0x41, 0x49, 0x5d, 0xdb, 0xe8, 0xda, 0xbb, 0x8c, 0x86, 0xcd, 0xf9, 0x97, 0x17,
+	0x1b, 0x53, 0x3f, 0xbd, 0x7a, 0xb1, 0x6d, 0xb5, 0x4b, 0xc9, 0xf4, 0x23, 0x32, 0xda, 0x25, 0x11,
+	0xfe, 0x18, 0xdd, 0xe7, 0x30, 0x24, 0xbc, 0xeb, 0x78, 0xfd, 0xb0, 0x4b, 0xc3, 0x9e, 0x33, 0xa4,
+	0x61, 0x97, 0x0d, 0xab, 0x77, 0x36, 0xad, 0xad, 0xbb, 0xcd, 0x19, 0x3d, 0xad, 0xa2, 0xc7, 0x3c,
+	0xd6, 0x43, 0x4e, 0xd4, 0x08, 0xfc, 0x29, 0x5a, 0x37, 0x4b, 0x70, 0x38, 0x78, 0x1c, 0xe2, 0x53,
+	0x27, 0x02, 0x4e, 0x59, 0xd7, 0xe9, 0xf8, 0xcc, 0x3d, 0x8b, 0xab, 0xd3, 0x59, 0xc4, 0x8a, 0x50,
+	0x82, 0x6d, 0x3d, 0xb2, 0xa5, 0x06, 0x36, 0xd5, 0x38, 0x4c, 0xd0, 0xd2, 0x80, 0xf9, 0x44, 0x50,
+	0x9f, 0x8a, 0xb1, 0xd3, 0x05, 0x97, 0x8c, 0xab, 0x77, 0x37, 0xad, 0xad, 0xf9, 0xe6, 0x47, 0x72,
+	0xe5, 0xbf, 0x5f, 0x6c, 0xac, 0xe9, 0xbd, 0xc5, 0xdd, 0x33, 0x9b, 0xb2, 0x46, 0x40, 0xc4, 0xa9,
+	0xfd, 0x05, 0xf4, 0x88, 0x3b, 0xde, 0x03, 0xf7, 0xd7, 0x9f, 0xdf, 0x47, 0x66, 0xeb, 0x7b, 0xe0,
+	0x9a, 0x6d, 0xa6, 0xbc, 0x3d, 0x89, 0xc3, 0x4f, 0x11, 0xf2, 0x7c, 0x36, 0x34, 0xf0, 0x99, 0x5c,
+	0xf0, 0x79, 0x49, 0xd2, 0xd8, 0xaf, 0xd1, 0x62, 0xd0, 0xf7, 0x05, 0x8d, 0x7c, 0x0a, 0x5c, 0x1d,
+	0x46, 0x21, 0x17, 0xba, 0x98, 0xd2, 0xe4, 0xe1, 0x78, 0xa8, 0x92, 0xc1, 0x07, 0x64, 0xe4, 0xc4,
+	0x02, 0xa2, 0xea, 0x6c, 0x2e, 0x8d, 0x72, 0x8a, 0x3c, 0x20, 0xa3, 0x43, 0x01, 0x11, 0xfe, 0x1c,
+	0xd5, 0x60, 0x14, 0xb1, 0xb8, 0xcf, 0xe1, 0x3f, 0x8e, 0x72, 0x2e, 0x7b, 0x94, 0x6b, 0x93, 0xc1,
+	0x6f, 0x38, 0xcc, 0x4f, 0xde, 0xfb, 0xeb, 0xc7, 0x0d, 0xeb, 0xbb, 0x57, 0x2f, 0xb6, 0x2b, 0xd7,
+	0x52, 0x4d, 0x1b, 0xb8, 0xfe, 0xed, 0x0c, 0x2a, 0x3e, 0x32, 0xb3, 0x0f, 0x05, 0x11, 0x80, 0x4f,
+	0xd1, 0xb2, 0x4f, 0x62, 0xe1, 0xa4, 0xbe, 0x8e, 0x38, 0x75, 0x41, 0xb9, 0xfa, 0xf6, 0x9b, 0xc4,
+	0x92, 0xd9, 0x9e, 0x20, 0x5b, 0x92, 0x88, 0x7b, 0xa8, 0x92, 0xb1, 0xd9, 0x80, 0x70, 0x4a, 0x42,
+	0x17, 0x94, 0xd1, 0x73, 0x08, 0xa5, 0xc8, 0x63, 0x43, 0xc4, 0xcf, 0x50, 0x51, 0x99, 0x2d, 0xe2,
+	0x10, 0xcb, 0x8d, 0xaa, 0x44, 0xb8, 0xbd, 0xc4, 0x3d, 0x09, 0x6b, 0x19, 0x16, 0x76, 0x50, 0xc9,
+	0xa7, 0xa4, 0xa3, 0x37, 0xc1, 0x89, 0xa0, 0x2c, 0x67, 0xae, 0x2c, 0x26, 0xb8, 0xb6, 0xa4, 0xe1,
+	0x63, 0x84, 0x52, 0x87, 0xe4, 0x4c, 0x95, 0x0c, 0x29, 0x49, 0x41, 0xbd, 0xe6, 0x42, 0xfe, 0x14,
+	0xd4, 0xcb, 0xfd, 0x10, 0x55, 0x26, 0xfe, 0x51, 0xbe, 0x3d, 0x05, 0xda, 0x3b, 0x15, 0x2a, 0x47,
+	0x12, 0xc3, 0x96, 0x8d, 0x1b, 0xe4, 0x80, 0xcf, 0x54, 0xbc, 0xfe, 0xf7, 0x2c, 0x5a, 0x3c, 0x60,
+	0x21, 0x08, 0xc2, 0xc7, 0x2d, 0xe6, 0x53, 0x77, 0x8c, 0xbb, 0x08, 0xc7, 0x62, 0xf2, 0x64, 0x65,
+	0x65, 0xe3, 0x44, 0xe4, 0xf5, 0xe1, 0x52, 0x42, 0x3c, 0x22, 0xa3, 0xb6, 0xf4, 0x7b, 0x8c, 0xd6,
+	0x07, 0xc4, 0xa7, 0x5d, 0x22, 0x18, 0xd7, 0xd9, 0xe5, 0x98, 0x02, 0x2c, 0x08, 0xef, 0x81, 0x30,
+	0x7e, 0x7c, 0x60, 0x04, 0xef, 0xbf, 0x2e, 0xb8, 0x1f, 0x8a, 0x8c, 0xd4, 0x7e, 0x28, 0xb4, 0xd4,
+	0x6a, 0x82, 0x55, 0x99, 0xd8, 0x56, 0xd0, 0x23, 0xc5, 0xc4, 0x01, 0x5a, 0x65, 0x9c, 0xb8, 0x3e,
+	0xbc, 0x51, 0x71, 0xfa, 0x96, 0x8a, 0xef, 0x6a, 0xe6, 0xeb, 0x72, 0xcf, 0x51, 0x8d, 0x43, 0x17,
+	0x82, 0x48, 0x50, 0x16, 0x3a, 0x9d, 0xbe, 0xe7, 0x01, 0x37, 0x62, 0xff, 0x8b, 0x65, 0xd7, 0x52,
+	0x7a, 0x53, 0xc1, 0xb5, 0xae, 0x36, 0xc4, 0x73, 0x54, 0x8b, 0x85, 0x3c, 0xba, 0x1e, 0x75, 0x1d,
+	0x0e, 0x31, 0xf0, 0x01, 0x5c, 0x17, 0xcf, 0xe7, 0xe9, 0xb5, 0x84, 0xde, 0xd6, 0xf0, 0xac, 0xb8,
+	0x8f, 0xde, 0xa1, 0x61, 0xdc, 0xe7, 0x44, 0xbf, 0xa0, 0x33, 0xa2, 0xf9, 0x0c, 0xbf, 0x9c, 0x50,
+	0x6f, 0xa8, 0xdd, 0xa8, 0x05, 0xce, 0x30, 0xb5, 0x7f, 0x0e, 0xb5, 0xeb, 0x25, 0xe1, 0x44, 0x31,
+	0xb1, 0x8b, 0xca, 0x99, 0xfa, 0x69, 0x84, 0xe6, 0xf2, 0xa5, 0x47, 0x0a, 0x34, 0x22, 0x27, 0x68,
+	0x41, 0x55, 0x09, 0x83, 0x9f, 0xcf, 0x57, 0x7e, 0x24, 0x4a, 0x83, 0xeb, 0xff, 0x58, 0xa8, 0x34,
+	0x49, 0xf8, 0x03, 0xdd, 0xbc, 0xe1, 0x5d, 0x34, 0x37, 0x69, 0xde, 0x4c, 0x17, 0x55, 0xb5, 0x65,
+	0x03, 0x68, 0x9a, 0x3b, 0x7b, 0xb0, 0x63, 0x3f, 0x32, 0xf1, 0x66, 0x51, 0xae, 0xe1, 0xfc, 0x62,
+	0xc3, 0xd2, 0xe8, 0x64, 0x22, 0xfe, 0x12, 0x2d, 0x06, 0x34, 0xa4, 0x41, 0x3f, 0x70, 0x22, 0x55,
+	0x48, 0x54, 0x06, 0x2f, 0x3c, 0xdc, 0xb0, 0x6f, 0xf4, 0x92, 0xf6, 0xf5, 0x7a, 0x93, 0x6d, 0xcb,
+	0x8a, 0x86, 0x60, 0x2a, 0x91, 0x44, 0x92, 0x51, 0x16, 0x39, 0x7d, 0x0b, 0xa4, 0x26, 0xe8, 0x48,
+	0xfd, 0x8f, 0x3b, 0x08, 0xb7, 0xb3, 0x4d, 0x9c, 0x7e, 0xfb, 0x3e, 0x40, 0x4b, 0xfa, 0x0d, 0xef,
+	0x70, 0x08, 0x08, 0x0d, 0x69, 0xd8, 0x53, 0x4f, 0x22, 0x29, 0x9d, 0x25, 0x1d, 0x6e, 0x4f, 0xa2,
+	0xf8, 0x19, 0x5a, 0x4a, 0xeb, 0x57, 0xce, 0x92, 0x55, 0x4a, 0x48, 0xa6, 0x70, 0x3c, 0x45, 0x45,
+	0x53, 0xa7, 0x72, 0x96, 0xa6, 0x7b, 0x1a, 0x63, 0xb0, 0xdf, 0xa0, 0x4a, 0xba, 0x66, 0x0f, 0xc0,
+	0x19, 0x10, 0xbf, 0x0f, 0xa6, 0x08, 0xbd, 0x3d, 0xbc, 0x9c, 0xc0, 0x1e, 0x03, 0x1c, 0x4b, 0x54,
+	0x9d, 0xa2, 0x82, 0x69, 0xa8, 0x97, 0xd1, 0x4c, 0x17, 0x42, 0x16, 0xe8, 0x17, 0x47, 0x5b, 0x5f,
+	0xe0, 0x7d, 0x34, 0x3b, 0x69, 0xd7, 0x6f, 0xfb, 0xb0, 0x0a, 0xba, 0x81, 0xae, 0xff, 0x60, 0x21,
+	0x7c, 0xc2, 0xa9, 0x10, 0x10, 0x3e, 0xf1, 0xbc, 0x49, 0x33, 0x85, 0x0f, 0x11, 0x66, 0x7d, 0x11,
+	0x0b, 0xa2, 0xbb, 0xf8, 0xb8, 0x1f, 0x45, 0xfe, 0xf8, 0xad, 0xbe, 0x0d, 0xca, 0x99, 0xf9, 0x87,
+	0x6a, 0x3a, 0xde, 0x46, 0xe5, 0x21, 0xa7, 0x02, 0x1c, 0xe6, 0x79, 0xce, 0x00, 0x78, 0x4c, 0x59,
+	0xa8, 0xbf, 0x0c, 0xda, 0x25, 0x15, 0x78, 0xe2, 0x79, 0xc7, 0xfa, 0x76, 0xd3, 0x7e, 0x79, 0x59,
+	0xb3, 0xce, 0x2f, 0x6b, 0xd6, 0x9f, 0x97, 0x35, 0xeb, 0xfb, 0xab, 0xda, 0xd4, 0xf9, 0x55, 0x6d,
+	0xea, 0xb7, 0xab, 0xda, 0xd4, 0x57, 0xcb, 0xb2, 0x13, 0x1c, 0xa5, 0xbd, 0xa0, 0x18, 0x47, 0x10,
+	0x77, 0x0a, 0xea, 0xeb, 0xe6, 0x83, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x8a, 0x0d, 0xcc, 0x67,
+	0x93, 0x0d, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -453,6 +585,21 @@ func (this *Params) Equal(that interface{}) bool {
 	if this.TaxCapRefreshPeriodBlocks != that1.TaxCapRefreshPeriodBlocks {
 		return false
 	}
+	if !this.VolatilityDecay.Equal(that1.VolatilityDecay) {
+		return false
+	}
+	if !this.FlowDecay.Equal(that1.FlowDecay) {
+		return false
+	}
+	if !this.MultiplierCap.Equal(that1.MultiplierCap) {
+		return false
+	}
+	if !this.MultiplierMaxStep.Equal(that1.MultiplierMaxStep) {
+		return false
+	}
+	if this.ExposureRefreshPeriodBlocks != that1.ExposureRefreshPeriodBlocks {
+		return false
+	}
 	return true
 }
 func (m *Params) Marshal() (dAtA []byte, err error) {
@@ -475,6 +622,51 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ExposureRefreshPeriodBlocks != 0 {
+		i = encodeVarintTreasury(dAtA, i, uint64(m.ExposureRefreshPeriodBlocks))
+		i--
+		dAtA[i] = 0x40
+	}
+	{
+		size := m.MultiplierMaxStep.Size()
+		i -= size
+		if _, err := m.MultiplierMaxStep.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
+	{
+		size := m.MultiplierCap.Size()
+		i -= size
+		if _, err := m.MultiplierCap.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x32
+	{
+		size := m.FlowDecay.Size()
+		i -= size
+		if _, err := m.FlowDecay.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	{
+		size := m.VolatilityDecay.Size()
+		i -= size
+		if _, err := m.VolatilityDecay.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
 	if m.TaxCapRefreshPeriodBlocks != 0 {
 		i = encodeVarintTreasury(dAtA, i, uint64(m.TaxCapRefreshPeriodBlocks))
 		i--
@@ -491,6 +683,94 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ExposureState) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExposureState) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ExposureState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.LastRefreshHeight != 0 {
+		i = encodeVarintTreasury(dAtA, i, uint64(m.LastRefreshHeight))
+		i--
+		dAtA[i] = 0x38
+	}
+	{
+		size := m.FlowRatio.Size()
+		i -= size
+		if _, err := m.FlowRatio.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x32
+	{
+		size := m.Multiplier.Size()
+		i -= size
+		if _, err := m.Multiplier.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	{
+		size := m.LiabilityRatio.Size()
+		i -= size
+		if _, err := m.LiabilityRatio.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size := m.FlowPressure.Size()
+		i -= size
+		if _, err := m.FlowPressure.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size := m.VolatilityVariance.Size()
+		i -= size
+		if _, err := m.VolatilityVariance.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size := m.LastReferencePrice.Size()
+		i -= size
+		if _, err := m.LastReferencePrice.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
 		i = encodeVarintTreasury(dAtA, i, uint64(size))
 	}
 	i--
@@ -518,6 +798,36 @@ func (m *MonetaryPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size := m.FlowWeight.Size()
+		i -= size
+		if _, err := m.FlowWeight.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x4a
+	{
+		size := m.VolatilityWeight.Size()
+		i -= size
+		if _, err := m.VolatilityWeight.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x42
+	{
+		size := m.LiabilityRatioWeight.Size()
+		i -= size
+		if _, err := m.LiabilityRatioWeight.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTreasury(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
 	{
 		size := m.InsuranceTargetRatio.Size()
 		i -= size
@@ -795,6 +1105,41 @@ func (m *Params) Size() (n int) {
 	if m.TaxCapRefreshPeriodBlocks != 0 {
 		n += 1 + sovTreasury(uint64(m.TaxCapRefreshPeriodBlocks))
 	}
+	l = m.VolatilityDecay.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.FlowDecay.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.MultiplierCap.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.MultiplierMaxStep.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	if m.ExposureRefreshPeriodBlocks != 0 {
+		n += 1 + sovTreasury(uint64(m.ExposureRefreshPeriodBlocks))
+	}
+	return n
+}
+
+func (m *ExposureState) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.LastReferencePrice.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.VolatilityVariance.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.FlowPressure.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.LiabilityRatio.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.Multiplier.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.FlowRatio.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	if m.LastRefreshHeight != 0 {
+		n += 1 + sovTreasury(uint64(m.LastRefreshHeight))
+	}
 	return n
 }
 
@@ -815,6 +1160,12 @@ func (m *MonetaryPolicy) Size() (n int) {
 	l = m.StrategicReserveTargetRatio.Size()
 	n += 1 + l + sovTreasury(uint64(l))
 	l = m.InsuranceTargetRatio.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.LiabilityRatioWeight.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.VolatilityWeight.Size()
+	n += 1 + l + sovTreasury(uint64(l))
+	l = m.FlowWeight.Size()
 	n += 1 + l + sovTreasury(uint64(l))
 	return n
 }
@@ -983,6 +1334,434 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.TaxCapRefreshPeriodBlocks |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolatilityDecay", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.VolatilityDecay.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FlowDecay", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FlowDecay.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MultiplierCap", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MultiplierCap.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MultiplierMaxStep", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MultiplierMaxStep.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExposureRefreshPeriodBlocks", wireType)
+			}
+			m.ExposureRefreshPeriodBlocks = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExposureRefreshPeriodBlocks |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTreasury(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExposureState) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTreasury
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExposureState: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExposureState: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastReferencePrice", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LastReferencePrice.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolatilityVariance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.VolatilityVariance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FlowPressure", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FlowPressure.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LiabilityRatio", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LiabilityRatio.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Multiplier", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Multiplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FlowRatio", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FlowRatio.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRefreshHeight", wireType)
+			}
+			m.LastRefreshHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LastRefreshHeight |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1238,6 +2017,108 @@ func (m *MonetaryPolicy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.InsuranceTargetRatio.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LiabilityRatioWeight", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LiabilityRatioWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolatilityWeight", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.VolatilityWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FlowWeight", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTreasury
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTreasury
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FlowWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

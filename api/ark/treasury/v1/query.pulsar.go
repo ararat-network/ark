@@ -5706,6 +5706,7 @@ var (
 	fd_QueryFundStatusResponse_insurance_target             protoreflect.FieldDescriptor
 	fd_QueryFundStatusResponse_insurance_net_target         protoreflect.FieldDescriptor
 	fd_QueryFundStatusResponse_subsidy_pool_balance         protoreflect.FieldDescriptor
+	fd_QueryFundStatusResponse_exposure_multiplier          protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -5731,6 +5732,7 @@ func init() {
 	fd_QueryFundStatusResponse_insurance_target = md_QueryFundStatusResponse.Fields().ByName("insurance_target")
 	fd_QueryFundStatusResponse_insurance_net_target = md_QueryFundStatusResponse.Fields().ByName("insurance_net_target")
 	fd_QueryFundStatusResponse_subsidy_pool_balance = md_QueryFundStatusResponse.Fields().ByName("subsidy_pool_balance")
+	fd_QueryFundStatusResponse_exposure_multiplier = md_QueryFundStatusResponse.Fields().ByName("exposure_multiplier")
 }
 
 var _ protoreflect.Message = (*fastReflection_QueryFundStatusResponse)(nil)
@@ -5918,6 +5920,12 @@ func (x *fastReflection_QueryFundStatusResponse) Range(f func(protoreflect.Field
 			return
 		}
 	}
+	if x.ExposureMultiplier != "" {
+		value := protoreflect.ValueOfString(x.ExposureMultiplier)
+		if !f(fd_QueryFundStatusResponse_exposure_multiplier, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -5973,6 +5981,8 @@ func (x *fastReflection_QueryFundStatusResponse) Has(fd protoreflect.FieldDescri
 		return x.InsuranceNetTarget != nil
 	case "ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance":
 		return x.SubsidyPoolBalance != nil
+	case "ark.treasury.v1.QueryFundStatusResponse.exposure_multiplier":
+		return x.ExposureMultiplier != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryFundStatusResponse"))
@@ -6029,6 +6039,8 @@ func (x *fastReflection_QueryFundStatusResponse) Clear(fd protoreflect.FieldDesc
 		x.InsuranceNetTarget = nil
 	case "ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance":
 		x.SubsidyPoolBalance = nil
+	case "ark.treasury.v1.QueryFundStatusResponse.exposure_multiplier":
+		x.ExposureMultiplier = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryFundStatusResponse"))
@@ -6117,6 +6129,9 @@ func (x *fastReflection_QueryFundStatusResponse) Get(descriptor protoreflect.Fie
 	case "ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance":
 		value := x.SubsidyPoolBalance
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.treasury.v1.QueryFundStatusResponse.exposure_multiplier":
+		value := x.ExposureMultiplier
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryFundStatusResponse"))
@@ -6185,6 +6200,8 @@ func (x *fastReflection_QueryFundStatusResponse) Set(fd protoreflect.FieldDescri
 		x.InsuranceNetTarget = value.Message().Interface().(*v1beta1.Coin)
 	case "ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance":
 		x.SubsidyPoolBalance = value.Message().Interface().(*v1beta1.Coin)
+	case "ark.treasury.v1.QueryFundStatusResponse.exposure_multiplier":
+		x.ExposureMultiplier = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryFundStatusResponse"))
@@ -6309,6 +6326,8 @@ func (x *fastReflection_QueryFundStatusResponse) Mutable(fd protoreflect.FieldDe
 			x.SubsidyPoolBalance = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.SubsidyPoolBalance.ProtoReflect())
+	case "ark.treasury.v1.QueryFundStatusResponse.exposure_multiplier":
+		panic(fmt.Errorf("field exposure_multiplier of message ark.treasury.v1.QueryFundStatusResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryFundStatusResponse"))
@@ -6382,6 +6401,8 @@ func (x *fastReflection_QueryFundStatusResponse) NewField(fd protoreflect.FieldD
 	case "ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.treasury.v1.QueryFundStatusResponse.exposure_multiplier":
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryFundStatusResponse"))
@@ -6539,6 +6560,10 @@ func (x *fastReflection_QueryFundStatusResponse) ProtoMethods() *protoiface.Meth
 			l = options.Size(x.SubsidyPoolBalance)
 			n += 2 + l + runtime.Sov(uint64(l))
 		}
+		l = len(x.ExposureMultiplier)
+		if l > 0 {
+			n += 2 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -6567,6 +6592,15 @@ func (x *fastReflection_QueryFundStatusResponse) ProtoMethods() *protoiface.Meth
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.ExposureMultiplier) > 0 {
+			i -= len(x.ExposureMultiplier)
+			copy(dAtA[i:], x.ExposureMultiplier)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ExposureMultiplier)))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0xaa
 		}
 		if x.SubsidyPoolBalance != nil {
 			encoded, err := options.Marshal(x.SubsidyPoolBalance)
@@ -7627,6 +7661,38 @@ func (x *fastReflection_QueryFundStatusResponse) ProtoMethods() *protoiface.Meth
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 21:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExposureMultiplier", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ExposureMultiplier = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -8453,6 +8519,915 @@ func (x *fastReflection_QueryRewardFundingResponse) ProtoMethods() *protoiface.M
 	}
 }
 
+var (
+	md_QueryExposureStatusRequest protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_treasury_v1_query_proto_init()
+	md_QueryExposureStatusRequest = File_ark_treasury_v1_query_proto.Messages().ByName("QueryExposureStatusRequest")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryExposureStatusRequest)(nil)
+
+type fastReflection_QueryExposureStatusRequest QueryExposureStatusRequest
+
+func (x *QueryExposureStatusRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryExposureStatusRequest)(x)
+}
+
+func (x *QueryExposureStatusRequest) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_treasury_v1_query_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryExposureStatusRequest_messageType fastReflection_QueryExposureStatusRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryExposureStatusRequest_messageType{}
+
+type fastReflection_QueryExposureStatusRequest_messageType struct{}
+
+func (x fastReflection_QueryExposureStatusRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryExposureStatusRequest)(nil)
+}
+func (x fastReflection_QueryExposureStatusRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryExposureStatusRequest)
+}
+func (x fastReflection_QueryExposureStatusRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryExposureStatusRequest
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryExposureStatusRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryExposureStatusRequest
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryExposureStatusRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryExposureStatusRequest_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryExposureStatusRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryExposureStatusRequest)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryExposureStatusRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryExposureStatusRequest)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryExposureStatusRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryExposureStatusRequest) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusRequest"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusRequest) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusRequest"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryExposureStatusRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusRequest"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusRequest does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusRequest"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusRequest"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryExposureStatusRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusRequest"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryExposureStatusRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryExposureStatusRequest", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryExposureStatusRequest) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusRequest) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryExposureStatusRequest) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryExposureStatusRequest) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryExposureStatusRequest)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryExposureStatusRequest)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryExposureStatusRequest)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryExposureStatusRequest: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryExposureStatusRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_QueryExposureStatusResponse                       protoreflect.MessageDescriptor
+	fd_QueryExposureStatusResponse_exposure_state        protoreflect.FieldDescriptor
+	fd_QueryExposureStatusResponse_annualised_volatility protoreflect.FieldDescriptor
+	fd_QueryExposureStatusResponse_refresh_pending       protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_treasury_v1_query_proto_init()
+	md_QueryExposureStatusResponse = File_ark_treasury_v1_query_proto.Messages().ByName("QueryExposureStatusResponse")
+	fd_QueryExposureStatusResponse_exposure_state = md_QueryExposureStatusResponse.Fields().ByName("exposure_state")
+	fd_QueryExposureStatusResponse_annualised_volatility = md_QueryExposureStatusResponse.Fields().ByName("annualised_volatility")
+	fd_QueryExposureStatusResponse_refresh_pending = md_QueryExposureStatusResponse.Fields().ByName("refresh_pending")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryExposureStatusResponse)(nil)
+
+type fastReflection_QueryExposureStatusResponse QueryExposureStatusResponse
+
+func (x *QueryExposureStatusResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryExposureStatusResponse)(x)
+}
+
+func (x *QueryExposureStatusResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_treasury_v1_query_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryExposureStatusResponse_messageType fastReflection_QueryExposureStatusResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryExposureStatusResponse_messageType{}
+
+type fastReflection_QueryExposureStatusResponse_messageType struct{}
+
+func (x fastReflection_QueryExposureStatusResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryExposureStatusResponse)(nil)
+}
+func (x fastReflection_QueryExposureStatusResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryExposureStatusResponse)
+}
+func (x fastReflection_QueryExposureStatusResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryExposureStatusResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryExposureStatusResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryExposureStatusResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryExposureStatusResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryExposureStatusResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryExposureStatusResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryExposureStatusResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryExposureStatusResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryExposureStatusResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryExposureStatusResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ExposureState != nil {
+		value := protoreflect.ValueOfMessage(x.ExposureState.ProtoReflect())
+		if !f(fd_QueryExposureStatusResponse_exposure_state, value) {
+			return
+		}
+	}
+	if x.AnnualisedVolatility != "" {
+		value := protoreflect.ValueOfString(x.AnnualisedVolatility)
+		if !f(fd_QueryExposureStatusResponse_annualised_volatility, value) {
+			return
+		}
+	}
+	if x.RefreshPending != false {
+		value := protoreflect.ValueOfBool(x.RefreshPending)
+		if !f(fd_QueryExposureStatusResponse_refresh_pending, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryExposureStatusResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.treasury.v1.QueryExposureStatusResponse.exposure_state":
+		return x.ExposureState != nil
+	case "ark.treasury.v1.QueryExposureStatusResponse.annualised_volatility":
+		return x.AnnualisedVolatility != ""
+	case "ark.treasury.v1.QueryExposureStatusResponse.refresh_pending":
+		return x.RefreshPending != false
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusResponse"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.QueryExposureStatusResponse.exposure_state":
+		x.ExposureState = nil
+	case "ark.treasury.v1.QueryExposureStatusResponse.annualised_volatility":
+		x.AnnualisedVolatility = ""
+	case "ark.treasury.v1.QueryExposureStatusResponse.refresh_pending":
+		x.RefreshPending = false
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusResponse"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryExposureStatusResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.treasury.v1.QueryExposureStatusResponse.exposure_state":
+		value := x.ExposureState
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.treasury.v1.QueryExposureStatusResponse.annualised_volatility":
+		value := x.AnnualisedVolatility
+		return protoreflect.ValueOfString(value)
+	case "ark.treasury.v1.QueryExposureStatusResponse.refresh_pending":
+		value := x.RefreshPending
+		return protoreflect.ValueOfBool(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusResponse"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.QueryExposureStatusResponse.exposure_state":
+		x.ExposureState = value.Message().Interface().(*ExposureState)
+	case "ark.treasury.v1.QueryExposureStatusResponse.annualised_volatility":
+		x.AnnualisedVolatility = value.Interface().(string)
+	case "ark.treasury.v1.QueryExposureStatusResponse.refresh_pending":
+		x.RefreshPending = value.Bool()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusResponse"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.QueryExposureStatusResponse.exposure_state":
+		if x.ExposureState == nil {
+			x.ExposureState = new(ExposureState)
+		}
+		return protoreflect.ValueOfMessage(x.ExposureState.ProtoReflect())
+	case "ark.treasury.v1.QueryExposureStatusResponse.annualised_volatility":
+		panic(fmt.Errorf("field annualised_volatility of message ark.treasury.v1.QueryExposureStatusResponse is not mutable"))
+	case "ark.treasury.v1.QueryExposureStatusResponse.refresh_pending":
+		panic(fmt.Errorf("field refresh_pending of message ark.treasury.v1.QueryExposureStatusResponse is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusResponse"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryExposureStatusResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.QueryExposureStatusResponse.exposure_state":
+		m := new(ExposureState)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.treasury.v1.QueryExposureStatusResponse.annualised_volatility":
+		return protoreflect.ValueOfString("")
+	case "ark.treasury.v1.QueryExposureStatusResponse.refresh_pending":
+		return protoreflect.ValueOfBool(false)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryExposureStatusResponse"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.QueryExposureStatusResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryExposureStatusResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryExposureStatusResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryExposureStatusResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryExposureStatusResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryExposureStatusResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryExposureStatusResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryExposureStatusResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.ExposureState != nil {
+			l = options.Size(x.ExposureState)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.AnnualisedVolatility)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.RefreshPending {
+			n += 2
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryExposureStatusResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.RefreshPending {
+			i--
+			if x.RefreshPending {
+				dAtA[i] = 1
+			} else {
+				dAtA[i] = 0
+			}
+			i--
+			dAtA[i] = 0x18
+		}
+		if len(x.AnnualisedVolatility) > 0 {
+			i -= len(x.AnnualisedVolatility)
+			copy(dAtA[i:], x.AnnualisedVolatility)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AnnualisedVolatility)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if x.ExposureState != nil {
+			encoded, err := options.Marshal(x.ExposureState)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryExposureStatusResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryExposureStatusResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryExposureStatusResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExposureState", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ExposureState == nil {
+					x.ExposureState = &ExposureState{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExposureState); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AnnualisedVolatility", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.AnnualisedVolatility = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RefreshPending", wireType)
+				}
+				var v int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				x.RefreshPending = bool(v != 0)
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -8987,6 +9962,13 @@ type QueryFundStatusResponse struct {
 	// subsidy_pool_balance carries no target: it funds reward subsidy rather than
 	// backing liability, so no ratio sizes it.
 	SubsidyPoolBalance *v1beta1.Coin `protobuf:"bytes,20,opt,name=subsidy_pool_balance,json=subsidyPoolBalance,proto3" json:"subsidy_pool_balance,omitempty"`
+	// exposure_multiplier is what every target above was scaled by. Without it
+	// the response cannot be reconciled — no target equals its ratio times the
+	// liability beside it — so this is the bridge term between the two, on both
+	// target families. It is one whenever the risk model is inert, which is its
+	// launch configuration. The draw is not scaled by it: redemption coverage
+	// divides by nominal_liability exactly as reported.
+	ExposureMultiplier string `protobuf:"bytes,21,opt,name=exposure_multiplier,json=exposureMultiplier,proto3" json:"exposure_multiplier,omitempty"`
 }
 
 func (x *QueryFundStatusResponse) Reset() {
@@ -9149,6 +10131,13 @@ func (x *QueryFundStatusResponse) GetSubsidyPoolBalance() *v1beta1.Coin {
 	return nil
 }
 
+func (x *QueryFundStatusResponse) GetExposureMultiplier() string {
+	if x != nil {
+		return x.ExposureMultiplier
+	}
+	return ""
+}
+
 // QueryRewardFundingRequest is the request type for Query/RewardFunding.
 type QueryRewardFundingRequest struct {
 	state         protoimpl.MessageState
@@ -9210,6 +10199,93 @@ func (x *QueryRewardFundingResponse) GetRewardFunding() *RewardFundingState {
 		return x.RewardFunding
 	}
 	return nil
+}
+
+// QueryExposureStatusRequest is the request type for Query/ExposureStatus.
+type QueryExposureStatusRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *QueryExposureStatusRequest) Reset() {
+	*x = QueryExposureStatusRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_treasury_v1_query_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryExposureStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryExposureStatusRequest) ProtoMessage() {}
+
+// Deprecated: Use QueryExposureStatusRequest.ProtoReflect.Descriptor instead.
+func (*QueryExposureStatusRequest) Descriptor() ([]byte, []int) {
+	return file_ark_treasury_v1_query_proto_rawDescGZIP(), []int{16}
+}
+
+// QueryExposureStatusResponse reports the stored risk state and the one figure
+// derived from it, so a reader can see both what is held and what the composite
+// consumed without recomputing either.
+type QueryExposureStatusResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ExposureState *ExposureState `protobuf:"bytes,1,opt,name=exposure_state,json=exposureState,proto3" json:"exposure_state,omitempty"`
+	// annualised_volatility is the square root of the stored variance scaled to a
+	// year of blocks: the form the multiplier's volatility weight is denominated
+	// against, and the only figure here the state does not carry directly.
+	AnnualisedVolatility string `protobuf:"bytes,2,opt,name=annualised_volatility,json=annualisedVolatility,proto3" json:"annualised_volatility,omitempty"`
+	// refresh_pending reports an elapsed period whose recomputation has not yet
+	// succeeded, so a multiplier that looks stale can be told apart from one that
+	// is simply unchanged.
+	RefreshPending bool `protobuf:"varint,3,opt,name=refresh_pending,json=refreshPending,proto3" json:"refresh_pending,omitempty"`
+}
+
+func (x *QueryExposureStatusResponse) Reset() {
+	*x = QueryExposureStatusResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_treasury_v1_query_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryExposureStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryExposureStatusResponse) ProtoMessage() {}
+
+// Deprecated: Use QueryExposureStatusResponse.ProtoReflect.Descriptor instead.
+func (*QueryExposureStatusResponse) Descriptor() ([]byte, []int) {
+	return file_ark_treasury_v1_query_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *QueryExposureStatusResponse) GetExposureState() *ExposureState {
+	if x != nil {
+		return x.ExposureState
+	}
+	return nil
+}
+
+func (x *QueryExposureStatusResponse) GetAnnualisedVolatility() string {
+	if x != nil {
+		return x.AnnualisedVolatility
+	}
+	return ""
+}
+
+func (x *QueryExposureStatusResponse) GetRefreshPending() bool {
+	if x != nil {
+		return x.RefreshPending
+	}
+	return false
 }
 
 var File_ark_treasury_v1_query_proto protoreflect.FileDescriptor
@@ -9289,7 +10365,7 @@ var file_ark_treasury_v1_query_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63,
 	0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x03, 0x74, 0x61, 0x78, 0x22, 0x18,
 	0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x46, 0x75, 0x6e, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xea, 0x0e, 0x0a, 0x17, 0x51, 0x75, 0x65,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xd3, 0x0f, 0x0a, 0x17, 0x51, 0x75, 0x65,
 	0x72, 0x79, 0x46, 0x75, 0x6e, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x52, 0x0a, 0x10, 0x70, 0x72, 0x69, 0x63, 0x65, 0x64, 0x5f, 0x6c,
 	0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c,
@@ -9408,99 +10484,134 @@ var file_ark_treasury_v1_query_proto_rawDesc = []byte{
 	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
 	0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
 	0x01, 0x52, 0x12, 0x73, 0x75, 0x62, 0x73, 0x69, 0x64, 0x79, 0x50, 0x6f, 0x6f, 0x6c, 0x42, 0x61,
-	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65,
-	0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x22, 0x73, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x66, 0x75, 0x6e, 0x64, 0x69,
-	0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x77, 0x61, 0x72,
-	0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8,
-	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64,
-	0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x32, 0xfc, 0x08, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x12, 0x79, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x23, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x24, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4,
-	0x93, 0x02, 0x19, 0x12, 0x17, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x9a, 0x01, 0x0a,
-	0x0e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12,
-	0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50,
-	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
-	0x72, 0x79, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x9e, 0x01, 0x0a, 0x0f, 0x4d, 0x6f,
-	0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e,
-	0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61,
-	0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72,
-	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
-	0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x83, 0x01, 0x0a, 0x06, 0x54,
-	0x61, 0x78, 0x43, 0x61, 0x70, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78,
-	0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b,
-	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x67, 0x0a, 0x13, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72,
+	0x65, 0x5f, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x15, 0x20, 0x01,
+	0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65,
+	0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12, 0x65, 0x78, 0x70, 0x6f,
+	0x73, 0x75, 0x72, 0x65, 0x4d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x22, 0x1b,
+	0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x73, 0x0a, 0x1a, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77,
+	0x61, 0x72, 0x64, 0x5f, 0x66, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x22, 0x1c, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72,
+	0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x8c,
+	0x02, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x50,
+	0x0a, 0x0e, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65,
+	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72,
+	0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0d, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65,
+	0x12, 0x6b, 0x0a, 0x15, 0x61, 0x6e, 0x6e, 0x75, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x64, 0x5f, 0x76,
+	0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
+	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
+	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x61, 0x6e, 0x6e, 0x75, 0x61, 0x6c, 0x69,
+	0x73, 0x65, 0x64, 0x56, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12, 0x2e, 0x0a,
+	0x0f, 0x72, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x5f, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x72,
+	0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x32, 0x99, 0x0a,
+	0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x79, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65,
+	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x24, 0x88, 0xe7,
+	0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x19, 0x12, 0x17, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
+	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x12, 0x9a, 0x01, 0x0a, 0x0e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50,
+	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e,
+	0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
+	0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f,
+	0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12,
+	0x9e, 0x01, 0x0a, 0x0f, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64,
+	0x61, 0x74, 0x65, 0x12, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74,
+	0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72,
+	0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
 	0x22, 0x2e, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x23, 0x12, 0x21, 0x2f,
 	0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f,
-	0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x2f, 0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d,
-	0x12, 0x7e, 0x0a, 0x07, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x12, 0x24, 0x2e, 0x61, 0x72,
+	0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
+	0x12, 0x83, 0x01, 0x0a, 0x06, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x12, 0x23, 0x2e, 0x61, 0x72,
 	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4,
+	0x93, 0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x2f, 0x7b,
+	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x12, 0x7e, 0x0a, 0x07, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70,
+	0x73, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
 	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x26, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82,
-	0xd3, 0xe4, 0x93, 0x02, 0x1b, 0x12, 0x19, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61, 0x70, 0x73,
-	0x12, 0x8d, 0x01, 0x0a, 0x0a, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x54, 0x61, 0x78, 0x12,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x54, 0x61,
-	0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x2c, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x21, 0x3a,
-	0x01, 0x2a, 0x22, 0x1c, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
-	0x79, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x74, 0x61, 0x78,
-	0x12, 0x8a, 0x01, 0x0a, 0x0a, 0x46, 0x75, 0x6e, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x46, 0x75, 0x6e, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x46, 0x75, 0x6e, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x29, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1e, 0x12,
-	0x1c, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76,
-	0x31, 0x2f, 0x66, 0x75, 0x6e, 0x64, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x96, 0x01,
-	0x0a, 0x0d, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12,
-	0x2a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x61, 0x72,
-	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54,
+	0x61, 0x78, 0x43, 0x61, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x26,
+	0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1b, 0x12, 0x19, 0x2f, 0x61, 0x72,
+	0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x61,
+	0x78, 0x5f, 0x63, 0x61, 0x70, 0x73, 0x12, 0x8d, 0x01, 0x0a, 0x0a, 0x43, 0x6f, 0x6d, 0x70, 0x75,
+	0x74, 0x65, 0x54, 0x61, 0x78, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6d,
+	0x70, 0x75, 0x74, 0x65, 0x54, 0x61, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x54, 0x61, 0x78,
 	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2c, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82,
-	0xd3, 0xe4, 0x93, 0x02, 0x21, 0x12, 0x1f, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61,
-	0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x66,
-	0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x61, 0x72,
-	0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31,
-	0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65,
-	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b,
-	0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42,
-	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a,
-	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0xd3, 0xe4, 0x93, 0x02, 0x21, 0x3a, 0x01, 0x2a, 0x22, 0x1c, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x75,
+	0x74, 0x65, 0x5f, 0x74, 0x61, 0x78, 0x12, 0x8a, 0x01, 0x0a, 0x0a, 0x46, 0x75, 0x6e, 0x64, 0x53,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x46, 0x75, 0x6e,
+	0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x46, 0x75, 0x6e, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x29, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82,
+	0xd3, 0xe4, 0x93, 0x02, 0x1e, 0x12, 0x1c, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x66, 0x75, 0x6e, 0x64, 0x5f, 0x73, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x12, 0x96, 0x01, 0x0a, 0x0d, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x2a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
+	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77,
+	0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46,
+	0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2c,
+	0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x21, 0x12, 0x1f, 0x2f, 0x61, 0x72,
+	0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x72, 0x65,
+	0x77, 0x61, 0x72, 0x64, 0x5f, 0x66, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x9a, 0x01, 0x0a,
+	0x0e, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
+	0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x53,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x61,
+	0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x53, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a,
+	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75,
+	0x72, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f,
+	0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
+	0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x22, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65,
+	0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e,
+	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72,
+	0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b,
+	0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c,
+	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72,
+	0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -9515,7 +10626,7 @@ func file_ark_treasury_v1_query_proto_rawDescGZIP() []byte {
 	return file_ark_treasury_v1_query_proto_rawDescData
 }
 
-var file_ark_treasury_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_ark_treasury_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_ark_treasury_v1_query_proto_goTypes = []interface{}{
 	(*QueryParamsRequest)(nil),           // 0: ark.treasury.v1.QueryParamsRequest
 	(*QueryParamsResponse)(nil),          // 1: ark.treasury.v1.QueryParamsResponse
@@ -9533,65 +10644,71 @@ var file_ark_treasury_v1_query_proto_goTypes = []interface{}{
 	(*QueryFundStatusResponse)(nil),      // 13: ark.treasury.v1.QueryFundStatusResponse
 	(*QueryRewardFundingRequest)(nil),    // 14: ark.treasury.v1.QueryRewardFundingRequest
 	(*QueryRewardFundingResponse)(nil),   // 15: ark.treasury.v1.QueryRewardFundingResponse
-	(*Params)(nil),                       // 16: ark.treasury.v1.Params
-	(*MonetaryPolicy)(nil),               // 17: ark.treasury.v1.MonetaryPolicy
-	(*MonetaryMandate)(nil),              // 18: ark.treasury.v1.MonetaryMandate
-	(*TaxCap)(nil),                       // 19: ark.treasury.v1.TaxCap
-	(*anypb.Any)(nil),                    // 20: google.protobuf.Any
-	(*v1beta1.Coin)(nil),                 // 21: cosmos.base.v1beta1.Coin
-	(*v1beta1.DecCoin)(nil),              // 22: cosmos.base.v1beta1.DecCoin
-	(*WrittenOffExposure)(nil),           // 23: ark.treasury.v1.WrittenOffExposure
-	(*RewardFundingState)(nil),           // 24: ark.treasury.v1.RewardFundingState
+	(*QueryExposureStatusRequest)(nil),   // 16: ark.treasury.v1.QueryExposureStatusRequest
+	(*QueryExposureStatusResponse)(nil),  // 17: ark.treasury.v1.QueryExposureStatusResponse
+	(*Params)(nil),                       // 18: ark.treasury.v1.Params
+	(*MonetaryPolicy)(nil),               // 19: ark.treasury.v1.MonetaryPolicy
+	(*MonetaryMandate)(nil),              // 20: ark.treasury.v1.MonetaryMandate
+	(*TaxCap)(nil),                       // 21: ark.treasury.v1.TaxCap
+	(*anypb.Any)(nil),                    // 22: google.protobuf.Any
+	(*v1beta1.Coin)(nil),                 // 23: cosmos.base.v1beta1.Coin
+	(*v1beta1.DecCoin)(nil),              // 24: cosmos.base.v1beta1.DecCoin
+	(*WrittenOffExposure)(nil),           // 25: ark.treasury.v1.WrittenOffExposure
+	(*RewardFundingState)(nil),           // 26: ark.treasury.v1.RewardFundingState
+	(*ExposureState)(nil),                // 27: ark.treasury.v1.ExposureState
 }
 var file_ark_treasury_v1_query_proto_depIdxs = []int32{
-	16, // 0: ark.treasury.v1.QueryParamsResponse.params:type_name -> ark.treasury.v1.Params
-	17, // 1: ark.treasury.v1.QueryMonetaryPolicyResponse.policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	18, // 2: ark.treasury.v1.QueryMonetaryMandateResponse.mandate:type_name -> ark.treasury.v1.MonetaryMandate
-	19, // 3: ark.treasury.v1.QueryTaxCapsResponse.tax_caps:type_name -> ark.treasury.v1.TaxCap
-	20, // 4: ark.treasury.v1.QueryComputeTaxRequest.messages:type_name -> google.protobuf.Any
-	21, // 5: ark.treasury.v1.QueryComputeTaxResponse.tax:type_name -> cosmos.base.v1beta1.Coin
-	22, // 6: ark.treasury.v1.QueryFundStatusResponse.priced_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	22, // 7: ark.treasury.v1.QueryFundStatusResponse.settlement_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	22, // 8: ark.treasury.v1.QueryFundStatusResponse.stale_priced_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	22, // 9: ark.treasury.v1.QueryFundStatusResponse.nominal_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	21, // 10: ark.treasury.v1.QueryFundStatusResponse.self_held_supply:type_name -> cosmos.base.v1beta1.Coin
-	22, // 11: ark.treasury.v1.QueryFundStatusResponse.self_held_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	22, // 12: ark.treasury.v1.QueryFundStatusResponse.net_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	21, // 13: ark.treasury.v1.QueryFundStatusResponse.stale_member_supply:type_name -> cosmos.base.v1beta1.Coin
-	21, // 14: ark.treasury.v1.QueryFundStatusResponse.untrusted_suspended_supply:type_name -> cosmos.base.v1beta1.Coin
-	23, // 15: ark.treasury.v1.QueryFundStatusResponse.written_off_exposure:type_name -> ark.treasury.v1.WrittenOffExposure
-	21, // 16: ark.treasury.v1.QueryFundStatusResponse.redemption_buffer_balance:type_name -> cosmos.base.v1beta1.Coin
-	21, // 17: ark.treasury.v1.QueryFundStatusResponse.redemption_buffer_target:type_name -> cosmos.base.v1beta1.Coin
-	21, // 18: ark.treasury.v1.QueryFundStatusResponse.redemption_buffer_net_target:type_name -> cosmos.base.v1beta1.Coin
-	21, // 19: ark.treasury.v1.QueryFundStatusResponse.strategic_reserve_balance:type_name -> cosmos.base.v1beta1.Coin
-	21, // 20: ark.treasury.v1.QueryFundStatusResponse.strategic_reserve_target:type_name -> cosmos.base.v1beta1.Coin
-	21, // 21: ark.treasury.v1.QueryFundStatusResponse.strategic_reserve_net_target:type_name -> cosmos.base.v1beta1.Coin
-	21, // 22: ark.treasury.v1.QueryFundStatusResponse.insurance_balance:type_name -> cosmos.base.v1beta1.Coin
-	21, // 23: ark.treasury.v1.QueryFundStatusResponse.insurance_target:type_name -> cosmos.base.v1beta1.Coin
-	21, // 24: ark.treasury.v1.QueryFundStatusResponse.insurance_net_target:type_name -> cosmos.base.v1beta1.Coin
-	21, // 25: ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance:type_name -> cosmos.base.v1beta1.Coin
-	24, // 26: ark.treasury.v1.QueryRewardFundingResponse.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
-	0,  // 27: ark.treasury.v1.Query.Params:input_type -> ark.treasury.v1.QueryParamsRequest
-	2,  // 28: ark.treasury.v1.Query.MonetaryPolicy:input_type -> ark.treasury.v1.QueryMonetaryPolicyRequest
-	4,  // 29: ark.treasury.v1.Query.MonetaryMandate:input_type -> ark.treasury.v1.QueryMonetaryMandateRequest
-	6,  // 30: ark.treasury.v1.Query.TaxCap:input_type -> ark.treasury.v1.QueryTaxCapRequest
-	8,  // 31: ark.treasury.v1.Query.TaxCaps:input_type -> ark.treasury.v1.QueryTaxCapsRequest
-	10, // 32: ark.treasury.v1.Query.ComputeTax:input_type -> ark.treasury.v1.QueryComputeTaxRequest
-	12, // 33: ark.treasury.v1.Query.FundStatus:input_type -> ark.treasury.v1.QueryFundStatusRequest
-	14, // 34: ark.treasury.v1.Query.RewardFunding:input_type -> ark.treasury.v1.QueryRewardFundingRequest
-	1,  // 35: ark.treasury.v1.Query.Params:output_type -> ark.treasury.v1.QueryParamsResponse
-	3,  // 36: ark.treasury.v1.Query.MonetaryPolicy:output_type -> ark.treasury.v1.QueryMonetaryPolicyResponse
-	5,  // 37: ark.treasury.v1.Query.MonetaryMandate:output_type -> ark.treasury.v1.QueryMonetaryMandateResponse
-	7,  // 38: ark.treasury.v1.Query.TaxCap:output_type -> ark.treasury.v1.QueryTaxCapResponse
-	9,  // 39: ark.treasury.v1.Query.TaxCaps:output_type -> ark.treasury.v1.QueryTaxCapsResponse
-	11, // 40: ark.treasury.v1.Query.ComputeTax:output_type -> ark.treasury.v1.QueryComputeTaxResponse
-	13, // 41: ark.treasury.v1.Query.FundStatus:output_type -> ark.treasury.v1.QueryFundStatusResponse
-	15, // 42: ark.treasury.v1.Query.RewardFunding:output_type -> ark.treasury.v1.QueryRewardFundingResponse
-	35, // [35:43] is the sub-list for method output_type
-	27, // [27:35] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	18, // 0: ark.treasury.v1.QueryParamsResponse.params:type_name -> ark.treasury.v1.Params
+	19, // 1: ark.treasury.v1.QueryMonetaryPolicyResponse.policy:type_name -> ark.treasury.v1.MonetaryPolicy
+	20, // 2: ark.treasury.v1.QueryMonetaryMandateResponse.mandate:type_name -> ark.treasury.v1.MonetaryMandate
+	21, // 3: ark.treasury.v1.QueryTaxCapsResponse.tax_caps:type_name -> ark.treasury.v1.TaxCap
+	22, // 4: ark.treasury.v1.QueryComputeTaxRequest.messages:type_name -> google.protobuf.Any
+	23, // 5: ark.treasury.v1.QueryComputeTaxResponse.tax:type_name -> cosmos.base.v1beta1.Coin
+	24, // 6: ark.treasury.v1.QueryFundStatusResponse.priced_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	24, // 7: ark.treasury.v1.QueryFundStatusResponse.settlement_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	24, // 8: ark.treasury.v1.QueryFundStatusResponse.stale_priced_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	24, // 9: ark.treasury.v1.QueryFundStatusResponse.nominal_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	23, // 10: ark.treasury.v1.QueryFundStatusResponse.self_held_supply:type_name -> cosmos.base.v1beta1.Coin
+	24, // 11: ark.treasury.v1.QueryFundStatusResponse.self_held_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	24, // 12: ark.treasury.v1.QueryFundStatusResponse.net_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	23, // 13: ark.treasury.v1.QueryFundStatusResponse.stale_member_supply:type_name -> cosmos.base.v1beta1.Coin
+	23, // 14: ark.treasury.v1.QueryFundStatusResponse.untrusted_suspended_supply:type_name -> cosmos.base.v1beta1.Coin
+	25, // 15: ark.treasury.v1.QueryFundStatusResponse.written_off_exposure:type_name -> ark.treasury.v1.WrittenOffExposure
+	23, // 16: ark.treasury.v1.QueryFundStatusResponse.redemption_buffer_balance:type_name -> cosmos.base.v1beta1.Coin
+	23, // 17: ark.treasury.v1.QueryFundStatusResponse.redemption_buffer_target:type_name -> cosmos.base.v1beta1.Coin
+	23, // 18: ark.treasury.v1.QueryFundStatusResponse.redemption_buffer_net_target:type_name -> cosmos.base.v1beta1.Coin
+	23, // 19: ark.treasury.v1.QueryFundStatusResponse.strategic_reserve_balance:type_name -> cosmos.base.v1beta1.Coin
+	23, // 20: ark.treasury.v1.QueryFundStatusResponse.strategic_reserve_target:type_name -> cosmos.base.v1beta1.Coin
+	23, // 21: ark.treasury.v1.QueryFundStatusResponse.strategic_reserve_net_target:type_name -> cosmos.base.v1beta1.Coin
+	23, // 22: ark.treasury.v1.QueryFundStatusResponse.insurance_balance:type_name -> cosmos.base.v1beta1.Coin
+	23, // 23: ark.treasury.v1.QueryFundStatusResponse.insurance_target:type_name -> cosmos.base.v1beta1.Coin
+	23, // 24: ark.treasury.v1.QueryFundStatusResponse.insurance_net_target:type_name -> cosmos.base.v1beta1.Coin
+	23, // 25: ark.treasury.v1.QueryFundStatusResponse.subsidy_pool_balance:type_name -> cosmos.base.v1beta1.Coin
+	26, // 26: ark.treasury.v1.QueryRewardFundingResponse.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
+	27, // 27: ark.treasury.v1.QueryExposureStatusResponse.exposure_state:type_name -> ark.treasury.v1.ExposureState
+	0,  // 28: ark.treasury.v1.Query.Params:input_type -> ark.treasury.v1.QueryParamsRequest
+	2,  // 29: ark.treasury.v1.Query.MonetaryPolicy:input_type -> ark.treasury.v1.QueryMonetaryPolicyRequest
+	4,  // 30: ark.treasury.v1.Query.MonetaryMandate:input_type -> ark.treasury.v1.QueryMonetaryMandateRequest
+	6,  // 31: ark.treasury.v1.Query.TaxCap:input_type -> ark.treasury.v1.QueryTaxCapRequest
+	8,  // 32: ark.treasury.v1.Query.TaxCaps:input_type -> ark.treasury.v1.QueryTaxCapsRequest
+	10, // 33: ark.treasury.v1.Query.ComputeTax:input_type -> ark.treasury.v1.QueryComputeTaxRequest
+	12, // 34: ark.treasury.v1.Query.FundStatus:input_type -> ark.treasury.v1.QueryFundStatusRequest
+	14, // 35: ark.treasury.v1.Query.RewardFunding:input_type -> ark.treasury.v1.QueryRewardFundingRequest
+	16, // 36: ark.treasury.v1.Query.ExposureStatus:input_type -> ark.treasury.v1.QueryExposureStatusRequest
+	1,  // 37: ark.treasury.v1.Query.Params:output_type -> ark.treasury.v1.QueryParamsResponse
+	3,  // 38: ark.treasury.v1.Query.MonetaryPolicy:output_type -> ark.treasury.v1.QueryMonetaryPolicyResponse
+	5,  // 39: ark.treasury.v1.Query.MonetaryMandate:output_type -> ark.treasury.v1.QueryMonetaryMandateResponse
+	7,  // 40: ark.treasury.v1.Query.TaxCap:output_type -> ark.treasury.v1.QueryTaxCapResponse
+	9,  // 41: ark.treasury.v1.Query.TaxCaps:output_type -> ark.treasury.v1.QueryTaxCapsResponse
+	11, // 42: ark.treasury.v1.Query.ComputeTax:output_type -> ark.treasury.v1.QueryComputeTaxResponse
+	13, // 43: ark.treasury.v1.Query.FundStatus:output_type -> ark.treasury.v1.QueryFundStatusResponse
+	15, // 44: ark.treasury.v1.Query.RewardFunding:output_type -> ark.treasury.v1.QueryRewardFundingResponse
+	17, // 45: ark.treasury.v1.Query.ExposureStatus:output_type -> ark.treasury.v1.QueryExposureStatusResponse
+	37, // [37:46] is the sub-list for method output_type
+	28, // [28:37] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_ark_treasury_v1_query_proto_init() }
@@ -9793,6 +10910,30 @@ func file_ark_treasury_v1_query_proto_init() {
 				return nil
 			}
 		}
+		file_ark_treasury_v1_query_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryExposureStatusRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_treasury_v1_query_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryExposureStatusResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -9800,7 +10941,7 @@ func file_ark_treasury_v1_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_treasury_v1_query_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -27,6 +27,7 @@ const (
 	Query_ComputeTax_FullMethodName      = "/ark.treasury.v1.Query/ComputeTax"
 	Query_FundStatus_FullMethodName      = "/ark.treasury.v1.Query/FundStatus"
 	Query_RewardFunding_FullMethodName   = "/ark.treasury.v1.Query/RewardFunding"
+	Query_ExposureStatus_FullMethodName  = "/ark.treasury.v1.Query/ExposureStatus"
 )
 
 // QueryClient is the client API for Query service.
@@ -52,6 +53,8 @@ type QueryClient interface {
 	FundStatus(ctx context.Context, in *QueryFundStatusRequest, opts ...grpc.CallOption) (*QueryFundStatusResponse, error)
 	// RewardFunding queries the active reward-funding accounting.
 	RewardFunding(ctx context.Context, in *QueryRewardFundingRequest, opts ...grpc.CallOption) (*QueryRewardFundingResponse, error)
+	// ExposureStatus queries the risk state behind the fund-target multiplier.
+	ExposureStatus(ctx context.Context, in *QueryExposureStatusRequest, opts ...grpc.CallOption) (*QueryExposureStatusResponse, error)
 }
 
 type queryClient struct {
@@ -142,6 +145,16 @@ func (c *queryClient) RewardFunding(ctx context.Context, in *QueryRewardFundingR
 	return out, nil
 }
 
+func (c *queryClient) ExposureStatus(ctx context.Context, in *QueryExposureStatusRequest, opts ...grpc.CallOption) (*QueryExposureStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryExposureStatusResponse)
+	err := c.cc.Invoke(ctx, Query_ExposureStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -165,6 +178,8 @@ type QueryServer interface {
 	FundStatus(context.Context, *QueryFundStatusRequest) (*QueryFundStatusResponse, error)
 	// RewardFunding queries the active reward-funding accounting.
 	RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error)
+	// ExposureStatus queries the risk state behind the fund-target multiplier.
+	ExposureStatus(context.Context, *QueryExposureStatusRequest) (*QueryExposureStatusResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -198,6 +213,9 @@ func (UnimplementedQueryServer) FundStatus(context.Context, *QueryFundStatusRequ
 }
 func (UnimplementedQueryServer) RewardFunding(context.Context, *QueryRewardFundingRequest) (*QueryRewardFundingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RewardFunding not implemented")
+}
+func (UnimplementedQueryServer) ExposureStatus(context.Context, *QueryExposureStatusRequest) (*QueryExposureStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExposureStatus not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -364,6 +382,24 @@ func _Query_RewardFunding_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ExposureStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryExposureStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ExposureStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ExposureStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ExposureStatus(ctx, req.(*QueryExposureStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -402,6 +438,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RewardFunding",
 			Handler:    _Query_RewardFunding_Handler,
+		},
+		{
+			MethodName: "ExposureStatus",
+			Handler:    _Query_ExposureStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

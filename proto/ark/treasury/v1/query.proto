@@ -68,6 +68,13 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/reward_funding";
   }
+
+  // ExposureStatus queries the risk state behind the fund-target multiplier.
+  rpc ExposureStatus(QueryExposureStatusRequest)
+      returns (QueryExposureStatusResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/exposure_status";
+  }
 }
 
 // QueryParamsRequest is the request type for Query/Params.
@@ -281,6 +288,18 @@ message QueryFundStatusResponse {
   // backing liability, so no ratio sizes it.
   cosmos.base.v1beta1.Coin subsidy_pool_balance = 20
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // exposure_multiplier is what every target above was scaled by. Without it
+  // the response cannot be reconciled — no target equals its ratio times the
+  // liability beside it — so this is the bridge term between the two, on both
+  // target families. It is one whenever the risk model is inert, which is its
+  // launch configuration. The draw is not scaled by it: redemption coverage
+  // divides by nominal_liability exactly as reported.
+  string exposure_multiplier = 21 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryRewardFundingRequest is the request type for Query/RewardFunding.
@@ -290,4 +309,28 @@ message QueryRewardFundingRequest {}
 message QueryRewardFundingResponse {
   RewardFundingState reward_funding = 1
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// QueryExposureStatusRequest is the request type for Query/ExposureStatus.
+message QueryExposureStatusRequest {}
+
+// QueryExposureStatusResponse reports the stored risk state and the one figure
+// derived from it, so a reader can see both what is held and what the composite
+// consumed without recomputing either.
+message QueryExposureStatusResponse {
+  ExposureState exposure_state = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // annualised_volatility is the square root of the stored variance scaled to a
+  // year of blocks: the form the multiplier's volatility weight is denominated
+  // against, and the only figure here the state does not carry directly.
+  string annualised_volatility = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // refresh_pending reports an elapsed period whose recomputation has not yet
+  // succeeded, so a multiplier that looks stale can be told apart from one that
+  // is simply unchanged.
+  bool refresh_pending = 3 [ (amino.dont_omitempty) = true ];
 }
