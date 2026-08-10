@@ -14,6 +14,10 @@ import (
 	"ark/x/reserve/types"
 )
 
+// The combined age bound asserts one message from both its lower and upper
+// cases, so the string lives once.
+const rateAgeOutOfRange = "max rate age must be greater than zero and at most"
+
 // creditDenom is the asset every credit case is written against.
 const creditDenom = "asdr"
 
@@ -73,12 +77,12 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			// does — so a zero factor either side is refused rather than stored.
 			name:    "zero haircut",
 			mutate:  func(e *types.EligibilityEntry) { e.HaircutFactor = math.LegacyZeroDec() },
-			wantErr: "haircut factor must be positive",
+			wantErr: "haircut factor must be greater than zero and at most one",
 		},
 		{
 			name:    "zero cap ratio",
 			mutate:  func(e *types.EligibilityEntry) { e.RecognitionCapRatio = math.LegacyZeroDec() },
-			wantErr: "recognition cap ratio must be positive",
+			wantErr: "recognition cap ratio must be greater than zero and at most one",
 		},
 		{
 			// The smallest representable factor is admissible on both: the rule
@@ -93,12 +97,12 @@ func TestEligibilityEntryValidate(t *testing.T) {
 		{
 			name:    "unset window",
 			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = 0 },
-			wantErr: "max rate age must be positive",
+			wantErr: rateAgeOutOfRange,
 		},
 		{
 			name:    "negative window",
 			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = -time.Second },
-			wantErr: "max rate age must be positive",
+			wantErr: rateAgeOutOfRange,
 		},
 		{
 			// The cap itself is admissible: it bounds absurdity, it does not
@@ -109,7 +113,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 		{
 			name:    "window past the domain cap",
 			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + time.Second },
-			wantErr: "max rate age must not exceed",
+			wantErr: rateAgeOutOfRange,
 		},
 	}
 

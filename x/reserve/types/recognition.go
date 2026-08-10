@@ -33,27 +33,23 @@ func (entry EligibilityEntry) Validate() error {
 	// Both figures are strictly positive because an entry exists to grant
 	// credit: one that grants none is indistinguishable from no entry at all.
 	// Refusing it makes every stored entry a live feed-guard claim.
-	if entry.HaircutFactor.IsNil() || !entry.HaircutFactor.IsPositive() {
-		return errors.New("eligibility haircut factor must be positive")
+	if entry.HaircutFactor.IsNil() ||
+		!entry.HaircutFactor.IsPositive() ||
+		entry.HaircutFactor.GT(math.LegacyOneDec()) {
+		return errors.New("eligibility haircut factor must be greater than zero and at most one")
 	}
-	if entry.HaircutFactor.GT(math.LegacyOneDec()) {
-		return errors.New("eligibility haircut factor must not exceed one")
-	}
-	if entry.RecognitionCapRatio.IsNil() || !entry.RecognitionCapRatio.IsPositive() {
-		return errors.New("eligibility recognition cap ratio must be positive")
-	}
-	if entry.RecognitionCapRatio.GT(math.LegacyOneDec()) {
-		return errors.New("eligibility recognition cap ratio must not exceed one")
+	if entry.RecognitionCapRatio.IsNil() ||
+		!entry.RecognitionCapRatio.IsPositive() ||
+		entry.RecognitionCapRatio.GT(math.LegacyOneDec()) {
+		return errors.New("eligibility recognition cap ratio must be greater than zero and at most one")
 	}
 	// Required rather than defaulted: an entry states its own tolerance rather
 	// than inheriting the Oracle's conversion-grade default.
-	if entry.MaxRateAge <= 0 {
-		return errors.New("eligibility max rate age must be positive")
-	}
-	if entry.MaxRateAge > MaxRecognitionRateAge {
+	if entry.MaxRateAge <= 0 || entry.MaxRateAge > MaxRecognitionRateAge {
 		return fmt.Errorf(
-			"eligibility max rate age must not exceed %s",
+			"eligibility max rate age must be greater than zero and at most %s, is %s",
 			MaxRecognitionRateAge,
+			entry.MaxRateAge,
 		)
 	}
 	return nil

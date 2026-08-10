@@ -241,8 +241,8 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 		// an entry exists to grant credit, so nothing short of positive is an
 		// entry at all.
 		const (
-			wantHaircut  = "haircut factor must be positive"
-			wantCapRatio = "recognition cap ratio must be positive"
+			wantHaircut  = "haircut factor must be greater than zero and at most one"
+			wantCapRatio = "recognition cap ratio must be greater than zero and at most one"
 		)
 		tests := []struct {
 			name  string
@@ -273,7 +273,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 			{
 				name:  "haircut above one",
 				entry: eligibility(testAsset, "1.000000000000000001", "0.1"),
-				want:  "haircut factor must not exceed one",
+				want:  "haircut factor must be greater than zero and at most one",
 			},
 			{
 				name: "unset cap ratio",
@@ -296,7 +296,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 			{
 				name:  "cap ratio above one",
 				entry: eligibility(testAsset, "1", "1.000000000000000001"),
-				want:  "recognition cap ratio must not exceed one",
+				want:  "recognition cap ratio must be greater than zero and at most one",
 			},
 		}
 
@@ -754,7 +754,7 @@ func (s *KeeperTestSuite) TestGenesisRecognitionPolicyValidation() {
 			mutate: func(gs *types.GenesisState) {
 				gs.RecognitionPolicy = []types.EligibilityEntry{eligibility(testAsset, "1.5", "0.1")}
 			},
-			want: "haircut factor must not exceed one",
+			want: "haircut factor must be greater than zero and at most one",
 		},
 	}
 
