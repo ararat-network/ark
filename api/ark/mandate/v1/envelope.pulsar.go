@@ -6,6 +6,7 @@ import (
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
+	_ "github.com/cosmos/gogoproto/gogoproto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -15,11 +16,640 @@ import (
 )
 
 var (
+	md_CommitteeShape              protoreflect.MessageDescriptor
+	fd_CommitteeShape_account_type protoreflect.FieldDescriptor
+	fd_CommitteeShape_key_kind     protoreflect.FieldDescriptor
+	fd_CommitteeShape_module       protoreflect.FieldDescriptor
+	fd_CommitteeShape_threshold    protoreflect.FieldDescriptor
+	fd_CommitteeShape_member_count protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_mandate_v1_envelope_proto_init()
+	md_CommitteeShape = File_ark_mandate_v1_envelope_proto.Messages().ByName("CommitteeShape")
+	fd_CommitteeShape_account_type = md_CommitteeShape.Fields().ByName("account_type")
+	fd_CommitteeShape_key_kind = md_CommitteeShape.Fields().ByName("key_kind")
+	fd_CommitteeShape_module = md_CommitteeShape.Fields().ByName("module")
+	fd_CommitteeShape_threshold = md_CommitteeShape.Fields().ByName("threshold")
+	fd_CommitteeShape_member_count = md_CommitteeShape.Fields().ByName("member_count")
+}
+
+var _ protoreflect.Message = (*fastReflection_CommitteeShape)(nil)
+
+type fastReflection_CommitteeShape CommitteeShape
+
+func (x *CommitteeShape) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_CommitteeShape)(x)
+}
+
+func (x *CommitteeShape) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_mandate_v1_envelope_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_CommitteeShape_messageType fastReflection_CommitteeShape_messageType
+var _ protoreflect.MessageType = fastReflection_CommitteeShape_messageType{}
+
+type fastReflection_CommitteeShape_messageType struct{}
+
+func (x fastReflection_CommitteeShape_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_CommitteeShape)(nil)
+}
+func (x fastReflection_CommitteeShape_messageType) New() protoreflect.Message {
+	return new(fastReflection_CommitteeShape)
+}
+func (x fastReflection_CommitteeShape_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_CommitteeShape
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_CommitteeShape) Descriptor() protoreflect.MessageDescriptor {
+	return md_CommitteeShape
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_CommitteeShape) Type() protoreflect.MessageType {
+	return _fastReflection_CommitteeShape_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_CommitteeShape) New() protoreflect.Message {
+	return new(fastReflection_CommitteeShape)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_CommitteeShape) Interface() protoreflect.ProtoMessage {
+	return (*CommitteeShape)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_CommitteeShape) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.AccountType != "" {
+		value := protoreflect.ValueOfString(x.AccountType)
+		if !f(fd_CommitteeShape_account_type, value) {
+			return
+		}
+	}
+	if x.KeyKind != 0 {
+		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.KeyKind))
+		if !f(fd_CommitteeShape_key_kind, value) {
+			return
+		}
+	}
+	if x.Module != "" {
+		value := protoreflect.ValueOfString(x.Module)
+		if !f(fd_CommitteeShape_module, value) {
+			return
+		}
+	}
+	if x.Threshold != uint32(0) {
+		value := protoreflect.ValueOfUint32(x.Threshold)
+		if !f(fd_CommitteeShape_threshold, value) {
+			return
+		}
+	}
+	if x.MemberCount != uint32(0) {
+		value := protoreflect.ValueOfUint32(x.MemberCount)
+		if !f(fd_CommitteeShape_member_count, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_CommitteeShape) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.mandate.v1.CommitteeShape.account_type":
+		return x.AccountType != ""
+	case "ark.mandate.v1.CommitteeShape.key_kind":
+		return x.KeyKind != 0
+	case "ark.mandate.v1.CommitteeShape.module":
+		return x.Module != ""
+	case "ark.mandate.v1.CommitteeShape.threshold":
+		return x.Threshold != uint32(0)
+	case "ark.mandate.v1.CommitteeShape.member_count":
+		return x.MemberCount != uint32(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.CommitteeShape"))
+		}
+		panic(fmt.Errorf("message ark.mandate.v1.CommitteeShape does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CommitteeShape) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.mandate.v1.CommitteeShape.account_type":
+		x.AccountType = ""
+	case "ark.mandate.v1.CommitteeShape.key_kind":
+		x.KeyKind = 0
+	case "ark.mandate.v1.CommitteeShape.module":
+		x.Module = ""
+	case "ark.mandate.v1.CommitteeShape.threshold":
+		x.Threshold = uint32(0)
+	case "ark.mandate.v1.CommitteeShape.member_count":
+		x.MemberCount = uint32(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.CommitteeShape"))
+		}
+		panic(fmt.Errorf("message ark.mandate.v1.CommitteeShape does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_CommitteeShape) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.mandate.v1.CommitteeShape.account_type":
+		value := x.AccountType
+		return protoreflect.ValueOfString(value)
+	case "ark.mandate.v1.CommitteeShape.key_kind":
+		value := x.KeyKind
+		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
+	case "ark.mandate.v1.CommitteeShape.module":
+		value := x.Module
+		return protoreflect.ValueOfString(value)
+	case "ark.mandate.v1.CommitteeShape.threshold":
+		value := x.Threshold
+		return protoreflect.ValueOfUint32(value)
+	case "ark.mandate.v1.CommitteeShape.member_count":
+		value := x.MemberCount
+		return protoreflect.ValueOfUint32(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.CommitteeShape"))
+		}
+		panic(fmt.Errorf("message ark.mandate.v1.CommitteeShape does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CommitteeShape) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.mandate.v1.CommitteeShape.account_type":
+		x.AccountType = value.Interface().(string)
+	case "ark.mandate.v1.CommitteeShape.key_kind":
+		x.KeyKind = (CommitteeKeyKind)(value.Enum())
+	case "ark.mandate.v1.CommitteeShape.module":
+		x.Module = value.Interface().(string)
+	case "ark.mandate.v1.CommitteeShape.threshold":
+		x.Threshold = uint32(value.Uint())
+	case "ark.mandate.v1.CommitteeShape.member_count":
+		x.MemberCount = uint32(value.Uint())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.CommitteeShape"))
+		}
+		panic(fmt.Errorf("message ark.mandate.v1.CommitteeShape does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CommitteeShape) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.mandate.v1.CommitteeShape.account_type":
+		panic(fmt.Errorf("field account_type of message ark.mandate.v1.CommitteeShape is not mutable"))
+	case "ark.mandate.v1.CommitteeShape.key_kind":
+		panic(fmt.Errorf("field key_kind of message ark.mandate.v1.CommitteeShape is not mutable"))
+	case "ark.mandate.v1.CommitteeShape.module":
+		panic(fmt.Errorf("field module of message ark.mandate.v1.CommitteeShape is not mutable"))
+	case "ark.mandate.v1.CommitteeShape.threshold":
+		panic(fmt.Errorf("field threshold of message ark.mandate.v1.CommitteeShape is not mutable"))
+	case "ark.mandate.v1.CommitteeShape.member_count":
+		panic(fmt.Errorf("field member_count of message ark.mandate.v1.CommitteeShape is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.CommitteeShape"))
+		}
+		panic(fmt.Errorf("message ark.mandate.v1.CommitteeShape does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_CommitteeShape) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.mandate.v1.CommitteeShape.account_type":
+		return protoreflect.ValueOfString("")
+	case "ark.mandate.v1.CommitteeShape.key_kind":
+		return protoreflect.ValueOfEnum(0)
+	case "ark.mandate.v1.CommitteeShape.module":
+		return protoreflect.ValueOfString("")
+	case "ark.mandate.v1.CommitteeShape.threshold":
+		return protoreflect.ValueOfUint32(uint32(0))
+	case "ark.mandate.v1.CommitteeShape.member_count":
+		return protoreflect.ValueOfUint32(uint32(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.CommitteeShape"))
+		}
+		panic(fmt.Errorf("message ark.mandate.v1.CommitteeShape does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_CommitteeShape) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.mandate.v1.CommitteeShape", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_CommitteeShape) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CommitteeShape) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_CommitteeShape) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_CommitteeShape) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*CommitteeShape)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.AccountType)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.KeyKind != 0 {
+			n += 1 + runtime.Sov(uint64(x.KeyKind))
+		}
+		l = len(x.Module)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Threshold != 0 {
+			n += 1 + runtime.Sov(uint64(x.Threshold))
+		}
+		if x.MemberCount != 0 {
+			n += 1 + runtime.Sov(uint64(x.MemberCount))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*CommitteeShape)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.MemberCount != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.MemberCount))
+			i--
+			dAtA[i] = 0x28
+		}
+		if x.Threshold != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Threshold))
+			i--
+			dAtA[i] = 0x20
+		}
+		if len(x.Module) > 0 {
+			i -= len(x.Module)
+			copy(dAtA[i:], x.Module)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Module)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.KeyKind != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.KeyKind))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.AccountType) > 0 {
+			i -= len(x.AccountType)
+			copy(dAtA[i:], x.AccountType)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AccountType)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*CommitteeShape)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: CommitteeShape: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: CommitteeShape: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AccountType", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.AccountType = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field KeyKind", wireType)
+				}
+				x.KeyKind = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.KeyKind |= CommitteeKeyKind(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Module", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Module = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Threshold", wireType)
+				}
+				x.Threshold = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Threshold |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 5:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MemberCount", wireType)
+				}
+				x.MemberCount = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.MemberCount |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
 	md_Envelope                   protoreflect.MessageDescriptor
 	fd_Envelope_term              protoreflect.FieldDescriptor
 	fd_Envelope_committee         protoreflect.FieldDescriptor
 	fd_Envelope_activation_height protoreflect.FieldDescriptor
 	fd_Envelope_expiry_height     protoreflect.FieldDescriptor
+	fd_Envelope_committee_shape   protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -29,6 +659,7 @@ func init() {
 	fd_Envelope_committee = md_Envelope.Fields().ByName("committee")
 	fd_Envelope_activation_height = md_Envelope.Fields().ByName("activation_height")
 	fd_Envelope_expiry_height = md_Envelope.Fields().ByName("expiry_height")
+	fd_Envelope_committee_shape = md_Envelope.Fields().ByName("committee_shape")
 }
 
 var _ protoreflect.Message = (*fastReflection_Envelope)(nil)
@@ -40,7 +671,7 @@ func (x *Envelope) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Envelope) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_mandate_v1_envelope_proto_msgTypes[0]
+	mi := &file_ark_mandate_v1_envelope_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -120,6 +751,12 @@ func (x *fastReflection_Envelope) Range(f func(protoreflect.FieldDescriptor, pro
 			return
 		}
 	}
+	if x.CommitteeShape != nil {
+		value := protoreflect.ValueOfMessage(x.CommitteeShape.ProtoReflect())
+		if !f(fd_Envelope_committee_shape, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -143,6 +780,8 @@ func (x *fastReflection_Envelope) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.ActivationHeight != uint64(0)
 	case "ark.mandate.v1.Envelope.expiry_height":
 		return x.ExpiryHeight != uint64(0)
+	case "ark.mandate.v1.Envelope.committee_shape":
+		return x.CommitteeShape != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.Envelope"))
@@ -167,6 +806,8 @@ func (x *fastReflection_Envelope) Clear(fd protoreflect.FieldDescriptor) {
 		x.ActivationHeight = uint64(0)
 	case "ark.mandate.v1.Envelope.expiry_height":
 		x.ExpiryHeight = uint64(0)
+	case "ark.mandate.v1.Envelope.committee_shape":
+		x.CommitteeShape = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.Envelope"))
@@ -195,6 +836,9 @@ func (x *fastReflection_Envelope) Get(descriptor protoreflect.FieldDescriptor) p
 	case "ark.mandate.v1.Envelope.expiry_height":
 		value := x.ExpiryHeight
 		return protoreflect.ValueOfUint64(value)
+	case "ark.mandate.v1.Envelope.committee_shape":
+		value := x.CommitteeShape
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.Envelope"))
@@ -223,6 +867,8 @@ func (x *fastReflection_Envelope) Set(fd protoreflect.FieldDescriptor, value pro
 		x.ActivationHeight = value.Uint()
 	case "ark.mandate.v1.Envelope.expiry_height":
 		x.ExpiryHeight = value.Uint()
+	case "ark.mandate.v1.Envelope.committee_shape":
+		x.CommitteeShape = value.Message().Interface().(*CommitteeShape)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.Envelope"))
@@ -243,6 +889,11 @@ func (x *fastReflection_Envelope) Set(fd protoreflect.FieldDescriptor, value pro
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Envelope) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "ark.mandate.v1.Envelope.committee_shape":
+		if x.CommitteeShape == nil {
+			x.CommitteeShape = new(CommitteeShape)
+		}
+		return protoreflect.ValueOfMessage(x.CommitteeShape.ProtoReflect())
 	case "ark.mandate.v1.Envelope.term":
 		panic(fmt.Errorf("field term of message ark.mandate.v1.Envelope is not mutable"))
 	case "ark.mandate.v1.Envelope.committee":
@@ -272,6 +923,9 @@ func (x *fastReflection_Envelope) NewField(fd protoreflect.FieldDescriptor) prot
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.mandate.v1.Envelope.expiry_height":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.mandate.v1.Envelope.committee_shape":
+		m := new(CommitteeShape)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.mandate.v1.Envelope"))
@@ -354,6 +1008,10 @@ func (x *fastReflection_Envelope) ProtoMethods() *protoiface.Methods {
 		if x.ExpiryHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
 		}
+		if x.CommitteeShape != nil {
+			l = options.Size(x.CommitteeShape)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -382,6 +1040,20 @@ func (x *fastReflection_Envelope) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.CommitteeShape != nil {
+			encoded, err := options.Marshal(x.CommitteeShape)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x2a
 		}
 		if x.ExpiryHeight != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
@@ -543,6 +1215,42 @@ func (x *fastReflection_Envelope) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CommitteeShape", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.CommitteeShape == nil {
+					x.CommitteeShape = &CommitteeShape{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.CommitteeShape); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -591,6 +1299,160 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// CommitteeKeyKind names what backs authorisation for a committee account. The
+// set of key types is closed by the interface registry — an unregistered key
+// cannot decode into an account — so every account the chain can hold maps to
+// exactly one value here, with OTHER absorbing a type this binary predates.
+type CommitteeKeyKind int32
+
+const (
+	// COMMITTEE_KEY_KIND_UNSPECIFIED is the disabled mandate's zero shape.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_UNSPECIFIED CommitteeKeyKind = 0
+	// COMMITTEE_KEY_KIND_ABSENT is an address holding no account.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT CommitteeKeyKind = 1
+	// COMMITTEE_KEY_KIND_KEYLESS is an account with no registered key: an unused
+	// key pair, a contract, an interchain account, or a module account.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_KEYLESS CommitteeKeyKind = 2
+	// COMMITTEE_KEY_KIND_SINGLE is one simple key.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_SINGLE CommitteeKeyKind = 3
+	// COMMITTEE_KEY_KIND_MULTISIG is a legacy amino threshold multisig.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG CommitteeKeyKind = 4
+	// COMMITTEE_KEY_KIND_MODULE is a module credential, authorising by module
+	// logic rather than by a key.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_MODULE CommitteeKeyKind = 5
+	// COMMITTEE_KEY_KIND_OTHER is a registered key type this binary predates,
+	// which must not be read as any of the shapes above.
+	CommitteeKeyKind_COMMITTEE_KEY_KIND_OTHER CommitteeKeyKind = 6
+)
+
+// Enum value maps for CommitteeKeyKind.
+var (
+	CommitteeKeyKind_name = map[int32]string{
+		0: "COMMITTEE_KEY_KIND_UNSPECIFIED",
+		1: "COMMITTEE_KEY_KIND_ABSENT",
+		2: "COMMITTEE_KEY_KIND_KEYLESS",
+		3: "COMMITTEE_KEY_KIND_SINGLE",
+		4: "COMMITTEE_KEY_KIND_MULTISIG",
+		5: "COMMITTEE_KEY_KIND_MODULE",
+		6: "COMMITTEE_KEY_KIND_OTHER",
+	}
+	CommitteeKeyKind_value = map[string]int32{
+		"COMMITTEE_KEY_KIND_UNSPECIFIED": 0,
+		"COMMITTEE_KEY_KIND_ABSENT":      1,
+		"COMMITTEE_KEY_KIND_KEYLESS":     2,
+		"COMMITTEE_KEY_KIND_SINGLE":      3,
+		"COMMITTEE_KEY_KIND_MULTISIG":    4,
+		"COMMITTEE_KEY_KIND_MODULE":      5,
+		"COMMITTEE_KEY_KIND_OTHER":       6,
+	}
+)
+
+func (x CommitteeKeyKind) Enum() *CommitteeKeyKind {
+	p := new(CommitteeKeyKind)
+	*p = x
+	return p
+}
+
+func (x CommitteeKeyKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CommitteeKeyKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_ark_mandate_v1_envelope_proto_enumTypes[0].Descriptor()
+}
+
+func (CommitteeKeyKind) Type() protoreflect.EnumType {
+	return &file_ark_mandate_v1_envelope_proto_enumTypes[0]
+}
+
+func (x CommitteeKeyKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CommitteeKeyKind.Descriptor instead.
+func (CommitteeKeyKind) EnumDescriptor() ([]byte, []int) {
+	return file_ark_mandate_v1_envelope_proto_rawDescGZIP(), []int{0}
+}
+
+// CommitteeShape is what the chain could prove about the committee account at
+// appointment. It is observation, never authorisation: a zeroed shape is a
+// committee whose backing could not be established, not one that was rejected.
+type CommitteeShape struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// account_type is the account's proto message name, empty when no account
+	// existed. It names an interchain account or any future account type without
+	// this package depending on the stack defining it.
+	AccountType string           `protobuf:"bytes,1,opt,name=account_type,json=accountType,proto3" json:"account_type,omitempty"`
+	KeyKind     CommitteeKeyKind `protobuf:"varint,2,opt,name=key_kind,json=keyKind,proto3,enum=ark.mandate.v1.CommitteeKeyKind" json:"key_kind,omitempty"`
+	// module is the module controlling the address, from a module credential or
+	// a module account, empty otherwise.
+	Module string `protobuf:"bytes,3,opt,name=module,proto3" json:"module,omitempty"`
+	// threshold and member_count read as K-of-N, and are nonzero only for a
+	// multisig of pairwise-distinct simple keys. A duplicate or nested member
+	// leaves them zero under COMMITTEE_KEY_KIND_MULTISIG, which is exactly the
+	// shape governance must not read as verified.
+	Threshold   uint32 `protobuf:"varint,4,opt,name=threshold,proto3" json:"threshold,omitempty"`
+	MemberCount uint32 `protobuf:"varint,5,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
+}
+
+func (x *CommitteeShape) Reset() {
+	*x = CommitteeShape{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_mandate_v1_envelope_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CommitteeShape) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommitteeShape) ProtoMessage() {}
+
+// Deprecated: Use CommitteeShape.ProtoReflect.Descriptor instead.
+func (*CommitteeShape) Descriptor() ([]byte, []int) {
+	return file_ark_mandate_v1_envelope_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CommitteeShape) GetAccountType() string {
+	if x != nil {
+		return x.AccountType
+	}
+	return ""
+}
+
+func (x *CommitteeShape) GetKeyKind() CommitteeKeyKind {
+	if x != nil {
+		return x.KeyKind
+	}
+	return CommitteeKeyKind_COMMITTEE_KEY_KIND_UNSPECIFIED
+}
+
+func (x *CommitteeShape) GetModule() string {
+	if x != nil {
+		return x.Module
+	}
+	return ""
+}
+
+func (x *CommitteeShape) GetThreshold() uint32 {
+	if x != nil {
+		return x.Threshold
+	}
+	return 0
+}
+
+func (x *CommitteeShape) GetMemberCount() uint32 {
+	if x != nil {
+		return x.MemberCount
+	}
+	return 0
+}
+
 // Envelope is the shared appointment envelope embedded by every
 // governance-appointed committee mandate. An empty committee is the canonical
 // disabled mandate, which still retains the latest term.
@@ -611,12 +1473,16 @@ type Envelope struct {
 	// expiry_height is the first height at which the committee may no longer
 	// act, forming a half-open window with activation_height.
 	ExpiryHeight uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	// committee_shape is what the chain proved about the committee account when
+	// it was appointed. The address is the hash of the key it commits to, so a
+	// shape observed at appointment cannot go stale within the term.
+	CommitteeShape *CommitteeShape `protobuf:"bytes,5,opt,name=committee_shape,json=committeeShape,proto3" json:"committee_shape,omitempty"`
 }
 
 func (x *Envelope) Reset() {
 	*x = Envelope{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_mandate_v1_envelope_proto_msgTypes[0]
+		mi := &file_ark_mandate_v1_envelope_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -630,7 +1496,7 @@ func (*Envelope) ProtoMessage() {}
 
 // Deprecated: Use Envelope.ProtoReflect.Descriptor instead.
 func (*Envelope) Descriptor() ([]byte, []int) {
-	return file_ark_mandate_v1_envelope_proto_rawDescGZIP(), []int{0}
+	return file_ark_mandate_v1_envelope_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Envelope) GetTerm() uint64 {
@@ -661,6 +1527,13 @@ func (x *Envelope) GetExpiryHeight() uint64 {
 	return 0
 }
 
+func (x *Envelope) GetCommitteeShape() *CommitteeShape {
+	if x != nil {
+		return x.CommitteeShape
+	}
+	return nil
+}
+
 var File_ark_mandate_v1_envelope_proto protoreflect.FileDescriptor
 
 var file_ark_mandate_v1_envelope_proto_rawDesc = []byte{
@@ -669,19 +1542,55 @@ var file_ark_mandate_v1_envelope_proto_rawDesc = []byte{
 	0x0e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x1a,
 	0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbd, 0x01,
-	0x0a, 0x08, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65,
-	0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
-	0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x32, 0x0a,
-	0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x9f, 0x01,
+	0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67,
+	0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x22, 0xde, 0x01, 0x0a, 0x0e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x63,
+	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x42, 0x0a, 0x08, 0x6b, 0x65, 0x79,
+	0x5f, 0x6b, 0x69, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x20, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x4b, 0x65, 0x79, 0x4b, 0x69, 0x6e, 0x64, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x6b, 0x65, 0x79, 0x4b, 0x69, 0x6e, 0x64, 0x12, 0x16, 0x0a,
+	0x06, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x6d,
+	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x12, 0x23, 0x0a, 0x09, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f,
+	0x6c, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x09, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x28, 0x0a, 0x0c, 0x6d, 0x65,
+	0x6d, 0x62, 0x65, 0x72, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0d,
+	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x6d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x43,
+	0x6f, 0x75, 0x6e, 0x74, 0x22, 0x91, 0x02, 0x0a, 0x08, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70,
+	0x65, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42,
+	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09,
+	0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x74, 0x65, 0x65, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42,
+	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69,
+	0x72, 0x79, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42,
+	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x12, 0x52, 0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x5f, 0x73, 0x68, 0x61, 0x70, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43,
+	0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x2a, 0xf2, 0x01, 0x0a, 0x10, 0x43, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x4b, 0x65, 0x79, 0x4b, 0x69, 0x6e, 0x64, 0x12, 0x22, 0x0a,
+	0x1e, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b, 0x45, 0x59, 0x5f, 0x4b,
+	0x49, 0x4e, 0x44, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10,
+	0x00, 0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b,
+	0x45, 0x59, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x41, 0x42, 0x53, 0x45, 0x4e, 0x54, 0x10, 0x01,
+	0x12, 0x1e, 0x0a, 0x1a, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b, 0x45,
+	0x59, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4b, 0x45, 0x59, 0x4c, 0x45, 0x53, 0x53, 0x10, 0x02,
+	0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b, 0x45,
+	0x59, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x53, 0x49, 0x4e, 0x47, 0x4c, 0x45, 0x10, 0x03, 0x12,
+	0x1f, 0x0a, 0x1b, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b, 0x45, 0x59,
+	0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4d, 0x55, 0x4c, 0x54, 0x49, 0x53, 0x49, 0x47, 0x10, 0x04,
+	0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b, 0x45,
+	0x59, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4d, 0x4f, 0x44, 0x55, 0x4c, 0x45, 0x10, 0x05, 0x12,
+	0x1c, 0x0a, 0x18, 0x43, 0x4f, 0x4d, 0x4d, 0x49, 0x54, 0x54, 0x45, 0x45, 0x5f, 0x4b, 0x45, 0x59,
+	0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4f, 0x54, 0x48, 0x45, 0x52, 0x10, 0x06, 0x42, 0x9f, 0x01,
 	0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74,
 	0x65, 0x2e, 0x76, 0x31, 0x42, 0x0d, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x50, 0x72,
 	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61,
@@ -707,16 +1616,21 @@ func file_ark_mandate_v1_envelope_proto_rawDescGZIP() []byte {
 	return file_ark_mandate_v1_envelope_proto_rawDescData
 }
 
-var file_ark_mandate_v1_envelope_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_ark_mandate_v1_envelope_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_ark_mandate_v1_envelope_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_ark_mandate_v1_envelope_proto_goTypes = []interface{}{
-	(*Envelope)(nil), // 0: ark.mandate.v1.Envelope
+	(CommitteeKeyKind)(0),  // 0: ark.mandate.v1.CommitteeKeyKind
+	(*CommitteeShape)(nil), // 1: ark.mandate.v1.CommitteeShape
+	(*Envelope)(nil),       // 2: ark.mandate.v1.Envelope
 }
 var file_ark_mandate_v1_envelope_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: ark.mandate.v1.CommitteeShape.key_kind:type_name -> ark.mandate.v1.CommitteeKeyKind
+	1, // 1: ark.mandate.v1.Envelope.committee_shape:type_name -> ark.mandate.v1.CommitteeShape
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_ark_mandate_v1_envelope_proto_init() }
@@ -726,6 +1640,18 @@ func file_ark_mandate_v1_envelope_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_ark_mandate_v1_envelope_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CommitteeShape); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_mandate_v1_envelope_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Envelope); i {
 			case 0:
 				return &v.state
@@ -743,13 +1669,14 @@ func file_ark_mandate_v1_envelope_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_mandate_v1_envelope_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   1,
+			NumEnums:      1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_ark_mandate_v1_envelope_proto_goTypes,
 		DependencyIndexes: file_ark_mandate_v1_envelope_proto_depIdxs,
+		EnumInfos:         file_ark_mandate_v1_envelope_proto_enumTypes,
 		MessageInfos:      file_ark_mandate_v1_envelope_proto_msgTypes,
 	}.Build()
 	File_ark_mandate_v1_envelope_proto = out.File

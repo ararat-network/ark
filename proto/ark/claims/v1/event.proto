@@ -3,6 +3,7 @@ package ark.claims.v1;
 
 import "amino/amino.proto";
 import "ark/claims/v1/claims.proto";
+import "ark/mandate/v1/envelope.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
@@ -54,4 +55,8 @@ message EventClaimsMandateSet {
   string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
   uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  // committee_shape is the appointment-time observation of the committee
+  // account, zeroed on a disabling.
+  ark.mandate.v1.CommitteeShape committee_shape = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }

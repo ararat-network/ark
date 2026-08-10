@@ -3,8 +3,53 @@ package ark.mandate.v1;
 
 import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "ark/pkg/mandate";
+
+// CommitteeKeyKind names what backs authorisation for a committee account. The
+// set of key types is closed by the interface registry — an unregistered key
+// cannot decode into an account — so every account the chain can hold maps to
+// exactly one value here, with OTHER absorbing a type this binary predates.
+enum CommitteeKeyKind {
+  // COMMITTEE_KEY_KIND_UNSPECIFIED is the disabled mandate's zero shape.
+  COMMITTEE_KEY_KIND_UNSPECIFIED = 0;
+  // COMMITTEE_KEY_KIND_ABSENT is an address holding no account.
+  COMMITTEE_KEY_KIND_ABSENT = 1;
+  // COMMITTEE_KEY_KIND_KEYLESS is an account with no registered key: an unused
+  // key pair, a contract, an interchain account, or a module account.
+  COMMITTEE_KEY_KIND_KEYLESS = 2;
+  // COMMITTEE_KEY_KIND_SINGLE is one simple key.
+  COMMITTEE_KEY_KIND_SINGLE = 3;
+  // COMMITTEE_KEY_KIND_MULTISIG is a legacy amino threshold multisig.
+  COMMITTEE_KEY_KIND_MULTISIG = 4;
+  // COMMITTEE_KEY_KIND_MODULE is a module credential, authorising by module
+  // logic rather than by a key.
+  COMMITTEE_KEY_KIND_MODULE = 5;
+  // COMMITTEE_KEY_KIND_OTHER is a registered key type this binary predates,
+  // which must not be read as any of the shapes above.
+  COMMITTEE_KEY_KIND_OTHER = 6;
+}
+
+// CommitteeShape is what the chain could prove about the committee account at
+// appointment. It is observation, never authorisation: a zeroed shape is a
+// committee whose backing could not be established, not one that was rejected.
+message CommitteeShape {
+  // account_type is the account's proto message name, empty when no account
+  // existed. It names an interchain account or any future account type without
+  // this package depending on the stack defining it.
+  string account_type = 1;
+  CommitteeKeyKind key_kind = 2 [ (amino.dont_omitempty) = true ];
+  // module is the module controlling the address, from a module credential or
+  // a module account, empty otherwise.
+  string module = 3;
+  // threshold and member_count read as K-of-N, and are nonzero only for a
+  // multisig of pairwise-distinct simple keys. A duplicate or nested member
+  // leaves them zero under COMMITTEE_KEY_KIND_MULTISIG, which is exactly the
+  // shape governance must not read as verified.
+  uint32 threshold = 4 [ (amino.dont_omitempty) = true ];
+  uint32 member_count = 5 [ (amino.dont_omitempty) = true ];
+}
 
 // Envelope is the shared appointment envelope embedded by every
 // governance-appointed committee mandate. An empty committee is the canonical
@@ -22,4 +67,9 @@ message Envelope {
   // expiry_height is the first height at which the committee may no longer
   // act, forming a half-open window with activation_height.
   uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  // committee_shape is what the chain proved about the committee account when
+  // it was appointed. The address is the hash of the key it commits to, so a
+  // shape observed at appointment cannot go stale within the term.
+  CommitteeShape committee_shape = 5
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
