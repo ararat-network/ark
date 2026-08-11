@@ -106,7 +106,8 @@ func (k Keeper) OpenSettlement(
 	// Validation caps the delay at a chain year, so the widening to int64 and
 	// the addition below cannot overflow for any stored value.
 	delayBlocks := int64(params.SettlementActivationDelayBlocks)
-	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	blockHeight := sdkCtx.BlockHeight()
 	activationHeight := blockHeight + delayBlocks
 
 	plan := types.SettlementPlan{
@@ -137,7 +138,7 @@ func (k Keeper) OpenSettlement(
 		return fmt.Errorf("setting settlement plan for asset %s: %w", denom, err)
 	}
 
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
+	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventSettlementOpened{
 			SettlementPlan: plan,
 		},
@@ -181,7 +182,8 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 	if !found {
 		return sdkerrors.Wrap(types.ErrSettlementPlanNotFound, denom)
 	}
-	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	blockHeight := sdkCtx.BlockHeight()
 	if plan.IsActive(blockHeight) {
 		return sdkerrors.Wrapf(
 			types.ErrInvalidAssetTransition,
@@ -200,7 +202,7 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 	if err := k.advanceAsset(ctx, asset, asset); err != nil {
 		return err
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
+	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventSettlementCancelled{
 			Denom:   denom,
 			Version: asset.Version + 1,
@@ -308,11 +310,12 @@ func (k Keeper) closeSettlementPlan(ctx context.Context, denom string, version u
 		return fmt.Errorf("closing settlement plan for asset %s: %w", denom, err)
 	}
 
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventSettlementClosed{
 			SettlementPlan: plan,
 			Version:        version,
-			ClosedHeight:   sdk.UnwrapSDKContext(ctx).BlockHeight(),
+			ClosedHeight:   sdkCtx.BlockHeight(),
 		},
 	); err != nil {
 		return fmt.Errorf(

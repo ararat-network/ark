@@ -19,6 +19,7 @@ import (
 // outflow has actually been paid, so a failed transfer leaves no record of a
 // movement that never happened.
 func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed sdk.Coin, venueReference string) (types.Position, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	positionID, err := k.NextPositionID.Peek(ctx)
 	if err != nil {
 		return types.Position{}, fmt.Errorf("getting next position ID: %w", err)
@@ -30,7 +31,7 @@ func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed s
 		Deployed:       deployed,
 		Returned:       chain.NoahCoin(math.ZeroInt()),
 		VenueReference: venueReference,
-		OpenedHeight:   uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+		OpenedHeight:   uint64(sdkCtx.BlockHeight()),
 	}
 	if err := position.Validate(); err != nil {
 		return types.Position{}, err
@@ -41,7 +42,7 @@ func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed s
 	if err := k.OpenPositions.Set(ctx, position.PositionId, position); err != nil {
 		return types.Position{}, fmt.Errorf("setting position %d: %w", position.PositionId, err)
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventPositionOpened{
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventPositionOpened{
 		PositionId: position.PositionId,
 		Deployed:   position.Deployed,
 	}); err != nil {
@@ -547,7 +548,8 @@ func (k *Keeper) closePosition(
 	if err != nil {
 		return 0, fmt.Errorf("getting open position %d: %w", positionID, err)
 	}
-	position.ClosedHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	position.ClosedHeight = uint64(sdkCtx.BlockHeight())
 	if err := position.Validate(); err != nil {
 		return 0, err
 	}
@@ -570,7 +572,7 @@ func (k *Keeper) closePosition(
 	if err != nil {
 		return 0, err
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventPositionClosed{
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventPositionClosed{
 		PositionId: position.PositionId,
 		Deployed:   position.Deployed,
 		Returned:   position.Returned,

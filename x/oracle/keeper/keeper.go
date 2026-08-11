@@ -225,7 +225,8 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate %s is not positive", exchangeRate.Denom, exchangeRate.Rate)
 	}
 
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentTime := sdkCtx.BlockTime()
 	if exchangeRate.BlockTimestamp.After(currentTime) {
 		return sdkerrors.Wrapf(
 			types.ErrInvalidExchangeRate,
@@ -239,7 +240,6 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 		return fmt.Errorf("setting exchange rate with event for denom %s: %w", exchangeRate.Denom, err)
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventExchangeRateUpdate{
 		Denom:        exchangeRate.Denom,
 		ExchangeRate: exchangeRate.Rate,

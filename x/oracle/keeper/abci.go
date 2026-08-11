@@ -15,6 +15,7 @@ import (
 func (k Keeper) EndBlocker(ctx context.Context) error {
 	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
@@ -39,7 +40,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 			accounting.RewardDistributionWindow != params.RewardDistributionWindow {
 			accounting.RewardWindow = params.RewardWindow
 			accounting.RewardDistributionWindow = params.RewardDistributionWindow
-			accounting.RewardWindowStartHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()) + 1
+			accounting.RewardWindowStartHeight = uint64(sdkCtx.BlockHeight()) + 1
 			accountingChanged = true
 		}
 	}
@@ -56,7 +57,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 
 		if accounting.AttendanceWindow != params.AttendanceWindow {
 			accounting.AttendanceWindow = params.AttendanceWindow
-			accounting.AttendanceWindowStartHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()) + 1
+			accounting.AttendanceWindowStartHeight = uint64(sdkCtx.BlockHeight()) + 1
 			accountingChanged = true
 		}
 	}

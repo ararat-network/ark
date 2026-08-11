@@ -70,6 +70,7 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 // signalling committee-confirmed distress through a door it left open. Halting
 // is wind-down policy, and policy runs at governance speed.
 func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, denom string, expectedTerm uint64) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	emergencyMandate, err := k.EmergencyMandate.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting emergency mandate: %w", err)
@@ -77,7 +78,7 @@ func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, den
 	if err := emergencyMandate.Authorise(
 		committee,
 		expectedTerm,
-		uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+		uint64(sdkCtx.BlockHeight()),
 	); err != nil {
 		return sdkerrors.Wrap(types.ErrEmergencyMandateInactive, err.Error())
 	}
@@ -117,7 +118,7 @@ func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, den
 	if err := k.EmergencySuspensions.Set(ctx, denom); err != nil {
 		return fmt.Errorf("recording emergency suspension for asset %s: %w", denom, err)
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
+	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventEmergencySuspended{
 			Denom:   denom,
 			Term:    expectedTerm,
