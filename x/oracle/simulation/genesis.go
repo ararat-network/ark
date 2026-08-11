@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"cosmossdk.io/math"
 
@@ -31,6 +32,28 @@ const (
 // GenVoteThreshold randomised VoteThreshold
 func GenVoteThreshold(r *rand.Rand) math.LegacyDec {
 	return types.MinVoteThreshold.Add(math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3))
+}
+
+// GenExchangeRates prices every launch feed as of the genesis timestamp.
+//
+// The simulation has to seed these because it never runs the vote-extension
+// pipeline that produces them on a live chain. Without a rate the protocol
+// reference denomination is unpriced, so every Market conversion the simulation
+// generates fails on an unknown denom and Market goes effectively untested.
+func GenExchangeRates(r *rand.Rand, genTime time.Time) []types.ExchangeRate {
+	rates := make([]types.ExchangeRate, 0, len(types.DefaultFeedDenoms))
+	for _, denom := range types.DefaultFeedDenoms {
+		rates = append(rates, types.ExchangeRate{
+			Denom: denom,
+			// Positive and spread over four orders of magnitude, so conversion
+			// arithmetic meets realistically dissimilar rates rather than a set
+			// clustered around one.
+			Rate:           math.LegacyNewDecWithPrec(int64(r.Intn(1_000_000)+1), 3),
+			BlockTimestamp: genTime,
+			BlockHeight:    0,
+		})
+	}
+	return rates
 }
 
 // GenRewardBand randomised RewardBand
@@ -121,19 +144,23 @@ func RandomisedGenState(simState *module.SimulationState) {
 	)
 
 	params := types.Params{
-		VoteThreshold:             voteThreshold,
-		RewardBand:                rewardBand,
-		RewardWindow:              rewardWindow,
-		RewardDistributionWindow:  rewardDistributionWindow,
-		AttendanceWindow:          attendanceWindow,
-		MinAttendancePerWindow:    minAttendancePerWindow,
-		MaxExchangeRateAge:        types.DefaultMaxExchangeRateAge,
+		VoteThreshold:            voteThreshold,
+		RewardBand:               rewardBand,
+		RewardWindow:             rewardWindow,
+		RewardDistributionWindow: rewardDistributionWindow,
+		AttendanceWindow:         attendanceWindow,
+		MinAttendancePerWindow:   minAttendancePerWindow,
+		// Nothing refreshes rates during a simulation, so the one-minute default
+		// would expire them a few blocks in and fail every conversion after
+		// that. The ceiling keeps the seeded rates readable for the whole run;
+		// the staleness path itself is covered by keeper tests.
+		MaxExchangeRateAge:        types.MaxAllowedExchangeRateAge,
 		FunctioningBlockThreshold: functioningBlockThreshold,
 		ParticipationThreshold:    participationThreshold,
 	}
 	oracleGenesis := types.NewGenesisState(
 		params,
-		[]types.ExchangeRate{},
+		GenExchangeRates(simState.Rand, simState.GenTimestamp),
 		[]types.RewardWeight{},
 		[]types.AttendanceRecord{},
 		types.NewAccounting(params),
