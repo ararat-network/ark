@@ -159,11 +159,41 @@ func (s *KeeperTestSuite) TestRecordVoteAccountingRejectsInvalidRewardWeight() {
 	}
 }
 
+// TestRecordVoteAccountingResolvesRotatedConsAddr covers the consensus key
+// rotation window. Vote extensions attribute the previous block's commit, so a
+// validator that rotated in between votes under an address the live index no
+// longer holds; accounting must still credit it rather than silently drop the
+// block's attendance.
+func (s *KeeperTestSuite) TestRecordVoteAccountingResolvesRotatedConsAddr() {
+	rotatedFrom, validator := s.newBondedValidator(valAddr1)
+	s.stakingKeeper.EXPECT().
+		ValidatorByConsAddr(s.ctx, rotatedFrom).
+		Return(nil, stakingtypes.ErrNoValidatorFound)
+	s.stakingKeeper.EXPECT().
+		ValidatorByHistoricalConsAddr(s.ctx, rotatedFrom).
+		Return(validator, nil)
+
+	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, rotatedFrom, math.NewInt(3), true, true))
+
+	attendance, err := s.keeper.Attendance.Get(s.ctx, valAddr1)
+	s.Require().NoError(err)
+	s.Require().Equal(types.Attendance{EligibleBlocks: 1, AttendedBlocks: 1}, attendance)
+
+	rewardWeight, err := s.keeper.RewardWeight.Get(s.ctx, valAddr1)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(3), rewardWeight)
+}
+
 func (s *KeeperTestSuite) TestRecordVoteAccountingSkipsUnresolvedValidator() {
 	consAddr := sdk.ConsAddress([]byte("missing_validator___"))
 	s.stakingKeeper.EXPECT().
 		ValidatorByConsAddr(s.ctx, consAddr).
 		Return(nil, stakingtypes.ErrNoValidatorFound)
+	// Absent from the live index, accounting falls back to the rotation history
+	// before giving up; an address in neither is skipped.
+	s.stakingKeeper.EXPECT().
+		ValidatorByHistoricalConsAddr(s.ctx, consAddr).
+		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound)
 
 	s.Require().NoError(s.keeper.RecordVoteAccounting(s.ctx, consAddr, math.NewInt(3), true, true))
 

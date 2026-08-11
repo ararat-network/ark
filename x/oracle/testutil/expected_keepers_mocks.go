@@ -87,6 +87,21 @@ func (mr *MockStakingKeeperMockRecorder) ValidatorByConsAddr(arg0, arg1 any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorByConsAddr", reflect.TypeOf((*MockStakingKeeper)(nil).ValidatorByConsAddr), arg0, arg1)
 }
 
+// ValidatorByHistoricalConsAddr mocks base method.
+func (m *MockStakingKeeper) ValidatorByHistoricalConsAddr(arg0 context.Context, arg1 types0.ConsAddress) (types1.Validator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatorByHistoricalConsAddr", arg0, arg1)
+	ret0, _ := ret[0].(types1.Validator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValidatorByHistoricalConsAddr indicates an expected call of ValidatorByHistoricalConsAddr.
+func (mr *MockStakingKeeperMockRecorder) ValidatorByHistoricalConsAddr(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorByHistoricalConsAddr", reflect.TypeOf((*MockStakingKeeper)(nil).ValidatorByHistoricalConsAddr), arg0, arg1)
+}
+
 // MockDistributionKeeper is a mock of DistributionKeeper interface.
 type MockDistributionKeeper struct {
 	ctrl     *gomock.Controller
