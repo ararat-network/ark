@@ -40,6 +40,9 @@ const (
 // signer they stamp on it; the real targets are exercised from the app tests.
 type stubRouter struct {
 	dispatched []sdk.Msg
+	// events, when set, are returned on the handler result, standing in for a
+	// target that emitted under the router's own event manager.
+	events sdk.Events
 	// err, when set, is returned by the handler, standing in for a target that
 	// rejects the message.
 	err error
@@ -59,7 +62,7 @@ func (r *stubRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
 		}
 		r.dispatched = append(r.dispatched, req)
 
-		return &sdk.Result{}, nil
+		return &sdk.Result{Events: r.events.ToABCIEvents()}, nil
 	}
 }
 

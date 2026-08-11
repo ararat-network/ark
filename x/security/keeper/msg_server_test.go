@@ -3,8 +3,10 @@ package keeper_test
 import (
 	clienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	"ark/x/security/types"
 )
@@ -368,6 +370,31 @@ func (s *KeeperTestSuite) TestCommitteeRecoverClient() {
 		})
 		s.Require().ErrorContains(err, "subject and substitute client identifiers must be set")
 	})
+}
+
+// TestDispatchForwardsUpstreamEvents pins that what a target emits reaches the
+// transaction result. The router gives the target its own event manager, so a
+// dispatch that drops the result drops the events with it, and an IBC client
+// recovery would carry only this module's own event.
+func (s *KeeperTestSuite) TestDispatchForwardsUpstreamEvents() {
+	s.appoint()
+	s.router.events = sdk.Events{
+		sdk.NewEvent("recover_client", sdk.NewAttribute("client_id", testSubjectClient)),
+	}
+	ctx := s.ctx.WithEventManager(sdk.NewEventManager())
+
+	_, err := s.msgServer.CommitteeRecoverClient(ctx, &types.MsgCommitteeRecoverClient{
+		Committee:          s.committee,
+		ExpectedTerm:       1,
+		SubjectClientId:    testSubjectClient,
+		SubstituteClientId: testSubstituteClient,
+	})
+	s.Require().NoError(err)
+
+	emitted := ctx.EventManager().Events()
+	s.Require().Len(emitted, 2)
+	s.Require().Equal("recover_client", emitted[0].Type)
+	s.Require().Equal(proto.MessageName(&types.EventCommitteeClientRecovered{}), emitted[1].Type)
 }
 
 // TestCommitteeMessagesRejectNil covers the defensive nil guard every handler

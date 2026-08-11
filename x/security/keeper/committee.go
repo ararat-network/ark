@@ -87,9 +87,15 @@ func (k Keeper) dispatch(ctx context.Context, msg sdk.Msg) error {
 	if handler == nil {
 		return fmt.Errorf("no handler registered for %s", sdk.MsgTypeURL(msg))
 	}
-	if _, err := handler(sdk.UnwrapSDKContext(ctx), msg); err != nil {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	res, err := handler(sdkCtx, msg)
+	if err != nil {
 		return fmt.Errorf("dispatching %s: %w", sdk.MsgTypeURL(msg), err)
 	}
+	// The router gives the target its own event manager and returns what it
+	// emitted on the result, so events not forwarded here are lost: a client
+	// recovery would be invisible to every relayer watching for it.
+	sdkCtx.EventManager().EmitEvents(res.GetEvents())
 
 	return nil
 }
