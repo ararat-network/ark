@@ -12,9 +12,6 @@ type StakingKeeper interface {
 	Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error)
 	Jail(context.Context, sdk.ConsAddress) error
 	ValidatorByConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.ValidatorI, error)
-	// ValidatorByHistoricalConsAddr resolves an address a validator rotated away
-	// from. It returns the concrete type and never falls back to the live index.
-	ValidatorByHistoricalConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.Validator, error)
 }
 
 // DistributionKeeper is expected keeper for distribution module

@@ -44,19 +44,10 @@ func (k Keeper) RecordVoteAccounting(
 
 	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
 	if err != nil {
-		if !errors.Is(err, stakingtypes.ErrNoValidatorFound) {
-			return fmt.Errorf("getting validator by consensus address %s: %w", consAddr, err)
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			return nil
 		}
-		// Vote extensions attribute the previous block's commit, so a consensus key
-		// rotated in between leaves the live index without the address that voted.
-		historical, histErr := k.stakingKeeper.ValidatorByHistoricalConsAddr(ctx, consAddr)
-		if histErr != nil {
-			if errors.Is(histErr, stakingtypes.ErrNoValidatorFound) {
-				return nil
-			}
-			return fmt.Errorf("getting validator by historical consensus address %s: %w", consAddr, histErr)
-		}
-		validator = historical
+		return fmt.Errorf("getting validator by consensus address %s: %w", consAddr, err)
 	}
 	if validator == nil {
 		return nil

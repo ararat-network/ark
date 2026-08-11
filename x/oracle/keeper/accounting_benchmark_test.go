@@ -70,16 +70,6 @@ func (k accountingBenchmarkStakingKeeper) ValidatorByConsAddr(
 	return validator, nil
 }
 
-// The benchmark seeds every validator into the live index, so the historical
-// lookup is only reached when ValidatorByConsAddr has already reported the
-// address as absent — which this fixture never does.
-func (accountingBenchmarkStakingKeeper) ValidatorByHistoricalConsAddr(
-	context.Context,
-	sdk.ConsAddress,
-) (stakingtypes.Validator, error) {
-	return stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound
-}
-
 func (accountingBenchmarkStakingKeeper) Validator(
 	context.Context,
 	sdk.ValAddress,
