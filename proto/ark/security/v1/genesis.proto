@@ -1,0 +1,22 @@
+syntax = "proto3";
+package ark.security.v1;
+
+import "amino/amino.proto";
+import "ark/security/v1/security.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/security/types";
+
+// GenesisState defines the security module's genesis state.
+message GenesisState {
+  // security_mandate is the governed security committee appointment, disabled
+  // at launch.
+  SecurityMandate security_mandate = 1
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+
+  // committee_plan is the upgrade plan the committee last scheduled, zero when
+  // there is none. It is independent of the mandate because the plan it
+  // describes lives in x/upgrade and outlives any appointment.
+  CommitteePlan committee_plan = 2
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}

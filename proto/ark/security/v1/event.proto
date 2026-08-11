@@ -1,0 +1,48 @@
+syntax = "proto3";
+package ark.security.v1;
+
+import "amino/amino.proto";
+import "ark/mandate/v1/envelope.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "ark/x/security/types";
+
+// EventSecurityMandateSet is emitted when governance appoints, replaces, or
+// disables the security committee.
+message EventSecurityMandateSet {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  // committee is empty when the mandate is disabled.
+  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  // committee_shape is the appointment-time observation of the committee
+  // account, zeroed on a disabling.
+  ark.mandate.v1.CommitteeShape committee_shape = 6
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+}
+
+// EventCommitteeUpgradeScheduled is emitted when the committee schedules an
+// emergency upgrade plan, whether into an empty slot or over its own pending
+// plan.
+message EventCommitteeUpgradeScheduled {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  string name = 2;
+  int64 height = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// EventCommitteeUpgradeCancelled is emitted when the committee cancels its own
+// pending upgrade plan.
+message EventCommitteeUpgradeCancelled {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  string name = 2;
+  int64 height = 3 [ (amino.dont_omitempty) = true ];
+}
+
+// EventCommitteeClientRecovered is emitted when the committee substitutes an
+// expired or frozen IBC client.
+message EventCommitteeClientRecovered {
+  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  string subject_client_id = 2;
+  string substitute_client_id = 3;
+}
