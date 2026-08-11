@@ -162,7 +162,7 @@ message AssetRecognition {
   // is custody without credit.
   bool eligible = 2 [ (amino.dont_omitempty) = true ];
   // attested_quantity sums the open, unimpaired positions in this asset.
-  string attested_quantity = 4 [
+  string attested_quantity = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -170,7 +170,7 @@ message AssetRecognition {
   ];
   // impaired_quantity sums the open, impaired positions: attested holdings
   // excluded from credit without being erased.
-  string impaired_quantity = 5 [
+  string impaired_quantity = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -179,19 +179,19 @@ message AssetRecognition {
   // rate is the Oracle rate used this block, in units of this asset per one
   // NOAH, so the credit below divides by it. It is zero when no rate was used:
   // the feed is dark, stale, or non-positive, or the asset was never priced.
-  string rate = 6 [
+  string rate = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string haircut_factor = 7 [
+  string haircut_factor = 6 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string recognition_cap_ratio = 8 [
+  string recognition_cap_ratio = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -199,7 +199,7 @@ message AssetRecognition {
   ];
   // effective_cap is recognition_cap_ratio resolved against this block's
   // recognised capital: the anoah ceiling this asset's credit was clipped at.
-  cosmos.base.v1beta1.Coin effective_cap = 10
+  cosmos.base.v1beta1.Coin effective_cap = 8
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
   // credit is the anoah this asset contributes: the gross quantity haircut,
   // divided by the rate, truncated, then clipped by the cap.
