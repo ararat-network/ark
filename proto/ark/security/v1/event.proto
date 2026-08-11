@@ -18,7 +18,7 @@ message EventSecurityMandateSet {
   uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
-  ark.mandate.v1.CommitteeShape committee_shape = 6
+  ark.mandate.v1.CommitteeShape committee_shape = 5
       [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
