@@ -211,8 +211,11 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 					Address: bytes.Repeat([]byte{byte(validatorIndex)}, 20),
 					Power:   1,
 				},
-				VoteExtension:      voteExtensions[start : start+maxVoteExtensionWireBytes],
-				ExtensionSignature: bytes.Repeat([]byte{byte(validatorIndex)}, 64),
+				VoteExtension: voteExtensions[start : start+maxVoteExtensionWireBytes],
+				// MaxDataBytes reserves MaxCommitSigBytes per validator, sized
+				// from this same maximum; a smaller signature would understate
+				// the payload the budget has to hold.
+				ExtensionSignature: bytes.Repeat([]byte{byte(validatorIndex)}, cmttypes.MaxSignatureSize),
 			}
 		}
 
