@@ -5,6 +5,9 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+
 	"cosmossdk.io/math"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -57,6 +60,63 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	tax, err := s.keeper.ComputeTax(s.ctx, msgs)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 60)), tax)
+}
+
+// The execution surfaces D41 assigns to the Wasm dispatcher — IBC sends,
+// execute funds, and instantiate funds — are taxed by this same calculator, and
+// the cap applies to each independently as it does to a Bank send.
+func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
+	source := authtypes.NewModuleAddress("tax-source").String()
+	contract := authtypes.NewModuleAddress("tax-contract").String()
+	policy := types.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
+
+	testCases := []struct {
+		name     string
+		msg      sdk.Msg
+		expected sdk.Coins
+	}{
+		{
+			name:     "IBC transfer taxes the outbound token",
+			msg:      &ibctransfertypes.MsgTransfer{Sender: source, Token: sdk.NewInt64Coin(chain.USDBaseDenom, 500)},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+		{
+			name:     "execute funds are taxed",
+			msg:      &wasmtypes.MsgExecuteContract{Sender: source, Contract: contract, Funds: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 300))},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 30)),
+		},
+		{
+			name:     "instantiate funds are taxed",
+			msg:      &wasmtypes.MsgInstantiateContract{Sender: source, Funds: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
+		},
+		{
+			name:     "instantiate2 funds are taxed",
+			msg:      &wasmtypes.MsgInstantiateContract2{Sender: source, Funds: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
+		},
+		{
+			name:     "fundless execution is untaxed",
+			msg:      &wasmtypes.MsgExecuteContract{Sender: source, Contract: contract},
+			expected: sdk.NewCoins(),
+		},
+		{
+			name:     "the cap binds each execution input alone",
+			msg:      &ibctransfertypes.MsgTransfer{Sender: source, Token: sdk.NewInt64Coin(chain.USDBaseDenom, 100_000)},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000)),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expected, tax)
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -151,6 +154,29 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 			return fmt.Errorf("nil Market swap message")
 		}
 		return nil
+	case *ibctransfertypes.MsgTransfer:
+		if typed == nil {
+			return fmt.Errorf("nil IBC transfer message")
+		}
+		// Only the outbound leg is an input. A forwarded hop, acknowledgement,
+		// timeout, or refund is protocol continuation of this same transfer and
+		// is never re-presented here (D46).
+		return addCoins(sdk.Coins{typed.Token})
+	case *wasmtypes.MsgExecuteContract:
+		if typed == nil {
+			return fmt.Errorf("nil Wasm execute message")
+		}
+		return addCoins(typed.Funds)
+	case *wasmtypes.MsgInstantiateContract:
+		if typed == nil {
+			return fmt.Errorf("nil Wasm instantiate message")
+		}
+		return addCoins(typed.Funds)
+	case *wasmtypes.MsgInstantiateContract2:
+		if typed == nil {
+			return fmt.Errorf("nil Wasm instantiate2 message")
+		}
+		return addCoins(typed.Funds)
 	case *authz.MsgExec:
 		if typed == nil {
 			return fmt.Errorf("nil authz execution message")
