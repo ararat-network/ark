@@ -3,9 +3,9 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/claims/`, `x/reserve/`, `x/wasm/`. The chain currently uses **cosmos-sdk v0.54.2** with
-depinject and `cosmossdk.io/*` packages; always verify `go.mod` before SDK-specific work because the SDK version can
-move.
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/`, `x/wasm/`. The
+chain currently uses **cosmos-sdk v0.55.0** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
+SDK-specific work because the SDK version can move.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
 
@@ -28,7 +28,8 @@ Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern pat
 
 Reference codebases:
 
-- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/`, `x/claims/`, `x/reserve/` (this repo)
+- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/` (this
+  repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Connect reference**: `../connect/`; when the user says `connect`, use this repo.
 - **Terra Feeder reference**: `../oracle-feeder/`; when the user says `feeder`, use this repo.
@@ -39,12 +40,14 @@ Reference codebases:
 
 ```text
 x/market/       # DEX swap module (Noah ↔ stablecoins)
-x/oracle/       # Price oracle module (validator price voting)
-x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
+x/oracle/       # Price oracle module (validator price voting, feed registry)
+x/treasury/     # Macro policy module (tax, reward funding, liability, fund targets)
+x/asset/        # Asset registry and lifecycle owner for every non-NOAH Bank asset
 x/claims/       # Insurance claims module (Claims mandate, claim record, Insurance custody)
-x/reserve/      # Strategic Reserve module (custody, governed Buffer transfer)
-x/wasm/         # CosmWasm smart contract module (exported interfaces)
-abci/           # Vote-extension, proposal, and preblock oracle pipeline
+x/reserve/      # Strategic Reserve module (custody, mandate, journal, recognition policy)
+x/security/     # Security committee over the standard-module emergency surface
+x/wasm/         # CosmWasm smart contract module (exported interfaces only; not wired)
+abci/           # Vote-extension, proposal, preblock oracle pipeline, and mempool lanes
 oracle/         # Off-chain oracle runtime, providers, transport, and validation
 pkg/            # Shared primitives such as encoding, telemetry, and minimal metrics
 proto/ark/     # Proto definitions (modules, ABCI, transport)
