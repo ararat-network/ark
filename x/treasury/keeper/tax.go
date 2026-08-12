@@ -219,6 +219,13 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 			return fmt.Errorf("nil Wasm instantiate2 message")
 		}
 		return addCoins(typed.Funds)
+	case *wasmtypes.MsgStoreAndInstantiateContract:
+		if typed == nil {
+			return fmt.Errorf("nil Wasm store-and-instantiate message")
+		}
+		// Authority-gated while uploads are AllowNobody, taxed anyway so a
+		// params change opening uploads cannot mint an untaxed instantiate.
+		return addCoins(typed.Funds)
 	case *authz.MsgExec:
 		if typed == nil {
 			return fmt.Errorf("nil authz execution message")

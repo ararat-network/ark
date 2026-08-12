@@ -100,6 +100,11 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
 		},
 		{
+			name:     "store-and-instantiate funds are taxed",
+			msg:      &wasmtypes.MsgStoreAndInstantiateContract{Authority: source, Funds: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
+		},
+		{
 			name:     "fundless execution is untaxed",
 			msg:      &wasmtypes.MsgExecuteContract{Sender: source, Contract: contract},
 			expected: sdk.NewCoins(),
