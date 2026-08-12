@@ -13,6 +13,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
@@ -144,6 +145,47 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 			}
 		}
 		return nil
+	// Funding a vesting account is a transfer: the coins leave the funder at
+	// creation and only their release is scheduled. Terra Classic left these
+	// untaxed and they became the standard dodge around its transfer tax.
+	case *vestingtypes.MsgCreateVestingAccount:
+		if typed == nil {
+			return fmt.Errorf("nil vesting account message")
+		}
+		return addCoins(typed.Amount)
+	case *vestingtypes.MsgCreatePermanentLockedAccount:
+		if typed == nil {
+			return fmt.Errorf("nil permanent locked account message")
+		}
+		return addCoins(typed.Amount)
+	case *vestingtypes.MsgCreatePeriodicVestingAccount:
+		if typed == nil {
+			return fmt.Errorf("nil periodic vesting account message")
+		}
+		// The whole schedule is funded at creation, so the periods sum to one
+		// input; presenting each period alone would apply the cap per period.
+		totals := make(map[string]math.Int)
+		for _, period := range typed.VestingPeriods {
+			if err := period.Amount.Validate(); err != nil {
+				return fmt.Errorf("invalid taxable coins: %w", err)
+			}
+			for _, coin := range period.Amount {
+				current, found := totals[coin.Denom]
+				if !found {
+					current = math.ZeroInt()
+				}
+				sum, err := current.SafeAdd(coin.Amount)
+				if err != nil {
+					return fmt.Errorf("summing vesting periods for denom %s: %w", coin.Denom, err)
+				}
+				totals[coin.Denom] = sum
+			}
+		}
+		total := make([]sdk.Coin, 0, len(totals))
+		for denom, amount := range totals {
+			total = append(total, sdk.NewCoin(denom, amount))
+		}
+		return addCoins(sdk.NewCoins(total...))
 	case *markettypes.MsgSwapSend:
 		if typed == nil {
 			return fmt.Errorf("nil Market swap-send message")

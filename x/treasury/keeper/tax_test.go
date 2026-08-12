@@ -13,6 +13,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
@@ -115,6 +116,145 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
 			s.Require().NoError(err)
 			s.Require().Equal(tc.expected, tax)
+		})
+	}
+}
+
+// Funding a vesting account moves the coins at creation — only release is
+// scheduled — so every vesting shape is taxed like the send it is. Terra
+// Classic left these untaxed and they became the standard dodge around its
+// transfer tax.
+func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
+	source := authtypes.NewModuleAddress("tax-source").String()
+	recipient := authtypes.NewModuleAddress("tax-recipient").String()
+	policy := types.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(100)))
+	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(100)))
+
+	nested, err := codectypes.NewAnyWithValue(&vestingtypes.MsgCreateVestingAccount{
+		FromAddress: source,
+		ToAddress:   recipient,
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 500)),
+	})
+	s.Require().NoError(err)
+
+	testCases := []struct {
+		name     string
+		msg      sdk.Msg
+		expected sdk.Coins
+	}{
+		{
+			name: "continuous vesting amount is taxed",
+			msg: &vestingtypes.MsgCreateVestingAccount{
+				FromAddress: source,
+				ToAddress:   recipient,
+				Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 500)),
+			},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+		{
+			name: "permanent locked amount is taxed",
+			msg: &vestingtypes.MsgCreatePermanentLockedAccount{
+				FromAddress: source,
+				ToAddress:   recipient,
+				Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 500)),
+			},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+		{
+			// 10% of the 1400 total clamps once at the 100 cap; per-period
+			// inputs would have paid 70 twice through two caps.
+			name: "periodic schedule sums to one capped input",
+			msg: &vestingtypes.MsgCreatePeriodicVestingAccount{
+				FromAddress: source,
+				ToAddress:   recipient,
+				VestingPeriods: []vestingtypes.Period{
+					{Length: 60, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
+					{Length: 60, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
+				},
+			},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
+		},
+		{
+			name: "periodic schedule sums each denomination",
+			msg: &vestingtypes.MsgCreatePeriodicVestingAccount{
+				FromAddress: source,
+				ToAddress:   recipient,
+				VestingPeriods: []vestingtypes.Period{
+					{Length: 60, Amount: sdk.NewCoins(
+						sdk.NewInt64Coin(chain.KRWBaseDenom, 200),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 100),
+					)},
+					{Length: 60, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
+				},
+			},
+			expected: sdk.NewCoins(
+				sdk.NewInt64Coin(chain.KRWBaseDenom, 20),
+				sdk.NewInt64Coin(chain.USDBaseDenom, 20),
+			),
+		},
+		{
+			name:     "vesting nested in authz is still taxed",
+			msg:      &authz.MsgExec{Msgs: []*codectypes.Any{nested}},
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expected, tax)
+		})
+	}
+}
+
+func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedVestingMessages() {
+	policy := types.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+
+	maxInt := math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)))
+	var typedNil *vestingtypes.MsgCreatePeriodicVestingAccount
+
+	testCases := []struct {
+		name   string
+		msg    sdk.Msg
+		errStr string
+	}{
+		{
+			name:   "typed nil periodic message",
+			msg:    typedNil,
+			errStr: "nil periodic vesting account message",
+		},
+		{
+			name: "invalid period coins",
+			msg: &vestingtypes.MsgCreatePeriodicVestingAccount{
+				VestingPeriods: []vestingtypes.Period{
+					{Length: 60, Amount: sdk.Coins{sdk.Coin{Denom: "", Amount: math.OneInt()}}},
+				},
+			},
+			errStr: "invalid taxable coins",
+		},
+		{
+			name: "period sum overflow",
+			msg: &vestingtypes.MsgCreatePeriodicVestingAccount{
+				VestingPeriods: []vestingtypes.Period{
+					{Length: 60, Amount: sdk.Coins{sdk.Coin{Denom: chain.USDBaseDenom, Amount: maxInt}}},
+					{Length: 60, Amount: sdk.Coins{sdk.Coin{Denom: chain.USDBaseDenom, Amount: maxInt}}},
+				},
+			},
+			errStr: "summing vesting periods",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			s.Require().ErrorIs(err, types.ErrInvalidTaxMessage)
+			s.Require().ErrorContains(err, tc.errStr)
 		})
 	}
 }
