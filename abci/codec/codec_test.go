@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/crypto/mldsa65"
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/math"
@@ -212,12 +211,8 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 					Address: bytes.Repeat([]byte{byte(validatorIndex)}, 20),
 					Power:   1,
 				},
-				VoteExtension: voteExtensions[start : start+maxVoteExtensionWireBytes],
-				// ML-DSA-65 is the largest signature CometBFT admits, and
-				// MaxCommitSigBytes is sized from it for every chain on v0.40
-				// regardless of the key types genesis enables. Size the worst
-				// case against it rather than ed25519.
-				ExtensionSignature: bytes.Repeat([]byte{byte(validatorIndex)}, mldsa65.SignatureSize),
+				VoteExtension:      voteExtensions[start : start+maxVoteExtensionWireBytes],
+				ExtensionSignature: bytes.Repeat([]byte{byte(validatorIndex)}, 64),
 			}
 		}
 
