@@ -5,6 +5,7 @@ linters:
   default: none
   enable:
     - copyloopvar
+    - depguard
     - dogsled
     - errcheck
     - errorlint
@@ -23,8 +24,35 @@ linters:
     - unparam
     - unused
   settings:
+    depguard:
+      rules:
+        # api/ pulsar output is depinject/autocli wiring only; module logic
+        # imports the gogo types in x/*/types.
+        pulsar-api:
+          files:
+            - "**/x/**"
+            - "**/abci/**"
+            - "**/pricefeed/**"
+            - "**/pkg/**"
+            - "!**/module/**"
+          deny:
+            - pkg: github.com/ararat-network/ark/api
+              desc: pulsar-generated code is wiring-only — import x/*/types instead
+        legacy:
+          deny:
+            - pkg: github.com/tendermint/tendermint
+              desc: use cometbft and cosmossdk.io/log
+            - pkg: gopkg.in/yaml.v2
+              desc: YAML marshaling on types was removed with the Classic port
+            - pkg: github.com/cosmos/cosmos-sdk/x/params
+              desc: params are collections-based module params
     dogsled:
       max-blank-identifiers: 3
+    goconst:
+      # Three scattered data-table occurrences are not worth a shared constant;
+      # duplication in test fixtures is not worth one either.
+      min-occurrences: 4
+      ignore-tests: true
     gocritic:
       disabled-checks:
         - regexpMust
@@ -44,10 +72,7 @@ linters:
       require-specific: true
     revive:
       rules:
-        - name: redefines-builtin-id
-          disabled: true
         - name: exported
-          severity: error
         - name: context-as-argument
         - name: error-return
         - name: error-strings
@@ -75,19 +100,27 @@ linters:
       - linters:
           - nolintlint
         text: leading space
+      # Tests dot-import the package under test by convention.
+      - path: _test\.go$
+        linters:
+          - revive
+        text: "dot-imports"
+      # autocli files are declarative arg tables; repeated field names there
+      # are data, not magic strings.
+      - path: module/autocli\.go$
+        linters:
+          - goconst
     paths:
       - .*\.pb\.go$
       - .*\.pb\.gw\.go$
       - .*\.pulsar\.go$
-      - third_party$
-      - builtin$
-      - examples$
 issues:
   max-issues-per-linter: 10000
   max-same-issues: 10000
 formatters:
   enable:
     - gci
+    - gofumpt
   settings:
     gci:
       sections:
@@ -104,6 +137,3 @@ formatters:
       - .*\.pb\.go$
       - .*\.pb\.gw\.go$
       - .*\.pulsar\.go$
-      - third_party$
-      - builtin$
-      - examples$
