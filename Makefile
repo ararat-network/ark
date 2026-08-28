@@ -1,4 +1,26 @@
 ###############################################################################
+###                                 Build                                   ###
+###############################################################################
+
+VERSION := $(shell git describe --tags --always --dirty)
+COMMIT := $(shell git rev-parse HEAD)
+
+# version.Name and version.AppName are set in app/config.go rather than here.
+# They are chain identity, and Name decides the keyring service name, so they
+# have to hold under `go build` and `go test` too — neither passes ldflags.
+# Only the halves that genuinely vary per build are stamped.
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
+
+BUILD_FLAGS := -ldflags '$(ldflags)'
+
+build:
+	@go build $(BUILD_FLAGS) -o build/arkd ./cmd/arkd
+
+install:
+	@go install $(BUILD_FLAGS) ./cmd/arkd
+
+###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
 
@@ -27,4 +49,4 @@ proto-update-deps:
 	@echo "Updating Protobuf dependencies"
 	@$(protoImage) buf mod update proto
 
-.PHONY: proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps
+.PHONY: build install proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps
