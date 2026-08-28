@@ -10,9 +10,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	oraclekeeper "ark/x/oracle/keeper"
-	"ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestQueryParams() {

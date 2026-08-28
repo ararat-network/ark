@@ -9,7 +9,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 // Simulation parameter constants

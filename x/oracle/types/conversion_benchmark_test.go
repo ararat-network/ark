@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 var benchmarkConverted sdk.DecCoin

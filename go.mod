@@ -1,4 +1,4 @@
-module ark
+module github.com/ararat-network/ark
 
 go 1.25.9
 

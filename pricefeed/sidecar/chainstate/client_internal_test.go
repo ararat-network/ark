@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	oracletypes "ark/x/oracle/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func withDialOptions(opts ...grpc.DialOption) Option {

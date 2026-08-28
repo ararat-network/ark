@@ -21,13 +21,13 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
-	oraclekeeper "ark/x/oracle/keeper"
-	oracletestutil "ark/x/oracle/testutil"
-	oracletypes "ark/x/oracle/types"
-	reservekeeper "ark/x/reserve/keeper"
-	"ark/x/reserve/testutil"
-	"ark/x/reserve/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
+	oracletestutil "github.com/ararat-network/ark/x/oracle/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservekeeper "github.com/ararat-network/ark/x/reserve/keeper"
+	"github.com/ararat-network/ark/x/reserve/testutil"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 type recognitionBenchFixture struct {

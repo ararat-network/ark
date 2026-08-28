@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/abci/metrics"
+	"github.com/ararat-network/ark/abci/metrics"
 )
 
 func TestStatusString(t *testing.T) {

@@ -23,7 +23,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	oracletypes "ark/x/oracle/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 const bufSize = 1024 * 1024

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"ark/pricefeed/sidecar/chainstate"
-	sidecarinternal "ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
 )
 
 var errChainStateClientExited = errors.New("chain state client exited without error")

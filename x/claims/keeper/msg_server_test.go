@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // setCancellationPeriod pins a short veto window so test heights stay readable.

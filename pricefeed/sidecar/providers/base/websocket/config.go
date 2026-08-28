@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 const (

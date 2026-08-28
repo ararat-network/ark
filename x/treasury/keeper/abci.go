@@ -3,8 +3,8 @@ package keeper
 import (
 	"context"
 
-	arkmetrics "ark/pkg/metrics"
-	"ark/x/treasury/types"
+	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // BeginBlocker refreshes derived tax caps when owed and advances the

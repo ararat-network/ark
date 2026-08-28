@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pricefeed/sidecar/providers/base/api"
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestBatchTickers(t *testing.T) {

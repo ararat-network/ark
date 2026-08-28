@@ -8,7 +8,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // Each combined bound asserts one message from both its lower and upper cases,

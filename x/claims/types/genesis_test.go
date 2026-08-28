@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 func TestDefaultGenesisState(t *testing.T) {

@@ -15,11 +15,11 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/mock/gomock"
 
-	"ark/pricefeed/sidecar/providers"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	"ark/pricefeed/sidecar/resolver"
-	"ark/pricefeed/sidecar/runtime"
-	oracletestutil "ark/pricefeed/sidecar/runtime/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestRunFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {

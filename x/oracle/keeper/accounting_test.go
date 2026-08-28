@@ -3,18 +3,19 @@ package keeper_test
 import (
 	"errors"
 
-	cmttypes "github.com/cometbft/cometbft/types"
+	"github.com/cosmos/gogoproto/proto"
 	"go.uber.org/mock/gomock"
+
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/gogoproto/proto"
 
-	chain "ark/pkg/chain"
-	"ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestRecordVoteAccountingAccumulatesAttendance() {

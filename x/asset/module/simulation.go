@@ -4,7 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // GenerateGenesisState installs the valid default asset genesis state.

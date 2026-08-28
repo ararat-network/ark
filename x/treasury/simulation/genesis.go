@@ -11,7 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 const (

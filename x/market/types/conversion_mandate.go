@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 // ConversionMandateLabel names the shared appointment envelope in

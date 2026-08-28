@@ -6,9 +6,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	"ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func (s *KeeperTestSuite) TestRegisterAsset() {

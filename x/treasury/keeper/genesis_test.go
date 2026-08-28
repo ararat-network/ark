@@ -10,11 +10,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/mandate"
-	assettypes "ark/x/asset/types"
-	reservetypes "ark/x/reserve/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // expectGenesisFundBalances stubs the balance inspection InitGenesis performs:

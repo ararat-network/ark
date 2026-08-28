@@ -10,8 +10,8 @@
 package testutil
 
 import (
-	"ark/pricefeed/api"
-	types0 "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pricefeed/api"
+	types0 "github.com/ararat-network/ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 

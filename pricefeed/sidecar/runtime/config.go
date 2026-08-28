@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"ark/pkg/chain"
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/providers"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	"ark/pricefeed/sidecar/resolver"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // Config defines the price runtime configuration. The runtime is configured

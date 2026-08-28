@@ -12,8 +12,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
-	"ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // seedReferenceDenomRates stores fresh rates for the denominations a rebase prices,

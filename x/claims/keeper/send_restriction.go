@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // SendRestriction permits only positive anoah-only transfers into the Insurance

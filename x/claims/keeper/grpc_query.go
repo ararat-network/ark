@@ -12,8 +12,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
-	"ark/pkg/chain"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 var _ types.QueryServer = (*queryServer)(nil)

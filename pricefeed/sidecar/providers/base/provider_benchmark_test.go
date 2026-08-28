@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func BenchmarkProviderGetPrices(b *testing.B) {

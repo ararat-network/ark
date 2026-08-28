@@ -1,7 +1,6 @@
 package providertest_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/providertest"
 	"context"
 	"maps"
 	"math/big"
@@ -11,10 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"ark/pricefeed/sidecar/providers/base"
-	basetestutil "ark/pricefeed/sidecar/providers/base/testutil"
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/providertest"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestRunBuildsProviderAndCollectsPriceSnapshots(t *testing.T) {

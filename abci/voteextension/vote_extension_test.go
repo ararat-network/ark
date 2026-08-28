@@ -16,12 +16,12 @@ import (
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
-	"ark/abci/codec"
-	abcitestutil "ark/abci/testutil"
-	"ark/abci/voteextension"
-	vetypes "ark/abci/voteextension/types"
-	"ark/pricefeed/api"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/codec"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	"github.com/ararat-network/ark/abci/voteextension"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	"github.com/ararat-network/ark/pricefeed/api"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestExtendVoteHandler(t *testing.T) {

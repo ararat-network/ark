@@ -1,8 +1,8 @@
 package types_test
 
 import (
-	"ark/pkg/chain"
-	assettypes "ark/x/asset/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
 func testAsset(denom string) assettypes.Asset {

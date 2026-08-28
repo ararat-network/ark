@@ -1,9 +1,10 @@
 package types_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/types"
 	"strings"
 	"testing"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestMarketsValidate(t *testing.T) {

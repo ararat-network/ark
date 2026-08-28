@@ -7,7 +7,7 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // FeedReferentGuard reports the claims a consumer holds on a feed.

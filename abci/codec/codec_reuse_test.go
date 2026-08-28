@@ -10,7 +10,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/stretchr/testify/require"
 
-	vetypes "ark/abci/voteextension/types"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 )
 
 func TestVoteExtensionCodecReusePreservesWireEncoding(t *testing.T) {

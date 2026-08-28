@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	claimsv1 "ark/api/ark/claims/v1"
+	claimsv1 "github.com/ararat-network/ark/api/ark/claims/v1"
 )
 
 // AutoCLIOptions returns the claims module's AutoCLI configuration.

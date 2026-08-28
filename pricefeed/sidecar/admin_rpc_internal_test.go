@@ -19,10 +19,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/api"
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/runtime"
-	sidecartypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestReloadConfigLoadsConstructionPath(t *testing.T) {

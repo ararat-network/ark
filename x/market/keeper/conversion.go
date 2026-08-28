@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // applyConversionPolicy validates one already-authorized conversion candidate

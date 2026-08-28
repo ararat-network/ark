@@ -21,8 +21,8 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"ark/x/security/keeper"
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/keeper"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 // Fixtures shared across the keeper suite.

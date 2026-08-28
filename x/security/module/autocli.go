@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	securityv1 "ark/api/ark/security/v1"
+	securityv1 "github.com/ararat-network/ark/api/ark/security/v1"
 )
 
 // AutoCLIOptions returns the security module's AutoCLI configuration.

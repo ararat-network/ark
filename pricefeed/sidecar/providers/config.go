@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/providers/base/api"
-	"ark/pricefeed/sidecar/providers/base/websocket"
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // Config describes a provider and the transport config used to build it.

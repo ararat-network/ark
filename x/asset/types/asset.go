@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/gogoproto/proto"
 
-	chain "ark/pkg/chain"
+	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // Validate checks the asset's identity, metadata, and local lifecycle fields.

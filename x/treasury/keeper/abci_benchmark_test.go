@@ -22,15 +22,15 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
-	oraclekeeper "ark/x/oracle/keeper"
-	oracletestutil "ark/x/oracle/testutil"
-	oracletypes "ark/x/oracle/types"
-	reservetypes "ark/x/reserve/types"
-	treasurykeeper "ark/x/treasury/keeper"
-	treasurytestutil "ark/x/treasury/testutil"
-	treasurytypes "ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
+	oracletestutil "github.com/ararat-network/ark/x/oracle/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
+	treasurytestutil "github.com/ararat-network/ark/x/treasury/testutil"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 // benchAssetKeeper reports a fixed denomination set as ACTIVE assets so

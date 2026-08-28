@@ -21,10 +21,10 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"ark/x/asset/keeper"
-	"ark/x/asset/testutil"
-	"ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/asset/keeper"
+	"github.com/ararat-network/ark/x/asset/testutil"
+	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 type KeeperTestSuite struct {

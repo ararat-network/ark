@@ -10,11 +10,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
-	"ark/pkg/mandate"
-	claimstypes "ark/x/claims/types"
-	"ark/x/reserve/types"
-	treasurytypes "ark/x/treasury/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	"github.com/ararat-network/ark/x/reserve/types"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 var _ types.MsgServer = msgServer{}

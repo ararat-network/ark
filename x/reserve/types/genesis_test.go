@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // positionFixture returns one position and the deployment entry that funded

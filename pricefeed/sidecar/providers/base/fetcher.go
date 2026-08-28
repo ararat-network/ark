@@ -3,7 +3,7 @@ package base
 import (
 	"context"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // Fetcher retrieves provider-specific ticker prices and publishes ticker-keyed responses.

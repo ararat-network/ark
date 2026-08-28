@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/api"
 	"context"
 	"errors"
 	"io"
@@ -15,10 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers/base"
-	apitestutil "ark/pricefeed/sidecar/providers/base/api/testutil"
-	"ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	apitestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 const testURL = "https://provider.test/prices"

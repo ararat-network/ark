@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // NewGenesisState creates a Treasury genesis state.

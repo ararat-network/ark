@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	oraclemetrics "ark/pricefeed/sidecar/metrics"
-	"ark/pricefeed/sidecar/types"
+	oraclemetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // ResolvePrices returns final pair prices for one complete provider snapshot. It

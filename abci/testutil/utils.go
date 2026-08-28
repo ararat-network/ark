@@ -14,10 +14,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
-	vetypes "ark/abci/voteextension/types"
-	arkencoding "ark/pkg/encoding"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/codec"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // NewSDKContext returns a minimal SDK context for ABCI tests.

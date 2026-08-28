@@ -7,8 +7,8 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/chain"
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 func TestDefaultGenesisState(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 
 	"cosmossdk.io/math"
 
-	chain "ark/pkg/chain"
-	"ark/x/asset/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // seedOraclePricedFixture stores one asset per membership case. Every asset

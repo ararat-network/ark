@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // The codec backs stored staleness windows, so a value that does not survive a

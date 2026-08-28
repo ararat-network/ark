@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 type claimQueryGatewayServer struct {

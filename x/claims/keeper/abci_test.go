@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // submitGovernanceClaim records one pending governance claim of the supplied

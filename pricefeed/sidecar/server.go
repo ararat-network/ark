@@ -18,7 +18,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/api"
+	"github.com/ararat-network/ark/pricefeed/api"
 )
 
 // DefaultServerReadHeaderTimeout bounds how long the public server waits to

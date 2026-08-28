@@ -4,8 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"ark/x/security/simulation"
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/simulation"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 // GenerateGenesisState creates a randomised GenState of the security module.

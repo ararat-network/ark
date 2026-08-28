@@ -3,8 +3,8 @@ package binance
 import (
 	"time"
 
-	"ark/pricefeed/sidecar/providers/base/websocket"
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 var (

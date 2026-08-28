@@ -3,9 +3,9 @@ package keeper_test
 import (
 	"cosmossdk.io/math"
 
-	"ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 const (

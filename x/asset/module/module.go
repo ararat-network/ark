@@ -16,8 +16,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/x/asset/keeper"
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/keeper"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 const consensusVersion = 1

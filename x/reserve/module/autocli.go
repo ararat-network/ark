@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	reservev1 "ark/api/ark/reserve/v1"
+	reservev1 "github.com/ararat-network/ark/api/ark/reserve/v1"
 )
 
 // AutoCLIOptions returns the reserve module's AutoCLI configuration.

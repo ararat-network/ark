@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/pkg/mandate"
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/pkg/mandate"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 var _ types.MsgServer = msgServer{}

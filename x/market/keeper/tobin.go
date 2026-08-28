@@ -10,7 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // GetTobinTax returns the effective rate a conversion leg in this denomination

@@ -8,12 +8,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/decimal"
-	claimstypes "ark/x/claims/types"
-	markettypes "ark/x/market/types"
-	reservetypes "ark/x/reserve/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // SettleConversions settles one block's recorded conversion flow and returns

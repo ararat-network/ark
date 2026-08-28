@@ -15,11 +15,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"ark/pkg/chain"
-	assettypes "ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/treasury/keeper"
-	treasurytypes "ark/x/treasury/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/keeper"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestQueryNilRequests() {

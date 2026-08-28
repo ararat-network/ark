@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/decimal"
+	"github.com/ararat-network/ark/pkg/decimal"
 )
 
 // EffectivePools contains the derived constant-product pools for one market

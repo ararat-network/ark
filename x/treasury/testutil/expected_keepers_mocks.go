@@ -10,8 +10,8 @@
 package testutil
 
 import (
-	types "ark/x/asset/types"
-	types0 "ark/x/oracle/types"
+	types "github.com/ararat-network/ark/x/asset/types"
+	types0 "github.com/ararat-network/ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 

@@ -5,8 +5,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"ark/x/market/simulation"
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/x/market/simulation"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // GenerateGenesisState creates a randomised GenState of the market module.

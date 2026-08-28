@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // SendRestriction admits only positive coins of NOAH or an Ark-issued asset

@@ -9,7 +9,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	oracletypes "ark/x/oracle/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 var (

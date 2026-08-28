@@ -21,9 +21,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/proposals"
-	abcitestutil "ark/abci/testutil"
-	arkabci "ark/abci/types"
+	"github.com/ararat-network/ark/abci/proposals"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	arkabci "github.com/ararat-network/ark/abci/types"
 )
 
 const (

@@ -1,13 +1,13 @@
 package websocket_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/websocket"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pricefeed/sidecar/providers/types"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestConfigEqual(t *testing.T) {

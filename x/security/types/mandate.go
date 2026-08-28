@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 // SecurityMandateLabel names the shared appointment envelope in security

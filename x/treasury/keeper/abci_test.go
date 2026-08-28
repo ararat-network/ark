@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	chain "ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestBeginBlockerSkipsRewardFundingAtGenesisHeight() {

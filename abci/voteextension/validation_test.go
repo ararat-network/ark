@@ -22,7 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/voteextension"
+	"github.com/ararat-network/ark/abci/voteextension"
 )
 
 const testChainID = "test-chain"

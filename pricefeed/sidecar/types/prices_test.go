@@ -1,12 +1,12 @@
 package types_test
 
 import (
-	. "ark/pricefeed/sidecar/types"
 	"math/big"
 	"strings"
 	"testing"
 
-	"ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestParsePriceUsesOraclePrecision(t *testing.T) {

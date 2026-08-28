@@ -8,10 +8,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/decimal"
-	"ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
+	"github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // The block's conversion accumulators. Each key holds a running total that the

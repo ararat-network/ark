@@ -17,10 +17,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/abci/preblock"
-	abcitestutil "ark/abci/testutil"
-	arkabcitypes "ark/abci/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/preblock"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	arkabcitypes "github.com/ararat-network/ark/abci/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {

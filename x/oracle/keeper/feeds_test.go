@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // Feeds are keyed by the denomination they price, so these read as denoms

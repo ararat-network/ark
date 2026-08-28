@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 // EmergencyMandateLabel names the shared appointment envelope in

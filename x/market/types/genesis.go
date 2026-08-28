@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	chain "ark/pkg/chain"
+	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // NewGenesisState creates a new GenesisState object

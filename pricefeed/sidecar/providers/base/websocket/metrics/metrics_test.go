@@ -1,7 +1,6 @@
 package metrics_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/websocket/metrics"
 	"context"
 	"testing"
 
@@ -11,6 +10,8 @@ import (
 	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket/metrics"
 )
 
 func TestRecordWebSocketMetrics(t *testing.T) {

@@ -13,8 +13,8 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/api"
-	sidecarinternal "ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/api"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
 )
 
 type adminServer struct {

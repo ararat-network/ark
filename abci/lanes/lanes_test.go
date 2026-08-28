@@ -10,7 +10,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
-	"ark/abci/lanes"
+	"github.com/ararat-network/ark/abci/lanes"
 )
 
 // The set under test is arbitrary — this package is mechanism, and the chain's

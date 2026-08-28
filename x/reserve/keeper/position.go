@@ -10,8 +10,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // openPosition records a new position funded by a proven outflow. It writes no

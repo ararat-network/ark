@@ -9,9 +9,9 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	modulev1 "ark/api/ark/asset/module/v1"
-	"ark/x/asset/keeper"
-	"ark/x/asset/types"
+	modulev1 "github.com/ararat-network/ark/api/ark/asset/module/v1"
+	"github.com/ararat-network/ark/x/asset/keeper"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 var _ depinject.OnePerModuleType = AppModule{}

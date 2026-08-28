@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // Pair identifies an oracle price pair in canonical BASE/QUOTE form.

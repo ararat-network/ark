@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pricefeed/api"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pricefeed/api"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // OracleKeeper exposes the oracle state required by vote-extension creation and

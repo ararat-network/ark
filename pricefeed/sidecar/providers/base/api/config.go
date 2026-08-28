@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // Config defines a config for an API based data provider.

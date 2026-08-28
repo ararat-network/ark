@@ -6,7 +6,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // DialFunc opens a websocket connection to url using opts.

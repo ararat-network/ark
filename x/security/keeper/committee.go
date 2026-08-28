@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 // A committee action runs this file in order: authorise the appointment, work

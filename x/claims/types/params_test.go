@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // Combining the period bound into one condition means its lower and upper cases

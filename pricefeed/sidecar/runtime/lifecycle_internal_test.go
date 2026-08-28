@@ -11,10 +11,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers/base"
-	basetestutil "ark/pricefeed/sidecar/providers/base/testutil"
-	providertypes "ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestRunDoesNotPublishRunningBeforeInitialProvidersStart(t *testing.T) {

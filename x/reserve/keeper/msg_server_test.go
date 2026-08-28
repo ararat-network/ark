@@ -10,10 +10,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/pkg/chain"
-	claimstypes "ark/x/claims/types"
-	"ark/x/reserve/types"
-	treasurytypes "ark/x/treasury/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	"github.com/ararat-network/ark/x/reserve/types"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 func noahCoin(amount int64) sdk.Coin {

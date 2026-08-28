@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"ark/pkg/chain"
-	"ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Config defines optional routes for resolving provider pair medians into

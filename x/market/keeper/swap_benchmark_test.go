@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/mock/gomock"
+
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,14 +20,13 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"go.uber.org/mock/gomock"
 
-	assettypes "ark/x/asset/types"
-	markettestutil "ark/x/market/testutil"
-	markettypes "ark/x/market/types"
-	oraclekeeper "ark/x/oracle/keeper"
-	oracletestutil "ark/x/oracle/testutil"
-	oracletypes "ark/x/oracle/types"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	markettestutil "github.com/ararat-network/ark/x/market/testutil"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
+	oracletestutil "github.com/ararat-network/ark/x/oracle/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 var benchmarkSwapQuote swapQuote

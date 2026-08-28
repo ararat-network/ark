@@ -11,9 +11,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
-	modulev1 "ark/api/ark/security/module/v1"
-	"ark/x/security/keeper"
-	"ark/x/security/types"
+	modulev1 "github.com/ararat-network/ark/api/ark/security/module/v1"
+	"github.com/ararat-network/ark/x/security/keeper"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 var _ depinject.OnePerModuleType = AppModule{}

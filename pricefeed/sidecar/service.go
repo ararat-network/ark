@@ -11,10 +11,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/api"
-	oracleconfig "ark/pricefeed/config"
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/runtime"
+	"github.com/ararat-network/ark/pricefeed/api"
+	oracleconfig "github.com/ararat-network/ark/pricefeed/config"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
 )
 
 var _ api.PriceFeedServer = (*Service)(nil)

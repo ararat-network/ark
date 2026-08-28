@@ -24,10 +24,10 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"ark/x/oracle/keeper"
-	"ark/x/oracle/simulation"
-	"ark/x/oracle/testutil"
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/keeper"
+	"github.com/ararat-network/ark/x/oracle/simulation"
+	"github.com/ararat-network/ark/x/oracle/testutil"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestMsgUpdateParamsFactory(t *testing.T) {

@@ -17,13 +17,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
-	"ark/abci/preblock"
-	abcitestutil "ark/abci/testutil"
-	"ark/abci/voteextension"
-	arkencoding "ark/pkg/encoding"
-	"ark/pricefeed/api"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/codec"
+	"github.com/ararat-network/ark/abci/preblock"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	"github.com/ararat-network/ark/abci/voteextension"
+	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {

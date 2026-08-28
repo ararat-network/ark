@@ -1,8 +1,8 @@
 package keeper_test
 
 import (
-	"ark/pkg/chain"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // TestInitGenesisCustodyAdmission pins the rule on seeded custody. Bank writes

@@ -3,8 +3,8 @@ package binance
 import (
 	"time"
 
-	"ark/pricefeed/sidecar/providers/base/api"
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // NOTE: All documentation for this file can be located on the Binance GitHub

@@ -9,9 +9,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oraclemetrics "ark/abci/oracle/metrics"
-	arkabcitypes "ark/abci/types"
-	oracletypes "ark/x/oracle/types"
+	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
+	arkabcitypes "github.com/ararat-network/ark/abci/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // ProcessVoteExtensions derives aggregate prices from vote extensions.

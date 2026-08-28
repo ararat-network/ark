@@ -1,11 +1,12 @@
 package types_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/types"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestErrorCodeError(t *testing.T) {

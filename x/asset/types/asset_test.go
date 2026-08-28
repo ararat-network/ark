@@ -7,8 +7,8 @@ import (
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
 func TestAssetIsOraclePriced(t *testing.T) {

@@ -3,8 +3,8 @@ package keeper_test
 import (
 	"fmt"
 
-	"ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func assetReferent(referent string) oracletypes.FeedReferent {

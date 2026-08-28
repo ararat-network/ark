@@ -18,8 +18,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"ark/x/oracle/keeper"
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/keeper"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 const benchmarkValidatorCount = 100

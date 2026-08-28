@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 var _ types.QueryServer = queryServer{}

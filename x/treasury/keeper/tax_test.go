@@ -3,10 +3,9 @@ package keeper_test
 import (
 	"math/big"
 
-	"go.uber.org/mock/gomock"
-
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
 
@@ -17,11 +16,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
-	markettypes "ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {

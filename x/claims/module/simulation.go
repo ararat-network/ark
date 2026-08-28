@@ -5,8 +5,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"ark/x/claims/simulation"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/simulation"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // GenerateGenesisState creates a randomised GenState of the claims module.

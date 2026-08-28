@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	oracletypes "ark/x/oracle/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // AccountKeeper defines the auth functionality required by Asset, which is

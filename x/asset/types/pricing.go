@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	oracletypes "ark/x/oracle/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // NumeraireVerdict is NOAH's verdict: one, by definition rather than by

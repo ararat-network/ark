@@ -12,8 +12,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
-	appclient "ark/app/client"
-	"ark/x/market/types"
+	appclient "github.com/ararat-network/ark/app/client"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -45,7 +45,7 @@ The swap fails unless it returns at least minimum-receive, and the resulting coi
 sent to to-address.
 `),
 		Example: strings.TrimSpace(fmt.Sprintf(`
-%s tx market swap-send "1000000000000000000akrw" "ausd" "1ausd" "ark1..."
+%s tx market swap-send "1000000000000000000akrw" "ausd" "1ausd" "ararat1..."
 `, version.AppName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)

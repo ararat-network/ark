@@ -13,10 +13,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pkg/encoding"
-	"ark/pricefeed/api"
-	clientmetrics "ark/pricefeed/client/metrics"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	clientmetrics "github.com/ararat-network/ark/pricefeed/client/metrics"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 const maxPriceSnapshotEntries = 2 * oracletypes.MaxFeeds

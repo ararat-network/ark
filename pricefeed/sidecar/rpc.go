@@ -11,10 +11,10 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/encoding"
-	"ark/pricefeed/api"
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	sidecartypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Prices returns the runtime's latest cached feed prices.

@@ -6,8 +6,8 @@ import (
 
 	"cosmossdk.io/collections"
 
-	"ark/pkg/chain"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // InitGenesis validates and imports Claims state. Insurance custody is

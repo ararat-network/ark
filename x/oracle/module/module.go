@@ -16,8 +16,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"ark/x/oracle/keeper"
-	"ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/oracle/keeper"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 const consensusVersion = 1

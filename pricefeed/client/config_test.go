@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	pricefeedclient "ark/pricefeed/client"
+	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 )
 
 func TestConfigValidate(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/decimal"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
 )
 
 // RateSet is an in-memory set of oracle rates used for one conversion flow.

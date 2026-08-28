@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers/base"
-	basetestutil "ark/pricefeed/sidecar/providers/base/testutil"
-	"ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestRunRejectsNilContext(t *testing.T) {

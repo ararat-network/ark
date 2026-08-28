@@ -1,11 +1,12 @@
 package websocket_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/websocket"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
 )
 
 func TestErrSelectEndpointWithErrWrapsSentinelAndCause(t *testing.T) {

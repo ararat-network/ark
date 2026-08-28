@@ -12,11 +12,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	arkmetrics "ark/abci/metrics"
-	abcioracle "ark/abci/oracle"
-	oraclemetrics "ark/abci/oracle/metrics"
-	arkabcitypes "ark/abci/types"
-	"ark/abci/voteextension"
+	arkmetrics "github.com/ararat-network/ark/abci/metrics"
+	abcioracle "github.com/ararat-network/ark/abci/oracle"
+	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
+	arkabcitypes "github.com/ararat-network/ark/abci/types"
+	"github.com/ararat-network/ark/abci/voteextension"
 )
 
 // Handler is responsible for aggregating oracle data from each

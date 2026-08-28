@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/metrics"
 )
 
 func TestModuleMethodString(t *testing.T) {

@@ -1,13 +1,14 @@
 package types_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/types"
 	"errors"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestNewResponseInitialisesNilMaps(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	oraclev1 "ark/api/ark/oracle/v1"
+	oraclev1 "github.com/ararat-network/ark/api/ark/oracle/v1"
 )
 
 // AutoCLIOptions returns the oracle module's AutoCLI configuration.

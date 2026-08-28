@@ -14,10 +14,10 @@ import (
 
 	"cosmossdk.io/math"
 
-	vetypes "ark/abci/voteextension/types"
-	chain "ark/pkg/chain"
-	arkencoding "ark/pkg/encoding"
-	oracletypes "ark/x/oracle/types"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestVoteExtensionCodec(t *testing.T) {

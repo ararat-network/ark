@@ -1,6 +1,6 @@
 package sidecar
 
-import "ark/pricefeed/sidecar/runtime"
+import "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
 
 const (
 	defaultServerAddress = "127.0.0.1:8080"

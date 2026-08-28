@@ -8,7 +8,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/decimal"
+	"github.com/ararat-network/ark/pkg/decimal"
 )
 
 // checkedOps pairs every checked operation with the LegacyDec operation it must

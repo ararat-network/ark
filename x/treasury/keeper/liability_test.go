@@ -7,12 +7,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
-	markettypes "ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/treasury/keeper"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/keeper"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // requireLiabilityValuation asserts the aggregate the block would settle

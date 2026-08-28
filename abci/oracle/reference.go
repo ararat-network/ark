@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/decimal"
+	"github.com/ararat-network/ark/pkg/decimal"
 )
 
 type referenceScore struct {

@@ -10,9 +10,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"ark/pkg/decimal"
-	"ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/decimal"
+	"github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // RebaseBasePool re-denominates the virtual pool when governance re-points the

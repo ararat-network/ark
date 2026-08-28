@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // DataHandler defines provider-specific websocket protocol behaviour.

@@ -1,12 +1,14 @@
 package binance_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/websocket/binance"
 	"encoding/json"
 	"testing"
 
-	"cosmossdk.io/log/v2"
 	"github.com/stretchr/testify/require"
+
+	"cosmossdk.io/log/v2"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/binance"
 )
 
 func TestNewSubscribeRequestMessageUsesSequentialIDs(t *testing.T) {

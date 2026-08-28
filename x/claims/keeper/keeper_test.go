@@ -22,11 +22,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"ark/pkg/chain"
-	"ark/pkg/mandate"
-	"ark/x/claims/keeper"
-	"ark/x/claims/testutil"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
+	"github.com/ararat-network/ark/x/claims/keeper"
+	"github.com/ararat-network/ark/x/claims/testutil"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 type KeeperTestSuite struct {

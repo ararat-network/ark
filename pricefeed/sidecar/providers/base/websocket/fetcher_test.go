@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	basewebsocket "ark/pricefeed/sidecar/providers/base/websocket"
-	wstestutil "ark/pricefeed/sidecar/providers/base/websocket/testutil"
-	"ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	basewebsocket "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
+	wstestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestNewFetcherValidatesInputs(t *testing.T) {

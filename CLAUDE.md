@@ -149,7 +149,7 @@ Dual generation pipeline matching the current upstream Cosmos SDK pattern:
 
 - `proto/buf.gen.gogo.yaml`: gocosmos + grpc-gateway → `x/*/types/*.pb.go` (typed Go structs via `gogoproto.customtype`)
 - `proto/buf.gen.yaml`: go-pulsar + go-grpc → `api/*.pulsar.go` (standard protobuf, managed mode)
-- Proto files use `option go_package = "ark/x/{module}/types"` to route gogo output
+- Proto files use `option go_package = "github.com/ararat-network/ark/x/{module}/types"` to route gogo output
 - Run `make proto-gen` to regenerate (runs Docker proto-builder)
 - Proto-gen uses a named Docker volume (`ark-proto-cache`) for BSR dependency caching
 - `go mod tidy` runs on the host (in Makefile), not inside the container — avoids re-downloading Go modules every run

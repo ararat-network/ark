@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 // MonetaryMandateLabel names the shared appointment envelope in

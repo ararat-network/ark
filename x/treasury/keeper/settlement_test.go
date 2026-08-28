@@ -8,12 +8,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	chain "ark/pkg/chain"
-	claimstypes "ark/x/claims/types"
-	markettypes "ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
-	reservetypes "ark/x/reserve/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // expansionTotals is a block that only expanded: principal already net of the

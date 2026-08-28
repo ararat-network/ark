@@ -12,8 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // Keeper owns the Claims mandate, the permanent claim record, and the

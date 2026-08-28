@@ -17,9 +17,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	marketcli "ark/x/market/client/cli"
-	"ark/x/market/keeper"
-	"ark/x/market/types"
+	marketcli "github.com/ararat-network/ark/x/market/client/cli"
+	"github.com/ararat-network/ark/x/market/keeper"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 const consensusVersion = 1

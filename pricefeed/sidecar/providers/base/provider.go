@@ -10,9 +10,9 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Provider runs a fetcher over provider-specific tickers and exposes pair-keyed prices.

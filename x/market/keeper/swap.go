@@ -11,11 +11,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/decimal"
-	assettypes "ark/x/asset/types"
-	"ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	"github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // swapQuote is the complete answer to one conversion: what the trader receives,

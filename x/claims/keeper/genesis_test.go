@@ -8,8 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/pkg/chain"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // expectInsuranceBalances stubs the account and multi-denom balance reads

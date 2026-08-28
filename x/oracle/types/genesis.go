@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
+	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // NewGenesisState creates a new GenesisState object

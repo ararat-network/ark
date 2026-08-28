@@ -9,7 +9,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/decimal"
+	"github.com/ararat-network/ark/pkg/decimal"
 )
 
 func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {

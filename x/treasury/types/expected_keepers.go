@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	assettypes "ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // ClaimsKeeper reports what x/claims' committee-operated fund is worth toward

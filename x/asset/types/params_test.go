@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
 // Combining the delay bound into one condition means its lower and upper cases

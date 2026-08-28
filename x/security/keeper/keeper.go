@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 // Keeper of the security store. It owns almost no state — the powers it

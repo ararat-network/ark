@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"ark/pricefeed/sidecar/runtime"
+	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
 )
 
 // Load reads, decodes, and validates the runtime config at path.

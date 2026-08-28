@@ -10,7 +10,7 @@
 package testutil
 
 import (
-	"ark/pricefeed/api"
+	"github.com/ararat-network/ark/pricefeed/api"
 	context "context"
 	reflect "reflect"
 

@@ -9,9 +9,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/chain"
-	"ark/pkg/decimal"
-	markettypes "ark/x/market/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
+	markettypes "github.com/ararat-network/ark/x/market/types"
 )
 
 var phase3ABasePool = chain.NativeBaseAmount(1_000_000)

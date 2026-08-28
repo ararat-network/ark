@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/collections"
 
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // InitGenesis validates and imports asset registry state. Asset locks are

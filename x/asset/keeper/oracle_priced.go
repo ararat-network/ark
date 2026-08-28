@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // OraclePricedDenoms returns the sorted denoms the Oracle is the price

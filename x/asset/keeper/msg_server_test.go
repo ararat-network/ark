@@ -11,8 +11,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"ark/x/asset/keeper"
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/keeper"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 func (s *KeeperTestSuite) TestMsgServerRejectsInvalidAuthority() {

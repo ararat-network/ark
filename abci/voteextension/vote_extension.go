@@ -12,12 +12,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
-	arkmetrics "ark/abci/metrics"
-	abcioracle "ark/abci/oracle"
-	arkabci "ark/abci/types"
-	vetypes "ark/abci/voteextension/types"
-	"ark/pricefeed/api"
+	"github.com/ararat-network/ark/abci/codec"
+	arkmetrics "github.com/ararat-network/ark/abci/metrics"
+	abcioracle "github.com/ararat-network/ark/abci/oracle"
+	arkabci "github.com/ararat-network/ark/abci/types"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	"github.com/ararat-network/ark/pricefeed/api"
 )
 
 // Handler extends local votes with oracle price reports. If

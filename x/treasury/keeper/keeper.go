@@ -13,9 +13,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	chain "ark/pkg/chain"
-	reservetypes "ark/x/reserve/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // Keeper owns Treasury policy state. Fund custody remains in Bank, and each

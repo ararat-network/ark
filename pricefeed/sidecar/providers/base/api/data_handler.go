@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // DataHandler contains provider-specific API behaviour used by Fetcher.

@@ -5,8 +5,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"ark/x/treasury/simulation"
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/x/treasury/simulation"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // GenerateGenesisState creates a randomised GenState of the treasury module.

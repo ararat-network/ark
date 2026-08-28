@@ -8,8 +8,8 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/chain"
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 // MaxReferenceLength bounds one free-form evidence string. A reference

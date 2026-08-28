@@ -10,9 +10,9 @@ import (
 	cometabci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
-	vetypes "ark/abci/voteextension/types"
-	chain "ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // The vote-extension byte limits derive from the domain bounds, so the codec

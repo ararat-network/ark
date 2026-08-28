@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/collections"
 
-	chain "ark/pkg/chain"
+	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // Validate checks a settlement plan's denomination, redemption rate, and

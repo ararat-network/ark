@@ -6,7 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // Keeper stores asset registry and lifecycle state.

@@ -7,10 +7,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers"
-	provider "ark/pricefeed/sidecar/providers/base"
-	providertypes "ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	provider "github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // managedProvider keeps provider execution state in the runtime that owns its

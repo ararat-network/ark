@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // Option configures a websocket fetcher.

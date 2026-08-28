@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"time"
 
-	"ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 )
 
 // Prices is the oracle-internal price map keyed by canonical BASE/QUOTE pairs.

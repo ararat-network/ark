@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 // InitGenesis initialises the security module genesis.

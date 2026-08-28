@@ -11,7 +11,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	otelmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/metrics"
 )
 
 func TestRecordModuleMethodLatency(t *testing.T) {

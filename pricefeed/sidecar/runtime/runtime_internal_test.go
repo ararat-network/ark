@@ -11,14 +11,14 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/providers"
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/providers/base/api"
-	basetestutil "ark/pricefeed/sidecar/providers/base/testutil"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	"ark/pricefeed/sidecar/resolver"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {

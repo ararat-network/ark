@@ -3,8 +3,8 @@ package base
 import (
 	"context"
 
-	providermetrics "ark/pricefeed/sidecar/providers/base/metrics"
-	"ark/pricefeed/sidecar/providers/types"
+	providermetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // recv owns response-channel reads for one provider run and commits successful

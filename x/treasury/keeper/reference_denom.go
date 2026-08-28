@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	oracletypes "ark/x/oracle/types"
-	"ark/x/treasury/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // RebaseTaxCap re-expresses Treasury's reference-denominated state when

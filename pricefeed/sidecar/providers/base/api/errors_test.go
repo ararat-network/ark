@@ -1,11 +1,12 @@
 package api_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/api"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 )
 
 func TestErrSelectEndpointWithErrWrapsSentinelAndCause(t *testing.T) {

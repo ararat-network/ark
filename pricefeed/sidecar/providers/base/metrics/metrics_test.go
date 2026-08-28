@@ -1,7 +1,6 @@
 package metrics_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/metrics"
 	"context"
 	"testing"
 
@@ -12,7 +11,8 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"ark/pricefeed/sidecar/providers/types"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestRecordResponse(t *testing.T) {

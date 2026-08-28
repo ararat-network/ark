@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // Keeper of the market store

@@ -14,10 +14,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
-	"ark/abci/oracle"
-	abcitestutil "ark/abci/testutil"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/codec"
+	"github.com/ararat-network/ark/abci/oracle"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestAggregateOracleVotesLeavesOmittedTargetUnpriced(t *testing.T) {

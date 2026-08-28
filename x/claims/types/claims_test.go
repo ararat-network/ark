@@ -12,9 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/pkg/chain"
-	"ark/pkg/mandate"
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 func TestClaimsMandateValidate(t *testing.T) {

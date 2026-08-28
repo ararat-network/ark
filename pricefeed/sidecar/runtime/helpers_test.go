@@ -12,18 +12,18 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/providers"
-	binanceapi "ark/pricefeed/sidecar/providers/api/binance"
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/providers/base/api"
-	basetestutil "ark/pricefeed/sidecar/providers/base/testutil"
-	"ark/pricefeed/sidecar/providers/base/websocket"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	resolverpkg "ark/pricefeed/sidecar/resolver"
-	. "ark/pricefeed/sidecar/runtime"
-	oracletestutil "ark/pricefeed/sidecar/runtime/testutil"
-	"ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	binanceapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/binance"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	resolverpkg "github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 type mockProvider struct {

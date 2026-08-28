@@ -16,7 +16,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/api"
+	"github.com/ararat-network/ark/pricefeed/api"
 )
 
 type recordingOracleService struct {

@@ -11,7 +11,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"ark/pricefeed/sidecar/chainstate/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate/metrics"
 )
 
 func TestRecordRefresh(t *testing.T) {

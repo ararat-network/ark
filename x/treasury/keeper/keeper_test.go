@@ -24,14 +24,14 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
-	claimstypes "ark/x/claims/types"
-	oracletypes "ark/x/oracle/types"
-	reservetypes "ark/x/reserve/types"
-	"ark/x/treasury/keeper"
-	"ark/x/treasury/testutil"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/treasury/keeper"
+	"github.com/ararat-network/ark/x/treasury/testutil"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 type KeeperTestSuite struct {

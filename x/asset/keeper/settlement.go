@@ -11,7 +11,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // GetSettlementPlan returns the stored settlement plan whether or not its

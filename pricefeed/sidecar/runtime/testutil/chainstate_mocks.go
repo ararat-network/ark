@@ -10,7 +10,7 @@
 package testutil
 
 import (
-	chainstate "ark/pricefeed/sidecar/chainstate"
+	chainstate "github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	context "context"
 	reflect "reflect"
 

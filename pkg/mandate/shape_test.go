@@ -14,7 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 const (

@@ -12,9 +12,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	"ark/pkg/encoding"
-	"ark/pricefeed/api"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestVersion(t *testing.T) {

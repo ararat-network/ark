@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Builder constructs a provider for a test run.

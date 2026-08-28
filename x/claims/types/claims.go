@@ -9,8 +9,8 @@ import (
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/pkg/chain"
-	"ark/pkg/mandate"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
 )
 
 // MaxClaimReferenceLength bounds a claim's required, free-form pointer to its

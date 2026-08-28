@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	oraclemetrics "ark/pricefeed/sidecar/metrics"
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/resolver"
-	"ark/pricefeed/sidecar/types"
+	oraclemetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // updatePriceSnapshot serialises feed sync, provider cache reads, resolution,

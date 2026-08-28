@@ -8,11 +8,11 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/sidecar/providers"
-	frankfurterapi "ark/pricefeed/sidecar/providers/api/frankfurter"
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/providers/base/api"
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	frankfurterapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestNewProviderAllowsEmptyActiveMarkets(t *testing.T) {

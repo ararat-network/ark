@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	chain "ark/pkg/chain"
-	markettypes "ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // ratCoverageDraw is the coverage draw in exact rational arithmetic: the

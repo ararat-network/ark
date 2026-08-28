@@ -9,9 +9,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/decimal"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/decimal"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // The combined age bound asserts one message from both its lower and upper

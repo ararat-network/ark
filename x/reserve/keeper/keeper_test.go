@@ -19,11 +19,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"ark/pkg/chain"
-	oracletypes "ark/x/oracle/types"
-	"ark/x/reserve/keeper"
-	"ark/x/reserve/testutil"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/reserve/keeper"
+	"github.com/ararat-network/ark/x/reserve/testutil"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 type KeeperTestSuite struct {

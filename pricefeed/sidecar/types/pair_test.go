@@ -1,9 +1,10 @@
 package types_test
 
 import (
-	. "ark/pricefeed/sidecar/types"
 	"strings"
 	"testing"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestNewPair(t *testing.T) {

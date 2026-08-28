@@ -8,7 +8,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 func TestValidateParams(t *testing.T) {

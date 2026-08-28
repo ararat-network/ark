@@ -7,8 +7,8 @@ import (
 
 	"cosmossdk.io/collections"
 
-	"ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // FeedReferents implements the oracle module's FeedReferentGuard. x/asset holds

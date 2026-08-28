@@ -12,8 +12,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	chain "ark/pkg/chain"
-	"ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // Simulation parameter constants

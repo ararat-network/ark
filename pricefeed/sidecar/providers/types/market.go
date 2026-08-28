@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	oracletypes "ark/pricefeed/sidecar/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Market maps an exchange-rate pair to the provider symbol used to fetch its price.

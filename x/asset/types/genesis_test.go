@@ -9,8 +9,8 @@ import (
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/pkg/chain"
-	assettypes "ark/x/asset/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
 func TestDefaultGenesisState(t *testing.T) {

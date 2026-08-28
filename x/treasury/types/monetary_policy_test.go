@@ -3,11 +3,11 @@ package types_test
 import (
 	"testing"
 
-	"cosmossdk.io/math"
-
 	"github.com/stretchr/testify/require"
 
-	"ark/x/treasury/types"
+	"cosmossdk.io/math"
+
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 func TestMonetaryPolicyValidate(t *testing.T) {

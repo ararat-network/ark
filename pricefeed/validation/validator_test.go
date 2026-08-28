@@ -15,11 +15,11 @@ import (
 	"cosmossdk.io/log/v2"
 	sdkmath "cosmossdk.io/math"
 
-	"ark/pkg/encoding"
-	"ark/pricefeed/api"
-	. "ark/pricefeed/validation"
-	validationtestutil "ark/pricefeed/validation/testutil"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	. "github.com/ararat-network/ark/pricefeed/validation"
+	validationtestutil "github.com/ararat-network/ark/pricefeed/validation/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestNewValidatorDerivesComponentLogger(t *testing.T) {

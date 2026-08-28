@@ -17,8 +17,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	markettypes "ark/x/market/types"
-	"ark/x/treasury/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 const maxTaxMessageDepth = 32

@@ -3,7 +3,7 @@ package keeper_test
 import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"ark/x/security/types"
+	"github.com/ararat-network/ark/x/security/types"
 )
 
 func (s *KeeperTestSuite) TestInitGenesis() {

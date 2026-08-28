@@ -4,9 +4,9 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	chain "ark/pkg/chain"
-	assettypes "ark/x/asset/types"
-	"ark/x/market/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // seedTobinTaxOverride writes an override straight to the collection. Tests

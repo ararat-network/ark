@@ -10,9 +10,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/chain"
-	"ark/pkg/decimal"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // MaxRecognitionRateAge bounds the staleness window one entry may state. It

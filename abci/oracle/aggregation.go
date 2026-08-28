@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/decimal"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/decimal"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // aggregationResult contains the internal output of one complete oracle aggregation.

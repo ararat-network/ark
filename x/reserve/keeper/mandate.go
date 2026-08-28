@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // authoriseCommittee checks the signer against the live mandate, returning it

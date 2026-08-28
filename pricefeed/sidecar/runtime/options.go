@@ -3,9 +3,9 @@ package runtime
 import (
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/sidecar/providers"
-	"ark/pricefeed/sidecar/providers/base"
-	providertypes "ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // Option customises oracle construction.

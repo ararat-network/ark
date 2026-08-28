@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
-	arkmetrics "ark/abci/metrics"
-	arkabci "ark/abci/types"
-	"ark/abci/voteextension"
+	"github.com/ararat-network/ark/abci/codec"
+	arkmetrics "github.com/ararat-network/ark/abci/metrics"
+	arkabci "github.com/ararat-network/ark/abci/types"
+	"github.com/ararat-network/ark/abci/voteextension"
 )
 
 // Handler is responsible primarily for:

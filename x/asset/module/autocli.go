@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	assetv1 "ark/api/ark/asset/v1"
+	assetv1 "github.com/ararat-network/ark/api/ark/asset/v1"
 )
 
 // AutoCLIOptions returns the asset module's AutoCLI configuration.

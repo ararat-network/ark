@@ -13,7 +13,7 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	otelmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	clientmetrics "ark/pricefeed/client/metrics"
+	clientmetrics "github.com/ararat-network/ark/pricefeed/client/metrics"
 )
 
 func TestRecordOracleResponse(t *testing.T) {

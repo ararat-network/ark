@@ -6,6 +6,11 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/cosmos/gogoproto/proto"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
+
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,16 +22,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/gogoproto/proto"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
-	"google.golang.org/grpc"
 
-	assetv1 "ark/api/ark/asset/v1"
-	assetmodule "ark/x/asset/module"
-	"ark/x/asset/testutil"
-	assettypes "ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	assetv1 "github.com/ararat-network/ark/api/ark/asset/v1"
+	assetmodule "github.com/ararat-network/ark/x/asset/module"
+	"github.com/ararat-network/ark/x/asset/testutil"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestAppModuleStandalone(t *testing.T) {

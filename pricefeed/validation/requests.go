@@ -9,10 +9,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/encoding"
-	"ark/pricefeed/api"
-	oracletypes "ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // PriceClient is the public oracle price API used by validation.

@@ -1,7 +1,6 @@
 package metrics_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/api/metrics"
 	"context"
 	"net/http"
 	"testing"
@@ -13,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api/metrics"
 )
 
 func TestRecordAPIMetrics(t *testing.T) {

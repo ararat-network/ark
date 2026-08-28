@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	chain "ark/pkg/chain"
-	"ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestValidatePricedDenom(t *testing.T) {

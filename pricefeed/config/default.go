@@ -3,14 +3,14 @@ package config
 import (
 	"time"
 
-	"ark/pkg/chain"
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/providers"
-	"ark/pricefeed/sidecar/providers/api/frankfurter"
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/resolver"
-	"ark/pricefeed/sidecar/runtime"
-	sidecartypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 const (

@@ -4,12 +4,13 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 
-	assettypes "ark/x/asset/types"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
 func TestSettlementPlanValidate(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
-	"ark/x/claims/types"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 func (s *KeeperTestSuite) TestQueryParams() {

@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pkg/chain"
-	"ark/pricefeed/sidecar/providers/api/frankfurter"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	"ark/pricefeed/sidecar/resolver"
-	sidecartypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestLoadDecodesDurationStrings(t *testing.T) {

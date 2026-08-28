@@ -14,10 +14,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers/base"
-	apimetrics "ark/pricefeed/sidecar/providers/base/api/metrics"
-	"ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	apimetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // MaxResponseBodyBytes bounds one provider HTTP response before JSON decoding.

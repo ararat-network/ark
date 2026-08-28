@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // MsgUpdateParamsFactory creates a governance proposal for a valid parameter

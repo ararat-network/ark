@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pricefeed/sidecar/resolver"
-	"ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestConfigMarketPairs(t *testing.T) {

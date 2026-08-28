@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // TestExposureModelLaunchesInert pins the launch guarantee the whole design

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
@@ -21,12 +22,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/gogoproto/proto"
 
-	assettypes "ark/x/asset/types"
-	"ark/x/market/keeper"
-	"ark/x/market/testutil"
-	"ark/x/market/types"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	"github.com/ararat-network/ark/x/market/keeper"
+	"github.com/ararat-network/ark/x/market/testutil"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 type KeeperTestSuite struct {

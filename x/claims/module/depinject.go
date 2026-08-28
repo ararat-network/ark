@@ -10,9 +10,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	modulev1 "ark/api/ark/claims/module/v1"
-	"ark/x/claims/keeper"
-	"ark/x/claims/types"
+	modulev1 "github.com/ararat-network/ark/api/ark/claims/module/v1"
+	"github.com/ararat-network/ark/x/claims/keeper"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 var _ depinject.OnePerModuleType = AppModule{}

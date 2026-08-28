@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"ark/pricefeed/sidecar/providers"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	. "ark/pricefeed/sidecar/runtime"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
 )
 
 func TestRunStartsAndStopsChainStateClient(t *testing.T) {

@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 const (

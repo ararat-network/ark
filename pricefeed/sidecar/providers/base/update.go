@@ -1,8 +1,8 @@
 package base
 
 import (
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // UpdateMarkets applies prevalidated market mappings. The runtime stops the

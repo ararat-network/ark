@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // parsePriceUpdateMessage converts a Binance symbol and price string into a

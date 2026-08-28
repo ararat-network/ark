@@ -10,13 +10,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	"ark/pkg/decimal"
-	claimstypes "ark/x/claims/types"
-	markettypes "ark/x/market/types"
-	oracletypes "ark/x/oracle/types"
-	reservetypes "ark/x/reserve/types"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/decimal"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // blocksPerYear is the annualisation factor for the variance series, held as a

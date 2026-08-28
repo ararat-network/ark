@@ -7,8 +7,8 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/mandate"
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/pkg/mandate"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 func TestMonetaryMandateValidate(t *testing.T) {

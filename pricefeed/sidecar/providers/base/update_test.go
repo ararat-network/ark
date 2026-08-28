@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	base "ark/pricefeed/sidecar/providers/base"
-	basetestutil "ark/pricefeed/sidecar/providers/base/testutil"
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	base "github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestGetTickersReturnsCopy(t *testing.T) {

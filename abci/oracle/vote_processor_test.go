@@ -14,11 +14,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/oracle"
-	abcitestutil "ark/abci/testutil"
-	arkabci "ark/abci/types"
-	vetypes "ark/abci/voteextension/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/oracle"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	arkabci "github.com/ararat-network/ark/abci/types"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestProcessVoteExtensions(t *testing.T) {

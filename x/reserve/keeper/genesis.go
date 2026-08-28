@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"ark/pkg/chain"
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // InitGenesis validates and imports Reserve state. Non-NOAH balances are

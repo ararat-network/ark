@@ -12,10 +12,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	sidecarinternal "ark/pricefeed/sidecar/internal"
-	"ark/pricefeed/sidecar/providers/base"
-	"ark/pricefeed/sidecar/providers/base/websocket/metrics"
-	"ark/pricefeed/sidecar/providers/types"
+	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket/metrics"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // Fetcher maintains websocket subscriptions for provider ticker prices.

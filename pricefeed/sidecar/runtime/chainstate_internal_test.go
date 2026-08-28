@@ -12,7 +12,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	oracletestutil "ark/pricefeed/sidecar/runtime/testutil"
+	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestRunReturnsChainStateClientError(t *testing.T) {

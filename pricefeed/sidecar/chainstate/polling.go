@@ -9,8 +9,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	chainstatemetrics "ark/pricefeed/sidecar/chainstate/metrics"
-	oracletypes "ark/x/oracle/types"
+	chainstatemetrics "github.com/ararat-network/ark/pricefeed/sidecar/chainstate/metrics"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // runOnce opens one query connection for the current address and polls it until

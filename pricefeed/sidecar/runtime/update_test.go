@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/providers"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	. "ark/pricefeed/sidecar/runtime"
-	oracletestutil "ark/pricefeed/sidecar/runtime/testutil"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestUpdateConfigAppliesUpdateIntervalWithoutRestart(t *testing.T) {

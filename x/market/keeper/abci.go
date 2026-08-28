@@ -6,9 +6,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "ark/pkg/chain"
-	arkmetrics "ark/pkg/metrics"
-	"ark/x/market/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // EndBlocker settles the block's conversions and then replenishes the pools.

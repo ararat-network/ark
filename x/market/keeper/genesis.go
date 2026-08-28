@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 // InitGenesis initialises the market module genesis

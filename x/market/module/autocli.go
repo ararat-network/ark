@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/version"
 
-	marketv1 "ark/api/ark/market/v1"
+	marketv1 "github.com/ararat-network/ark/api/ark/market/v1"
 )
 
 // AutoCLIOptions returns the market module's AutoCLI configuration.

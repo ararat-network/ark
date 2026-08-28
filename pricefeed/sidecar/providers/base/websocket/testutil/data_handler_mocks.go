@@ -10,8 +10,8 @@
 package testutil
 
 import (
-	websocket "ark/pricefeed/sidecar/providers/base/websocket"
-	types "ark/pricefeed/sidecar/providers/types"
+	websocket "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
+	types "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

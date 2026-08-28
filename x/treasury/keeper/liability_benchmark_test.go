@@ -22,14 +22,14 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "ark/pkg/chain"
-	markettypes "ark/x/market/types"
-	oraclekeeper "ark/x/oracle/keeper"
-	oracletestutil "ark/x/oracle/testutil"
-	oracletypes "ark/x/oracle/types"
-	treasurykeeper "ark/x/treasury/keeper"
-	treasurytestutil "ark/x/treasury/testutil"
-	treasurytypes "ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
+	oracletestutil "github.com/ararat-network/ark/x/oracle/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
+	treasurytestutil "github.com/ararat-network/ark/x/treasury/testutil"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 type liabilityBenchFixture struct {

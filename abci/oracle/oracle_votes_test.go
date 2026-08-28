@@ -14,12 +14,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/abci/codec"
-	"ark/abci/oracle"
-	abcitestutil "ark/abci/testutil"
-	vetypes "ark/abci/voteextension/types"
-	arkencoding "ark/pkg/encoding"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/codec"
+	"github.com/ararat-network/ark/abci/oracle"
+	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 var (

@@ -15,9 +15,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	chain "ark/pkg/chain"
-	"ark/x/market/simulation"
-	"ark/x/market/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/market/simulation"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 func TestRandomisedGenState(t *testing.T) {

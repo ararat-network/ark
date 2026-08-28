@@ -8,8 +8,8 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	chain "ark/pkg/chain"
-	"ark/x/treasury/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // InitGenesis validates and imports Treasury policy state. Fund custody is

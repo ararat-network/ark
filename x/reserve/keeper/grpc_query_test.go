@@ -3,7 +3,7 @@ package keeper_test
 import (
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
-	"ark/x/reserve/types"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // closePosition closes one position as the committee.

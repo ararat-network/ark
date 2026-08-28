@@ -7,9 +7,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	chain "ark/pkg/chain"
-	"ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // pricingDenom is registered by the pricing tests themselves so each case

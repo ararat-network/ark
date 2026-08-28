@@ -8,7 +8,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 )
 
 func TestEncodeDecodeLegacyDec(t *testing.T) {

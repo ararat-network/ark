@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	api "ark/pricefeed/sidecar/providers/base/api"
-	"ark/pricefeed/sidecar/providers/types"
-	oracletypes "ark/pricefeed/sidecar/types"
+	api "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 var _ api.DataHandler = (*Handler)(nil)

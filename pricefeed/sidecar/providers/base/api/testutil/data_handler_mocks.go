@@ -10,7 +10,7 @@
 package testutil
 
 import (
-	types "ark/pricefeed/sidecar/providers/types"
+	types "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	http "net/http"
 	reflect "reflect"
 

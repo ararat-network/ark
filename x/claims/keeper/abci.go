@@ -8,8 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	arkmetrics "ark/pkg/metrics"
-	"ark/x/claims/types"
+	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // EndBlocker settles every claim whose cancellation period closed at or before

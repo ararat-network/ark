@@ -8,8 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"ark/pkg/mandate"
-	"ark/x/asset/types"
+	"github.com/ararat-network/ark/pkg/mandate"
+	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // SetEmergencyMandate replaces or disables the committee appointment. Every

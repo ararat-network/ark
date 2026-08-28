@@ -13,8 +13,8 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
-	"ark/pricefeed/sidecar/resolver"
-	"ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
+	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestAggregatePricesRecordsMetrics(t *testing.T) {

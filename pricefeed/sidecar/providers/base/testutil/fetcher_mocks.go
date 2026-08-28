@@ -10,8 +10,8 @@
 package testutil
 
 import (
-	base "ark/pricefeed/sidecar/providers/base"
-	types "ark/pricefeed/sidecar/providers/types"
+	base "github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	types "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	context "context"
 	reflect "reflect"
 

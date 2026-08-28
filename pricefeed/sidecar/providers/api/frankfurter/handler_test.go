@@ -1,7 +1,6 @@
 package frankfurter_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/api/frankfurter"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,7 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pricefeed/sidecar/providers/types"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestBatchTickers(t *testing.T) {

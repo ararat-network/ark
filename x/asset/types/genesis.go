@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	chain "ark/pkg/chain"
+	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // DefaultGenesisState returns the launch asset registry.

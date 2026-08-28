@@ -3,7 +3,7 @@ package api
 import (
 	"slices"
 
-	"ark/pricefeed/sidecar/providers/types"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 // BatchTickers chunks tickers in input order. A non-positive batch size keeps

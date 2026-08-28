@@ -1,10 +1,11 @@
 package types_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/types"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestTickerKey(t *testing.T) {

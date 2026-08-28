@@ -1,13 +1,13 @@
 package api_test
 
 import (
-	. "ark/pricefeed/sidecar/providers/base/api"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"ark/pricefeed/sidecar/providers/types"
+	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
 func TestAPIConfigValidateBasicAllowsPositiveRequiredControls(t *testing.T) {

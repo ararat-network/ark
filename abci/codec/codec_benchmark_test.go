@@ -6,9 +6,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	vetypes "ark/abci/voteextension/types"
-	arkencoding "ark/pkg/encoding"
-	oracletypes "ark/x/oracle/types"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 var (

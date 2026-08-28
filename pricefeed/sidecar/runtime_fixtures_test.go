@@ -12,15 +12,15 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pricefeed/api"
-	"ark/pricefeed/sidecar/chainstate"
-	"ark/pricefeed/sidecar/providers"
-	frankfurterapi "ark/pricefeed/sidecar/providers/api/frankfurter"
-	"ark/pricefeed/sidecar/providers/base"
-	baseapi "ark/pricefeed/sidecar/providers/base/api"
-	providertypes "ark/pricefeed/sidecar/providers/types"
-	runtimepkg "ark/pricefeed/sidecar/runtime"
-	oracletypes "ark/pricefeed/sidecar/types"
+	"github.com/ararat-network/ark/pricefeed/api"
+	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	frankfurterapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
+	baseapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
+	runtimepkg "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 type serverTestFetcher struct {

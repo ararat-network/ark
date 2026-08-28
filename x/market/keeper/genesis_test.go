@@ -7,8 +7,8 @@ import (
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"ark/pkg/chain"
-	"ark/x/market/types"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {

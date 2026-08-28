@@ -12,10 +12,10 @@ import (
 
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 
-	chain "ark/pkg/chain"
-	"ark/x/asset/keeper"
-	assettypes "ark/x/asset/types"
-	oracletypes "ark/x/oracle/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/asset/keeper"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // stubQueryRates answers the per-denom rate lookups the query server makes,

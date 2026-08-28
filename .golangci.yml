@@ -96,7 +96,7 @@ formatters:
         - prefix(github.com/cometbft/cometbft)
         - prefix(cosmossdk.io)
         - prefix(github.com/cosmos/cosmos-sdk)
-        - prefix(ark)
+        - prefix(github.com/ararat-network/ark)
       custom-order: true
   exclusions:
     generated: lax

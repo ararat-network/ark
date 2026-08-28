@@ -17,10 +17,10 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	"ark/pkg/encoding"
-	"ark/pricefeed/api"
-	apitestutil "ark/pricefeed/api/testutil"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pricefeed/api"
+	apitestutil "github.com/ararat-network/ark/pricefeed/api/testutil"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestNewCachedPriceClient(t *testing.T) {

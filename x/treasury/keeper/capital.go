@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	"ark/x/treasury/types"
+	"github.com/ararat-network/ark/x/treasury/types"
 )
 
 // RequiredReserveCapital reports the capital the strategic Reserve is owed
