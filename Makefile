@@ -5,14 +5,19 @@
 VERSION := $(shell git describe --tags --always --dirty)
 COMMIT := $(shell git rev-parse HEAD)
 
+# Comma-separated go build tags; none by default.
+BUILD_TAGS ?=
+
 # version.Name and version.AppName are set in app/config.go rather than here.
 # They are chain identity, and Name decides the keyring service name, so they
 # have to hold under `go build` and `go test` too — neither passes ldflags.
 # Only the halves that genuinely vary per build are stamped.
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
-	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
+	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)"
+ldflags += $(LDFLAGS)
 
-BUILD_FLAGS := -ldflags '$(ldflags)'
+BUILD_FLAGS := -tags "$(BUILD_TAGS)" -mod=readonly -trimpath -ldflags '$(strip $(ldflags))'
 
 build:
 	@go build $(BUILD_FLAGS) -o build/arkd ./cmd/arkd
@@ -20,14 +25,68 @@ build:
 install:
 	@go install $(BUILD_FLAGS) ./cmd/arkd
 
+clean:
+	@rm -rf build/ coverage.out
+
+###############################################################################
+###                                 Tests                                   ###
+###############################################################################
+
+test:
+	@go test -mod=readonly ./...
+
+test-race:
+	@go test -mod=readonly -race ./...
+
+test-cover:
+	@go test -mod=readonly -covermode=atomic -coverprofile=coverage.out ./...
+
+###############################################################################
+###                               Simulation                                ###
+###############################################################################
+
+test-sim:
+	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestFullAppSimulation -NumBlocks=50
+
+test-sim-nondeterminism:
+	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestAppStateDeterminism -NumBlocks=100 -BlockSize=200
+
+test-sim-import-export:
+	@go test ./app -failfast -mod=readonly -timeout 20m -tags=sims -run TestAppImportExport -NumBlocks=50
+
+test-sim-after-import:
+	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestAppSimulationAfterImport -NumBlocks=50
+
+test-sim-fuzz:
+	@go test ./app -failfast -mod=readonly -timeout 3m -tags=sims -run ^$$ -fuzz FuzzFullAppSimulation -fuzztime 2m
+
+test-sim-benchmark:
+	@go test ./app -failfast -mod=readonly -timeout 24h -tags=sims -benchmem -run ^$$ -bench BenchmarkFullAppSimulation -NumBlocks=100 -BlockSize=200
+
+###############################################################################
+###                                Linting                                  ###
+###############################################################################
+
+lint:
+	@golangci-lint run ./...
+
+lint-fix:
+	@golangci-lint run ./... --fix
+
+format:
+	@golangci-lint fmt
+
 ###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
 
+HTTPS_GIT := https://github.com/ararat-network/ark.git
+
 DOCKER := $(shell which docker)
-protoVer=0.18.0
+protoVer=0.18.1
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace -v ark-proto-cache:/root/.cache --workdir /workspace $(protoImageName)
+# expanded per-recipe so only the proto targets require docker
+protoImage=$(if $(DOCKER),,$(error docker is required for the proto targets))$(DOCKER) run --rm -v $(CURDIR):/workspace -v ark-proto-cache:/root/.cache --workdir /workspace $(protoImageName)
 
 proto-all: proto-format proto-lint proto-gen
 
@@ -37,7 +96,7 @@ proto-gen:
 	@go mod tidy
 
 proto-format:
-	@$(protoImage) find ./proto -name "*.proto" -exec clang-format -i {} \;
+	@$(protoImage) buf format -w proto
 
 proto-lint:
 	@$(protoImage) buf lint proto --error-format=json
@@ -49,4 +108,6 @@ proto-update-deps:
 	@echo "Updating Protobuf dependencies"
 	@$(protoImage) buf mod update proto
 
-.PHONY: build install proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps
+.PHONY: build install clean test test-race test-cover \
+	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
+	lint lint-fix format proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps

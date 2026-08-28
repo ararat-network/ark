@@ -191,6 +191,7 @@ string field_name = N [
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`
+- Go linting: `make lint` (golangci-lint); `make lint-fix` auto-fixes; `make format` runs gci and gofumpt
 - Run tests: `go test ./x/{module}/...` for a single module, or `go test ./...` for all
 - Run with verbose output: `go test -v ./x/{module}/...`
 
