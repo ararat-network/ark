@@ -27,8 +27,9 @@ type FeedReferentGuard interface {
 
 // SetFeedReferentGuards registers the complete removal-guard set. App wiring
 // owns the set and it holds exactly the foreign consumers that exist: today
-// x/asset, which answers for the registry; basket and reserve guards join with
-// their specs. The protocol reference is not a guard — it is oracle's own state
+// x/asset, which answers for the registry, and x/reserve, which answers for
+// its credited and positioned holdings; a basket guard joins with its spec.
+// The protocol reference is not a guard — it is oracle's own state
 // and feedReferents checks it directly; that collector stays unexported so the
 // keeper cannot satisfy this interface and be registered against itself. One
 // entry per consumer, not per claim, because a consumer knows its own reasons.
