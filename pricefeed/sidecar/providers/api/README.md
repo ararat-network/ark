@@ -20,4 +20,8 @@ shared fetcher. Endpoint authentication belongs in config; adapters should not h
 ## Supported Providers
 
 - [Binance](./binance/README.md) fetches spot ticker prices from Binance's public REST API.
+- CurrencyBeacon fetches fiat exchange rates from CurrencyBeacon's REST API. Requires an API key, sent as
+  `Authorization: Bearer <key>` via endpoint authentication.
 - Frankfurter fetches fiat exchange rates from Frankfurter's public REST API.
+- Open Exchange Rates fetches fiat exchange rates from the Open Exchange Rates REST API. Requires an app ID, sent as
+  `Authorization: Token <app_id>` via endpoint authentication.

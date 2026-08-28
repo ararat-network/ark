@@ -8,7 +8,9 @@ import (
 	"cosmossdk.io/log/v2"
 
 	binanceapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/binance"
+	currencybeaconapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/currencybeacon"
 	frankfurterapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	openexchangeratesapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/openexchangerates"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
@@ -45,8 +47,14 @@ func DefaultRegistry() *Registry {
 	_ = r.RegisterAPI(binanceapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
 		return binanceapi.NewHandler(), nil
 	})
+	_ = r.RegisterAPI(currencybeaconapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return currencybeaconapi.NewHandler(), nil
+	})
 	_ = r.RegisterAPI(frankfurterapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
 		return frankfurterapi.NewHandler(), nil
+	})
+	_ = r.RegisterAPI(openexchangeratesapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return openexchangeratesapi.NewHandler(), nil
 	})
 	_ = r.RegisterWebSocket(binancews.Name, func(cfg Config, logger log.Logger) (websocket.DataHandler, error) {
 		return binancews.NewHandler(logger, cfg.WebSocket)

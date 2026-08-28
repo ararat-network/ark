@@ -6,7 +6,9 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/currencybeacon"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/openexchangerates"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
@@ -29,13 +31,30 @@ const (
 )
 
 // DefaultProviders defines the provider templates used by Default.
+//
+// CurrencyBeacon and Open Exchange Rates ship with placeholder API keys and
+// fetch nothing until the operator replaces them.
 var DefaultProviders = map[string]providers.Config{
+	currencybeacon.Name: {
+		Name:          currencybeacon.Name,
+		TransportType: base.API,
+		Markets:       currencybeacon.DefaultMarkets,
+		MaxPriceAge:   currencybeacon.DefaultMaxPriceAge,
+		API:           currencybeacon.DefaultAPIConfig,
+	},
 	frankfurter.Name: {
 		Name:          frankfurter.Name,
 		TransportType: base.API,
 		Markets:       frankfurter.DefaultMarkets,
 		MaxPriceAge:   frankfurter.DefaultMaxPriceAge,
 		API:           frankfurter.DefaultAPIConfig,
+	},
+	openexchangerates.Name: {
+		Name:          openexchangerates.Name,
+		TransportType: base.API,
+		Markets:       openexchangerates.DefaultMarkets,
+		MaxPriceAge:   openexchangerates.DefaultMaxPriceAge,
+		API:           openexchangerates.DefaultAPIConfig,
 	},
 }
 
