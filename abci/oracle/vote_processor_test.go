@@ -72,6 +72,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
+				t.Helper()
 				voteTargets := oracletypes.FeedSet{
 					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},
@@ -113,6 +114,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
+				t.Helper()
 				voteTargets := oracletypes.FeedSet{
 					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"akrw", "ausd"},
@@ -156,6 +158,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 3)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
+				t.Helper()
 				voteTargets := oracletypes.FeedSet{
 					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},
@@ -193,6 +196,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
+				t.Helper()
 				voteTargets := oracletypes.FeedSet{
 					Version: oracletypes.InitialFeedVersion,
 					Denoms:  []string{"ausd"},

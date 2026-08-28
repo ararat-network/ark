@@ -33,7 +33,7 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 
 	s.Run("active mandate reports remaining allowance", func() {
 		s.SetupTest()
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(400)))
 		s.setBlockHeight(20)
 
@@ -47,7 +47,7 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 
 	s.Run("activity is derived from the current height", func() {
 		s.SetupTest()
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 
 		// Half-open window: inactive one block before activation and again at
 		// expiry itself.
@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 	s.Run("survives mandate replacement", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(testAddress(1), 1, 10, 100, 1_000)
+		s.appointCommittee(testAddress(1))
 		s.setBlockHeight(20)
 		s.fundInsurance(5_000)
 

@@ -134,15 +134,15 @@ func TestPhase3ACapacityPropertiesRandomised(t *testing.T) {
 		spreadBasisPoints := int64(rng.Intn(1_001)) // [0%, 10%]
 
 		state := newPhase3AStateFromRatios(
-			phase3ARatio(deltaBasisPoints, 10_000),
-			phase3ARatio(liabilityBasisPoints, 10_000),
-			phase3ARatio(bufferBasisPoints, 10_000),
-			phase3ARatio(spreadBasisPoints, 10_000),
+			phase3ARatio(deltaBasisPoints),
+			phase3ARatio(liabilityBasisPoints),
+			phase3ARatio(bufferBasisPoints),
+			phase3ARatio(spreadBasisPoints),
 			math.LegacyOneDec(),
 			markettypes.DefaultPoolRecoveryPeriod,
 			i%5 != 0,
 		)
-		offer := phase3AFractionOfIntByDec(state.stableSupply, phase3ARatio(offerBasisPoints, 10_000))
+		offer := phase3AFractionOfIntByDec(state.stableSupply, phase3ARatio(offerBasisPoints))
 		result, err := state.redeem(offer)
 		require.NoError(t, err, "case %d", i)
 		assertPhase3ARedemptionConservation(t, state, offer, result)
@@ -882,8 +882,8 @@ func phase3ARelativeRoundingTolerance(amount math.Int, operations int64) math.In
 		MulRaw(operations)
 }
 
-func phase3ARatio(numerator, denominator int64) math.LegacyDec {
-	return math.LegacyNewDec(numerator).QuoInt64(denominator)
+func phase3ARatio(basisPoints int64) math.LegacyDec {
+	return math.LegacyNewDec(basisPoints).QuoInt64(10_000)
 }
 
 func phase3AMustDec(value string) math.LegacyDec {

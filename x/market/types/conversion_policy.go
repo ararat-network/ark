@@ -68,7 +68,7 @@ func (policy ConversionPolicy) Validate() error {
 	if policy.PoolRecoveryPeriod == 0 || policy.PoolRecoveryPeriod > MaxPoolRecoveryPeriod {
 		return fmt.Errorf(
 			"pool recovery period must be between one and %d, is %d",
-			uint64(MaxPoolRecoveryPeriod),
+			MaxPoolRecoveryPeriod,
 			policy.PoolRecoveryPeriod,
 		)
 	}

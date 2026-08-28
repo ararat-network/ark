@@ -47,6 +47,8 @@ func BenchmarkResolvePricesWithPrometheus(b *testing.B) {
 }
 
 func benchmarkResolvePrices(b *testing.B) {
+	b.Helper()
+
 	testCases := []struct {
 		name          string
 		feedCount     int

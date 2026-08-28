@@ -91,7 +91,7 @@ func (s *adminServer) serve(ctx context.Context, ln net.Listener) error {
 	return nil
 }
 
-// ReloadConfig handles the process-local RPC by delegating the serialized file
+// ReloadConfig handles the process-local RPC by delegating the serialised file
 // reload and runtime replacement to the owning Service.
 func (s *adminService) ReloadConfig(
 	ctx context.Context,

@@ -237,6 +237,7 @@ func TestRunKeepsLastFeedsAfterRefreshFailure(t *testing.T) {
 	cancel()
 	requireOracleStopped(t, errCh)
 }
+
 func requireCommittedSnapshot(t *testing.T, oracle *runtime.Runtime) {
 	t.Helper()
 

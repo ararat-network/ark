@@ -134,6 +134,7 @@ func TestExtendedCommitCodecRejectsExcessVotesWithBoundedAllocation(t *testing.T
 
 	encoded := bytes.Repeat([]byte{0x12, 0x00}, attackPayloadBytes/2)
 	result := testing.Benchmark(func(b *testing.B) {
+		b.Helper()
 		b.ReportAllocs()
 		for b.Loop() {
 			_, err := DecodeExtendedCommit(encoded, 100)

@@ -82,7 +82,7 @@ func TestCachedPriceClientRunReturnsDialError(t *testing.T) {
 func TestCachedPriceClientRunRejectsInvalidContext(t *testing.T) {
 	client := newTestCachedPriceClient(t, validClientConfig())
 
-	require.EqualError(t, client.Run(nil), "context cannot be nil")
+	require.EqualError(t, client.Run(nil), "context cannot be nil") //nolint:staticcheck // the nil context is the case under test
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

@@ -451,20 +451,6 @@ func (s *KeeperTestSuite) setAssets(denoms ...string) {
 	}
 }
 
-func (s *KeeperTestSuite) clearTransientStore() {
-	transientStore := s.transientStoreService.OpenTransientStore(s.ctx)
-	iterator, err := transientStore.Iterator(nil, nil)
-	s.Require().NoError(err)
-	var keys [][]byte
-	for ; iterator.Valid(); iterator.Next() {
-		keys = append(keys, append([]byte(nil), iterator.Key()...))
-	}
-	s.Require().NoError(iterator.Close())
-	for _, key := range keys {
-		s.Require().NoError(transientStore.Delete(key))
-	}
-}
-
 func (s *KeeperTestSuite) requireTypedEvent(expected proto.Message) {
 	expectedEvent, err := sdk.TypedEventToEvent(expected)
 	s.Require().NoError(err)
@@ -493,19 +479,5 @@ func (s *KeeperTestSuite) requireNoTypedEvent(unexpected proto.Message) {
 	s.Require().NoError(err)
 	for _, event := range sdk.UnwrapSDKContext(s.ctx).EventManager().Events() {
 		s.Require().NotEqual(unexpectedEvent.Type, event.Type)
-	}
-}
-
-func (s *KeeperTestSuite) requireTypedEvents(actual sdk.Events, expected ...proto.Message) {
-	s.Require().Len(actual, len(expected))
-	for i, expectedMessage := range expected {
-		expectedEvent, err := sdk.TypedEventToEvent(expectedMessage)
-		s.Require().NoError(err)
-		s.Require().Equal(expectedEvent, actual[i])
-		parsed, err := sdk.ParseTypedEvent(sdk.Events{actual[i]}.ToABCIEvents()[0])
-		s.Require().NoError(err)
-		roundTripEvent, err := sdk.TypedEventToEvent(parsed)
-		s.Require().NoError(err)
-		s.Require().Equal(expectedEvent, roundTripEvent)
 	}
 }

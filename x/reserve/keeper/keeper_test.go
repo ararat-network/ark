@@ -218,8 +218,8 @@ func (s *KeeperTestSuite) registerAsset(denom string) {
 // so seeding the account with one would exercise the fold through a door that
 // does not exist. The cost basis is a nominal one anoah: Validate only
 // requires it positive, and no fold reads it.
-func (s *KeeperTestSuite) attest(denom string, amount int64) uint64 {
-	return s.attestQuantity(denom, math.NewInt(amount))
+func (s *KeeperTestSuite) attest(denom string, amount int64) {
+	s.attestQuantity(denom, math.NewInt(amount))
 }
 
 // attestQuantity is attest for a holding beyond int64, which is the range the

@@ -30,6 +30,7 @@ func TestParamsValidate(t *testing.T) {
 			name:   "default is valid",
 			mutate: func(p *types.Params) {},
 			check: func(t *testing.T, p types.Params) {
+				t.Helper()
 				require.Equal(t, math.LegacyMustNewDecFromStr("0.666666666666666667"), p.VoteThreshold)
 				require.Equal(t, time.Minute, p.MaxExchangeRateAge)
 			},

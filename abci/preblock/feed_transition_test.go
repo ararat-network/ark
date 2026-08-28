@@ -57,7 +57,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 
 	// The activation-height vote extension is produced before FinalizeBlock at
 	// that height. The scheduled transition therefore has to be
-	// height-addressable before it is folded into the materialized set.
+	// height-addressable before it is folded into the materialised set.
 	oldResponse, err := extendVote(
 		abcitestutil.NewSDKContext(activationVoteHeight-1, 1),
 		&cometabci.RequestExtendVote{Height: activationVoteHeight - 1},

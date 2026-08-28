@@ -67,9 +67,7 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 	ctrl := gomock.NewController(tb)
 	oracleAccountKeeper := oracletestutil.NewMockAccountKeeper(ctrl)
 	oracleAccountKeeper.EXPECT().GetModuleAddress(gomock.Any()).
-		DoAndReturn(func(name string) sdk.AccAddress {
-			return authtypes.NewModuleAddress(name)
-		}).AnyTimes()
+		DoAndReturn(authtypes.NewModuleAddress).AnyTimes()
 	oracleKeeper := oraclekeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(oracleKey),

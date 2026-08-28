@@ -105,7 +105,7 @@ func TestValidateGenesisState(t *testing.T) {
 			// rebased into the new unit, the corridor still in the unit
 			// governance appointed it in. It is a state the chain reaches on its
 			// own and therefore has to be able to restart from, so genesis
-			// accepts it. The corridor authorizes nothing until governance
+			// accepts it. The corridor authorises nothing until governance
 			// re-appoints, which is what makes accepting it safe.
 			name: "enabled mandate stranded off the genesis pool unit",
 			mutate: func(gs *types.GenesisState) {

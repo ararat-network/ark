@@ -120,7 +120,7 @@ func (p Params) Validate() error {
 	if p.RewardWindow == 0 || p.RewardWindow > MaxRewardWindow {
 		return fmt.Errorf(
 			"oracle parameter RewardWindow must be between one and %d, is %d",
-			uint64(MaxRewardWindow),
+			MaxRewardWindow,
 			p.RewardWindow,
 		)
 	}
@@ -130,7 +130,7 @@ func (p Params) Validate() error {
 	if p.AttendanceWindow == 0 || p.AttendanceWindow > MaxAttendanceWindow {
 		return fmt.Errorf(
 			"oracle parameter AttendanceWindow must be between one and %d, is %d",
-			uint64(MaxAttendanceWindow),
+			MaxAttendanceWindow,
 			p.AttendanceWindow,
 		)
 	}

@@ -179,7 +179,7 @@ func TestRunSendsMethodHeadersAndParsesSuccessfulResponse(t *testing.T) {
 			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 				require.Equal(t, http.MethodPost, req.Method)
 				require.Equal(t, "secret", req.Header.Get("X-API-Key"))
-				return httpResponse(http.StatusOK, `{"ok":true}`), nil
+				return httpResponse(`{"ok":true}`), nil
 			}),
 		},
 		handler,
@@ -232,7 +232,7 @@ func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
 			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 				require.Empty(t, req.Header.Get("X-First-Key"))
 				require.Equal(t, "second-secret", req.Header.Get("X-Second-Key"))
-				return httpResponse(http.StatusOK, `{"ok":true}`), nil
+				return httpResponse(`{"ok":true}`), nil
 			}),
 		},
 		handler,
@@ -332,7 +332,7 @@ func TestRunRejectsOversizedSuccessResponseBeforeParsing(t *testing.T) {
 	fetcher, err := NewFetcher(cfg, &http.Client{
 		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 			body := strings.Repeat("x", int(MaxResponseBodyBytes)+1)
-			return httpResponse(http.StatusOK, body), nil
+			return httpResponse(body), nil
 		}),
 	}, handler)
 	require.NoError(t, err)
@@ -439,7 +439,7 @@ func TestRunPublishesBatchedResponsesAndStopsOnContextCancellation(t *testing.T)
 
 	fetcher, err := NewFetcher(cfg, &http.Client{
 		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-			return httpResponse(http.StatusOK, `{}`), nil
+			return httpResponse(`{}`), nil
 		}),
 	}, handler)
 	require.NoError(t, err)
@@ -484,7 +484,7 @@ func TestRunUsesConfiguredBatchSize(t *testing.T) {
 
 	fetcher, err := NewFetcher(cfg, &http.Client{
 		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-			return httpResponse(http.StatusOK, `{}`), nil
+			return httpResponse(`{}`), nil
 		}),
 	}, handler)
 	require.NoError(t, err)
@@ -541,7 +541,7 @@ func TestRunUsesDataHandlerBatching(t *testing.T) {
 	fetcher, err := NewFetcher(
 		cfg,
 		&http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-			return httpResponse(http.StatusOK, `{}`), nil
+			return httpResponse(`{}`), nil
 		})},
 		handler,
 	)
@@ -578,7 +578,8 @@ func TestResponseBufferSizeReturnsBatchCount(t *testing.T) {
 
 func runAPIOnce(fetcher interface {
 	Run(context.Context, []types.Ticker, chan<- types.Response) error
-}, tickers []types.Ticker) (types.Response, error) {
+}, tickers []types.Ticker,
+) (types.Response, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -644,9 +645,9 @@ func (r *trackingReadCloser) Close() error {
 	return nil
 }
 
-func httpResponse(status int, body string) *http.Response {
+func httpResponse(body string) *http.Response {
 	return &http.Response{
-		StatusCode: status,
+		StatusCode: http.StatusOK,
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }

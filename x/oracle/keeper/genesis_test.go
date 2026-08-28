@@ -309,7 +309,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			Denoms: []string{
 				chain.KRWBaseDenom,
 				chain.USDBaseDenom,
-			}, Version: types.InitialFeedVersion},
+			}, Version: types.InitialFeedVersion,
+		},
 	}
 	expected.Params.RewardWindow = 10
 	expected.Params.VoteThreshold = math.LegacyNewDecWithPrec(6, 1)

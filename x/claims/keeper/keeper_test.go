@@ -166,23 +166,18 @@ func (s *KeeperTestSuite) requireDueClaims(expected ...uint64) {
 	s.Require().Equal(expected, due)
 }
 
-// appointCommittee stores an active mandate spanning the supplied window and
-// resets allowance usage, mirroring a successful MsgSetClaimsMandate.
-func (s *KeeperTestSuite) appointCommittee(
-	committee string,
-	term uint64,
-	activation uint64,
-	expiry uint64,
-	limit int64,
-) types.ClaimsMandate {
+// appointCommittee stores an active mandate spanning heights 10–100 with a
+// 1000-noah limit and resets allowance usage, mirroring a successful
+// MsgSetClaimsMandate.
+func (s *KeeperTestSuite) appointCommittee(committee string) types.ClaimsMandate {
 	claimsMandate := types.ClaimsMandate{
 		Envelope: mandate.Envelope{
-			Term:             term,
+			Term:             1,
 			Committee:        committee,
-			ActivationHeight: activation,
-			ExpiryHeight:     expiry,
+			ActivationHeight: 10,
+			ExpiryHeight:     100,
 		},
-		CommitteeClaimLimit: noahCoin(limit),
+		CommitteeClaimLimit: noahCoin(1_000),
 	}
 	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, claimsMandate))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.ZeroInt()))

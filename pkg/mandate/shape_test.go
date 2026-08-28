@@ -72,6 +72,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "account with no registered key",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				return accountWithKey(t, nil)
 			},
 			want: mandate.CommitteeShape{
@@ -82,6 +83,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "secp256k1 single key",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				return accountWithKey(t, first)
 			},
 			want: mandate.CommitteeShape{
@@ -92,6 +94,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "ed25519 single key",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				return accountWithKey(t, ed25519.GenPrivKey().PubKey())
 			},
 			want: mandate.CommitteeShape{
@@ -102,6 +105,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "secp256r1 single key",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				key, err := secp256r1.GenPrivKey()
 				require.NoError(t, err)
 
@@ -115,6 +119,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "two of three distinct members",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				key := kmultisig.NewLegacyAminoPubKey(2, []cryptotypes.PubKey{first, second, third})
 
 				return accountWithKey(t, key)
@@ -129,6 +134,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "one of one is a multisig in name only, and recorded as one",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				key := kmultisig.NewLegacyAminoPubKey(1, []cryptotypes.PubKey{first})
 
 				return accountWithKey(t, key)
@@ -145,6 +151,7 @@ func TestShape(t *testing.T) {
 			// reads as is not the one it requires.
 			name: "repeated member zeroes the shape",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				key := kmultisig.NewLegacyAminoPubKey(3, []cryptotypes.PubKey{first, first, first})
 
 				return accountWithKey(t, key)
@@ -159,6 +166,7 @@ func TestShape(t *testing.T) {
 			// level, so distinctness there proves nothing.
 			name: "nested multisig member zeroes the shape",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				inner := kmultisig.NewLegacyAminoPubKey(1, []cryptotypes.PubKey{first})
 				key := kmultisig.NewLegacyAminoPubKey(2, []cryptotypes.PubKey{inner, second, third})
 
@@ -172,6 +180,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "zero threshold zeroes the shape",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				return accountWithKey(t, rawMultisig(t, 0, first, second))
 			},
 			want: mandate.CommitteeShape{
@@ -182,6 +191,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "threshold above the member count zeroes the shape",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				return accountWithKey(t, rawMultisig(t, 3, first, second))
 			},
 			want: mandate.CommitteeShape{
@@ -192,6 +202,7 @@ func TestShape(t *testing.T) {
 		{
 			name: "module credential names its module",
 			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
 				credential, err := authtypes.NewModuleCredential("group", []byte{1}, []byte{2})
 				require.NoError(t, err)
 

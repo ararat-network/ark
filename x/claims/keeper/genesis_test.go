@@ -44,7 +44,7 @@ func (s *KeeperTestSuite) TestInitGenesisRoundTrip() {
 		SubmittedHeight: 20,
 		ClosingHeight:   25,
 	}
-	claimsMandate := s.appointCommittee(testAddress(1), 1, 10, 100, 1_000)
+	claimsMandate := s.appointCommittee(testAddress(1))
 
 	genesis := types.NewGenesisState(
 		types.Params{ClaimCancellationPeriodBlocks: 5},

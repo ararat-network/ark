@@ -23,7 +23,8 @@ func WithLogger(logger log.Logger) Option {
 func WithProviderFactory(factory func(
 	providers.Config,
 	providertypes.Markets,
-) (*base.Provider, error)) Option {
+) (*base.Provider, error),
+) Option {
 	return func(r *Runtime) {
 		r.providerFactory = factory
 	}

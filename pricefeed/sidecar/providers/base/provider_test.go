@@ -175,8 +175,8 @@ func TestNewProviderRejectsMismatchedFetcherName(t *testing.T) {
 	require.ErrorContains(t, err, "mismatched provider and fetcher name")
 }
 
-func newTestProvider(fetcher base.Fetcher, opts ...base.Option) (*base.Provider, error) {
-	return newTestProviderWithMarkets(testMarkets(), fetcher, opts...)
+func newTestProvider(fetcher base.Fetcher) (*base.Provider, error) {
+	return newTestProviderWithMarkets(testMarkets(), fetcher)
 }
 
 func expectFetcher(fetcher *basetestutil.MockFetcher, name string, providerType base.TransportType) {

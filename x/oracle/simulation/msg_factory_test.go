@@ -40,6 +40,7 @@ func TestMsgUpdateParamsFactory(t *testing.T) {
 			name:        "preserves staleness and participation policy",
 			storeParams: true,
 			assert: func(t *testing.T, reporter simsx.SimulationReporter, msg *types.MsgUpdateParams, stored types.Params) {
+				t.Helper()
 				require.False(t, reporter.IsSkipped())
 				require.NotNil(t, msg)
 				require.Equal(t, authtypes.NewModuleAddress(govtypes.ModuleName).String(), msg.Authority)
@@ -53,6 +54,7 @@ func TestMsgUpdateParamsFactory(t *testing.T) {
 		{
 			name: "skips when params are unavailable",
 			assert: func(t *testing.T, reporter simsx.SimulationReporter, msg *types.MsgUpdateParams, _ types.Params) {
+				t.Helper()
 				require.True(t, reporter.IsSkipped())
 				require.Nil(t, msg)
 				require.Contains(t, reporter.Comment(), "get oracle params")

@@ -38,7 +38,7 @@ func (h *Handler) CreateURL(
 ) (string, error) {
 	var tickerStrings strings.Builder
 	for _, ticker := range tickers {
-		tickerStrings.WriteString(fmt.Sprintf("%s%s%s%s", Quotation, ticker, Quotation, Separator))
+		fmt.Fprintf(&tickerStrings, "%s%s%s%s", Quotation, ticker, Quotation, Separator)
 	}
 
 	if len(tickerStrings.String()) == 0 {

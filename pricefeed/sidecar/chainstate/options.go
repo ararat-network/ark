@@ -4,7 +4,7 @@ import (
 	"cosmossdk.io/log/v2"
 )
 
-// Option customizes a Client during construction.
+// Option customises a Client during construction.
 type Option func(*Client)
 
 // WithLogger sets the logger used by the chainstate client.

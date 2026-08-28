@@ -18,7 +18,6 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
-	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	resolverpkg "github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
@@ -294,34 +293,6 @@ func testBinanceAPIProviderConfig(markets providertypes.Markets) providers.Confi
 	cfg := testUnknownAPIProviderConfig(binanceapi.Name, markets)
 	cfg.API = binanceapi.DefaultNonUSAPIConfig
 	return cfg
-}
-
-func testWebSocketProviderConfig(name string, markets providertypes.Markets) providers.Config {
-	return providers.Config{
-		Name:          name,
-		TransportType: base.WebSocket,
-		Markets:       markets,
-		MaxPriceAge:   time.Minute,
-		WebSocket:     testWebSocketConfig(name),
-	}
-}
-
-func testWebSocketConfig(name string) websocket.Config {
-	return websocket.Config{
-		Name:                     name,
-		MaxBufferSize:            1,
-		ReconnectionTimeout:      time.Second,
-		PostConnectionTimeout:    time.Second,
-		Endpoints:                []providertypes.Endpoint{{URL: "wss://example.invalid/stream"}},
-		HandshakeTimeout:         time.Second,
-		EnableCompression:        false,
-		ReadTimeout:              time.Second,
-		WriteTimeout:             time.Second,
-		PingInterval:             time.Second,
-		WriteInterval:            time.Second,
-		MaxTickersPerConnection:  1,
-		MaxSubscriptionsPerBatch: 1,
-	}
 }
 
 func testOracleConfig(providerCfgs map[string]providers.Config) Config {

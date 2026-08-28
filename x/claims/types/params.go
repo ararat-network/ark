@@ -33,7 +33,7 @@ func (p Params) Validate() error {
 		p.ClaimCancellationPeriodBlocks > MaxClaimCancellationPeriodBlocks {
 		return fmt.Errorf(
 			"claims parameter ClaimCancellationPeriodBlocks must be between one and %d, is %d",
-			uint64(MaxClaimCancellationPeriodBlocks),
+			MaxClaimCancellationPeriodBlocks,
 			p.ClaimCancellationPeriodBlocks,
 		)
 	}

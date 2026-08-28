@@ -87,7 +87,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 	s.Run("replacement resets allowance usage", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(400)))
 
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
@@ -139,7 +139,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 	s.Run("empty committee disables and keeps the reservation", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(70)))
 
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
@@ -404,7 +404,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 	s.Run("consumes the term allowance", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.setBlockHeight(20)
 		s.fundInsurance(5_000)
 
@@ -424,7 +424,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 	s.Run("uppercase committee signer authorises and is stored canonical", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.setBlockHeight(20)
 		s.fundInsurance(5_000)
 
@@ -445,7 +445,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 	s.Run("allowance is consumed permanently across submissions", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.setBlockHeight(20)
 		s.fundInsurance(5_000)
 
@@ -462,7 +462,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 	s.Run("closing height may not pass mandate expiry", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.fundInsurance(5_000)
 
 		// 96 + 5 = 101, one past expiry.
@@ -518,7 +518,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
 			s.setCancellationPeriod(5)
-			s.appointCommittee(committee, 1, 10, 100, 1_000)
+			s.appointCommittee(committee)
 			s.setBlockHeight(tc.height)
 			s.fundInsurance(5_000)
 
@@ -609,7 +609,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	s.Run("cancellation does not restore committee allowance", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.setBlockHeight(20)
 		s.fundInsurance(5_000)
 
@@ -649,7 +649,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	s.Run("committee cannot cancel a governance claim", func() {
 		s.SetupTest()
 		claimID := submitGovernance()
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.setBlockHeight(24)
 
 		_, err := s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
@@ -663,7 +663,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	s.Run("committee cancels its own claim", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.appointCommittee(committee, 1, 10, 100, 1_000)
+		s.appointCommittee(committee)
 		s.setBlockHeight(20)
 		s.fundInsurance(5_000)
 

@@ -23,6 +23,9 @@ const (
 	DefaultClientTimeout = 2 * time.Second
 	// DefaultClientInterval is the default feed polling cadence.
 	DefaultClientInterval = 5 * time.Second
+
+	// noahUSD is the hub pair every default route quotes through.
+	noahUSD = "NOAH/USD"
 )
 
 // DefaultProviders defines the provider templates used by Default.
@@ -40,35 +43,35 @@ var DefaultProviders = map[string]providers.Config{
 var DefaultResolver = resolver.Config{
 	BootstrapPrices: []resolver.BootstrapPrice{
 		{
-			Pair:       "NOAH/USD",
+			Pair:       noahUSD,
 			Price:      "1",
 			ValidUntil: "2027-10-29T00:00:00Z",
 		},
 	},
 	Routes: map[string][]resolver.Route{
 		chain.USDBaseDenom: {
-			{Name: "direct", Pairs: []sidecartypes.Pair{"NOAH/USD"}},
+			{Name: "direct", Pairs: []sidecartypes.Pair{noahUSD}},
 		},
 		chain.KRWBaseDenom: {
-			{Name: "noah-usd-krw", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/KRW"}},
+			{Name: "noah-usd-krw", Pairs: []sidecartypes.Pair{noahUSD, "USD/KRW"}},
 		},
 		chain.SDRBaseDenom: {
-			{Name: "noah-usd-sdr", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/SDR"}},
+			{Name: "noah-usd-sdr", Pairs: []sidecartypes.Pair{noahUSD, "USD/SDR"}},
 		},
 		chain.CNYBaseDenom: {
-			{Name: "noah-usd-cny", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/CNY"}},
+			{Name: "noah-usd-cny", Pairs: []sidecartypes.Pair{noahUSD, "USD/CNY"}},
 		},
 		chain.JPYBaseDenom: {
-			{Name: "noah-usd-jpy", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/JPY"}},
+			{Name: "noah-usd-jpy", Pairs: []sidecartypes.Pair{noahUSD, "USD/JPY"}},
 		},
 		chain.EURBaseDenom: {
-			{Name: "noah-usd-eur", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/EUR"}},
+			{Name: "noah-usd-eur", Pairs: []sidecartypes.Pair{noahUSD, "USD/EUR"}},
 		},
 		chain.GBPBaseDenom: {
-			{Name: "noah-usd-gbp", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/GBP"}},
+			{Name: "noah-usd-gbp", Pairs: []sidecartypes.Pair{noahUSD, "USD/GBP"}},
 		},
 		chain.MNTBaseDenom: {
-			{Name: "noah-usd-mnt", Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/MNT"}},
+			{Name: "noah-usd-mnt", Pairs: []sidecartypes.Pair{noahUSD, "USD/MNT"}},
 		},
 	},
 }

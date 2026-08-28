@@ -157,7 +157,7 @@ func TestDefaultConversionPolicyValues(t *testing.T) {
 		t,
 		math.LegacyNewDecFromInt(chain.NativeBaseAmount(1_000_000)).Equal(policy.BasePool.Amount),
 	)
-	require.Equal(t, uint64(chain.BlocksPerDay), policy.PoolRecoveryPeriod)
+	require.Equal(t, chain.BlocksPerDay, policy.PoolRecoveryPeriod)
 	require.True(t, math.LegacyNewDecWithPrec(2, 2).Equal(policy.MinStabilitySpread))
 }
 
@@ -242,7 +242,7 @@ func TestConversionPolicyEqual(t *testing.T) {
 	require.False(t, base.Equal(slower))
 	require.False(t, base.Equal(pricier))
 	// Nil amounts compare without panicking, in both directions.
-	require.True(t, types.ConversionPolicy{}.Equal(types.ConversionPolicy{}))
+	require.True(t, types.ConversionPolicy{}.Equal(types.ConversionPolicy{})) //nolint:gocritic // distinct zero values; nil-amount comparison is the case under test
 	require.False(t, types.ConversionPolicy{}.Equal(types.ZeroConversionPolicy()))
 	require.False(t, types.ZeroConversionPolicy().Equal(types.ConversionPolicy{}))
 }

@@ -213,6 +213,7 @@ func TestUpdateConfigRestartsStoppedProviderOnMarketOnlyChange(t *testing.T) {
 	cancel()
 	requireOracleStopped(t, errCh)
 }
+
 func TestUpdateConfigKeepsProviderWhenFallbackFeedsDeactivateMarkets(t *testing.T) {
 	providerCfg := testUnknownAPIProviderConfig("unknown", testMarkets())
 	cfg := testOracleConfig(map[string]providers.Config{

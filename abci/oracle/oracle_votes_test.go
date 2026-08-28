@@ -474,13 +474,13 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 	}
 }
 
-func makeRateMap(t testing.TB, count int) map[string][]byte {
-	t.Helper()
+func makeRateMap(tb testing.TB, count int) map[string][]byte {
+	tb.Helper()
 
 	rates := make(map[string][]byte, count)
 	for i := range count {
 		encoded, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 1)))
-		require.NoError(t, err)
+		require.NoError(tb, err)
 		rates[fmt.Sprintf("a%03d", i)] = encoded
 	}
 	return rates

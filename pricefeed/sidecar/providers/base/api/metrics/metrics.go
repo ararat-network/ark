@@ -84,24 +84,30 @@ func durationMillis(duration time.Duration) float64 {
 	return float64(duration) / float64(time.Millisecond)
 }
 
+// statusSuccess and statusFailure are the values of the status metric label.
+const (
+	statusSuccess = "success"
+	statusFailure = "failure"
+)
+
 func requestStatus(resp *http.Response, err error) string {
 	if err != nil {
-		return "failure"
+		return statusFailure
 	}
 	if resp == nil {
-		return "success"
+		return statusSuccess
 	}
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return "failure"
+		return statusFailure
 	}
-	return "success"
+	return statusSuccess
 }
 
 func errorStatus(err error) string {
 	if err != nil {
-		return "failure"
+		return statusFailure
 	}
-	return "success"
+	return statusSuccess
 }
 
 func statusCode(resp *http.Response) string {

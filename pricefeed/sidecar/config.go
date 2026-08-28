@@ -6,8 +6,8 @@ const (
 	defaultServerAddress = "127.0.0.1:8080"
 )
 
-// Config separates reloadable runtime behavior from process-scoped sidecar
-// behavior that is fixed for the lifetime of the oracle process.
+// Config separates reloadable runtime behaviour from process-scoped sidecar
+// behaviour that is fixed for the lifetime of the oracle process.
 type Config struct {
 	// Runtime contains reloadable price-fetching and aggregation settings.
 	Runtime runtime.Config

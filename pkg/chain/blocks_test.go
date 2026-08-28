@@ -45,14 +45,14 @@ func TestIsPeriodLastBlock(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := sdk.WrapSDKContext(sdk.Context{}.WithBlockHeight(tt.height))
+			ctx := sdk.Context{}.WithBlockHeight(tt.height)
 			require.Equal(t, tt.expected, chain.IsPeriodLastBlock(ctx, tt.blocksPerPeriod))
 		})
 	}
 }
 
 func TestIsPeriodLastBlockPanicsForZeroPeriod(t *testing.T) {
-	ctx := sdk.WrapSDKContext(sdk.Context{})
+	ctx := sdk.Context{}
 
 	require.Panics(t, func() {
 		chain.IsPeriodLastBlock(ctx, 0)
@@ -76,7 +76,7 @@ func TestIsPeriodLastBlockFrom(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := sdk.WrapSDKContext(sdk.Context{}.WithBlockHeight(tt.height))
+			ctx := sdk.Context{}.WithBlockHeight(tt.height)
 			require.Equal(
 				t,
 				tt.expected,
@@ -87,7 +87,7 @@ func TestIsPeriodLastBlockFrom(t *testing.T) {
 }
 
 func TestIsPeriodLastBlockFromPanicsForZeroPeriod(t *testing.T) {
-	ctx := sdk.WrapSDKContext(sdk.Context{})
+	ctx := sdk.Context{}
 
 	require.Panics(t, func() {
 		chain.IsPeriodLastBlockFrom(ctx, 0, 0)

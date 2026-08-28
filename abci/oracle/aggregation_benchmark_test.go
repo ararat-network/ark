@@ -115,8 +115,8 @@ func benchmarkReferenceInput(targetCount, validatorCount, supportPatterns int) (
 		for validatorIndex := range validatorCount {
 			if supportPatterns > 1 {
 				pattern := targetIndex % supportPatterns
-				switch {
-				case supportPatterns == 2:
+				switch supportPatterns {
+				case 2:
 					if pattern != 0 && validatorIndex >= validatorCount-10 {
 						continue
 					}
