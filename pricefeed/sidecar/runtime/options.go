@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"errors"
+
 	"cosmossdk.io/log/v2"
 
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
@@ -27,6 +29,19 @@ func WithProviderFactory(factory func(
 ) Option {
 	return func(r *Runtime) {
 		r.providerFactory = factory
+	}
+}
+
+// WithProviderRegistry builds providers through reg instead of the default
+// registry, preserving configuration-owned provider membership.
+func WithProviderRegistry(reg *providers.Registry) Option {
+	return func(r *Runtime) {
+		r.providerFactory = func(cfg providers.Config, markets providertypes.Markets) (*base.Provider, error) {
+			if reg == nil {
+				return nil, errors.New("provider registry is nil")
+			}
+			return reg.NewProvider(cfg, markets, r.logger)
+		}
 	}
 }
 

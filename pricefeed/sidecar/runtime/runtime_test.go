@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"cosmossdk.io/log/v2"
+
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	binanceapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/binance"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
 	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
@@ -54,6 +59,34 @@ func TestNewRuntimeRejectsInvalidInputs(t *testing.T) {
 			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
+}
+
+func TestNewRuntimeWithProviderRegistry(t *testing.T) {
+	cfg := testRuntimeConfigWithUnknownProvider()
+
+	t.Run("default registry rejects unregistered provider", func(t *testing.T) {
+		_, err := NewRuntime(cfg)
+
+		require.ErrorContains(t, err, "unrecognised provider name: unknown")
+	})
+
+	t.Run("registered provider builds", func(t *testing.T) {
+		registry := providers.NewRegistry()
+		require.NoError(t, registry.RegisterAPI("unknown", func(providers.Config, log.Logger) (api.DataHandler, error) {
+			return binanceapi.NewHandler(), nil
+		}))
+
+		oracle, err := NewRuntime(cfg, WithProviderRegistry(registry))
+
+		require.NoError(t, err)
+		require.NotNil(t, oracle)
+	})
+
+	t.Run("nil registry", func(t *testing.T) {
+		_, err := NewRuntime(cfg, WithProviderRegistry(nil))
+
+		require.ErrorContains(t, err, "provider registry is nil")
+	})
 }
 
 func TestConfigValidateRejectsNonCanonicalFallbackDenom(t *testing.T) {

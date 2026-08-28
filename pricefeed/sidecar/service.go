@@ -45,11 +45,19 @@ type Service struct {
 }
 
 // NewService constructs a sidecar process around a validated runtime.
-func NewService(cfg Config, logger log.Logger) (*Service, error) {
+func NewService(cfg Config, logger log.Logger, opts ...Option) (*Service, error) {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
-	r, err := runtime.NewRuntime(cfg.Runtime, runtime.WithLogger(logger))
+	var svcOpts serviceOptions
+	for _, opt := range opts {
+		opt(&svcOpts)
+	}
+	runtimeOpts := []runtime.Option{runtime.WithLogger(logger)}
+	if svcOpts.registry != nil {
+		runtimeOpts = append(runtimeOpts, runtime.WithProviderRegistry(svcOpts.registry))
+	}
+	r, err := runtime.NewRuntime(cfg.Runtime, runtimeOpts...)
 	if err != nil {
 		return nil, err
 	}
