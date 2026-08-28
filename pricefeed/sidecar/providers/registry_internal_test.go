@@ -13,7 +13,7 @@ import (
 )
 
 func TestBuildAPIFetcherUsesFrankfurterHandlerBatching(t *testing.T) {
-	fetcher, err := buildAPIFetcher(Config{
+	fetcher, err := DefaultRegistry().buildAPIFetcher(Config{
 		Name:          frankfurterapi.Name,
 		TransportType: base.API,
 		API:           frankfurterapi.DefaultAPIConfig,

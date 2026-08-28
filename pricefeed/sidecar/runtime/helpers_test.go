@@ -46,7 +46,7 @@ func withInitialProviders(initial ...*base.Provider) Option {
 			return provider, nil
 		}
 
-		return providers.NewProvider(cfg, markets, log.NewNopLogger())
+		return providers.DefaultRegistry().NewProvider(cfg, markets, log.NewNopLogger())
 	})
 }
 

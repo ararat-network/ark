@@ -74,8 +74,9 @@ func NewRuntime(cfg Config, opts ...Option) (*Runtime, error) {
 		updateIntervalCh: make(chan struct{}, 1),
 		logger:           log.NewNopLogger(),
 	}
+	registry := providers.DefaultRegistry()
 	r.providerFactory = func(cfg providers.Config, markets providertypes.Markets) (*base.Provider, error) {
-		return providers.NewProvider(cfg, markets, r.logger)
+		return registry.NewProvider(cfg, markets, r.logger)
 	}
 
 	for _, opt := range opts {
