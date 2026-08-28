@@ -9,7 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	transporttypes "ark/oracle/types"
+	"ark/pricefeed/api"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -23,7 +23,7 @@ type OracleKeeper interface {
 	AdvanceFeeds(ctx context.Context) error
 }
 
-// OracleClient fetches prices for the vote-extension handler.
-type OracleClient interface {
-	Prices(ctx context.Context, in *transporttypes.OraclePricesRequest, opts ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error)
+// PriceFeedClient fetches prices for the vote-extension handler.
+type PriceFeedClient interface {
+	Prices(ctx context.Context, in *api.PricesRequest, opts ...grpc.CallOption) (*api.PricesResponse, error)
 }

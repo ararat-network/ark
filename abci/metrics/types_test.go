@@ -22,8 +22,8 @@ func TestStatusString(t *testing.T) {
 		{name: "missing commit info", got: metrics.StatusMissingCommitInfo.String(), want: "MissingCommitInfoError"},
 		{name: "extended commit validation", got: metrics.StatusExtendedCommitValidation.String(), want: "ExtendedCommitValidationError"},
 		{name: "panic", got: metrics.StatusPanic.String(), want: "Panic"},
-		{name: "oracle client", got: metrics.StatusOracleClient.String(), want: "OracleClientError"},
-		{name: "invalid oracle prices", got: metrics.StatusInvalidOraclePrices.String(), want: "InvalidOraclePricesError"},
+		{name: "oracle client", got: metrics.StatusPriceFeedClient.String(), want: "PriceFeedClientError"},
+		{name: "invalid oracle prices", got: metrics.StatusInvalidPrices.String(), want: "InvalidPricesError"},
 		{name: "vote extension validation", got: metrics.StatusVoteExtensionValidation.String(), want: "VoteExtensionValidationError"},
 		{name: "oracle keeper", got: metrics.StatusOracleKeeper.String(), want: "OracleKeeperError"},
 	}

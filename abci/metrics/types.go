@@ -14,8 +14,8 @@ const (
 	StatusMissingCommitInfo        Status = "MissingCommitInfoError"
 	StatusExtendedCommitValidation Status = "ExtendedCommitValidationError"
 	StatusPanic                    Status = "Panic"
-	StatusOracleClient             Status = "OracleClientError"
-	StatusInvalidOraclePrices      Status = "InvalidOraclePricesError"
+	StatusPriceFeedClient          Status = "PriceFeedClientError"
+	StatusInvalidPrices            Status = "InvalidPricesError"
 	StatusVoteExtensionValidation  Status = "VoteExtensionValidationError"
 	StatusOracleKeeper             Status = "OracleKeeperError"
 )

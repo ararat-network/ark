@@ -20,7 +20,7 @@ import (
 	abcitestutil "ark/abci/testutil"
 	"ark/abci/voteextension"
 	vetypes "ark/abci/voteextension/types"
-	transporttypes "ark/oracle/types"
+	"ark/pricefeed/api"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -46,7 +46,7 @@ func TestExtendVoteHandler(t *testing.T) {
 	testCases := []struct {
 		name              string
 		req               *cometabci.RequestExtendVote
-		setup             func(*abcitestutil.MockOracleClient)
+		setup             func(*abcitestutil.MockPriceFeedClient)
 		targetErr         error
 		expectedExtension []byte
 		expectResp        bool
@@ -68,9 +68,9 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "oracle client error returns empty vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient) {
+			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
-					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
+					Prices(gomock.Any(), &api.PricesRequest{}).
 					Return(nil, errors.New("oracle unavailable"))
 			},
 			expectedExtension: []byte{},
@@ -79,9 +79,9 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "nil oracle response returns empty vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient) {
+			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
-					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
+					Prices(gomock.Any(), &api.PricesRequest{}).
 					Return(nil, nil)
 			},
 			expectedExtension: []byte{},
@@ -90,10 +90,10 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "undecodable rate degrades to an empty report",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient) {
+			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
-					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-					Return(&transporttypes.OraclePricesResponse{
+					Prices(gomock.Any(), &api.PricesRequest{}).
+					Return(&api.PricesResponse{
 						Prices: map[string][]byte{"ausd": []byte("invalid")},
 					}, nil)
 			},
@@ -103,10 +103,10 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "fresh sparse response encodes target unavailability",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient) {
+			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
-					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-					Return(&transporttypes.OraclePricesResponse{Prices: map[string][]byte{}}, nil)
+					Prices(gomock.Any(), &api.PricesRequest{}).
+					Return(&api.PricesResponse{Prices: map[string][]byte{}}, nil)
 			},
 			expectedExtension: encodedUnavailableVoteExt,
 			expectResp:        true,
@@ -114,10 +114,10 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "valid prices are encoded into vote extension",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient) {
+			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
-					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-					Return(&transporttypes.OraclePricesResponse{Prices: validPrices}, nil)
+					Prices(gomock.Any(), &api.PricesRequest{}).
+					Return(&api.PricesResponse{Prices: validPrices}, nil)
 			},
 			expectedExtension: encodedVoteExt,
 			expectResp:        true,
@@ -125,10 +125,10 @@ func TestExtendVoteHandler(t *testing.T) {
 		{
 			name: "panic returns empty vote extension and error",
 			req:  &cometabci.RequestExtendVote{Height: 10},
-			setup: func(oracleClient *abcitestutil.MockOracleClient) {
+			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
-					Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-					DoAndReturn(func(context.Context, *transporttypes.OraclePricesRequest, ...grpc.CallOption) (*transporttypes.OraclePricesResponse, error) {
+					Prices(gomock.Any(), &api.PricesRequest{}).
+					DoAndReturn(func(context.Context, *api.PricesRequest, ...grpc.CallOption) (*api.PricesResponse, error) {
 						panic(panicCause)
 					})
 			},
@@ -142,7 +142,7 @@ func TestExtendVoteHandler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			oracleClient := abcitestutil.NewMockOracleClient(ctrl)
+			oracleClient := abcitestutil.NewMockPriceFeedClient(ctrl)
 			oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
 			if tc.req != nil {
 				oracleKeeper.EXPECT().
@@ -244,15 +244,15 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			oracleClient := abcitestutil.NewMockOracleClient(ctrl)
+			oracleClient := abcitestutil.NewMockPriceFeedClient(ctrl)
 			oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
 			req := &cometabci.RequestExtendVote{Height: 10}
 			oracleKeeper.EXPECT().
 				GetFeeds(gomock.Any(), req.Height).
 				Return(targets, nil)
 			oracleClient.EXPECT().
-				Prices(gomock.Any(), &transporttypes.OraclePricesRequest{}).
-				Return(&transporttypes.OraclePricesResponse{Prices: tc.prices}, nil)
+				Prices(gomock.Any(), &api.PricesRequest{}).
+				Return(&api.PricesResponse{Prices: tc.prices}, nil)
 
 			handler := voteextension.NewHandler(
 				log.NewNopLogger(),

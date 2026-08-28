@@ -16,8 +16,8 @@ import (
 	arkmetrics "ark/abci/metrics"
 	abcioracle "ark/abci/oracle"
 	arkabci "ark/abci/types"
-	"ark/abci/voteextension/types"
-	transporttypes "ark/oracle/types"
+	vetypes "ark/abci/voteextension/types"
+	"ark/pricefeed/api"
 )
 
 // Handler extends local votes with oracle price reports. If
@@ -27,7 +27,7 @@ type Handler struct {
 	logger log.Logger
 
 	// oracleClient is the remote oracle client that is responsible for fetching prices
-	oracleClient arkabci.OracleClient
+	oracleClient arkabci.PriceFeedClient
 
 	// oracleKeeper resolves the consensus target epoch for each vote height.
 	oracleKeeper arkabci.OracleKeeper
@@ -40,7 +40,7 @@ type Handler struct {
 // NewHandler returns a new Handler.
 func NewHandler(
 	logger log.Logger,
-	oracleClient arkabci.OracleClient,
+	oracleClient arkabci.PriceFeedClient,
 	oracleKeeper arkabci.OracleKeeper,
 	timeout time.Duration,
 ) *Handler {
@@ -108,15 +108,15 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 
 		// To preserve liveness, return an empty vote extension if the oracle is
 		// unavailable or returns an invalid response.
-		oracleResp, err := h.oracleClient.Prices(reqCtx, &transporttypes.OraclePricesRequest{})
+		oracleResp, err := h.oracleClient.Prices(reqCtx, &api.PricesRequest{})
 		if err != nil {
-			err = fmt.Errorf("%w: %w", errOracleClient, err)
+			err = fmt.Errorf("%w: %w", errPriceFeedClient, err)
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
 		// If we get no response, we return an empty vote extension.
 		if oracleResp == nil {
-			err = fmt.Errorf("%w: oracle returned nil prices", errOracleClient)
+			err = fmt.Errorf("%w: oracle returned nil prices", errPriceFeedClient)
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
@@ -145,12 +145,12 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				"targets", droppedTargets,
 			)
 		}
-		voteExt := types.OracleVoteExtension{
+		voteExt := vetypes.OracleVoteExtension{
 			Rates:         rates,
 			TargetVersion: feeds.Version,
 		}
 		if _, validationErr := abcioracle.ValidateVoteExtension(voteExt, feeds); validationErr != nil {
-			err = fmt.Errorf("%w: %w", errInvalidOraclePrices, validationErr)
+			err = fmt.Errorf("%w: %w", errInvalidPrices, validationErr)
 			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 		bz, err := codec.EncodeVoteExtension(voteExt)
@@ -220,10 +220,10 @@ func voteExtensionStatus(err error) arkmetrics.Status {
 		return arkmetrics.StatusNilRequest
 	case errors.Is(err, errPanic):
 		return arkmetrics.StatusPanic
-	case errors.Is(err, errOracleClient):
-		return arkmetrics.StatusOracleClient
-	case errors.Is(err, errInvalidOraclePrices):
-		return arkmetrics.StatusInvalidOraclePrices
+	case errors.Is(err, errPriceFeedClient):
+		return arkmetrics.StatusPriceFeedClient
+	case errors.Is(err, errInvalidPrices):
+		return arkmetrics.StatusInvalidPrices
 	case errors.Is(err, errVoteExtensionValidation):
 		return arkmetrics.StatusVoteExtensionValidation
 	case errors.Is(err, arkabci.ErrOracleKeeper):

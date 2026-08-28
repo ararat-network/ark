@@ -21,8 +21,8 @@ import (
 	"ark/abci/preblock"
 	abcitestutil "ark/abci/testutil"
 	"ark/abci/voteextension"
-	transporttypes "ark/oracle/types"
 	arkencoding "ark/pkg/encoding"
+	"ark/pricefeed/api"
 	oracletypes "ark/x/oracle/types"
 )
 
@@ -43,7 +43,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 			},
 		},
 	}
-	oracleClient := staticOracleClient{prices: map[string][]byte{
+	oracleClient := staticPriceFeedClient{prices: map[string][]byte{
 		"akrw": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec()),
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
@@ -138,7 +138,7 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 			},
 		},
 	}
-	oracleClient := staticOracleClient{prices: map[string][]byte{
+	oracleClient := staticPriceFeedClient{prices: map[string][]byte{
 		"ajpy": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(150)),
 		"akrw": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(1300)),
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
@@ -223,7 +223,7 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 			},
 		},
 	}
-	oracleClient := staticOracleClient{prices: map[string][]byte{
+	oracleClient := staticPriceFeedClient{prices: map[string][]byte{
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
 	extendVote := voteextension.NewHandler(
@@ -258,16 +258,16 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 	require.Equal(t, oracletypes.InitialFeedVersion+1, keeper.feeds.Version)
 }
 
-type staticOracleClient struct {
+type staticPriceFeedClient struct {
 	prices map[string][]byte
 }
 
-func (c staticOracleClient) Prices(
+func (c staticPriceFeedClient) Prices(
 	context.Context,
-	*transporttypes.OraclePricesRequest,
+	*api.PricesRequest,
 	...grpc.CallOption,
-) (*transporttypes.OraclePricesResponse, error) {
-	return &transporttypes.OraclePricesResponse{Prices: c.prices}, nil
+) (*api.PricesResponse, error) {
+	return &api.PricesResponse{Prices: c.prices}, nil
 }
 
 type transitionOracleKeeper struct {

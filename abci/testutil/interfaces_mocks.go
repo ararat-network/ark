@@ -10,7 +10,7 @@
 package testutil
 
 import (
-	types "ark/oracle/types"
+	"ark/pricefeed/api"
 	types0 "ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
@@ -117,46 +117,46 @@ func (mr *MockOracleKeeperMockRecorder) SetExchangeRateWithEvent(ctx, exchangeRa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExchangeRateWithEvent", reflect.TypeOf((*MockOracleKeeper)(nil).SetExchangeRateWithEvent), ctx, exchangeRate)
 }
 
-// MockOracleClient is a mock of OracleClient interface.
-type MockOracleClient struct {
+// MockPriceFeedClient is a mock of PriceFeedClient interface.
+type MockPriceFeedClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockOracleClientMockRecorder
+	recorder *MockPriceFeedClientMockRecorder
 	isgomock struct{}
 }
 
-// MockOracleClientMockRecorder is the mock recorder for MockOracleClient.
-type MockOracleClientMockRecorder struct {
-	mock *MockOracleClient
+// MockPriceFeedClientMockRecorder is the mock recorder for MockPriceFeedClient.
+type MockPriceFeedClientMockRecorder struct {
+	mock *MockPriceFeedClient
 }
 
-// NewMockOracleClient creates a new mock instance.
-func NewMockOracleClient(ctrl *gomock.Controller) *MockOracleClient {
-	mock := &MockOracleClient{ctrl: ctrl}
-	mock.recorder = &MockOracleClientMockRecorder{mock}
+// NewMockPriceFeedClient creates a new mock instance.
+func NewMockPriceFeedClient(ctrl *gomock.Controller) *MockPriceFeedClient {
+	mock := &MockPriceFeedClient{ctrl: ctrl}
+	mock.recorder = &MockPriceFeedClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockOracleClient) EXPECT() *MockOracleClientMockRecorder {
+func (m *MockPriceFeedClient) EXPECT() *MockPriceFeedClientMockRecorder {
 	return m.recorder
 }
 
 // Prices mocks base method.
-func (m *MockOracleClient) Prices(ctx context.Context, in *types.OraclePricesRequest, opts ...grpc.CallOption) (*types.OraclePricesResponse, error) {
+func (m *MockPriceFeedClient) Prices(ctx context.Context, in *api.PricesRequest, opts ...grpc.CallOption) (*api.PricesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Prices", varargs...)
-	ret0, _ := ret[0].(*types.OraclePricesResponse)
+	ret0, _ := ret[0].(*api.PricesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Prices indicates an expected call of Prices.
-func (mr *MockOracleClientMockRecorder) Prices(ctx, in any, opts ...any) *gomock.Call {
+func (mr *MockPriceFeedClientMockRecorder) Prices(ctx, in any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prices", reflect.TypeOf((*MockOracleClient)(nil).Prices), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prices", reflect.TypeOf((*MockPriceFeedClient)(nil).Prices), varargs...)
 }
