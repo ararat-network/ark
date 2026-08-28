@@ -25,10 +25,10 @@ enum AssetStatus {
   ASSET_STATUS_ISSUANCE_HALTED = 2;
   // ASSET_STATUS_SUSPENDED identifies an asset whose ordinary protocol
   // economic operations are disabled without erasing holder balances or
-  // recognized exposure.
+  // recognised exposure.
   ASSET_STATUS_SUSPENDED = 3;
   // ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
-  // governance currently recognizes no protocol redemption obligation.
+  // governance currently recognises no protocol redemption obligation.
   ASSET_STATUS_WRITTEN_OFF = 4;
   // ASSET_STATUS_RETIRED identifies a zero-supply asset retained as a
   // historical tombstone.
@@ -68,7 +68,7 @@ enum UnpricedReason {
   // market rate is exactly what stopped being trustworthy, and governance has
   // not committed to another.
   UNPRICED_REASON_UNTRUSTED = 2;
-  // UNPRICED_REASON_WRITTEN_OFF is supply carrying no recognized redemption
+  // UNPRICED_REASON_WRITTEN_OFF is supply carrying no recognised redemption
   // obligation.
   UNPRICED_REASON_WRITTEN_OFF = 3;
   // UNPRICED_REASON_RETIRED is residual supply of a retired asset.
@@ -78,12 +78,12 @@ enum UnpricedReason {
   UNPRICED_REASON_UNRECOGNISED = 5;
 }
 
-// ResolutionKind identifies why governance derecognized outstanding supply.
+// ResolutionKind identifies why governance derecognised outstanding supply.
 enum ResolutionKind {
   // RESOLUTION_KIND_UNSPECIFIED is not a valid persisted resolution kind.
   RESOLUTION_KIND_UNSPECIFIED = 0;
   // RESOLUTION_KIND_WRITE_OFF records emergency derecognition of all
-  // recognized obligation on a suspended asset.
+  // recognised obligation on a suspended asset.
   RESOLUTION_KIND_WRITE_OFF = 1;
   // RESOLUTION_KIND_RETIREMENT_RESIDUAL records derecognition of bounded
   // residual supply at final retirement.
@@ -108,8 +108,7 @@ message Params {
   // consulting x/asset — a delay that was ample at launch silently stops being
   // a correction window at all if voting slows. Treasury's claim cancellation
   // period is the same quantity for claims and is likewise a parameter.
-  uint64 settlement_activation_delay_blocks = 1
-      [ (amino.dont_omitempty) = true ];
+  uint64 settlement_activation_delay_blocks = 1 [(amino.dont_omitempty) = true];
 }
 
 // Asset is the authoritative registry record for one governance-managed Bank
@@ -118,12 +117,14 @@ message Asset {
   // denom is the immutable Bank base denomination and asset identifier.
   string denom = 1;
   // metadata defines the asset's canonical Bank denomination units.
-  cosmos.bank.v1beta1.Metadata metadata = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.bank.v1beta1.Metadata metadata = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // status is the asset's current lifecycle status.
-  AssetStatus status = 3 [ (amino.dont_omitempty) = true ];
+  AssetStatus status = 3 [(amino.dont_omitempty) = true];
   // version increases on every lifecycle or pricing-mode mutation.
-  uint64 version = 4 [ (amino.dont_omitempty) = true ];
+  uint64 version = 4 [(amino.dont_omitempty) = true];
 }
 
 // The OracleTargets, OracleTargetTransition, and OracleTargetDirection
@@ -156,16 +157,16 @@ message SettlementPlan {
   // Params.SettlementActivationDelayBlocks past the opening height, and stored
   // rather than recomputed on read so a later parameter change cannot move
   // terms holders have already been shown.
-  int64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  int64 activation_height = 3 [(amino.dont_omitempty) = true];
   // earliest_closing_height is the hard commitment to holders: redemption
   // stays open at least until this height. It is mandatory, is fixed for the
   // plan's whole life, and is read by exactly one message — WriteOffAsset,
   // which is refused before it. Reaching it never closes settlement
   // automatically.
-  int64 earliest_closing_height = 4 [ (amino.dont_omitempty) = true ];
+  int64 earliest_closing_height = 4 [(amino.dont_omitempty) = true];
   // opened_height records the block height at which governance stored these
   // terms.
-  int64 opened_height = 5 [ (amino.dont_omitempty) = true ];
+  int64 opened_height = 5 [(amino.dont_omitempty) = true];
 }
 
 // AssetPricing was folded into PricedAsset: it had exactly one embedding site
@@ -188,8 +189,10 @@ message SettlementPlan {
 // is UNRECOGNISED here, which is the honest answer rather than a gap, and that
 // authority produces its own verdicts for consumers to merge.
 message PricedAsset {
-  Asset asset = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Asset asset = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // rate is unset unless the denomination is priced. Read source before acting
   // on it: a settlement rate is a standing governance commitment, not a market
   // quote, and the two must not be conflated.
@@ -207,31 +210,33 @@ message PricedAsset {
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec"
   ];
-  PriceSource source = 4 [ (amino.dont_omitempty) = true ];
-  UnpricedReason reason = 5 [ (amino.dont_omitempty) = true ];
+  PriceSource source = 4 [(amino.dont_omitempty) = true];
+  UnpricedReason reason = 5 [(amino.dont_omitempty) = true];
 }
 
 // ResolutionRecord is an immutable snapshot appended whenever governance
-// derecognizes outstanding asset supply. A later recovery never erases or
+// derecognises outstanding asset supply. A later recovery never erases or
 // reinterprets an earlier record.
 message ResolutionRecord {
   string denom = 1;
-  // version is the asset version in effect when governance derecognized the
+  // version is the asset version in effect when governance derecognised the
   // obligation. Every derecognition is a governance act that advances the
   // version and records the advanced value; nothing else appends a record, so
   // there is no path that files one against an unchanged version.
   // (denom, version) is unique, and an append is rejected rather than
   // overwriting a record.
-  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+  uint64 version = 2 [(amino.dont_omitempty) = true];
   // resolution_height is the block height at which the record was appended.
-  int64 resolution_height = 3 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin outstanding_supply = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  int64 resolution_height = 3 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin outstanding_supply = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // settlement_plan carries final terms only for a write-off that ended an
   // open settlement.
   SettlementPlan settlement_plan = 5;
-  // kind identifies why the obligation was derecognized.
-  ResolutionKind kind = 6 [ (amino.dont_omitempty) = true ];
+  // kind identifies why the obligation was derecognised.
+  ResolutionKind kind = 6 [(amino.dont_omitempty) = true];
 }
 
 // EmergencyMandate stores the governance-appointed committee that may suspend

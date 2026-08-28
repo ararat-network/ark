@@ -11,19 +11,29 @@ option go_package = "github.com/ararat-network/ark/x/asset/types";
 // reference moved to ark.oracle.v1's genesis with the reference itself.
 message GenesisState {
   // params carries the governance-owned module parameters.
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated Asset assets = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated SettlementPlan settlement_plans = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated ResolutionRecord resolution_records = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated Asset assets = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated SettlementPlan settlement_plans = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated ResolutionRecord resolution_records = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // emergency_mandate seeds the committee appointment or its canonical
   // disabled state.
-  EmergencyMandate emergency_mandate = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  EmergencyMandate emergency_mandate = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // emergency_suspensions lists the assets whose suspension is already
   // consumed under the seeded mandate term, sorted and unique.
-  repeated string emergency_suspensions = 6 [ (amino.dont_omitempty) = true ];
+  repeated string emergency_suspensions = 6 [(amino.dont_omitempty) = true];
 }

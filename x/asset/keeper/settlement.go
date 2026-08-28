@@ -159,7 +159,7 @@ func (k Keeper) OpenSettlement(
 // This is the whole of the correction window: the activation delay exists so a
 // mistaken plan can be withdrawn before it binds, and once holders can redeem
 // there is nothing here to withdraw. From activation onward a plan ends only by
-// RecoverAsset, FinalizeRetirement, or a WriteOffAsset past the announced
+// RecoverAsset, FinaliseRetirement, or a WriteOffAsset past the announced
 // closing height — so no message shortens the window a holder was shown.
 func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVersion uint64) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)

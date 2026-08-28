@@ -224,7 +224,7 @@ func (k Keeper) RecoverAsset(ctx context.Context, denom string, expectedVersion 
 	return k.closeSettlementPlan(ctx, denom, asset.Version+1)
 }
 
-// FinalizeRetirement retires a cleared asset in the block it executes. Feed
+// FinaliseRetirement retires a cleared asset in the block it executes. Feed
 // membership is not asset state, so retirement schedules nothing and consults
 // neither the feed registry nor the protocol reference. From ISSUANCE_HALTED
 // governance may derecognize a bounded residual it judges unredeemable;
@@ -257,7 +257,7 @@ func (k Keeper) RecoverAsset(ctx context.Context, denom string, expectedVersion 
 // a retirement that derecognized a residual it is the honest outcome: the old
 // denomination names an asset whose holders were written down, and supply of it
 // is still out there, indistinguishable from anything reissued under the name.
-func (k Keeper) FinalizeRetirement(ctx context.Context, denom string, expectedVersion uint64, maxResidualSupply math.Int) error {
+func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVersion uint64, maxResidualSupply math.Int) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)
 	if err != nil {
 		return err

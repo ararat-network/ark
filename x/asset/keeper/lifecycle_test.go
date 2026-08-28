@@ -143,16 +143,16 @@ func (s *KeeperTestSuite) TestRegisterAssetDerivesMetadata() {
 	s.Require().Equal("GOLDA", stored.Metadata.Symbol)
 }
 
-// TestFinalizeRetirementRefusesActiveAsset pins the absence of a shortcut for a
+// TestFinaliseRetirementRefusesActiveAsset pins the absence of a shortcut for a
 // registration governance regrets. Registration admits outright, so an unwanted
 // asset unwinds the way every other asset does — halt first, so redemption
 // stays open across the decision — rather than through a cancellation that
 // skipped the exit.
-func (s *KeeperTestSuite) TestFinalizeRetirementRefusesActiveAsset() {
+func (s *KeeperTestSuite) TestFinaliseRetirementRefusesActiveAsset() {
 	asset := types.DefaultGenesisState().Assets[0]
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 
-	err := s.keeper.FinalizeRetirement(
+	err := s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version,
@@ -164,7 +164,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementRefusesActiveAsset() {
 	s.bankKeeper.EXPECT().
 		GetSupply(s.ctx, asset.Denom).
 		Return(zeroAssetCoin(asset.Denom))
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version+1,
@@ -225,7 +225,7 @@ func (s *KeeperTestSuite) TestBeginAndResumeIssuance() {
 	s.Require().ErrorIs(err, types.ErrAssetVersionMismatch)
 }
 
-func (s *KeeperTestSuite) TestFinalizeRetirement() {
+func (s *KeeperTestSuite) TestFinaliseRetirement() {
 	assets := types.DefaultGenesisState().Assets
 
 	direct := []struct {
@@ -251,7 +251,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirement() {
 		s.bankKeeper.EXPECT().
 			GetSupply(s.ctx, test.asset.Denom).
 			Return(zeroAssetCoin(test.asset.Denom))
-		s.Require().NoError(s.keeper.FinalizeRetirement(
+		s.Require().NoError(s.keeper.FinaliseRetirement(
 			s.ctx,
 			test.asset.Denom,
 			test.asset.Version,
@@ -276,7 +276,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirement() {
 	s.bankKeeper.EXPECT().
 		GetSupply(s.ctx, writtenOff.Denom).
 		Return(sdk.NewInt64Coin(writtenOff.Denom, 9))
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		writtenOff.Denom,
 		writtenOff.Version,
@@ -303,7 +303,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirement() {
 	s.bankKeeper.EXPECT().
 		GetSupply(s.ctx, priced.Denom).
 		Return(zeroAssetCoin(priced.Denom))
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		priced.Denom,
 		priced.Version,
@@ -323,7 +323,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirement() {
 	s.bankKeeper.EXPECT().
 		GetSupply(s.ctx, settled.Denom).
 		Return(zeroAssetCoin(settled.Denom))
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		settled.Denom,
 		settled.Version,
@@ -341,12 +341,11 @@ func (s *KeeperTestSuite) TestFinalizeRetirement() {
 	s.bankKeeper.EXPECT().
 		GetSupply(s.ctx, issued.Denom).
 		Return(sdk.NewInt64Coin(issued.Denom, 1))
-	err = s.keeper.FinalizeRetirement(s.ctx, issued.Denom, issued.Version, math.ZeroInt())
+	err = s.keeper.FinaliseRetirement(s.ctx, issued.Denom, issued.Version, math.ZeroInt())
 	s.Require().ErrorIs(err, types.ErrAssetSupplyNotZero)
-
 }
 
-func (s *KeeperTestSuite) TestFinalizeRetirementDerecognisesApprovedResidual() {
+func (s *KeeperTestSuite) TestFinaliseRetirementDerecognisesApprovedResidual() {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(30)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
@@ -359,7 +358,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementDerecognisesApprovedResidual() {
 		GetSupply(s.ctx, asset.Denom).
 		Return(residual).
 		Times(2)
-	err := s.keeper.FinalizeRetirement(
+	err := s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version,
@@ -369,7 +368,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementDerecognisesApprovedResidual() {
 
 	// Within the bound, retirement closes the books and discloses the actual
 	// residual.
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version,
@@ -394,11 +393,11 @@ func (s *KeeperTestSuite) TestFinalizeRetirementDerecognisesApprovedResidual() {
 	}, record)
 }
 
-// TestFinalizeRetirementRejectsDuplicateResidualBeforeWriting is the retirement
+// TestFinaliseRetirementRejectsDuplicateResidualBeforeWriting is the retirement
 // half of the rule TestWriteOffAssetRejectsUnsafeState covers for write-off: a
 // derecognition that cannot record its outcome must not have moved the asset or
 // closed its plan on the way to finding out.
-func (s *KeeperTestSuite) TestFinalizeRetirementRejectsDuplicateResidualBeforeWriting() {
+func (s *KeeperTestSuite) TestFinaliseRetirementRejectsDuplicateResidualBeforeWriting() {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(30)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
@@ -414,7 +413,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementRejectsDuplicateResidualBeforeWr
 		types.ResolutionRecord{},
 	))
 
-	err := s.keeper.FinalizeRetirement(
+	err := s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version,
@@ -434,7 +433,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementRejectsDuplicateResidualBeforeWr
 // not are refused for different reasons. Each case asserts the message naming
 // its own remedy: supply is what blocks a suspended retirement, so it must
 // point at WriteOffAsset rather than at whatever bound the message carried.
-func (s *KeeperTestSuite) TestFinalizeRetirementRejectsUnapprovableResidual() {
+func (s *KeeperTestSuite) TestFinaliseRetirementRejectsUnapprovableResidual() {
 	assets := types.DefaultGenesisState().Assets
 
 	for i, test := range []struct {
@@ -493,7 +492,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementRejectsUnapprovableResidual() {
 				GetSupply(s.ctx, asset.Denom).
 				Return(sdk.NewInt64Coin(asset.Denom, test.supply))
 
-			err := s.keeper.FinalizeRetirement(
+			err := s.keeper.FinaliseRetirement(
 				s.ctx,
 				asset.Denom,
 				asset.Version,
@@ -553,7 +552,7 @@ func (s *KeeperTestSuite) TestRetirementIsTerminal() {
 			return s.keeper.CancelSettlement(s.ctx, asset.Denom, asset.Version)
 		}},
 		{"retire again", func() error {
-			return s.keeper.FinalizeRetirement(
+			return s.keeper.FinaliseRetirement(
 				s.ctx,
 				asset.Denom,
 				asset.Version,

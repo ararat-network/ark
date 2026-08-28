@@ -170,18 +170,18 @@ func (m msgServer) WriteOffAsset(ctx context.Context, msg *types.MsgWriteOffAsse
 	return &types.MsgWriteOffAssetResponse{}, nil
 }
 
-func (m msgServer) FinalizeRetirement(ctx context.Context, msg *types.MsgFinalizeRetirement) (*types.MsgFinalizeRetirementResponse, error) {
+func (m msgServer) FinaliseRetirement(ctx context.Context, msg *types.MsgFinaliseRetirement) (*types.MsgFinaliseRetirementResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil finalise retirement message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
 	}
-	if err := m.k.FinalizeRetirement(ctx, msg.Denom, msg.ExpectedVersion, msg.MaxResidualSupply); err != nil {
+	if err := m.k.FinaliseRetirement(ctx, msg.Denom, msg.ExpectedVersion, msg.MaxResidualSupply); err != nil {
 		return nil, err
 	}
 
-	return &types.MsgFinalizeRetirementResponse{}, nil
+	return &types.MsgFinaliseRetirementResponse{}, nil
 }
 
 func (m msgServer) SetEmergencyMandate(ctx context.Context, msg *types.MsgSetEmergencyMandate) (*types.MsgSetEmergencyMandateResponse, error) {

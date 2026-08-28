@@ -26,7 +26,6 @@ func (s *KeeperTestSuite) seedOraclePricedFixture() {
 		asset.Status = statuses[asset.Denom]
 		s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 	}
-
 }
 
 func (s *KeeperTestSuite) TestOraclePricedDenoms() {
@@ -109,7 +108,7 @@ func (s *KeeperTestSuite) TestOraclePricedDenomsDropOnRemovalPromotion() {
 
 	// Retirement is immediate, so the asset leaves the live set in the same
 	// block that finalises it.
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version,

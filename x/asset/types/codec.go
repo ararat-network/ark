@@ -19,7 +19,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgCancelSettlement{}, "ark/asset/MsgCancelSettlement")
 	legacy.RegisterAminoMsg(cdc, &MsgRecoverAsset{}, "ark/asset/MsgRecoverAsset")
 	legacy.RegisterAminoMsg(cdc, &MsgWriteOffAsset{}, "ark/asset/MsgWriteOffAsset")
-	legacy.RegisterAminoMsg(cdc, &MsgFinalizeRetirement{}, "ark/asset/MsgFinalizeRetirement")
+	legacy.RegisterAminoMsg(cdc, &MsgFinaliseRetirement{}, "ark/asset/MsgFinaliseRetirement")
 	legacy.RegisterAminoMsg(cdc, &MsgSetEmergencyMandate{}, "ark/asset/MsgSetEmergencyMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgEmergencySuspendAsset{}, "ark/asset/MsgEmergencySuspendAsset")
 }
@@ -37,7 +37,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgCancelSettlement{},
 		&MsgRecoverAsset{},
 		&MsgWriteOffAsset{},
-		&MsgFinalizeRetirement{},
+		&MsgFinaliseRetirement{},
 		&MsgSetEmergencyMandate{},
 		&MsgEmergencySuspendAsset{},
 	)

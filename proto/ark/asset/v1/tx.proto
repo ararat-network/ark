@@ -31,32 +31,28 @@ service Msg {
   // OpenSettlement establishes a one-way asset-to-NOAH redemption plan.
   rpc OpenSettlement(MsgOpenSettlement) returns (MsgOpenSettlementResponse) {}
   // CancelSettlement cancels a settlement that has not yet activated.
-  rpc CancelSettlement(MsgCancelSettlement)
-      returns (MsgCancelSettlementResponse) {}
+  rpc CancelSettlement(MsgCancelSettlement) returns (MsgCancelSettlementResponse) {}
   // RecoverAsset restores a suspended or written-off asset to issuance-halted
   // status, undoing SuspendAsset.
   rpc RecoverAsset(MsgRecoverAsset) returns (MsgRecoverAssetResponse) {}
-  // WriteOffAsset derecognizes outstanding supply without changing balances.
+  // WriteOffAsset derecognises outstanding supply without changing balances.
   rpc WriteOffAsset(MsgWriteOffAsset) returns (MsgWriteOffAssetResponse) {}
-  // FinalizeRetirement retires an asset within its approved residual bound.
+  // FinaliseRetirement retires an asset within its approved residual bound.
   // Retirement is terminal: there is no RPC back out of it.
-  rpc FinalizeRetirement(MsgFinalizeRetirement)
-      returns (MsgFinalizeRetirementResponse) {}
+  rpc FinaliseRetirement(MsgFinaliseRetirement) returns (MsgFinaliseRetirementResponse) {}
   // The ReactivateAsset RPC was removed with the comeback it offered; the name
   // stays burned. A retired tombstone is final, and the two reversible pairs
   // the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
   // SuspendAsset/RecoverAsset for distress — are what an asset that might
   // return uses instead.
   // SetEmergencyMandate replaces or disables the emergency committee mandate.
-  rpc SetEmergencyMandate(MsgSetEmergencyMandate)
-      returns (MsgSetEmergencyMandateResponse) {}
+  rpc SetEmergencyMandate(MsgSetEmergencyMandate) returns (MsgSetEmergencyMandateResponse) {}
   // EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
   // It is the committee's only power: halting issuance contains nothing, so it
   // stays a governance act.
   // Suspension is a pure status move: an asset sharing the reference
   // denomination suspends freely while the feed keeps pricing.
-  rpc EmergencySuspendAsset(MsgEmergencySuspendAsset)
-      returns (MsgEmergencySuspendAssetResponse) {}
+  rpc EmergencySuspendAsset(MsgEmergencySuspendAsset) returns (MsgEmergencySuspendAssetResponse) {}
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -64,11 +60,13 @@ message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgUpdateParams";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // params defines the x/asset parameters to update. All parameters must be
   // supplied.
-  Params params = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a
@@ -83,7 +81,7 @@ message MsgRegisterAsset {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgRegisterAsset";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
 }
 
@@ -101,9 +99,9 @@ message MsgHaltIssuance {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgHaltIssuance";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgHaltIssuanceResponse is the response type for MsgHaltIssuance.
@@ -115,9 +113,9 @@ message MsgResumeIssuance {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgResumeIssuance";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgResumeIssuanceResponse is the response type for MsgResumeIssuance.
@@ -131,9 +129,9 @@ message MsgSuspendAsset {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgSuspendAsset";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgSuspendAssetResponse is the response type for MsgSuspendAsset.
@@ -144,9 +142,9 @@ message MsgOpenSettlement {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgOpenSettlement";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
   // redemption_rate is the positive number of units of the settled asset
   // redeemed per one NOAH, the same NOAH-quoted orientation as oracle
   // exchange rates.
@@ -161,7 +159,7 @@ message MsgOpenSettlement {
   // activates SettlementActivationDelayBlocks after this message executes, and
   // this height must fall after that activation. A settlement always carries a
   // redemption window, and WriteOffAsset is refused before it.
-  int64 earliest_closing_height = 5 [ (amino.dont_omitempty) = true ];
+  int64 earliest_closing_height = 5 [(amino.dont_omitempty) = true];
 }
 
 // MsgOpenSettlementResponse is the response type for MsgOpenSettlement.
@@ -169,15 +167,15 @@ message MsgOpenSettlementResponse {}
 
 // MsgCancelSettlement cancels a settlement plan before it activates, leaving
 // the asset suspended. From activation onward the plan is a hard commitment:
-// only RecoverAsset, FinalizeRetirement, or a WriteOffAsset past the announced
+// only RecoverAsset, FinaliseRetirement, or a WriteOffAsset past the announced
 // closing height may end it.
 message MsgCancelSettlement {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgCancelSettlement";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgCancelSettlementResponse is the response type for MsgCancelSettlement.
@@ -190,15 +188,15 @@ message MsgRecoverAsset {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgRecoverAsset";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgRecoverAssetResponse is the response type for MsgRecoverAsset.
 message MsgRecoverAssetResponse {}
 
-// MsgWriteOffAsset derecognizes outstanding SUSPENDED supply without burning,
+// MsgWriteOffAsset derecognises outstanding SUSPENDED supply without burning,
 // transferring, or repricing holder balances. It is refused before a settlement
 // plan's earliest closing height: the announced window is the one guarantee
 // holders get, and derecognition is the only act that could break it.
@@ -206,28 +204,28 @@ message MsgWriteOffAsset {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgWriteOffAsset";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgWriteOffAssetResponse is the response type for MsgWriteOffAsset.
 message MsgWriteOffAssetResponse {}
 
-// MsgFinalizeRetirement retires a settlement-free asset. Retirement never
+// MsgFinaliseRetirement retires a settlement-free asset. Retirement never
 // consults the protocol reference: a tombstone's feed is the feed layer's
 // concern, and the referent guard pins a referenced feed against removal.
 //
 // It is the lifecycle's only irreversible act, and it spends the denomination
 // permanently: the tombstone keeps the registry entry and the Bank metadata,
 // both of which registration refuses to collide with.
-message MsgFinalizeRetirement {
+message MsgFinaliseRetirement {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/asset/MsgFinalizeRetirement";
+  option (amino.name) = "ark/asset/MsgFinaliseRetirement";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_version = 3 [(amino.dont_omitempty) = true];
   // max_residual_supply bounds the outstanding supply governance approves
   // derecognizing. From ISSUANCE_HALTED, where redemption has been
   // continuously available, it may be positive and a matching
@@ -242,9 +240,9 @@ message MsgFinalizeRetirement {
   ];
 }
 
-// MsgFinalizeRetirementResponse is the response type for
-// MsgFinalizeRetirement.
-message MsgFinalizeRetirementResponse {}
+// MsgFinaliseRetirementResponse is the response type for
+// MsgFinaliseRetirement.
+message MsgFinaliseRetirementResponse {}
 
 // MsgReactivateAsset and MsgReactivateAssetResponse were removed with the
 // ReactivateAsset RPC; their names stay burned.
@@ -261,11 +259,11 @@ message MsgSetEmergencyMandate {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgSetEmergencyMandate";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // committee is the exact threshold-multisig account, empty to disable.
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
 }
 
 // MsgSetEmergencyMandateResponse is the response type for
@@ -282,9 +280,9 @@ message MsgEmergencySuspendAsset {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/asset/MsgEmergencySuspendAsset";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
-  uint64 expected_term = 3 [ (amino.dont_omitempty) = true ];
+  uint64 expected_term = 3 [(amino.dont_omitempty) = true];
 }
 
 // MsgEmergencySuspendAssetResponse is the response type for

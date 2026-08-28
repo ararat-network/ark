@@ -25,7 +25,7 @@ func (s *KeeperTestSuite) TestOpenSettlement() {
 		asset.Denom,
 		asset.Version,
 		rate,
-		testSettlementActivationHeight(10)+100,
+		testSettlementActivationHeight()+100,
 	))
 	s.requireStoredAsset(
 		asset.Denom,
@@ -37,8 +37,8 @@ func (s *KeeperTestSuite) TestOpenSettlement() {
 	s.Require().Equal(types.SettlementPlan{
 		Denom:                 asset.Denom,
 		RedemptionRate:        rate,
-		ActivationHeight:      testSettlementActivationHeight(10),
-		EarliestClosingHeight: testSettlementActivationHeight(10) + 100,
+		ActivationHeight:      testSettlementActivationHeight(),
+		EarliestClosingHeight: testSettlementActivationHeight() + 100,
 		OpenedHeight:          10,
 	}, plan)
 	s.requireTypedEvents(
@@ -70,7 +70,7 @@ func (s *KeeperTestSuite) TestOpenSettlementReinstatesWrittenOffAsset() {
 		asset.Denom,
 		asset.Version,
 		math.LegacyOneDec(),
-		testSettlementActivationHeight(10)+100,
+		testSettlementActivationHeight()+100,
 	))
 	s.requireStoredAsset(
 		asset.Denom,
@@ -112,7 +112,7 @@ func (s *KeeperTestSuite) TestOpenSettlementRejectsUnsafeState() {
 		zeroSupply.Denom,
 		zeroSupply.Version,
 		math.LegacyOneDec(),
-		testSettlementActivationHeight(10)+100,
+		testSettlementActivationHeight()+100,
 	)
 	s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
 
@@ -134,7 +134,7 @@ func (s *KeeperTestSuite) TestOpenSettlementRejectsInvalidTerms() {
 		{
 			name:          "redemption rate is not positive",
 			rate:          math.LegacyZeroDec(),
-			closingHeight: testSettlementActivationHeight(10) + 100,
+			closingHeight: testSettlementActivationHeight() + 100,
 		},
 		{
 			// The window is mandatory: a plan with no announced closing height
@@ -149,7 +149,7 @@ func (s *KeeperTestSuite) TestOpenSettlementRejectsInvalidTerms() {
 			// the one timing mistake a proposal can still make.
 			name:          "closing window precedes activation",
 			rate:          math.LegacyOneDec(),
-			closingHeight: testSettlementActivationHeight(10),
+			closingHeight: testSettlementActivationHeight(),
 		},
 	} {
 		s.Run(test.name, func() {
@@ -437,7 +437,7 @@ func (s *KeeperTestSuite) TestResolutionRecordsAccumulateAcrossVersions() {
 	)
 
 	s.bankKeeper.EXPECT().GetSupply(s.ctx, asset.Denom).Return(supply)
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version+2,
@@ -471,9 +471,9 @@ func (s *KeeperTestSuite) TestResolutionRecordsAccumulateAcrossVersions() {
 }
 
 // testSettlementActivationHeight returns the settlement activation height
-// derived for a plan opened at openHeight, under the launch delay.
-func testSettlementActivationHeight(openHeight int64) int64 {
-	return openHeight + int64(types.DefaultSettlementActivationDelayBlocks)
+// derived for a plan opened at height 10, under the launch delay.
+func testSettlementActivationHeight() int64 {
+	return 10 + int64(types.DefaultSettlementActivationDelayBlocks)
 }
 
 // The announced window is now enforced against the one message that could
@@ -588,7 +588,7 @@ func (s *KeeperTestSuite) TestRecoverAssetClosesSettlement() {
 		GetSupply(s.ctx, asset.Denom).
 		Return(sdk.NewInt64Coin(asset.Denom, 100))
 
-	activation := testSettlementActivationHeight(10)
+	activation := testSettlementActivationHeight()
 	s.Require().NoError(s.keeper.OpenSettlement(
 		s.ctx,
 		asset.Denom,
@@ -636,7 +636,7 @@ func (s *KeeperTestSuite) TestRecoverAssetClosesSettlement() {
 // Retirement ends a spent settlement rather than refusing it. Plans live only
 // on suspended assets, and suspended retirement already demands zero supply, so
 // an attached plan is necessarily one nobody can still redeem against.
-func (s *KeeperTestSuite) TestFinalizeRetirementClosesSpentSettlement() {
+func (s *KeeperTestSuite) TestFinaliseRetirementClosesSpentSettlement() {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(50)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED
@@ -654,7 +654,7 @@ func (s *KeeperTestSuite) TestFinalizeRetirementClosesSpentSettlement() {
 		GetSupply(s.ctx, asset.Denom).
 		Return(zeroAssetCoin(asset.Denom))
 
-	s.Require().NoError(s.keeper.FinalizeRetirement(
+	s.Require().NoError(s.keeper.FinaliseRetirement(
 		s.ctx,
 		asset.Denom,
 		asset.Version,
@@ -702,5 +702,5 @@ func (s *KeeperTestSuite) TestOpenSettlementDelayFollowsParams() {
 	s.Require().Equal(int64(openHeight+100), plan.ActivationHeight)
 	// The launch delay would have put activation far beyond this, so only the
 	// configured one can have produced it.
-	s.Require().Less(plan.ActivationHeight, testSettlementActivationHeight(openHeight))
+	s.Require().Less(plan.ActivationHeight, testSettlementActivationHeight())
 }

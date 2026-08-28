@@ -94,9 +94,9 @@ func (s *KeeperTestSuite) TestMsgServerRejectsInvalidAuthority() {
 		{
 			name: "finalise retirement",
 			call: func() error {
-				_, err := server.FinalizeRetirement(
+				_, err := server.FinaliseRetirement(
 					s.ctx,
-					&types.MsgFinalizeRetirement{
+					&types.MsgFinaliseRetirement{
 						Authority:       invalidAuthority,
 						Denom:           asset.Denom,
 						ExpectedVersion: asset.Version,
@@ -267,7 +267,7 @@ func (s *KeeperTestSuite) TestMsgServerRejectsNilLifecycleMessages() {
 		{
 			name: "finalise retirement",
 			call: func() error {
-				_, err := server.FinalizeRetirement(s.ctx, nil)
+				_, err := server.FinaliseRetirement(s.ctx, nil)
 				return err
 			},
 		},
@@ -404,7 +404,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParamsLeavesOpenPlansAlone() {
 		GetSupply(s.ctx, asset.Denom).
 		Return(sdk.NewInt64Coin(asset.Denom, 100))
 
-	activation := testSettlementActivationHeight(openHeight)
+	activation := testSettlementActivationHeight()
 	s.Require().NoError(s.keeper.OpenSettlement(
 		s.ctx,
 		asset.Denom,

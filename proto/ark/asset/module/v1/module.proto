@@ -6,7 +6,5 @@ import "cosmos/app/v1alpha1/module.proto";
 
 // Module is the config object for the asset module.
 message Module {
-  option (cosmos.app.v1alpha1.module) = {
-    go_import : "ark/x/asset"
-  };
+  option (cosmos.app.v1alpha1.module) = {go_import: "ark/x/asset"};
 }

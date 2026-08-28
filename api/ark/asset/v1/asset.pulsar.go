@@ -3491,10 +3491,10 @@ const (
 	AssetStatus_ASSET_STATUS_ISSUANCE_HALTED AssetStatus = 2
 	// ASSET_STATUS_SUSPENDED identifies an asset whose ordinary protocol
 	// economic operations are disabled without erasing holder balances or
-	// recognized exposure.
+	// recognised exposure.
 	AssetStatus_ASSET_STATUS_SUSPENDED AssetStatus = 3
 	// ASSET_STATUS_WRITTEN_OFF identifies outstanding supply for which
-	// governance currently recognizes no protocol redemption obligation.
+	// governance currently recognises no protocol redemption obligation.
 	AssetStatus_ASSET_STATUS_WRITTEN_OFF AssetStatus = 4
 	// ASSET_STATUS_RETIRED identifies a zero-supply asset retained as a
 	// historical tombstone.
@@ -3628,7 +3628,7 @@ const (
 	// market rate is exactly what stopped being trustworthy, and governance has
 	// not committed to another.
 	UnpricedReason_UNPRICED_REASON_UNTRUSTED UnpricedReason = 2
-	// UNPRICED_REASON_WRITTEN_OFF is supply carrying no recognized redemption
+	// UNPRICED_REASON_WRITTEN_OFF is supply carrying no recognised redemption
 	// obligation.
 	UnpricedReason_UNPRICED_REASON_WRITTEN_OFF UnpricedReason = 3
 	// UNPRICED_REASON_RETIRED is residual supply of a retired asset.
@@ -3685,14 +3685,14 @@ func (UnpricedReason) EnumDescriptor() ([]byte, []int) {
 	return file_ark_asset_v1_asset_proto_rawDescGZIP(), []int{2}
 }
 
-// ResolutionKind identifies why governance derecognized outstanding supply.
+// ResolutionKind identifies why governance derecognised outstanding supply.
 type ResolutionKind int32
 
 const (
 	// RESOLUTION_KIND_UNSPECIFIED is not a valid persisted resolution kind.
 	ResolutionKind_RESOLUTION_KIND_UNSPECIFIED ResolutionKind = 0
 	// RESOLUTION_KIND_WRITE_OFF records emergency derecognition of all
-	// recognized obligation on a suspended asset.
+	// recognised obligation on a suspended asset.
 	ResolutionKind_RESOLUTION_KIND_WRITE_OFF ResolutionKind = 1
 	// RESOLUTION_KIND_RETIREMENT_RESIDUAL records derecognition of bounded
 	// residual supply at final retirement.
@@ -4031,7 +4031,7 @@ func (x *PricedAsset) GetReason() UnpricedReason {
 }
 
 // ResolutionRecord is an immutable snapshot appended whenever governance
-// derecognizes outstanding asset supply. A later recovery never erases or
+// derecognises outstanding asset supply. A later recovery never erases or
 // reinterprets an earlier record.
 type ResolutionRecord struct {
 	state         protoimpl.MessageState
@@ -4039,7 +4039,7 @@ type ResolutionRecord struct {
 	unknownFields protoimpl.UnknownFields
 
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	// version is the asset version in effect when governance derecognized the
+	// version is the asset version in effect when governance derecognised the
 	// obligation. Every derecognition is a governance act that advances the
 	// version and records the advanced value; nothing else appends a record, so
 	// there is no path that files one against an unchanged version.
@@ -4052,7 +4052,7 @@ type ResolutionRecord struct {
 	// settlement_plan carries final terms only for a write-off that ended an
 	// open settlement.
 	SettlementPlan *SettlementPlan `protobuf:"bytes,5,opt,name=settlement_plan,json=settlementPlan,proto3" json:"settlement_plan,omitempty"`
-	// kind identifies why the obligation was derecognized.
+	// kind identifies why the obligation was derecognised.
 	Kind ResolutionKind `protobuf:"varint,6,opt,name=kind,proto3,enum=ark.asset.v1.ResolutionKind" json:"kind,omitempty"`
 }
 

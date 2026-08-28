@@ -11,16 +11,18 @@ option go_package = "github.com/ararat-network/ark/x/asset/types";
 
 // EventAssetRegistered is emitted after a new asset is registered.
 message EventAssetRegistered {
-  Asset asset = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Asset asset = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventAssetStatusChanged is emitted after an asset lifecycle transition.
 message EventAssetStatusChanged {
   string denom = 1;
-  AssetStatus old_status = 2 [ (amino.dont_omitempty) = true ];
-  AssetStatus new_status = 3 [ (amino.dont_omitempty) = true ];
-  uint64 version = 4 [ (amino.dont_omitempty) = true ];
+  AssetStatus old_status = 2 [(amino.dont_omitempty) = true];
+  AssetStatus new_status = 3 [(amino.dont_omitempty) = true];
+  uint64 version = 4 [(amino.dont_omitempty) = true];
 }
 
 // The EventRegistrationAmended event was removed with the amendment it
@@ -32,44 +34,52 @@ message EventAssetStatusChanged {
 
 // EventSettlementOpened is emitted when governance stores settlement terms.
 message EventSettlementOpened {
-  SettlementPlan settlement_plan = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  SettlementPlan settlement_plan = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventSettlementCancelled is emitted when governance cancels a settlement
 // before activation.
 message EventSettlementCancelled {
   string denom = 1;
-  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+  uint64 version = 2 [(amino.dont_omitempty) = true];
 }
 
 // EventSettlementClosed is emitted when an activated settlement ends, carrying
 // the plan's full terms and both its open and close heights.
 message EventSettlementClosed {
-  SettlementPlan settlement_plan = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  uint64 version = 2 [ (amino.dont_omitempty) = true ];
-  int64 closed_height = 3 [ (amino.dont_omitempty) = true ];
+  SettlementPlan settlement_plan = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 version = 2 [(amino.dont_omitempty) = true];
+  int64 closed_height = 3 [(amino.dont_omitempty) = true];
 }
 
 // EventAssetResolved is emitted after a resolution record is appended.
 message EventAssetResolved {
-  ResolutionRecord resolution_record = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ResolutionRecord resolution_record = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventEmergencyMandateSet is emitted after governance replaces or disables
 // the emergency committee appointment.
 message EventEmergencyMandateSet {
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is empty when governance disabled the mandate.
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
-  ark.mandate.v1.CommitteeShape committee_shape = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ark.mandate.v1.CommitteeShape committee_shape = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventEmergencySuspended is emitted after the committee consumes an asset's
@@ -77,9 +87,9 @@ message EventEmergencyMandateSet {
 message EventEmergencySuspended {
   string denom = 1;
   // term is the mandate term the suspension was executed under.
-  uint64 term = 2 [ (amino.dont_omitempty) = true ];
+  uint64 term = 2 [(amino.dont_omitempty) = true];
   // version is the asset version produced by the suspension.
-  uint64 version = 3 [ (amino.dont_omitempty) = true ];
+  uint64 version = 3 [(amino.dont_omitempty) = true];
 }
 
 // EventReferenceUpdated moved to ark.oracle.v1 with the protocol reference

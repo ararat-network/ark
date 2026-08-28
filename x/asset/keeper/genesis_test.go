@@ -96,8 +96,7 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsInvalidStateBeforeWrites() {
 			name: "invalid genesis",
 			genesis: func() *types.GenesisState {
 				genesis := types.DefaultGenesisState()
-				genesis.Assets[0], genesis.Assets[1] =
-					genesis.Assets[1], genesis.Assets[0]
+				genesis.Assets[0], genesis.Assets[1] = genesis.Assets[1], genesis.Assets[0]
 				return genesis
 			},
 			expectErr: "invalid asset genesis state: genesis assets must be sorted by unique denom",

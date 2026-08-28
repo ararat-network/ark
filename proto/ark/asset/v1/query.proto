@@ -35,23 +35,20 @@ service Query {
   // itself, where it is ReferenceDenom; its name stays burned here.
 
   // SettlementPlan returns the active settlement plan for one asset.
-  rpc SettlementPlan(QuerySettlementPlanRequest)
-      returns (QuerySettlementPlanResponse) {
+  rpc SettlementPlan(QuerySettlementPlanRequest) returns (QuerySettlementPlanResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/asset/v1/assets/{denom}/settlement";
   }
 
   // ResolutionHistory returns append-only resolution records for one asset.
-  rpc ResolutionHistory(QueryResolutionHistoryRequest)
-      returns (QueryResolutionHistoryResponse) {
+  rpc ResolutionHistory(QueryResolutionHistoryRequest) returns (QueryResolutionHistoryResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/asset/v1/assets/{denom}/resolutions";
   }
 
   // EmergencyMandate returns the committee appointment, its current effective
   // status, and the actions already consumed under its term.
-  rpc EmergencyMandate(QueryEmergencyMandateRequest)
-      returns (QueryEmergencyMandateResponse) {
+  rpc EmergencyMandate(QueryEmergencyMandateRequest) returns (QueryEmergencyMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/asset/v1/emergency_mandate";
   }
@@ -62,17 +59,23 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is the response type for Query/Params.
 message QueryParamsResponse {
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryAssetRequest is the request type for Query/Asset.
-message QueryAssetRequest { string denom = 1; }
+message QueryAssetRequest {
+  string denom = 1;
+}
 
 // QueryAssetResponse is the response type for Query/Asset.
 message QueryAssetResponse {
-  PricedAsset priced_asset = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  PricedAsset priced_asset = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryAssetsRequest is the request type for Query/Assets.
@@ -80,8 +83,10 @@ message QueryAssetsRequest {}
 
 // QueryAssetsResponse is the response type for Query/Assets.
 message QueryAssetsResponse {
-  repeated PricedAsset priced_assets = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated PricedAsset priced_assets = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryReferenceRequest and QueryReferenceResponse moved to ark.oracle.v1 with
@@ -92,12 +97,16 @@ message QueryAssetsResponse {
 // registry; its name stays burned here.
 
 // QuerySettlementPlanRequest is the request type for Query/SettlementPlan.
-message QuerySettlementPlanRequest { string denom = 1; }
+message QuerySettlementPlanRequest {
+  string denom = 1;
+}
 
 // QuerySettlementPlanResponse returns one active settlement plan.
 message QuerySettlementPlanResponse {
-  SettlementPlan settlement_plan = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  SettlementPlan settlement_plan = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryResolutionHistoryRequest is the request type for
@@ -110,8 +119,10 @@ message QueryResolutionHistoryRequest {
 // QueryResolutionHistoryResponse returns append-only resolution records
 // ordered by increasing asset version.
 message QueryResolutionHistoryResponse {
-  repeated ResolutionRecord resolution_records = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated ResolutionRecord resolution_records = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
@@ -121,11 +132,13 @@ message QueryEmergencyMandateRequest {}
 // QueryEmergencyMandateResponse returns the committee appointment and its
 // current effective status.
 message QueryEmergencyMandateResponse {
-  EmergencyMandate mandate = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  EmergencyMandate mandate = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // active reports whether the committee may act at the current height.
-  bool active = 2 [ (amino.dont_omitempty) = true ];
+  bool active = 2 [(amino.dont_omitempty) = true];
   // suspended_denoms lists the assets whose per-term suspension the committee
   // has already consumed under the current term, sorted.
-  repeated string suspended_denoms = 3 [ (amino.dont_omitempty) = true ];
+  repeated string suspended_denoms = 3 [(amino.dont_omitempty) = true];
 }

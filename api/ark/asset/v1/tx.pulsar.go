@@ -8040,31 +8040,31 @@ func (x *fastReflection_MsgWriteOffAssetResponse) ProtoMethods() *protoiface.Met
 }
 
 var (
-	md_MsgFinalizeRetirement                     protoreflect.MessageDescriptor
-	fd_MsgFinalizeRetirement_authority           protoreflect.FieldDescriptor
-	fd_MsgFinalizeRetirement_denom               protoreflect.FieldDescriptor
-	fd_MsgFinalizeRetirement_expected_version    protoreflect.FieldDescriptor
-	fd_MsgFinalizeRetirement_max_residual_supply protoreflect.FieldDescriptor
+	md_MsgFinaliseRetirement                     protoreflect.MessageDescriptor
+	fd_MsgFinaliseRetirement_authority           protoreflect.FieldDescriptor
+	fd_MsgFinaliseRetirement_denom               protoreflect.FieldDescriptor
+	fd_MsgFinaliseRetirement_expected_version    protoreflect.FieldDescriptor
+	fd_MsgFinaliseRetirement_max_residual_supply protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgFinalizeRetirement = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinalizeRetirement")
-	fd_MsgFinalizeRetirement_authority = md_MsgFinalizeRetirement.Fields().ByName("authority")
-	fd_MsgFinalizeRetirement_denom = md_MsgFinalizeRetirement.Fields().ByName("denom")
-	fd_MsgFinalizeRetirement_expected_version = md_MsgFinalizeRetirement.Fields().ByName("expected_version")
-	fd_MsgFinalizeRetirement_max_residual_supply = md_MsgFinalizeRetirement.Fields().ByName("max_residual_supply")
+	md_MsgFinaliseRetirement = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinaliseRetirement")
+	fd_MsgFinaliseRetirement_authority = md_MsgFinaliseRetirement.Fields().ByName("authority")
+	fd_MsgFinaliseRetirement_denom = md_MsgFinaliseRetirement.Fields().ByName("denom")
+	fd_MsgFinaliseRetirement_expected_version = md_MsgFinaliseRetirement.Fields().ByName("expected_version")
+	fd_MsgFinaliseRetirement_max_residual_supply = md_MsgFinaliseRetirement.Fields().ByName("max_residual_supply")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgFinalizeRetirement)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgFinaliseRetirement)(nil)
 
-type fastReflection_MsgFinalizeRetirement MsgFinalizeRetirement
+type fastReflection_MsgFinaliseRetirement MsgFinaliseRetirement
 
-func (x *MsgFinalizeRetirement) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirement)(x)
+func (x *MsgFinaliseRetirement) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgFinaliseRetirement)(x)
 }
 
-func (x *MsgFinalizeRetirement) slowProtoReflect() protoreflect.Message {
+func (x *MsgFinaliseRetirement) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -8076,43 +8076,43 @@ func (x *MsgFinalizeRetirement) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgFinalizeRetirement_messageType fastReflection_MsgFinalizeRetirement_messageType
-var _ protoreflect.MessageType = fastReflection_MsgFinalizeRetirement_messageType{}
+var _fastReflection_MsgFinaliseRetirement_messageType fastReflection_MsgFinaliseRetirement_messageType
+var _ protoreflect.MessageType = fastReflection_MsgFinaliseRetirement_messageType{}
 
-type fastReflection_MsgFinalizeRetirement_messageType struct{}
+type fastReflection_MsgFinaliseRetirement_messageType struct{}
 
-func (x fastReflection_MsgFinalizeRetirement_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirement)(nil)
+func (x fastReflection_MsgFinaliseRetirement_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgFinaliseRetirement)(nil)
 }
-func (x fastReflection_MsgFinalizeRetirement_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirement)
+func (x fastReflection_MsgFinaliseRetirement_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgFinaliseRetirement)
 }
-func (x fastReflection_MsgFinalizeRetirement_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirement
+func (x fastReflection_MsgFinaliseRetirement_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinaliseRetirement
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgFinalizeRetirement) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirement
+func (x *fastReflection_MsgFinaliseRetirement) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinaliseRetirement
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgFinalizeRetirement) Type() protoreflect.MessageType {
-	return _fastReflection_MsgFinalizeRetirement_messageType
+func (x *fastReflection_MsgFinaliseRetirement) Type() protoreflect.MessageType {
+	return _fastReflection_MsgFinaliseRetirement_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgFinalizeRetirement) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirement)
+func (x *fastReflection_MsgFinaliseRetirement) New() protoreflect.Message {
+	return new(fastReflection_MsgFinaliseRetirement)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgFinalizeRetirement) Interface() protoreflect.ProtoMessage {
-	return (*MsgFinalizeRetirement)(x)
+func (x *fastReflection_MsgFinaliseRetirement) Interface() protoreflect.ProtoMessage {
+	return (*MsgFinaliseRetirement)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -8120,28 +8120,28 @@ func (x *fastReflection_MsgFinalizeRetirement) Interface() protoreflect.ProtoMes
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgFinalizeRetirement) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgFinaliseRetirement) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgFinalizeRetirement_authority, value) {
+		if !f(fd_MsgFinaliseRetirement_authority, value) {
 			return
 		}
 	}
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_MsgFinalizeRetirement_denom, value) {
+		if !f(fd_MsgFinaliseRetirement_denom, value) {
 			return
 		}
 	}
 	if x.ExpectedVersion != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpectedVersion)
-		if !f(fd_MsgFinalizeRetirement_expected_version, value) {
+		if !f(fd_MsgFinaliseRetirement_expected_version, value) {
 			return
 		}
 	}
 	if x.MaxResidualSupply != "" {
 		value := protoreflect.ValueOfString(x.MaxResidualSupply)
-		if !f(fd_MsgFinalizeRetirement_max_residual_supply, value) {
+		if !f(fd_MsgFinaliseRetirement_max_residual_supply, value) {
 			return
 		}
 	}
@@ -8158,21 +8158,21 @@ func (x *fastReflection_MsgFinalizeRetirement) Range(f func(protoreflect.FieldDe
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgFinalizeRetirement) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgFinaliseRetirement) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+	case "ark.asset.v1.MsgFinaliseRetirement.authority":
 		return x.Authority != ""
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+	case "ark.asset.v1.MsgFinaliseRetirement.denom":
 		return x.Denom != ""
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+	case "ark.asset.v1.MsgFinaliseRetirement.expected_version":
 		return x.ExpectedVersion != uint64(0)
-	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+	case "ark.asset.v1.MsgFinaliseRetirement.max_residual_supply":
 		return x.MaxResidualSupply != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirement"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirement does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8182,21 +8182,21 @@ func (x *fastReflection_MsgFinalizeRetirement) Has(fd protoreflect.FieldDescript
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgFinaliseRetirement) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+	case "ark.asset.v1.MsgFinaliseRetirement.authority":
 		x.Authority = ""
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+	case "ark.asset.v1.MsgFinaliseRetirement.denom":
 		x.Denom = ""
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+	case "ark.asset.v1.MsgFinaliseRetirement.expected_version":
 		x.ExpectedVersion = uint64(0)
-	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+	case "ark.asset.v1.MsgFinaliseRetirement.max_residual_supply":
 		x.MaxResidualSupply = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirement"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirement does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8206,25 +8206,25 @@ func (x *fastReflection_MsgFinalizeRetirement) Clear(fd protoreflect.FieldDescri
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgFinalizeRetirement) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgFinaliseRetirement) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+	case "ark.asset.v1.MsgFinaliseRetirement.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+	case "ark.asset.v1.MsgFinaliseRetirement.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+	case "ark.asset.v1.MsgFinaliseRetirement.expected_version":
 		value := x.ExpectedVersion
 		return protoreflect.ValueOfUint64(value)
-	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+	case "ark.asset.v1.MsgFinaliseRetirement.max_residual_supply":
 		value := x.MaxResidualSupply
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirement"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirement does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -8238,21 +8238,21 @@ func (x *fastReflection_MsgFinalizeRetirement) Get(descriptor protoreflect.Field
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgFinaliseRetirement) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+	case "ark.asset.v1.MsgFinaliseRetirement.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+	case "ark.asset.v1.MsgFinaliseRetirement.denom":
 		x.Denom = value.Interface().(string)
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+	case "ark.asset.v1.MsgFinaliseRetirement.expected_version":
 		x.ExpectedVersion = value.Uint()
-	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+	case "ark.asset.v1.MsgFinaliseRetirement.max_residual_supply":
 		x.MaxResidualSupply = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirement"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirement does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8266,52 +8266,52 @@ func (x *fastReflection_MsgFinalizeRetirement) Set(fd protoreflect.FieldDescript
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgFinaliseRetirement) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
-		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
-		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
-		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
-	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
-		panic(fmt.Errorf("field max_residual_supply of message ark.asset.v1.MsgFinalizeRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinaliseRetirement.authority":
+		panic(fmt.Errorf("field authority of message ark.asset.v1.MsgFinaliseRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinaliseRetirement.denom":
+		panic(fmt.Errorf("field denom of message ark.asset.v1.MsgFinaliseRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinaliseRetirement.expected_version":
+		panic(fmt.Errorf("field expected_version of message ark.asset.v1.MsgFinaliseRetirement is not mutable"))
+	case "ark.asset.v1.MsgFinaliseRetirement.max_residual_supply":
+		panic(fmt.Errorf("field max_residual_supply of message ark.asset.v1.MsgFinaliseRetirement is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirement"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirement does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgFinalizeRetirement) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgFinaliseRetirement) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.asset.v1.MsgFinalizeRetirement.authority":
+	case "ark.asset.v1.MsgFinaliseRetirement.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgFinalizeRetirement.denom":
+	case "ark.asset.v1.MsgFinaliseRetirement.denom":
 		return protoreflect.ValueOfString("")
-	case "ark.asset.v1.MsgFinalizeRetirement.expected_version":
+	case "ark.asset.v1.MsgFinaliseRetirement.expected_version":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.asset.v1.MsgFinalizeRetirement.max_residual_supply":
+	case "ark.asset.v1.MsgFinaliseRetirement.max_residual_supply":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirement"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirement"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirement does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirement does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgFinalizeRetirement) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgFinaliseRetirement) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinalizeRetirement", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinaliseRetirement", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -8319,7 +8319,7 @@ func (x *fastReflection_MsgFinalizeRetirement) WhichOneof(d protoreflect.OneofDe
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgFinalizeRetirement) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgFinaliseRetirement) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -8330,7 +8330,7 @@ func (x *fastReflection_MsgFinalizeRetirement) GetUnknown() protoreflect.RawFiel
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirement) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgFinaliseRetirement) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -8342,7 +8342,7 @@ func (x *fastReflection_MsgFinalizeRetirement) SetUnknown(fields protoreflect.Ra
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgFinalizeRetirement) IsValid() bool {
+func (x *fastReflection_MsgFinaliseRetirement) IsValid() bool {
 	return x != nil
 }
 
@@ -8352,9 +8352,9 @@ func (x *fastReflection_MsgFinalizeRetirement) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgFinaliseRetirement) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgFinalizeRetirement)
+		x := input.Message.Interface().(*MsgFinaliseRetirement)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -8391,7 +8391,7 @@ func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Method
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirement)
+		x := input.Message.Interface().(*MsgFinaliseRetirement)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -8447,7 +8447,7 @@ func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Method
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirement)
+		x := input.Message.Interface().(*MsgFinaliseRetirement)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -8479,10 +8479,10 @@ func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Method
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirement: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinaliseRetirement: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinaliseRetirement: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -8636,23 +8636,23 @@ func (x *fastReflection_MsgFinalizeRetirement) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_MsgFinalizeRetirementResponse protoreflect.MessageDescriptor
+	md_MsgFinaliseRetirementResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_asset_v1_tx_proto_init()
-	md_MsgFinalizeRetirementResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinalizeRetirementResponse")
+	md_MsgFinaliseRetirementResponse = File_ark_asset_v1_tx_proto.Messages().ByName("MsgFinaliseRetirementResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgFinalizeRetirementResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgFinaliseRetirementResponse)(nil)
 
-type fastReflection_MsgFinalizeRetirementResponse MsgFinalizeRetirementResponse
+type fastReflection_MsgFinaliseRetirementResponse MsgFinaliseRetirementResponse
 
-func (x *MsgFinalizeRetirementResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirementResponse)(x)
+func (x *MsgFinaliseRetirementResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgFinaliseRetirementResponse)(x)
 }
 
-func (x *MsgFinalizeRetirementResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgFinaliseRetirementResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_asset_v1_tx_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -8664,43 +8664,43 @@ func (x *MsgFinalizeRetirementResponse) slowProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgFinalizeRetirementResponse_messageType fastReflection_MsgFinalizeRetirementResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgFinalizeRetirementResponse_messageType{}
+var _fastReflection_MsgFinaliseRetirementResponse_messageType fastReflection_MsgFinaliseRetirementResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgFinaliseRetirementResponse_messageType{}
 
-type fastReflection_MsgFinalizeRetirementResponse_messageType struct{}
+type fastReflection_MsgFinaliseRetirementResponse_messageType struct{}
 
-func (x fastReflection_MsgFinalizeRetirementResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgFinalizeRetirementResponse)(nil)
+func (x fastReflection_MsgFinaliseRetirementResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgFinaliseRetirementResponse)(nil)
 }
-func (x fastReflection_MsgFinalizeRetirementResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirementResponse)
+func (x fastReflection_MsgFinaliseRetirementResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgFinaliseRetirementResponse)
 }
-func (x fastReflection_MsgFinalizeRetirementResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirementResponse
+func (x fastReflection_MsgFinaliseRetirementResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinaliseRetirementResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgFinalizeRetirementResponse
+func (x *fastReflection_MsgFinaliseRetirementResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgFinaliseRetirementResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgFinalizeRetirementResponse_messageType
+func (x *fastReflection_MsgFinaliseRetirementResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgFinaliseRetirementResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgFinalizeRetirementResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgFinalizeRetirementResponse)
+func (x *fastReflection_MsgFinaliseRetirementResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgFinaliseRetirementResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgFinalizeRetirementResponse)(x)
+func (x *fastReflection_MsgFinaliseRetirementResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgFinaliseRetirementResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -8708,7 +8708,7 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) Interface() protoreflect.
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgFinaliseRetirementResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -8722,13 +8722,13 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) Range(f func(protoreflect
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgFinaliseRetirementResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirementResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirementResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8738,13 +8738,13 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) Has(fd protoreflect.Field
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgFinaliseRetirementResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirementResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirementResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8754,13 +8754,13 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) Clear(fd protoreflect.Fie
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgFinaliseRetirementResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirementResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirementResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -8774,13 +8774,13 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) Get(descriptor protorefle
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgFinaliseRetirementResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirementResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirementResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -8794,36 +8794,36 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) Set(fd protoreflect.Field
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgFinaliseRetirementResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirementResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirementResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgFinalizeRetirementResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgFinaliseRetirementResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinalizeRetirementResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.asset.v1.MsgFinaliseRetirementResponse"))
 		}
-		panic(fmt.Errorf("message ark.asset.v1.MsgFinalizeRetirementResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.asset.v1.MsgFinaliseRetirementResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgFinalizeRetirementResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgFinaliseRetirementResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinalizeRetirementResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.asset.v1.MsgFinaliseRetirementResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -8831,7 +8831,7 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) WhichOneof(d protoreflect
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgFinalizeRetirementResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgFinaliseRetirementResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -8842,7 +8842,7 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) GetUnknown() protoreflect
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgFinalizeRetirementResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgFinaliseRetirementResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -8854,7 +8854,7 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) SetUnknown(fields protore
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgFinalizeRetirementResponse) IsValid() bool {
+func (x *fastReflection_MsgFinaliseRetirementResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -8864,9 +8864,9 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgFinalizeRetirementResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgFinaliseRetirementResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
+		x := input.Message.Interface().(*MsgFinaliseRetirementResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -8888,7 +8888,7 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) ProtoMethods() *protoifac
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
+		x := input.Message.Interface().(*MsgFinaliseRetirementResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -8918,7 +8918,7 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) ProtoMethods() *protoifac
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgFinalizeRetirementResponse)
+		x := input.Message.Interface().(*MsgFinaliseRetirementResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -8950,10 +8950,10 @@ func (x *fastReflection_MsgFinalizeRetirementResponse) ProtoMethods() *protoifac
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirementResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinaliseRetirementResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinalizeRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgFinaliseRetirementResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -11323,7 +11323,7 @@ func (*MsgOpenSettlementResponse) Descriptor() ([]byte, []int) {
 
 // MsgCancelSettlement cancels a settlement plan before it activates, leaving
 // the asset suspended. From activation onward the plan is a hard commitment:
-// only RecoverAsset, FinalizeRetirement, or a WriteOffAsset past the announced
+// only RecoverAsset, FinaliseRetirement, or a WriteOffAsset past the announced
 // closing height may end it.
 type MsgCancelSettlement struct {
 	state         protoimpl.MessageState
@@ -11484,7 +11484,7 @@ func (*MsgRecoverAssetResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{15}
 }
 
-// MsgWriteOffAsset derecognizes outstanding SUSPENDED supply without burning,
+// MsgWriteOffAsset derecognises outstanding SUSPENDED supply without burning,
 // transferring, or repricing holder balances. It is refused before a settlement
 // plan's earliest closing height: the announced window is the one guarantee
 // holders get, and derecognition is the only act that could break it.
@@ -11566,14 +11566,14 @@ func (*MsgWriteOffAssetResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{17}
 }
 
-// MsgFinalizeRetirement retires a settlement-free asset. Retirement never
+// MsgFinaliseRetirement retires a settlement-free asset. Retirement never
 // consults the protocol reference: a tombstone's feed is the feed layer's
 // concern, and the referent guard pins a referenced feed against removal.
 //
 // It is the lifecycle's only irreversible act, and it spends the denomination
 // permanently: the tombstone keeps the registry entry and the Bank metadata,
 // both of which registration refuses to collide with.
-type MsgFinalizeRetirement struct {
+type MsgFinaliseRetirement struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -11590,8 +11590,8 @@ type MsgFinalizeRetirement struct {
 	MaxResidualSupply string `protobuf:"bytes,4,opt,name=max_residual_supply,json=maxResidualSupply,proto3" json:"max_residual_supply,omitempty"`
 }
 
-func (x *MsgFinalizeRetirement) Reset() {
-	*x = MsgFinalizeRetirement{}
+func (x *MsgFinaliseRetirement) Reset() {
+	*x = MsgFinaliseRetirement{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -11599,55 +11599,55 @@ func (x *MsgFinalizeRetirement) Reset() {
 	}
 }
 
-func (x *MsgFinalizeRetirement) String() string {
+func (x *MsgFinaliseRetirement) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgFinalizeRetirement) ProtoMessage() {}
+func (*MsgFinaliseRetirement) ProtoMessage() {}
 
-// Deprecated: Use MsgFinalizeRetirement.ProtoReflect.Descriptor instead.
-func (*MsgFinalizeRetirement) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgFinaliseRetirement.ProtoReflect.Descriptor instead.
+func (*MsgFinaliseRetirement) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *MsgFinalizeRetirement) GetAuthority() string {
+func (x *MsgFinaliseRetirement) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgFinalizeRetirement) GetDenom() string {
+func (x *MsgFinaliseRetirement) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *MsgFinalizeRetirement) GetExpectedVersion() uint64 {
+func (x *MsgFinaliseRetirement) GetExpectedVersion() uint64 {
 	if x != nil {
 		return x.ExpectedVersion
 	}
 	return 0
 }
 
-func (x *MsgFinalizeRetirement) GetMaxResidualSupply() string {
+func (x *MsgFinaliseRetirement) GetMaxResidualSupply() string {
 	if x != nil {
 		return x.MaxResidualSupply
 	}
 	return ""
 }
 
-// MsgFinalizeRetirementResponse is the response type for
-// MsgFinalizeRetirement.
-type MsgFinalizeRetirementResponse struct {
+// MsgFinaliseRetirementResponse is the response type for
+// MsgFinaliseRetirement.
+type MsgFinaliseRetirementResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgFinalizeRetirementResponse) Reset() {
-	*x = MsgFinalizeRetirementResponse{}
+func (x *MsgFinaliseRetirementResponse) Reset() {
+	*x = MsgFinaliseRetirementResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_asset_v1_tx_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -11655,14 +11655,14 @@ func (x *MsgFinalizeRetirementResponse) Reset() {
 	}
 }
 
-func (x *MsgFinalizeRetirementResponse) String() string {
+func (x *MsgFinaliseRetirementResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgFinalizeRetirementResponse) ProtoMessage() {}
+func (*MsgFinaliseRetirementResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgFinalizeRetirementResponse.ProtoReflect.Descriptor instead.
-func (*MsgFinalizeRetirementResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgFinaliseRetirementResponse.ProtoReflect.Descriptor instead.
+func (*MsgFinaliseRetirementResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{19}
 }
 
@@ -11988,7 +11988,7 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x74, 0x2f, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66, 0x66, 0x41, 0x73, 0x73,
 	0x65, 0x74, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f, 0x66,
 	0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xad,
-	0x02, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65,
+	0x02, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x52, 0x65,
 	0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68,
 	0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
 	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
@@ -12006,8 +12006,8 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x64, 0x75, 0x61, 0x6c, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x3a, 0x32, 0x82, 0xe7, 0xb0, 0x2a,
 	0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1f, 0x61,
 	0x72, 0x6b, 0x2f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61,
-	0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1f,
-	0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74,
+	0x6c, 0x69, 0x73, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x1f,
+	0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x52, 0x65, 0x74,
 	0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
 	0x9d, 0x02, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65,
 	0x6e, 0x63, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75,
@@ -12096,12 +12096,12 @@ var file_ark_asset_v1_tx_proto_rawDesc = []byte{
 	0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
 	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x57, 0x72, 0x69, 0x74, 0x65, 0x4f,
 	0x66, 0x66, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x68, 0x0a, 0x12, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74,
+	0x00, 0x12, 0x68, 0x0a, 0x12, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x52, 0x65, 0x74,
 	0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73,
 	0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69,
-	0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x2b, 0x2e, 0x61,
+	0x73, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x1a, 0x2b, 0x2e, 0x61,
 	0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x46,
-	0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e,
+	0x69, 0x6e, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x52, 0x65, 0x74, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e,
 	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6b, 0x0a, 0x13, 0x53,
 	0x65, 0x74, 0x45, 0x6d, 0x65, 0x72, 0x67, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61,
 	0x74, 0x65, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x61, 0x73, 0x73, 0x65, 0x74, 0x2e, 0x76,
@@ -12163,8 +12163,8 @@ var file_ark_asset_v1_tx_proto_goTypes = []interface{}{
 	(*MsgRecoverAssetResponse)(nil),          // 15: ark.asset.v1.MsgRecoverAssetResponse
 	(*MsgWriteOffAsset)(nil),                 // 16: ark.asset.v1.MsgWriteOffAsset
 	(*MsgWriteOffAssetResponse)(nil),         // 17: ark.asset.v1.MsgWriteOffAssetResponse
-	(*MsgFinalizeRetirement)(nil),            // 18: ark.asset.v1.MsgFinalizeRetirement
-	(*MsgFinalizeRetirementResponse)(nil),    // 19: ark.asset.v1.MsgFinalizeRetirementResponse
+	(*MsgFinaliseRetirement)(nil),            // 18: ark.asset.v1.MsgFinaliseRetirement
+	(*MsgFinaliseRetirementResponse)(nil),    // 19: ark.asset.v1.MsgFinaliseRetirementResponse
 	(*MsgSetEmergencyMandate)(nil),           // 20: ark.asset.v1.MsgSetEmergencyMandate
 	(*MsgSetEmergencyMandateResponse)(nil),   // 21: ark.asset.v1.MsgSetEmergencyMandateResponse
 	(*MsgEmergencySuspendAsset)(nil),         // 22: ark.asset.v1.MsgEmergencySuspendAsset
@@ -12182,7 +12182,7 @@ var file_ark_asset_v1_tx_proto_depIdxs = []int32{
 	12, // 7: ark.asset.v1.Msg.CancelSettlement:input_type -> ark.asset.v1.MsgCancelSettlement
 	14, // 8: ark.asset.v1.Msg.RecoverAsset:input_type -> ark.asset.v1.MsgRecoverAsset
 	16, // 9: ark.asset.v1.Msg.WriteOffAsset:input_type -> ark.asset.v1.MsgWriteOffAsset
-	18, // 10: ark.asset.v1.Msg.FinalizeRetirement:input_type -> ark.asset.v1.MsgFinalizeRetirement
+	18, // 10: ark.asset.v1.Msg.FinaliseRetirement:input_type -> ark.asset.v1.MsgFinaliseRetirement
 	20, // 11: ark.asset.v1.Msg.SetEmergencyMandate:input_type -> ark.asset.v1.MsgSetEmergencyMandate
 	22, // 12: ark.asset.v1.Msg.EmergencySuspendAsset:input_type -> ark.asset.v1.MsgEmergencySuspendAsset
 	1,  // 13: ark.asset.v1.Msg.UpdateParams:output_type -> ark.asset.v1.MsgUpdateParamsResponse
@@ -12194,7 +12194,7 @@ var file_ark_asset_v1_tx_proto_depIdxs = []int32{
 	13, // 19: ark.asset.v1.Msg.CancelSettlement:output_type -> ark.asset.v1.MsgCancelSettlementResponse
 	15, // 20: ark.asset.v1.Msg.RecoverAsset:output_type -> ark.asset.v1.MsgRecoverAssetResponse
 	17, // 21: ark.asset.v1.Msg.WriteOffAsset:output_type -> ark.asset.v1.MsgWriteOffAssetResponse
-	19, // 22: ark.asset.v1.Msg.FinalizeRetirement:output_type -> ark.asset.v1.MsgFinalizeRetirementResponse
+	19, // 22: ark.asset.v1.Msg.FinaliseRetirement:output_type -> ark.asset.v1.MsgFinaliseRetirementResponse
 	21, // 23: ark.asset.v1.Msg.SetEmergencyMandate:output_type -> ark.asset.v1.MsgSetEmergencyMandateResponse
 	23, // 24: ark.asset.v1.Msg.EmergencySuspendAsset:output_type -> ark.asset.v1.MsgEmergencySuspendAssetResponse
 	13, // [13:25] is the sub-list for method output_type
@@ -12428,7 +12428,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgFinalizeRetirement); i {
+			switch v := v.(*MsgFinaliseRetirement); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12440,7 +12440,7 @@ func file_ark_asset_v1_tx_proto_init() {
 			}
 		}
 		file_ark_asset_v1_tx_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgFinalizeRetirementResponse); i {
+			switch v := v.(*MsgFinaliseRetirementResponse); i {
 			case 0:
 				return &v.state
 			case 1:

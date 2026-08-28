@@ -155,9 +155,9 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					"expected_version",
 				),
 				assetProposalCommand(
-					"FinalizeRetirement",
-					"finalize-retirement-proposal [denom] [expected-version] [max-residual-supply]",
-					"Submit a proposal to finalize asset retirement",
+					"FinaliseRetirement",
+					"finalise-retirement-proposal [denom] [expected-version] [max-residual-supply]",
+					"Submit a proposal to finalise asset retirement",
 					"denom",
 					"expected_version",
 					"max_residual_supply",

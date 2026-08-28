@@ -101,7 +101,7 @@ func (AppModule) ValidateGenesis(
 	return data.Validate()
 }
 
-// InitGenesis initializes the asset module without validator updates.
+// InitGenesis initialises the asset module without validator updates.
 func (am AppModule) InitGenesis(
 	ctx sdk.Context,
 	cdc codec.JSONCodec,
