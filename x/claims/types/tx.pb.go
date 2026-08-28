@@ -479,7 +479,7 @@ func (m *MsgCommitteeSubmitClaimResponse) GetClaimId() uint64 {
 	return 0
 }
 
-// MsgCancelClaim is a governance-authorized cancellation of any pending claim
+// MsgCancelClaim is a governance-authorised cancellation of any pending claim
 // during its cancellation period. It carries no expected term because
 // governance cancellation does not depend on the current committee mandate.
 type MsgCancelClaim struct {
@@ -571,7 +571,7 @@ func (m *MsgCancelClaimResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgCancelClaimResponse proto.InternalMessageInfo
 
-// MsgCommitteeCancelClaim is an exact committee-authorized cancellation during
+// MsgCommitteeCancelClaim is an exact committee-authorised cancellation during
 // the claim's cancellation period. expected_term protects committee
 // cancellations from stale signatures, and the committee may cancel only a
 // claim whose immutable origin is not governance.

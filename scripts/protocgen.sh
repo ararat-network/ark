@@ -5,7 +5,7 @@
 # docker run --rm -v $(pwd):/workspace --workdir /workspace cosmossdk-proto sh ./scripts/protocgen.sh
 
 echo "Formatting protobuf files"
-find ./proto -name "*.proto" -exec clang-format -i {} \;
+buf format -w proto
 
 set -e
 

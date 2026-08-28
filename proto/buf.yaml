@@ -1,5 +1,5 @@
 version: v1
-name: buf.build/ark/arkapp
+name: buf.build/ararat-network/ark
 deps:
   - buf.build/cosmos/cosmos-sdk
   - buf.build/cosmos/cosmos-proto
@@ -9,8 +9,6 @@ deps:
 breaking:
   use:
     - FILE
-  ignore:
-    - testpb
 lint:
   use:
     - STANDARD
@@ -20,6 +18,4 @@ lint:
     - UNARY_RPC
     - COMMENT_FIELD
     - SERVICE_SUFFIX
-    - PACKAGE_VERSION_SUFFIX
     - RPC_REQUEST_STANDARD_NAME
-    - RPC_RESPONSE_STANDARD_NAME

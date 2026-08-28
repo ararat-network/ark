@@ -618,7 +618,7 @@ type QueryFundStatusResponse struct {
 	// nominal_liability is the sum of the three above: the claimable aggregate
 	// this block could value, and the denominator redemption coverage divides by.
 	// It is always reported, so a partial total is visible rather than withheld;
-	// whether it also covers every recognized liability — which is what the
+	// whether it also covers every recognised liability — which is what the
 	// targets below require — is what the exclusion lists below answer.
 	NominalLiability types.DecCoin `protobuf:"bytes,4,opt,name=nominal_liability,json=nominalLiability,proto3" json:"nominal_liability"`
 	// self_held_supply lists the strategic Reserve's balances of members the
@@ -640,7 +640,7 @@ type QueryFundStatusResponse struct {
 	// state the actor it bounds can reverse at will.
 	NetLiability types.DecCoin `protobuf:"bytes,7,opt,name=net_liability,json=netLiability,proto3" json:"net_liability"`
 	// stale_member_supply is ACTIVE or ISSUANCE_HALTED supply the Oracle could
-	// not price this block: recognized liability whose feed is stale or absent,
+	// not price this block: recognised liability whose feed is stale or absent,
 	// so priced_liability excludes it. Unlike the two lists below it is expected
 	// to be transient, and a returning feed moves the same supply back into the
 	// priced bucket without any lifecycle action. Because the obligation is
@@ -650,8 +650,8 @@ type QueryFundStatusResponse struct {
 	// untrusted_suspended_supply is SUSPENDED supply with no open settlement:
 	// explicit exposure, never zero, valuable by no honest rate.
 	UntrustedSuspendedSupply []types.Coin `protobuf:"bytes,9,rep,name=untrusted_suspended_supply,json=untrustedSuspendedSupply,proto3" json:"untrusted_suspended_supply"`
-	// written_off_exposure is derecognized supply, disclosed but excluded from
-	// recognized liability. It does not make the valuation incomplete.
+	// written_off_exposure is derecognised supply, disclosed but excluded from
+	// recognised liability. It does not make the valuation incomplete.
 	WrittenOffExposure        []WrittenOffExposure `protobuf:"bytes,10,rep,name=written_off_exposure,json=writtenOffExposure,proto3" json:"written_off_exposure"`
 	RedemptionBufferBalance   types.Coin           `protobuf:"bytes,11,opt,name=redemption_buffer_balance,json=redemptionBufferBalance,proto3" json:"redemption_buffer_balance"`
 	RedemptionBufferTarget    types.Coin           `protobuf:"bytes,12,opt,name=redemption_buffer_target,json=redemptionBufferTarget,proto3" json:"redemption_buffer_target"`
@@ -659,7 +659,7 @@ type QueryFundStatusResponse struct {
 	StrategicReserveBalance   types.Coin           `protobuf:"bytes,14,opt,name=strategic_reserve_balance,json=strategicReserveBalance,proto3" json:"strategic_reserve_balance"`
 	StrategicReserveTarget    types.Coin           `protobuf:"bytes,15,opt,name=strategic_reserve_target,json=strategicReserveTarget,proto3" json:"strategic_reserve_target"`
 	StrategicReserveNetTarget types.Coin           `protobuf:"bytes,16,opt,name=strategic_reserve_net_target,json=strategicReserveNetTarget,proto3" json:"strategic_reserve_net_target"`
-	// insurance_balance is the capital x/claims recognizes toward its target,
+	// insurance_balance is the capital x/claims recognises toward its target,
 	// which excludes the reservation held against approved pending claims. The
 	// reservation itself is x/claims state, served by Query/ClaimsMandate.
 	InsuranceBalance   types.Coin `protobuf:"bytes,17,opt,name=insurance_balance,json=insuranceBalance,proto3" json:"insurance_balance"`

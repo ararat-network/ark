@@ -159,7 +159,7 @@ func (m *Params) GetMaxExchangeRateAge() time.Duration {
 	return 0
 }
 
-// Feeds defines the materialized active feed set and any scheduled per-feed
+// Feeds defines the materialised active feed set and any scheduled per-feed
 // transitions not yet activated. The feed set for a vote height is the active
 // set folded with every transition whose activation height has arrived.
 type Feeds struct {

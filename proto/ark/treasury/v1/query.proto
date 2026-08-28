@@ -21,16 +21,14 @@ service Query {
   }
 
   // MonetaryPolicy queries the current reversible Treasury policy.
-  rpc MonetaryPolicy(QueryMonetaryPolicyRequest)
-      returns (QueryMonetaryPolicyResponse) {
+  rpc MonetaryPolicy(QueryMonetaryPolicyRequest) returns (QueryMonetaryPolicyResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/monetary_policy";
   }
 
   // MonetaryMandate queries the governed committee appointment and its
   // current effective status.
-  rpc MonetaryMandate(QueryMonetaryMandateRequest)
-      returns (QueryMonetaryMandateResponse) {
+  rpc MonetaryMandate(QueryMonetaryMandateRequest) returns (QueryMonetaryMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/monetary_mandate";
   }
@@ -51,8 +49,8 @@ service Query {
   rpc ComputeTax(QueryComputeTaxRequest) returns (QueryComputeTaxResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http) = {
-      post : "/ark/treasury/v1/compute_tax"
-      body : "*"
+      post: "/ark/treasury/v1/compute_tax"
+      body: "*"
     };
   }
 
@@ -63,15 +61,13 @@ service Query {
   }
 
   // RewardFunding queries the active reward-funding accounting.
-  rpc RewardFunding(QueryRewardFundingRequest)
-      returns (QueryRewardFundingResponse) {
+  rpc RewardFunding(QueryRewardFundingRequest) returns (QueryRewardFundingResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/reward_funding";
   }
 
   // ExposureStatus queries the risk state behind the fund-target multiplier.
-  rpc ExposureStatus(QueryExposureStatusRequest)
-      returns (QueryExposureStatusResponse) {
+  rpc ExposureStatus(QueryExposureStatusRequest) returns (QueryExposureStatusResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/treasury/v1/exposure_status";
   }
@@ -82,8 +78,10 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is the response type for Query/Params.
 message QueryParamsResponse {
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryMonetaryPolicyRequest is the request for the current monetary policy.
@@ -91,8 +89,10 @@ message QueryMonetaryPolicyRequest {}
 
 // QueryMonetaryPolicyResponse returns the current reversible Treasury policy.
 message QueryMonetaryPolicyResponse {
-  MonetaryPolicy policy = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  MonetaryPolicy policy = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryMonetaryMandateRequest is the request for the governed
@@ -102,13 +102,17 @@ message QueryMonetaryMandateRequest {}
 // QueryMonetaryMandateResponse returns the stored mandate and whether it
 // is usable at the current height.
 message QueryMonetaryMandateResponse {
-  MonetaryMandate mandate = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  bool active = 2 [ (amino.dont_omitempty) = true ];
+  MonetaryMandate mandate = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  bool active = 2 [(amino.dont_omitempty) = true];
 }
 
 // QueryTaxCapRequest is the request type for Query/TaxCap.
-message QueryTaxCapRequest { string denom = 1; }
+message QueryTaxCapRequest {
+  string denom = 1;
+}
 
 // QueryTaxCapResponse is the response type for Query/TaxCap.
 message QueryTaxCapResponse {
@@ -128,14 +132,15 @@ message QueryTaxCapsRequest {}
 // QueryTaxCapsResponse is the response type for Query/TaxCaps.
 message QueryTaxCapsResponse {
   // tax_caps includes explicit zero entries for uncapped denominations.
-  repeated TaxCap tax_caps = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated TaxCap tax_caps = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryComputeTaxRequest is the request type for Query/ComputeTax.
 message QueryComputeTaxRequest {
-  repeated google.protobuf.Any messages = 1
-      [ (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg" ];
+  repeated google.protobuf.Any messages = 1 [(cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg"];
 }
 
 // QueryComputeTaxResponse is the response type for Query/ComputeTax.
@@ -172,12 +177,16 @@ message QueryFundStatusResponse {
 
   // priced_liability values ACTIVE and ISSUANCE_HALTED supply at fresh Oracle
   // rates. It excludes any member listed in stale_member_supply.
-  cosmos.base.v1beta1.DecCoin priced_liability = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin priced_liability = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // settlement_liability values SUSPENDED supply carrying an open settlement
   // plan at the plan's committed rate.
-  cosmos.base.v1beta1.DecCoin settlement_liability = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin settlement_liability = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // stale_priced_liability values stale_member_supply at the last rate the
   // Oracle stored for each denomination. It is reported apart from
   // priced_liability because the rate behind it failed the freshness gate: good
@@ -186,15 +195,19 @@ message QueryFundStatusResponse {
   // non-empty stale_member_supply zeroes every target below. It is zero
   // whenever that list is empty, and excludes any member the Oracle has never
   // priced, for which no last rate exists.
-  cosmos.base.v1beta1.DecCoin stale_priced_liability = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin stale_priced_liability = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // nominal_liability is the sum of the three above: the claimable aggregate
   // this block could value, and the denominator redemption coverage divides by.
   // It is always reported, so a partial total is visible rather than withheld;
-  // whether it also covers every recognized liability — which is what the
+  // whether it also covers every recognised liability — which is what the
   // targets below require — is what the exclusion lists below answer.
-  cosmos.base.v1beta1.DecCoin nominal_liability = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin nominal_liability = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // self_held_supply lists the strategic Reserve's balances of members the
   // aggregate above counts: supply inside the claimable total from which no
   // claim can arrive, because the Reserve cannot present it for redemption and
@@ -210,22 +223,26 @@ message QueryFundStatusResponse {
   // aggregate valued it — fresh, settlement, or last known, whichever branch
   // counted it — so the two sides of the subtraction below can never price on
   // different bases.
-  cosmos.base.v1beta1.DecCoin self_held_liability = 6
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin self_held_liability = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // net_liability is nominal_liability less self_held_liability: the claims
   // that can actually arrive. It is what redemption coverage divides by and
   // what the expansion waterfall sizes fund gaps against, while every bound on
   // a committee act stays on the nominal figure — a bound must not loosen on a
   // state the actor it bounds can reverse at will.
-  cosmos.base.v1beta1.DecCoin net_liability = 7
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin net_liability = 7 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // What the totals above exclude, in ascending order of permanence: a stale
   // feed is transient, a suspension holds until settlement, a write-off is
   // final. The first two zero every target; the third does not.
 
   // stale_member_supply is ACTIVE or ISSUANCE_HALTED supply the Oracle could
-  // not price this block: recognized liability whose feed is stale or absent,
+  // not price this block: recognised liability whose feed is stale or absent,
   // so priced_liability excludes it. Unlike the two lists below it is expected
   // to be transient, and a returning feed moves the same supply back into the
   // priced bucket without any lifecycle action. Because the obligation is
@@ -243,14 +260,16 @@ message QueryFundStatusResponse {
     (amino.dont_omitempty) = true,
     (amino.encoding) = "legacy_coins"
   ];
-  // written_off_exposure is derecognized supply, disclosed but excluded from
-  // recognized liability. It does not make the valuation incomplete.
-  repeated WrittenOffExposure written_off_exposure = 10
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  // written_off_exposure is derecognised supply, disclosed but excluded from
+  // recognised liability. It does not make the valuation incomplete.
+  repeated WrittenOffExposure written_off_exposure = 10 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
-  // Each fund's recognized capital against the requirements Treasury sizes for
+  // Each fund's recognised capital against the requirements Treasury sizes for
   // it, one triplet per fund. Committee-operated funds report what their own
-  // operator recognizes, which is not the module account balance.
+  // operator recognises, which is not the module account balance.
   //
   // Every *_target is sized against nominal_liability: it is the requirement
   // that bounds what a committee may burn or transfer, and it counts self-held
@@ -263,31 +282,51 @@ message QueryFundStatusResponse {
   // protocol's own paper, and every target of either basis is zero while the
   // valuation is incomplete.
 
-  cosmos.base.v1beta1.Coin redemption_buffer_balance = 11
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_target = 12
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin redemption_buffer_net_target = 13
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_balance = 14
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_target = 15
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin strategic_reserve_net_target = 16
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // insurance_balance is the capital x/claims recognizes toward its target,
+  cosmos.base.v1beta1.Coin redemption_buffer_balance = 11 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin redemption_buffer_target = 12 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin redemption_buffer_net_target = 13 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin strategic_reserve_balance = 14 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin strategic_reserve_target = 15 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin strategic_reserve_net_target = 16 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // insurance_balance is the capital x/claims recognises toward its target,
   // which excludes the reservation held against approved pending claims. The
   // reservation itself is x/claims state, served by Query/ClaimsMandate.
-  cosmos.base.v1beta1.Coin insurance_balance = 17
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_target = 18
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin insurance_net_target = 19
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin insurance_balance = 17 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin insurance_target = 18 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin insurance_net_target = 19 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // subsidy_pool_balance carries no target: it funds reward subsidy rather than
   // backing liability, so no ratio sizes it.
-  cosmos.base.v1beta1.Coin subsidy_pool_balance = 20
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin subsidy_pool_balance = 20 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // exposure_multiplier is what every target above was scaled by. Without it
   // the response cannot be reconciled — no target equals its ratio times the
   // liability beside it — so this is the bridge term between the two, on both
@@ -307,8 +346,10 @@ message QueryRewardFundingRequest {}
 
 // QueryRewardFundingResponse is the response type for Query/RewardFunding.
 message QueryRewardFundingResponse {
-  RewardFundingState reward_funding = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  RewardFundingState reward_funding = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryExposureStatusRequest is the request type for Query/ExposureStatus.
@@ -318,8 +359,10 @@ message QueryExposureStatusRequest {}
 // derived from it, so a reader can see both what is held and what the composite
 // consumed without recomputing either.
 message QueryExposureStatusResponse {
-  ExposureState exposure_state = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ExposureState exposure_state = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // annualised_volatility is the square root of the stored variance scaled to a
   // year of blocks: the form the multiplier's volatility weight is denominated
   // against, and the only figure here the state does not carry directly.
@@ -332,5 +375,5 @@ message QueryExposureStatusResponse {
   // refresh_pending reports an elapsed period whose recomputation has not yet
   // succeeded, so a multiplier that looks stale can be told apart from one that
   // is simply unchanged.
-  bool refresh_pending = 3 [ (amino.dont_omitempty) = true ];
+  bool refresh_pending = 3 [(amino.dont_omitempty) = true];
 }

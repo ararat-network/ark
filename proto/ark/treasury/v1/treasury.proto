@@ -17,10 +17,12 @@ message Params {
   // reference_tax_cap is the governance-owned cap used to derive the complete
   // per-denomination tax-cap map. A zero amount means taxation is uncapped; a
   // positive amount derives positive per-denomination ceilings.
-  cosmos.base.v1beta1.Coin reference_tax_cap = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  // reward_funding_window initializes each new funding countdown.
-  uint64 reward_funding_window = 2 [ (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin reference_tax_cap = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // reward_funding_window initialises each new funding countdown.
+  uint64 reward_funding_window = 2 [(amino.dont_omitempty) = true];
   // tax_cap_refresh_period_blocks is how often the derived per-denomination
   // caps are trued up against rate drift. Membership changes refresh the map on
   // their own, so this cadence exists only for the drift between them: the
@@ -29,7 +31,7 @@ message Params {
   // moving after the map is built. A shorter period tracks the ceiling
   // governance voted for more closely and rebuilds the map more often; a longer
   // one lets the real ceiling drift further from it.
-  uint64 tax_cap_refresh_period_blocks = 3 [ (amino.dont_omitempty) = true ];
+  uint64 tax_cap_refresh_period_blocks = 3 [(amino.dont_omitempty) = true];
 
   // The exposure multiplier's machinery (D72): the instrument that measures
   // risk, the cadence it runs on, and the rails bounding how far and how fast
@@ -85,7 +87,7 @@ message Params {
   // recomputation waits. It keeps the exposure qualifier the four fields above
   // drop, because Params already carries a second cadence in
   // tax_cap_refresh_period_blocks and a bare period would read as the module's.
-  uint64 exposure_refresh_period_blocks = 8 [ (amino.dont_omitempty) = true ];
+  uint64 exposure_refresh_period_blocks = 8 [(amino.dont_omitempty) = true];
 }
 
 // ExposureState is the running risk estimate behind the multiplier: two
@@ -151,7 +153,7 @@ message ExposureState {
   // is chain-relative: an exported state carries the old chain's height, so a
   // reader comparing it against a restarted chain sees a refresh in the future
   // rather than a stale one.
-  uint64 last_refresh_height = 7 [ (amino.dont_omitempty) = true ];
+  uint64 last_refresh_height = 7 [(amino.dont_omitempty) = true];
 }
 
 // MonetaryPolicy is the complete set of reversible Treasury levers delegated
@@ -243,17 +245,21 @@ message MonetaryMandate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  MonetaryPolicy minimum_policy = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryPolicy maximum_policy = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  MonetaryPolicy minimum_policy = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  MonetaryPolicy maximum_policy = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // RewardFundingState stores aggregate reward-funding accounting for the
 // current Treasury settlement window.
 message RewardFundingState {
   // blocks_remaining is the number of observations before settlement.
-  uint64 blocks_remaining = 1 [ (amino.dont_omitempty) = true ];
+  uint64 blocks_remaining = 1 [(amino.dont_omitempty) = true];
   string validator_target = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -287,11 +293,13 @@ message TaxCap {
   ];
 }
 
-// WrittenOffExposure discloses supply governance has formally derecognized.
+// WrittenOffExposure discloses supply governance has formally derecognised.
 // The coin carries the denomination; the version pins which asset record the
 // write-off resolved.
 message WrittenOffExposure {
-  cosmos.base.v1beta1.Coin outstanding_supply = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin outstanding_supply = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   uint64 write_off_version = 2;
 }

@@ -87,7 +87,7 @@ message Params {
 // Params.max_exchange_rate_age, which is the conversion-grade default and the
 // only window the Oracle keeps.
 
-// Feeds defines the materialized active feed set and any scheduled per-feed
+// Feeds defines the materialised active feed set and any scheduled per-feed
 // transitions not yet activated. The feed set for a vote height is the active
 // set folded with every transition whose activation height has arrived.
 message Feeds {
@@ -98,19 +98,21 @@ message Feeds {
   // denomination it will carry.
   repeated string denoms = 1;
   // version advances once per activation batch.
-  uint64 version = 2 [ (amino.dont_omitempty) = true ];
+  uint64 version = 2 [(amino.dont_omitempty) = true];
   // transitions are scheduled membership changes, sorted by
   // (activation_vote_height, denom). Immutable once written.
-  repeated FeedTransition transitions = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated FeedTransition transitions = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // FeedTransition is one scheduled membership change for one feed. Immutable
 // once written.
 message FeedTransition {
   string denom = 1;
-  FeedDirection direction = 2 [ (amino.dont_omitempty) = true ];
-  int64 activation_vote_height = 3 [ (amino.dont_omitempty) = true ];
+  FeedDirection direction = 2 [(amino.dont_omitempty) = true];
+  int64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
 }
 
 // FeedReferent is one consumer claim on a feed, derived from the consumer's

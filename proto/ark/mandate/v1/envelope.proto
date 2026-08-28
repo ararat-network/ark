@@ -39,7 +39,7 @@ message CommitteeShape {
   // existed. It names an interchain account or any future account type without
   // this package depending on the stack defining it.
   string account_type = 1;
-  CommitteeKeyKind key_kind = 2 [ (amino.dont_omitempty) = true ];
+  CommitteeKeyKind key_kind = 2 [(amino.dont_omitempty) = true];
   // module is the module controlling the address, from a module credential or
   // a module account, empty otherwise.
   string module = 3;
@@ -47,8 +47,8 @@ message CommitteeShape {
   // multisig of pairwise-distinct simple keys. A duplicate or nested member
   // leaves them zero under COMMITTEE_KEY_KIND_MULTISIG, which is exactly the
   // shape governance must not read as verified.
-  uint32 threshold = 4 [ (amino.dont_omitempty) = true ];
-  uint32 member_count = 5 [ (amino.dont_omitempty) = true ];
+  uint32 threshold = 4 [(amino.dont_omitempty) = true];
+  uint32 member_count = 5 [(amino.dont_omitempty) = true];
 }
 
 // Envelope is the shared appointment envelope embedded by every
@@ -58,18 +58,20 @@ message Envelope {
   // term is the chain-derived monotonic appointment counter. It advances on
   // every replacement so previously prepared committee transactions cannot
   // become valid again.
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is the exact appointed account, empty when the mandate is
   // disabled.
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // activation_height is the first height at which the committee may act.
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
   // expiry_height is the first height at which the committee may no longer
   // act, forming a half-open window with activation_height.
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
   // committee_shape is what the chain proved about the committee account when
   // it was appointed. The address is the hash of the key it commits to, so a
   // shape observed at appointment cannot go stale within the term.
-  CommitteeShape committee_shape = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  CommitteeShape committee_shape = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

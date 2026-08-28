@@ -2,17 +2,19 @@ syntax = "proto3";
 package ark.market.v1;
 
 import "amino/amino.proto";
+import "ark/market/v1/market.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "ark/market/v1/market.proto";
 
 option go_package = "github.com/ararat-network/ark/x/market/types";
 
 // GenesisState defines the market module's genesis state.
 message GenesisState {
   // params defines all the parameters of the module.
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // ark_pool_delta is the signed gap between the ArkPool and BasePool measured
   // in conversion_policy.base_pool.denom.
@@ -25,16 +27,22 @@ message GenesisState {
 
   // tobin_tax_overrides are the sparse per-denomination Tobin exceptions,
   // sorted by unique denomination.
-  repeated TobinTaxOverride tobin_tax_overrides = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated TobinTaxOverride tobin_tax_overrides = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // conversion_policy is the live conversion-capacity pair. Its base pool must
   // be denominated in the configured protocol reference.
-  ConversionPolicy conversion_policy = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ConversionPolicy conversion_policy = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // conversion_mandate is the governed conversion committee appointment,
   // disabled at launch.
-  ConversionMandate conversion_mandate = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ConversionMandate conversion_mandate = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

@@ -2,12 +2,12 @@ syntax = "proto3";
 package ark.market.v1;
 
 import "amino/amino.proto";
+import "ark/market/v1/market.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "ark/market/v1/market.proto";
 
 option go_package = "github.com/ararat-network/ark/x/market/types";
 
@@ -41,23 +41,20 @@ service Query {
   }
 
   // TobinTaxOverrides returns the sparse per-denomination exceptions.
-  rpc TobinTaxOverrides(QueryTobinTaxOverridesRequest)
-      returns (QueryTobinTaxOverridesResponse) {
+  rpc TobinTaxOverrides(QueryTobinTaxOverridesRequest) returns (QueryTobinTaxOverridesResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/market/v1/tobin_tax_overrides";
   }
 
   // ConversionPolicy returns the live conversion-capacity pair.
-  rpc ConversionPolicy(QueryConversionPolicyRequest)
-      returns (QueryConversionPolicyResponse) {
+  rpc ConversionPolicy(QueryConversionPolicyRequest) returns (QueryConversionPolicyResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/market/v1/conversion_policy";
   }
 
   // ConversionMandate returns the governed committee appointment over
   // conversion policy and its current effective status.
-  rpc ConversionMandate(QueryConversionMandateRequest)
-      returns (QueryConversionMandateResponse) {
+  rpc ConversionMandate(QueryConversionMandateRequest) returns (QueryConversionMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/market/v1/conversion_mandate";
   }
@@ -74,9 +71,9 @@ message QuerySwapRequest {
 // QuerySwapResponse is the response type for the Query/Swap RPC method.
 message QuerySwapResponse {
   // return_coin defines the coin returned as a result of the swap simulation.
-  cosmos.base.v1beta1.Coin swap_coin = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin swap_coin = 1 [(gogoproto.nullable) = false];
   // swap_fee defines the fee deducted from the simulated swap result.
-  cosmos.base.v1beta1.DecCoin swap_fee = 2 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [(gogoproto.nullable) = false];
 }
 
 // QueryPoolRequest is the request type for the Query/Pool RPC method.
@@ -86,8 +83,10 @@ message QueryPoolRequest {}
 message QueryPoolResponse {
   // base_pool is the policy depth the pool recovers toward, denominated in
   // the protocol reference.
-  cosmos.base.v1beta1.DecCoin base_pool = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin base_pool = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // ark_pool_delta is the signed gap between the ArkPool and base_pool, in
   // base_pool units.
   string ark_pool_delta = 2 [
@@ -104,12 +103,16 @@ message QueryParamsRequest {}
 // QueryParamsResponse is the response type for the Query/Params RPC method.
 message QueryParamsResponse {
   // params defines the parameters of the module.
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryTobinTaxRequest is the request type for the Query/TobinTax RPC method.
-message QueryTobinTaxRequest { string denom = 1; }
+message QueryTobinTaxRequest {
+  string denom = 1;
+}
 
 // QueryTobinTaxResponse is the response type for the Query/TobinTax RPC
 // method.
@@ -132,8 +135,10 @@ message QueryTobinTaxOverridesRequest {}
 // QueryTobinTaxOverridesResponse is the response type for the
 // Query/TobinTaxOverrides RPC method.
 message QueryTobinTaxOverridesResponse {
-  repeated TobinTaxOverride tobin_tax_overrides = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated TobinTaxOverride tobin_tax_overrides = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryConversionPolicyRequest is the request type for the
@@ -143,8 +148,10 @@ message QueryConversionPolicyRequest {}
 // QueryConversionPolicyResponse is the response type for the
 // Query/ConversionPolicy RPC method.
 message QueryConversionPolicyResponse {
-  ConversionPolicy conversion_policy = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ConversionPolicy conversion_policy = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryConversionMandateRequest is the request type for the
@@ -154,7 +161,9 @@ message QueryConversionMandateRequest {}
 // QueryConversionMandateResponse returns the stored mandate and whether it is
 // usable at the current height.
 message QueryConversionMandateResponse {
-  ConversionMandate mandate = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  bool active = 2 [ (amino.dont_omitempty) = true ];
+  ConversionMandate mandate = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  bool active = 2 [(amino.dont_omitempty) = true];
 }

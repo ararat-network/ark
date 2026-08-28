@@ -26,8 +26,7 @@ service Msg {
 
   // SetReferenceDenom re-points the shared protocol reference denomination,
   // rebasing consumer reference-unit state when it changes.
-  rpc SetReferenceDenom(MsgSetReferenceDenom)
-      returns (MsgSetReferenceDenomResponse) {}
+  rpc SetReferenceDenom(MsgSetReferenceDenom) returns (MsgSetReferenceDenomResponse) {}
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -37,11 +36,13 @@ message MsgUpdateParams {
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // params defines the x/oracle parameters to update.
-  Params params = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a
@@ -60,7 +61,7 @@ message MsgAddFeed {
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // denom keys the feed to add.
   string denom = 2;
@@ -77,7 +78,7 @@ message MsgRemoveFeed {
 
   // authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // denom keys the feed to remove.
   string denom = 2;
@@ -96,7 +97,7 @@ message MsgSetReferenceDenom {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/oracle/MsgSetReferenceDenom";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // reference_denom keys the feed the reference unit is priced from.
   string reference_denom = 2;
   // outgoing_rate overrides the rate the outgoing reference denom is converted

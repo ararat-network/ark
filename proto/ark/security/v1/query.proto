@@ -13,16 +13,14 @@ option go_package = "github.com/ararat-network/ark/x/security/types";
 service Query {
   // SecurityMandate returns the governed security committee appointment and
   // its current effective status.
-  rpc SecurityMandate(QuerySecurityMandateRequest)
-      returns (QuerySecurityMandateResponse) {
+  rpc SecurityMandate(QuerySecurityMandateRequest) returns (QuerySecurityMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/security/v1/security_mandate";
   }
 
   // CommitteePlan returns the upgrade plan the committee last scheduled and
   // whether it still matches the plan pending in x/upgrade.
-  rpc CommitteePlan(QueryCommitteePlanRequest)
-      returns (QueryCommitteePlanResponse) {
+  rpc CommitteePlan(QueryCommitteePlanRequest) returns (QueryCommitteePlanResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/security/v1/committee_plan";
   }
@@ -35,10 +33,12 @@ message QuerySecurityMandateRequest {}
 // QuerySecurityMandateResponse is the response type for the
 // Query/SecurityMandate RPC method.
 message QuerySecurityMandateResponse {
-  SecurityMandate mandate = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  SecurityMandate mandate = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // active reports whether the appointment may act at the current height.
-  bool active = 2 [ (amino.dont_omitempty) = true ];
+  bool active = 2 [(amino.dont_omitempty) = true];
 }
 
 // QueryCommitteePlanRequest is the request type for the Query/CommitteePlan
@@ -48,9 +48,11 @@ message QueryCommitteePlanRequest {}
 // QueryCommitteePlanResponse is the response type for the Query/CommitteePlan
 // RPC method.
 message QueryCommitteePlanResponse {
-  CommitteePlan committee_plan = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  CommitteePlan committee_plan = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // matches_pending reports whether the record still describes the plan
   // pending in x/upgrade. False means the committee holds no pending plan.
-  bool matches_pending = 2 [ (amino.dont_omitempty) = true ];
+  bool matches_pending = 2 [(amino.dont_omitempty) = true];
 }

@@ -18,11 +18,9 @@ service Msg {
 
   // SetReserveMandate appoints, replaces, or disables the height-scoped
   // Reserve committee.
-  rpc SetReserveMandate(MsgSetReserveMandate)
-      returns (MsgSetReserveMandateResponse) {}
+  rpc SetReserveMandate(MsgSetReserveMandate) returns (MsgSetReserveMandateResponse) {}
   // SetRecognitionPolicy replaces the complete asset eligibility set.
-  rpc SetRecognitionPolicy(MsgSetRecognitionPolicy)
-      returns (MsgSetRecognitionPolicyResponse) {}
+  rpc SetRecognitionPolicy(MsgSetRecognitionPolicy) returns (MsgSetRecognitionPolicyResponse) {}
   // FundBuffer transfers strategic Reserve NOAH to the Redemption Buffer.
   rpc FundBuffer(MsgFundBuffer) returns (MsgFundBufferResponse) {}
   // FundInsurance transfers strategic Reserve NOAH to Insurance. With
@@ -31,12 +29,10 @@ service Msg {
   rpc FundInsurance(MsgFundInsurance) returns (MsgFundInsuranceResponse) {}
   // CorrectPosition restates a position as the governance authority, through
   // a correcting ledger entry.
-  rpc CorrectPosition(MsgCorrectPosition) returns (MsgCorrectPositionResponse) {
-  }
+  rpc CorrectPosition(MsgCorrectPosition) returns (MsgCorrectPositionResponse) {}
   // ClearImpairment restores a position's recognition credit as the
   // governance authority.
-  rpc ClearImpairment(MsgClearImpairment) returns (MsgClearImpairmentResponse) {
-  }
+  rpc ClearImpairment(MsgClearImpairment) returns (MsgClearImpairmentResponse) {}
   // MarkImpaired zeroes a position's recognition credit as the governance
   // authority.
   rpc MarkImpaired(MsgMarkImpaired) returns (MsgMarkImpairedResponse) {}
@@ -48,53 +44,40 @@ service Msg {
   rpc ReverseReturn(MsgReverseReturn) returns (MsgReverseReturnResponse) {}
   // BurnReserveAssets destroys Reserve custody as the governance authority,
   // including NOAH.
-  rpc BurnReserveAssets(MsgBurnReserveAssets)
-      returns (MsgBurnReserveAssetsResponse) {}
+  rpc BurnReserveAssets(MsgBurnReserveAssets) returns (MsgBurnReserveAssetsResponse) {}
 
   // CommitteeDeploy pays approved anoah to a mandate destination, opening or
   // funding a position.
-  rpc CommitteeDeploy(MsgCommitteeDeploy) returns (MsgCommitteeDeployResponse) {
-  }
+  rpc CommitteeDeploy(MsgCommitteeDeploy) returns (MsgCommitteeDeployResponse) {}
   // CommitteeRecordUpdate restates a position's attested holding.
-  rpc CommitteeRecordUpdate(MsgCommitteeRecordUpdate)
-      returns (MsgCommitteeRecordUpdateResponse) {}
+  rpc CommitteeRecordUpdate(MsgCommitteeRecordUpdate) returns (MsgCommitteeRecordUpdateResponse) {}
   // CommitteeAttributeReturn matches an inflow already in the Reserve account
   // to the position it settles.
-  rpc CommitteeAttributeReturn(MsgCommitteeAttributeReturn)
-      returns (MsgCommitteeAttributeReturnResponse) {}
+  rpc CommitteeAttributeReturn(MsgCommitteeAttributeReturn) returns (MsgCommitteeAttributeReturnResponse) {}
   // CommitteeReverseReturn undoes one return attribution recorded in error.
-  rpc CommitteeReverseReturn(MsgCommitteeReverseReturn)
-      returns (MsgCommitteeReverseReturnResponse) {}
+  rpc CommitteeReverseReturn(MsgCommitteeReverseReturn) returns (MsgCommitteeReverseReturnResponse) {}
   // CommitteeMarkImpaired zeroes a position's recognition credit without
   // erasing the claim.
-  rpc CommitteeMarkImpaired(MsgCommitteeMarkImpaired)
-      returns (MsgCommitteeMarkImpairedResponse) {}
+  rpc CommitteeMarkImpaired(MsgCommitteeMarkImpaired) returns (MsgCommitteeMarkImpairedResponse) {}
   // CommitteeClearImpairment restores a position's recognition credit.
-  rpc CommitteeClearImpairment(MsgCommitteeClearImpairment)
-      returns (MsgCommitteeClearImpairmentResponse) {}
+  rpc CommitteeClearImpairment(MsgCommitteeClearImpairment) returns (MsgCommitteeClearImpairmentResponse) {}
   // CommitteeCorrectPosition restates a position through a correcting ledger
   // entry.
-  rpc CommitteeCorrectPosition(MsgCommitteeCorrectPosition)
-      returns (MsgCommitteeCorrectPositionResponse) {}
+  rpc CommitteeCorrectPosition(MsgCommitteeCorrectPosition) returns (MsgCommitteeCorrectPositionResponse) {}
   // CommitteeClosePosition closes a position, crystallising its realised
   // profit or loss.
-  rpc CommitteeClosePosition(MsgCommitteeClosePosition)
-      returns (MsgCommitteeClosePositionResponse) {}
+  rpc CommitteeClosePosition(MsgCommitteeClosePosition) returns (MsgCommitteeClosePositionResponse) {}
   // CommitteeBurnPaper destroys Ark-issued paper held in Reserve custody.
-  rpc CommitteeBurnPaper(MsgCommitteeBurnPaper)
-      returns (MsgCommitteeBurnPaperResponse) {}
+  rpc CommitteeBurnPaper(MsgCommitteeBurnPaper) returns (MsgCommitteeBurnPaperResponse) {}
   // CommitteeBurnSurplus destroys Reserve NOAH above the fund's capital
   // requirement.
-  rpc CommitteeBurnSurplus(MsgCommitteeBurnSurplus)
-      returns (MsgCommitteeBurnSurplusResponse) {}
+  rpc CommitteeBurnSurplus(MsgCommitteeBurnSurplus) returns (MsgCommitteeBurnSurplusResponse) {}
   // CommitteeFundBuffer tops the Redemption Buffer up toward its
   // target, bounded by what it is short.
-  rpc CommitteeFundBuffer(MsgCommitteeFundBuffer)
-      returns (MsgCommitteeFundBufferResponse) {}
+  rpc CommitteeFundBuffer(MsgCommitteeFundBuffer) returns (MsgCommitteeFundBufferResponse) {}
   // CommitteeFundInsurance tops Insurance up toward its target, bounded
   // by what it is short.
-  rpc CommitteeFundInsurance(MsgCommitteeFundInsurance)
-      returns (MsgCommitteeFundInsuranceResponse) {}
+  rpc CommitteeFundInsurance(MsgCommitteeFundInsurance) returns (MsgCommitteeFundInsuranceResponse) {}
 }
 
 // MsgSetReserveMandate is the governance request for a complete Reserve
@@ -105,16 +88,19 @@ message MsgSetReserveMandate {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgSetReserveMandate";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin deployment_allowance = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin minimum_noah_balance = 6
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated string destinations = 7
-      [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin deployment_allowance = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin minimum_noah_balance = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated string destinations = 7 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // MsgSetReserveMandateResponse is the response for a Reserve committee
@@ -128,15 +114,17 @@ message MsgSetRecognitionPolicy {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgSetRecognitionPolicy";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  repeated EligibilityEntry entries = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  repeated EligibilityEntry entries = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgSetRecognitionPolicyResponse is the response for a policy replacement.
 message MsgSetRecognitionPolicyResponse {}
 
-// MsgFundBuffer defines one governance-authorized strategic Reserve transfer
+// MsgFundBuffer defines one governance-authorised strategic Reserve transfer
 // to the Redemption Buffer. Source, destination, and denomination are fixed
 // in keeper code; the request carries no recipient, purpose selector, asset
 // selector, or call data.
@@ -144,20 +132,24 @@ message MsgFundBuffer {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgFundBuffer";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin amount = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.v1beta1.Coin amount = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // minimum_reserve_balance is a per-proposal stale-state guard, not a global
   // protocol floor. Governance may approve a full transfer by submitting zero.
-  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgFundBufferResponse is the response for a strategic
 // Reserve transfer.
 message MsgFundBufferResponse {}
 
-// MsgFundInsurance defines one governance-authorized strategic Reserve
+// MsgFundInsurance defines one governance-authorised strategic Reserve
 // transfer to Insurance. It is the Buffer transfer's twin, with the same
 // rigidity: source, destination, and denomination are fixed in keeper code,
 // and the request carries no recipient, purpose selector, asset selector, or
@@ -166,13 +158,17 @@ message MsgFundInsurance {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgFundInsurance";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  cosmos.base.v1beta1.Coin amount = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.v1beta1.Coin amount = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // minimum_reserve_balance is a per-proposal stale-state guard, not a global
   // protocol floor. Governance may approve a full transfer by submitting zero.
-  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgFundInsuranceResponse is the response for an Insurance transfer.
@@ -186,20 +182,22 @@ message MsgCorrectPosition {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgCorrectPosition";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 position_id = 2 [(amino.dont_omitempty) = true];
   // corrects names the ledger entry being restated. It must exist and belong
   // to this position.
-  uint64 corrects = 3 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin quantity = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  uint64 corrects = 3 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin quantity = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   string venue_reference = 5;
   string reference = 6;
 }
 
 // MsgCorrectPositionResponse is the response for a governance correction.
 message MsgCorrectPositionResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgClearImpairment restores a position's recognition credit as the
@@ -209,14 +207,14 @@ message MsgClearImpairment {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgClearImpairment";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 position_id = 2 [(amino.dont_omitempty) = true];
   string reference = 3;
 }
 
 // MsgClearImpairmentResponse is the response for clearing an impairment.
 message MsgClearImpairmentResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgMarkImpaired zeroes a position's recognition credit as the governance
@@ -226,14 +224,14 @@ message MsgMarkImpaired {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgMarkImpaired";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 position_id = 2 [(amino.dont_omitempty) = true];
   string reference = 3;
 }
 
 // MsgMarkImpairedResponse is the response for a governance impairment.
 message MsgMarkImpairedResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgClosePosition closes a position as the governance authority,
@@ -243,14 +241,14 @@ message MsgClosePosition {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgClosePosition";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 position_id = 2 [(amino.dont_omitempty) = true];
   string reference = 3;
 }
 
 // MsgClosePositionResponse is the response for a governance closure.
 message MsgClosePositionResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgReverseReturn undoes one return attribution as the governance authority,
@@ -265,18 +263,18 @@ message MsgReverseReturn {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgReverseReturn";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 position_id = 2 [(amino.dont_omitempty) = true];
   // reverses names the RETURN_ATTRIBUTION being undone. It must exist, belong
   // to this position, and not already have been reversed.
-  uint64 reverses = 3 [ (amino.dont_omitempty) = true ];
+  uint64 reverses = 3 [(amino.dont_omitempty) = true];
   // reference must name the evidence that the attribution was wrong.
   string reference = 4;
 }
 
 // MsgReverseReturnResponse is the response for a governance reversal.
 message MsgReverseReturnResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgBurnReserveAssets destroys Reserve custody as the governance authority,
@@ -285,7 +283,7 @@ message MsgBurnReserveAssets {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgBurnReserveAssets";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   repeated cosmos.base.v1beta1.Coin amounts = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
@@ -294,8 +292,10 @@ message MsgBurnReserveAssets {
   // minimum_reserve_balance is a per-proposal stale-state guard on the NOAH
   // component, not a global protocol floor. Governance may burn to zero by
   // submitting zero.
-  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin minimum_reserve_balance = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgBurnReserveAssetsResponse is the response for a governance burn.
@@ -308,21 +308,25 @@ message MsgCommitteeDeploy {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeDeploy";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // position_id is zero to open a new position, or an open position to fund.
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
-  string destination = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
+  string destination = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // amount is the coin leaving the Reserve: the proven leg. Only a NOAH
   // outflow consumes deployment allowance, but any denomination the account
   // holds may go out. An in-kind outflow is booked at this block's valuation
   // and refused when its feed is dark.
-  cosmos.base.v1beta1.Coin amount = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin amount = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // acquired is the holding the committee attests the outflow bought, added
   // to the position's quantity. It is the attested leg.
-  cosmos.base.v1beta1.Coin acquired = 6
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin acquired = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   string venue_reference = 7;
   // references must name at least one piece of evidence for the outflow.
   string reference = 8;
@@ -330,8 +334,8 @@ message MsgCommitteeDeploy {
 
 // MsgCommitteeDeployResponse returns the position the deployment funded.
 message MsgCommitteeDeployResponse {
-  uint64 position_id = 1 [ (amino.dont_omitempty) = true ];
-  uint64 entry_id = 2 [ (amino.dont_omitempty) = true ];
+  uint64 position_id = 1 [(amino.dont_omitempty) = true];
+  uint64 entry_id = 2 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeRecordUpdate restates a position's attested holding: settlement
@@ -340,18 +344,20 @@ message MsgCommitteeRecordUpdate {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeRecordUpdate";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   // quantity is the holding after this update, not a delta.
-  cosmos.base.v1beta1.Coin quantity = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin quantity = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   string reference = 5;
 }
 
 // MsgCommitteeRecordUpdateResponse is the response for a holding update.
 message MsgCommitteeRecordUpdateResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeAttributeReturn matches an inflow already sitting in the Reserve
@@ -361,24 +367,28 @@ message MsgCommitteeAttributeReturn {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeAttribute";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   // returned_coin is the inbound coin being attributed. Its anoah valuation
   // is computed by the keeper at this height, never supplied by the caller.
-  cosmos.base.v1beta1.Coin returned_coin = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin returned_coin = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // remaining_quantity is the position's holding after the return, so a
   // partial redemption states what is left rather than implying it.
-  cosmos.base.v1beta1.Coin remaining_quantity = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin remaining_quantity = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // references must name at least one piece of evidence for the inflow.
   string reference = 6;
 }
 
 // MsgCommitteeAttributeReturnResponse is the response for an attribution.
 message MsgCommitteeAttributeReturnResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeReverseReturn undoes one return attribution as the committee
@@ -387,18 +397,18 @@ message MsgCommitteeReverseReturn {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeReverseReturn";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   // reverses names the RETURN_ATTRIBUTION being undone.
-  uint64 reverses = 4 [ (amino.dont_omitempty) = true ];
+  uint64 reverses = 4 [(amino.dont_omitempty) = true];
   // reference must name the evidence that the attribution was wrong.
   string reference = 5;
 }
 
 // MsgCommitteeReverseReturnResponse is the response for a committee reversal.
 message MsgCommitteeReverseReturnResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeMarkImpaired zeroes a position's recognition credit without
@@ -407,15 +417,15 @@ message MsgCommitteeMarkImpaired {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeMarkImpaired";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   string reference = 4;
 }
 
 // MsgCommitteeMarkImpairedResponse is the response for an impairment.
 message MsgCommitteeMarkImpairedResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeClearImpairment restores a position's recognition credit. The
@@ -427,16 +437,16 @@ message MsgCommitteeClearImpairment {
   // full name lands exactly on the SDK's 39-byte type-name limit.
   option (amino.name) = "ark/reserve/MsgCommitteeClear";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   string reference = 4;
 }
 
 // MsgCommitteeClearImpairmentResponse is the response for clearing an
 // impairment.
 message MsgCommitteeClearImpairmentResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeCorrectPosition restates a position through a correcting ledger
@@ -448,14 +458,16 @@ message MsgCommitteeCorrectPosition {
   // The amino name drops the object noun, for the same reason.
   option (amino.name) = "ark/reserve/MsgCommitteeCorrect";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   // corrects names the ledger entry being restated. It must exist and belong
   // to this position.
-  uint64 corrects = 4 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin quantity = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  uint64 corrects = 4 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin quantity = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   string venue_reference = 6;
   string reference = 7;
 }
@@ -463,7 +475,7 @@ message MsgCommitteeCorrectPosition {
 // MsgCommitteeCorrectPositionResponse is the response for a committee
 // correction.
 message MsgCommitteeCorrectPositionResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeClosePosition closes a position, crystallising realised profit
@@ -472,15 +484,15 @@ message MsgCommitteeClosePosition {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeClosePosition";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 3 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  uint64 position_id = 3 [(amino.dont_omitempty) = true];
   string reference = 4;
 }
 
 // MsgCommitteeClosePositionResponse is the response for a closure.
 message MsgCommitteeClosePositionResponse {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeBurnPaper destroys Ark-issued paper held in Reserve custody.
@@ -491,8 +503,8 @@ message MsgCommitteeBurnPaper {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeBurnPaper";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   repeated cosmos.base.v1beta1.Coin amounts = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
@@ -512,19 +524,23 @@ message MsgCommitteeBurnSurplus {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeBurnSurplus";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // amount is the anoah to burn. It must not exceed the burnable surplus the
   // keeper derives.
-  cosmos.base.v1beta1.Coin amount = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCommitteeBurnSurplusResponse reports the surplus remaining after the
 // burn, so the committee sees what it did not take.
 message MsgCommitteeBurnSurplusResponse {
-  cosmos.base.v1beta1.Coin remaining_surplus = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin remaining_surplus = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCommitteeFundBuffer commits Reserve NOAH to the Redemption Buffer as the
@@ -535,19 +551,23 @@ message MsgCommitteeFundBuffer {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeFundBuffer";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // amount is the anoah to transfer. It must not exceed the destination's
   // shortfall, which the keeper derives.
-  cosmos.base.v1beta1.Coin amount = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCommitteeFundBufferResponse reports the shortfall remaining after
 // the transfer, so the committee sees what it did not fill.
 message MsgCommitteeFundBufferResponse {
-  cosmos.base.v1beta1.Coin remaining_shortfall = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin remaining_shortfall = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCommitteeFundInsurance commits Reserve NOAH to Insurance as the
@@ -558,17 +578,21 @@ message MsgCommitteeFundInsurance {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeFundInsurance";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // amount is the anoah to transfer, bounded by the destination's shortfall
   // exactly as on the Buffer transfer.
-  cosmos.base.v1beta1.Coin amount = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCommitteeFundInsuranceResponse reports the shortfall remaining
 // after the transfer.
 message MsgCommitteeFundInsuranceResponse {
-  cosmos.base.v1beta1.Coin remaining_shortfall = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin remaining_shortfall = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

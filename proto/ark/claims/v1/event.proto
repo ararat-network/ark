@@ -11,13 +11,13 @@ option go_package = "github.com/ararat-network/ark/x/claims/types";
 
 // EventClaimSubmitted records the keeper-assigned identity of a new claim.
 message EventClaimSubmitted {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 claim_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // EventClaimPaid records the successful settlement of a claim.
 message EventClaimPaid {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
-  string recipient = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 claim_id = 1 [(amino.dont_omitempty) = true];
+  string recipient = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string amount_denom = 3;
   string amount = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",
@@ -32,7 +32,7 @@ message EventClaimPaid {
 // keeps the full detail; this carries the attribution an indexer needs to
 // follow the transition without polling.
 message EventClaimCancelled {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 claim_id = 1 [(amino.dont_omitempty) = true];
   ClaimAuthority cancelled_by = 2;
 }
 
@@ -43,20 +43,22 @@ message EventClaimCancelled {
 // in state or in a consensus-visible field would make error-message formatting
 // consensus-critical; it goes to the node log instead, where drift is harmless.
 message EventClaimFailed {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 claim_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // EventClaimsMandateSet is emitted when governance appoints, replaces, or
 // disables the Claims committee. A disabling carries the empty committee and
 // the advanced term.
 message EventClaimsMandateSet {
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is empty when governance disabled the mandate.
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
-  ark.mandate.v1.CommitteeShape committee_shape = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ark.mandate.v1.CommitteeShape committee_shape = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

@@ -15,23 +15,19 @@ service Msg {
   option (cosmos.msg.v1.service) = true;
 
   // SetSecurityMandate appoints, replaces, or disables the security committee.
-  rpc SetSecurityMandate(MsgSetSecurityMandate)
-      returns (MsgSetSecurityMandateResponse) {}
+  rpc SetSecurityMandate(MsgSetSecurityMandate) returns (MsgSetSecurityMandateResponse) {}
 
   // CommitteePlanUpgrade schedules an emergency upgrade plan as the
   // security committee, when the pending plan slot is free or holds the
   // committee's own plan.
-  rpc CommitteePlanUpgrade(MsgCommitteePlanUpgrade)
-      returns (MsgCommitteePlanUpgradeResponse) {}
+  rpc CommitteePlanUpgrade(MsgCommitteePlanUpgrade) returns (MsgCommitteePlanUpgradeResponse) {}
 
   // CommitteeCancelUpgrade cancels the committee's own pending upgrade plan.
-  rpc CommitteeCancelUpgrade(MsgCommitteeCancelUpgrade)
-      returns (MsgCommitteeCancelUpgradeResponse) {}
+  rpc CommitteeCancelUpgrade(MsgCommitteeCancelUpgrade) returns (MsgCommitteeCancelUpgradeResponse) {}
 
   // CommitteeRecoverClient substitutes an expired or frozen IBC client as the
   // security committee.
-  rpc CommitteeRecoverClient(MsgCommitteeRecoverClient)
-      returns (MsgCommitteeRecoverClientResponse) {}
+  rpc CommitteeRecoverClient(MsgCommitteeRecoverClient) returns (MsgCommitteeRecoverClientResponse) {}
 }
 
 // MsgSetSecurityMandate is the governance request for a complete security
@@ -41,12 +37,12 @@ message MsgSetSecurityMandate {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/security/MsgSetSecurityMandate";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // committee is the exact appointed account, empty to disable. A threshold
   // multisig is the intended shape; the chain sees only the account.
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
 }
 
 // MsgSetSecurityMandateResponse is the response for a security committee
@@ -63,13 +59,13 @@ message MsgCommitteePlanUpgrade {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/security/MsgCommitteePlanUpgrade";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // name identifies the upgrade handler the patched binary must carry.
   string name = 3;
   // height is the block at which the chain halts for the upgrade, enforced by
   // x/upgrade to be in the future.
-  int64 height = 4 [ (amino.dont_omitempty) = true ];
+  int64 height = 4 [(amino.dont_omitempty) = true];
   // info carries the upgrade metadata operators read, conventionally the
   // binary locations.
   string info = 5;
@@ -87,8 +83,8 @@ message MsgCommitteeCancelUpgrade {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/security/MsgCommitteeCancelUpgrade";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeCancelUpgradeResponse is the response type for
@@ -102,8 +98,8 @@ message MsgCommitteeRecoverClient {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/security/MsgCommitteeRecoverClient";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // subject_client_id is the frozen or expired client being recovered.
   string subject_client_id = 3;
   // substitute_client_id is the active client whose state it adopts.

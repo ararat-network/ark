@@ -23,37 +23,37 @@ message EventExchangeRateUpdate {
 // EventOracleJail is emitted after a validator is jailed for insufficient
 // oracle attendance over one attendance window.
 message EventOracleJail {
-  string validator = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  uint64 eligible_blocks = 2 [ (amino.dont_omitempty) = true ];
-  uint64 attended_blocks = 3 [ (amino.dont_omitempty) = true ];
-  uint64 attendance_window = 4 [ (amino.dont_omitempty) = true ];
+  string validator = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
+  uint64 eligible_blocks = 2 [(amino.dont_omitempty) = true];
+  uint64 attended_blocks = 3 [(amino.dont_omitempty) = true];
+  uint64 attendance_window = 4 [(amino.dont_omitempty) = true];
 }
 
 // EventFeedTransitionScheduled is emitted when one feed transition is
 // scheduled.
 message EventFeedTransitionScheduled {
   string denom = 1;
-  FeedDirection direction = 2 [ (amino.dont_omitempty) = true ];
-  int64 activation_vote_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 resulting_version = 4 [ (amino.dont_omitempty) = true ];
+  FeedDirection direction = 2 [(amino.dont_omitempty) = true];
+  int64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
+  uint64 resulting_version = 4 [(amino.dont_omitempty) = true];
 }
 
 // EventFeedsActivated is emitted once per promoted activation batch.
 message EventFeedsActivated {
-  uint64 version = 1 [ (amino.dont_omitempty) = true ];
+  uint64 version = 1 [(amino.dont_omitempty) = true];
   repeated string added_denoms = 2;
   repeated string removed_denoms = 3;
 }
 
 // EventReferenceDenomUpdated is emitted after every protocol reference denom
 // write.
-message EventReferenceDenomUpdated { string reference_denom = 1; }
+message EventReferenceDenomUpdated {
+  string reference_denom = 1;
+}
 
 // EventOracleReward is emitted after a validator's Oracle rewards are funded.
 message EventOracleReward {
-  string validator = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  string validator = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
   repeated cosmos.base.v1beta1.Coin rewards = 2 [
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false,

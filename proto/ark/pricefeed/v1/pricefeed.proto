@@ -11,17 +11,13 @@ option go_package = "github.com/ararat-network/ark/pricefeed/api";
 service PriceFeed {
   // Prices defines a method for fetching the latest prices.
   rpc Prices(PricesRequest) returns (PricesResponse) {
-    option (google.api.http) = {
-      get : "/ark/pricefeed/v1/prices"
-    };
+    option (google.api.http) = {get: "/ark/pricefeed/v1/prices"};
   }
 
   // Version defines a method for fetching the current version of the
   // price-feed service.
   rpc Version(VersionRequest) returns (VersionResponse) {
-    option (google.api.http) = {
-      get : "/ark/pricefeed/v1/version"
-    };
+    option (google.api.http) = {get: "/ark/pricefeed/v1/version"};
   }
 }
 
@@ -31,11 +27,13 @@ message PricesRequest {}
 // PricesResponse defines the response type for the Prices method.
 message PricesResponse {
   // Prices defines the list of prices.
-  map<string, bytes> prices = 1 [ (gogoproto.nullable) = false ];
+  map<string, bytes> prices = 1 [(gogoproto.nullable) = false];
 
   // Timestamp defines the timestamp of the prices.
-  google.protobuf.Timestamp timestamp = 2
-      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp timestamp = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
 
   // Version defines the version of the price-feed service that provided the
   // prices.

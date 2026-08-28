@@ -10,8 +10,8 @@ option go_package = "github.com/ararat-network/ark/x/market/types";
 
 // EventSwap is emitted after a Market swap settles successfully.
 message EventSwap {
-  string trader = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string recipient = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string trader = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string recipient = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string offer_denom = 3;
   string offer_amount = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",
@@ -69,7 +69,7 @@ message EventPoolUpdated {
 // distinct from EventSwap because the rate is the plan's, not the oracle's,
 // and no pool state moves.
 message EventSettle {
-  string trader = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string trader = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string offer_denom = 2;
   string offer_amount = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
@@ -111,18 +111,22 @@ message EventTobinTaxOverrideSet {
 // EventTobinTaxOverrideRemoved is emitted when governance deletes one
 // per-denomination Tobin exception, returning that denomination to the
 // default rate.
-message EventTobinTaxOverrideRemoved { string denom = 1; }
+message EventTobinTaxOverrideRemoved {
+  string denom = 1;
+}
 
 // EventConversionMandateSet is emitted when governance appoints, replaces, or
 // disables the conversion committee. A disabling carries the empty committee
 // and the advanced term.
 message EventConversionMandateSet {
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  uint64 term = 1 [(amino.dont_omitempty) = true];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
-  ark.mandate.v1.CommitteeShape committee_shape = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ark.mandate.v1.CommitteeShape committee_shape = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

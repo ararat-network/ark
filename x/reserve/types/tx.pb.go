@@ -259,7 +259,7 @@ func (m *MsgSetRecognitionPolicyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgSetRecognitionPolicyResponse proto.InternalMessageInfo
 
-// MsgFundBuffer defines one governance-authorized strategic Reserve transfer
+// MsgFundBuffer defines one governance-authorised strategic Reserve transfer
 // to the Redemption Buffer. Source, destination, and denomination are fixed
 // in keeper code; the request carries no recipient, purpose selector, asset
 // selector, or call data.
@@ -363,7 +363,7 @@ func (m *MsgFundBufferResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgFundBufferResponse proto.InternalMessageInfo
 
-// MsgFundInsurance defines one governance-authorized strategic Reserve
+// MsgFundInsurance defines one governance-authorised strategic Reserve
 // transfer to Insurance. It is the Buffer transfer's twin, with the same
 // rigidity: source, destination, and denomination are fixed in keeper code,
 // and the request carries no recipient, purpose selector, asset selector, or

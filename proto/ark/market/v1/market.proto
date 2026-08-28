@@ -2,10 +2,10 @@ syntax = "proto3";
 package ark.market.v1;
 
 import "amino/amino.proto";
+import "ark/mandate/v1/envelope.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "ark/mandate/v1/envelope.proto";
 
 option go_package = "github.com/ararat-network/ark/x/market/types";
 
@@ -51,11 +51,13 @@ message Params {
 // policy update from either entry point.
 message ConversionPolicy {
   // base_pool defines the denomination-labelled virtual-pool depth.
-  cosmos.base.v1beta1.DecCoin base_pool = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.DecCoin base_pool = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // pool_recovery_period is the number of blocks over which the pool delta
   // decays back to the base depth.
-  uint64 pool_recovery_period = 2 [ (amino.dont_omitempty) = true ];
+  uint64 pool_recovery_period = 2 [(amino.dont_omitempty) = true];
   // min_stability_spread is the floor under the constant-product spread on
   // every NOAH pair. It is dimensionless, so unlike depth it means the same
   // thing before and after a reference re-point.
@@ -99,10 +101,14 @@ message ConversionMandate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  ConversionPolicy minimum_policy = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  ConversionPolicy maximum_policy = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ConversionPolicy minimum_policy = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  ConversionPolicy maximum_policy = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // max_tobin_tax is the upper edge of the band the committee may set any
   // registered denomination's Tobin rate within. The lower edge is
   // Params.default_tobin_tax, so governance owns both ends exactly as it owns

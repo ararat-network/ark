@@ -22720,7 +22720,7 @@ func (*MsgSetRecognitionPolicyResponse) Descriptor() ([]byte, []int) {
 	return file_ark_reserve_v1_tx_proto_rawDescGZIP(), []int{3}
 }
 
-// MsgFundBuffer defines one governance-authorized strategic Reserve transfer
+// MsgFundBuffer defines one governance-authorised strategic Reserve transfer
 // to the Redemption Buffer. Source, destination, and denomination are fixed
 // in keeper code; the request carries no recipient, purpose selector, asset
 // selector, or call data.
@@ -22805,7 +22805,7 @@ func (*MsgFundBufferResponse) Descriptor() ([]byte, []int) {
 	return file_ark_reserve_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
-// MsgFundInsurance defines one governance-authorized strategic Reserve
+// MsgFundInsurance defines one governance-authorised strategic Reserve
 // transfer to Insurance. It is the Buffer transfer's twin, with the same
 // rigidity: source, destination, and denomination are fixed in keeper code,
 // and the request carries no recipient, purpose selector, asset selector, or

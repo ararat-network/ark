@@ -17,15 +17,13 @@ service Msg {
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
   // SetMonetaryMandate appoints, replaces, or disables the bounded
   // monetary-policy committee.
-  rpc SetMonetaryMandate(MsgSetMonetaryMandate)
-      returns (MsgSetMonetaryMandateResponse) {}
+  rpc SetMonetaryMandate(MsgSetMonetaryMandate) returns (MsgSetMonetaryMandateResponse) {}
   // UpdatePolicy applies one complete reversible policy candidate as
   // the governance authority, unbounded by the committee mandate.
   rpc UpdatePolicy(MsgUpdatePolicy) returns (MsgUpdatePolicyResponse) {}
   // CommitteeUpdatePolicy applies one complete reversible policy
   // candidate as the monetary-policy committee, inside its mandate bounds.
-  rpc CommitteeUpdatePolicy(MsgCommitteeUpdatePolicy)
-      returns (MsgCommitteeUpdatePolicyResponse) {}
+  rpc CommitteeUpdatePolicy(MsgCommitteeUpdatePolicy) returns (MsgCommitteeUpdatePolicyResponse) {}
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -33,9 +31,11 @@ message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/treasury/MsgUpdateParams";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  Params params = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Params params = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgUpdateParamsResponse is the Msg/UpdateParams response type.
@@ -48,14 +48,18 @@ message MsgSetMonetaryMandate {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/treasury/MsgSetMonetaryMandate";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
-  MonetaryPolicy minimum_policy = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryPolicy maximum_policy = 6
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  MonetaryPolicy minimum_policy = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  MonetaryPolicy maximum_policy = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgSetMonetaryMandateResponse is the response for a committee
@@ -69,9 +73,11 @@ message MsgUpdatePolicy {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/treasury/MsgUpdatePolicy";
 
-  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  MonetaryPolicy policy = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  MonetaryPolicy policy = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgUpdatePolicyResponse is the response for one governance
@@ -88,10 +94,12 @@ message MsgCommitteeUpdatePolicy {
   // name, signer, and semantics are unchanged.
   option (amino.name) = "ark/treasury/MsgCommitteeUpdatePolicy";
 
-  string committee = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 expected_term = 2 [ (amino.dont_omitempty) = true ];
-  MonetaryPolicy policy = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  MonetaryPolicy policy = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCommitteeUpdatePolicyResponse is the response for one committee

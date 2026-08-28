@@ -9,29 +9,41 @@ option go_package = "github.com/ararat-network/ark/x/treasury/types";
 
 // GenesisState defines the treasury module's genesis state.
 message GenesisState {
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  repeated TaxCap tax_caps = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  RewardFundingState reward_funding = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryMandate monetary_mandate = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  MonetaryPolicy monetary_policy = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated TaxCap tax_caps = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  RewardFundingState reward_funding = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  MonetaryMandate monetary_mandate = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  MonetaryPolicy monetary_policy = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // tax_cap_refresh_pending records a cadence boundary that passed without a
   // successful tax-cap rebuild, so an owed refresh survives export and import
   // instead of being forgiven by the migration.
-  bool tax_cap_refresh_pending = 6 [ (amino.dont_omitempty) = true ];
+  bool tax_cap_refresh_pending = 6 [(amino.dont_omitempty) = true];
   // exposure_state carries the multiplier and the two sampled series across an
   // export. The series are the only history behind the multiplier, so dropping
   // them would restart every EWMA from zero and hand the new chain a
   // calm-market multiplier during whatever conditions prompted the export.
-  ExposureState exposure_state = 7
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ExposureState exposure_state = 7 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // exposure_refresh_pending records a refresh period that elapsed without a
   // successful recomputation, on the same terms as tax_cap_refresh_pending: the
   // boundary is an instant rather than a state, so an owed refresh survives
   // export instead of being forgiven by the migration.
-  bool exposure_refresh_pending = 8 [ (amino.dont_omitempty) = true ];
+  bool exposure_refresh_pending = 8 [(amino.dont_omitempty) = true];
 }

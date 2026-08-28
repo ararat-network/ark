@@ -4751,7 +4751,7 @@ type Params struct {
 	// per-denomination tax-cap map. A zero amount means taxation is uncapped; a
 	// positive amount derives positive per-denomination ceilings.
 	ReferenceTaxCap *v1beta1.Coin `protobuf:"bytes,1,opt,name=reference_tax_cap,json=referenceTaxCap,proto3" json:"reference_tax_cap,omitempty"`
-	// reward_funding_window initializes each new funding countdown.
+	// reward_funding_window initialises each new funding countdown.
 	RewardFundingWindow uint64 `protobuf:"varint,2,opt,name=reward_funding_window,json=rewardFundingWindow,proto3" json:"reward_funding_window,omitempty"`
 	// tax_cap_refresh_period_blocks is how often the derived per-denomination
 	// caps are trued up against rate drift. Membership changes refresh the map on
@@ -5241,7 +5241,7 @@ func (x *TaxCap) GetTaxCap() string {
 	return ""
 }
 
-// WrittenOffExposure discloses supply governance has formally derecognized.
+// WrittenOffExposure discloses supply governance has formally derecognised.
 // The coin carries the denomination; the version pins which asset record the
 // write-off resolved.
 type WrittenOffExposure struct {

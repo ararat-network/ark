@@ -186,7 +186,7 @@ func (m *EventUnpricedStabilityTaxRouted) GetDeferred() github_com_cosmos_cosmos
 }
 
 // EventLiabilityIncomplete discloses a liability valuation that could not
-// cover every recognized liability, and is emitted only in that degraded
+// cover every recognised liability, and is emitted only in that degraded
 // state. At least one of the two supply lists below is non-empty and is the
 // reason. Conversion settlement emits it once for the block's own valuation,
 // and a committee bound sized on the degraded aggregate emits it again inside

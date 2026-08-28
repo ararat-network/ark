@@ -20,8 +20,7 @@ service Query {
   }
 
   // ClaimsMandate queries the committee mandate and its term allowance.
-  rpc ClaimsMandate(QueryClaimsMandateRequest)
-      returns (QueryClaimsMandateResponse) {
+  rpc ClaimsMandate(QueryClaimsMandateRequest) returns (QueryClaimsMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/claims/v1/mandate";
   }
@@ -51,8 +50,10 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is the response type for Query/Params.
 message QueryParamsResponse {
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryClaimsMandateRequest is the request type for Query/ClaimsMandate.
@@ -62,13 +63,19 @@ message QueryClaimsMandateRequest {}
 // Every figure here is scoped to the current term and resets with it. The
 // Insurance encumbrance does not, so it answers Query/Balance instead.
 message QueryClaimsMandateResponse {
-  ClaimsMandate mandate = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  bool active = 2 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin allowance_used = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin allowance_remaining = 4
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ClaimsMandate mandate = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  bool active = 2 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin allowance_used = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin allowance_remaining = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryBalanceRequest is the request type for Query/Balance.
@@ -77,23 +84,29 @@ message QueryBalanceRequest {}
 // QueryBalanceResponse is the response type for Query/Balance. Their
 // difference is the capital the fund recognises toward its Treasury target.
 message QueryBalanceResponse {
-  cosmos.base.v1beta1.Coin balance = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin balance = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // reserved spans the pending claims of every term. Mandate replacement resets
   // the committee allowance and never clears this.
-  cosmos.base.v1beta1.Coin reserved = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  cosmos.base.v1beta1.Coin reserved = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryClaimRequest is the request type for Query/Claim.
 message QueryClaimRequest {
-  uint64 claim_id = 1 [ (amino.dont_omitempty) = true ];
+  uint64 claim_id = 1 [(amino.dont_omitempty) = true];
 }
 
 // QueryClaimResponse is the response type for Query/Claim.
 message QueryClaimResponse {
-  Claim claim = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Claim claim = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryClaimsRequest is the request type for Query/Claims.
@@ -103,7 +116,9 @@ message QueryClaimsRequest {
 
 // QueryClaimsResponse is the response type for Query/Claims.
 message QueryClaimsResponse {
-  repeated Claim claims = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated Claim claims = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

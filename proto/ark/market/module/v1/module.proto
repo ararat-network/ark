@@ -6,7 +6,5 @@ import "cosmos/app/v1alpha1/module.proto";
 
 // Module is the config object for the market module.
 message Module {
-  option (cosmos.app.v1alpha1.module) = {
-    go_import : "ark/x/market"
-  };
+  option (cosmos.app.v1alpha1.module) = {go_import: "ark/x/market"};
 }

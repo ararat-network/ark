@@ -211,7 +211,7 @@ type Claim struct {
 	ClaimId   uint64         `protobuf:"varint,1,opt,name=claim_id,json=claimId,proto3" json:"claim_id,omitempty"`
 	Submitter string         `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
 	Origin    ClaimAuthority `protobuf:"varint,3,opt,name=origin,proto3,enum=ark.claims.v1.ClaimAuthority" json:"origin,omitempty"`
-	// mandate_term records the committee appointment that authorized the claim;
+	// mandate_term records the committee appointment that authorised the claim;
 	// zero for governance claims, which do not depend on the Claims mandate.
 	MandateTerm uint64 `protobuf:"varint,4,opt,name=mandate_term,json=mandateTerm,proto3" json:"mandate_term,omitempty"`
 	// reference is the required, bounded pointer to the off-chain case record

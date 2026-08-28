@@ -13,33 +13,39 @@ option go_package = "github.com/ararat-network/ark/x/reserve/types";
 // disables the Reserve committee. A disabling carries the empty committee and
 // the advanced term.
 message EventReserveMandateSet {
-  uint64 term = 1 [ (amino.dont_omitempty) = true ];
+  uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is empty when governance disabled the mandate.
-  string committee = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 activation_height = 3 [ (amino.dont_omitempty) = true ];
-  uint64 expiry_height = 4 [ (amino.dont_omitempty) = true ];
+  string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
-  ark.mandate.v1.CommitteeShape committee_shape = 5
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  ark.mandate.v1.CommitteeShape committee_shape = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventRecognitionPolicySet is emitted when governance replaces the
 // recognition policy. It carries the denominations rather than the full
 // entries, which remain queryable state.
-message EventRecognitionPolicySet { repeated string denoms = 1; }
+message EventRecognitionPolicySet {
+  repeated string denoms = 1;
+}
 
 // EventPositionOpened records the keeper-assigned identity of a new position.
 message EventPositionOpened {
-  uint64 position_id = 1 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin deployed = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  uint64 position_id = 1 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin deployed = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EventLedgerEntryRecorded records every append to the ledger.
 message EventLedgerEntryRecorded {
-  uint64 entry_id = 1 [ (amino.dont_omitempty) = true ];
-  uint64 position_id = 2 [ (amino.dont_omitempty) = true ];
+  uint64 entry_id = 1 [(amino.dont_omitempty) = true];
+  uint64 position_id = 2 [(amino.dont_omitempty) = true];
   // kind is the EntryKind name, carried as a string so an indexer reading
   // only events need not track the enum's numbering.
   string kind = 3;
@@ -49,11 +55,15 @@ message EventLedgerEntryRecorded {
 // close crystallised. realised is the signed anoah difference between what
 // came back and what went out.
 message EventPositionClosed {
-  uint64 position_id = 1 [ (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin deployed = 2
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
-  cosmos.base.v1beta1.Coin returned = 3
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  uint64 position_id = 1 [(amino.dont_omitempty) = true];
+  cosmos.base.v1beta1.Coin deployed = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin returned = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // realised is negative on a loss, so it is a signed Int rather than a Coin.
   string realised = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",

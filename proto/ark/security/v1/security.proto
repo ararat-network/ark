@@ -28,7 +28,7 @@ message SecurityMandate {
 // reads as "not ours".
 message CommitteePlan {
   string name = 1;
-  int64 height = 2 [ (amino.dont_omitempty) = true ];
+  int64 height = 2 [(amino.dont_omitempty) = true];
   // term is the appointment that scheduled it.
-  uint64 term = 3 [ (amino.dont_omitempty) = true ];
+  uint64 term = 3 [(amino.dont_omitempty) = true];
 }

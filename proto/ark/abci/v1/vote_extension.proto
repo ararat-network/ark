@@ -1,5 +1,5 @@
 syntax = "proto3";
-package ark.abci;
+package ark.abci.v1;
 
 option go_package = "github.com/ararat-network/ark/abci/voteextension/types";
 

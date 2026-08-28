@@ -2,28 +2,25 @@ syntax = "proto3";
 package ark.oracle.v1;
 
 import "amino/amino.proto";
+import "ark/oracle/v1/oracle.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "ark/oracle/v1/oracle.proto";
 
 option go_package = "github.com/ararat-network/ark/x/oracle/types";
 
 // Query defines the gRPC querier service.
 service Query {
   // ExchangeRate returns exchange rate of a denom
-  rpc ExchangeRate(QueryExchangeRateRequest)
-      returns (QueryExchangeRateResponse) {
+  rpc ExchangeRate(QueryExchangeRateRequest) returns (QueryExchangeRateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/ark/oracle/v1/denoms/{denom}/exchange_rate";
+    option (google.api.http).get = "/ark/oracle/v1/denoms/{denom}/exchange_rate";
   }
 
   // ExchangeRates returns exchange rates of all denoms
-  rpc ExchangeRates(QueryExchangeRatesRequest)
-      returns (QueryExchangeRatesResponse) {
+  rpc ExchangeRates(QueryExchangeRatesRequest) returns (QueryExchangeRatesResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/oracle/v1/denoms/exchange_rates";
   }
@@ -41,32 +38,27 @@ service Query {
   // Deliberately not module_query_safe: referent descriptions are consumer-
   // owned prose for operators, and whitelisting them for wasm and ICQ would
   // make rewording a claim a state-machine-breaking change.
-  rpc FeedReferents(QueryFeedReferentsRequest)
-      returns (QueryFeedReferentsResponse) {
+  rpc FeedReferents(QueryFeedReferentsRequest) returns (QueryFeedReferentsResponse) {
     option (google.api.http).get = "/ark/oracle/v1/feeds/{denom}/referents";
   }
 
   // ReferenceDenom returns the denomination whose feed is the shared protocol
   // reference unit.
-  rpc ReferenceDenom(QueryReferenceDenomRequest)
-      returns (QueryReferenceDenomResponse) {
+  rpc ReferenceDenom(QueryReferenceDenomRequest) returns (QueryReferenceDenomResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/oracle/v1/reference_denom";
   }
 
   // RewardWeight returns a validator's accumulated oracle reward weight.
-  rpc RewardWeight(QueryRewardWeightRequest)
-      returns (QueryRewardWeightResponse) {
+  rpc RewardWeight(QueryRewardWeightRequest) returns (QueryRewardWeightResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/ark/oracle/v1/validators/{validator_addr}/reward_weight";
+    option (google.api.http).get = "/ark/oracle/v1/validators/{validator_addr}/reward_weight";
   }
 
   // Attendance returns a validator's in-progress oracle attendance counters.
   rpc Attendance(QueryAttendanceRequest) returns (QueryAttendanceResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get =
-        "/ark/oracle/v1/validators/{validator_addr}/attendance";
+    option (google.api.http).get = "/ark/oracle/v1/validators/{validator_addr}/attendance";
   }
 
   // Params queries all parameters.
@@ -117,8 +109,10 @@ message QueryFeedsRequest {}
 // QueryFeedsResponse is the response type for the Query/Feeds RPC method.
 message QueryFeedsResponse {
   // feeds defines the active feed set and any scheduled transitions.
-  Feeds feeds = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Feeds feeds = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryFeedReferentsRequest is the request type for the Query/FeedReferents
@@ -134,8 +128,10 @@ message QueryFeedReferentsResponse {
   // referents lists every claim consumers hold on the feed. Empty means no
   // consumer blocks removal. Unpaginated: the count is bounded by consumers
   // times claims per consumer.
-  repeated FeedReferent referents = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  repeated FeedReferent referents = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryReferenceDenomRequest is the request type for the Query/ReferenceDenom
@@ -154,8 +150,7 @@ message QueryReferenceDenomResponse {
 // method.
 message QueryRewardWeightRequest {
   // validator defines the validator address to query for.
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  string validator_addr = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
 }
 
 // QueryRewardWeightResponse is response type for the
@@ -174,15 +169,16 @@ message QueryRewardWeightResponse {
 // method.
 message QueryAttendanceRequest {
   // validator defines the validator address to query for.
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
+  string validator_addr = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
 }
 
 // QueryAttendanceResponse is response type for the Query/Attendance RPC
 // method.
 message QueryAttendanceResponse {
-  Attendance attendance = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Attendance attendance = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -191,6 +187,8 @@ message QueryParamsRequest {}
 // QueryParamsResponse is the response type for the Query/Params RPC method.
 message QueryParamsResponse {
   // params defines the parameters of the module.
-  Params params = 1
-      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
