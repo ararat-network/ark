@@ -172,6 +172,9 @@ string field_name = N [
 
 - Address keys: use typed codecs (`sdk.ValAddressKey`, `sdk.AccAddressKey`), not `collections.StringKey`
 - Address as value: `collcodec.KeyToValueCodec(sdk.AccAddressKey)` — adapts a KeyCodec into a ValueCodec
+- Key persistent state by operator address (`sdk.ValAddress`), never by consensus address. The operator address is the
+  validator's identity; the consensus address is a rotatable credential, and SDK v0.55 key rotation makes that mapping
+  mutable. Cons-addr-keyed state has to be migrated on every rotation; cons addrs belong at attribution boundaries only
 - Default param values: use `const` for compile-time literals (integers, strings); `var` only for runtime init (function
   calls, struct/slice literals)
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
