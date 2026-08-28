@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/internal/fiat"
 	api "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
@@ -26,51 +27,14 @@ func NewHandler() *Handler {
 // BatchTickers groups tickers by base currency, then applies batchSize within
 // each base group. A zero batchSize keeps each base group in one request.
 func (h *Handler) BatchTickers(tickers []types.Ticker, batchSize int) ([][]types.Ticker, error) {
-	if len(tickers) == 0 {
-		return nil, nil
-	}
-
-	baseOrder := make([]string, 0)
-	byBase := make(map[string][]types.Ticker)
-	for _, ticker := range tickers {
-		base, _, err := splitTicker(ticker)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := byBase[base]; !ok {
-			baseOrder = append(baseOrder, base)
-		}
-		byBase[base] = append(byBase[base], ticker)
-	}
-
-	batches := make([][]types.Ticker, 0, len(baseOrder))
-	for _, base := range baseOrder {
-		batches = append(batches, api.BatchTickers(byBase[base], batchSize)...)
-	}
-	return batches, nil
+	return fiat.BatchTickers(tickers, batchSize)
 }
 
 // CreateURL returns the URL used to fetch one same-base exchange-rate batch.
 func (h *Handler) CreateURL(endpoint types.Endpoint, tickers []types.Ticker) (string, error) {
-	if len(tickers) == 0 {
-		return "", errors.New("tickers cannot be empty")
-	}
-
-	base, firstQuote, err := splitTicker(tickers[0])
+	base, quotes, err := fiat.BatchBaseQuotes(tickers)
 	if err != nil {
 		return "", err
-	}
-	quotes := make([]string, 0, len(tickers))
-	quotes = append(quotes, firstQuote)
-	for _, ticker := range tickers[1:] {
-		tickerBase, quote, err := splitTicker(ticker)
-		if err != nil {
-			return "", err
-		}
-		if tickerBase != base {
-			return "", fmt.Errorf("ticker base %q does not match batch base %q", tickerBase, base)
-		}
-		quotes = append(quotes, quote)
 	}
 
 	parsedURL, err := url.Parse(endpoint.URL)
@@ -101,7 +65,7 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 
 	timestamp := time.Now().UTC()
 	for _, result := range results {
-		ticker, ok := requestedTickers.Lookup(pairKey(result.Base, result.Quote))
+		ticker, ok := requestedTickers.Lookup(fiat.PairKey(result.Base, result.Quote))
 		if !ok {
 			continue
 		}
@@ -124,23 +88,4 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 	}
 
 	return types.NewResponse(resolved, unresolved)
-}
-
-func splitTicker(ticker types.Ticker) (string, string, error) {
-	parts := strings.Split(strings.TrimSpace(string(ticker)), "/")
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf(`expected ticker in "BASE/QUOTE" format, got %q`, ticker)
-	}
-
-	base := strings.ToUpper(strings.TrimSpace(parts[0]))
-	quote := strings.ToUpper(strings.TrimSpace(parts[1]))
-	if base == "" || quote == "" {
-		return "", "", fmt.Errorf(`expected ticker in "BASE/QUOTE" format, got %q`, ticker)
-	}
-
-	return base, quote, nil
-}
-
-func pairKey(base, quote string) string {
-	return strings.ToUpper(strings.TrimSpace(base)) + "/" + strings.ToUpper(strings.TrimSpace(quote))
 }
