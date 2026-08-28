@@ -5,7 +5,7 @@ import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/pkg/mandate";
+option go_package = "github.com/ararat-network/ark/pkg/mandate";
 
 // CommitteeKeyKind names what backs authorisation for a committee account. The
 // set of key types is closed by the interface registry — an unregistered key

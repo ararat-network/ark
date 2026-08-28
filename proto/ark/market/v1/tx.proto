@@ -8,7 +8,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "ark/market/v1/market.proto";
 
-option go_package = "ark/x/market/types";
+option go_package = "github.com/ararat-network/ark/x/market/types";
 
 // Msg defines the market Msg service.
 service Msg {

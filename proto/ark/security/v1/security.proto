@@ -5,7 +5,7 @@ import "amino/amino.proto";
 import "ark/mandate/v1/envelope.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/security/types";
+option go_package = "github.com/ararat-network/ark/x/security/types";
 
 // SecurityMandate stores one governance-created, height-scoped security
 // committee appointment. An empty committee identifies a disabled mandate;

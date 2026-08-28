@@ -6,7 +6,7 @@ import "ark/mandate/v1/envelope.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/market/types";
+option go_package = "github.com/ararat-network/ark/x/market/types";
 
 // EventSwap is emitted after a Market swap settles successfully.
 message EventSwap {

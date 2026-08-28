@@ -5,7 +5,7 @@ import "amino/amino.proto";
 import "ark/security/v1/security.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/security/types";
+option go_package = "github.com/ararat-network/ark/x/security/types";
 
 // GenesisState defines the security module's genesis state.
 message GenesisState {

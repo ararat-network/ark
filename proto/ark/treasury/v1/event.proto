@@ -8,7 +8,7 @@ import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/treasury/types";
+option go_package = "github.com/ararat-network/ark/x/treasury/types";
 
 // EventTaxCapsRefreshed reports one completed pass of the derived tax-cap
 // rebuild. It is emitted per pass that wrote something rather than per changed

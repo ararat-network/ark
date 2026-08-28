@@ -5,7 +5,7 @@ import "amino/amino.proto";
 import "ark/treasury/v1/treasury.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/treasury/types";
+option go_package = "github.com/ararat-network/ark/x/treasury/types";
 
 // GenesisState defines the treasury module's genesis state.
 message GenesisState {

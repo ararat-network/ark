@@ -1,7 +1,7 @@
 syntax = "proto3";
 package ark.pricefeed.v1;
 
-option go_package = "ark/pricefeed/api";
+option go_package = "github.com/ararat-network/ark/pricefeed/api";
 
 // PriceFeedAdmin defines process-local price-feed administration operations.
 service PriceFeedAdmin {

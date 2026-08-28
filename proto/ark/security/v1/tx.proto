@@ -5,7 +5,7 @@ import "amino/amino.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "ark/x/security/types";
+option go_package = "github.com/ararat-network/ark/x/security/types";
 
 // Msg defines the security Msg service. Only the appointment is governance's
 // here; every other method is the committee's bounded door to a power

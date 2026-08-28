@@ -6,7 +6,7 @@ import "ark/claims/v1/claims.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/claims/types";
+option go_package = "github.com/ararat-network/ark/x/claims/types";
 
 // GenesisState defines the claims module's genesis state.
 message GenesisState {

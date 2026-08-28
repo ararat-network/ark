@@ -7,7 +7,7 @@ import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/reserve/types";
+option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
 // EventReserveMandateSet is emitted when governance appoints, replaces, or
 // disables the Reserve committee. A disabling carries the empty committee and

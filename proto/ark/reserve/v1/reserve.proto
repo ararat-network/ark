@@ -8,7 +8,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/duration.proto";
 
-option go_package = "ark/x/reserve/types";
+option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
 // EntryKind identifies what one ledger entry records. DEPLOYMENT and
 // RETURN_ATTRIBUTION carry a coin movement the chain executed, while

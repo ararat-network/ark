@@ -7,7 +7,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "ark/mandate/v1/envelope.proto";
 
-option go_package = "ark/x/market/types";
+option go_package = "github.com/ararat-network/ark/x/market/types";
 
 // Params defines the parameters for the market module.
 //

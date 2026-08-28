@@ -6,7 +6,7 @@ import "ark/mandate/v1/envelope.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/security/types";
+option go_package = "github.com/ararat-network/ark/x/security/types";
 
 // EventSecurityMandateSet is emitted when governance appoints, replaces, or
 // disables the security committee.

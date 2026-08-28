@@ -8,7 +8,7 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/reserve/types";
+option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
 // Msg defines the reserve module's message service. Every action a role may
 // take is its own message type, so the complete committee surface is

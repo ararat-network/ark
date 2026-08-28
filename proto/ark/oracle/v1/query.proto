@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "ark/oracle/v1/oracle.proto";
 
-option go_package = "ark/x/oracle/types";
+option go_package = "github.com/ararat-network/ark/x/oracle/types";
 
 // Query defines the gRPC querier service.
 service Query {

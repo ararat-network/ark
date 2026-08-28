@@ -6,7 +6,7 @@ import "ark/reserve/v1/reserve.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/reserve/types";
+option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
 // GenesisState defines the reserve module's genesis state. Every position's
 // proven legs are re-derived from the ledger at import and required to match.

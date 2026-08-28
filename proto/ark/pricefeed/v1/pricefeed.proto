@@ -5,7 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "ark/pricefeed/api";
+option go_package = "github.com/ararat-network/ark/pricefeed/api";
 
 // PriceFeed defines the gRPC price-feed service the sidecar serves.
 service PriceFeed {

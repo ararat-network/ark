@@ -9,7 +9,7 @@ import "cosmos/query/v1/query.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 
-option go_package = "ark/x/reserve/types";
+option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
 // Query defines the reserve module's gRPC query service.
 service Query {

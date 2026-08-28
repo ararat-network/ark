@@ -7,7 +7,7 @@ import "ark/mandate/v1/envelope.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/claims/types";
+option go_package = "github.com/ararat-network/ark/x/claims/types";
 
 // EventClaimSubmitted records the keeper-assigned identity of a new claim.
 message EventClaimSubmitted {

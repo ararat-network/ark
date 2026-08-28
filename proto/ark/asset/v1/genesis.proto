@@ -5,7 +5,7 @@ import "amino/amino.proto";
 import "ark/asset/v1/asset.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "ark/x/asset/types";
+option go_package = "github.com/ararat-network/ark/x/asset/types";
 
 // GenesisState defines the asset module's genesis state. The protocol
 // reference moved to ark.oracle.v1's genesis with the reference itself.
