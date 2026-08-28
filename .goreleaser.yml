@@ -2,45 +2,85 @@ version: 2
 
 project_name: arkd
 
+# arkd links libwasmvm through cgo, so it is released as a static musl
+# binary and only for linux — the wasmd/Osmosis pattern. This config must
+# run inside a musl container that provides x86_64-linux-musl-gcc,
+# aarch64-linux-musl-gcc, and the libwasmvm_muslc.<arch>.a static
+# libraries for the wasmvm version in go.mod, staged where the linker
+# finds them. macOS developers build from source with `make install`.
+#
+# CI may export CMT_VERSION (go list -m github.com/cometbft/cometbft)
+# to stamp the CometBFT version the way `make build` does.
+
 release:
-  name_template: "{{.Tag}}"
+  name_template: "{{ .Tag }}"
 
 before:
   hooks:
-    - go mod tidy
+    - go mod verify
 
 builds:
-  - id: arkd
+  - id: arkd-amd64
     main: ./cmd/arkd
     binary: arkd
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
-      - arm64
     env:
-      - LEDGER_ENABLED=true
+      - CGO_ENABLED=1
+      - CC=x86_64-linux-musl-gcc
     flags:
       - -trimpath
       - -mod=readonly
     tags:
       - netgo
       - ledger
+      - muslc
     ldflags:
-      - "-X github.com/cosmos/cosmos-sdk/version.Name=ark"
-      - "-X github.com/cosmos/cosmos-sdk/version.AppName=arkd"
-      - "-X github.com/cosmos/cosmos-sdk/version.Version={{.Version}}"
-      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}"
-      - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger"'
+      # version.Name and version.AppName are chain identity, set in
+      # app/config.go rather than stamped here.
+      - "-X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}"
+      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
+      - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc"'
+      - '-X github.com/cometbft/cometbft/version.TMCoreSemVer={{ envOrDefault "CMT_VERSION" "" }}'
       - "-w"
       - "-s"
+      - "-linkmode=external"
+      - '-extldflags "-Wl,-z,muslsymversions -static"'
 
-  # The oracle sidecar is an off-chain process: no ledger support, and a static
-  # binary so it can be dropped into a minimal container alongside the node.
-  - id: oracle
-    main: ./cmd/oracle
-    binary: oracle
+  - id: arkd-arm64
+    main: ./cmd/arkd
+    binary: arkd
+    goos:
+      - linux
+    goarch:
+      - arm64
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-musl-gcc
+    flags:
+      - -trimpath
+      - -mod=readonly
+    tags:
+      - netgo
+      - ledger
+      - muslc
+    ldflags:
+      - "-X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}"
+      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
+      - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc"'
+      - '-X github.com/cometbft/cometbft/version.TMCoreSemVer={{ envOrDefault "CMT_VERSION" "" }}'
+      - "-w"
+      - "-s"
+      - "-linkmode=external"
+      - '-extldflags "-Wl,-z,muslsymversions -static"'
+
+  # The price-feed sidecar is pure Go: no cgo, static by default, and
+  # cross-compiles to every target from one host.
+  - id: pricefeed
+    main: ./cmd/pricefeed
+    binary: pricefeed
     goos:
       - linux
       - darwin
@@ -55,24 +95,32 @@ builds:
     tags:
       - netgo
     ldflags:
-      - "-X github.com/cosmos/cosmos-sdk/version.Version={{.Version}}"
-      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}"
+      - "-X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}"
+      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
       - "-w"
       - "-s"
 
 archives:
   - id: arkd
     ids:
-      - arkd
-    name_template: '{{ replace .Version "arkd/" "arkd-" }}-{{ .Os }}-{{ .Arch }}'
-  - id: oracle
+      - arkd-amd64
+      - arkd-arm64
+    name_template: "arkd-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    files:
+      - README.md
+  - id: pricefeed
     ids:
-      - oracle
-    name_template: 'oracle-{{ replace .Version "arkd/" "arkd-" }}-{{ .Os }}-{{ .Arch }}'
+      - pricefeed
+    name_template: "pricefeed-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    files:
+      - README.md
 
 checksum:
-  name_template: 'SHA256SUMS-{{ replace .Version "arkd/" "arkd-" }}.txt'
+  name_template: "SHA256SUMS-{{ .Version }}.txt"
   algorithm: sha256
+
+snapshot:
+  version_template: "{{ .Version }}-snapshot-{{ .ShortCommit }}"
 
 changelog:
   disable: true
