@@ -1,0 +1,17 @@
+syntax = "proto3";
+package ark.pricefeed.v1;
+
+option go_package = "ark/pricefeed/api";
+
+// PriceFeedAdmin defines process-local price-feed administration operations.
+service PriceFeedAdmin {
+  // ReloadConfig reloads the runtime config file used to construct the
+  // sidecar.
+  rpc ReloadConfig(ReloadConfigRequest) returns (ReloadConfigResponse);
+}
+
+// ReloadConfigRequest defines the request for ReloadConfig.
+message ReloadConfigRequest {}
+
+// ReloadConfigResponse defines the response for ReloadConfig.
+message ReloadConfigResponse {}
