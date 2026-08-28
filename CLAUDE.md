@@ -4,7 +4,7 @@
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
 modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/`, `x/wasm/`. The
-chain currently uses **cosmos-sdk v0.55.0** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
+chain currently uses **cosmos-sdk v0.54.3** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
 SDK-specific work because the SDK version can move.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
@@ -48,31 +48,31 @@ x/reserve/      # Strategic Reserve module (custody, mandate, journal, recogniti
 x/security/     # Security committee over the standard-module emergency surface
 x/wasm/         # CosmWasm smart contract module (exported interfaces only; not wired)
 abci/           # Vote-extension, proposal, preblock oracle pipeline, and mempool lanes
-oracle/         # Off-chain oracle runtime, providers, transport, and validation
+pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and transport API
 pkg/            # Shared primitives such as encoding, telemetry, and minimal metrics
-proto/ark/     # Proto definitions (modules, ABCI, transport)
+proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config
 ```
 
-## Oracle, Transport, And ABCI Boundaries
+## Oracle, Price Feed, And ABCI Boundaries
 
-- Keep `x/oracle/` as the on-chain module. Top-level `oracle/` is split into `oracle/client` for the app-side cached
-  client, `oracle/types` for generated transport API types, and `oracle/sidecar` for the off-chain sidecar.
-- `oracle/sidecar` owns the sidecar process and transport: the sidecar `Oracle` implements the generated RPC server,
-  owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `oracle/sidecar/runtime`.
-  `oracle/sidecar/runtime` owns the price-fetch loop and runtime updates.
-- Keep `oracle/types` generated transport API only. Sidecar domain structs live under `oracle/sidecar/types`; routes use
-  `/ark/transport/v1/...`.
-- `oracle/sidecar/providers` owns full provider config and construction. `oracle/sidecar/providers/base` owns provider
+- Keep `x/oracle/` as the on-chain module. Top-level `pricefeed/` is split into `pricefeed/client` for the app-side cached
+  client, `pricefeed/api` for generated transport API types, and `pricefeed/sidecar` for the off-chain sidecar.
+- `pricefeed/sidecar` owns the sidecar process and transport: the sidecar `Service` implements the generated RPC server,
+  owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `pricefeed/sidecar/runtime`.
+  `pricefeed/sidecar/runtime` owns the price-fetch loop and runtime updates.
+- Keep `pricefeed/api` generated transport API only. Sidecar domain structs live under `pricefeed/sidecar/types`; routes use
+  `/ark/pricefeed/v1/...`.
+- `pricefeed/sidecar/providers` owns full provider config and construction. `pricefeed/sidecar/providers/base` owns provider
   runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and
   `TransportType`.
 - `abci/` is fixed protocol code, not a pluggable strategy layer. Lifecycle hooks stay thin; `abci/oracle` owns vote
   extraction, aggregation, scoring, price application, and oracle-specific encoding policy.
 - Keep primitive codecs and per-value encoding limits in `pkg/encoding`; keep aggregate vote-extension wire and decoded
   size limits in `abci/codec`.
-- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `oracle/client/metrics`,
-  `oracle/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
+- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`,
+  `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
 
 ## Cosmos SDK Conventions
 
