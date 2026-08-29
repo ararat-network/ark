@@ -744,9 +744,9 @@ type OracleVoteExtension struct {
 
 	// rates maps a valid oracle denom to its reported exchange rate.
 	//
-	// Each value is the canonical byte encoding produced by
-	// cosmossdk.io/math.LegacyDec.Marshal(). Consumers must decode values with
-	// LegacyDec.Unmarshal() and reject invalid denoms or malformed rate bytes.
+	// Each value is the minimal big-endian encoding of the strictly positive
+	// raw value price*10^18: never empty, never a leading zero byte. An
+	// unpriced denom is omitted; omission is the only abstention.
 	Rates map[string][]byte `protobuf:"bytes,1,rep,name=rates,proto3" json:"rates,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// target_version identifies the on-chain vote-target epoch used to build
 	// this report.

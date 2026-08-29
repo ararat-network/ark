@@ -72,7 +72,8 @@ var xxx_messageInfo_PricesRequest proto.InternalMessageInfo
 
 // PricesResponse defines the response type for the Prices method.
 type PricesResponse struct {
-	// Prices defines the list of prices.
+	// Prices maps a feed denom to the minimal big-endian encoding of its
+	// strictly positive raw price*10^18. Unpriced feeds are omitted.
 	Prices map[string][]byte `protobuf:"bytes,1,rep,name=prices,proto3" json:"prices" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Timestamp defines the timestamp of the prices.
 	Timestamp time.Time `protobuf:"bytes,2,opt,name=timestamp,proto3,stdtime" json:"timestamp"`
