@@ -26,6 +26,8 @@ const (
 	Query_TaxCaps_FullMethodName           = "/ark.treasury.v1.Query/TaxCaps"
 	Query_ConversionFactor_FullMethodName  = "/ark.treasury.v1.Query/ConversionFactor"
 	Query_ConversionFactors_FullMethodName = "/ark.treasury.v1.Query/ConversionFactors"
+	Query_GasPrice_FullMethodName          = "/ark.treasury.v1.Query/GasPrice"
+	Query_GasPrices_FullMethodName         = "/ark.treasury.v1.Query/GasPrices"
 	Query_ComputeTax_FullMethodName        = "/ark.treasury.v1.Query/ComputeTax"
 	Query_FundStatus_FullMethodName        = "/ark.treasury.v1.Query/FundStatus"
 	Query_RewardFunding_FullMethodName     = "/ark.treasury.v1.Query/RewardFunding"
@@ -55,6 +57,13 @@ type QueryClient interface {
 	// ConversionFactors queries the complete factor table in denomination
 	// order, derivation heights included, so staleness is observable.
 	ConversionFactors(ctx context.Context, in *QueryConversionFactorsRequest, opts ...grpc.CallOption) (*QueryConversionFactorsResponse, error)
+	// GasPrice queries one accepted fee denomination's gas price — the base
+	// price carried through its conversion factor. The reference
+	// denomination's row is the base price itself, at the identity factor.
+	GasPrice(ctx context.Context, in *QueryGasPriceRequest, opts ...grpc.CallOption) (*QueryGasPriceResponse, error)
+	// GasPrices queries the complete fee-denomination price sheet — the posted
+	// gas-price list, on chain and consensus.
+	GasPrices(ctx context.Context, in *QueryGasPricesRequest, opts ...grpc.CallOption) (*QueryGasPricesResponse, error)
 	// ComputeTax computes the ante-visible stability tax for SDK messages.
 	ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error)
 	// FundStatus queries Treasury fund balances, liabilities, and targets.
@@ -143,6 +152,26 @@ func (c *queryClient) ConversionFactors(ctx context.Context, in *QueryConversion
 	return out, nil
 }
 
+func (c *queryClient) GasPrice(ctx context.Context, in *QueryGasPriceRequest, opts ...grpc.CallOption) (*QueryGasPriceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryGasPriceResponse)
+	err := c.cc.Invoke(ctx, Query_GasPrice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) GasPrices(ctx context.Context, in *QueryGasPricesRequest, opts ...grpc.CallOption) (*QueryGasPricesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryGasPricesResponse)
+	err := c.cc.Invoke(ctx, Query_GasPrices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryComputeTaxResponse)
@@ -206,6 +235,13 @@ type QueryServer interface {
 	// ConversionFactors queries the complete factor table in denomination
 	// order, derivation heights included, so staleness is observable.
 	ConversionFactors(context.Context, *QueryConversionFactorsRequest) (*QueryConversionFactorsResponse, error)
+	// GasPrice queries one accepted fee denomination's gas price — the base
+	// price carried through its conversion factor. The reference
+	// denomination's row is the base price itself, at the identity factor.
+	GasPrice(context.Context, *QueryGasPriceRequest) (*QueryGasPriceResponse, error)
+	// GasPrices queries the complete fee-denomination price sheet — the posted
+	// gas-price list, on chain and consensus.
+	GasPrices(context.Context, *QueryGasPricesRequest) (*QueryGasPricesResponse, error)
 	// ComputeTax computes the ante-visible stability tax for SDK messages.
 	ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error)
 	// FundStatus queries Treasury fund balances, liabilities, and targets.
@@ -244,6 +280,12 @@ func (UnimplementedQueryServer) ConversionFactor(context.Context, *QueryConversi
 }
 func (UnimplementedQueryServer) ConversionFactors(context.Context, *QueryConversionFactorsRequest) (*QueryConversionFactorsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConversionFactors not implemented")
+}
+func (UnimplementedQueryServer) GasPrice(context.Context, *QueryGasPriceRequest) (*QueryGasPriceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GasPrice not implemented")
+}
+func (UnimplementedQueryServer) GasPrices(context.Context, *QueryGasPricesRequest) (*QueryGasPricesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GasPrices not implemented")
 }
 func (UnimplementedQueryServer) ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ComputeTax not implemented")
@@ -404,6 +446,42 @@ func _Query_ConversionFactors_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_GasPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryGasPriceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).GasPrice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_GasPrice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).GasPrice(ctx, req.(*QueryGasPriceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_GasPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryGasPricesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).GasPrices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_GasPrices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).GasPrices(ctx, req.(*QueryGasPricesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_ComputeTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryComputeTaxRequest)
 	if err := dec(in); err != nil {
@@ -510,6 +588,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConversionFactors",
 			Handler:    _Query_ConversionFactors_Handler,
+		},
+		{
+			MethodName: "GasPrice",
+			Handler:    _Query_GasPrice_Handler,
+		},
+		{
+			MethodName: "GasPrices",
+			Handler:    _Query_GasPrices_Handler,
 		},
 		{
 			MethodName: "ComputeTax",

@@ -10,10 +10,11 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/treasury/types";
 
-// EventConversionFactorsRefreshed reports the factors one per-block pass
-// changed. It carries changed values only, unlike its per-pass predecessor:
-// the pass runs every block, so a re-derivation to the held value is the
-// steady state and reporting it would be constant noise.
+// EventConversionFactorsRefreshed reports the factors a write pass changed —
+// the per-block refresh, or the reference re-point's rescale. It carries
+// changed values only, unlike its per-pass predecessor: the refresh runs
+// every block, so a re-derivation to the held value is the steady state and
+// reporting it would be constant noise.
 message EventConversionFactorsRefreshed {
   repeated ConversionFactor conversion_factors = 1 [
     (gogoproto.nullable) = false,
@@ -238,7 +239,7 @@ message EventMonetaryMandateSet {
 }
 
 // EventReferenceTaxCapRebased records the reference tax cap re-expressed in a
-// new protocol reference unit. Emitted only by RebaseTaxCap, whose only caller
+// new protocol reference unit. Emitted only by RebaseReferenceState, whose only caller
 // is MsgSetReference.
 message EventReferenceTaxCapRebased {
   cosmos.base.v1beta1.Coin old_cap = 1 [
@@ -246,6 +247,20 @@ message EventReferenceTaxCapRebased {
     (amino.dont_omitempty) = true
   ];
   cosmos.base.v1beta1.Coin new_cap = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventBaseGasPriceUpdated reports a new base gas price: the controller's
+// per-block update, on change only — holding at the floor or the target is
+// the steady state and not news — or the reference re-point's re-quote.
+message EventBaseGasPriceUpdated {
+  // base_gas_price is the new price, in reference-denom base units per gas
+  // unit.
+  string base_gas_price = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

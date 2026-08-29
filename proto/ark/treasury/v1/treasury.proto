@@ -14,15 +14,21 @@ message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "ark/treasury/Params";
 
-  // reference_tax_cap is the governance-owned cap used to derive the complete
-  // per-denomination tax-cap map. A zero amount means taxation is uncapped; a
-  // positive amount derives positive per-denomination ceilings.
-  cosmos.base.v1beta1.Coin reference_tax_cap = 1 [
+  // reference_denom is the unit every reference-quoted Treasury figure is
+  // stated in. Identity with the protocol reference is enforced at genesis
+  // and frozen against MsgUpdateParams; only a reference re-point moves it.
+  string reference_denom = 1;
+  // reference_tax_cap derives the complete per-denomination tax-cap map, in
+  // reference_denom base units. Zero means taxation is uncapped; a positive
+  // amount derives positive per-denomination ceilings.
+  string reference_tax_cap = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
   // reward_funding_window initialises each new funding countdown.
-  uint64 reward_funding_window = 2 [(amino.dont_omitempty) = true];
+  uint64 reward_funding_window = 3 [(amino.dont_omitempty) = true];
 
   // The exposure multiplier's machinery (D72): the instrument that measures
   // risk, the cadence it runs on, and the rails bounding how far and how fast
@@ -40,7 +46,7 @@ message Params {
 
   // volatility_decay is the per-block EWMA retention for the variance
   // series, in [0, 1). A value at or above one would never forget a sample.
-  string volatility_decay = 3 [
+  string volatility_decay = 4 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -48,7 +54,7 @@ message Params {
   ];
   // flow_decay is the per-block EMA retention for the flow series, in
   // [0, 1).
-  string flow_decay = 4 [
+  string flow_decay = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -58,7 +64,7 @@ message Params {
   // one. It is also the saturation point: a composite that leaves representable
   // range resolves here rather than failing a block, because stress past
   // measurement is the cap by definition.
-  string multiplier_cap = 5 [
+  string multiplier_cap = 6 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -67,7 +73,7 @@ message Params {
   // multiplier_max_step is the most the multiplier may move in one
   // update, in either direction. Positive: a zero step would freeze the
   // multiplier at its stored value forever.
-  string multiplier_max_step = 6 [
+  string multiplier_max_step = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -76,9 +82,39 @@ message Params {
   // exposure_refresh_period_blocks is how often the multiplier is recomputed
   // from the sampled series. Sampling itself is per block; only the
   // recomputation waits. It keeps the exposure qualifier the four fields above
-  // drop, because Params already carries a second cadence in
-  // tax_cap_refresh_period_blocks and a bare period would read as the module's.
-  uint64 exposure_refresh_period_blocks = 7 [(amino.dont_omitempty) = true];
+  // drop so the cadence reads as the multiplier's rather than the module's.
+  uint64 exposure_refresh_period_blocks = 8 [(amino.dont_omitempty) = true];
+
+  // The base-fee controller's rails (dynamic fees, phase 2a). The live price
+  // is state the controller rewrites every block, not a parameter; these
+  // three bound where it rests and how fast it moves.
+
+  // base_fee_target_utilisation is the block-gas utilisation the controller
+  // holds price at, in (0, 1]. Above it the price rises, below it decays.
+  string base_fee_target_utilisation = 9 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // base_fee_adjustment_rate is the largest proportional base-fee move per
+  // block, in [0, 1]. Zero disables the controller and holds the price at
+  // min_base_gas_price.
+  string base_fee_adjustment_rate = 10 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // min_base_gas_price is the controller's floor and resting price, in
+  // reference_denom base units per gas unit. Positive: a zero floor would
+  // let sustained empty blocks decay gas to free.
+  string min_base_gas_price = 11 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // ExposureState is the running risk estimate behind the multiplier: two
@@ -302,6 +338,23 @@ message ConversionFactor {
   ];
   // derived_height is the block whose rates produced the factor, kept for
   // observability and future staleness policy; the reads ignore it.
+  uint64 derived_height = 3 [(amino.dont_omitempty) = true];
+}
+
+// GasPrice is one row of the fee-denomination price sheet.
+message GasPrice {
+  string denom = 1;
+  // gas_price is denom base units per gas unit: the base price carried
+  // through the denomination's conversion factor.
+  string gas_price = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // derived_height is the block whose rates derived the denomination's
+  // conversion factor, so staleness is observable. Zero for the reference
+  // denomination: its cross is identity and cannot go stale.
   uint64 derived_height = 3 [(amino.dont_omitempty) = true];
 }
 

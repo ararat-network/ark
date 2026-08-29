@@ -5715,6 +5715,426 @@ func (x *fastReflection_EventReferenceTaxCapRebased) ProtoMethods() *protoiface.
 	}
 }
 
+var (
+	md_EventBaseGasPriceUpdated                protoreflect.MessageDescriptor
+	fd_EventBaseGasPriceUpdated_base_gas_price protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_treasury_v1_event_proto_init()
+	md_EventBaseGasPriceUpdated = File_ark_treasury_v1_event_proto.Messages().ByName("EventBaseGasPriceUpdated")
+	fd_EventBaseGasPriceUpdated_base_gas_price = md_EventBaseGasPriceUpdated.Fields().ByName("base_gas_price")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventBaseGasPriceUpdated)(nil)
+
+type fastReflection_EventBaseGasPriceUpdated EventBaseGasPriceUpdated
+
+func (x *EventBaseGasPriceUpdated) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventBaseGasPriceUpdated)(x)
+}
+
+func (x *EventBaseGasPriceUpdated) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_treasury_v1_event_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventBaseGasPriceUpdated_messageType fastReflection_EventBaseGasPriceUpdated_messageType
+var _ protoreflect.MessageType = fastReflection_EventBaseGasPriceUpdated_messageType{}
+
+type fastReflection_EventBaseGasPriceUpdated_messageType struct{}
+
+func (x fastReflection_EventBaseGasPriceUpdated_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventBaseGasPriceUpdated)(nil)
+}
+func (x fastReflection_EventBaseGasPriceUpdated_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventBaseGasPriceUpdated)
+}
+func (x fastReflection_EventBaseGasPriceUpdated_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventBaseGasPriceUpdated
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventBaseGasPriceUpdated) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventBaseGasPriceUpdated
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventBaseGasPriceUpdated) Type() protoreflect.MessageType {
+	return _fastReflection_EventBaseGasPriceUpdated_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventBaseGasPriceUpdated) New() protoreflect.Message {
+	return new(fastReflection_EventBaseGasPriceUpdated)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventBaseGasPriceUpdated) Interface() protoreflect.ProtoMessage {
+	return (*EventBaseGasPriceUpdated)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventBaseGasPriceUpdated) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.BaseGasPrice != "" {
+		value := protoreflect.ValueOfString(x.BaseGasPrice)
+		if !f(fd_EventBaseGasPriceUpdated_base_gas_price, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventBaseGasPriceUpdated) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventBaseGasPriceUpdated.base_gas_price":
+		return x.BaseGasPrice != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventBaseGasPriceUpdated"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventBaseGasPriceUpdated does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventBaseGasPriceUpdated) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventBaseGasPriceUpdated.base_gas_price":
+		x.BaseGasPrice = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventBaseGasPriceUpdated"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventBaseGasPriceUpdated does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventBaseGasPriceUpdated) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.treasury.v1.EventBaseGasPriceUpdated.base_gas_price":
+		value := x.BaseGasPrice
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventBaseGasPriceUpdated"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventBaseGasPriceUpdated does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventBaseGasPriceUpdated) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventBaseGasPriceUpdated.base_gas_price":
+		x.BaseGasPrice = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventBaseGasPriceUpdated"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventBaseGasPriceUpdated does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventBaseGasPriceUpdated) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventBaseGasPriceUpdated.base_gas_price":
+		panic(fmt.Errorf("field base_gas_price of message ark.treasury.v1.EventBaseGasPriceUpdated is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventBaseGasPriceUpdated"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventBaseGasPriceUpdated does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventBaseGasPriceUpdated) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.treasury.v1.EventBaseGasPriceUpdated.base_gas_price":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.EventBaseGasPriceUpdated"))
+		}
+		panic(fmt.Errorf("message ark.treasury.v1.EventBaseGasPriceUpdated does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventBaseGasPriceUpdated) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.EventBaseGasPriceUpdated", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventBaseGasPriceUpdated) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventBaseGasPriceUpdated) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventBaseGasPriceUpdated) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventBaseGasPriceUpdated) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventBaseGasPriceUpdated)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.BaseGasPrice)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventBaseGasPriceUpdated)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.BaseGasPrice) > 0 {
+			i -= len(x.BaseGasPrice)
+			copy(dAtA[i:], x.BaseGasPrice)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.BaseGasPrice)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventBaseGasPriceUpdated)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventBaseGasPriceUpdated: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventBaseGasPriceUpdated: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BaseGasPrice", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.BaseGasPrice = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -5728,10 +6148,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// EventConversionFactorsRefreshed reports the factors one per-block pass
-// changed. It carries changed values only, unlike its per-pass predecessor:
-// the pass runs every block, so a re-derivation to the held value is the
-// steady state and reporting it would be constant noise.
+// EventConversionFactorsRefreshed reports the factors a write pass changed —
+// the per-block refresh, or the reference re-point's rescale. It carries
+// changed values only, unlike its per-pass predecessor: the refresh runs
+// every block, so a re-derivation to the held value is the steady state and
+// reporting it would be constant noise.
 type EventConversionFactorsRefreshed struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6255,7 +6676,7 @@ func (x *EventMonetaryMandateSet) GetCommitteeShape() *v1.CommitteeShape {
 }
 
 // EventReferenceTaxCapRebased records the reference tax cap re-expressed in a
-// new protocol reference unit. Emitted only by RebaseTaxCap, whose only caller
+// new protocol reference unit. Emitted only by RebaseReferenceState, whose only caller
 // is MsgSetReference.
 type EventReferenceTaxCapRebased struct {
 	state         protoimpl.MessageState
@@ -6298,6 +6719,46 @@ func (x *EventReferenceTaxCapRebased) GetNewCap() *v1beta1.Coin {
 		return x.NewCap
 	}
 	return nil
+}
+
+// EventBaseGasPriceUpdated reports a new base gas price: the controller's
+// per-block update, on change only — holding at the floor or the target is
+// the steady state and not news — or the reference re-point's re-quote.
+type EventBaseGasPriceUpdated struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// base_gas_price is the new price, in reference-denom base units per gas
+	// unit.
+	BaseGasPrice string `protobuf:"bytes,1,opt,name=base_gas_price,json=baseGasPrice,proto3" json:"base_gas_price,omitempty"`
+}
+
+func (x *EventBaseGasPriceUpdated) Reset() {
+	*x = EventBaseGasPriceUpdated{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_treasury_v1_event_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventBaseGasPriceUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventBaseGasPriceUpdated) ProtoMessage() {}
+
+// Deprecated: Use EventBaseGasPriceUpdated.ProtoReflect.Descriptor instead.
+func (*EventBaseGasPriceUpdated) Descriptor() ([]byte, []int) {
+	return file_ark_treasury_v1_event_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *EventBaseGasPriceUpdated) GetBaseGasPrice() string {
+	if x != nil {
+		return x.BaseGasPrice
+	}
+	return ""
 }
 
 var File_ark_treasury_v1_event_proto protoreflect.FileDescriptor
@@ -6500,19 +6961,27 @@ var file_ark_treasury_v1_event_proto_rawDesc = []byte{
 	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62,
 	0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
 	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x6e, 0x65, 0x77,
-	0x43, 0x61, 0x70, 0x42, 0xbd, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3c, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74,
-	0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b,
-	0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65,
-	0x61, 0x73, 0x75, 0x72, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f,
-	0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca,
-	0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56,
-	0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a,
-	0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x43, 0x61, 0x70, 0x22, 0x78, 0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x42, 0x61, 0x73, 0x65,
+	0x47, 0x61, 0x73, 0x50, 0x72, 0x69, 0x63, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12,
+	0x5c, 0x0a, 0x0e, 0x62, 0x61, 0x73, 0x65, 0x5f, 0x67, 0x61, 0x73, 0x5f, 0x70, 0x72, 0x69, 0x63,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
+	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x0c, 0x62, 0x61, 0x73, 0x65, 0x47, 0x61, 0x73, 0x50, 0x72, 0x69, 0x63, 0x65, 0x42, 0xbd, 0x01,
+	0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74,
+	0x6f, 0x50, 0x01, 0x5a, 0x3c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61,
+	0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x76,
+	0x31, 0xa2, 0x02, 0x03, 0x41, 0x54, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x54, 0x72,
+	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c,
+	0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72,
+	0x6b, 0x5c, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
+	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a,
+	0x3a, 0x54, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -6527,7 +6996,7 @@ func file_ark_treasury_v1_event_proto_rawDescGZIP() []byte {
 	return file_ark_treasury_v1_event_proto_rawDescData
 }
 
-var file_ark_treasury_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_ark_treasury_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_ark_treasury_v1_event_proto_goTypes = []interface{}{
 	(*EventConversionFactorsRefreshed)(nil), // 0: ark.treasury.v1.EventConversionFactorsRefreshed
 	(*EventBlockRewardsToppedUp)(nil),       // 1: ark.treasury.v1.EventBlockRewardsToppedUp
@@ -6538,21 +7007,22 @@ var file_ark_treasury_v1_event_proto_goTypes = []interface{}{
 	(*EventExposureRefreshed)(nil),          // 6: ark.treasury.v1.EventExposureRefreshed
 	(*EventMonetaryMandateSet)(nil),         // 7: ark.treasury.v1.EventMonetaryMandateSet
 	(*EventReferenceTaxCapRebased)(nil),     // 8: ark.treasury.v1.EventReferenceTaxCapRebased
-	(*ConversionFactor)(nil),                // 9: ark.treasury.v1.ConversionFactor
-	(*v1beta1.Coin)(nil),                    // 10: cosmos.base.v1beta1.Coin
-	(*v1beta1.DecCoin)(nil),                 // 11: cosmos.base.v1beta1.DecCoin
-	(*v1.CommitteeShape)(nil),               // 12: ark.mandate.v1.CommitteeShape
+	(*EventBaseGasPriceUpdated)(nil),        // 9: ark.treasury.v1.EventBaseGasPriceUpdated
+	(*ConversionFactor)(nil),                // 10: ark.treasury.v1.ConversionFactor
+	(*v1beta1.Coin)(nil),                    // 11: cosmos.base.v1beta1.Coin
+	(*v1beta1.DecCoin)(nil),                 // 12: cosmos.base.v1beta1.DecCoin
+	(*v1.CommitteeShape)(nil),               // 13: ark.mandate.v1.CommitteeShape
 }
 var file_ark_treasury_v1_event_proto_depIdxs = []int32{
-	9,  // 0: ark.treasury.v1.EventConversionFactorsRefreshed.conversion_factors:type_name -> ark.treasury.v1.ConversionFactor
-	10, // 1: ark.treasury.v1.EventUnpricedStabilityTaxRouted.moved:type_name -> cosmos.base.v1beta1.Coin
-	10, // 2: ark.treasury.v1.EventUnpricedStabilityTaxRouted.deferred:type_name -> cosmos.base.v1beta1.Coin
-	11, // 3: ark.treasury.v1.EventLiabilityIncomplete.claimable_liability:type_name -> cosmos.base.v1beta1.DecCoin
-	10, // 4: ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply:type_name -> cosmos.base.v1beta1.Coin
-	10, // 5: ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply:type_name -> cosmos.base.v1beta1.Coin
-	12, // 6: ark.treasury.v1.EventMonetaryMandateSet.committee_shape:type_name -> ark.mandate.v1.CommitteeShape
-	10, // 7: ark.treasury.v1.EventReferenceTaxCapRebased.old_cap:type_name -> cosmos.base.v1beta1.Coin
-	10, // 8: ark.treasury.v1.EventReferenceTaxCapRebased.new_cap:type_name -> cosmos.base.v1beta1.Coin
+	10, // 0: ark.treasury.v1.EventConversionFactorsRefreshed.conversion_factors:type_name -> ark.treasury.v1.ConversionFactor
+	11, // 1: ark.treasury.v1.EventUnpricedStabilityTaxRouted.moved:type_name -> cosmos.base.v1beta1.Coin
+	11, // 2: ark.treasury.v1.EventUnpricedStabilityTaxRouted.deferred:type_name -> cosmos.base.v1beta1.Coin
+	12, // 3: ark.treasury.v1.EventLiabilityIncomplete.claimable_liability:type_name -> cosmos.base.v1beta1.DecCoin
+	11, // 4: ark.treasury.v1.EventLiabilityIncomplete.stale_member_supply:type_name -> cosmos.base.v1beta1.Coin
+	11, // 5: ark.treasury.v1.EventLiabilityIncomplete.untrusted_suspended_supply:type_name -> cosmos.base.v1beta1.Coin
+	13, // 6: ark.treasury.v1.EventMonetaryMandateSet.committee_shape:type_name -> ark.mandate.v1.CommitteeShape
+	11, // 7: ark.treasury.v1.EventReferenceTaxCapRebased.old_cap:type_name -> cosmos.base.v1beta1.Coin
+	11, // 8: ark.treasury.v1.EventReferenceTaxCapRebased.new_cap:type_name -> cosmos.base.v1beta1.Coin
 	9,  // [9:9] is the sub-list for method output_type
 	9,  // [9:9] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
@@ -6675,6 +7145,18 @@ func file_ark_treasury_v1_event_proto_init() {
 				return nil
 			}
 		}
+		file_ark_treasury_v1_event_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventBaseGasPriceUpdated); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -6682,7 +7164,7 @@ func file_ark_treasury_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_treasury_v1_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

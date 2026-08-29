@@ -3,6 +3,7 @@ package ark.treasury.v1;
 
 import "amino/amino.proto";
 import "ark/treasury/v1/treasury.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/treasury/types";
@@ -42,4 +43,19 @@ message GenesisState {
   // boundary is an instant rather than a state, so an owed refresh survives
   // export instead of being forgiven by the migration.
   bool exposure_refresh_pending = 7 [(amino.dont_omitempty) = true];
+  // base_gas_price is the base-fee controller's live price, in reference_denom
+  // base units per gas unit. At least min_base_gas_price: a fresh chain starts
+  // at the floor, and an export carries whatever the controller had reached.
+  string base_gas_price = 8 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // noah_conversion_factor is the numeraire's cross from the protocol
+  // reference — NOAH units per reference unit — kept beside the member table
+  // rather than in it, because table presence is the tax base and NOAH is
+  // never taxed. Unset means never derivable yet: NOAH has no arrival seed,
+  // so the fee-denom gate (phase 2b) refuses it until a real cross exists.
+  ConversionFactor noah_conversion_factor = 9;
 }

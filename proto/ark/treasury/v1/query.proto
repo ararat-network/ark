@@ -59,6 +59,21 @@ service Query {
     option (google.api.http).get = "/ark/treasury/v1/conversion_factors";
   }
 
+  // GasPrice queries one accepted fee denomination's gas price — the base
+  // price carried through its conversion factor. The reference
+  // denomination's row is the base price itself, at the identity factor.
+  rpc GasPrice(QueryGasPriceRequest) returns (QueryGasPriceResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/gas_prices/{denom}";
+  }
+
+  // GasPrices queries the complete fee-denomination price sheet — the posted
+  // gas-price list, on chain and consensus.
+  rpc GasPrices(QueryGasPricesRequest) returns (QueryGasPricesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/gas_prices";
+  }
+
   // ComputeTax computes the ante-visible stability tax for SDK messages.
   rpc ComputeTax(QueryComputeTaxRequest) returns (QueryComputeTaxResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -389,6 +404,33 @@ message QueryRewardFundingRequest {}
 // QueryRewardFundingResponse is the response type for Query/RewardFunding.
 message QueryRewardFundingResponse {
   RewardFundingState reward_funding = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryGasPriceRequest is the request type for Query/GasPrice.
+message QueryGasPriceRequest {
+  string denom = 1;
+}
+
+// QueryGasPriceResponse reports one accepted fee denomination's gas price.
+// A denomination with no conversion factor is not an accepted fee denom and
+// reports NotFound.
+message QueryGasPriceResponse {
+  GasPrice gas_price = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryGasPricesRequest is the request type for Query/GasPrices.
+message QueryGasPricesRequest {}
+
+// QueryGasPricesResponse is the complete price sheet: the reference
+// denomination first, members in denomination order, NOAH last.
+message QueryGasPricesResponse {
+  repeated GasPrice gas_prices = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
