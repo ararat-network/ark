@@ -63,6 +63,10 @@ func (k Keeper) RebaseTaxCap(ctx context.Context, from string, to string, rates 
 		return fmt.Errorf("setting rebased params: %w", err)
 	}
 
+	if err := k.rescaleConversionFactors(ctx, from, to, rates); err != nil {
+		return err
+	}
+
 	if err := k.rescaleReferencePrice(ctx, from, to, rates); err != nil {
 		return err
 	}

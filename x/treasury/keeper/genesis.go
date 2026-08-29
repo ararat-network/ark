@@ -51,33 +51,34 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		)
 	}
 
-	taxCaps := append([]types.TaxCap(nil), data.TaxCaps...)
-	seeded := false
-	if len(taxCaps) == 0 {
+	factors := append([]types.ConversionFactor(nil), data.ConversionFactors...)
+	if len(factors) == 0 {
 		denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 		if err != nil {
 			return fmt.Errorf("getting oracle-priced denominations: %w", err)
 		}
 		// Seeded, not derived: a fresh genesis holds no rates by construction,
-		// so every member starts at the unconverted reference amount rather
-		// than a conversion no rate can serve. The seed is the same value the
-		// refresh uses for an arrival it cannot derive, and the flag raised
-		// below has the first complete pass re-express it in member units.
+		// so every member starts at a factor of one rather than a conversion
+		// no rate can serve. The seed is the same value the refresh uses for
+		// an arrival it cannot derive, and the first block's pass re-derives
+		// it from real rates.
 		for _, denom := range denoms {
-			taxCaps = append(taxCaps, types.TaxCap{Denom: denom, TaxCap: data.Params.ReferenceTaxCap.Amount})
+			factors = append(factors, types.ConversionFactor{
+				Denom:  denom,
+				Factor: math.LegacyOneDec(),
+			})
 		}
-		seeded = len(taxCaps) > 0
 	}
-	// A supplied cap set stays loose in one direction only: a member holding no
-	// cap is the gap an arrival opens until the next BeginBlocker covers it, so
-	// an export taken inside that window still imports. Amounts are not checked
-	// against the reference either — a kept cap is anchored to the reference
-	// amount it was last derived under.
+	// A supplied factor set stays loose in one direction only: a member holding
+	// no factor is the gap an arrival opens until the next BeginBlocker covers
+	// it, so an export taken inside that window still imports. Factors are not
+	// checked against live rates either — a kept factor is anchored to the rate
+	// it was last derived under.
 	//
-	// Every cap denomination must name a registry member, because the cap set
-	// is the tax base: a cap is the one thing that makes a denomination taxable,
-	// so a cap naming a never-member would have the chain collect tax it can
-	// never settle. Such coins verdict UNRECOGNISED, and settlement defers what
+	// Every factor denomination must name a registry member, because the factor
+	// set is the tax base: a factor is the one thing that makes a denomination
+	// taxable, so one naming a never-member would have the chain collect tax it
+	// can never settle. Such coins verdict UNRECOGNISED, and settlement defers what
 	// it cannot price rather than moving it, so they would accumulate in the
 	// collector permanently.
 	//
@@ -85,16 +86,16 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// departure is exactly what the refresh is built to keep — but departure is
 	// a lifecycle status, not a loss of membership, and registry rows are never
 	// deleted, so a kept cap still names a member here.
-	for _, cap := range taxCaps {
-		member, err := k.assetKeeper.HasAsset(ctx, cap.Denom)
+	for _, factor := range factors {
+		member, err := k.assetKeeper.HasAsset(ctx, factor.Denom)
 		if err != nil {
-			return fmt.Errorf("checking the asset registry for %s: %w", cap.Denom, err)
+			return fmt.Errorf("checking the asset registry for %s: %w", factor.Denom, err)
 		}
 		if !member {
 			return fmt.Errorf(
-				"tax cap denom %s is not an Ark-issued asset: a cap is what makes a "+
+				"conversion factor denom %s is not an Ark-issued asset: a factor is what makes a "+
 					"denomination taxable, and tax the chain cannot price never leaves the collector",
-				cap.Denom,
+				factor.Denom,
 			)
 		}
 	}
@@ -156,19 +157,10 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.MonetaryPolicy.Set(ctx, data.MonetaryPolicy); err != nil {
 		return fmt.Errorf("setting monetary policy: %w", err)
 	}
-	for _, cap := range taxCaps {
-		if err := k.TaxCaps.Set(ctx, cap.Denom, cap.TaxCap); err != nil {
-			return fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
+	for _, factor := range factors {
+		if err := k.ConversionFactors.Set(ctx, factor.Denom, factor); err != nil {
+			return fmt.Errorf("setting conversion factor %s: %w", factor.Denom, err)
 		}
-	}
-	// The cadence flag is imported state on the supplied-caps path: an export
-	// taken while a refresh was owed keeps it owed on the new chain. A seeded
-	// set raises it regardless of the import, because a seed is a placeholder
-	// the first successful rebuild is owed — it converts into member units as
-	// soon as rates exist, which a fresh chain reaches within its first
-	// blocks.
-	if err := k.TaxCapRefreshPending.Set(ctx, data.TaxCapRefreshPending || seeded); err != nil {
-		return fmt.Errorf("setting pending tax cap refresh: %w", err)
 	}
 	if err := k.RewardFunding.Set(ctx, data.RewardFunding); err != nil {
 		return fmt.Errorf("setting reward funding state: %w", err)
@@ -209,10 +201,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if err != nil {
 		return nil, fmt.Errorf("getting monetary mandate: %w", err)
 	}
-	taxCapRefreshPending, err := k.TaxCapRefreshPending.Get(ctx)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return nil, fmt.Errorf("getting pending tax cap refresh: %w", err)
-	}
 	exposureState, err := k.getExposureState(ctx)
 	if err != nil {
 		return nil, err
@@ -222,21 +210,20 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("getting pending exposure refresh: %w", err)
 	}
 
-	taxCaps := make([]types.TaxCap, 0)
-	if err := k.TaxCaps.Walk(ctx, nil, func(denom string, amount math.Int) (bool, error) {
-		taxCaps = append(taxCaps, types.TaxCap{Denom: denom, TaxCap: amount})
+	factors := make([]types.ConversionFactor, 0)
+	if err := k.ConversionFactors.Walk(ctx, nil, func(_ string, factor types.ConversionFactor) (bool, error) {
+		factors = append(factors, factor)
 		return false, nil
 	}); err != nil {
-		return nil, fmt.Errorf("iterating tax caps: %w", err)
+		return nil, fmt.Errorf("iterating conversion factors: %w", err)
 	}
 
 	return &types.GenesisState{
 		Params:                 params,
-		TaxCaps:                taxCaps,
+		ConversionFactors:      factors,
 		RewardFunding:          rewardFunding,
 		MonetaryMandate:        monetaryMandate,
 		MonetaryPolicy:         monetaryPolicy,
-		TaxCapRefreshPending:   taxCapRefreshPending,
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
 	}, nil

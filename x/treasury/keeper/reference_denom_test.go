@@ -15,11 +15,16 @@ func (s *KeeperTestSuite) TestRebaseTaxCap() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-	// A stored per-denomination cap that must survive the rebase verbatim:
-	// each derived cap is the reference value already expressed in its own
-	// denomination — a unit-independent quantity — so re-expressing the
-	// params coin does not touch the store.
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(9)))
+	// A stored factor is reference-relative, so the rebase must re-express it
+	// in the new unit for the derived cap — a unit-independent quantity — to
+	// survive the re-point verbatim.
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
+		Denom:  chain.KRWBaseDenom,
+		Factor: math.LegacyNewDec(9),
+	}))
+	capBefore, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(900), capBefore)
 
 	// x/asset reads the pair once and hands it in; Treasury never reads the
 	// oracle here — the strict mock carries that assertion.
@@ -35,9 +40,14 @@ func (s *KeeperTestSuite) TestRebaseTaxCap() {
 	expected := current
 	expected.ReferenceTaxCap = sdk.NewInt64Coin(chain.USDBaseDenom, 200)
 	s.Require().Equal(expected, stored)
-	survivingCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	// One SDR is half a USD at these rates, so the factor halves while the
+	// derived cap survives the unit change untouched.
+	rescaled, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(9), survivingCap)
+	s.Require().Equal(math.LegacyMustNewDecFromStr("4.5"), rescaled.Factor)
+	capAfter, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(900), capAfter)
 	s.requireTypedEvent(&types.EventReferenceTaxCapRebased{
 		OldCap: sdk.NewInt64Coin(chain.SDRBaseDenom, 100),
 		NewCap: sdk.NewInt64Coin(chain.USDBaseDenom, 200),
@@ -68,8 +78,18 @@ func (s *KeeperTestSuite) TestRebaseTaxCapCarriesZeroWithoutConversion() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 0)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
+		Denom:  chain.KRWBaseDenom,
+		Factor: math.LegacyNewDec(9),
+	}))
 
 	s.Require().NoError(s.keeper.RebaseTaxCap(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, nil))
+
+	// No cross serves the rescale, so the factor is kept rather than the
+	// re-point wedged; the per-block refresh re-derives it when rates return.
+	kept, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacyNewDec(9), kept.Factor)
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)

@@ -50,6 +50,21 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:   fmt.Sprintf("%s query treasury tax-caps", version.AppName),
 				},
 				{
+					RpcMethod: "ConversionFactor",
+					Use:       "conversion-factor [denom]",
+					Short:     "Query a denomination's stored reference conversion factor",
+					Example:   fmt.Sprintf("%s query treasury conversion-factor ausd", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "denom"},
+					},
+				},
+				{
+					RpcMethod: "ConversionFactors",
+					Use:       "conversion-factors",
+					Short:     "Query the complete conversion-factor table with derivation heights",
+					Example:   fmt.Sprintf("%s query treasury conversion-factors", version.AppName),
+				},
+				{
 					RpcMethod: "ComputeTax",
 					Skip:      true,
 				},

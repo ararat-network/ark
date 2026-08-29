@@ -19,15 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Params_FullMethodName          = "/ark.treasury.v1.Query/Params"
-	Query_MonetaryPolicy_FullMethodName  = "/ark.treasury.v1.Query/MonetaryPolicy"
-	Query_MonetaryMandate_FullMethodName = "/ark.treasury.v1.Query/MonetaryMandate"
-	Query_TaxCap_FullMethodName          = "/ark.treasury.v1.Query/TaxCap"
-	Query_TaxCaps_FullMethodName         = "/ark.treasury.v1.Query/TaxCaps"
-	Query_ComputeTax_FullMethodName      = "/ark.treasury.v1.Query/ComputeTax"
-	Query_FundStatus_FullMethodName      = "/ark.treasury.v1.Query/FundStatus"
-	Query_RewardFunding_FullMethodName   = "/ark.treasury.v1.Query/RewardFunding"
-	Query_ExposureStatus_FullMethodName  = "/ark.treasury.v1.Query/ExposureStatus"
+	Query_Params_FullMethodName            = "/ark.treasury.v1.Query/Params"
+	Query_MonetaryPolicy_FullMethodName    = "/ark.treasury.v1.Query/MonetaryPolicy"
+	Query_MonetaryMandate_FullMethodName   = "/ark.treasury.v1.Query/MonetaryMandate"
+	Query_TaxCap_FullMethodName            = "/ark.treasury.v1.Query/TaxCap"
+	Query_TaxCaps_FullMethodName           = "/ark.treasury.v1.Query/TaxCaps"
+	Query_ConversionFactor_FullMethodName  = "/ark.treasury.v1.Query/ConversionFactor"
+	Query_ConversionFactors_FullMethodName = "/ark.treasury.v1.Query/ConversionFactors"
+	Query_ComputeTax_FullMethodName        = "/ark.treasury.v1.Query/ComputeTax"
+	Query_FundStatus_FullMethodName        = "/ark.treasury.v1.Query/FundStatus"
+	Query_RewardFunding_FullMethodName     = "/ark.treasury.v1.Query/RewardFunding"
+	Query_ExposureStatus_FullMethodName    = "/ark.treasury.v1.Query/ExposureStatus"
 )
 
 // QueryClient is the client API for Query service.
@@ -47,6 +49,12 @@ type QueryClient interface {
 	TaxCap(ctx context.Context, in *QueryTaxCapRequest, opts ...grpc.CallOption) (*QueryTaxCapResponse, error)
 	// TaxCaps queries all derived denomination tax caps.
 	TaxCaps(ctx context.Context, in *QueryTaxCapsRequest, opts ...grpc.CallOption) (*QueryTaxCapsResponse, error)
+	// ConversionFactor queries one denomination's stored conversion factor,
+	// the reference cross rate the tax cap derives from.
+	ConversionFactor(ctx context.Context, in *QueryConversionFactorRequest, opts ...grpc.CallOption) (*QueryConversionFactorResponse, error)
+	// ConversionFactors queries the complete factor table in denomination
+	// order, derivation heights included, so staleness is observable.
+	ConversionFactors(ctx context.Context, in *QueryConversionFactorsRequest, opts ...grpc.CallOption) (*QueryConversionFactorsResponse, error)
 	// ComputeTax computes the ante-visible stability tax for SDK messages.
 	ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error)
 	// FundStatus queries Treasury fund balances, liabilities, and targets.
@@ -115,6 +123,26 @@ func (c *queryClient) TaxCaps(ctx context.Context, in *QueryTaxCapsRequest, opts
 	return out, nil
 }
 
+func (c *queryClient) ConversionFactor(ctx context.Context, in *QueryConversionFactorRequest, opts ...grpc.CallOption) (*QueryConversionFactorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryConversionFactorResponse)
+	err := c.cc.Invoke(ctx, Query_ConversionFactor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ConversionFactors(ctx context.Context, in *QueryConversionFactorsRequest, opts ...grpc.CallOption) (*QueryConversionFactorsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryConversionFactorsResponse)
+	err := c.cc.Invoke(ctx, Query_ConversionFactors_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryComputeTaxResponse)
@@ -172,6 +200,12 @@ type QueryServer interface {
 	TaxCap(context.Context, *QueryTaxCapRequest) (*QueryTaxCapResponse, error)
 	// TaxCaps queries all derived denomination tax caps.
 	TaxCaps(context.Context, *QueryTaxCapsRequest) (*QueryTaxCapsResponse, error)
+	// ConversionFactor queries one denomination's stored conversion factor,
+	// the reference cross rate the tax cap derives from.
+	ConversionFactor(context.Context, *QueryConversionFactorRequest) (*QueryConversionFactorResponse, error)
+	// ConversionFactors queries the complete factor table in denomination
+	// order, derivation heights included, so staleness is observable.
+	ConversionFactors(context.Context, *QueryConversionFactorsRequest) (*QueryConversionFactorsResponse, error)
 	// ComputeTax computes the ante-visible stability tax for SDK messages.
 	ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error)
 	// FundStatus queries Treasury fund balances, liabilities, and targets.
@@ -204,6 +238,12 @@ func (UnimplementedQueryServer) TaxCap(context.Context, *QueryTaxCapRequest) (*Q
 }
 func (UnimplementedQueryServer) TaxCaps(context.Context, *QueryTaxCapsRequest) (*QueryTaxCapsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TaxCaps not implemented")
+}
+func (UnimplementedQueryServer) ConversionFactor(context.Context, *QueryConversionFactorRequest) (*QueryConversionFactorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConversionFactor not implemented")
+}
+func (UnimplementedQueryServer) ConversionFactors(context.Context, *QueryConversionFactorsRequest) (*QueryConversionFactorsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConversionFactors not implemented")
 }
 func (UnimplementedQueryServer) ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ComputeTax not implemented")
@@ -328,6 +368,42 @@ func _Query_TaxCaps_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ConversionFactor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionFactorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionFactor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ConversionFactor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionFactor(ctx, req.(*QueryConversionFactorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ConversionFactors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionFactorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionFactors(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ConversionFactors_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionFactors(ctx, req.(*QueryConversionFactorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_ComputeTax_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryComputeTaxRequest)
 	if err := dec(in); err != nil {
@@ -426,6 +502,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TaxCaps",
 			Handler:    _Query_TaxCaps_Handler,
+		},
+		{
+			MethodName: "ConversionFactor",
+			Handler:    _Query_ConversionFactor_Handler,
+		},
+		{
+			MethodName: "ConversionFactors",
+			Handler:    _Query_ConversionFactors_Handler,
 		},
 		{
 			MethodName: "ComputeTax",

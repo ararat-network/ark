@@ -5,7 +5,6 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
 
@@ -19,7 +18,6 @@ import (
 	chain "github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -28,7 +26,7 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(50)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	msgs := []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
@@ -45,7 +43,7 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	msgs := []sdk.Msg{
 		&banktypes.MsgMultiSend{Inputs: []banktypes.Input{
@@ -71,7 +69,7 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	testCases := []struct {
 		name     string
@@ -134,8 +132,8 @@ func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(100)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(100)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(100))
+	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(100))
 
 	nested, err := codectypes.NewAnyWithValue(&vestingtypes.MsgCreateVestingAccount{
 		FromAddress: source,
@@ -271,7 +269,7 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(50)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
 		Inputs: []banktypes.Input{
@@ -296,7 +294,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(10)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(10))
 	s.setAssets(chain.SDRBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
@@ -323,128 +321,23 @@ func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 	s.Require().True(tax.IsZero())
 }
 
-func (s *KeeperTestSuite) TestComputeTaxTreatsZeroCapAsUncapped() {
+func (s *KeeperTestSuite) TestComputeTaxTreatsZeroReferenceAsUncapped() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.ZeroInt()))
+	// The suite baseline's zero reference derives the uncapped sentinel; the
+	// held factor is what keeps the denomination taxed at all.
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000))},
 	})
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
-}
-
-func (s *KeeperTestSuite) TestUpdateParamsDerivesCapsFromOneSnapshot() {
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
-	// One capture for the whole membership, in sorted member order. The
-	// reference denomination is appended only when it is not already a member,
-	// and here it is one.
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyNewDec(2),
-		chain.USDBaseDenom: math.LegacyOneDec(),
-	}, nil)
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    params,
-	})
-	s.Require().NoError(err)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(500_000), usdCap)
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
-}
-
-// TestUpdateParamsRebuildServesOutstandingCadenceRefresh pins the flag clear at
-// the message call site. This rebuild derives every member from current inputs,
-// which is exactly the work an outstanding cadence refresh was owed, so leaving
-// the flag raised would make the next block redo what governance just did.
-func (s *KeeperTestSuite) TestUpdateParamsRebuildServesOutstandingCadenceRefresh() {
-	s.Require().NoError(s.keeper.TaxCapRefreshPending.Set(s.ctx, true))
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom: math.LegacyOneDec(),
-	}, nil)
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    params,
-	})
-	s.Require().NoError(err)
-	s.requireTaxCapRefreshPending(false)
-}
-
-// TestUpdateParamsUsesZeroAsUncappedWithoutRates is the complement of the
-// sub-unit flooring below: a truncated conversion floors at one, so a
-// deliberately zero reference cap is the only thing that can leave a derived
-// denom uncapped. No rate is captured to do it, so the oracle mock stays
-// unprogrammed.
-func (s *KeeperTestSuite) TestUpdateParamsUsesZeroAsUncappedWithoutRates() {
-	current := types.DefaultParams()
-	current.ReferenceTaxCap.Amount = math.OneInt()
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
-	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    params,
-	})
-	s.Require().NoError(err)
-	for _, denom := range []string{chain.USDBaseDenom, chain.SDRBaseDenom} {
-		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
-		s.Require().NoError(err)
-		s.Require().True(cap.IsZero())
-	}
-}
-
-func (s *KeeperTestSuite) TestUpdateParamsFloorsSubUnitConversionAtOneUnit() {
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.OneInt()
-	s.setAssets(chain.USDBaseDenom, chain.SDRBaseDenom)
-	// A one-base-unit cap is worth half a unit of ausd at this pair. Storing
-	// the zero it truncates to would read as uncapped, so it floors at one:
-	// the tightest ceiling ausd can express, which is what a reference cap
-	// this small is asking for.
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyNewDec(2),
-		chain.USDBaseDenom: math.LegacyOneDec(),
-	}, nil)
-
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    params,
-	})
-	s.Require().NoError(err)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.OneInt(), usdCap)
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.OneInt(), sdrCap)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedMessagesWhenDisabled() {
@@ -505,8 +398,8 @@ func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(1_000)))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
+	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(1_000))
 
 	pack := func(msg sdk.Msg) *codectypes.Any {
 		packed, err := codectypes.NewAnyWithValue(msg)
@@ -575,7 +468,13 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, maxInt))
+	maxParams := types.DefaultParams()
+	maxParams.ReferenceTaxCap.Amount = maxInt
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
 	source := authtypes.NewModuleAddress("tax-source").String()
 	msg := func() sdk.Msg {
 		return &banktypes.MsgSend{
@@ -606,7 +505,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 			policy := types.DefaultMonetaryPolicy()
 			policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-			s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(1_000)))
+			s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 			s.seedAsset(chain.USDBaseDenom, status)
 
 			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{

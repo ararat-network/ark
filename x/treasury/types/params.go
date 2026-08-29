@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	DefaultReferenceTaxCapDenom      = chain.SDRBaseDenom
-	DefaultRewardFundingWindow       = chain.BlocksPerWeek
-	DefaultTaxCapRefreshPeriodBlocks = chain.BlocksPerWeek
+	DefaultReferenceTaxCapDenom = chain.SDRBaseDenom
+	DefaultRewardFundingWindow  = chain.BlocksPerWeek
 
 	// DefaultExposureRefreshPeriodBlocks recomputes the multiplier hourly. The
 	// cadence is a judgement about the fastest stress worth tracking: a
@@ -31,9 +30,6 @@ const (
 	// some seven centuries at this chain's block time, so the bound refuses
 	// only values that were never a schedule.
 	MaxRewardFundingWindow = 1 << 32
-
-	// MaxTaxCapRefreshPeriodBlocks bounds the cap-drift cadence at a year.
-	MaxTaxCapRefreshPeriodBlocks = chain.BlocksPerYear
 
 	// MaxExposureRefreshPeriodBlocks bounds the cadence at a year. A period
 	// longer than the series it reads is not a schedule, and one no block can
@@ -87,7 +83,6 @@ func DefaultParams() Params {
 	return Params{
 		ReferenceTaxCap:             sdk.NewCoin(DefaultReferenceTaxCapDenom, math.OneInt()),
 		RewardFundingWindow:         DefaultRewardFundingWindow,
-		TaxCapRefreshPeriodBlocks:   DefaultTaxCapRefreshPeriodBlocks,
 		VolatilityDecay:             DefaultExposureVolatilityDecay,
 		FlowDecay:                   DefaultExposureFlowDecay,
 		MultiplierCap:               DefaultExposureMultiplierCap,
@@ -112,14 +107,6 @@ func (p Params) Validate() error {
 			"treasury parameter RewardFundingWindow must be between one and %d: %d",
 			uint64(MaxRewardFundingWindow),
 			p.RewardFundingWindow,
-		)
-	}
-	if p.TaxCapRefreshPeriodBlocks == 0 ||
-		p.TaxCapRefreshPeriodBlocks > MaxTaxCapRefreshPeriodBlocks {
-		return fmt.Errorf(
-			"treasury parameter TaxCapRefreshPeriodBlocks must be between one and %d: %d",
-			MaxTaxCapRefreshPeriodBlocks,
-			p.TaxCapRefreshPeriodBlocks,
 		)
 	}
 

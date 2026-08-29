@@ -12,16 +12,16 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	"github.com/ararat-network/ark/pkg/decimal"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
-
-const maxTaxMessageDepth = 32
 
 // ComputeTax calculates stability tax with the cap applied independently to
 // each message input.
@@ -58,22 +58,17 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 		for _, principal := range input {
 			cap, loaded := caps[principal.Denom]
 			if !loaded {
-				stored, err := k.TaxCaps.Get(ctx, principal.Denom)
-				switch {
-				case err == nil:
-					if stored.IsNegative() {
-						return nil, fmt.Errorf("negative tax cap %s for denom %s", stored, principal.Denom)
-					}
-					cap = stored
-				case errors.Is(err, collections.ErrNotFound):
-					// No cap has ever been derived for this denomination: it
-					// is outside the registry, or a member whose first rebuild
-					// has not landed. Untaxed either way, because taxing
-					// uncapped would be unbounded and rejecting would let a
-					// stalled refresh block transfers. A nil entry memoises
+				var err error
+				cap, err = k.GetTaxCap(ctx, principal.Denom)
+				if errors.Is(err, collections.ErrNotFound) {
+					// No factor has ever been derived for this denomination:
+					// it is outside the registry, or a member whose first
+					// refresh has not landed. Untaxed either way, because
+					// taxing uncapped would be unbounded and rejecting would
+					// let a dark oracle block transfers. A nil entry memoises
 					// the miss for the rest of the transaction.
 					cap = math.Int{}
-				default:
+				} else if err != nil {
 					return nil, fmt.Errorf("getting tax cap for denom %s: %w", principal.Denom, err)
 				}
 				caps[principal.Denom] = cap
@@ -112,12 +107,56 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 	return sdk.NewCoins(taxes...), nil
 }
 
+// GetTaxCap derives one denomination's tax cap from its stored conversion
+// factor: ReferenceTaxCap × factor, truncated to base units. A zero reference
+// is the uncapped sentinel and derives zero for every member; a positive
+// reference whose product truncates below one floors at one rather than
+// producing the zero that would read as uncapped, which would lift the
+// ceiling a small reference cap was asking to tighten. A missing entry
+// returns collections.ErrNotFound: the factor set is the tax base, and
+// absence means untaxed to the callers that own that judgement.
+func (k Keeper) GetTaxCap(ctx context.Context, denom string) (math.Int, error) {
+	entry, err := k.ConversionFactors.Get(ctx, denom)
+	if err != nil {
+		return math.Int{}, err
+	}
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("getting params: %w", err)
+	}
+	return deriveTaxCap(params, entry), nil
+}
+
+// deriveTaxCap is the one place the cap arithmetic lives; GetTaxCap and the
+// TaxCaps query both price through it. The product is checked because this
+// runs at read time, where a lopsided factor meets whatever reference a later
+// governance vote chose: a ceiling too large for the decimal domain is no
+// ceiling, so an unrepresentable product derives the uncapped sentinel rather
+// than panicking a read.
+func deriveTaxCap(params types.Params, entry types.ConversionFactor) math.Int {
+	if params.ReferenceTaxCap.Amount.IsZero() {
+		return math.ZeroInt()
+	}
+	product, err := decimal.Mul(entry.Factor, math.LegacyNewDecFromInt(params.ReferenceTaxCap.Amount))
+	if err != nil {
+		return math.ZeroInt()
+	}
+	cap := product.TruncateInt()
+	if !cap.IsPositive() {
+		cap = math.OneInt()
+	}
+	return cap
+}
+
 func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 	if msg == nil {
 		return fmt.Errorf("nil SDK message")
 	}
-	if depth > maxTaxMessageDepth {
-		return fmt.Errorf("nested authz messages exceed maximum depth %d", maxTaxMessageDepth)
+	// The decoder's unpack-depth cap is the recursion bound: a signed
+	// transaction nested this deep cannot decode, so the check binds only
+	// for messages arriving off the tx path through the router.
+	if depth >= codectypes.MaxUnpackAnyRecursionDepth {
+		return fmt.Errorf("nested authz messages exceed maximum depth %d", codectypes.MaxUnpackAnyRecursionDepth)
 	}
 	addCoins := func(coins sdk.Coins) error {
 		if err := coins.Validate(); err != nil {

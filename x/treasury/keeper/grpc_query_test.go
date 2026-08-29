@@ -127,8 +127,13 @@ func (s *KeeperTestSuite) TestQueryMonetaryMandate() {
 }
 
 func (s *KeeperTestSuite) TestQueryTaxCap() {
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(100)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.ZeroInt()))
+	params := treasurytypes.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.NewInt(100)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
 	server := keeper.NewQueryServerImpl(s.keeper)
 	tests := []struct {
 		name     string
@@ -140,11 +145,6 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 			name:    "found",
 			request: &treasurytypes.QueryTaxCapRequest{Denom: chain.USDBaseDenom},
 			wantCap: math.NewInt(100),
-		},
-		{
-			name:    "uncapped",
-			request: &treasurytypes.QueryTaxCapRequest{Denom: chain.KRWBaseDenom},
-			wantCap: math.ZeroInt(),
 		},
 		{
 			name:     "not found",
@@ -170,11 +170,30 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 			s.Require().True(tc.wantCap.Equal(response.TaxCap))
 		})
 	}
+
+	// The uncapped sentinel is the zero reference, derived through the same
+	// read.
+	s.Run("uncapped", func() {
+		params.ReferenceTaxCap.Amount = math.ZeroInt()
+		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+		response, err := server.TaxCap(s.ctx, &treasurytypes.QueryTaxCapRequest{Denom: chain.USDBaseDenom})
+		s.Require().NoError(err)
+		s.Require().True(response.TaxCap.IsZero())
+	})
 }
 
 func (s *KeeperTestSuite) TestQueryTaxCaps() {
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(100)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(200)))
+	params := treasurytypes.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.NewInt(100)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.KRWBaseDenom,
+		Factor: math.LegacyNewDec(2),
+	}))
 
 	response, err := keeper.NewQueryServerImpl(s.keeper).TaxCaps(
 		s.ctx,
@@ -185,6 +204,41 @@ func (s *KeeperTestSuite) TestQueryTaxCaps() {
 		{Denom: chain.KRWBaseDenom, TaxCap: math.NewInt(200)},
 		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(100)},
 	}, response.TaxCaps)
+}
+
+func (s *KeeperTestSuite) TestQueryConversionFactor() {
+	entry := treasurytypes.ConversionFactor{
+		Denom:         chain.USDBaseDenom,
+		Factor:        math.LegacyNewDec(2),
+		DerivedHeight: 7,
+	}
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, entry))
+	server := keeper.NewQueryServerImpl(s.keeper)
+
+	response, err := server.ConversionFactor(s.ctx, &treasurytypes.QueryConversionFactorRequest{
+		Denom: chain.USDBaseDenom,
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(entry, response.ConversionFactor)
+
+	_, err = server.ConversionFactor(s.ctx, &treasurytypes.QueryConversionFactorRequest{
+		Denom: chain.KRWBaseDenom,
+	})
+	s.Require().Equal(codes.NotFound, status.Code(err))
+}
+
+func (s *KeeperTestSuite) TestQueryConversionFactors() {
+	usd := treasurytypes.ConversionFactor{Denom: chain.USDBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3}
+	krw := treasurytypes.ConversionFactor{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(2), DerivedHeight: 5}
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, usd.Denom, usd))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, krw.Denom, krw))
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).ConversionFactors(
+		s.ctx,
+		&treasurytypes.QueryConversionFactorsRequest{},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal([]treasurytypes.ConversionFactor{krw, usd}, response.ConversionFactors)
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTax() {
@@ -261,7 +315,13 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 	policy := treasurytypes.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, maxInt))
+	maxParams := treasurytypes.DefaultParams()
+	maxParams.ReferenceTaxCap.Amount = maxInt
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, maxInt)),
 	})

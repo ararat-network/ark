@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
-
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -32,13 +30,11 @@ func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coin
 func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
-	genesis.TaxCaps = []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
+	genesis.ConversionFactors = []types.ConversionFactor{
+		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
 	}
-	// An export taken while a cadence refresh was owed carries the raised flag,
-	// and the import must keep the work owed rather than forgive it. The
-	// exposure update carries the same semantics on its own flag.
-	genesis.TaxCapRefreshPending = true
+	// An export taken while an exposure update was owed carries the raised
+	// flag, and the import must keep the work owed rather than forgive it.
 	genesis.ExposureRefreshPending = true
 	// A non-default risk state, so the round trip proves the series survive
 	// rather than being re-derived from zero: restarting the EWMAs would hand
@@ -65,21 +61,20 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().NoError(err)
 	s.Require().Equal(genesis.Params, exported.Params)
 	s.Require().True(genesis.MonetaryPolicy.Equal(exported.MonetaryPolicy))
-	s.Require().Equal(genesis.TaxCaps, exported.TaxCaps)
+	s.Require().Equal(genesis.ConversionFactors, exported.ConversionFactors)
 	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
 	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
-	s.Require().Equal(genesis.TaxCapRefreshPending, exported.TaxCapRefreshPending)
 	s.Require().Equal(genesis.ExposureState, exported.ExposureState)
 	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
 }
 
-// TestInitGenesisSeedsCapsAtReferenceAmount pins the launch path: a genesis
-// shipping no caps seeds every member at the unconverted reference amount — a
-// fresh chain holds no rates at InitChain, so there is no conversion to
-// refuse, and the strict oracle mock carries that assertion. The seeds raise
-// the cadence flag so the first successful rebuild re-expresses them in
-// member units.
-func (s *KeeperTestSuite) TestInitGenesisSeedsCapsAtReferenceAmount() {
+// TestInitGenesisSeedsFactorsAtOne pins the launch path: a genesis shipping
+// no factors seeds every member at one — a fresh chain holds no rates at
+// InitChain, so there is no conversion to refuse, and the strict oracle mock
+// carries that assertion. The derived cap is then the unconverted reference
+// amount until the first block's pass re-derives from real rates, and a zero
+// reference derives the uncapped sentinel through the same seeds.
+func (s *KeeperTestSuite) TestInitGenesisSeedsFactorsAtOne() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
@@ -87,29 +82,19 @@ func (s *KeeperTestSuite) TestInitGenesisSeedsCapsAtReferenceAmount() {
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
 	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
-		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		cap, err := s.keeper.GetTaxCap(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), cap)
 	}
-	s.requireTaxCapRefreshPending(true)
-}
 
-// TestInitGenesisSeedsUncappedSetWhenTaxIsUncapped keeps the zero sentinel's
-// meaning through seeding: an explicitly uncapped launch copies zero into
-// every member, so the whole set is taxed-uncapped from block one.
-func (s *KeeperTestSuite) TestInitGenesisSeedsUncappedSetWhenTaxIsUncapped() {
-	genesis := types.DefaultGenesisState()
+	// The zero sentinel keeps its meaning through the same seeds.
 	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.expectGenesisFundBalances(nil)
-
-	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, genesis.Params))
 	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
-		cap, err := s.keeper.TaxCaps.Get(s.ctx, denom)
+		cap, err := s.keeper.GetTaxCap(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
 	}
-	s.requireTaxCapRefreshPending(true)
 }
 
 // TestInitGenesisRequiresConfiguredMatchingReferenceDenom pins the launch
@@ -144,81 +129,77 @@ func (s *KeeperTestSuite) TestInitGenesisRequiresConfiguredMatchingReferenceDeno
 	}
 }
 
-// TestInitGenesisAcceptsMembersWithoutCaps pins the import contract loose on
-// the member side: a member holding no cap is the gap an arrival opens until
-// the next BeginBlocker covers it, and an export taken inside that gap must
-// remain importable, arriving with the member untaxed exactly as it was on
-// the exporting chain; the membership trigger covers it — derived or seeded —
-// on the next BeginBlocker either way.
-func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutCaps() {
+// TestInitGenesisAcceptsMembersWithoutFactors pins the import contract loose
+// on the member side: a member holding no factor is the gap an arrival opens
+// until the next BeginBlocker covers it, and an export taken inside that gap
+// must remain importable, arriving with the member untaxed exactly as it was
+// on the exporting chain; the next block's pass covers it either way.
+func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
-	genesis.TaxCaps = []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
+	genesis.ConversionFactors = []types.ConversionFactor{
+		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec()},
 	}
 	s.expectGenesisFundBalances(nil)
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
-	s.Require().True(sdrCap.IsZero())
-	_, err = s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	_, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().Error(err)
 
 	// The chain's own export round-trips: the gap survives import instead of
 	// refusing it.
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(genesis.TaxCaps, exported.TaxCaps)
+	s.Require().Equal(genesis.ConversionFactors, exported.ConversionFactors)
 	s.expectGenesisFundBalances(nil)
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
-	_, err = s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	_, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().Error(err)
 }
 
-// TestInitGenesisAcceptsCapsBeyondOraclePricing pins the import contract loose
-// on the oracle-priced side. A cap kept after its member leaves the
+// TestInitGenesisAcceptsFactorsBeyondOraclePricing pins the import contract
+// loose on the oracle-priced side. A factor kept after its member leaves the
 // oracle-priced set is the expected shape of an export taken after a
-// departure, and an amount that disagrees with the reference is what a kept
-// cap looks like once policy has moved on; rejecting either would refuse the
-// chain its own exported state. Departure is a lifecycle status, never a
-// missing registry row, so both capped denoms are still members here.
-func (s *KeeperTestSuite) TestInitGenesisAcceptsCapsBeyondOraclePricing() {
+// departure; rejecting it would refuse the chain its own exported state.
+// Departure is a lifecycle status, never a missing registry row, so both
+// denoms are still members here.
+func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	s.setAssets(chain.USDBaseDenom)
 	// akrw has departed the oracle-priced set — written off, its row permanent —
-	// and its kept cap travels in the export. Neither amount matches the
-	// reference.
+	// and its kept factor travels in the export.
 	s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF)
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(3)
-	genesis.TaxCaps = []types.TaxCap{
-		{Denom: chain.KRWBaseDenom, TaxCap: math.NewInt(11)},
-		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(7)},
+	genesis.ConversionFactors = []types.ConversionFactor{
+		{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(11)},
+		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(7)},
 	}
 	s.expectGenesisFundBalances(nil)
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(7), usdCap)
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	s.Require().Equal(math.NewInt(21), usdCap)
+	krwCap, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(11), krwCap)
-	_, err = s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+	s.Require().Equal(math.NewInt(33), krwCap)
+	_, err = s.keeper.GetTaxCap(s.ctx, chain.SDRBaseDenom)
 	s.Require().Error(err)
 }
 
-// TestInitGenesisRefusesCapsForNonMembers pins where the loose import stops:
-// the cap set is the tax base, so a cap naming a denomination the protocol
-// never issued would have the chain collect tax that settlement can never
-// price and never move — it would defer in the collector permanently. No real
-// export carries such a cap, because runtime derivation walks the registry and
-// rows are permanent, so refusing it costs no round trip.
-func (s *KeeperTestSuite) TestInitGenesisRefusesCapsForNonMembers() {
+// TestInitGenesisRefusesFactorsForNonMembers pins where the loose import
+// stops: the factor set is the tax base, so one naming a denomination the
+// protocol never issued would have the chain collect tax that settlement can
+// never price and never move — it would defer in the collector permanently.
+// No real export carries such a factor, because runtime derivation walks the
+// registry and rows are permanent, so refusing it costs no round trip.
+func (s *KeeperTestSuite) TestInitGenesisRefusesFactorsForNonMembers() {
 	s.setAssets(chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
-	genesis.TaxCaps = []types.TaxCap{
-		{Denom: chain.KRWBaseDenom, TaxCap: math.NewInt(11)},
+	genesis.ConversionFactors = []types.ConversionFactor{
+		{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(11)},
 	}
 
 	s.Require().ErrorContains(
@@ -275,40 +256,6 @@ func (s *KeeperTestSuite) TestInitGenesisCollectorBalanceAdmission() {
 			s.keeper.InitGenesis(s.ctx, genesis),
 			"unsupported genesis denom",
 		)
-	})
-}
-
-// TestInitGenesisImportsTaxCapRefreshFlag pins the cadence flag as imported
-// state whenever the caps are: an export taken while a refresh was owed
-// carries true, so the debt survives the migration instead of being forgiven
-// by it. A genesis shipping no caps forces the flag instead, because seeds
-// are placeholders that owe the first successful rebuild.
-func (s *KeeperTestSuite) TestInitGenesisImportsTaxCapRefreshFlag() {
-	for _, pending := range []bool{false, true} {
-		s.Run(fmt.Sprintf("pending %t", pending), func() {
-			s.setBlockHeight(9)
-			s.setAssets(chain.SDRBaseDenom)
-			s.expectGenesisFundBalances(nil)
-			genesis := types.DefaultGenesisState()
-			genesis.TaxCaps = []types.TaxCap{
-				{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()},
-			}
-			genesis.TaxCapRefreshPending = pending
-
-			s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-			s.requireTaxCapRefreshPending(pending)
-		})
-	}
-
-	s.Run("seeded caps force the flag", func() {
-		s.setBlockHeight(9)
-		s.setAssets(chain.SDRBaseDenom)
-		s.expectGenesisFundBalances(nil)
-		genesis := types.DefaultGenesisState()
-		genesis.TaxCapRefreshPending = false
-
-		s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-		s.requireTaxCapRefreshPending(true)
 	})
 }
 

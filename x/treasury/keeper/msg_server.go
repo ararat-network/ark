@@ -49,31 +49,6 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 			msg.Params.ReferenceTaxCap.Denom,
 		)
 	}
-	if !current.ReferenceTaxCap.Equal(msg.Params.ReferenceTaxCap) {
-		denoms, err := m.k.assetKeeper.OraclePricedDenoms(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("getting oracle-priced denominations: %w", err)
-		}
-		caps, underived, err := m.k.buildTaxCaps(ctx, msg.Params, denoms)
-		if err != nil {
-			return nil, err
-		}
-		for _, cap := range caps {
-			if err := m.k.TaxCaps.Set(ctx, cap.Denom, cap.TaxCap); err != nil {
-				return nil, fmt.Errorf("setting tax cap %s: %w", cap.Denom, err)
-			}
-		}
-		if err := m.k.TaxCapRefreshPending.Set(ctx, len(underived) > 0); err != nil {
-			return nil, fmt.Errorf("recording pending tax cap refresh: %w", err)
-		}
-		if len(caps) > 0 {
-			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTaxCapsRefreshed{
-				TaxCaps: caps,
-			}); err != nil {
-				return nil, fmt.Errorf("emitting Treasury tax-cap refresh event: %w", err)
-			}
-		}
-	}
 	if err := m.k.Params.Set(ctx, msg.Params); err != nil {
 		return nil, fmt.Errorf("setting params: %w", err)
 	}

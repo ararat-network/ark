@@ -15,93 +15,87 @@ func TestDefaultGenesisState(t *testing.T) {
 	genesis := types.DefaultGenesisState()
 	require.Equal(t, types.DefaultParams(), genesis.Params)
 	require.True(t, types.DefaultMonetaryPolicy().Equal(genesis.MonetaryPolicy))
-	require.Empty(t, genesis.TaxCaps)
+	require.Empty(t, genesis.ConversionFactors)
 	require.Equal(t, types.DefaultRewardFundingState(), genesis.RewardFunding)
 	require.Equal(t, types.DefaultMonetaryMandate(), genesis.MonetaryMandate)
 	require.NoError(t, genesis.Validate())
 }
 
 func TestNewGenesisStateCopiesSlices(t *testing.T) {
-	taxCaps := []types.TaxCap{{Denom: chain.USDBaseDenom, TaxCap: math.OneInt()}}
+	factors := []types.ConversionFactor{{Denom: chain.USDBaseDenom, Factor: math.LegacyOneDec()}}
 	genesis := types.NewGenesisState(
 		types.DefaultParams(),
-		taxCaps,
+		factors,
 		types.DefaultRewardFundingState(),
 		types.DefaultMonetaryMandate(),
 		types.DefaultMonetaryPolicy(),
-		false,
 		types.DefaultExposureState(),
 		false,
 	)
-	taxCaps[0].Denom = "mutated"
-	require.Equal(t, chain.USDBaseDenom, genesis.TaxCaps[0].Denom)
+	factors[0].Denom = "mutated"
+	require.Equal(t, chain.USDBaseDenom, genesis.ConversionFactors[0].Denom)
 }
 
-func TestGenesisTaxCapValidation(t *testing.T) {
+func TestGenesisConversionFactorValidation(t *testing.T) {
+	factor := func(denom string, factor string) types.ConversionFactor {
+		return types.ConversionFactor{Denom: denom, Factor: math.LegacyMustNewDecFromStr(factor)}
+	}
+
 	tests := []struct {
 		name      string
 		mutate    func(*types.GenesisState)
 		expectErr string
 	}{
 		{
-			name: "positive reference cap requires positive derived caps",
+			name: "positive factor is valid",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()}}
+				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "1")}
 			},
 		},
-		// A cap that disagrees with the reference is the expected shape of a
-		// kept cap, not a corrupt one: it was derived under whatever the
-		// reference was at the time, and nothing re-derives it afterwards.
+		// A factor that disagrees with live rates is the expected shape of a
+		// kept factor, not a corrupt one: it was derived under whatever the
+		// rates were at the time, and only the refresh re-derives it.
 		{
-			name: "positive reference cap permits uncapped sentinel",
+			name: "sub-unit factor is valid",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.Params.ReferenceTaxCap.Amount = math.OneInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()}}
-			},
-		},
-		{
-			name: "zero reference cap permits uncapped sentinel",
-			mutate: func(genesis *types.GenesisState) {
-				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()}}
+				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "0.000001")}
 			},
 		},
 		{
-			name: "zero reference cap permits positive kept cap",
+			name: "zero factor is refused",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
-				genesis.TaxCaps = []types.TaxCap{{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()}}
+				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "0")}
 			},
+			expectErr: "must be positive",
 		},
 		{
-			name: "sorted tax caps are valid",
+			name: "sorted factors are valid",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.TaxCaps = []types.TaxCap{
-					{Denom: chain.KRWBaseDenom, TaxCap: math.ZeroInt()},
-					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.KRWBaseDenom, "1"),
+					factor(chain.USDBaseDenom, "1"),
 				}
 			},
 		},
 		{
-			name: "unsorted tax caps",
+			name: "unsorted factors",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.TaxCaps = []types.TaxCap{
-					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
-					{Denom: chain.KRWBaseDenom, TaxCap: math.ZeroInt()},
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.USDBaseDenom, "1"),
+					factor(chain.KRWBaseDenom, "1"),
 				}
 			},
-			expectErr: "genesis tax caps must be sorted by unique denom",
+			expectErr: "genesis conversion factors must be sorted by unique denom",
 		},
 		{
-			name: "duplicate tax cap denom",
+			name: "duplicate factor denom",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.TaxCaps = []types.TaxCap{
-					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
-					{Denom: chain.USDBaseDenom, TaxCap: math.ZeroInt()},
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.USDBaseDenom, "1"),
+					factor(chain.USDBaseDenom, "1"),
 				}
 			},
-			expectErr: "genesis tax caps must be sorted by unique denom",
+			expectErr: "genesis conversion factors must be sorted by unique denom",
 		},
 	}
 

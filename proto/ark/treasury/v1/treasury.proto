@@ -23,15 +23,6 @@ message Params {
   ];
   // reward_funding_window initialises each new funding countdown.
   uint64 reward_funding_window = 2 [(amino.dont_omitempty) = true];
-  // tax_cap_refresh_period_blocks is how often the derived per-denomination
-  // caps are trued up against rate drift. Membership changes refresh the map on
-  // their own, so this cadence exists only for the drift between them: the
-  // reference cap is a fixed amount in the reference unit, and every other
-  // denomination's ceiling is that amount priced through a rate that keeps
-  // moving after the map is built. A shorter period tracks the ceiling
-  // governance voted for more closely and rebuilds the map more often; a longer
-  // one lets the real ceiling drift further from it.
-  uint64 tax_cap_refresh_period_blocks = 3 [(amino.dont_omitempty) = true];
 
   // The exposure multiplier's machinery (D72): the instrument that measures
   // risk, the cadence it runs on, and the rails bounding how far and how fast
@@ -49,7 +40,7 @@ message Params {
 
   // volatility_decay is the per-block EWMA retention for the variance
   // series, in [0, 1). A value at or above one would never forget a sample.
-  string volatility_decay = 4 [
+  string volatility_decay = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -57,7 +48,7 @@ message Params {
   ];
   // flow_decay is the per-block EMA retention for the flow series, in
   // [0, 1).
-  string flow_decay = 5 [
+  string flow_decay = 4 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -67,7 +58,7 @@ message Params {
   // one. It is also the saturation point: a composite that leaves representable
   // range resolves here rather than failing a block, because stress past
   // measurement is the cap by definition.
-  string multiplier_cap = 6 [
+  string multiplier_cap = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -76,7 +67,7 @@ message Params {
   // multiplier_max_step is the most the multiplier may move in one
   // update, in either direction. Positive: a zero step would freeze the
   // multiplier at its stored value forever.
-  string multiplier_max_step = 7 [
+  string multiplier_max_step = 6 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -87,7 +78,7 @@ message Params {
   // recomputation waits. It keeps the exposure qualifier the four fields above
   // drop, because Params already carries a second cadence in
   // tax_cap_refresh_period_blocks and a bare period would read as the module's.
-  uint64 exposure_refresh_period_blocks = 8 [(amino.dont_omitempty) = true];
+  uint64 exposure_refresh_period_blocks = 7 [(amino.dont_omitempty) = true];
 }
 
 // ExposureState is the running risk estimate behind the multiplier: two
@@ -291,6 +282,27 @@ message TaxCap {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// ConversionFactor is one denomination's stored cross rate from the protocol
+// reference unit — base units of the denomination per one base unit of the
+// reference — refreshed every block the oracle can serve it and kept at its
+// last derived value when it cannot. Presence of an entry is what makes a
+// denomination taxable; the per-denomination tax cap is derived from it at
+// read time as reference_tax_cap × factor.
+message ConversionFactor {
+  string denom = 1;
+  // factor is strictly positive: an underivable arrival is seeded at one,
+  // never zero.
+  string factor = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // derived_height is the block whose rates produced the factor, kept for
+  // observability and future staleness policy; the reads ignore it.
+  uint64 derived_height = 3 [(amino.dont_omitempty) = true];
 }
 
 // WrittenOffExposure discloses supply governance has formally derecognised.

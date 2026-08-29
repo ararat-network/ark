@@ -44,27 +44,6 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardFundingWindow must be between one and",
 		},
 		{
-			// Zero would divide by zero in the modular cadence check.
-			name:      "zero tax cap refresh period",
-			mutate:    func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = 0 },
-			expectErr: "TaxCapRefreshPeriodBlocks must be between one and",
-		},
-		{
-			name:   "single-block tax cap refresh period is valid",
-			mutate: func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = 1 },
-		},
-		{
-			name:   "tax cap refresh period at the domain cap",
-			mutate: func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = types.MaxTaxCapRefreshPeriodBlocks },
-		},
-		{
-			// A cadence no chain reaches retires the drift true-up silently.
-			// Disabling it is a zero reference cap, not an unreachable period.
-			name:      "tax cap refresh period above the domain cap",
-			mutate:    func(p *types.Params) { p.TaxCapRefreshPeriodBlocks = types.MaxTaxCapRefreshPeriodBlocks + 1 },
-			expectErr: "TaxCapRefreshPeriodBlocks must be between one and",
-		},
-		{
 			name:      "reference cap denom must be canonical micro denom",
 			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "USDR" },
 			expectErr: "ReferenceTaxCap denom is invalid",

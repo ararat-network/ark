@@ -73,7 +73,7 @@ func (q queryServer) TaxCap(ctx context.Context, req *types.QueryTaxCapRequest) 
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	taxCap, err := q.k.TaxCaps.Get(ctx, req.Denom)
+	taxCap, err := q.k.GetTaxCap(ctx, req.Denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Errorf(codes.NotFound, "tax cap not found for denom %s", req.Denom)
@@ -89,15 +89,54 @@ func (q queryServer) TaxCaps(ctx context.Context, req *types.QueryTaxCapsRequest
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
+	// The response derives each cap over one params read rather than through
+	// GetTaxCap, which would re-read params per entry.
+	params, err := q.k.Params.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting params: %v", err)
+	}
 	taxCaps := make([]types.TaxCap, 0)
-	if err := q.k.TaxCaps.Walk(ctx, nil, func(denom string, taxCap math.Int) (bool, error) {
-		taxCaps = append(taxCaps, types.TaxCap{Denom: denom, TaxCap: taxCap})
+	if err := q.k.ConversionFactors.Walk(ctx, nil, func(denom string, factor types.ConversionFactor) (bool, error) {
+		taxCaps = append(taxCaps, types.TaxCap{
+			Denom:  denom,
+			TaxCap: deriveTaxCap(params, factor),
+		})
 		return false, nil
 	}); err != nil {
 		return nil, status.Errorf(codes.Internal, "listing treasury tax caps: %v", err)
 	}
 
 	return &types.QueryTaxCapsResponse{TaxCaps: taxCaps}, nil
+}
+
+// ConversionFactor queries one denomination's stored conversion factor.
+func (q queryServer) ConversionFactor(ctx context.Context, req *types.QueryConversionFactorRequest) (*types.QueryConversionFactorResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	factor, err := q.k.ConversionFactors.Get(ctx, req.Denom)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "conversion factor not found for denom %s", req.Denom)
+		}
+		return nil, status.Errorf(codes.Internal, "getting conversion factor for denom %s: %v", req.Denom, err)
+	}
+	return &types.QueryConversionFactorResponse{ConversionFactor: factor}, nil
+}
+
+// ConversionFactors queries the complete factor table in denomination order.
+func (q queryServer) ConversionFactors(ctx context.Context, req *types.QueryConversionFactorsRequest) (*types.QueryConversionFactorsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	factors := make([]types.ConversionFactor, 0)
+	if err := q.k.ConversionFactors.Walk(ctx, nil, func(_ string, factor types.ConversionFactor) (bool, error) {
+		factors = append(factors, factor)
+		return false, nil
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "listing treasury conversion factors: %v", err)
+	}
+	return &types.QueryConversionFactorsResponse{ConversionFactors: factors}, nil
 }
 
 // ComputeTax computes the current stability tax for the supplied SDK messages.

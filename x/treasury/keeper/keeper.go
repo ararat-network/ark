@@ -40,18 +40,18 @@ type Keeper struct {
 	// never a silently empty entry in a hand-written map.
 	fundAddresses map[string]struct{}
 
-	Schema          collections.Schema
-	Params          collections.Item[types.Params]
-	TaxCaps         collections.Map[string, math.Int]
-	RewardFunding   collections.Item[types.RewardFundingState]
-	MonetaryMandate collections.Item[types.MonetaryMandate]
-	MonetaryPolicy  collections.Item[types.MonetaryPolicy]
-	// TaxCapRefreshPending records that a complete cap derivation is owed: a
-	// cadence boundary passed, or a pass left seeded or kept-through-outage
-	// caps behind. Only a pass that derives every member lowers it, so an
-	// incomplete refresh retries every block until rates return. Membership
-	// drift needs no flag: the registry is ground truth, re-read every block.
-	TaxCapRefreshPending collections.Item[bool]
+	Schema collections.Schema
+	Params collections.Item[types.Params]
+	// ConversionFactors holds each taxable denomination's cross rate from the
+	// protocol reference, refreshed every block the oracle can serve it and
+	// kept at its last derived value when it cannot. Entry presence is the tax
+	// base, and the per-denomination cap is GetTaxCap's derived read — nothing
+	// stores a resolved cap. Membership drift needs no flag: the registry is
+	// ground truth, re-read every block, and every block is the retry.
+	ConversionFactors collections.Map[string, types.ConversionFactor]
+	RewardFunding     collections.Item[types.RewardFundingState]
+	MonetaryMandate   collections.Item[types.MonetaryMandate]
+	MonetaryPolicy    collections.Item[types.MonetaryPolicy]
 	// ExposureState holds the risk estimate behind the fund-target multiplier:
 	// two per-block series, the inputs of the last completed refresh, and the
 	// multiplier itself. Sampling writes it every block from settlement;
@@ -124,12 +124,12 @@ func NewKeeper(
 			"params",
 			codec.CollValue[types.Params](cdc),
 		),
-		TaxCaps: collections.NewMap(
+		ConversionFactors: collections.NewMap(
 			sb,
-			types.TaxCapsKey,
-			"tax_caps",
+			types.ConversionFactorsKey,
+			"conversion_factors",
 			collections.StringKey,
-			sdk.IntValue,
+			codec.CollValue[types.ConversionFactor](cdc),
 		),
 		RewardFunding: collections.NewItem(
 			sb,
@@ -160,12 +160,6 @@ func NewKeeper(
 			types.MonetaryPolicyKey,
 			"monetary_policy",
 			codec.CollValue[types.MonetaryPolicy](cdc),
-		),
-		TaxCapRefreshPending: collections.NewItem(
-			sb,
-			types.TaxCapRefreshPendingKey,
-			"tax_cap_refresh_pending",
-			collections.BoolValue,
 		),
 	}
 

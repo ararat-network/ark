@@ -88,6 +88,9 @@ type KeeperTestSuite struct {
 	// omission, never an error, so this stands for a genuine store or state
 	// fault — the only thing a valuation is allowed to propagate.
 	ratesErr error
+	// rateCaptures records each rate capture's denom list, newest last, so a
+	// test can assert the capture shape without its own mock expectation.
+	rateCaptures [][]string
 	// reference is the protocol reference the mock reports. It defaults to
 	// the reference the default params' tax cap is denominated in, matching
 	// the genesis invariant the keeper enforces.
@@ -188,6 +191,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.rates = oracletypes.NewRateSet()
 	s.lastRates = oracletypes.NewRateSet()
 	s.ratesErr = nil
+	s.rateCaptures = nil
 	s.reference = chain.SDRBaseDenom
 	for _, denom := range []string{chain.KRWBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom} {
 		s.seedAsset(denom, assettypes.AssetStatus_ASSET_STATUS_ACTIVE)
@@ -251,16 +255,14 @@ func (s *KeeperTestSuite) SetupTest() {
 			return s.reference, nil
 		}).
 		AnyTimes()
-	// Exposure sampling reads the reference rate on every settling block, and
-	// no reward-funding or settlement assertion depends on it. The matcher
-	// binds the whole variadic slice rather than one denomination, which is
-	// what keeps it from shadowing the tax-cap rebuild's own expectations: a
-	// bare string matcher would match any call whose first denomination is the
-	// reference, because gomock compares a short matcher list against a prefix
-	// of the arguments, and the capture sends the member set alongside it.
+	// One fake serves every rate capture — the per-block factor refresh,
+	// exposure sampling, and the re-point executor alike — from s.rates and
+	// s.ratesErr, recording each call's denom list so a test can assert the
+	// capture shape without its own expectation.
 	s.oracleKeeper.EXPECT().
-		GetAvailableRateSet(gomock.Any(), gomock.Eq([]string{chain.SDRBaseDenom})).
+		GetAvailableRateSet(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, denoms ...string) (oracletypes.RateSet, error) {
+			s.rateCaptures = append(s.rateCaptures, denoms)
 			if s.ratesErr != nil {
 				return nil, s.ratesErr
 			}
@@ -302,12 +304,6 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.ctx,
 		types.DefaultMonetaryMandate(),
 	))
-	// Lower the cadence flag the way InitGenesis does, so the cadence trigger
-	// starts quiet and tests reach a boundary only when they set one. The cap
-	// store is left empty: tests that care about the membership trigger seed
-	// exactly the caps they mean to compare.
-	s.Require().NoError(s.keeper.TaxCapRefreshPending.Set(s.ctx, false))
-
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
 	s.queryClient = types.NewQueryClient(queryHelper)
@@ -387,29 +383,18 @@ func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-// expectExposureUpdateReads absorbs the state an exposure recomputation reads
-// when a block crosses the update cadence. The recomputation folds the registry
-// and nets the fund balances out of NOAH supply, which a test about tax caps or
-// reward funding has no opinion about, so every read answers zero and the
-// multiplier holds at one.
-//
-// It is called from the tests that cross a boundary rather than from SetupTest,
-// so it cannot shadow a test that stubs supply or balances itself: gomock serves
-// the first unexhausted match, and anything registered earlier in the test still
-// answers first.
-func (s *KeeperTestSuite) expectExposureUpdateReads() {
-	s.bankKeeper.EXPECT().
-		GetSupply(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, denom string) sdk.Coin {
-			return sdk.NewCoin(denom, math.ZeroInt())
-		}).
-		AnyTimes()
-	s.bankKeeper.EXPECT().
-		GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
-		DoAndReturn(func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
-			return sdk.NewCoin(denom, math.ZeroInt())
-		}).
-		AnyTimes()
+// setDerivedTaxCap gives one denomination a derived cap of exactly the given
+// amount: the reference amount pins to one base unit and the factor carries
+// the value, so several denominations hold distinct caps side by side.
+func (s *KeeperTestSuite) setDerivedTaxCap(denom string, amount math.Int) {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.ReferenceTaxCap.Amount = math.OneInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, denom, types.ConversionFactor{
+		Denom:  denom,
+		Factor: math.LegacyNewDecFromInt(amount),
+	}))
 }
 
 // beginBlock runs BeginBlocker. The indirection is the seam tests share: when

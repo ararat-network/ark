@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	"go.uber.org/mock/gomock"
-
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -68,205 +66,60 @@ func (s *KeeperTestSuite) TestBeginBlockerValuesStableFeesAgainstOraclePricedMem
 	s.Require().Equal(math.NewInt(5), funding.ValidatorFeeValue)
 }
 
-// TestBeginBlockerRebuildsDriftedCapsMidPeriod pins the membership trigger:
-// the caps are compared against the registry itself, so a member left
-// uncovered is served on the next block rather than waiting for a cadence
-// boundary. Nothing has to announce the move for this to fire.
-func (s *KeeperTestSuite) TestBeginBlockerRebuildsDriftedCapsMidPeriod() {
-	s.setBlockHeight(1)
-	s.setAssets(chain.SDRBaseDenom)
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(5)))
-
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// The lone member is the reference itself, so the rebuild needs no rates:
-	// the strict oracle mock stays unprogrammed and the stored caps are the
-	// whole observable effect.
-	s.Require().NoError(s.beginBlock())
-
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
-	// The non-member's cap is untouched by the rebuild rather than swept with
-	// it: it is the only cap that denomination can have.
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(5), usdCap)
-}
-
-func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsOnMembershipChange() {
+// TestBeginBlockerDerivesFactorsEveryBlock pins the per-block contract: a
+// servable member's factor tracks this block's rate, the derived cap tracks
+// the factor, and the changed-only event stays quiet on a block that
+// re-derives every factor to the value it already held.
+func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// akrw is outside the membership set while its seeded cap stays behind:
-	// the rebuild must derive the members without disturbing it.
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(7)))
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
+	s.setRates(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyNewDec(2),
-	}, nil)
+	})
 
 	s.Require().NoError(s.beginBlock())
 
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(2_000_000), usdCap)
+	sdrCap, err := s.keeper.GetTaxCap(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(2_000_000), usdCap)
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(7), krwCap)
-	// The rebuild leaves the cadence flag down, and the caps now cover
-	// membership, so the next block has nothing to do. The event reports the
-	// denoms this rebuild derived, not the kept cap it left alone.
-	s.requireTaxCapRefreshPending(false)
-	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
-		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(2_000_000)},
+	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
+		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
+		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(2), DerivedHeight: 1},
 	}})
-}
 
-// TestBeginBlockerKeepsCapsWhenMembershipShrinks proves a departure is not a
-// rebuild trigger. The strict oracle mock is left unprogrammed, so any attempt
-// to re-derive would fail the test: coverage is containment of the members,
-// and losing one leaves every survivor already covered.
-func (s *KeeperTestSuite) TestBeginBlockerKeepsCapsWhenMembershipShrinks() {
-	s.setBlockHeight(1)
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.setAssets(chain.SDRBaseDenom)
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(1_000_000)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.USDBaseDenom, math.NewInt(2_000_000)))
-	// The suite leaves the cadence flag down and this height closes no period,
-	// so coverage is the only trigger under test.
-
+	// An unchanged block writes nothing and says nothing.
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithEventManager(sdk.NewEventManager())
 	s.Require().NoError(s.beginBlock())
-
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	s.requireNoTypedEvent(&types.EventConversionFactorsRefreshed{})
+	usd, err := s.keeper.ConversionFactors.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(2_000_000), usdCap)
-	s.requireTaxCapRefreshPending(false)
-}
+	s.Require().Equal(uint64(1), usd.DerivedHeight)
 
-// TestBeginBlockerRefreshCadenceFollowsParams proves the drift cadence is the
-// parameter and not the calendar: a ten-block period rebuilds at height 9,
-// where the launch weekly default would have skipped, and skips at height 4.
-func (s *KeeperTestSuite) TestBeginBlockerRefreshCadenceFollowsParams() {
-	params := types.DefaultParams()
-	// Uncapped keeps the boundary rebuild rate-free, so the cadence is the
-	// only thing under test.
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
-	params.TaxCapRefreshPeriodBlocks = 10
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// The cap set covers exactly the membership, so its denoms never disagree
-	// and the cadence is the only trigger left. Only the stored amount is
-	// stale, standing in for the rate drift the cadence exists to true up.
-	s.setAssets(chain.SDRBaseDenom)
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(7)))
-
-	// Height 4 is inside the shortened period, so the drifted amount survives.
-	s.setBlockHeight(4)
-	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
-	s.expectValidatorFees(sdk.NewCoins())
-
-	s.Require().NoError(s.beginBlock())
-
-	staleCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(7), staleCap)
-
-	// Height 9 closes the period, so the same drift is trued up — a block the
-	// weekly default would have passed over.
-	s.setBlockHeight(9)
-	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
-	s.expectValidatorFees(sdk.NewCoins())
-
-	s.Require().NoError(s.beginBlock())
-
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().True(sdrCap.IsZero())
-	s.requireTaxCapRefreshPending(false)
-}
-
-func (s *KeeperTestSuite) TestBeginBlockerRebuildsCapsAtWeeklyBoundaryWithUnchangedMembership() {
-	// The default cadence boundary trues up rate drift even while membership
-	// sits still. An explicitly zero reference cap keeps the rebuild
-	// rate-free, so the only observable difference from a skipped block is
-	// the replaced amount.
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.setBlockHeight(int64(chain.BlocksPerWeek) - 1)
-	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
-	s.expectValidatorFees(sdk.NewCoins())
-	s.setAssets(chain.SDRBaseDenom)
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(7)))
-	// A weekly boundary is also an hourly one, so this block recomputes the
-	// exposure multiplier alongside the cap rebuild. The recomputation is not
-	// what this test is about, but its reads have to be answered.
-	s.expectExposureUpdateReads()
-
-	s.Require().NoError(s.beginBlock())
-
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().True(sdrCap.IsZero())
-	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.ZeroInt()},
-	}})
-}
-
-func (s *KeeperTestSuite) TestBeginBlockerBuildsCapsForMembersOnlyWhenReferenceIsNotAMember() {
-	s.setBlockHeight(1)
-	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// The reference names a feed, not necessarily a listed asset: membership
-	// excludes asdr, yet the rate capture must still include it so the cap
-	// can convert out of reference units.
-	s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.KRWBaseDenom,
-		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.KRWBaseDenom: math.LegacyNewDec(4),
-		chain.USDBaseDenom: math.LegacyNewDec(2),
+	// A moved rate re-derives the one factor it moved.
+	s.setRates(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
-	}, nil)
-
+		chain.USDBaseDenom: math.LegacyNewDec(3),
+	})
 	s.Require().NoError(s.beginBlock())
-
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(4_000_000), krwCap)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(2_000_000), usdCap)
-	// No asset is listed under the reference denomination, so no cap is
-	// stored for it: caps exist only for members.
-	_, err = s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().Error(err)
-	s.requireTaxCapRefreshPending(false)
+	s.Require().Equal(math.NewInt(3_000_000), usdCap)
+	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
+		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(3), DerivedHeight: 1},
+	}})
 }
 
-// TestBeginBlockerCoversMembersLackingUsableRates pins all three verdicts of
-// one partial pass: a member whose rate serves is derived, a covered member
-// whose rate does not keeps its cap, and an uncovered member whose rate does
-// not is seeded at the unconverted reference amount rather than left exempt.
-// The pass is incomplete, so the refresh stays owed.
-func (s *KeeperTestSuite) TestBeginBlockerCoversMembersLackingUsableRates() {
+// TestBeginBlockerKeepsFactorThroughOutage proves a dark feed keeps its last
+// factor, the derived cap keeps clamping through the outage, and the pass
+// mends the factor the block the feed returns — every block is the retry.
+func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 	s.setBlockHeight(1)
 	policy := types.DefaultMonetaryPolicy()
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
@@ -274,227 +127,209 @@ func (s *KeeperTestSuite) TestBeginBlockerCoversMembersLackingUsableRates() {
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// akrw holds a kept cap and its rate is unavailable; ausd awaits its
-	// first cap; asdr is the reference member, derivable without any rate.
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(7)))
-	s.setAssets(chain.KRWBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.KRWBaseDenom,
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
-	}, nil)
+	s.setAssets(chain.KRWBaseDenom, chain.SDRBaseDenom)
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
+		Denom:  chain.KRWBaseDenom,
+		Factor: math.LegacyMustNewDecFromStr("0.000007"),
+	}))
 
+	// The outage block: no rate serves akrw, so its factor is kept untouched.
 	s.Require().NoError(s.beginBlock())
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	kept, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(7), krwCap)
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1_000_000), usdCap)
-	s.requireTaxCapRefreshPending(true)
-	// The event carries what the pass wrote — the derived reference member
-	// and the seed — never the kept cap it left alone.
-	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
-		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(1_000_000)},
-	}})
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.000007"), kept.Factor)
+	s.Require().Equal(uint64(0), kept.DerivedHeight)
 
-	// Every member taxes through the outage: the kept cap keeps clamping —
-	// 10 would be owed at the rate, the kept cap of 7 binds — and the seeded
-	// arrival pays under its seed. An oracle outage must not make a healthy
-	// denomination untransactable — nor tax-exempt.
+	// Every member taxes through the outage: the kept factor keeps deriving
+	// the cap that clamps — 10 would be owed at the rate, the derived cap of
+	// 7 binds. An oracle outage must not make a healthy denomination
+	// untransactable — nor tax-exempt.
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)),
 	}})
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 7)), tax)
 
-	tax, err = s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
-		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
-	}})
+	// The feed returns and the very next block re-derives.
+	s.setRates(oracletypes.RateSet{
+		chain.KRWBaseDenom: math.LegacyNewDec(2),
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+	})
+	s.Require().NoError(s.beginBlock())
+	mended, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10)), tax)
+	s.Require().Equal(math.LegacyNewDec(2), mended.Factor)
 }
 
-// TestBeginBlockerRetriesIncompleteRefreshNextBlock proves a seed is a
-// placeholder, not a resting state: the member whose rate is unavailable is
-// seeded, the flag stays raised, and the next block's pass re-expresses the
-// whole set once rates return.
-func (s *KeeperTestSuite) TestBeginBlockerRetriesIncompleteRefreshNextBlock() {
+// TestBeginBlockerSeedsUncoveredArrivalAtOne pins the arrival verdict of a
+// partial pass: a member holding no factor whose rate cannot serve is seeded
+// at one — taxable the block it arrives, at the unconverted reference amount
+// — rather than left exempt until its feed warms.
+func (s *KeeperTestSuite) TestBeginBlockerSeedsUncoveredArrivalAtOne() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	gomock.InOrder(
-		s.oracleKeeper.EXPECT().GetAvailableRateSet(
-			gomock.Any(),
-			chain.SDRBaseDenom,
-			chain.USDBaseDenom,
-		).Return(oracletypes.RateSet{
-			chain.SDRBaseDenom: math.LegacyOneDec(),
-		}, nil),
-		s.oracleKeeper.EXPECT().GetAvailableRateSet(
-			gomock.Any(),
-			chain.SDRBaseDenom,
-			chain.USDBaseDenom,
-		).Return(oracletypes.RateSet{
-			chain.SDRBaseDenom: math.LegacyOneDec(),
-			chain.USDBaseDenom: math.LegacyNewDec(2),
-		}, nil),
-	)
+	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
 
 	s.Require().NoError(s.beginBlock())
-	// The reference member derives without a rate; the member whose rate is
-	// unavailable is seeded at the reference amount, so the refresh stays
-	// owed.
-	sdrCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.SDRBaseDenom)
+
+	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(1_000_000), usdCap)
+	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
+		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
+		{Denom: chain.USDBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
+	}})
+}
+
+// TestBeginBlockerLeavesDepartedFactorUntouched proves a departure is not a
+// trigger: the factor a member leaves behind keeps deriving the only cap its
+// outstanding supply can have.
+func (s *KeeperTestSuite) TestBeginBlockerLeavesDepartedFactorUntouched() {
+	s.setBlockHeight(1)
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.setAssets(chain.SDRBaseDenom)
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
+		Denom:  chain.KRWBaseDenom,
+		Factor: math.LegacyNewDec(4),
+	}))
+
+	s.Require().NoError(s.beginBlock())
+
+	krwCap, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(4_000_000), krwCap)
+}
+
+// TestBeginBlockerDerivesReferenceIdentityWithoutServedRates pins the identity
+// arm: a membership of the reference alone derives factor one from a capture
+// that serves nothing.
+func (s *KeeperTestSuite) TestBeginBlockerDerivesReferenceIdentityWithoutServedRates() {
+	s.setBlockHeight(1)
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.setAssets(chain.SDRBaseDenom)
+
+	s.Require().NoError(s.beginBlock())
+
+	sdrCap, err := s.keeper.GetTaxCap(s.ctx, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(1_000_000), sdrCap)
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1_000_000), usdCap)
-	s.requireTaxCapRefreshPending(true)
-
-	s.Require().NoError(s.beginBlock())
-	s.requireTaxCapRefreshPending(false)
-	usdCap, err = s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(2_000_000), usdCap)
-	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.NewInt(1_000_000)},
-		{Denom: chain.USDBaseDenom, TaxCap: math.NewInt(2_000_000)},
-	}})
+	s.Require().Equal([][]string{{chain.SDRBaseDenom}}, s.rateCaptures)
 }
 
-func (s *KeeperTestSuite) TestBeginBlockerCoversUnrepresentableTaxCapConversion() {
+// TestBeginBlockerCapturesReferenceWhenNotAMember pins the capture shape:
+// membership excludes the reference, yet the capture must include it so the
+// factors can convert out of reference units, and no factor is stored for it
+// — factors exist only for members.
+func (s *KeeperTestSuite) TestBeginBlockerCapturesReferenceWhenNotAMember() {
+	s.setBlockHeight(1)
+	params := types.DefaultParams()
+	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
+	s.setRates(oracletypes.RateSet{
+		chain.KRWBaseDenom: math.LegacyNewDec(4),
+		chain.USDBaseDenom: math.LegacyNewDec(2),
+		chain.SDRBaseDenom: math.LegacyOneDec(),
+	})
+
+	s.Require().NoError(s.beginBlock())
+
+	s.Require().NotEmpty(s.rateCaptures)
+	s.Require().Equal(
+		[]string{chain.KRWBaseDenom, chain.USDBaseDenom, chain.SDRBaseDenom},
+		s.rateCaptures[len(s.rateCaptures)-1],
+	)
+	krwCap, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(4_000_000), krwCap)
+	_, err = s.keeper.ConversionFactors.Get(s.ctx, chain.SDRBaseDenom)
+	s.Require().Error(err)
+}
+
+// TestBeginBlockerStoresLopsidedFactorDerivingUncapped pins the degrade for a
+// hyper-lopsided rate: the factor itself is representable and stored, and the
+// derived cap — whose true value exceeds the decimal domain — reads as the
+// uncapped sentinel. A ceiling too large to express is no ceiling; the old
+// seed-at-reference degrade imposed one many orders of magnitude tighter than
+// policy asked for.
+func (s *KeeperTestSuite) TestBeginBlockerStoresLopsidedFactorDerivingUncapped() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	// The rate is present but the cross is unrepresentable: 10^6 reference
-	// units times a 10^72 rate leaves the decimal domain mid-conversion.
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
+	s.setRates(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyNewDec(10).Power(72),
-	}, nil)
+	})
 
 	s.Require().NoError(s.beginBlock())
-	// An unrepresentable cross is covered exactly like a missing rate: the
-	// uncovered member is seeded rather than left exempt, and the seed keeps
-	// the refresh owed.
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+
+	stored, err := s.keeper.ConversionFactors.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(1_000_000), usdCap)
-	s.requireTaxCapRefreshPending(true)
+	s.Require().Equal(math.LegacyNewDec(10).Power(72), stored.Factor)
+	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().True(usdCap.IsZero())
 }
 
-// TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit pins the degrade decision: a
-// ceiling worth less than one base unit is floored at one rather than stored as
-// the zero it truncates to, which would read as uncapped and lift the ceiling a
-// small reference cap was asking to tighten. Refusing the conversion instead
-// would hold every member's refresh hostage to a rate pair no retry can mend —
-// rates this lopsided are a legal steady state, not an outage.
-func (s *KeeperTestSuite) TestBeginBlockerFloorsTruncatedTaxCapAtOneUnit() {
+// TestTaxCapDerivationBounds pins both edges of the derived read: a sub-unit
+// product floors at one rather than truncating to the zero that would read
+// as uncapped, and a zero reference derives the uncapped sentinel for every
+// member regardless of its factor.
+func (s *KeeperTestSuite) TestTaxCapDerivationBounds() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.OneInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
-	// A one-base-unit reference cap converts to half a unit at this rate pair.
-	s.oracleKeeper.EXPECT().GetAvailableRateSet(
-		gomock.Any(),
-		chain.SDRBaseDenom,
-		chain.USDBaseDenom,
-	).Return(oracletypes.RateSet{
+	// One base unit of reference converts to half a unit at this rate pair.
+	s.setRates(oracletypes.RateSet{
 		chain.SDRBaseDenom: math.LegacyNewDec(2),
 		chain.USDBaseDenom: math.LegacyOneDec(),
-	}, nil)
+	})
 
 	s.Require().NoError(s.beginBlock())
 
-	usdCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.USDBaseDenom)
+	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.OneInt(), usdCap)
-	s.requireTaxCapRefreshPending(false)
-	s.requireTypedEvent(&types.EventTaxCapsRefreshed{TaxCaps: []types.TaxCap{
-		{Denom: chain.SDRBaseDenom, TaxCap: math.OneInt()},
-		{Denom: chain.USDBaseDenom, TaxCap: math.OneInt()},
-	}})
+
+	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().True(usdCap.IsZero())
 }
 
-// TestBeginBlockerRetriesIncompleteCadenceRefreshAfterBoundary covers the
-// case the epoch comparison could not: a cadence-triggered refresh whose
-// rates cannot serve it. Membership never moves and the boundary block
-// passes, so a trigger built on those two alone would go quiet for a whole
-// period. Keying the cadence to the last complete pass instead leaves the
-// work due until it actually completes.
-func (s *KeeperTestSuite) TestBeginBlockerRetriesIncompleteCadenceRefreshAfterBoundary() {
+// TestReferenceTaxCapChangeRepricesInstantly pins the derive-at-read
+// semantic: a governance change to the reference amount re-prices every
+// member the moment the params land, departed members included, with no
+// rebuild between.
+func (s *KeeperTestSuite) TestReferenceTaxCapChangeRepricesInstantly() {
+	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
-	params.TaxCapRefreshPeriodBlocks = 10
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	// The caps already cover membership exactly, so the cadence is the only
-	// trigger and only the stale amounts are wrong. The non-reference member
-	// is what keeps the boundary pass incomplete: the reference member
-	// derives without a rate, so covered akrw is what the empty rate set
-	// leaves kept.
-	s.setAssets(chain.KRWBaseDenom, chain.SDRBaseDenom)
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.KRWBaseDenom, math.NewInt(7)))
-	s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, chain.SDRBaseDenom, math.NewInt(7)))
-	gomock.InOrder(
-		s.oracleKeeper.EXPECT().GetAvailableRateSet(
-			gomock.Any(),
-			chain.KRWBaseDenom,
-			chain.SDRBaseDenom,
-		).Return(oracletypes.RateSet{}, nil),
-		s.oracleKeeper.EXPECT().GetAvailableRateSet(
-			gomock.Any(),
-			chain.KRWBaseDenom,
-			chain.SDRBaseDenom,
-		).Return(oracletypes.RateSet{
-			chain.KRWBaseDenom: math.LegacyNewDec(2),
-			chain.SDRBaseDenom: math.LegacyOneDec(),
-		}, nil),
-	)
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyNewDec(2),
+	}))
 
-	// Height 9 closes the period and raises the flag, but no rate serves the
-	// non-reference member, so its kept cap stands and the flag stays raised.
-	s.setBlockHeight(9)
-	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
-	s.expectValidatorFees(sdk.NewCoins())
-	s.Require().NoError(s.beginBlock())
-	s.requireTaxCapRefreshPending(true)
-	staleCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(7), staleCap)
+	s.Require().Equal(math.NewInt(2_000_000), usdCap)
 
-	// Height 10 is mid-period and membership still matches, yet the flag
-	// raised at 9 is still up, so the pass completes the moment rates return
-	// and lowers it.
-	s.setBlockHeight(10)
-	s.setRewardFunding(rewardFunding(5, 0, 0, 0))
-	s.expectValidatorFees(sdk.NewCoins())
-	s.Require().NoError(s.beginBlock())
-	s.requireTaxCapRefreshPending(false)
-	krwCap, err := s.keeper.TaxCaps.Get(s.ctx, chain.KRWBaseDenom)
+	params.ReferenceTaxCap.Amount = math.NewInt(500_000)
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(2_000_000), krwCap)
-}
-
-func (s *KeeperTestSuite) requireTaxCapRefreshPending(expected bool) {
-	pending, err := s.keeper.TaxCapRefreshPending.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(expected, pending)
+	s.Require().Equal(math.NewInt(1_000_000), usdCap)
 }

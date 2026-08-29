@@ -13,7 +13,7 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated TaxCap tax_caps = 2 [
+  repeated ConversionFactor conversion_factors = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -29,15 +29,11 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // tax_cap_refresh_pending records a cadence boundary that passed without a
-  // successful tax-cap rebuild, so an owed refresh survives export and import
-  // instead of being forgiven by the migration.
-  bool tax_cap_refresh_pending = 6 [(amino.dont_omitempty) = true];
   // exposure_state carries the multiplier and the two sampled series across an
   // export. The series are the only history behind the multiplier, so dropping
   // them would restart every EWMA from zero and hand the new chain a
   // calm-market multiplier during whatever conditions prompted the export.
-  ExposureState exposure_state = 7 [
+  ExposureState exposure_state = 6 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -45,5 +41,5 @@ message GenesisState {
   // successful recomputation, on the same terms as tax_cap_refresh_pending: the
   // boundary is an instant rather than a state, so an owed refresh survives
   // export instead of being forgiven by the migration.
-  bool exposure_refresh_pending = 8 [(amino.dont_omitempty) = true];
+  bool exposure_refresh_pending = 7 [(amino.dont_omitempty) = true];
 }

@@ -582,12 +582,14 @@ func (s *KeeperTestSuite) runRewardFundingSettlement(
 
 // expectRewardFundingConfiguration pins the oracle-priced membership — the set
 // reward valuation admits — to exactly the given denominations and gives each
-// an uncapped tax cap. The epoch seeded in SetupTest still matches, so the
-// narrowed membership does not trigger a cap rebuild mid-test.
+// a held conversion factor, so the per-block pass has nothing to seed.
 func (s *KeeperTestSuite) expectRewardFundingConfiguration(denoms []string) {
 	s.setAssets(denoms...)
 	for _, denom := range denoms {
-		s.Require().NoError(s.keeper.TaxCaps.Set(s.ctx, denom, math.ZeroInt()))
+		s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, denom, types.ConversionFactor{
+			Denom:  denom,
+			Factor: math.LegacyOneDec(),
+		}))
 	}
 }
 

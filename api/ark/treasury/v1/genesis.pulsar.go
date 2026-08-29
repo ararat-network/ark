@@ -17,7 +17,7 @@ import (
 var _ protoreflect.List = (*_GenesisState_2_list)(nil)
 
 type _GenesisState_2_list struct {
-	list *[]*TaxCap
+	list *[]*ConversionFactor
 }
 
 func (x *_GenesisState_2_list) Len() int {
@@ -33,18 +33,18 @@ func (x *_GenesisState_2_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*TaxCap)
+	concreteValue := valueUnwrapped.Interface().(*ConversionFactor)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*TaxCap)
+	concreteValue := valueUnwrapped.Interface().(*ConversionFactor)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_2_list) AppendMutable() protoreflect.Value {
-	v := new(TaxCap)
+	v := new(ConversionFactor)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -57,7 +57,7 @@ func (x *_GenesisState_2_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_2_list) NewElement() protoreflect.Value {
-	v := new(TaxCap)
+	v := new(ConversionFactor)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -68,11 +68,10 @@ func (x *_GenesisState_2_list) IsValid() bool {
 var (
 	md_GenesisState                          protoreflect.MessageDescriptor
 	fd_GenesisState_params                   protoreflect.FieldDescriptor
-	fd_GenesisState_tax_caps                 protoreflect.FieldDescriptor
+	fd_GenesisState_conversion_factors       protoreflect.FieldDescriptor
 	fd_GenesisState_reward_funding           protoreflect.FieldDescriptor
 	fd_GenesisState_monetary_mandate         protoreflect.FieldDescriptor
 	fd_GenesisState_monetary_policy          protoreflect.FieldDescriptor
-	fd_GenesisState_tax_cap_refresh_pending  protoreflect.FieldDescriptor
 	fd_GenesisState_exposure_state           protoreflect.FieldDescriptor
 	fd_GenesisState_exposure_refresh_pending protoreflect.FieldDescriptor
 )
@@ -81,11 +80,10 @@ func init() {
 	file_ark_treasury_v1_genesis_proto_init()
 	md_GenesisState = File_ark_treasury_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
-	fd_GenesisState_tax_caps = md_GenesisState.Fields().ByName("tax_caps")
+	fd_GenesisState_conversion_factors = md_GenesisState.Fields().ByName("conversion_factors")
 	fd_GenesisState_reward_funding = md_GenesisState.Fields().ByName("reward_funding")
 	fd_GenesisState_monetary_mandate = md_GenesisState.Fields().ByName("monetary_mandate")
 	fd_GenesisState_monetary_policy = md_GenesisState.Fields().ByName("monetary_policy")
-	fd_GenesisState_tax_cap_refresh_pending = md_GenesisState.Fields().ByName("tax_cap_refresh_pending")
 	fd_GenesisState_exposure_state = md_GenesisState.Fields().ByName("exposure_state")
 	fd_GenesisState_exposure_refresh_pending = md_GenesisState.Fields().ByName("exposure_refresh_pending")
 }
@@ -161,9 +159,9 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.TaxCaps) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.TaxCaps})
-		if !f(fd_GenesisState_tax_caps, value) {
+	if len(x.ConversionFactors) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.ConversionFactors})
+		if !f(fd_GenesisState_conversion_factors, value) {
 			return
 		}
 	}
@@ -182,12 +180,6 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 	if x.MonetaryPolicy != nil {
 		value := protoreflect.ValueOfMessage(x.MonetaryPolicy.ProtoReflect())
 		if !f(fd_GenesisState_monetary_policy, value) {
-			return
-		}
-	}
-	if x.TaxCapRefreshPending != false {
-		value := protoreflect.ValueOfBool(x.TaxCapRefreshPending)
-		if !f(fd_GenesisState_tax_cap_refresh_pending, value) {
 			return
 		}
 	}
@@ -220,16 +212,14 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 	switch fd.FullName() {
 	case "ark.treasury.v1.GenesisState.params":
 		return x.Params != nil
-	case "ark.treasury.v1.GenesisState.tax_caps":
-		return len(x.TaxCaps) != 0
+	case "ark.treasury.v1.GenesisState.conversion_factors":
+		return len(x.ConversionFactors) != 0
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		return x.RewardFunding != nil
 	case "ark.treasury.v1.GenesisState.monetary_mandate":
 		return x.MonetaryMandate != nil
 	case "ark.treasury.v1.GenesisState.monetary_policy":
 		return x.MonetaryPolicy != nil
-	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
-		return x.TaxCapRefreshPending != false
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		return x.ExposureState != nil
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
@@ -252,16 +242,14 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "ark.treasury.v1.GenesisState.params":
 		x.Params = nil
-	case "ark.treasury.v1.GenesisState.tax_caps":
-		x.TaxCaps = nil
+	case "ark.treasury.v1.GenesisState.conversion_factors":
+		x.ConversionFactors = nil
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		x.RewardFunding = nil
 	case "ark.treasury.v1.GenesisState.monetary_mandate":
 		x.MonetaryMandate = nil
 	case "ark.treasury.v1.GenesisState.monetary_policy":
 		x.MonetaryPolicy = nil
-	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
-		x.TaxCapRefreshPending = false
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		x.ExposureState = nil
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
@@ -285,11 +273,11 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.treasury.v1.GenesisState.params":
 		value := x.Params
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_caps":
-		if len(x.TaxCaps) == 0 {
+	case "ark.treasury.v1.GenesisState.conversion_factors":
+		if len(x.ConversionFactors) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_2_list{})
 		}
-		listValue := &_GenesisState_2_list{list: &x.TaxCaps}
+		listValue := &_GenesisState_2_list{list: &x.ConversionFactors}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		value := x.RewardFunding
@@ -300,9 +288,6 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.treasury.v1.GenesisState.monetary_policy":
 		value := x.MonetaryPolicy
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
-		value := x.TaxCapRefreshPending
-		return protoreflect.ValueOfBool(value)
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		value := x.ExposureState
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
@@ -331,18 +316,16 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 	switch fd.FullName() {
 	case "ark.treasury.v1.GenesisState.params":
 		x.Params = value.Message().Interface().(*Params)
-	case "ark.treasury.v1.GenesisState.tax_caps":
+	case "ark.treasury.v1.GenesisState.conversion_factors":
 		lv := value.List()
 		clv := lv.(*_GenesisState_2_list)
-		x.TaxCaps = *clv.list
+		x.ConversionFactors = *clv.list
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		x.RewardFunding = value.Message().Interface().(*RewardFundingState)
 	case "ark.treasury.v1.GenesisState.monetary_mandate":
 		x.MonetaryMandate = value.Message().Interface().(*MonetaryMandate)
 	case "ark.treasury.v1.GenesisState.monetary_policy":
 		x.MonetaryPolicy = value.Message().Interface().(*MonetaryPolicy)
-	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
-		x.TaxCapRefreshPending = value.Bool()
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		x.ExposureState = value.Message().Interface().(*ExposureState)
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
@@ -372,11 +355,11 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.Params = new(Params)
 		}
 		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_caps":
-		if x.TaxCaps == nil {
-			x.TaxCaps = []*TaxCap{}
+	case "ark.treasury.v1.GenesisState.conversion_factors":
+		if x.ConversionFactors == nil {
+			x.ConversionFactors = []*ConversionFactor{}
 		}
-		value := &_GenesisState_2_list{list: &x.TaxCaps}
+		value := &_GenesisState_2_list{list: &x.ConversionFactors}
 		return protoreflect.ValueOfList(value)
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		if x.RewardFunding == nil {
@@ -398,8 +381,6 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.ExposureState = new(ExposureState)
 		}
 		return protoreflect.ValueOfMessage(x.ExposureState.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
-		panic(fmt.Errorf("field tax_cap_refresh_pending of message ark.treasury.v1.GenesisState is not mutable"))
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
 		panic(fmt.Errorf("field exposure_refresh_pending of message ark.treasury.v1.GenesisState is not mutable"))
 	default:
@@ -418,8 +399,8 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.treasury.v1.GenesisState.params":
 		m := new(Params)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_caps":
-		list := []*TaxCap{}
+	case "ark.treasury.v1.GenesisState.conversion_factors":
+		list := []*ConversionFactor{}
 		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		m := new(RewardFundingState)
@@ -430,8 +411,6 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.treasury.v1.GenesisState.monetary_policy":
 		m := new(MonetaryPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.tax_cap_refresh_pending":
-		return protoreflect.ValueOfBool(false)
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		m := new(ExposureState)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
@@ -510,8 +489,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Params)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if len(x.TaxCaps) > 0 {
-			for _, e := range x.TaxCaps {
+		if len(x.ConversionFactors) > 0 {
+			for _, e := range x.ConversionFactors {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -527,9 +506,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 		if x.MonetaryPolicy != nil {
 			l = options.Size(x.MonetaryPolicy)
 			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.TaxCapRefreshPending {
-			n += 2
 		}
 		if x.ExposureState != nil {
 			l = options.Size(x.ExposureState)
@@ -575,7 +551,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0
 			}
 			i--
-			dAtA[i] = 0x40
+			dAtA[i] = 0x38
 		}
 		if x.ExposureState != nil {
 			encoded, err := options.Marshal(x.ExposureState)
@@ -589,17 +565,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x3a
-		}
-		if x.TaxCapRefreshPending {
-			i--
-			if x.TaxCapRefreshPending {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
-			i--
-			dAtA[i] = 0x30
+			dAtA[i] = 0x32
 		}
 		if x.MonetaryPolicy != nil {
 			encoded, err := options.Marshal(x.MonetaryPolicy)
@@ -643,9 +609,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x1a
 		}
-		if len(x.TaxCaps) > 0 {
-			for iNdEx := len(x.TaxCaps) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.TaxCaps[iNdEx])
+		if len(x.ConversionFactors) > 0 {
+			for iNdEx := len(x.ConversionFactors) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ConversionFactors[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -760,7 +726,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxCaps", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ConversionFactors", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -787,8 +753,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TaxCaps = append(x.TaxCaps, &TaxCap{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TaxCaps[len(x.TaxCaps)-1]); err != nil {
+				x.ConversionFactors = append(x.ConversionFactors, &ConversionFactor{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ConversionFactors[len(x.ConversionFactors)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -901,26 +867,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				}
 				iNdEx = postIndex
 			case 6:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TaxCapRefreshPending", wireType)
-				}
-				var v int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.TaxCapRefreshPending = bool(v != 0)
-			case 7:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExposureState", wireType)
 				}
@@ -956,7 +902,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 8:
+			case 7:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExposureRefreshPending", wireType)
 				}
@@ -1030,25 +976,21 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params          *Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	TaxCaps         []*TaxCap           `protobuf:"bytes,2,rep,name=tax_caps,json=taxCaps,proto3" json:"tax_caps,omitempty"`
-	RewardFunding   *RewardFundingState `protobuf:"bytes,3,opt,name=reward_funding,json=rewardFunding,proto3" json:"reward_funding,omitempty"`
-	MonetaryMandate *MonetaryMandate    `protobuf:"bytes,4,opt,name=monetary_mandate,json=monetaryMandate,proto3" json:"monetary_mandate,omitempty"`
-	MonetaryPolicy  *MonetaryPolicy     `protobuf:"bytes,5,opt,name=monetary_policy,json=monetaryPolicy,proto3" json:"monetary_policy,omitempty"`
-	// tax_cap_refresh_pending records a cadence boundary that passed without a
-	// successful tax-cap rebuild, so an owed refresh survives export and import
-	// instead of being forgiven by the migration.
-	TaxCapRefreshPending bool `protobuf:"varint,6,opt,name=tax_cap_refresh_pending,json=taxCapRefreshPending,proto3" json:"tax_cap_refresh_pending,omitempty"`
+	Params            *Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	ConversionFactors []*ConversionFactor `protobuf:"bytes,2,rep,name=conversion_factors,json=conversionFactors,proto3" json:"conversion_factors,omitempty"`
+	RewardFunding     *RewardFundingState `protobuf:"bytes,3,opt,name=reward_funding,json=rewardFunding,proto3" json:"reward_funding,omitempty"`
+	MonetaryMandate   *MonetaryMandate    `protobuf:"bytes,4,opt,name=monetary_mandate,json=monetaryMandate,proto3" json:"monetary_mandate,omitempty"`
+	MonetaryPolicy    *MonetaryPolicy     `protobuf:"bytes,5,opt,name=monetary_policy,json=monetaryPolicy,proto3" json:"monetary_policy,omitempty"`
 	// exposure_state carries the multiplier and the two sampled series across an
 	// export. The series are the only history behind the multiplier, so dropping
 	// them would restart every EWMA from zero and hand the new chain a
 	// calm-market multiplier during whatever conditions prompted the export.
-	ExposureState *ExposureState `protobuf:"bytes,7,opt,name=exposure_state,json=exposureState,proto3" json:"exposure_state,omitempty"`
+	ExposureState *ExposureState `protobuf:"bytes,6,opt,name=exposure_state,json=exposureState,proto3" json:"exposure_state,omitempty"`
 	// exposure_refresh_pending records a refresh period that elapsed without a
 	// successful recomputation, on the same terms as tax_cap_refresh_pending: the
 	// boundary is an instant rather than a state, so an owed refresh survives
 	// export instead of being forgiven by the migration.
-	ExposureRefreshPending bool `protobuf:"varint,8,opt,name=exposure_refresh_pending,json=exposureRefreshPending,proto3" json:"exposure_refresh_pending,omitempty"`
+	ExposureRefreshPending bool `protobuf:"varint,7,opt,name=exposure_refresh_pending,json=exposureRefreshPending,proto3" json:"exposure_refresh_pending,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -1078,9 +1020,9 @@ func (x *GenesisState) GetParams() *Params {
 	return nil
 }
 
-func (x *GenesisState) GetTaxCaps() []*TaxCap {
+func (x *GenesisState) GetConversionFactors() []*ConversionFactor {
 	if x != nil {
-		return x.TaxCaps
+		return x.ConversionFactors
 	}
 	return nil
 }
@@ -1104,13 +1046,6 @@ func (x *GenesisState) GetMonetaryPolicy() *MonetaryPolicy {
 		return x.MonetaryPolicy
 	}
 	return nil
-}
-
-func (x *GenesisState) GetTaxCapRefreshPending() bool {
-	if x != nil {
-		return x.TaxCapRefreshPending
-	}
-	return false
 }
 
 func (x *GenesisState) GetExposureState() *ExposureState {
@@ -1137,43 +1072,41 @@ var file_ark_treasury_v1_genesis_proto_rawDesc = []byte{
 	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
 	0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67,
-	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xde, 0x04, 0x0a, 0x0c, 0x47, 0x65,
+	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbe, 0x04, 0x0a, 0x0c, 0x47, 0x65,
 	0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3a, 0x0a, 0x06, 0x70, 0x61,
 	0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72,
 	0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
-	0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x3d, 0x0a, 0x08, 0x74, 0x61, 0x78, 0x5f, 0x63, 0x61,
-	0x70, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x78, 0x43, 0x61,
-	0x70, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x74, 0x61,
-	0x78, 0x43, 0x61, 0x70, 0x73, 0x12, 0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f,
-	0x66, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61,
-	0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72,
-	0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10,
-	0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65,
-	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72,
-	0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e,
-	0x64, 0x61, 0x74, 0x65, 0x12, 0x53, 0x0a, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79,
-	0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09,
-	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x6f, 0x6e, 0x65, 0x74,
-	0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x3c, 0x0a, 0x17, 0x74, 0x61, 0x78,
-	0x5f, 0x63, 0x61, 0x70, 0x5f, 0x72, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x5f, 0x70, 0x65, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x14, 0x74, 0x61, 0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68,
-	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x50, 0x0a, 0x0e, 0x65, 0x78, 0x70, 0x6f, 0x73,
-	0x75, 0x72, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x5b, 0x0a, 0x12, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72,
+	0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x46,
+	0x61, 0x63, 0x74, 0x6f, 0x72, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x11, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x46, 0x61, 0x63, 0x74,
+	0x6f, 0x72, 0x73, 0x12, 0x55, 0x0a, 0x0e, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x66, 0x75,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65,
+	0x77, 0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65,
+	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77,
+	0x61, 0x72, 0x64, 0x46, 0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10, 0x6d, 0x6f,
+	0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73,
+	0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d,
+	0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61,
+	0x74, 0x65, 0x12, 0x53, 0x0a, 0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x70,
+	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f,
+	0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72,
+	0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x50, 0x0a, 0x0e, 0x65, 0x78, 0x70, 0x6f, 0x73,
+	0x75, 0x72, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
 	0x31, 0x2e, 0x45, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42,
 	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x65, 0x78, 0x70, 0x6f,
 	0x73, 0x75, 0x72, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3f, 0x0a, 0x18, 0x65, 0x78, 0x70,
 	0x6f, 0x73, 0x75, 0x72, 0x65, 0x5f, 0x72, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x5f, 0x70, 0x65,
-	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x08, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
 	0x2a, 0x01, 0x52, 0x16, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x52, 0x65, 0x66, 0x72,
 	0x65, 0x73, 0x68, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0xbf, 0x01, 0x0a, 0x13, 0x63,
 	0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
@@ -1207,7 +1140,7 @@ var file_ark_treasury_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 
 var file_ark_treasury_v1_genesis_proto_goTypes = []interface{}{
 	(*GenesisState)(nil),       // 0: ark.treasury.v1.GenesisState
 	(*Params)(nil),             // 1: ark.treasury.v1.Params
-	(*TaxCap)(nil),             // 2: ark.treasury.v1.TaxCap
+	(*ConversionFactor)(nil),   // 2: ark.treasury.v1.ConversionFactor
 	(*RewardFundingState)(nil), // 3: ark.treasury.v1.RewardFundingState
 	(*MonetaryMandate)(nil),    // 4: ark.treasury.v1.MonetaryMandate
 	(*MonetaryPolicy)(nil),     // 5: ark.treasury.v1.MonetaryPolicy
@@ -1215,7 +1148,7 @@ var file_ark_treasury_v1_genesis_proto_goTypes = []interface{}{
 }
 var file_ark_treasury_v1_genesis_proto_depIdxs = []int32{
 	1, // 0: ark.treasury.v1.GenesisState.params:type_name -> ark.treasury.v1.Params
-	2, // 1: ark.treasury.v1.GenesisState.tax_caps:type_name -> ark.treasury.v1.TaxCap
+	2, // 1: ark.treasury.v1.GenesisState.conversion_factors:type_name -> ark.treasury.v1.ConversionFactor
 	3, // 2: ark.treasury.v1.GenesisState.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
 	4, // 3: ark.treasury.v1.GenesisState.monetary_mandate:type_name -> ark.treasury.v1.MonetaryMandate
 	5, // 4: ark.treasury.v1.GenesisState.monetary_policy:type_name -> ark.treasury.v1.MonetaryPolicy

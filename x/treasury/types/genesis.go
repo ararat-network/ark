@@ -12,21 +12,19 @@ import (
 // NewGenesisState creates a Treasury genesis state.
 func NewGenesisState(
 	params Params,
-	taxCaps []TaxCap,
+	conversionFactors []ConversionFactor,
 	rewardFunding RewardFundingState,
 	monetaryMandate MonetaryMandate,
 	monetaryPolicy MonetaryPolicy,
-	taxCapRefreshPending bool,
 	exposureState ExposureState,
 	exposureUpdatePending bool,
 ) *GenesisState {
 	return &GenesisState{
 		Params:                 params,
-		TaxCaps:                append([]TaxCap(nil), taxCaps...),
+		ConversionFactors:      append([]ConversionFactor(nil), conversionFactors...),
 		RewardFunding:          rewardFunding,
 		MonetaryMandate:        monetaryMandate,
 		MonetaryPolicy:         monetaryPolicy,
-		TaxCapRefreshPending:   taxCapRefreshPending,
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
 	}
@@ -36,11 +34,10 @@ func NewGenesisState(
 func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
-		[]TaxCap{},
+		[]ConversionFactor{},
 		DefaultRewardFundingState(),
 		DefaultMonetaryMandate(),
 		DefaultMonetaryPolicy(),
-		false,
 		DefaultExposureState(),
 		false,
 	)
@@ -67,24 +64,21 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 
-	for i, taxCap := range gs.TaxCaps {
-		if err := chain.ValidatePricedDenom(taxCap.Denom); err != nil {
-			return fmt.Errorf("tax cap denom %q is invalid: %w", taxCap.Denom, err)
+	for i, factor := range gs.ConversionFactors {
+		if err := chain.ValidatePricedDenom(factor.Denom); err != nil {
+			return fmt.Errorf("conversion factor denom %q is invalid: %w", factor.Denom, err)
 		}
-		if taxCap.TaxCap.IsNil() {
-			return fmt.Errorf("tax cap for %s must be set", taxCap.Denom)
+		// Strictly positive: the derived cap floors at one base unit, so a
+		// zero factor could only ever have been written by a bug, and a
+		// negative one prices nothing.
+		if factor.Factor.IsNil() || !factor.Factor.IsPositive() {
+			return fmt.Errorf("conversion factor for %s must be positive", factor.Denom)
 		}
-		if taxCap.TaxCap.IsNegative() {
-			return fmt.Errorf("tax cap for %s must be zero or positive", taxCap.Denom)
-		}
-		// A cap is deliberately not compared against the reference tax cap.
-		// Only caps derived under the current reference agree with it: caps
-		// kept after a denomination leaves the oracle-priced set are anchored to
-		// whatever the reference was when they were last derived, so a
-		// later policy move — including one to or from the zero uncapped
-		// sentinel — leaves them disagreeing by design.
-		if i > 0 && taxCap.Denom <= gs.TaxCaps[i-1].Denom {
-			return fmt.Errorf("genesis tax caps must be sorted by unique denom")
+		// A factor is deliberately not compared against live rates. One kept
+		// after its feed went dark is anchored to the rate it was last
+		// derived under, by design.
+		if i > 0 && factor.Denom <= gs.ConversionFactors[i-1].Denom {
+			return fmt.Errorf("genesis conversion factors must be sorted by unique denom")
 		}
 	}
 

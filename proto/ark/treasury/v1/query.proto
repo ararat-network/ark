@@ -45,6 +45,20 @@ service Query {
     option (google.api.http).get = "/ark/treasury/v1/tax_caps";
   }
 
+  // ConversionFactor queries one denomination's stored conversion factor,
+  // the reference cross rate the tax cap derives from.
+  rpc ConversionFactor(QueryConversionFactorRequest) returns (QueryConversionFactorResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/conversion_factors/{denom}";
+  }
+
+  // ConversionFactors queries the complete factor table in denomination
+  // order, derivation heights included, so staleness is observable.
+  rpc ConversionFactors(QueryConversionFactorsRequest) returns (QueryConversionFactorsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/treasury/v1/conversion_factors";
+  }
+
   // ComputeTax computes the ante-visible stability tax for SDK messages.
   rpc ComputeTax(QueryComputeTaxRequest) returns (QueryComputeTaxResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -121,6 +135,34 @@ message QueryTaxCapResponse {
   string tax_cap = 1 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryConversionFactorRequest is the request type for Query/ConversionFactor.
+message QueryConversionFactorRequest {
+  string denom = 1;
+}
+
+// QueryConversionFactorResponse is the response type for
+// Query/ConversionFactor. A missing factor returns an error: absence is the
+// untaxed verdict, not an empty entry.
+message QueryConversionFactorResponse {
+  ConversionFactor conversion_factor = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryConversionFactorsRequest is the request type for
+// Query/ConversionFactors.
+message QueryConversionFactorsRequest {}
+
+// QueryConversionFactorsResponse is the response type for
+// Query/ConversionFactors.
+message QueryConversionFactorsResponse {
+  repeated ConversionFactor conversion_factors = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

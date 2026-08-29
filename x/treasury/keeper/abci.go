@@ -7,8 +7,9 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// BeginBlocker refreshes derived tax caps when owed and advances the
-// reward-funding window before Distribution consumes the previous block's fees.
+// BeginBlocker refreshes the conversion-factor table from this block's rates
+// and advances the reward-funding window before Distribution consumes the
+// previous block's fees.
 // Reward funding asks the registry for pricing verdicts rather than reading the
 // membership list, and owns its own genesis-height skip.
 //
@@ -19,7 +20,7 @@ import (
 func (k Keeper) BeginBlocker(ctx context.Context) error {
 	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.BeginBlock)()
 
-	if err := k.refreshTaxCaps(ctx); err != nil {
+	if err := k.refreshConversionFactors(ctx); err != nil {
 		return err
 	}
 
