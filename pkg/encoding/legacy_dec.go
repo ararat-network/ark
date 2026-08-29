@@ -2,57 +2,53 @@ package encoding
 
 import (
 	"fmt"
+	"math/big"
 
 	"cosmossdk.io/math"
 )
 
-// MaxEncodedLegacyDecBytes bounds the canonical base-10 integer encoding used
-// by math.LegacyDec.Marshal. The current LegacyDec range fits within 97 bytes;
-// 128 bytes retains conservative headroom while rejecting unbounded inputs
-// before big.Int parsing.
-const MaxEncodedLegacyDecBytes = 128
+// MaxEncodedCompactLegacyDecBytes bounds the minimal big-endian encoding of a
+// positive LegacyDec raw value. Valid raw values stay under 2^315, which is
+// 40 bytes.
+const MaxEncodedCompactLegacyDecBytes = 40
 
-func EncodeLegacyDec(value math.LegacyDec) ([]byte, error) {
+// EncodeCompactLegacyDec encodes a strictly positive LegacyDec as the minimal
+// big-endian bytes of its raw value*10^18: never empty, never a leading zero
+// byte, so every value has exactly one encoding.
+func EncodeCompactLegacyDec(value math.LegacyDec) ([]byte, error) {
 	if value.IsNil() {
 		return nil, fmt.Errorf("nil LegacyDec")
 	}
 	if !value.IsInValidRange() {
 		return nil, fmt.Errorf("LegacyDec is out of range")
 	}
-
-	bz, err := value.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	if len(bz) > MaxEncodedLegacyDecBytes {
-		return nil, fmt.Errorf(
-			"encoded LegacyDec length %d exceeds maximum %d",
-			len(bz),
-			MaxEncodedLegacyDecBytes,
-		)
+	if !value.IsPositive() {
+		return nil, fmt.Errorf("LegacyDec is not positive")
 	}
 
-	return bz, nil
+	return value.BigInt().Bytes(), nil
 }
 
-func DecodeLegacyDec(bz []byte) (math.LegacyDec, error) {
+// DecodeCompactLegacyDec decodes the minimal big-endian encoding produced by
+// EncodeCompactLegacyDec.
+func DecodeCompactLegacyDec(bz []byte) (math.LegacyDec, error) {
 	if len(bz) == 0 {
 		return math.LegacyDec{}, fmt.Errorf("empty LegacyDec bytes")
 	}
-	if len(bz) > MaxEncodedLegacyDecBytes {
+	if len(bz) > MaxEncodedCompactLegacyDecBytes {
 		return math.LegacyDec{}, fmt.Errorf(
 			"encoded LegacyDec length %d exceeds maximum %d",
 			len(bz),
-			MaxEncodedLegacyDecBytes,
+			MaxEncodedCompactLegacyDecBytes,
 		)
 	}
-
-	var value math.LegacyDec
-	if err := value.Unmarshal(bz); err != nil {
-		return math.LegacyDec{}, err
+	if bz[0] == 0 {
+		return math.LegacyDec{}, fmt.Errorf("encoded LegacyDec has a leading zero byte")
 	}
-	if value.IsNil() {
-		return math.LegacyDec{}, fmt.Errorf("nil LegacyDec")
+
+	value := math.LegacyNewDecFromBigIntWithPrec(new(big.Int).SetBytes(bz), math.LegacyPrecision)
+	if !value.IsInValidRange() {
+		return math.LegacyDec{}, fmt.Errorf("LegacyDec is out of range")
 	}
 
 	return value, nil
