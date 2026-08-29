@@ -1,19 +1,6 @@
 /*
-Package params defines the simulation parameters in the arkapp.
-
-It contains the default weights used for each transaction used on the module's
-simulation. These weights define the chance for a transaction to be simulated at
-any given operation.
-
-You can replace the default values for the weights by providing a params.json
-file with the weights defined for each of the transaction operations:
-
-	{
-		"op_weight_msg_send": 60,
-		"op_weight_msg_delegate": 100,
-	}
-
-In the example above, the `MsgSend` has 60% chance to be simulated, while the
-`MsgDelegate` will always be simulated.
+Package params holds Ark's compile-time chain identity: the bech32 prefixes,
+the address verifier, and the BIP-44 derivation constants. app/config.go reads
+it once to set and seal the global SDK config.
 */
 package params
