@@ -32,14 +32,11 @@ type taxSplit struct {
 // advanceRewardFunding accrues this block into the reward-funding window and
 // settles the window once it closes, leaving fresh accounting behind for the
 // next one. The whole window state machine lives here so the ABCI hook is not
-// the place that knows when a window opens, closes, or resets. Genesis height
-// accrues nothing: accrual values the fee collector, which at BeginBlock
-// holds the previous block's fees, and height 1 has no previous block.
+// the place that knows when a window opens, closes, or resets. At EndBlock
+// the fee collector holds this block's own fees, so every real block accrues,
+// the first included; the guard covers only a hook driven before any block
+// exists.
 func (k Keeper) advanceRewardFunding(ctx context.Context) error {
-	if sdk.UnwrapSDKContext(ctx).BlockHeight() <= 1 {
-		return nil
-	}
-
 	funding, err := k.updateRewardFunding(ctx)
 	if err != nil {
 		return err
@@ -81,7 +78,7 @@ func (k Keeper) updateRewardFunding(ctx context.Context) (types.RewardFundingSta
 	// MaxBlockRewardTarget, over a window under MaxRewardFundingWindow, tops
 	// out ninety-five bits below the integer limit. Both are refused at the
 	// write, so no policy or params value reaching here can overflow these
-	// sums. The additions stay checked because this runs in a BeginBlocker,
+	// sums. The additions stay checked because this runs in an EndBlocker,
 	// where the alternative to an error is a panicking block — but nothing
 	// depends on them firing.
 	funding.ValidatorTarget, err = funding.ValidatorTarget.SafeAdd(policy.ValidatorBlockRewardTarget)
@@ -165,7 +162,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 		// The pool is shared pro rata by the Oracle leg's share of the combined
 		// gap. The product is checked rather than trusted to fit: both factors
 		// are chain balances with no ceiling of their own, and this runs in a
-		// BeginBlocker where an overflow would panic the block rather than fail
+		// block hook where an overflow would panic the block rather than fail
 		// a transaction. The division is safe — this branch cannot be entered
 		// with a zero total, because no balance is negative — and floors, so
 		// the validator remainder below stays non-negative and the two legs
@@ -296,7 +293,7 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 	// or share leaves the validator leg empty, which also keeps the division
 	// below away from a zero divisor. The product is checked for the same
 	// reason the subsidy split's is: a balance times a target has no ceiling of
-	// its own, and this is reached from a BeginBlocker.
+	// its own, and this is reached from an EndBlocker.
 	validatorTax := make(sdk.Coins, 0, len(priced))
 	if desiredValidatorTax.IsPositive() && stabilityTaxValue.IsPositive() {
 		for _, coin := range priced {

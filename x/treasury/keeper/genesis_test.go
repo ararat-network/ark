@@ -29,7 +29,7 @@ func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coin
 
 func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis := types.DefaultGenesisState()
-	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
+	genesis.Params.ReferenceTaxCap = math.ZeroInt()
 	genesis.ConversionFactors = []types.ConversionFactor{
 		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
 	}
@@ -49,6 +49,13 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 		Multiplier:         math.LegacyMustNewDecFromStr("1.75"),
 		LastRefreshHeight:  7,
 	}
+	// A derived NOAH cross survives export on keep-last-value terms, like the
+	// member factors it lives beside.
+	genesis.NoahConversionFactor = &types.ConversionFactor{
+		Denom:         chain.NoahBaseDenom,
+		Factor:        math.LegacyMustNewDecFromStr("0.25"),
+		DerivedHeight: 5,
+	}
 	s.setAssets(chain.SDRBaseDenom)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
 		types.SubsidyPoolName:             sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
@@ -66,6 +73,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
 	s.Require().Equal(genesis.ExposureState, exported.ExposureState)
 	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
+	s.Require().Equal(genesis.NoahConversionFactor, exported.NoahConversionFactor)
 }
 
 // TestInitGenesisSeedsFactorsAtOne pins the launch path: a genesis shipping
@@ -76,7 +84,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 // reference derives the uncapped sentinel through the same seeds.
 func (s *KeeperTestSuite) TestInitGenesisSeedsFactorsAtOne() {
 	genesis := types.DefaultGenesisState()
-	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(100)
+	genesis.Params.ReferenceTaxCap = math.NewInt(100)
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.expectGenesisFundBalances(nil)
 
@@ -88,7 +96,7 @@ func (s *KeeperTestSuite) TestInitGenesisSeedsFactorsAtOne() {
 	}
 
 	// The zero sentinel keeps its meaning through the same seeds.
-	genesis.Params.ReferenceTaxCap.Amount = math.ZeroInt()
+	genesis.Params.ReferenceTaxCap = math.ZeroInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, genesis.Params))
 	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.GetTaxCap(s.ctx, denom)
@@ -110,12 +118,12 @@ func (s *KeeperTestSuite) TestInitGenesisRequiresConfiguredMatchingReferenceDeno
 		{
 			name:      "reference not configured",
 			reference: "",
-			wantErr:   "reference tax cap denom asdr requires a configured protocol reference",
+			wantErr:   "treasury reference denom asdr requires a configured protocol reference",
 		},
 		{
 			name:      "reference names another feed",
 			reference: chain.USDBaseDenom,
-			wantErr:   "reference tax cap denom asdr must be the protocol reference ausd",
+			wantErr:   "treasury reference denom asdr must be the protocol reference ausd",
 		},
 	}
 
@@ -171,7 +179,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	// and its kept factor travels in the export.
 	s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF)
 	genesis := types.DefaultGenesisState()
-	genesis.Params.ReferenceTaxCap.Amount = math.NewInt(3)
+	genesis.Params.ReferenceTaxCap = math.NewInt(3)
 	genesis.ConversionFactors = []types.ConversionFactor{
 		{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(11)},
 		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(7)},

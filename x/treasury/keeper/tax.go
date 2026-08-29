@@ -20,6 +20,7 @@ import (
 
 	"github.com/ararat-network/ark/pkg/decimal"
 	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -134,10 +135,10 @@ func (k Keeper) GetTaxCap(ctx context.Context, denom string) (math.Int, error) {
 // ceiling, so an unrepresentable product derives the uncapped sentinel rather
 // than panicking a read.
 func deriveTaxCap(params types.Params, entry types.ConversionFactor) math.Int {
-	if params.ReferenceTaxCap.Amount.IsZero() {
+	if params.ReferenceTaxCap.IsZero() {
 		return math.ZeroInt()
 	}
-	product, err := decimal.Mul(entry.Factor, math.LegacyNewDecFromInt(params.ReferenceTaxCap.Amount))
+	product, err := decimal.Mul(entry.Factor, math.LegacyNewDecFromInt(params.ReferenceTaxCap))
 	if err != nil {
 		return math.ZeroInt()
 	}
@@ -146,6 +147,38 @@ func deriveTaxCap(params types.Params, entry types.ConversionFactor) math.Int {
 		cap = math.OneInt()
 	}
 	return cap
+}
+
+// rescaleTaxCap re-expresses the reference tax cap in the new unit and emits
+// the rebase event, returning the converted amount for the caller's single
+// params write. Conversion failure fails the re-point: the handed set prices
+// both legs by the caller's contract.
+func (k Keeper) rescaleTaxCap(ctx context.Context, params types.Params, to string, rates oracletypes.RateSet) (math.Int, error) {
+	oldCap := sdk.NewCoin(params.ReferenceDenom, params.ReferenceTaxCap)
+	newCap := sdk.NewCoin(to, params.ReferenceTaxCap)
+	if params.ReferenceTaxCap.IsPositive() {
+		converted, err := rates.Convert(sdk.NewDecCoinFromCoin(oldCap), to)
+		if err != nil {
+			return math.Int{}, err
+		}
+		coin, _ := converted.TruncateDecimal()
+		// A positive cap truncating to zero would silently become the uncapped
+		// sentinel, and unlimited taxation by rounding accident is not a unit
+		// change. Flooring at one base unit is the same degrade the derived
+		// caps apply: the tightest finite ceiling, where refusing would wedge
+		// the re-point on a rate pair no retry can mend.
+		if !coin.Amount.IsPositive() {
+			coin.Amount = math.OneInt()
+		}
+		newCap = coin
+	}
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventReferenceTaxCapRebased{
+		OldCap: oldCap,
+		NewCap: newCap,
+	}); err != nil {
+		return math.Int{}, fmt.Errorf("emitting Treasury reference tax cap rebase event: %w", err)
+	}
+	return newCap.Amount, nil
 }
 
 func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {

@@ -213,7 +213,6 @@ func (s *KeeperTestSuite) TestExposureUpdateRaisesMultiplierByStep() {
 		GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
 		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).AnyTimes()
 	s.setBlockHeight(9)
-	s.expectValidatorFees(sdk.NewCoins())
 
 	s.Require().NoError(s.beginBlock())
 
@@ -255,7 +254,6 @@ func (s *KeeperTestSuite) TestExposureUpdateHoldsWithoutCirculatingSupply() {
 		GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
 		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).AnyTimes()
 	s.setBlockHeight(9)
-	s.expectValidatorFees(sdk.NewCoins())
 
 	s.Require().NoError(s.beginBlock())
 
@@ -277,7 +275,6 @@ func (s *KeeperTestSuite) TestExposureUpdateSkippedOnOffCadenceBlock() {
 		p.ExposureRefreshPeriodBlocks = 100
 	})
 	s.setBlockHeight(50)
-	s.expectValidatorFees(sdk.NewCoins())
 
 	// No supply or balance expectations: reaching the fold would fail here.
 	s.Require().NoError(s.beginBlock())
@@ -294,7 +291,7 @@ func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
 	s.Require().Equal(math.LegacyNewDec(2), s.getExposureState().LastReferencePrice)
 
 	// One SDR is two USD, so an anchor of two SDR per NOAH is four USD per NOAH.
-	s.Require().NoError(s.keeper.RebaseTaxCap(
+	s.Require().NoError(s.keeper.RebaseReferenceState(
 		s.ctx,
 		chain.SDRBaseDenom,
 		chain.USDBaseDenom,

@@ -65,6 +65,21 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:   fmt.Sprintf("%s query treasury conversion-factors", version.AppName),
 				},
 				{
+					RpcMethod: "GasPrice",
+					Use:       "gas-price [denom]",
+					Short:     "Query one accepted fee denomination's gas price",
+					Example:   fmt.Sprintf("%s query treasury gas-price ausd", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "denom"},
+					},
+				},
+				{
+					RpcMethod: "GasPrices",
+					Use:       "gas-prices",
+					Short:     "Query the complete fee-denomination gas price sheet",
+					Example:   fmt.Sprintf("%s query treasury gas-prices", version.AppName),
+				},
+				{
 					RpcMethod: "ComputeTax",
 					Skip:      true,
 				},

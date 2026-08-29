@@ -469,7 +469,7 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 	policy.StabilityTaxRate = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	maxParams := types.DefaultParams()
-	maxParams.ReferenceTaxCap.Amount = maxInt
+	maxParams.ReferenceTaxCap = maxInt
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
 		Denom:  chain.USDBaseDenom,

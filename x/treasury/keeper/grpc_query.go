@@ -139,6 +139,68 @@ func (q queryServer) ConversionFactors(ctx context.Context, req *types.QueryConv
 	return &types.QueryConversionFactorsResponse{ConversionFactors: factors}, nil
 }
 
+// GasPrice reports one accepted fee denomination's gas price — the base
+// price carried through its conversion factor.
+func (q queryServer) GasPrice(ctx context.Context, req *types.QueryGasPriceRequest) (*types.QueryGasPriceResponse, error) {
+	if req == nil || req.Denom == "" {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	params, err := q.k.Params.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
+	}
+	row, err := q.k.gasPrice(ctx, params.ReferenceDenom, req.Denom)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "%s is not an accepted fee denomination", req.Denom)
+		}
+		return nil, status.Errorf(codes.Internal, "pricing gas in %s: %v", req.Denom, err)
+	}
+	return &types.QueryGasPriceResponse{GasPrice: row}, nil
+}
+
+// GasPrices reports the complete fee-denomination price sheet: reference
+// first, members in denomination order, NOAH last. A denomination whose
+// price is unrepresentable is omitted — the sheet lists what the gate would
+// accept.
+func (q queryServer) GasPrices(ctx context.Context, req *types.QueryGasPricesRequest) (*types.QueryGasPricesResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	params, err := q.k.Params.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting treasury params: %v", err)
+	}
+	reference := params.ReferenceDenom
+
+	rows := make([]types.GasPrice, 0)
+	referenceRow, err := q.k.gasPrice(ctx, reference, reference)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "pricing gas in %s: %v", reference, err)
+	}
+	rows = append(rows, referenceRow)
+
+	if err := q.k.ConversionFactors.Walk(ctx, nil, func(denom string, _ types.ConversionFactor) (bool, error) {
+		if denom == reference {
+			return false, nil
+		}
+		row, err := q.k.gasPrice(ctx, reference, denom)
+		if err != nil {
+			return false, nil
+		}
+		rows = append(rows, row)
+		return false, nil
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "listing gas prices: %v", err)
+	}
+
+	if row, err := q.k.gasPrice(ctx, reference, chain.NoahBaseDenom); err == nil {
+		rows = append(rows, row)
+	}
+
+	return &types.QueryGasPricesResponse{GasPrices: rows}, nil
+}
+
 // ComputeTax computes the current stability tax for the supplied SDK messages.
 func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxRequest) (*types.QueryComputeTaxResponse, error) {
 	if req == nil {

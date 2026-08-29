@@ -70,6 +70,9 @@ func RandomisedGenState(simState *module.SimulationState) {
 	treasuryGenesis := types.DefaultGenesisState()
 	treasuryGenesis.Params = params
 	treasuryGenesis.MonetaryPolicy = policy
+	// The controller starts at whatever floor the params drew, keeping the
+	// genesis invariant that the price never sits below it.
+	treasuryGenesis.BaseGasPrice = params.MinBaseGasPrice
 
 	bz, err := json.MarshalIndent(treasuryGenesis, "", " ")
 	if err != nil {

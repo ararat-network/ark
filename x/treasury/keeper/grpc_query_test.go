@@ -128,7 +128,7 @@ func (s *KeeperTestSuite) TestQueryMonetaryMandate() {
 
 func (s *KeeperTestSuite) TestQueryTaxCap() {
 	params := treasurytypes.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(100)
+	params.ReferenceTaxCap = math.NewInt(100)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
@@ -174,7 +174,7 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 	// The uncapped sentinel is the zero reference, derived through the same
 	// read.
 	s.Run("uncapped", func() {
-		params.ReferenceTaxCap.Amount = math.ZeroInt()
+		params.ReferenceTaxCap = math.ZeroInt()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 		response, err := server.TaxCap(s.ctx, &treasurytypes.QueryTaxCapRequest{Denom: chain.USDBaseDenom})
 		s.Require().NoError(err)
@@ -184,7 +184,7 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 
 func (s *KeeperTestSuite) TestQueryTaxCaps() {
 	params := treasurytypes.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(100)
+	params.ReferenceTaxCap = math.NewInt(100)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
@@ -316,7 +316,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 	policy.StabilityTaxRate = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	maxParams := treasurytypes.DefaultParams()
-	maxParams.ReferenceTaxCap.Amount = maxInt
+	maxParams.ReferenceTaxCap = maxInt
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
@@ -571,4 +571,74 @@ func (s *KeeperTestSuite) TestQueryFundStatusReportsScaledTargetsAndMultiplier()
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 50), response.InsuranceTarget)
 	// The net family scales on the same multiplier, so the two stay comparable.
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), response.RedemptionBufferNetTarget)
+}
+
+// TestQueryGasPrice pins the single-row read over all three factor sources
+// and the refusal for a denomination with no cross.
+func (s *KeeperTestSuite) TestQueryGasPrice() {
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
+		Denom:         chain.USDBaseDenom,
+		Factor:        math.LegacyNewDec(2),
+		DerivedHeight: 5,
+	}))
+	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, treasurytypes.ConversionFactor{
+		Denom:         chain.NoahBaseDenom,
+		Factor:        math.LegacyMustNewDecFromStr("0.25"),
+		DerivedHeight: 6,
+	}))
+	server := keeper.NewQueryServerImpl(s.keeper)
+
+	reference, err := server.GasPrice(s.ctx, &treasurytypes.QueryGasPriceRequest{Denom: chain.SDRBaseDenom})
+	s.Require().NoError(err)
+	s.Require().Equal(treasurytypes.GasPrice{
+		Denom:    chain.SDRBaseDenom,
+		GasPrice: testMinBaseGasPrice,
+	}, reference.GasPrice)
+
+	member, err := server.GasPrice(s.ctx, &treasurytypes.QueryGasPriceRequest{Denom: chain.USDBaseDenom})
+	s.Require().NoError(err)
+	s.Require().Equal(treasurytypes.GasPrice{
+		Denom:         chain.USDBaseDenom,
+		GasPrice:      math.LegacyMustNewDecFromStr("0.2"),
+		DerivedHeight: 5,
+	}, member.GasPrice)
+
+	noah, err := server.GasPrice(s.ctx, &treasurytypes.QueryGasPriceRequest{Denom: chain.NoahBaseDenom})
+	s.Require().NoError(err)
+	s.Require().Equal(treasurytypes.GasPrice{
+		Denom:         chain.NoahBaseDenom,
+		GasPrice:      math.LegacyMustNewDecFromStr("0.025"),
+		DerivedHeight: 6,
+	}, noah.GasPrice)
+
+	_, err = server.GasPrice(s.ctx, &treasurytypes.QueryGasPriceRequest{Denom: chain.KRWBaseDenom})
+	s.Require().ErrorContains(err, "not an accepted fee denomination")
+}
+
+// TestQueryGasPricesSheet pins the sheet's contract: reference first, members
+// in denomination order without duplicating a member reference, NOAH last.
+func (s *KeeperTestSuite) TestQueryGasPricesSheet() {
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.SDRBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.SDRBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, treasurytypes.ConversionFactor{
+		Denom:         chain.KRWBaseDenom,
+		Factor:        math.LegacyNewDec(4),
+		DerivedHeight: 3,
+	}))
+	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, treasurytypes.ConversionFactor{
+		Denom:         chain.NoahBaseDenom,
+		Factor:        math.LegacyMustNewDecFromStr("0.25"),
+		DerivedHeight: 6,
+	}))
+	server := keeper.NewQueryServerImpl(s.keeper)
+
+	response, err := server.GasPrices(s.ctx, &treasurytypes.QueryGasPricesRequest{})
+	s.Require().NoError(err)
+	s.Require().Equal([]treasurytypes.GasPrice{
+		{Denom: chain.SDRBaseDenom, GasPrice: testMinBaseGasPrice},
+		{Denom: chain.KRWBaseDenom, GasPrice: math.LegacyMustNewDecFromStr("0.4"), DerivedHeight: 3},
+		{Denom: chain.NoahBaseDenom, GasPrice: math.LegacyMustNewDecFromStr("0.025"), DerivedHeight: 6},
+	}, response.GasPrices)
 }

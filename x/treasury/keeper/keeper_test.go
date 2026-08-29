@@ -34,6 +34,11 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
+// testMinBaseGasPrice is the suite's gas price floor: a tenth of a base unit
+// per gas unit, so fee arithmetic in tests reads in small integers rather
+// than the launch default's atto-scaled figures.
+var testMinBaseGasPrice = math.LegacyMustNewDecFromStr("0.1")
+
 type KeeperTestSuite struct {
 	suite.Suite
 
@@ -293,8 +298,14 @@ func (s *KeeperTestSuite) SetupTest() {
 	// for the many tests that never look at caps. Every cap test states its
 	// own reference explicitly.
 	baselineParams := types.DefaultParams()
-	baselineParams.ReferenceTaxCap.Amount = math.ZeroInt()
+	baselineParams.ReferenceTaxCap = math.ZeroInt()
+	// The launch floor is atto-scaled; the suite prices gas at a tenth of a
+	// base unit instead so fee arithmetic in tests reads in small integers.
+	baselineParams.MinBaseGasPrice = testMinBaseGasPrice
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, baselineParams))
+	// The live price always exists on a real chain — InitGenesis writes it —
+	// so the suite keeps that invariant for everything that reads it.
+	s.Require().NoError(s.keeper.BaseGasPrice.Set(s.ctx, testMinBaseGasPrice))
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, types.DefaultMonetaryPolicy()))
 	s.Require().NoError(s.keeper.RewardFunding.Set(
 		s.ctx,
@@ -389,7 +400,7 @@ func (s *KeeperTestSuite) setBlockHeight(height int64) {
 func (s *KeeperTestSuite) setDerivedTaxCap(denom string, amount math.Int) {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.ReferenceTaxCap.Amount = math.OneInt()
+	params.ReferenceTaxCap = math.OneInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, denom, types.ConversionFactor{
 		Denom:  denom,
@@ -403,6 +414,10 @@ func (s *KeeperTestSuite) setDerivedTaxCap(denom string, amount math.Int) {
 // with liability priming, which BeginBlocker no longer performs.
 func (s *KeeperTestSuite) beginBlock() error {
 	return s.keeper.BeginBlocker(s.ctx)
+}
+
+func (s *KeeperTestSuite) endBlock() error {
+	return s.keeper.EndBlocker(s.ctx)
 }
 
 // seedAsset registers or overwrites one asset in the mock registry. The

@@ -29,7 +29,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	// The reference cap matches the suite baseline so no rebuild fires: the
 	// window change is the whole update.
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	params.ReferenceTaxCap = math.ZeroInt()
 	params.RewardFundingWindow++
 
 	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -49,7 +49,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
 	funding := rewardFunding(2, 0, 0, 0)
 	s.setRewardFunding(funding)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	params.ReferenceTaxCap = math.ZeroInt()
 	params.RewardFundingWindow = 5
 
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
@@ -119,7 +119,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy()
 func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 	s.setBlockHeight(42)
 	current := types.DefaultParams()
-	current.ReferenceTaxCap.Amount = math.OneInt()
+	current.ReferenceTaxCap = math.OneInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
@@ -128,7 +128,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 	}))
 
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
+	params.ReferenceTaxCap = math.NewInt(100)
 	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
 		Params:    params,
@@ -140,7 +140,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 	s.Require().Empty(s.rateCaptures)
 
 	// The uncapped sentinel arrives the same way.
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	params.ReferenceTaxCap = math.ZeroInt()
 	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
 		Params:    params,
@@ -423,7 +423,7 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	s.Require().NoError(err)
 
 	params := types.DefaultParams()
-	params.ReferenceTaxCap = sdk.NewInt64Coin(chain.SDRBaseDenom, 100)
+	params.ReferenceTaxCap = math.NewInt(100)
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
@@ -477,7 +477,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsReferenceDenomChange() {
 	current, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Denom = chain.USDBaseDenom
+	params.ReferenceDenom = chain.USDBaseDenom
 
 	// The strict oracle mock also proves the rejection precedes any rate
 	// capture or cap rebuild.

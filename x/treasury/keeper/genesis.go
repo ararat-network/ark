@@ -39,14 +39,14 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	}
 	if referenceDenom == "" {
 		return fmt.Errorf(
-			"reference tax cap denom %s requires a configured protocol reference",
-			data.Params.ReferenceTaxCap.Denom,
+			"treasury reference denom %s requires a configured protocol reference",
+			data.Params.ReferenceDenom,
 		)
 	}
-	if data.Params.ReferenceTaxCap.Denom != referenceDenom {
+	if data.Params.ReferenceDenom != referenceDenom {
 		return fmt.Errorf(
-			"reference tax cap denom %s must be the protocol reference %s",
-			data.Params.ReferenceTaxCap.Denom,
+			"treasury reference denom %s must be the protocol reference %s",
+			data.Params.ReferenceDenom,
 			referenceDenom,
 		)
 	}
@@ -179,6 +179,18 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("setting pending exposure refresh: %w", err)
 	}
 
+	if err := k.BaseGasPrice.Set(ctx, data.BaseGasPrice); err != nil {
+		return fmt.Errorf("setting base gas price: %w", err)
+	}
+
+	// Absent stays absent: the NOAH cross has no seed, so a genesis without
+	// one imports a chain on which NOAH has never been derivable.
+	if data.NoahConversionFactor != nil {
+		if err := k.NoahConversionFactor.Set(ctx, *data.NoahConversionFactor); err != nil {
+			return fmt.Errorf("setting the NOAH conversion factor: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -218,6 +230,20 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("iterating conversion factors: %w", err)
 	}
 
+	baseGasPrice, err := k.BaseGasPrice.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting base gas price: %w", err)
+	}
+
+	var noahFactor *types.ConversionFactor
+	stored, err := k.NoahConversionFactor.Get(ctx)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return nil, fmt.Errorf("getting the NOAH conversion factor: %w", err)
+	}
+	if err == nil {
+		noahFactor = &stored
+	}
+
 	return &types.GenesisState{
 		Params:                 params,
 		ConversionFactors:      factors,
@@ -226,5 +252,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		MonetaryPolicy:         monetaryPolicy,
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
+		BaseGasPrice:           baseGasPrice,
+		NoahConversionFactor:   noahFactor,
 	}, nil
 }

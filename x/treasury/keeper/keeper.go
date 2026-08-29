@@ -63,6 +63,16 @@ type Keeper struct {
 	// elapsed while liability could not be valued stays owed rather than being
 	// forgiven, and every later block retries until it lands.
 	ExposureRefreshPending collections.Item[bool]
+	// BaseGasPrice is the base-fee controller's live price in reference base
+	// units per gas unit: the fee gate reads it at ante, the EndBlock update
+	// rewrites it from the block's gas tally.
+	BaseGasPrice collections.Item[math.LegacyDec]
+	// NoahConversionFactor is the numeraire's cross from the protocol
+	// reference — NOAH units per reference unit — held beside the member
+	// table rather than in it, because table presence is the tax base and
+	// NOAH is never taxed. Absent until first derivable: NOAH has no arrival
+	// seed, so the fee-denom gate refuses it until a real cross exists.
+	NoahConversionFactor collections.Item[types.ConversionFactor]
 }
 
 // NewKeeper creates a Treasury keeper.
@@ -160,6 +170,18 @@ func NewKeeper(
 			types.MonetaryPolicyKey,
 			"monetary_policy",
 			codec.CollValue[types.MonetaryPolicy](cdc),
+		),
+		BaseGasPrice: collections.NewItem(
+			sb,
+			types.BaseGasPriceKey,
+			"base_gas_price",
+			sdk.LegacyDecValue,
+		),
+		NoahConversionFactor: collections.NewItem(
+			sb,
+			types.NoahConversionFactorKey,
+			"noah_conversion_factor",
+			codec.CollValue[types.ConversionFactor](cdc),
 		),
 	}
 

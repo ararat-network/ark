@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,11 +12,18 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-func (s *KeeperTestSuite) TestBeginBlockerSkipsRewardFundingAtGenesisHeight() {
+// TestEndBlockerAccruesRewardFundingFromTheFirstBlock pins the accrual's
+// phase: at EndBlock the collector holds the block's own fees, so the first
+// real block already accrues — there is no genesis-height skip to inherit
+// from the BeginBlock era, whose read had no previous block to value.
+func (s *KeeperTestSuite) TestEndBlockerAccruesRewardFundingFromTheFirstBlock() {
 	s.setBlockHeight(1)
+	s.expectValidatorFees(sdk.NewCoins())
 
-	s.Require().NoError(s.beginBlock())
-	s.requireDefaultRewardFunding()
+	s.Require().NoError(s.endBlock())
+	funding, err := s.keeper.RewardFunding.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
 }
 
 // TestBeginBlockerValuesNoLiability pins the scan that left this hook. The
@@ -34,25 +42,22 @@ func (s *KeeperTestSuite) TestBeginBlockerValuesNoLiability() {
 	s.setRates(oracletypes.RateSet{
 		chain.USDBaseDenom: math.LegacyNewDecWithPrec(1, 18),
 	})
-	s.expectValidatorFees(sdk.NewCoins())
 
 	s.Require().NoError(s.beginBlock())
 	s.requireNoTypedEvent(&types.EventLiabilityIncomplete{})
 }
 
-func (s *KeeperTestSuite) TestBeginBlockerAccruesRewardFunding() {
+func (s *KeeperTestSuite) TestEndBlockerAccruesRewardFunding() {
 	s.setBlockHeight(2)
 	s.expectValidatorFees(sdk.NewCoins())
 
-	// The default reference cap is zero, so the refresh is rate-free and this
-	// block is observably pure reward-funding accrual.
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlock())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
 }
 
-func (s *KeeperTestSuite) TestBeginBlockerValuesStableFeesAgainstOraclePricedMembership() {
+func (s *KeeperTestSuite) TestEndBlockerValuesStableFeesAgainstOraclePricedMembership() {
 	s.setBlockHeight(2)
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 5)))
 	// asdr is oracle-priced by the suite defaults, so the fee is valued; the
@@ -60,7 +65,7 @@ func (s *KeeperTestSuite) TestBeginBlockerValuesStableFeesAgainstOraclePricedMem
 	// any Treasury- or Oracle-owned list.
 	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
 
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlock())
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(5), funding.ValidatorFeeValue)
@@ -73,7 +78,7 @@ func (s *KeeperTestSuite) TestBeginBlockerValuesStableFeesAgainstOraclePricedMem
 func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
@@ -92,6 +97,8 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
 		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
 		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(2), DerivedHeight: 1},
+		// The NOAH cross derives in the same pass and reports last.
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
 	}})
 
 	// An unchanged block writes nothing and says nothing.
@@ -125,7 +132,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.KRWBaseDenom, chain.SDRBaseDenom)
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
@@ -168,7 +175,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 func (s *KeeperTestSuite) TestBeginBlockerSeedsUncoveredArrivalAtOne() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
@@ -181,6 +188,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSeedsUncoveredArrivalAtOne() {
 	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
 		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
 		{Denom: chain.USDBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 1},
 	}})
 }
 
@@ -190,7 +198,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSeedsUncoveredArrivalAtOne() {
 func (s *KeeperTestSuite) TestBeginBlockerLeavesDepartedFactorUntouched() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom)
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
@@ -211,7 +219,7 @@ func (s *KeeperTestSuite) TestBeginBlockerLeavesDepartedFactorUntouched() {
 func (s *KeeperTestSuite) TestBeginBlockerDerivesReferenceIdentityWithoutServedRates() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom)
 
@@ -230,7 +238,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesReferenceIdentityWithoutServedR
 func (s *KeeperTestSuite) TestBeginBlockerCapturesReferenceWhenNotAMember() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
@@ -262,7 +270,7 @@ func (s *KeeperTestSuite) TestBeginBlockerCapturesReferenceWhenNotAMember() {
 func (s *KeeperTestSuite) TestBeginBlockerStoresLopsidedFactorDerivingUncapped() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
@@ -287,7 +295,7 @@ func (s *KeeperTestSuite) TestBeginBlockerStoresLopsidedFactorDerivingUncapped()
 func (s *KeeperTestSuite) TestTaxCapDerivationBounds() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.OneInt()
+	params.ReferenceTaxCap = math.OneInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	// One base unit of reference converts to half a unit at this rate pair.
@@ -302,7 +310,7 @@ func (s *KeeperTestSuite) TestTaxCapDerivationBounds() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.OneInt(), usdCap)
 
-	params.ReferenceTaxCap.Amount = math.ZeroInt()
+	params.ReferenceTaxCap = math.ZeroInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -316,7 +324,7 @@ func (s *KeeperTestSuite) TestTaxCapDerivationBounds() {
 func (s *KeeperTestSuite) TestReferenceTaxCapChangeRepricesInstantly() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
-	params.ReferenceTaxCap.Amount = math.NewInt(1_000_000)
+	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
@@ -327,9 +335,43 @@ func (s *KeeperTestSuite) TestReferenceTaxCapChangeRepricesInstantly() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(2_000_000), usdCap)
 
-	params.ReferenceTaxCap.Amount = math.NewInt(500_000)
+	params.ReferenceTaxCap = math.NewInt(500_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(1_000_000), usdCap)
+}
+
+// TestBeginBlockerDerivesNoahCrossWithoutSeeding pins the numeraire's
+// difference from the members: no servable reference rate means no cross —
+// NOAH is refused as a fee denom rather than seeded, because nothing forces
+// gas to be paid in it — and the first real rate creates the cross beside
+// the table, never in it.
+func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
+	s.setBlockHeight(1)
+	s.setAssets(chain.USDBaseDenom)
+
+	s.Require().NoError(s.beginBlock())
+	_, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	s.Require().ErrorIs(err, collections.ErrNotFound)
+
+	// One NOAH is four SDR here, so one reference unit is a quarter NOAH.
+	s.setRates(oracletypes.RateSet{
+		chain.SDRBaseDenom: math.LegacyNewDec(4),
+		chain.USDBaseDenom: math.LegacyNewDec(2),
+	})
+	s.Require().NoError(s.beginBlock())
+	cross, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), cross.Factor)
+	// Never in the table: the tax base is untouched.
+	_, err = s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
+	s.Require().ErrorIs(err, collections.ErrNotFound)
+
+	// A dark reference keeps the cross, like any member through an outage.
+	s.setRates(oracletypes.RateSet{})
+	s.Require().NoError(s.beginBlock())
+	kept, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), kept.Factor)
 }

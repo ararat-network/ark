@@ -42,11 +42,11 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	if err != nil {
 		return nil, fmt.Errorf("getting current params: %w", err)
 	}
-	if msg.Params.ReferenceTaxCap.Denom != current.ReferenceTaxCap.Denom {
+	if msg.Params.ReferenceDenom != current.ReferenceDenom {
 		return nil, sdkerrors.Wrapf(
 			errortypes.ErrInvalidRequest,
-			"reference tax cap denom is set by the protocol reference: re-point it with MsgSetReferenceDenom, not %s",
-			msg.Params.ReferenceTaxCap.Denom,
+			"reference denom is set by the protocol reference: re-point it with MsgSetReferenceDenom, not %s",
+			msg.Params.ReferenceDenom,
 		)
 	}
 	if err := m.k.Params.Set(ctx, msg.Params); err != nil {

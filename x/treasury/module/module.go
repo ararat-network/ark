@@ -29,6 +29,7 @@ var (
 
 	_ appmodule.AppModule       = AppModule{}
 	_ appmodule.HasBeginBlocker = AppModule{}
+	_ appmodule.HasEndBlocker   = AppModule{}
 )
 
 // AppModule implements an application module for the treasury module.
@@ -114,4 +115,9 @@ func (AppModule) ConsensusVersion() uint64 { return consensusVersion }
 // BeginBlock runs Treasury's tax-cap refresh and reward-funding accounting.
 func (am AppModule) BeginBlock(ctx context.Context) error {
 	return am.k.BeginBlocker(ctx)
+}
+
+// EndBlock runs the base-fee controller's update from the block's gas tally.
+func (am AppModule) EndBlock(ctx context.Context) error {
+	return am.k.EndBlocker(ctx)
 }
