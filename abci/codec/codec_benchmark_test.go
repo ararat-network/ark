@@ -82,7 +82,7 @@ func benchmarkCodecVoteExtension(b *testing.B, targetCount int) vetypes.OracleVo
 
 	rates := make(map[string][]byte, targetCount)
 	for i := range targetCount {
-		rate, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 1)))
+		rate, err := arkencoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 1)))
 		if err != nil {
 			b.Fatal(err)
 		}

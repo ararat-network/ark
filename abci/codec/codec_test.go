@@ -3,8 +3,8 @@ package codec
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 	"math/rand"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,16 +41,32 @@ func TestVoteExtensionCodec(t *testing.T) {
 	require.Empty(t, decoded.Rates)
 }
 
-// The wire limit is derived from the zstd frame format; the encoder derives
-// the same bound from its own options. Cross-checking the two catches both a
-// domain bound leaving the ranges the derivation assumes and a dependency
-// upgrade changing the worst case, either of which moves consensus acceptance.
-func TestVoteExtensionWireLimitMatchesEncoderWorstCase(t *testing.T) {
-	require.Equal(
-		t,
-		maxVoteExtensionWireBytes,
-		zstdEncoder.MaxEncodedSize(maxVoteExtensionDecodedBytes),
-	)
+// Finalisation decodes one vote extension per validator and retains every
+// result, so decoded rate bytes must not alias storage that a later decode can
+// overwrite.
+func TestDecodeVoteExtensionOwnsReturnedRateBytes(t *testing.T) {
+	first := vetypes.OracleVoteExtension{
+		Rates: map[string][]byte{"uone": []byte("first-rate")},
+	}
+	encodedFirst, err := EncodeVoteExtension(first)
+	require.NoError(t, err)
+	decodedFirst, err := DecodeVoteExtension(encodedFirst)
+	require.NoError(t, err)
+
+	for i := range 10 {
+		second := vetypes.OracleVoteExtension{
+			Rates: map[string][]byte{
+				"utwo": bytes.Repeat([]byte{byte(i + 1)}, 1_024),
+			},
+		}
+		encodedSecond, err := EncodeVoteExtension(second)
+		require.NoError(t, err)
+		decodedSecond, err := DecodeVoteExtension(encodedSecond)
+		require.NoError(t, err)
+		require.Equal(t, second, decodedSecond)
+	}
+
+	require.Equal(t, []byte("first-rate"), decodedFirst.Rates["uone"])
 }
 
 func TestExtendedCommitCodec(t *testing.T) {
@@ -156,10 +172,13 @@ func TestExtendedCommitCodecRejectsExcessVotesOnEncode(t *testing.T) {
 
 func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 	t.Run("256-target vote extension", func(t *testing.T) {
-		// The widest rate a vote may carry: MaxEncodedVoteRateBytes decimal
-		// digits of raw price*10^18.
-		maxRate, err := arkencoding.EncodeLegacyDec(
-			math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 21)),
+		// The widest rate a vote may carry: the largest raw value encoding to
+		// MaxEncodedVoteRateBytes big-endian bytes.
+		maxRate, err := arkencoding.EncodeCompactLegacyDec(
+			math.LegacyNewDecFromBigIntWithPrec(
+				new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*oracletypes.MaxEncodedVoteRateBytes), big.NewInt(1)),
+				math.LegacyPrecision,
+			),
 		)
 		require.NoError(t, err)
 		require.Len(t, maxRate, oracletypes.MaxEncodedVoteRateBytes)
@@ -175,20 +194,15 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 			voteExtension.Rates[denom] = maxRate
 		}
 
-		decoded, err := voteExtension.Marshal()
-		require.NoError(t, err)
-		require.LessOrEqual(t, len(decoded), maxVoteExtensionDecodedBytes)
-		// The derived limit is tight: the maximal valid payload leaves
-		// headroom only for the version varint width.
-		require.Greater(t, len(decoded), maxVoteExtensionDecodedBytes-versionFieldMaxBytes)
-
 		encoded, err := EncodeVoteExtension(voteExtension)
 		require.NoError(t, err)
-		require.LessOrEqual(t, len(encoded), maxVoteExtensionWireBytes)
+		require.LessOrEqual(t, len(encoded), maxVoteExtensionBytes)
+		// The derived limit is tight: the maximal valid payload leaves
+		// headroom only for the version varint width.
+		require.Greater(t, len(encoded), maxVoteExtensionBytes-versionFieldMaxBytes)
 
-		// The maximal payload must survive the round trip: it exercises the
-		// encoder window against the decoder's window and memory bounds at the
-		// exact size where those limits meet.
+		// The maximal payload must survive the round trip: it meets the
+		// decoder's length bound at the exact size where the two limits touch.
 		roundTripped, err := DecodeVoteExtension(encoded)
 		require.NoError(t, err)
 		require.Equal(t, voteExtension, roundTripped)
@@ -198,7 +212,7 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 		// Terra operated with a governance-controlled 130-validator active set.
 		const validatorCount = 130
 
-		voteExtensions := make([]byte, validatorCount*maxVoteExtensionWireBytes)
+		voteExtensions := make([]byte, validatorCount*maxVoteExtensionBytes)
 		_, err := rand.New(rand.NewSource(1)).Read(voteExtensions)
 		require.NoError(t, err)
 
@@ -206,13 +220,13 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 			Votes: make([]cmtabci.ExtendedVoteInfo, validatorCount),
 		}
 		for validatorIndex := range validatorCount {
-			start := validatorIndex * maxVoteExtensionWireBytes
+			start := validatorIndex * maxVoteExtensionBytes
 			extendedCommit.Votes[validatorIndex] = cmtabci.ExtendedVoteInfo{
 				Validator: cmtabci.Validator{
 					Address: bytes.Repeat([]byte{byte(validatorIndex)}, 20),
 					Power:   1,
 				},
-				VoteExtension: voteExtensions[start : start+maxVoteExtensionWireBytes],
+				VoteExtension: voteExtensions[start : start+maxVoteExtensionBytes],
 				// MaxDataBytes reserves MaxCommitSigBytes per validator, sized
 				// from this same maximum; a smaller signature would understate
 				// the payload the budget has to hold.
@@ -241,9 +255,9 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 	})
 }
 
-func TestVoteExtensionCodecRejectsOversizedWirePayload(t *testing.T) {
-	_, err := DecodeVoteExtension(make([]byte, maxVoteExtensionWireBytes+1))
-	require.ErrorContains(t, err, "compressed vote extension")
+func TestVoteExtensionCodecRejectsOversizedPayloadOnDecode(t *testing.T) {
+	_, err := DecodeVoteExtension(make([]byte, maxVoteExtensionBytes+1))
+	require.ErrorContains(t, err, "encoded vote extension size")
 }
 
 func TestVoteExtensionCodecRejectsDuplicateKeyPadding(t *testing.T) {
@@ -253,29 +267,22 @@ func TestVoteExtensionCodecRejectsDuplicateKeyPadding(t *testing.T) {
 	require.NoError(t, err)
 
 	// Concatenated map entries decode to one small valid map, so duplicate
-	// keys are pure wire padding; the decoded limit must stop them.
-	padded := bytes.Repeat(entry, maxVoteExtensionDecodedBytes/len(entry)+1)
+	// keys are pure wire padding; the byte limit must stop them.
+	padded := bytes.Repeat(entry, maxVoteExtensionBytes/len(entry)+1)
 
-	_, err = DecodeVoteExtension(zstdEncoder.EncodeAll(padded, nil))
-	require.ErrorContains(t, err, "decompressed output size")
-}
-
-func TestVoteExtensionCodecBoundsDecompressedOutput(t *testing.T) {
-	oversized := bytes.Repeat([]byte("a"), maxVoteExtensionDecodedBytes+1)
-
-	_, err := DecodeVoteExtension(zstdEncoder.EncodeAll(oversized, nil))
-	require.ErrorContains(t, err, "decompressed output size")
+	_, err = DecodeVoteExtension(padded)
+	require.ErrorContains(t, err, "encoded vote extension size")
 }
 
 func TestVoteExtensionCodecRejectsOversizedPayloadOnEncode(t *testing.T) {
 	_, err := EncodeVoteExtension(vetypes.OracleVoteExtension{
-		Rates: map[string][]byte{"ausd": bytes.Repeat([]byte("1"), maxVoteExtensionDecodedBytes)},
+		Rates: map[string][]byte{"ausd": bytes.Repeat([]byte("1"), maxVoteExtensionBytes)},
 	})
-	require.ErrorContains(t, err, "decoded vote extension")
+	require.ErrorContains(t, err, "encoded vote extension size")
 }
 
 func TestCodecsRejectMalformedPayloads(t *testing.T) {
-	_, err := DecodeVoteExtension([]byte("not-zstd"))
+	_, err := DecodeVoteExtension([]byte("not-protobuf"))
 	require.Error(t, err)
 
 	_, err = DecodeExtendedCommit([]byte("not-protobuf"), cmttypes.MaxVotesCount)
