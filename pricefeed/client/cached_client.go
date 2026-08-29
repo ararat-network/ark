@@ -144,12 +144,12 @@ func validatePricesResponse(resp *api.PricesResponse) error {
 		)
 	}
 	for denom, rawPrice := range resp.Prices {
-		if len(rawPrice) > encoding.MaxEncodedLegacyDecBytes {
+		if len(rawPrice) > encoding.MaxEncodedCompactLegacyDecBytes {
 			return fmt.Errorf(
 				"sidecar price %s length %d exceeds maximum %d",
 				denom,
 				len(rawPrice),
-				encoding.MaxEncodedLegacyDecBytes,
+				encoding.MaxEncodedCompactLegacyDecBytes,
 			)
 		}
 	}

@@ -72,7 +72,7 @@ func toReqPrices(prices sidecartypes.FeedPrices) (map[string][]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("convert price %s: %w", ticker, err)
 		}
-		rawRate, err := encoding.EncodeLegacyDec(rate)
+		rawRate, err := encoding.EncodeCompactLegacyDec(rate)
 		if err != nil {
 			return nil, fmt.Errorf("encoding rate: %w", err)
 		}

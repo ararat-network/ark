@@ -248,7 +248,7 @@ func TestCachedPriceClientDoesNotCacheOversizedSnapshot(t *testing.T) {
 				response := freshResponse()
 				response.Prices["btc/usd"] = bytes.Repeat(
 					[]byte("1"),
-					encoding.MaxEncodedLegacyDecBytes+1,
+					encoding.MaxEncodedCompactLegacyDecBytes+1,
 				)
 				return response
 			},

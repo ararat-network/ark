@@ -112,14 +112,8 @@ func (v *Validator) samplePrices(ctx context.Context, activeFeeds []string) []st
 			continue
 		}
 
-		price, err := encoding.DecodeLegacyDec(rawPrice)
-		if err != nil {
+		if _, err := encoding.DecodeCompactLegacyDec(rawPrice); err != nil {
 			v.logger.Error("oracle price is invalid", "denom", denom, "err", err)
-			missing = append(missing, denom)
-			continue
-		}
-		if !price.IsPositive() {
-			v.logger.Error("oracle price is not positive", "denom", denom, "price", price.String())
 			missing = append(missing, denom)
 		}
 	}

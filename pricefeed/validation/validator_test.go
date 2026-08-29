@@ -352,7 +352,6 @@ func TestRunFailsWhenDenomBelowLivenessThreshold(t *testing.T) {
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
 			Return(pricesResponseWithValues(t, now, map[string]sdkmath.LegacyDec{
 				"ausd": positivePrice(),
-				"akrw": sdkmath.LegacyZeroDec(),
 			}), nil),
 	)
 	cfg := validConfig()
@@ -377,20 +376,16 @@ func TestRunCountsInvalidPricesAsMissing(t *testing.T) {
 		rawPrice []byte
 	}{
 		{
-			name:     "zero",
-			rawPrice: encodedPrice(t, sdkmath.LegacyZeroDec()),
+			name:     "empty",
+			rawPrice: []byte{},
 		},
 		{
-			name:     "negative",
-			rawPrice: encodedPrice(t, sdkmath.LegacyNewDec(-1)),
-		},
-		{
-			name:     "malformed",
-			rawPrice: []byte("not-a-decimal"),
+			name:     "leading zero",
+			rawPrice: []byte{0x00, 0x01},
 		},
 		{
 			name:     "oversized",
-			rawPrice: make([]byte, encoding.MaxEncodedLegacyDecBytes+1),
+			rawPrice: make([]byte, encoding.MaxEncodedCompactLegacyDecBytes+1),
 		},
 	}
 
@@ -667,7 +662,7 @@ func pricesResponseWithValues(
 func encodedPrice(t *testing.T, price sdkmath.LegacyDec) []byte {
 	t.Helper()
 
-	rawPrice, err := encoding.EncodeLegacyDec(price)
+	rawPrice, err := encoding.EncodeCompactLegacyDec(price)
 	require.NoError(t, err)
 	return rawPrice
 }

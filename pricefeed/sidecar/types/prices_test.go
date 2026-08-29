@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ararat-network/ark/pkg/encoding"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
@@ -26,7 +25,7 @@ func TestParsePriceRejectsInfinity(t *testing.T) {
 }
 
 func TestParsePriceRejectsOversizedText(t *testing.T) {
-	_, err := ParsePrice(strings.Repeat("1", encoding.MaxEncodedLegacyDecBytes+1))
+	_, err := ParsePrice(strings.Repeat("1", MaxPriceTextBytes+1))
 	if err == nil || !strings.Contains(err.Error(), "exceeds maximum") {
 		t.Fatalf("ParsePrice() error = %v, want maximum-length error", err)
 	}

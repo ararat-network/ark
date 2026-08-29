@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/ararat-network/ark/pkg/encoding"
 )
 
 // Prices is the oracle-internal price map keyed by canonical BASE/QUOTE pairs.
@@ -88,14 +86,19 @@ func ValidatePrice(price *big.Float) error {
 	return nil
 }
 
+// MaxPriceTextBytes bounds the decimal text ParsePrice accepts. The full
+// LegacyDec range renders within 97 characters plus a point; 128 retains
+// headroom while refusing unbounded inputs before big.Float parsing.
+const MaxPriceTextBytes = 128
+
 // ParsePrice parses a finite, LegacyDec-representable decimal string into an
 // oracle price.
 func ParsePrice(s string) (*big.Float, error) {
-	if len(s) > encoding.MaxEncodedLegacyDecBytes {
+	if len(s) > MaxPriceTextBytes {
 		return nil, fmt.Errorf(
 			"oracle price text length %d exceeds maximum %d",
 			len(s),
-			encoding.MaxEncodedLegacyDecBytes,
+			MaxPriceTextBytes,
 		)
 	}
 

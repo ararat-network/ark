@@ -161,7 +161,7 @@ func TestToReqPrices(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, got, len(tt.want))
 			for ticker, want := range tt.want {
-				rate, err := encoding.DecodeLegacyDec(got[ticker])
+				rate, err := encoding.DecodeCompactLegacyDec(got[ticker])
 				require.NoError(t, err)
 				require.Equal(t, want, rate)
 			}
@@ -199,7 +199,7 @@ func mustBigFloat(t *testing.T, value string) *big.Float {
 func decodePrice(t *testing.T, rawPrice []byte) math.LegacyDec {
 	t.Helper()
 
-	price, err := encoding.DecodeLegacyDec(rawPrice)
+	price, err := encoding.DecodeCompactLegacyDec(rawPrice)
 	require.NoError(t, err)
 	return price
 }
