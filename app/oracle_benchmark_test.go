@@ -25,12 +25,12 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	abcicodec "ark/abci/codec"
-	abcioracle "ark/abci/oracle"
-	vetypes "ark/abci/voteextension/types"
-	chain "ark/pkg/chain"
-	arkencoding "ark/pkg/encoding"
-	oracletypes "ark/x/oracle/types"
+	abcicodec "github.com/ararat-network/ark/abci/codec"
+	abcioracle "github.com/ararat-network/ark/abci/oracle"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 const oracleBenchmarkValidatorCount = 100
@@ -77,8 +77,8 @@ func BenchmarkOracleProcessVoteExtensions(b *testing.B) {
 		{name: "targets_8/reports_8/all_valid", targetCount: 8},
 		{name: "targets_8/reports_8/ten_percent_partial", targetCount: 8, partialEvery: 10},
 		{name: "targets_8/reports_0/all_absent", targetCount: 8, allAbsent: true},
-		{name: "targets_256/reports_8/all_partial", targetCount: oracletypes.MaxVoteTargets, reportCount: 8},
-		{name: "targets_256/reports_256/all_valid", targetCount: oracletypes.MaxVoteTargets},
+		{name: "targets_256/reports_8/all_partial", targetCount: oracletypes.MaxFeeds, reportCount: 8},
+		{name: "targets_256/reports_256/all_valid", targetCount: oracletypes.MaxFeeds},
 	}
 
 	for _, benchmarkCase := range cases {
@@ -98,9 +98,9 @@ func benchmarkProcessVoteExtensions(
 
 	baseCtx, _ := parentCtx.CacheContext()
 	targets := benchmarkOracleTargets(benchmarkCase.targetCount)
-	if err := fixture.app.OracleKeeper.VoteTargets.Set(baseCtx, oracletypes.VoteTargets{
+	if err := fixture.app.OracleKeeper.Feeds.Set(baseCtx, oracletypes.Feeds{
 		Denoms:  targets,
-		Version: oracletypes.InitialVoteTargetVersion,
+		Version: oracletypes.InitialFeedVersion,
 	}); err != nil {
 		b.Fatal(err)
 	}
@@ -118,9 +118,7 @@ func benchmarkProcessVoteExtensions(
 			b.Fatal(err)
 		}
 	}
-
-	voteExtensionCodec := abcicodec.NewVoteExtensionCodec()
-	commitBz := benchmarkExtendedCommit(b, voteExtensionCodec, fixture.consAddrs, targets, benchmarkCase)
+	commitBz := benchmarkExtendedCommit(b, fixture.consAddrs, targets, benchmarkCase)
 	req := &cometabci.RequestFinalizeBlock{
 		Height:            3,
 		Txs:               [][]byte{commitBz},
@@ -137,7 +135,7 @@ func benchmarkProcessVoteExtensions(
 		ctx, _ := baseCtx.CacheContext()
 		b.StartTimer()
 
-		prices, err := abcioracle.ProcessVoteExtensions(ctx, fixture.app.OracleKeeper, voteExtensionCodec, req)
+		prices, err := abcioracle.ProcessVoteExtensions(ctx, fixture.app.OracleKeeper, req)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -322,13 +320,12 @@ func benchmarkOracleFinalizeAndCommit(b *testing.B, withOracle bool) {
 
 	var txs [][]byte
 	if withOracle {
-		targets := oracletypes.NewVoteTargets(oracletypes.DefaultParams())
+		feeds := oracletypes.DefaultFeeds()
 		commitBz := benchmarkExtendedCommit(
 			b,
-			abcicodec.NewVoteExtensionCodec(),
 			fixture.consAddrs,
-			targets.Denoms,
-			processVoteExtensionsBenchmarkCase{targetCount: len(targets.Denoms)},
+			feeds.Denoms,
+			processVoteExtensionsBenchmarkCase{targetCount: len(feeds.Denoms)},
 		)
 		txs = [][]byte{commitBz}
 		b.SetBytes(int64(len(commitBz)))
@@ -493,7 +490,6 @@ func newOracleBenchmarkFixture(
 
 func benchmarkExtendedCommit(
 	tb testing.TB,
-	voteExtensionCodec *abcicodec.VoteExtensionCodec,
 	consAddrs []sdk.ConsAddress,
 	targets []string,
 	benchmarkCase processVoteExtensionsBenchmarkCase,
@@ -505,12 +501,12 @@ func benchmarkExtendedCommit(
 		reportCount = len(targets)
 	}
 	reportedTargets := targets[:reportCount]
-	fullVoteExtension := benchmarkVoteExtension(tb, voteExtensionCodec, reportedTargets)
+	fullVoteExtension := benchmarkVoteExtension(tb, reportedTargets)
 	partialTargets := reportedTargets
 	if len(partialTargets) > 0 {
 		partialTargets = partialTargets[:len(partialTargets)-1]
 	}
-	partialVoteExtension := benchmarkVoteExtension(tb, voteExtensionCodec, partialTargets)
+	partialVoteExtension := benchmarkVoteExtension(tb, partialTargets)
 
 	votes := make([]cometabci.ExtendedVoteInfo, len(consAddrs))
 	for i, consAddr := range consAddrs {
@@ -537,22 +533,21 @@ func benchmarkExtendedCommit(
 
 func benchmarkVoteExtension(
 	tb testing.TB,
-	voteExtensionCodec *abcicodec.VoteExtensionCodec,
 	targets []string,
 ) []byte {
 	tb.Helper()
 
 	rates := make(map[string][]byte, len(targets))
 	for i, denom := range targets {
-		rate, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 100)))
+		rate, err := arkencoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 100)))
 		if err != nil {
 			tb.Fatal(err)
 		}
 		rates[denom] = rate
 	}
-	encoded, err := voteExtensionCodec.Encode(vetypes.OracleVoteExtension{
+	encoded, err := abcicodec.EncodeVoteExtension(vetypes.OracleVoteExtension{
 		Rates:         rates,
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+		TargetVersion: oracletypes.InitialFeedVersion,
 	})
 	if err != nil {
 		tb.Fatal(err)

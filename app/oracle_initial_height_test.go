@@ -26,9 +26,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
-	"ark/abci/codec"
-	vetypes "ark/abci/voteextension/types"
-	oracletypes "ark/x/oracle/types"
+	"github.com/ararat-network/ark/abci/codec"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
@@ -129,8 +129,8 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	_, err = arkApp.Commit()
 	require.NoError(t, err)
 
-	voteExtension, err := codec.NewVoteExtensionCodec().Encode(vetypes.OracleVoteExtension{
-		TargetVersion: oracletypes.InitialVoteTargetVersion,
+	voteExtension, err := codec.EncodeVoteExtension(vetypes.OracleVoteExtension{
+		TargetVersion: oracletypes.InitialFeedVersion,
 	})
 	require.NoError(t, err)
 	canonicalVoteExtension := cmtproto.CanonicalVoteExtension{
